@@ -29,7 +29,7 @@ Add es-hadoop-<version>.jar to `hive.aux.jars.path` or register it manually in y
 ```
 ADD JAR /path_to_jar/es-hadoop-<version>.jar;
 ```
-## Reading
+### Reading
 To read data from ES, define a table backed by the desired index:
 ```
 "CREATE EXTERNAL TABLE artists (
@@ -44,7 +44,7 @@ The fields defined in the table are mapped to the JSON when communicating with E
 SELECT * FROM artists;
 ```
 
-## Writing
+### Writing
 To write data, a similar definition is used but with a different `es.location`:
 ```
 "CREATE EXTERNAL TABLE artists (
@@ -61,9 +61,9 @@ INSERT OVERWRITE TABLE artists
     SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s
 ```
 
-As one can note, currently the reading and writing are treated separately but we're working on synchronizing the two and automatically translating HiveQL to ElasticSearch queries.
+As one can note, currently the reading and writing are treated separately but we're working on synchronizing the two and automatically translating [HiveQL][] to ElasticSearch queries.
 
-# [Pig][]
+## [Pig][]
 ES-Hadoop provides both read and write functions for Pig so you can access ElasticSearch from Pig scripts.
 
 Register ES-Hadoop jar into your script or add it to your Pig classpath:
@@ -76,14 +76,14 @@ Additionally one can define an alias to save some chars:
 ```
 and use `$ESSTORAGE` for storage definition.
 
-## Reading
+### Reading
 To read data from ES, use `ESStorage` and specify the query through the `LOAD` function:
 ```
 A = LOAD 'radio/artists/_search?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();
 DUMP A;
 ```
 
-## Writing
+### Writing
 Use the same `Storage` to write data to ElasticSearch:
 ```
 A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);
@@ -91,9 +91,18 @@ B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.ESStorage();
 ```
 
+# Building from source
+
+ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine.
+To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in build\libs.
+
+
+
 [Hadoop]: http://hadoop.apache.org
 [MapReduce]: http://hadoop.apache.org/docs/r1.0.4/mapred_tutorial.html
 [Pig]: http://pig.apache.org
 [Hive]: http://hive.apache.org
+[HiveQL]: http://cwiki.apache.org/confluence/display/Hive/LanguageManual
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
+[Gradle]: http://www.gradle.org/
