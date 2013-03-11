@@ -1,0 +1,143 @@
+buildscript {
+    repositories {
+        maven { url 'http://repo.springsource.org/plugins-release' }
+    }
+    dependencies {
+        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.3'
+    }
+}
+
+description = 'ElasticSearch Hadoop'
+group = 'org.elasticsearch.hadoop'
+
+repositories {
+  mavenCentral()
+  maven { url "http://oss.sonatype.org/content/groups/public/" }
+  // JDO ec2 missing from Maven Central
+  maven { url "http://www.datanucleus.org/downloads/maven2" }
+}
+
+apply plugin: "java"
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'propdeps'
+apply plugin: 'propdeps-idea'
+apply plugin: 'propdeps-eclipse'
+
+dependencies {
+	ext.hadoopVersion=hadoop10Version
+	
+    compile("org.apache.hadoop:hadoop-streaming:$hadoopVersion")
+	compile("org.apache.hadoop:hadoop-tools:$hadoopVersion")
+	
+	optional("com.sun.jersey:jersey-bundle:$jerseyVersion")
+	optional("commons-io:commons-io:2.1")
+	compile("org.codehaus.jackson:jackson-mapper-asl:1.8.8")
+    // Logging - using commons-logging from spring-core
+    testRuntime("log4j:log4j:$log4jVersion")
+
+    // Pig
+    optional("org.apache.pig:pig:$pigVersion")
+
+	ext.hiveGroup = "org.apache.hive"
+    // Hive
+    optional("$hiveGroup:hive-service:$hiveVersion")
+    
+    // needed by the Hive Server tests
+    testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 
+
+    // Libs dependencies (specified to cope with incompatibilities between them)
+    testRuntime "org.antlr:antlr-runtime:$antlrVersion"
+
+    // Testing
+    testCompile "junit:junit:$junitVersion"
+    
+	// Required by Pig
+	testRuntime "com.google.guava:guava:11.0"
+    // specify a version of antlr that works with both hive and pig (works only during compilation)
+    testRuntime "org.antlr:antlr-runtime:$antlrVersion"
+ }
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6 
+
+ext.skipPig = true
+ext.skipHive = true
+
+task enablePigTests {
+    description = "Enable Pig tests"
+    group = "Verification"
+    
+    doLast() {
+        project.ext.skipPig = false
+   }
+}
+
+task enableHiveTests {
+    description = "Enable Hive tests"
+    group = "Verification"
+    doLast() {
+        project.ext.skipHive = false
+   }
+}
+
+task enableAllTests() {
+    description = "Enable all (incl. Pig, Hive) tests"
+    group = "Verification"
+    doFirst() {
+      println "Enable all tests"
+      project.ext.skipPig = false
+      project.ext.skipHive = false
+    }
+}
+
+test {
+    systemProperties['input.path'] = 'build/classes/test/input'
+    systemProperties['output.path'] = 'build/classes/test/output'
+    includes = ["**/*.class"]
+
+    testLogging {
+        events "started"
+        minGranularity 2
+        maxGranularity 2
+    }
+
+    doFirst() {
+        ext.msg = ""
+        
+        if (skipPig) {
+            ext.msg += "Pig "
+            excludes.add("**/pig/**")
+        }
+        if (skipHive) {
+            ext.msg += "Hive "
+            excludes.add("**/hive/**")
+        }
+
+        if (!msg.isEmpty())
+            println "Skipping [$msg] Tests";
+	}
+}
+
+task sourcesJar(type: Jar, dependsOn:classes) {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+task wrapper(type: Wrapper) {
+    description = 'Generates gradlew[.bat] scripts'
+    gradleVersion = '1.4'
+}
+
+assemble.dependsOn = ['jar', 'sourcesJar']
+defaultTasks 'build'

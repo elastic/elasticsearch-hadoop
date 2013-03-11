@@ -1,0 +1,11 @@
+.gradle
+bin
+build
+.settings
+.classpath
+.project
+*.iml
+*.ipr
+*.iws
+*.log
+metastore_db
