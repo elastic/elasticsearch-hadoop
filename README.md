@@ -32,12 +32,12 @@ ADD JAR /path_to_jar/es-hadoop-<version>.jar;
 ### Reading
 To read data from ES, define a table backed by the desired index:
 ```
-"CREATE EXTERNAL TABLE artists (
+CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.location' = 'radio/artists/_search?q=me*')";
+TBLPROPERTIES('es.location' = 'radio/artists/_search?q=me*');
 ```
 The fields defined in the table are mapped to the JSON when communicating with ElasticSearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table:
 ```
@@ -52,16 +52,16 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.location' = 'radio/artists/')";
+TBLPROPERTIES('es.location' = 'radio/artists/');
 ```
 
 Any data passed to the table is then passed down to ElasticSearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to ElasticSearch like this:
 ```
 INSERT OVERWRITE TABLE artists 
-    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s
+    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
 ```
 
-As one can note, currently the reading and writing are treated separately but we're working on synchronizing the two and automatically translating [HiveQL][] to ElasticSearch queries.
+As one can note, currently the reading and writing are treated separately but we're working on unifying the two and automatically translating [HiveQL][] to ElasticSearch queries.
 
 ## [Pig][]
 ES-Hadoop provides both read and write functions for Pig so you can access ElasticSearch from Pig scripts.
