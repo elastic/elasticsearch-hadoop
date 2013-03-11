@@ -1,8 +1,8 @@
 # ElasticSearch Hadoop
-Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports MapReduce, Hive and Pig. Cascading and Hadoop streaming are planned for the very near future.
+Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports MapReduce, [Hive][#Hive] and [Pig][#Pig]. Cascading and Hadoop streaming are planned for the very near future.
 
 # Requirements
-ElasticSearch cluster accessible through REST. That's it.
+ElasticSearch cluster accessible through [REST][]. That's it.
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 
 # License
@@ -47,7 +47,7 @@ SELECT * FROM artists;
 ### Writing
 To write data, a similar definition is used but with a different `es.location`:
 ```
-"CREATE EXTERNAL TABLE artists (
+CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
@@ -94,7 +94,8 @@ STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.ESStorage();
 # Building from source
 
 ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine.
-To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in build\libs.
+
+To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build\libs`.
 
 
 
@@ -106,3 +107,4 @@ To create a distributable jar, run `gradlew -x test build` from the command line
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
 [Gradle]: http://www.gradle.org/
+[REST]: http://www.elasticsearch.org/guide/reference/api/
