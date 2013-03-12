@@ -22,16 +22,10 @@ import org.junit.Test;
 public abstract class RestTest {
 
     private final String BASE = "http://localhost:9200/";
-    private JerseyClient client = new JerseyClient(BASE);
-
-    @Test
-    public void testCount() throws Exception {
-        client.numberOfResults("twitter?q=kimchy");
-    }
+    private RestClient client = new RestClient(BASE);
 
     @Test
     public void testPagination() throws Exception {
         client.query("twitter/_search?q=kimchy", 0, 2);
     }
-
 }

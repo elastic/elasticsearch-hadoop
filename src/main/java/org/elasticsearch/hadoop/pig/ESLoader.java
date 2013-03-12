@@ -68,7 +68,7 @@ public class ESLoader extends LoadFunc {
     public void setLocation(String location, Job job) throws IOException {
         // TODO: add validation (no host/port or leading /)
         Configuration cfg = job.getConfiguration();
-        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortURI(host, port, cfg));
+        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, cfg));
         cfg.set(ESConfigConstants.ES_QUERY, location.trim());
     }
 

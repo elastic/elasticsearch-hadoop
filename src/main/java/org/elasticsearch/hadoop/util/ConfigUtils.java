@@ -21,12 +21,12 @@ import org.elasticsearch.hadoop.mr.ESConfigConstants;
 
 public abstract class ConfigUtils {
 
-    public static String detectHostPortURI(Configuration cfg) {
+    public static String detectHostPortAddress(Configuration cfg) {
         String address = cfg.get(ESConfigConstants.ES_ADDRESS);
-        return StringUtils.isBlank(address) ? address : detectHostPortURI(null, 0, cfg);
+        return StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
     }
 
-    public static String detectHostPortURI(String host, int port, Configuration cfg) {
+    public static String detectHostPortAddress(String host, int port, Configuration cfg) {
         String h = !StringUtils.isBlank(host) ? host : cfg.get("es.host", "localhost");
         int p = (port > 0) ? port : cfg.getInt("es.port", 9200);
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();

@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.rest.JerseyClient;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.ConfigUtils;
 
 /**
@@ -70,7 +70,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
     protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
 
         private final String index;
-        private final JerseyClient client;
+        private final RestClient client;
 
         // number of records to write in one call
         private final int BATCH_SIZE = 2;
@@ -78,7 +78,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
         public ESRecordWriter(Configuration cfg) {
             index = cfg.get(ES_INDEX);
-            client = new JerseyClient(ConfigUtils.detectHostPortURI(cfg));
+            client = new RestClient(ConfigUtils.detectHostPortAddress(cfg));
         }
 
         @Override
