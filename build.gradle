@@ -30,10 +30,8 @@ dependencies {
     compile("org.apache.hadoop:hadoop-streaming:$hadoopVersion")
 	compile("org.apache.hadoop:hadoop-tools:$hadoopVersion")
 	
-	optional("com.sun.jersey:jersey-bundle:$jerseyVersion")
 	optional("commons-io:commons-io:2.1")
 	compile("org.codehaus.jackson:jackson-mapper-asl:1.8.8")
-    // Logging - using commons-logging from spring-core
     testRuntime("log4j:log4j:$log4jVersion")
 
     // Pig

@@ -85,7 +85,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
         }
         Configuration cfg = getConf();
 
-        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortURI(host, port, cfg));
+        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, cfg));
         cfg.set(ESConfigConstants.ES_QUERY, location.trim());
         cfg.set(ESConfigConstants.ES_INDEX, location.trim());
 

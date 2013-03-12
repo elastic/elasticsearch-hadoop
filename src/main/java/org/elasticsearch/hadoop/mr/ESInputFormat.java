@@ -33,7 +33,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.elasticsearch.hadoop.rest.JerseyClient;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.ConfigUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
@@ -93,7 +93,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         private int read = 0;
 
-        private JerseyClient client;
+        private RestClient client;
 
         private List<Map<String, Object>> batch = Collections.emptyList();
         private int index = 0;
@@ -126,7 +126,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
             query = cfg.get(ES_QUERY);
             // initialize REST client
-            client = new JerseyClient(ConfigUtils.detectHostPortURI(cfg));
+            client = new RestClient(ConfigUtils.detectHostPortAddress(cfg));
         }
 
         @Override

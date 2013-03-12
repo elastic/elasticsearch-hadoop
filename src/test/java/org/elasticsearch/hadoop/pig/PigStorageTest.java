@@ -18,7 +18,7 @@ package org.elasticsearch.hadoop.pig;
 import java.io.ByteArrayInputStream;
 
 import org.apache.pig.PigServer;
-import org.elasticsearch.hadoop.rest.JerseyClient;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -39,7 +39,7 @@ public class PigStorageTest {
         // initialize Pig in local mode
         pig = new PigServer("local");
         pig.setBatchOn();
-        JerseyClient client = new JerseyClient("http://localhost:9200");
+        RestClient client = new RestClient("http://localhost:9200");
         try {
             client.deleteIndex("radio");
         } catch (Exception ex) {
