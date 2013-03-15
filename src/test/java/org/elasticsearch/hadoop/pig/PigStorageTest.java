@@ -65,6 +65,14 @@ public class PigStorageTest {
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 //"ILLUSTRATE B;" +
                 "STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.ESStorage();";
+                //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();" +
+                //"DUMP es_total;" +
+                //"bartists = FILTER B BY name MATCHES 'me.*';" +
+                //"allb = GROUP bartists ALL;"+
+                //"total = FOREACH allb GENERATE 'total' as foo, COUNT_STAR($1) as total;"+
+                //"ILLUSTRATE allb;"+
+                //"STORE total INTO '/tmp/total';"+
+                //"DUMP total;";
         executeScript(script);
     }
 
