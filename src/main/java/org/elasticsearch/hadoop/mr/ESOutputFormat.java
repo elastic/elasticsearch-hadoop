@@ -16,8 +16,6 @@
 package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -29,7 +27,7 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.util.ConfigUtils;
 
 /**
@@ -70,29 +68,16 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
     protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
 
         private final String index;
-        private final RestClient client;
-
-        // number of records to write in one call
-        private final int BATCH_SIZE = 2;
-        private final List<Object> batch = new ArrayList<Object>(BATCH_SIZE);
+        private final BufferedRestClient client;
 
         public ESRecordWriter(Configuration cfg) {
             index = cfg.get(ES_INDEX);
-            client = new RestClient(ConfigUtils.detectHostPortAddress(cfg));
+            client = new BufferedRestClient(ConfigUtils.detectHostPortAddress(cfg));
         }
 
         @Override
         public void write(Object key, Object value) throws IOException {
-            // consider whether the object needs to be cloned or not
-            batch.add(value);
-            if (batch.size() == BATCH_SIZE) {
-                flushBatch();
-            }
-        }
-
-        private void flushBatch() throws IOException {
-            client.addToIndex(index, batch);
-            batch.clear();
+            client.addToIndex(index, value);
         }
 
         @Override
@@ -102,13 +87,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
         @Override
         public void close(Reporter reporter) throws IOException {
-            try {
-                if (!batch.isEmpty()) {
-                    flushBatch();
-                }
-            } finally {
-                client.close();
-            }
+            client.close();
         }
     }
 

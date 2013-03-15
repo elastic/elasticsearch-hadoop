@@ -19,7 +19,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +32,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.QueryResult;
 import org.elasticsearch.hadoop.util.ConfigUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
@@ -84,24 +84,17 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     // read data in small bulks (through the scan api)
     static class ESRecordReader extends RecordReader<Text, MapWritable> implements
             org.apache.hadoop.mapred.RecordReader<Text, MapWritable> {
-        // number of records to get in one call
-        private final int BATCH_SIZE = 1;
 
-        private int from;
-        private int size;
         private String query;
-
         private int read = 0;
 
-        private RestClient client;
-
-        private List<Map<String, Object>> batch = Collections.emptyList();
-        private int index = 0;
-        private boolean done = false;
+        private BufferedRestClient client;
+        private QueryResult result;
 
         // minor optimization - see below
         private String currentKey;
         private MapWritable currentValue;
+        private int size = 0;
 
         // default constructor used by the NEW api
         ESRecordReader() {
@@ -121,12 +114,11 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         }
 
         void init(ESInputSplit esSplit, Configuration cfg) {
-            from = esSplit.from;
             size = esSplit.size;
 
             query = cfg.get(ES_QUERY);
             // initialize REST client
-            client = new RestClient(ConfigUtils.detectHostPortAddress(cfg));
+            client = new BufferedRestClient(ConfigUtils.detectHostPortAddress(cfg));
         }
 
         @Override
@@ -158,23 +150,20 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public boolean next(Text key, MapWritable value) throws IOException {
-            if (done || read > size) {
-                return false;
-            }
-            // get a new batch
-            if (batch.isEmpty() || ++index >= batch.size()) {
-                batch = client.query(query, from + read, BATCH_SIZE);
-                if (batch.isEmpty()) {
-                    done = true;
-                    return false;
-                }
-                // reset index
-                index = 0;
+            if (result == null) {
+                result = client.query(query);
             }
 
+            boolean hasNext = result.hasNext();
+
+            if (!hasNext) {
+                return false;
+            }
+
+            Map<String, Object> next = result.next();
             // we save the key as is since under the old API, we don't have to create a new Text() object
-            currentKey = batch.get(index).get("_id").toString();
-            currentValue = (MapWritable) WritableUtils.toWritable(batch.get(index).get("_source"));
+            currentKey = next.get("_id").toString();
+            currentValue = (MapWritable) WritableUtils.toWritable(next.get("_source"));
 
             if (key != null) {
                 key.set(currentKey);

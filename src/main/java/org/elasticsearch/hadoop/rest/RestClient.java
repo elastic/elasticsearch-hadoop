@@ -37,7 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 
 /**
- * REST client used for interacting with ElasticSearch.
+ * REST client used for interacting with ElasticSearch. Performs basic operations; for buffer/batching operation consider using BufferedRestClient.
  */
 public class RestClient implements Closeable {
 
@@ -102,10 +102,15 @@ public class RestClient implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         HttpConnectionManager manager = client.getHttpConnectionManager();
         if (manager instanceof SimpleHttpConnectionManager) {
-            ((SimpleHttpConnectionManager) manager).shutdown();
+            try {
+                ((SimpleHttpConnectionManager) manager).shutdown();
+            } catch (Exception ex) {
+                // log - not much else to do
+                log.warn("Exception closing underlying HTTP manager", ex);
+            }
         }
     }
 
