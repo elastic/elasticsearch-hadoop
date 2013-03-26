@@ -15,6 +15,7 @@ repositories {
   maven { url "http://oss.sonatype.org/content/groups/public/" }
   // JDO ec2 missing from Maven Central
   maven { url "http://www.datanucleus.org/downloads/maven2" }
+  maven { url "http://repository.cloudera.com/artifactory/cloudera-repos/" }
 }
 
 apply plugin: "java"
@@ -24,11 +25,46 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
 
+def List hadoop = []
+def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoop10"
+def hadoopVersion = hadoop10Version
+
+// default is Hadoop 1.0.x
+switch (hadoopDistro) {
+
+  // Cloudera CDH4
+  case "cdh4":
+    hadoopVersion = cdh4Version
+    println "Using Cloudera CDH4 [$hadoopVersion]"
+
+    dependencies {
+		optional("org.apache.hadoop:hadoop-client:$hadoopVersion");
+    }
+
+    hiveVersion = cdh4HiveVersion
+    pigVersion = cdh4PigVersion
+    thriftVersion = cdh4ThriftVersion
+
+  break;
+
+  // Hadoop 1.1.x
+  case "hadoop11":
+    hadoopVersion = hadoop11Version
+    println "Using Apache Hadoop 1.1.x [$hadoopVersion]"
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
+
+  break;
+
+  default:
+    println "Using Apache Hadoop 1.0.x [$hadoopVersion]"
+    hadoopVersion = hadoop10Version
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
+}
+
 dependencies {
-	ext.hadoopVersion=hadoop10Version
-	
-    compile("org.apache.hadoop:hadoop-streaming:$hadoopVersion")
-	compile("org.apache.hadoop:hadoop-tools:$hadoopVersion")
+	compile hadoop
 	
 	optional("commons-io:commons-io:2.1")
 	compile("org.codehaus.jackson:jackson-mapper-asl:1.8.8")
@@ -55,7 +91,14 @@ dependencies {
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
     // specify a version of antlr that works with both hive and pig (works only during compilation)
     testRuntime "org.antlr:antlr-runtime:$antlrVersion"
- }
+}
+
+// exclude poms from the classpath (pulled in by Cloudera)
+eclipse.classpath.file {
+    whenMerged { classpath ->
+        classpath.entries.removeAll { entry -> entry.toString().contains(".pom") }
+    }
+}
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6 
@@ -109,7 +152,7 @@ test {
             excludes.add("**/pig/**")
         }
         if (skipHive) {
-            ext.msg += "Hive "
+            ext.msg += "Hive"
             excludes.add("**/hive/**")
         }
 
