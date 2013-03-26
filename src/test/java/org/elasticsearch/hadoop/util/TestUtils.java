@@ -17,7 +17,6 @@ package org.elasticsearch.hadoop.util;
 
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.filecache.TrackerDistributedCacheManager;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 
@@ -33,10 +32,14 @@ public class TestUtils {
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
 
-            // handle jar permissions as well
+            // handle jar permissions as well - temporarely disable for CDH 4 / YARN
             try {
-                FsPermission perm = (FsPermission) FieldUtils.readStaticField(TrackerDistributedCacheManager.class, "PUBLIC_CACHE_OBJECT_PERM", true);
+                Class<?> tdcm = Class.forName("org.apache.hadoop.filecache.TrackerDistributedCacheManager");
+                FsPermission perm = (FsPermission) FieldUtils.readStaticField(tdcm, "PUBLIC_CACHE_OBJECT_PERM", true);
                 perm.fromShort((short) 0650);
+            } catch (ClassNotFoundException cnfe) {
+                //ignore
+                return;
             } catch (Exception ex) {
                 LogFactory.getLog(TestUtils.class).warn("Cannot set permission for TrackerDistributedCacheManager", ex);
             }
