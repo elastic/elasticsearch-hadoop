@@ -107,6 +107,8 @@ public class RestClient implements Closeable {
         if (manager instanceof SimpleHttpConnectionManager) {
             try {
                 ((SimpleHttpConnectionManager) manager).shutdown();
+            } catch (NullPointerException npe) {
+                // ignore
             } catch (Exception ex) {
                 // log - not much else to do
                 log.warn("Exception closing underlying HTTP manager", ex);

@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.util.Properties;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.mr.ESConfigConstants;
@@ -29,6 +31,12 @@ public abstract class ConfigUtils {
     public static String detectHostPortAddress(String host, int port, Configuration cfg) {
         String h = !StringUtils.isBlank(host) ? host : cfg.get("es.host", "localhost");
         int p = (port > 0) ? port : cfg.getInt("es.port", 9200);
+        return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
+    }
+
+    public static String detectHostPortAddress(String host, int port, Properties cfg) {
+        String h = !StringUtils.isBlank(host) ? host : cfg.getProperty("es.host", "localhost");
+        int p = (port > 0) ? port : Integer.valueOf(cfg.getProperty("es.port", "9200"));
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
     }
 }

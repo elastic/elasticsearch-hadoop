@@ -15,6 +15,7 @@ repositories {
   maven { url "http://oss.sonatype.org/content/groups/public/" }
   // JDO ec2 missing from Maven Central
   maven { url "http://www.datanucleus.org/downloads/maven2" }
+  maven { url "http://conjars.org/repo" }
 }
 
 apply plugin: "java"
@@ -40,6 +41,10 @@ dependencies {
 	ext.hiveGroup = "org.apache.hive"
     // Hive
     optional("$hiveGroup:hive-service:$hiveVersion")
+	
+	// Cascading
+	optional("cascading:cascading-hadoop:$cascadingVersion")
+	optional("cascading:cascading-local:$cascadingVersion")
     
     // needed by the Hive Server tests
     testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 

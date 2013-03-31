@@ -21,7 +21,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * Utility class for handling URIs.
  */
-public abstract class URIUtils {
+abstract class URIUtils {
 
     public static String addPath(String uri, String... path) {
         String p = URIUtil.getPath(uri);
