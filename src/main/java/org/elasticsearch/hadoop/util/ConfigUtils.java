@@ -24,19 +24,22 @@ import org.elasticsearch.hadoop.mr.ESConfigConstants;
 public abstract class ConfigUtils {
 
     public static String detectHostPortAddress(Configuration cfg) {
+        if (cfg == null) {
+            return detectHostPortAddress(null, 0, cfg);
+        }
         String address = cfg.get(ESConfigConstants.ES_ADDRESS);
-        return StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
+        return !StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
     }
 
     public static String detectHostPortAddress(String host, int port, Configuration cfg) {
-        String h = !StringUtils.isBlank(host) ? host : cfg.get("es.host", "localhost");
-        int p = (port > 0) ? port : cfg.getInt("es.port", 9200);
+        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? "localhost" : cfg.get("es.host", "localhost"));
+        int p = (port > 0) ? port : (cfg == null ? 9200 : cfg.getInt("es.port", 9200));
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
     }
 
     public static String detectHostPortAddress(String host, int port, Properties cfg) {
-        String h = !StringUtils.isBlank(host) ? host : cfg.getProperty("es.host", "localhost");
-        int p = (port > 0) ? port : Integer.valueOf(cfg.getProperty("es.port", "9200"));
+        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? "localhost" : cfg.getProperty("es.host", "localhost"));
+        int p = (port > 0) ? port : Integer.valueOf(cfg == null ? "9200" : cfg.getProperty("es.port", "9200"));
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
     }
 }
