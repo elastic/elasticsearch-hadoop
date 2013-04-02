@@ -1,5 +1,5 @@
 # ElasticSearch Hadoop
-Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports MapReduce, [Hive](#hive) and [Pig](#pig). Cascading and Hadoop streaming are planned for the very near future.
+Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
 # Requirements
 ElasticSearch cluster accessible through [REST][]. That's it!
