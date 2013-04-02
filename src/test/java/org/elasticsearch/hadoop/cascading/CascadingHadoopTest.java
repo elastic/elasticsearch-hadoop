@@ -40,31 +40,23 @@ public class CascadingHadoopTest {
 
     @Test
     public void testWriteToES() throws Exception {
-        Properties props = new Properties();
-
         // local file-system source
         Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
-
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        FlowDef flow = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
-        new HadoopFlowConnector().connect(flow).complete();
+        new HadoopFlowConnector().connect(in, out, pipe).complete();
     }
 
     @Test
     public void testReadFromES() throws Exception {
-        Properties props = new Properties();
-        props.setProperty(ESConfigConstants.ES_LOCATION, "radio/artists/_search?q=me*");
-
         Tap in = new ESTap("http://localhost:9200/radio/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         Tap out = new HadoopStdOutTap();
 
-        FlowDef flow = FlowDef.flowDef().addSource(copy, in).addTailSink(copy, out);
-        new HadoopFlowConnector().connect(flow).complete();
+        new HadoopFlowConnector().connect(in, out, copy).complete();
     }
 }

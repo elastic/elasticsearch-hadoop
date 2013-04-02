@@ -15,18 +15,10 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
-import java.util.Properties;
-
-import org.elasticsearch.hadoop.mr.ESConfigConstants;
 import org.junit.Test;
 
-import com.sun.corba.se.spi.ior.Identifiable;
-
-import cascading.flow.FlowDef;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
-import cascading.operation.Insert;
-import cascading.operation.expression.ExpressionFunction;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextDelimited;
@@ -40,8 +32,6 @@ public class CascadingLocalTest {
 
     @Test
     public void testWriteToES() throws Exception {
-        Properties props = new Properties();
-
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
@@ -50,21 +40,15 @@ public class CascadingLocalTest {
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        FlowDef flow = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
-        new LocalFlowConnector().connect(flow).complete();
+        new LocalFlowConnector().connect(in, out, pipe).complete();
     }
 
     @Test
     public void testReadFromES() throws Exception {
-        Properties props = new Properties();
-        props.setProperty(ESConfigConstants.ES_LOCATION, "radio/artists/_search?q=me*");
-
         Tap in = new ESTap("http://localhost:9200/radio/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         StdOutTap out = new StdOutTap(new TextLine());
-
-        FlowDef flow = FlowDef.flowDef().addSource(copy, in).addTailSink(copy, out);
-        new LocalFlowConnector().connect(flow).complete();
+        new LocalFlowConnector().connect(in, out, copy).complete();
     }
 }
