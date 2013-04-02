@@ -17,26 +17,28 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
 
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.QueryResult;
-
+import cascading.flow.Flow;
+import cascading.flow.FlowElement;
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
-import cascading.tuple.TupleEntrySchemeCollector;
-import cascading.tuple.TupleEntrySchemeIterator;
+import cascading.util.Util;
 
 /**
- * Cascading Tap backed by ElasticSearch.
+ * Cascading Tap backed by ElasticSearch. Can be used as a source and/or sink, for both local and Hadoop (local or not) flows.
  * If no fields are specified or are associated with the incoming tuple, the Tap will create name each field "field[num]" - this allows the document to be parsed by ES but will most likely conflict with the
  * existing mapping for the given index.
  */
-public class ESTap<Config, Output> extends Tap<Config, QueryResult, Output> {
+public class ESTap extends Tap<Object, Object, Object> {
 
     private String target;
-    private BufferedRestClient client;
+    private boolean runningInHadoop = false;
+    private Tap actualTap;
+    private Fields fields;
+    private String host;
+    private int port;
 
     // TODO: add defaults fallback
     public ESTap(String index) {
@@ -53,7 +55,39 @@ public class ESTap<Config, Output> extends Tap<Config, QueryResult, Output> {
 
     public ESTap(String host, int port, String index, Fields fields) {
         this.target = index;
-        setScheme(new ESScheme(host, port, index, fields));
+        this.host = host;
+        this.port = port;
+        this.fields = fields;
+    }
+
+    @Override
+    public void flowConfInit(Flow<Object> flow) {
+        Class<?> clz = null;
+        try {
+            clz = Class.forName("cascading.flow.hadoop.HadoopFlow", false, getClass().getClassLoader());
+            if (clz.isInstance(flow)) {
+                runningInHadoop = true;
+            }
+        } catch (ClassNotFoundException e) {
+            runningInHadoop = false;
+        }
+        // TODO: alternative
+        //hadoopFlow = flow.getConfig() instanceof Configuration;
+
+        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, target, fields) : new ESLocalTap(host, port, target,
+                fields));
+        setScheme(actualTap.getScheme());
+    }
+
+
+    @Override
+    public boolean isSink() {
+        return true;
+    }
+
+    @Override
+    public boolean isSource() {
+        return true;
     }
 
     @Override
@@ -62,47 +96,52 @@ public class ESTap<Config, Output> extends Tap<Config, QueryResult, Output> {
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<Config> flowProcess, Config conf) {
+    public void sourceConfInit(FlowProcess<Object> flowProcess, Object conf) {
         super.sourceConfInit(flowProcess, conf);
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<Config> flowProcess, Config conf) {
+    public void sinkConfInit(FlowProcess<Object> flowProcess, Object conf) {
         super.sinkConfInit(flowProcess, conf);
     }
 
     @Override
-    public TupleEntryIterator openForRead(FlowProcess<Config> flowProcess, QueryResult input) throws IOException {
-        client = new BufferedRestClient(target);
-
-        if (input == null) {
-            input = client.query(target);
-        }
-        return new TupleEntrySchemeIterator(flowProcess, getScheme(), input, getIdentifier());
+    public TupleEntryIterator openForRead(FlowProcess<Object> flowProcess, Object input) throws IOException {
+        return actualTap.openForRead(flowProcess, input);
     }
 
     @Override
-    public TupleEntryCollector openForWrite(FlowProcess<Config> flowProcess, Output output) throws IOException {
-        return new TupleEntrySchemeCollector(flowProcess, getScheme(), output);
+    public TupleEntryCollector openForWrite(FlowProcess<Object> flowProcess, Object output) throws IOException {
+        return actualTap.openForWrite(flowProcess, output);
     }
 
     @Override
-    public boolean createResource(Config conf) throws IOException {
-        return false;
+    public boolean createResource(Object conf) throws IOException {
+        return actualTap.createResource(conf);
     }
 
     @Override
-    public boolean deleteResource(Config conf) throws IOException {
-        return false;
+    public boolean deleteResource(Object conf) throws IOException {
+        return actualTap.deleteResource(conf);
     }
 
     @Override
-    public boolean resourceExists(Config conf) throws IOException {
-        return true;
+    public boolean resourceExists(Object conf) throws IOException {
+        return actualTap.resourceExists(conf);
     }
 
     @Override
-    public long getModifiedTime(Config conf) throws IOException {
-        return -1;
+    public long getModifiedTime(Object conf) throws IOException {
+        return actualTap.getModifiedTime(conf);
+    }
+
+    @Override
+    public boolean isEquivalentTo(FlowElement element) {
+        return actualTap.isEquivalentTo(element);
+    }
+
+    @Override
+    public String toString() {
+        return actualTap.toString();
     }
 }

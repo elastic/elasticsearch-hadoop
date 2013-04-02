@@ -21,14 +21,18 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.lang.Validate;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
+import org.elasticsearch.hadoop.mr.ESConfigConstants;
+import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.QueryResult;
 import org.elasticsearch.hadoop.util.ConfigUtils;
+import org.elasticsearch.hadoop.util.WritableUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -43,15 +47,13 @@ import cascading.tuple.Tuples;
 /**
  * Cascading Scheme handling
  */
-class ESScheme<Config, Output> extends Scheme<Config, QueryResult, Output, Object[], Object[]> {
+class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
     private final String index;
     private final String host;
     private final int port;
-    private transient BufferedRestClient client;
 
-
-    ESScheme(String host, int port, String index, Fields fields) {
+    ESHadoopScheme(String host, int port, String index, Fields fields) {
         this.index = index;
         this.host = host;
         this.port = port;
@@ -62,25 +64,27 @@ class ESScheme<Config, Output> extends Scheme<Config, QueryResult, Output, Objec
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<Config> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
+    public void sourcePrepare(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
         Fields sourceCallFields = sourceCall.getIncomingEntry().getFields();
         Fields sourceFields = (sourceCallFields.isDefined() ? sourceCallFields : getSourceFields());
         List<String> tupleNames = resolveNames(sourceFields);
 
-        Object[] context = new Object[1];
+        Object[] context = new Object[3];
         context[0] = tupleNames;
+        context[1] = sourceCall.getInput().createKey();
+        context[2] = sourceCall.getInput().createValue();
         sourceCall.setContext(context);
     }
 
     @Override
-    public void sourceCleanup(FlowProcess<Config> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
+    public void sourceCleanup(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         sourceCall.getInput().close();
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<Config> flowProcess, SinkCall<Object[], Output> sinkCall) throws IOException {
+    public void sinkPrepare(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
         Fields sinkCallFields = sinkCall.getOutgoingEntry().getFields();
@@ -110,43 +114,41 @@ class ESScheme<Config, Output> extends Scheme<Config, QueryResult, Output, Objec
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<Config> flowProcess, Tap<Config, QueryResult, Output> tap, Config conf) {
+    public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
+        conf.setInputFormat(ESInputFormat.class);
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<Config> flowProcess, Tap<Config, QueryResult, Output> tap, Config conf) {
+    public void sinkConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
+        conf.setOutputFormat(ESOutputFormat.class);
     }
 
-    private void initTargetUri(Config conf) {
-        Validate.isTrue(conf instanceof Properties || conf instanceof Configuration, "unknown configuration object " + conf.getClass());
-        if (client == null) {
-            String targetUri = (conf instanceof Properties ? ConfigUtils.detectHostPortAddress(host, port, (Properties) conf)
-                    : ConfigUtils.detectHostPortAddress(host, port, (Configuration) conf));
-            client = new BufferedRestClient(targetUri);
-        }
+    private void initTargetUri(JobConf conf) {
+        // init
+        conf.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, conf));
+        conf.set(ESConfigConstants.ES_QUERY, index.trim());
     }
 
     @Override
-    public boolean source(FlowProcess<Config> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
-        QueryResult query = sourceCall.getInput();
-        if (query.hasNext()) {
-            Map<String, Object> map = query.next();
-            TupleEntry tuples = sourceCall.getIncomingEntry();
-            // TODO: verify ordering guarantees
-            Set<String> keys = map.keySet();
-            //tuples.set(new TupleEntry(new Fields(keys.toArray(new String[keys.size()])),
+    public boolean source(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
+        RecordReader input = sourceCall.getInput();
+        Object[] context = sourceCall.getContext();
 
-            tuples.setTuple(Tuples.create(new ArrayList<Object>(map.values())));
-            return true;
+        if (!sourceCall.getInput().next(context[1], context[2])) {
+            return false;
         }
-        return false;
+
+        Tuple tuple = sourceCall.getIncomingEntry().getTuple();
+        tuple.clear();
+        tuple.addAll(context[1], context[2]);
+        return true;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void sink(FlowProcess<Config> flowProcess, SinkCall<Object[], Output> sinkCall) throws IOException {
+    public void sink(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
         Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
 
         List<String> names = (List<String>) sinkCall.getContext()[0];
@@ -156,6 +158,6 @@ class ESScheme<Config, Output> extends Scheme<Config, QueryResult, Output, Objec
             toES.put(name, tuple.getObject(i));
         }
 
-        client.addToIndex(index, toES);
+        sinkCall.getOutput().collect(null, WritableUtils.toWritable(toES));
     }
 }

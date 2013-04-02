@@ -46,6 +46,9 @@ public abstract class WritableUtils {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static Writable toWritable(Object object) {
+        if (object instanceof Writable) {
+            return (Writable) object;
+        }
         if (object == null) {
             return NullWritable.get();
         }

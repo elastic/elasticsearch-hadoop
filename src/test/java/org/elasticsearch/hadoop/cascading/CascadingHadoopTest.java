@@ -18,32 +18,32 @@ package org.elasticsearch.hadoop.cascading;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.mr.ESConfigConstants;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
-import com.sun.corba.se.spi.ior.Identifiable;
-
 import cascading.flow.FlowDef;
-import cascading.flow.local.LocalFlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.Identity;
-import cascading.operation.Insert;
-import cascading.operation.expression.ExpressionFunction;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.local.TextDelimited;
-import cascading.scheme.local.TextLine;
+import cascading.scheme.hadoop.TextDelimited;
 import cascading.tap.Tap;
-import cascading.tap.local.FileTap;
-import cascading.tap.local.StdOutTap;
+import cascading.tap.hadoop.Lfs;
 import cascading.tuple.Fields;
 
-public class CascadingTest {
+public class CascadingHadoopTest {
+
+    {
+        TestUtils.hackHadoopStagingOnWin();
+    }
+
 
     @Test
     public void testWriteToES() throws Exception {
         Properties props = new Properties();
 
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
@@ -51,7 +51,7 @@ public class CascadingTest {
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
         FlowDef flow = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
-        new LocalFlowConnector().connect(flow).complete();
+        new HadoopFlowConnector().connect(flow).complete();
     }
 
     @Test
@@ -62,9 +62,9 @@ public class CascadingTest {
         Tap in = new ESTap("http://localhost:9200/radio/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
-        StdOutTap out = new StdOutTap(new TextLine());
+        Tap out = new HadoopStdOutTap();
 
         FlowDef flow = FlowDef.flowDef().addSource(copy, in).addTailSink(copy, out);
-        new LocalFlowConnector().connect(flow).complete();
+        new HadoopFlowConnector().connect(flow).complete();
     }
 }
