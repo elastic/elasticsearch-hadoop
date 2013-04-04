@@ -46,7 +46,7 @@ JobClient.runJob(conf);
 Same configuration template can be used for writing but using `ESOuputFormat`:
 ```java
 JobConf conf = new JobConf();
-conf.setInputFormat(ESOutputFormat.class);
+conf.setOutputFormat(ESOutputFormat.class);
 conf.set("es.location", "radio/artists"); // index or indices used for storing data
 ...
 JobClient.runJob(conf);
