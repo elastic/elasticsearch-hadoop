@@ -106,7 +106,7 @@ public class RestClient implements Closeable {
         HttpConnectionManager manager = client.getHttpConnectionManager();
         if (manager instanceof SimpleHttpConnectionManager) {
             try {
-                ((SimpleHttpConnectionManager) manager).shutdown();
+                ((SimpleHttpConnectionManager) manager).closeIdleConnections(0);
             } catch (NullPointerException npe) {
                 // ignore
             } catch (Exception ex) {

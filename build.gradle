@@ -60,7 +60,13 @@ dependencies {
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
     // specify a version of antlr that works with both hive and pig (works only during compilation)
     testRuntime "org.antlr:antlr-runtime:$antlrVersion"
- }
+}
+
+configurations.all {
+  resolutionStrategy {
+	forcedModules = ['commons-httpclient:commons-httpclient:3.0.1']
+  }
+}
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6 
