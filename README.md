@@ -67,7 +67,7 @@ job.waitForCompletion(true);
 Configuration conf = new Configuration();
 conf.set("es.location", "radio/artists"); // index or indices used for storing data
 Job job = new Job(conf)
-job.setInputFormat(ESOutputFormat.class);
+job.setOutputFormat(ESOutputFormat.class);
 ...
 job.waitForCompletion(true);
 ```
