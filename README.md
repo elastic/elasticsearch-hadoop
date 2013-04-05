@@ -8,7 +8,7 @@ Significant effort has been invested to create a small, dependency-free, self-co
 # License
 This project is released under version 2.0 of the [Apache License][]
 
-# Instalation
+# Installation
 We're working towards a first release and we plan to have nightly builds soon available. In the meantime please [build](#building-the-source) the project yourself.
 
 # Feedback / Q&A
