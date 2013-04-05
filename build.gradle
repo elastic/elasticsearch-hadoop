@@ -54,6 +54,7 @@ dependencies {
 
     // Testing
     testCompile "junit:junit:$junitVersion"
+	testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
     
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"

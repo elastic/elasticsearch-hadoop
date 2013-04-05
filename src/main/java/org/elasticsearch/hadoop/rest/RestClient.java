@@ -35,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.cfg.Settings;
 
 /**
  * REST client used for interacting with ElasticSearch. Performs basic operations; for buffer/batching operation consider using BufferedRestClient.
@@ -44,22 +45,21 @@ public class RestClient implements Closeable {
     private static final Log log = LogFactory.getLog(RestClient.class);
 
     private HttpClient client;
-    private final String target;
     private ObjectMapper mapper = new ObjectMapper();
 
-    public RestClient(String targetUri) {
+    public RestClient(Settings settings) {
         HttpClientParams params = new HttpClientParams();
-        params.setConnectionManagerTimeout(60 * 1000);
+        params.setConnectionManagerTimeout(settings.getHttpTimeout());
 
         client = new HttpClient(params);
         HostConfiguration hostConfig = new HostConfiguration();
+        String targetUri = settings.getTargetUri();
         try {
             hostConfig.setHost(new URI(targetUri, false));
         } catch (IOException ex) {
             throw new IllegalArgumentException("Invalid target URI " + targetUri, ex);
         }
         client.setHostConfiguration(hostConfig);
-        this.target = targetUri;
     }
 
     /**
@@ -84,17 +84,17 @@ public class RestClient implements Closeable {
         return map.get(string);
     }
 
-    public void addToIndex(String index, List<Object> values) throws IOException {
-        // TODO: add bulk support
-        for (Object object : values) {
-            create(index, mapper.writeValueAsBytes(object));
-        }
+    public void bulk(String index, byte[] buffer, int bufferSize) throws IOException {
+        PostMethod post = new PostMethod(index + "/_bulk");
+        post.setRequestEntity(new JsonByteArrayRequestEntity(buffer, bufferSize));
+        post.setContentChunked(false);
+        execute(post);
     }
 
     private void create(String q, byte[] value) throws IOException {
-        PostMethod put = new PostMethod(q);
-        put.setRequestEntity(new ByteArrayRequestEntity(value));
-        execute(put);
+        PostMethod post = new PostMethod(q);
+        post.setRequestEntity(new ByteArrayRequestEntity(value));
+        execute(post);
     }
 
     public void deleteIndex(String index) throws IOException {

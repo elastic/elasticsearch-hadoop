@@ -13,33 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.util;
+package org.elasticsearch.hadoop.cfg;
 
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.elasticsearch.hadoop.mr.ESConfigConstants;
 
-public abstract class ConfigUtils {
+public abstract class ConfigUtils implements InternalConfigurationOptions {
 
     public static String detectHostPortAddress(Configuration cfg) {
         if (cfg == null) {
             return detectHostPortAddress(null, 0, cfg);
         }
-        String address = cfg.get(ESConfigConstants.ES_ADDRESS);
+        String address = cfg.get(INTERNAL_ES_TARGET_URI);
         return !StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
     }
 
     public static String detectHostPortAddress(String host, int port, Configuration cfg) {
-        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? "localhost" : cfg.get("es.host", "localhost"));
-        int p = (port > 0) ? port : (cfg == null ? 9200 : cfg.getInt("es.port", 9200));
+        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? ES_HOST_DEFAULT : cfg.get(ES_HOST, ES_HOST_DEFAULT));
+        int p = (port > 0) ? port : Integer.valueOf(cfg == null ? ES_PORT_DEFAULT : cfg.get(ES_PORT, ES_PORT_DEFAULT));
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
     }
 
     public static String detectHostPortAddress(String host, int port, Properties cfg) {
-        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? "localhost" : cfg.getProperty("es.host", "localhost"));
-        int p = (port > 0) ? port : Integer.valueOf(cfg == null ? "9200" : cfg.getProperty("es.port", "9200"));
+        String h = !StringUtils.isBlank(host) ? host : (cfg == null ? ES_HOST_DEFAULT : cfg.getProperty(ES_HOST, ES_HOST_DEFAULT));
+        int p = (port > 0) ? port : Integer.valueOf(cfg == null ? ES_PORT_DEFAULT : cfg.getProperty(ES_PORT, ES_PORT_DEFAULT));
         return new StringBuilder("http://").append(h).append(":").append(p).append("/").toString();
     }
 }

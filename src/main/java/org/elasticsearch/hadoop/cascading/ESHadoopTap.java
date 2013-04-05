@@ -20,7 +20,6 @@ import java.io.IOException;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
 
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
@@ -33,11 +32,10 @@ import cascading.tuple.TupleEntryIterator;
 /**
  * Hadoop-based Cascading Tap.
  */
-// - local-mode  Tap<Properties, QueryResult, ?>
+@SuppressWarnings("rawtypes")
 class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     private String target;
-    private BufferedRestClient client;
 
     public ESHadoopTap(String host, int port, String index, Fields fields) {
         this.target = index;

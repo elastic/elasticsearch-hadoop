@@ -13,22 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.mr;
+package org.elasticsearch.hadoop.cfg;
 
 /**
- * Class providing the various Configuration parameters used by the ElasticSearch Map/Reduce Input/Output formats.
+ * Property names for internal framework use. They will show up inside the Hadoop configuration or Cascading properties (which act as a distributing support) but not in the API.
  */
-public interface ESConfigConstants {
+interface InternalConfigurationOptions extends ConfigurationOptions {
 
-    public static final String ES_HOST = "es.host";
-    public static final String ES_PORT = "es.port";
-    public static final String ES_LOCATION = "es.location";
-
-    /**
-     * For internal use - do not define.
-     */
-    public static final String ES_INDEX = "es.mr.index";
-    public static final String ES_QUERY = "es.mr.query";
-
-    public static final String ES_ADDRESS = "es.address";
+    static final String INTERNAL_ES_TARGET_RESOURCE = "es.internal.mr.target.resource";
+    static final String INTERNAL_ES_TARGET_URI = "es.internal.mr.target.uri";
 }

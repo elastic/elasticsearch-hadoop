@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop;
 
-import org.elasticsearch.hadoop.TestSettings;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.junit.Test;
+import java.util.Properties;
+
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 
 /**
+ * Tweaked settings for testing.
  */
-public abstract class RestTest {
+public class TestSettings extends PropertiesSettings {
 
-    private RestClient client = new RestClient(new TestSettings());
+    private final static Properties TESTING_PROPS = new Properties();
 
-    @Test
-    public void testPagination() throws Exception {
-        client.query("twitter/_search?q=kimchy", 0, 2);
+    static {
+        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
+    }
+
+    public TestSettings() {
+        super(TESTING_PROPS);
     }
 }

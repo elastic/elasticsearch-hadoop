@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.cfg;
 
-import org.elasticsearch.hadoop.TestSettings;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.junit.Test;
+import org.apache.commons.lang.Validate;
+import org.apache.hadoop.conf.Configuration;
 
-/**
- */
-public abstract class RestTest {
+public class HadoopSettings extends Settings {
 
-    private RestClient client = new RestClient(new TestSettings());
+    private final Configuration cfg;
 
-    @Test
-    public void testPagination() throws Exception {
-        client.query("twitter/_search?q=kimchy", 0, 2);
+    public HadoopSettings(Configuration cfg) {
+        Validate.notNull(cfg, "Non-null properties expected");
+        this.cfg = cfg;
+    }
+
+    @Override
+    public String getProperty(String name) {
+        return cfg.get(name);
+    }
+
+    @Override
+    public void setProperty(String name, String value) {
+        cfg.set(name, value);
     }
 }

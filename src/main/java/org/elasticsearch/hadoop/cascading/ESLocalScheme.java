@@ -24,9 +24,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryResult;
-import org.elasticsearch.hadoop.util.ConfigUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -119,8 +120,9 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
 
     private void initTargetUri(Properties props) {
         if (client == null) {
-            String targetUri = ConfigUtils.detectHostPortAddress(host, port, props);
-            client = new BufferedRestClient(targetUri);
+            Settings settings = SettingsManager.loadFrom(props);
+            settings.setHost(host).setPort(port);
+            client = new BufferedRestClient(settings);
         }
     }
 

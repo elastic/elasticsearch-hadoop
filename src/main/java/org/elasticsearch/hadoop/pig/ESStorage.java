@@ -25,7 +25,6 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -47,10 +46,9 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.UDFContext;
 import org.apache.pig.impl.util.Utils;
-import org.elasticsearch.hadoop.mr.ESConfigConstants;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.util.ConfigUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -93,10 +91,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
-        Configuration cfg = job.getConfiguration();
-
-        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, cfg));
-        cfg.set(ESConfigConstants.ES_INDEX, location.trim());
+        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setIndex(location).save();
     }
 
     @Override
@@ -226,10 +221,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     //
 
     public void setLocation(String location, Job job) throws IOException {
-        // TODO: add validation (no host/port or leading /)
-        Configuration cfg = job.getConfiguration();
-        cfg.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, cfg));
-        cfg.set(ESConfigConstants.ES_QUERY, location.trim());
+        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setIndex(location).save();
     }
 
 

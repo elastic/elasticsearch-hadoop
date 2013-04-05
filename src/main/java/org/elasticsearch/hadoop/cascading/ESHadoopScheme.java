@@ -21,17 +21,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
-import org.elasticsearch.hadoop.mr.ESConfigConstants;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.util.ConfigUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 import cascading.flow.FlowProcess;
@@ -41,12 +37,11 @@ import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntry;
-import cascading.tuple.Tuples;
 
 /**
  * Cascading Scheme handling
  */
+@SuppressWarnings("rawtypes")
 class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
     private final String index;
@@ -127,13 +122,12 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     private void initTargetUri(JobConf conf) {
         // init
-        conf.set(ESConfigConstants.ES_ADDRESS, ConfigUtils.detectHostPortAddress(host, port, conf));
-        conf.set(ESConfigConstants.ES_QUERY, index.trim());
+        SettingsManager.loadFrom(conf).setHost(host).setPort(port).setIndex(index).save();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean source(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
-        RecordReader input = sourceCall.getInput();
         Object[] context = sourceCall.getContext();
 
         if (!sourceCall.getInput().next(context[1], context[2])) {

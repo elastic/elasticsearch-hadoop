@@ -17,29 +17,34 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+
+import org.apache.commons.lang.Validate;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.cfg.Settings;
 
 /**
- * Rest client performing high-level operations using buffers to improve performance.
+ * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
  */
 public class BufferedRestClient implements Closeable {
 
-    // TODO: needs to be changed
-    private int WRITE_BULK_SIZE = 3;
-    private final Map<String, List<Object>> writeBatch = new LinkedHashMap<String, List<Object>>(WRITE_BULK_SIZE);
-    private int currentBatchSize = 0;
+    // TODO: make this configurable
+    private final byte[] buffer;
+    private final int bufferEntriesThreshold;
+
+    private int bufferSize = 0;
+    private int bufferEntries = 0;
+
+    private ObjectMapper mapper = new ObjectMapper();
 
     private RestClient client;
+    private String index;
 
-    public BufferedRestClient(String targetUri) {
-        this(new RestClient(targetUri));
-    }
+    public BufferedRestClient(Settings settings) {
+        this.client = new RestClient(settings);
+        this.index = settings.getTargetResource();
 
-    public BufferedRestClient(RestClient client) {
-        this.client = client;
+        buffer = new byte[settings.getBatchSizeInBytes()];
+        bufferEntriesThreshold = settings.getBatchSizeInEntries();
     }
 
     /**
@@ -58,39 +63,42 @@ public class BufferedRestClient implements Closeable {
      * @param index
      * @param object
      */
-    public void addToIndex(String index, Object... object) {
-        List<Object> list = writeBatch.get(index);
-        if (list == null) {
-            list = new ArrayList<Object>();
-            writeBatch.put(index, list);
-        }
+    public void addToIndex(Object... object) throws IOException {
+        Validate.notEmpty(index, "no index given");
+
+        StringBuilder sb = new StringBuilder();
 
         for (Object obj : object) {
-            list.add(obj);
-            currentBatchSize++;
-        }
+            sb.append("{\"index\":{}}\n");
+            sb.append(mapper.writeValueAsString(obj));
+            sb.append("\n");
 
-        if (currentBatchSize >= WRITE_BULK_SIZE) {
-            flushBatch();
+            byte[] data = sb.toString().getBytes("UTF-8");
+
+            // make some space first
+            if (data.length + bufferSize >= buffer.length) {
+                flushBatch();
+            }
+
+            System.arraycopy(data, 0, buffer, bufferSize, data.length);
+            bufferSize += data.length;
+            bufferEntries++;
+
+            if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
+                flushBatch();
+            }
         }
     }
 
-    private void flushBatch() {
-        try {
-            for (Map.Entry<String, List<Object>> entry : writeBatch.entrySet()) {
-                client.addToIndex(entry.getKey(), entry.getValue());
-            }
-
-        } catch (IOException ex) {
-            throw new IllegalStateException("Cannot add to index", ex);
-        }
-        writeBatch.clear();
-        currentBatchSize = 0;
+    private void flushBatch() throws IOException {
+        client.bulk(index, buffer, bufferSize);
+        bufferSize = 0;
+        bufferEntries = 0;
     }
 
     @Override
-    public void close() {
-        if (currentBatchSize > 0) {
+    public void close() throws IOException {
+        if (bufferSize > 0) {
             flushBatch();
         }
         client.close();

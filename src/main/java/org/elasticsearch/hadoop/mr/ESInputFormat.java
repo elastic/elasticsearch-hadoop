@@ -32,9 +32,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryResult;
-import org.elasticsearch.hadoop.util.ConfigUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -44,7 +46,7 @@ import org.elasticsearch.hadoop.util.WritableUtils;
  * <p/>This class implements both the "old" (<tt>org.apache.hadoop.mapred</tt>) and the "new" (<tt>org.apache.hadoop.mapreduce</tt>) API.
  */
 public class ESInputFormat extends InputFormat<Text, MapWritable> implements
-        org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ESConfigConstants {
+        org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ConfigurationOptions {
 
     static class ESInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
         private int from = 0;
@@ -116,9 +118,10 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         void init(ESInputSplit esSplit, Configuration cfg) {
             size = esSplit.size;
 
-            query = cfg.get(ES_QUERY);
+            Settings settings = SettingsManager.loadFrom(cfg);
+            query = settings.getTargetResource();
             // initialize REST client
-            client = new BufferedRestClient(ConfigUtils.detectHostPortAddress(cfg));
+            client = new BufferedRestClient(settings);
         }
 
         @Override

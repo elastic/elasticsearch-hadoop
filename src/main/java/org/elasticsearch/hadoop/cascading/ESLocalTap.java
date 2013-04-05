@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.cascading;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryResult;
 
@@ -60,7 +61,7 @@ class ESLocalTap extends Tap<Properties, QueryResult, Object> {
 
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, QueryResult input) throws IOException {
-        client = new BufferedRestClient(target);
+        client = new BufferedRestClient(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
 
         if (input == null) {
             input = client.query(target);

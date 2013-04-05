@@ -17,7 +17,7 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.util.Properties;
 
-import org.elasticsearch.hadoop.mr.ESConfigConstants;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
