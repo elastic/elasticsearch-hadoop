@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.mr;
 import java.io.IOException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.JobConf;
@@ -121,8 +122,6 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
     public void checkOutputSpecs(FileSystem ignored, JobConf cfg) {
         Settings settings = SettingsManager.loadFrom(cfg);
 
-        if (StringUtils.isBlank(settings.getTargetResource())) {
-            throw new IllegalStateException(String.format("no ElasticSearch index specified ('%s' property)", ConfigurationOptions.ES_LOCATION));
-        }
+        Validate.notEmpty(settings.getTargetResource(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
     }
 }

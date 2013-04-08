@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import java.util.Enumeration;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
@@ -25,7 +26,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
-public abstract class Settings implements ConfigurationOptions, InternalConfigurationOptions {
+public abstract class Settings implements InternalConfigurationOptions {
 
     private String host;
     private int port;
@@ -66,13 +67,14 @@ public abstract class Settings implements ConfigurationOptions, InternalConfigur
         return this;
     }
 
-    public Settings setIndex(String index) {
+    public Settings setResource(String index) {
         this.targetResource = index;
         return this;
     }
 
     public String getTargetResource() {
-        return (targetResource != null ? targetResource : !StringUtils.isBlank(targetResource) ? targetResource : getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_RESOURCE));
+        String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
+        return (!StringUtils.isBlank(targetResource) ? targetResource : !StringUtils.isBlank(resource) ? resource : getProperty(InternalConfigurationOptions.ES_RESOURCE));
     }
 
     /**
@@ -80,13 +82,13 @@ public abstract class Settings implements ConfigurationOptions, InternalConfigur
      */
     public void save() {
         String targetUri = getTargetUri();
-        String index = getTargetResource();
+        String resource = getTargetResource();
 
         Validate.notEmpty(targetUri, "No address specified");
-        Validate.notEmpty(index, "No index/location specified");
+        Validate.notEmpty(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
 
-        setProperty(INTERNAL_ES_TARGET_RESOURCE, getTargetResource());
-        setProperty(INTERNAL_ES_TARGET_URI, getTargetUri());
+        setProperty(INTERNAL_ES_TARGET_URI, targetUri);
+        setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);
     }
 
     protected String getProperty(String name, String defaultValue) {
@@ -101,7 +103,18 @@ public abstract class Settings implements ConfigurationOptions, InternalConfigur
 
     public abstract void setProperty(String name, String value);
 
-    public void merge(Properties properties) {
-        throw new UnsupportedOperationException();
+    public Settings merge(Properties properties) {
+        Enumeration<?> propertyNames = properties.propertyNames();
+
+        Object prop = null;
+        for (; propertyNames.hasMoreElements();) {
+            prop = propertyNames.nextElement();
+            if (prop instanceof String) {
+                Object value = properties.get(prop);
+                setProperty((String) prop, value.toString());
+            }
+        }
+
+        return this;
     }
 }

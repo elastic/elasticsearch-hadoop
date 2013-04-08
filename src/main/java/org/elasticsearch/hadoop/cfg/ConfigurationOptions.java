@@ -29,7 +29,7 @@ public interface ConfigurationOptions {
     static final String ES_PORT_DEFAULT = "9200";
 
     /** ElasticSearch index or query (so called location) */
-    static final String ES_LOCATION = "es.location";
+    static final String ES_RESOURCE = "es.resource";
 
     /** ElasticSearch batch size given in bytes */
     static final String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";

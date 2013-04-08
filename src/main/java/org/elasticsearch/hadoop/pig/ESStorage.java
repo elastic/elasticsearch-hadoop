@@ -91,7 +91,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
-        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setIndex(location).save();
+        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location).save();
     }
 
     @Override
@@ -221,7 +221,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     //
 
     public void setLocation(String location, Job job) throws IOException {
-        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setIndex(location).save();
+        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location).save();
     }
 
 
