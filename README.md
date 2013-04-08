@@ -18,11 +18,21 @@ We're interested in your feedback! You can find us on the User [mailing list](ht
 
 ## Configuration Properties
 
-These properties are read from Hadoop Configuration if the user hasn't specified them.
+All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
+
+The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used (see the relevant documentation below). The full list is available [here](http://github.com/elasticsearch/elasticsearch-hadoop/tree/master/src/main/java/org/elasticsearch/hadoop/cfg/ConfigurationOptions.java).
+
+### Required
 ```
-es.host=<ES host address> # optional, defaults to localhost
-es.port=<ES REST port>    # optional, defaults to 9200
-es.location=<ES resource location, relative to the host/port specified above. Can be an index or a query> # required
+es.resource=<ES resource location, relative to the host/port specified above. Can be an index or a query>
+```
+### Optional
+```
+es.host=<ES host address> 				       # defaults to localhost
+es.port=<ES REST port>    				       # defaults to 9200
+es.bulk.size.bytes=<bulk size in bytes>        # defaults to 10mb
+es.bulk.size.entries=<bulk size in entries>    # defaults to 0 (meaning it's not set)
+es.http.timeout=<timeout for http connections> # defaults to 1m
 ```
 
 ## [MapReduce][]
@@ -38,7 +48,7 @@ To read data from ES, configure the `ESInputFormat` on your job configuration al
 ```java
 JobConf conf = new JobConf();
 conf.setInputFormat(ESInputFormat.class);
-conf.set("es.location", "radio/artists/_search?q=me*"); // replace this with the relevant query
+conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
 ...
 JobClient.runJob(conf);
 ```
@@ -47,7 +57,7 @@ Same configuration template can be used for writing but using `ESOuputFormat`:
 ```java
 JobConf conf = new JobConf();
 conf.setOutputFormat(ESOutputFormat.class);
-conf.set("es.location", "radio/artists"); // index or indices used for storing data
+conf.set("es.resource", "radio/artists"); // index or indices used for storing data
 ...
 JobClient.runJob(conf);
 ```
@@ -56,7 +66,7 @@ JobClient.runJob(conf);
 ### Reading
 ```java
 Configuration conf = new Configuration();
-conf.set("es.location", "radio/artists/_search?q=me*"); // replace this with the relevant query
+conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
 Job job = new Job(conf)
 job.setInputFormat(ESInputFormat.class);
 ...
@@ -65,7 +75,7 @@ job.waitForCompletion(true);
 ### Writing
 ```java
 Configuration conf = new Configuration();
-conf.set("es.location", "radio/artists"); // index or indices used for storing data
+conf.set("es.resource", "radio/artists"); // index or indices used for storing data
 Job job = new Job(conf)
 job.setOutputFormat(ESOutputFormat.class);
 ...
@@ -86,7 +96,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.location' = 'radio/artists/_search?q=me*');
+TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*');
 ```
 The fields defined in the table are mapped to the JSON when communicating with ElasticSearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table:
 ```
@@ -94,14 +104,14 @@ SELECT * FROM artists;
 ```
 
 ### Writing
-To write data, a similar definition is used but with a different `es.location`:
+To write data, a similar definition is used but with a different `es.resource`:
 ```SQL
 CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.location' = 'radio/artists/');
+TBLPROPERTIES('es.resource' = 'radio/artists/');
 ```
 
 Any data passed to the table is then passed down to ElasticSearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to ElasticSearch like this:
