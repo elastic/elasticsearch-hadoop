@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.util.unit;
 
-abstract class StringUtils {
+abstract class Strings {
 
     static String format1Decimals(double value, String suffix) {
         String p = String.valueOf(value);

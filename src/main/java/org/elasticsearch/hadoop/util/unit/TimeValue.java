@@ -190,7 +190,7 @@ public class TimeValue {
             value = microsFrac();
             suffix = "micros";
         }
-        return StringUtils.format1Decimals(value, suffix);
+        return Strings.format1Decimals(value, suffix);
     }
 
     public static TimeValue parseTimeValue(String sValue) {

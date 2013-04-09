@@ -112,7 +112,7 @@ public class ByteSizeValue {
             value = kbFrac();
             suffix = "kb";
         }
-        return StringUtils.format1Decimals(value, suffix);
+        return Strings.format1Decimals(value, suffix);
     }
 
     public static ByteSizeValue parseBytesSizeValue(String sValue) throws IllegalArgumentException {
