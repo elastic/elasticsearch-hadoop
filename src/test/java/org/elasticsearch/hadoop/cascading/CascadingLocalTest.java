@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;
@@ -29,6 +30,10 @@ import cascading.tap.local.StdOutTap;
 import cascading.tuple.Fields;
 
 public class CascadingLocalTest {
+
+    {
+        TestUtils.assertElasticsearchIsRunning();
+    }
 
     @Test
     public void testWriteToES() throws Exception {

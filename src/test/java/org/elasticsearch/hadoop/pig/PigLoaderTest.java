@@ -31,6 +31,7 @@ public class PigLoaderTest {
 
     {
         TestUtils.hackHadoopStagingOnWin();
+        TestUtils.assertElasticsearchIsRunning();
     }
 
     @BeforeClass

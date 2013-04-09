@@ -26,6 +26,7 @@ public class HiveLoaderTest {
 
     {
         TestUtils.hackHadoopStagingOnWin();
+        TestUtils.assertElasticsearchIsRunning();
     }
 
     @BeforeClass

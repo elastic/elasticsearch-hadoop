@@ -16,7 +16,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.TestSettings;
-import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
 /**
@@ -24,6 +24,10 @@ import org.junit.Test;
 public abstract class RestTest {
 
     private RestClient client = new RestClient(new TestSettings());
+
+    {
+        TestUtils.assertElasticsearchIsRunning();
+    }
 
     @Test
     public void testPagination() throws Exception {
