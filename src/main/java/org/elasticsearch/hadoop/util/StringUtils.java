@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -24,6 +25,8 @@ import java.util.StringTokenizer;
  * Utility class around Strings. Used to remove dependency on other libraries that might (or not) be available at runtime.
  */
 public abstract class StringUtils {
+
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
 
     public static boolean hasLength(CharSequence sequence) {
         return (sequence != null && sequence.length() > 0);
