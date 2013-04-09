@@ -17,7 +17,7 @@ package org.elasticsearch.hadoop.cfg;
 
 import java.util.Properties;
 
-import org.apache.commons.lang.Validate;
+import org.elasticsearch.hadoop.util.Assert;
 
 /**
  * Properties-based settings - used for testing or local environments (including Cascading-local).
@@ -27,7 +27,7 @@ public class PropertiesSettings extends Settings {
     private final Properties props;
 
     public PropertiesSettings(Properties props) {
-        Validate.notNull(props, "Non-null properties expected");
+        Assert.notNull(props, "Non-null properties expected");
         this.props = props;
     }
 

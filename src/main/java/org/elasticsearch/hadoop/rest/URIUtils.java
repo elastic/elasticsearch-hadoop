@@ -16,7 +16,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.httpclient.util.URIUtil;
-import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Utility class for handling URIs.
@@ -26,12 +26,12 @@ abstract class URIUtils {
     public static String addPath(String uri, String... path) {
         String p = URIUtil.getPath(uri);
         String fixedP = p.endsWith("/") ? p : p.concat("/");
-        return uri.replace(p, fixedP + StringUtils.join(path, "/"));
+        return uri.replace(p, fixedP + StringUtils.concatenate(path, "/"));
     }
 
     public static String addParam(String uri, String... param) {
         String pq = URIUtil.getPathQuery(uri);
         String fixedPq = pq.contains("?") ? pq.concat("&") : pq.concat("?");
-        return uri.replace(pq, fixedPq + StringUtils.join(param, "&"));
+        return uri.replace(pq, fixedPq + StringUtils.concatenate(param, "&"));
     }
 }

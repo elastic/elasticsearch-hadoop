@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
@@ -45,6 +44,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class ESSerDe implements SerDe {
 
@@ -60,7 +60,7 @@ public class ESSerDe implements SerDe {
 
         // the column names are saved as the given inspector to #serialize doesn't preserves them (maybe because it's an external table)
         // use the class since StructType requires it ...
-        columnNames = new ArrayList<String>(Arrays.asList(StringUtils.split(tbl.getProperty("columns"), ",")));
+        columnNames = new ArrayList<String>(StringUtils.tokenize(tbl.getProperty("columns"), ","));
         List<TypeInfo> colTypes = TypeInfoUtils.getTypeInfosFromTypeString(tbl.getProperty("columns.types"));
 
         // create a standard Object Inspector - note we're not using it for serialization/deserialization

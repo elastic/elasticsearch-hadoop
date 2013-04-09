@@ -196,7 +196,7 @@ public class TimeValue {
     public static TimeValue parseTimeValue(String sValue) {
         try {
             long millis;
-            sValue = org.apache.commons.lang.StringUtils.deleteWhitespace(sValue);
+            sValue = org.elasticsearch.hadoop.util.StringUtils.deleteWhitespace(sValue);
             if (sValue.endsWith("S")) {
                 millis = Long.parseLong(sValue.substring(0, sValue.length() - 1));
             }

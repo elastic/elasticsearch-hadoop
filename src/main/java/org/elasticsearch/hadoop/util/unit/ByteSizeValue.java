@@ -117,7 +117,7 @@ public class ByteSizeValue {
 
     public static ByteSizeValue parseBytesSizeValue(String sValue) throws IllegalArgumentException {
         long bytes;
-        sValue = org.apache.commons.lang.StringUtils.deleteWhitespace(sValue);
+        sValue = org.elasticsearch.hadoop.util.StringUtils.deleteWhitespace(sValue);
 
         try {
             if (sValue.endsWith("k") || sValue.endsWith("K")) {

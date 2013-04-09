@@ -15,15 +15,15 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
-import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.util.Assert;
 
 public class HadoopSettings extends Settings {
 
     private final Configuration cfg;
 
     public HadoopSettings(Configuration cfg) {
-        Validate.notNull(cfg, "Non-null properties expected");
+        Assert.notNull(cfg, "Non-null properties expected");
         this.cfg = cfg;
     }
 
