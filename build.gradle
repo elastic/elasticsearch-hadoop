@@ -61,6 +61,8 @@ dependencies {
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
     // specify a version of antlr that works with both hive and pig (works only during compilation)
     testRuntime "org.antlr:antlr-runtime:$antlrVersion"
+    
+    testCompile("org.elasticsearch:elasticsearch:$elasticsearchVersion")
 }
 
 configurations.all {
