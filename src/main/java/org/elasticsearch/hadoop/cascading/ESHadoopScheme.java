@@ -75,7 +75,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public void sourceCleanup(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
-        sourceCall.getInput().close();
+        // we haven't created anything, don't do any cleanup
     }
 
     @Override
@@ -89,6 +89,10 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Object[] context = new Object[1];
         context[0] = tupleNames;
         sinkCall.setContext(context);
+    }
+
+    public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
+        //we haven't created anything, don't do any cleanup
     }
 
     private List<String> resolveNames(Fields fields) {

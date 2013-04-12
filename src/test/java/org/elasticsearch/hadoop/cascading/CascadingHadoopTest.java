@@ -42,7 +42,7 @@ public class CascadingHadoopTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
+        Tap out = new ESTap("billboard/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
@@ -52,7 +52,7 @@ public class CascadingHadoopTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("http://localhost:9200/radio/artists/_search?q=me*");
+        Tap in = new ESTap("http://localhost:9200/billboard/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         Tap out = new HadoopStdOutTap();
