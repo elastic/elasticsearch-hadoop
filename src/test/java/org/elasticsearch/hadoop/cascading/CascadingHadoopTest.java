@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.Identity;
+import cascading.operation.filter.FilterNull;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.hadoop.TextDelimited;
@@ -60,7 +61,10 @@ public class CascadingHadoopTest {
         Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
-                
+
+        // filter null properties
+        pipe = new Each(pipe, new Fields("id", "name", "url", "picture"), new FilterNull());
+
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
         new HadoopFlowConnector().connect(in, out, pipe).complete();
