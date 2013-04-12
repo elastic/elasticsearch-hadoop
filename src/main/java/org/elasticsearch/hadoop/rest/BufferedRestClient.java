@@ -63,30 +63,28 @@ public class BufferedRestClient implements Closeable {
      * @param index
      * @param object
      */
-    public void addToIndex(Object... object) throws IOException {
+    public void addToIndex(Object object) throws IOException {
         Validate.notEmpty(index, "no index given");
 
         StringBuilder sb = new StringBuilder();
 
-        for (Object obj : object) {
-            sb.append("{\"index\":{}}\n");
-            sb.append(mapper.writeValueAsString(obj));
-            sb.append("\n");
+        sb.append("{\"index\":{}}\n");
+        sb.append(mapper.writeValueAsString(object));
+        sb.append("\n");
 
-            byte[] data = sb.toString().getBytes("UTF-8");
+        byte[] data = sb.toString().getBytes("UTF-8");
 
-            // make some space first
-            if (data.length + bufferSize >= buffer.length) {
-                flushBatch();
-            }
+        // make some space first
+        if (data.length + bufferSize >= buffer.length) {
+            flushBatch();
+        }
 
-            System.arraycopy(data, 0, buffer, bufferSize, data.length);
-            bufferSize += data.length;
-            bufferEntries++;
+        System.arraycopy(data, 0, buffer, bufferSize, data.length);
+        bufferSize += data.length;
+        bufferEntries++;
 
-            if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
-                flushBatch();
-            }
+        if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
+            flushBatch();
         }
     }
 

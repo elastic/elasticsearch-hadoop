@@ -165,6 +165,6 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
             toES.put(name, tuple.getObject(i));
         }
 
-        client.addToIndex(resource, toES);
+        client.addToIndex(toES);
     }
 }
