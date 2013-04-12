@@ -140,6 +140,38 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
+
+jar {
+    manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+    manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
+    manifest.attributes['Implementation-Version'] = project.version
+    manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+    manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
+    manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch"
+    
+    def build = System.env['ESHDP.BUILD']
+    if (build != null)
+        manifest.attributes['Build'] = build
+    
+    String rev = "unknown"
+    
+    // parse the git files to find out the revision
+    File gitHead = file('.git/HEAD')
+    if (gitHead.exists()) {
+        gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
+        if (gitHead.exists()) { rev = gitHead.text }
+    }
+
+    from("$rootDir/docs/src/info") {
+        include "license.txt"
+        include "notice.txt"
+        into "META-INF"
+        expand(copyright: new Date().format('yyyy'), version: project.version)
+    }
+
+    manifest.attributes['Repository-Revision'] = rev
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
