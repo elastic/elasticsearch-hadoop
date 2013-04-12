@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
@@ -121,7 +122,7 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     private void initTargetUri(Properties props) {
         if (client == null) {
             Settings settings = SettingsManager.loadFrom(props);
-            settings.setHost(host).setPort(port);
+            settings.setHost(host).setPort(port).setResource(index).setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1");
             client = new BufferedRestClient(settings);
         }
     }
