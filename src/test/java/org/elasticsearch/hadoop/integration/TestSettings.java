@@ -35,4 +35,9 @@ public class TestSettings extends PropertiesSettings {
     public TestSettings() {
         super(TESTING_PROPS);
     }
+
+    public TestSettings(String uri) {
+        this();
+        setProperty(ES_RESOURCE, uri);
+    }
 }

@@ -21,12 +21,11 @@ import org.junit.Test;
 
 /**
  */
-public abstract class RestTest {
-
-    private RestClient client = new RestClient(new TestSettings());
+public class RestTest {
 
     @Test
-    public void testPagination() throws Exception {
-        client.query("twitter/_search?q=kimchy", 0, 2);
+    public void testShardInfo() throws Exception {
+        BufferedRestClient client = new BufferedRestClient(new TestSettings());
+        System.out.println(client.getTargetShards());
     }
 }

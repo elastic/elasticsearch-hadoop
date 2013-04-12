@@ -33,7 +33,7 @@ public abstract class StringUtils {
     }
 
     public static boolean hasText(CharSequence sequence) {
-        if (hasLength(sequence)) {
+        if (!hasLength(sequence)) {
             return false;
         }
         int length = sequence.length();
