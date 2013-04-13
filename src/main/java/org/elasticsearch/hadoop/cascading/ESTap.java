@@ -32,7 +32,7 @@ import cascading.tuple.TupleEntryIterator;
  */
 public class ESTap extends Tap<Object, Object, Object> {
 
-    private String target;
+    private String resource;
     private boolean runningInHadoop = false;
     private Tap actualTap;
     private Fields fields;
@@ -40,20 +40,20 @@ public class ESTap extends Tap<Object, Object, Object> {
     private int port;
 
     // TODO: add defaults fallback
-    public ESTap(String index) {
-        this(index, null);
+    public ESTap(String resource) {
+        this(resource, null);
     }
 
-    public ESTap(String host, int port, String index) {
-        this(host, port, index, null);
+    public ESTap(String host, int port, String resource) {
+        this(host, port, resource, null);
     }
 
-    public ESTap(String index, Fields fields) {
-        this(null, -1, index, fields);
+    public ESTap(String resource, Fields fields) {
+        this(null, -1, resource, fields);
     }
 
-    public ESTap(String host, int port, String index, Fields fields) {
-        this.target = index;
+    public ESTap(String host, int port, String resource, Fields fields) {
+        this.resource = resource;
         this.host = host;
         this.port = port;
         this.fields = fields;
@@ -73,8 +73,7 @@ public class ESTap extends Tap<Object, Object, Object> {
         // TODO: alternative
         //hadoopFlow = flow.getConfig() instanceof Configuration;
 
-        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, target, fields) : new ESLocalTap(host, port, target,
-                fields));
+        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, resource, fields) : new ESLocalTap(host, port, resource, fields));
         setScheme(actualTap.getScheme());
     }
 
@@ -91,7 +90,7 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public String getIdentifier() {
-        return target;
+        return resource;
     }
 
     @Override

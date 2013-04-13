@@ -45,13 +45,13 @@ import cascading.tuple.Tuples;
  */
 class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Object[]> {
 
-    private final String index;
+    private final String resource;
     private final String host;
     private final int port;
     private transient BufferedRestClient client;
 
     ESLocalScheme(String host, int port, String index, Fields fields) {
-        this.index = index;
+        this.resource = index;
         this.host = host;
         this.port = port;
         if (fields != null) {
@@ -76,11 +76,23 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     @Override
     public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
         sourceCall.getInput().close();
+        cleanupClient();
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall)
-            throws IOException {
+    public void sinkCleanup(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
+        cleanupClient();
+    }
+
+    private void cleanupClient() throws IOException {
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+    }
+
+    @Override
+    public void sinkPrepare(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
         Fields sinkCallFields = sinkCall.getOutgoingEntry().getFields();
@@ -111,25 +123,22 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
 
     @Override
     public void sourceConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, QueryResult, Object> tap, Properties conf) {
-        initTargetUri(conf);
+        initClient(conf);
     }
 
     @Override
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, QueryResult, Object> tap, Properties conf) {
-        initTargetUri(conf);
+        initClient(conf);
     }
 
-    private void initTargetUri(Properties props) {
+    private void initClient(Properties props) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props);
-            settings.setHost(host).setPort(port).setResource(index).setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1");
-            client = new BufferedRestClient(settings);
+            client = new BufferedRestClient(SettingsManager.loadFrom(props).setHost(host).setPort(port).setResource(resource));
         }
     }
 
     @Override
-    public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall)
-            throws IOException {
+    public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
         QueryResult query = sourceCall.getInput();
         if (query.hasNext()) {
             Map<String, Object> map = query.next();
@@ -156,6 +165,6 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
             toES.put(name, tuple.getObject(i));
         }
 
-        client.addToIndex(index, toES);
+        client.addToIndex(toES);
     }
 }

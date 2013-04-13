@@ -39,9 +39,9 @@ class ESLocalTap extends Tap<Properties, QueryResult, Object> {
     private String target;
     private BufferedRestClient client;
 
-    public ESLocalTap(String host, int port, String index, Fields fields) {
-        this.target = index;
-        setScheme(new ESLocalScheme(host, port, index, fields));
+    public ESLocalTap(String host, int port, String resource, Fields fields) {
+        this.target = resource;
+        setScheme(new ESLocalScheme(host, port, resource, fields));
     }
 
     @Override

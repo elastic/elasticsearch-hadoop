@@ -57,7 +57,7 @@ public class CascadingLocalTest {
     private void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
+        Tap out = new ESTap("top/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 
@@ -66,9 +66,8 @@ public class CascadingLocalTest {
         new LocalFlowConnector().connect(in, out, pipe).complete();
     }
 
-    
-    private void testReadFromES() throws Exception {
-        Tap in = new ESTap("http://localhost:9200/radio/artists/_search?q=me*");
+    public void testReadFromES() throws Exception {
+        Tap in = new ESTap("top/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         StdOutTap out = new StdOutTap(new TextLine());
