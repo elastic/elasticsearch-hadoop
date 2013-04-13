@@ -15,6 +15,9 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import org.elasticsearch.hadoop.EmbeddedElasticsearchServer;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;
@@ -30,8 +33,28 @@ import cascading.tuple.Fields;
 
 public class CascadingLocalTest {
 
+  private static EmbeddedElasticsearchServer esServer;
+
+
+    @BeforeClass
+    public static void beforeClass() {
+      esServer = new EmbeddedElasticsearchServer();
+    }
+  
+    @AfterClass
+    public static void afterClass() {
+      esServer.shutdown();
+    }
+
     @Test
-    public void testWriteToES() throws Exception {
+    public void testWriteToESAdnReadFromES() throws Exception {
+      
+      testWriteToES();
+      
+      testReadFromES();      
+    }
+
+    private void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("top/artists", new Fields("name", "url", "picture"));
@@ -43,7 +66,6 @@ public class CascadingLocalTest {
         new LocalFlowConnector().connect(in, out, pipe).complete();
     }
 
-    @Test
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("top/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");

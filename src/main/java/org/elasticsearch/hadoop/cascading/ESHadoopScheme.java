@@ -122,6 +122,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sinkConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setOutputFormat(ESOutputFormat.class);
+        conf.set("mapred.output.dir", "/tmp/dummy");
     }
 
     private void initTargetUri(JobConf conf) {
