@@ -15,12 +15,23 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Assert;
 
 public class TestUtils {
+
+    /** URI for the ES instance to run tests against */
+    private static final String TEST_ES_URL = "http://localhost:9200/";
 
     /**
      * Hack to allow Hadoop client to run on windows (which otherwise fails due to some permission problem).
@@ -48,5 +59,24 @@ public class TestUtils {
 
     public static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().startsWith("win");
+    }
+
+    /**
+     * @throws A RuntimeException if a test-ready ElasticSearch instance isn't running
+     */
+    public static void assertElasticsearchIsRunning() {
+        try {
+            JSONObject json = new JSONObject(IOUtils.toString(new URL(TEST_ES_URL).openStream()));
+            Assert.assertEquals("ok is true", true, json.getBoolean("ok"));
+            Assert.assertEquals("status is 200", 200, json.getInt("status"));
+        } catch(java.net.ConnectException ce) {
+            Assert.fail("No ElasticSearch instance running at " + TEST_ES_URL);
+        } catch(MalformedURLException e) {
+            throw new RuntimeException("Bad URL when connecting to ES at " + TEST_ES_URL, e);
+        } catch(IOException e) {
+            throw new RuntimeException("Could not connect to ES at " + TEST_ES_URL, e);
+        } catch(JSONException e) {
+            throw new RuntimeException("Non-JSON response from ES at " + TEST_ES_URL, e);
+        }
     }
 }

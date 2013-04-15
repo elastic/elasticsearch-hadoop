@@ -20,6 +20,7 @@ import java.io.PrintStream;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 import cascading.flow.FlowProcess;
