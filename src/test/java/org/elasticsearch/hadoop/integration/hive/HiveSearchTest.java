@@ -41,7 +41,7 @@ public class HiveSearchTest {
                 + "name 	STRING, "
                 + "links 	STRUCT<url:STRING, picture:STRING>) "
                 + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*') ";
+                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=me*') ";
 
         String select = "SELECT * FROM artists";
 

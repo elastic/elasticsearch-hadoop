@@ -34,7 +34,7 @@ public class CascadingLocalSaveTest {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")),
                 "src/test/resources/artists.dat");
-        Tap out = new ESTap("top/artists", new Fields("name", "url", "picture"));
+        Tap out = new ESTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 

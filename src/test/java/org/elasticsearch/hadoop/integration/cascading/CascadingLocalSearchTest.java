@@ -28,7 +28,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("top/artists/_search?q=me*");
+        Tap in = new ESTap("cascading-local/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         StdOutTap out = new StdOutTap(new TextLine());

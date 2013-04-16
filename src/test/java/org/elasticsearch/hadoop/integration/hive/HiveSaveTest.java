@@ -59,7 +59,7 @@ public class HiveSaveTest {
                 + "links    STRUCT<url:STRING, picture:STRING>) "
                 + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
                 + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
-                + "TBLPROPERTIES('es.resource' = 'radio/artists') ";
+                + "TBLPROPERTIES('es.resource' = 'hive/artists') ";
 
         String selectTest = "SELECT NULL, s.name, struct(s.url, s.picture) FROM source s";
 

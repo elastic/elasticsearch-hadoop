@@ -26,7 +26,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("http://localhost:9200/billboard/artists/_search?q=me*");
+        Tap in = new ESTap("http://localhost:9200/cascading-hadoop/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         Tap out = new HadoopStdOutTap();

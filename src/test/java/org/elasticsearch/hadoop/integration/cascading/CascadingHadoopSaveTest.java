@@ -33,7 +33,7 @@ public class CascadingHadoopSaveTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("billboard/artists", new Fields("name", "url", "picture"));
+        Tap out = new ESTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"

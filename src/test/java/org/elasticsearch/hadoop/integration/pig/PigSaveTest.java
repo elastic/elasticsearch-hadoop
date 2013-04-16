@@ -60,7 +60,7 @@ public class PigSaveTest {
                 //"ILLUSTRATE A;" +
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 //"ILLUSTRATE B;" +
-                "STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.ESStorage();";
+                "STORE B INTO 'pig/artists' USING org.elasticsearch.hadoop.pig.ESStorage();";
                 //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();" +
                 //"DUMP es_total;" +
                 //"bartists = FILTER B BY name MATCHES 'me.*';" +

@@ -47,7 +47,7 @@ public class PigSearchTest {
     @Test
     public void testLoaderBasic() throws Exception {
         String script =
-                "A = LOAD 'radio/artists/_search?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();" +
+                "A = LOAD 'pig/artists/_search?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();" +
                 "DESCRIBE A;" +
                 "DUMP A;";
         executeScript(script);
