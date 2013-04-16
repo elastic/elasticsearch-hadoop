@@ -32,7 +32,7 @@ public class LocalES extends ExternalResource {
 
         if (es == null) {
             System.out.println("Starting Elasticsearch...");
-            es = new ESEmbeddedServer();
+            es = new ESEmbeddedServer(ES_DATA_PATH);
             es.start();
         }
     }
