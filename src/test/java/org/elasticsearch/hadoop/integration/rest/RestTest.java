@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.integration.rest;
 
-import org.elasticsearch.hadoop.TestSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.junit.Test;
 
 /**

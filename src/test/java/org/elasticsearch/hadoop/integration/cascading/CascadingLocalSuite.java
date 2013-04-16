@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop;
+package org.elasticsearch.hadoop.integration.cascading;
 
-import java.util.Properties;
+import org.elasticsearch.hadoop.integration.LocalES;
+import org.junit.ClassRule;
+import org.junit.rules.ExternalResource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
+@RunWith(Suite.class)
+@Suite.SuiteClasses({ CascadingLocalSaveTest.class, CascadingLocalSearchTest.class })
+public class CascadingLocalSuite {
 
-/**
- * Tweaked settings for testing.
- */
-public class TestSettings extends PropertiesSettings {
-
-    private final static Properties TESTING_PROPS = new Properties();
-
-    static {
-        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
-    }
-
-    public TestSettings() {
-        super(TESTING_PROPS);
-    }
+    @ClassRule
+    public static ExternalResource resource = new LocalES();
 }

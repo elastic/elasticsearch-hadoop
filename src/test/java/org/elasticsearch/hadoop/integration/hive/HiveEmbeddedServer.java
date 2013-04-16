@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.hive;
+package org.elasticsearch.hadoop.integration.hive;
 
 import java.io.File;
 import java.lang.reflect.Field;

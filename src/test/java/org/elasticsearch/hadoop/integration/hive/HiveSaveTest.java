@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.hive;
+package org.elasticsearch.hadoop.integration.hive;
 
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class HiveStoreTest {
+public class HiveSaveTest {
 
     private static HiveEmbeddedServer server;
-
-    {
-        TestUtils.hackHadoopStagingOnWin();
-    }
 
     @BeforeClass
     public static void start() throws Exception {

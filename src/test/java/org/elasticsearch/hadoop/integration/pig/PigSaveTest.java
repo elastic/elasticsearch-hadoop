@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.pig;
+package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.ByteArrayInputStream;
 
 import org.apache.pig.PigServer;
-import org.elasticsearch.hadoop.TestSettings;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.rest.RestClient;
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  */
-public class PigStorageTest {
+public class PigSaveTest {
 
     static PigServer pig;
-
-    {
-        TestUtils.hackHadoopStagingOnWin();
-    }
 
     @BeforeClass
     public static void startup() throws Exception {
