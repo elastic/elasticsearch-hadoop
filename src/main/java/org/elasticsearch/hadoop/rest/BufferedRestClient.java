@@ -33,6 +33,8 @@ public class BufferedRestClient implements Closeable {
 
     private int bufferSize = 0;
     private int bufferEntries = 0;
+    private boolean requiresRefreshAfterBulk = false;
+    private boolean executedBulkWrite = false;
 
     private ObjectMapper mapper = new ObjectMapper();
 
@@ -45,6 +47,7 @@ public class BufferedRestClient implements Closeable {
 
         buffer = new byte[settings.getBatchSizeInBytes()];
         bufferEntriesThreshold = settings.getBatchSizeInEntries();
+        requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
     }
 
     /**
@@ -92,12 +95,17 @@ public class BufferedRestClient implements Closeable {
         client.bulk(index, buffer, bufferSize);
         bufferSize = 0;
         bufferEntries = 0;
+        requiresRefreshAfterBulk = true;
     }
 
     @Override
     public void close() throws IOException {
         if (bufferSize > 0) {
             flushBatch();
+        }
+        if (requiresRefreshAfterBulk && executedBulkWrite) {
+            // refresh batch
+            client.refresh(index);
         }
         client.close();
     }

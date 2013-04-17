@@ -91,6 +91,11 @@ public class RestClient implements Closeable {
         execute(post);
     }
 
+    public void refresh(String index) throws IOException {
+        String indx = index.substring(0, index.indexOf("/"));
+        execute(new PostMethod(indx + "/_refresh"));
+    }
+
     private void create(String q, byte[] value) throws IOException {
         PostMethod post = new PostMethod(q);
         post.setRequestEntity(new ByteArrayRequestEntity(value));

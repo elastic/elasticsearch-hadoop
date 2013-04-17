@@ -39,6 +39,10 @@ public interface ConfigurationOptions {
     static final String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
     static final String ES_BATCH_SIZE_ENTRIES_DEFAULT = "0";
 
+    /** Whether to trigger an index refresh after doing batch writing */
+    static final String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";
+    static final String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
+
     /** HTTP connection timeout */
     static final String ES_HTTP_TIMEOUT = "es.http.timeout";
     static final String ES_HTTP_TIMEOUT_DEFAULT = "1m";

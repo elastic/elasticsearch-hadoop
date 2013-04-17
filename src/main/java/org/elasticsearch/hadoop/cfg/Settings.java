@@ -20,6 +20,7 @@ import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
+import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -50,6 +51,10 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public int getBatchSizeInEntries() {
         return Integer.valueOf(getProperty(ES_BATCH_SIZE_ENTRIES, ES_BATCH_SIZE_ENTRIES_DEFAULT));
+    }
+
+    public boolean getBatchRefreshAfterWrite() {
+        return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_REFRESH, ES_BATCH_WRITE_REFRESH_DEFAULT));
     }
 
     public String getTargetUri() {
