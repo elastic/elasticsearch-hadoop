@@ -67,6 +67,35 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
         }
     }
 
+    public static class ESOldAPIOutputCommitter extends org.apache.hadoop.mapred.OutputCommitter {
+
+        @Override
+        public void setupJob(org.apache.hadoop.mapred.JobContext jobContext) throws IOException {
+            //no-op
+        }
+
+        @Override
+        public void setupTask(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
+            //no-op
+        }
+
+        @Override
+        public boolean needsTaskCommit(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
+            //no-op
+            return false;
+        }
+
+        @Override
+        public void commitTask(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
+            //no-op
+        }
+
+        @Override
+        public void abortTask(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
+            //no-op
+        }
+    }
+
     protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
 
         private final BufferedRestClient client;

@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
@@ -75,7 +76,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public void sourceCleanup(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
-        // we haven't created anything, don't do any cleanup
+        sourceCall.setContext(null);
     }
 
     @Override
@@ -92,7 +93,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     }
 
     public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
-        //we haven't created anything, don't do any cleanup
+        sinkCall.setContext(null);
     }
 
     private List<String> resolveNames(Fields fields) {
@@ -122,6 +123,11 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sinkConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setOutputFormat(ESOutputFormat.class);
+        // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
+        Settings set = SettingsManager.loadFrom(conf);
+        // NB: there's no es:// protocol - this is just a fake placeholder that will cause exceptions if any File-based output class is used
+        conf.set("mapred.output.dir", "es://" + set.getTargetUri() + "/" + set.getTargetResource());
+        conf.set("mapred.output.committer.class", ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
     }
 
     private void initTargetUri(JobConf conf) {

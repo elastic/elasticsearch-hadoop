@@ -50,16 +50,6 @@ class ESLocalTap extends Tap<Properties, QueryResult, Object> {
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<Properties> flowProcess, Properties conf) {
-        super.sourceConfInit(flowProcess, conf);
-    }
-
-    @Override
-    public void sinkConfInit(FlowProcess<Properties> flowProcess, Properties conf) {
-        super.sinkConfInit(flowProcess, conf);
-    }
-
-    @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, QueryResult input) throws IOException {
         client = new BufferedRestClient(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
 

@@ -95,12 +95,12 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public void sourceConfInit(FlowProcess<Object> flowProcess, Object conf) {
-        super.sourceConfInit(flowProcess, conf);
+        actualTap.sourceConfInit(flowProcess, conf);
     }
 
     @Override
     public void sinkConfInit(FlowProcess<Object> flowProcess, Object conf) {
-        super.sinkConfInit(flowProcess, conf);
+        actualTap.sinkConfInit(flowProcess, conf);
     }
 
     @Override
