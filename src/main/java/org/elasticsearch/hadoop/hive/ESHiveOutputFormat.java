@@ -27,7 +27,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
  * Hive specific OutputFormat.
@@ -42,8 +41,7 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
 
         @Override
         public void write(Writable w) throws IOException {
-            Object obj = WritableUtils.fromWritable(w);
-            super.write(null, obj);
+            super.write(null, w);
         }
 
         @Override
