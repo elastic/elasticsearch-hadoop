@@ -27,8 +27,8 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveInterface;
 import org.apache.hadoop.hive.service.HiveServer;
-import org.elasticsearch.hadoop.util.NTFSLocalFileSystem;
-import org.elasticsearch.hadoop.util.TestUtils;
+import org.elasticsearch.hadoop.unit.util.NTFSLocalFileSystem;
+import org.elasticsearch.hadoop.unit.util.TestUtils;
 
 /**
  * Utility starting a local/embedded Hive server for testing purposes.

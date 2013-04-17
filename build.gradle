@@ -94,7 +94,7 @@ task enableHiveTests {
 }
 
 task enableAllTests() {
-    description = "Enable all (incl. Pig, Hive) tests"
+    description = "Enable all (incl. Hive, Pig) tests"
     group = "Verification"
     doFirst() {
       println "Enable all tests"
@@ -106,7 +106,7 @@ task enableAllTests() {
 test {
     systemProperties['input.path'] = 'build/classes/test/input'
     systemProperties['output.path'] = 'build/classes/test/output'
-    includes = ["**/*.class"]
+    includes = ["org/elasticsearch/hadoop/unit/**/*.class", "org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
         events "started"
@@ -122,7 +122,7 @@ test {
             excludes.add("**/pig/**")
         }
         if (skipHive) {
-            ext.msg += "Hive "
+            ext.msg += "Hive"
             excludes.add("**/hive/**")
         }
 

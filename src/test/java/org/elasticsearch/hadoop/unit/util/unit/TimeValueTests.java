@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.util.unit;
+package org.elasticsearch.hadoop.unit.util.unit;
 
 import java.util.concurrent.TimeUnit;
 
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
