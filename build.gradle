@@ -73,15 +73,15 @@ configurations.all {
 sourceCompatibility = 1.6
 targetCompatibility = 1.6 
 
-ext.skipPig = true
+ext.skipCascading = true
 ext.skipHive = true
+ext.skipPig = true
 
-task enablePigTests {
-    description = "Enable Pig tests"
+task enableCascadingTests {
+    description = "Enable Cascading tests"
     group = "Verification"
-    
     doLast() {
-        project.ext.skipPig = false
+        project.ext.skipCascading = false
    }
 }
 
@@ -90,16 +90,29 @@ task enableHiveTests {
     group = "Verification"
     doLast() {
         project.ext.skipHive = false
+		project.ext.skipPig = true
    }
 }
 
-task enableAllTests() {
-    description = "Enable all (incl. Hive, Pig) tests"
+task enablePigTests {
+    description = "Enable Pig tests"
+    group = "Verification"
+    
+    doLast() {
+        project.ext.skipPig = false
+		project.ext.skipHive = true
+   }
+}
+
+task enableIntegrationTests() {
+    description = "Enable all integration tests"
     group = "Verification"
     doFirst() {
-      println "Enable all tests"
+      println "Enable all integration tests"
+  	  project.ext.skipCascading = false
+	  // Hive and Pig are not compatible
+      project.ext.skipHive = true
       project.ext.skipPig = false
-      project.ext.skipHive = false
     }
 }
 
@@ -114,16 +127,21 @@ test {
         maxGranularity 2
     }
 
+	
     doFirst() {
         ext.msg = ""
         
-        if (skipPig) {
-            ext.msg += "Pig "
-            excludes.add("**/pig/**")
+        if (skipCascading) {
+            ext.msg += "Cascading "
+            excludes.add("**/cascading/**")
         }
         if (skipHive) {
-            ext.msg += "Hive"
+            ext.msg += "Hive "
             excludes.add("**/hive/**")
+        }
+        if (skipPig) {
+            ext.msg += "Pig"
+            excludes.add("**/pig/**")
         }
 
         if (!msg.isEmpty())
