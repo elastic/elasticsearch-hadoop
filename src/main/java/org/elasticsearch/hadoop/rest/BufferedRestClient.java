@@ -99,7 +99,7 @@ public class BufferedRestClient implements Closeable {
         client.bulk(index, buffer, bufferSize);
         bufferSize = 0;
         bufferEntries = 0;
-        requiresRefreshAfterBulk = true;
+        executedBulkWrite = true;
     }
 
     @Override
