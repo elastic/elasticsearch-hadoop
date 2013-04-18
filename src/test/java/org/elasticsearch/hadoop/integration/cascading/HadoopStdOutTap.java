@@ -79,6 +79,7 @@ class HadoopStdOutTap extends SinkTap<JobConf, Object> {
         return "HadoopStdOut";
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<JobConf> flowProcess, Object output) throws IOException {
         return new TupleEntrySchemeCollector(flowProcess, getScheme(), System.out);
