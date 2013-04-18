@@ -9,7 +9,8 @@ Significant effort has been invested to create a small, dependency-free, self-co
 This project is released under version 2.0 of the [Apache License][]
 
 # Installation
-We're working towards a first release and we plan to have nightly builds soon available. In the meantime please [build](#building-the-source) the project yourself.
+We're working towards a first release and we plan to publish nightly builds soon. In the meantime, please [build](#building-the-source) the project yourself. 
+We do build and test the code on _each_ commit; see the current status [here](http://build.elasticsearch.org/browse/ESHADOOP)
 
 # Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
