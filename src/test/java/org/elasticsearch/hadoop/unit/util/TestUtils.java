@@ -32,7 +32,7 @@ public class TestUtils {
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
 
-            // handle jar permissions as well - temporarely disable for CDH 4 / YARN
+            // handle jar permissions as well - temporarily disable for CDH 4 / YARN
             try {
                 Class<?> tdcm = Class.forName("org.apache.hadoop.filecache.TrackerDistributedCacheManager");
                 FsPermission perm = (FsPermission) FieldUtils.readStaticField(tdcm, "PUBLIC_CACHE_OBJECT_PERM", true);
