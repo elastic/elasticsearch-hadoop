@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.integration;
 
-import java.io.File;
 import java.util.Properties;
 
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -27,13 +26,11 @@ public class ESEmbeddedServer {
 
     private final Node node;
 
-    public ESEmbeddedServer() {
-        this(new File(".").getAbsolutePath());
-    }
-
-    public ESEmbeddedServer(String dataPath) {
+    public ESEmbeddedServer(String dataPath, String httpRange, String transportRange) {
         Properties props = new Properties();
         props.setProperty("path.data", dataPath);
+        props.setProperty("http.port", httpRange);
+        props.setProperty("transport.tcp.port", transportRange);
 
         Settings settings = ImmutableSettings.settingsBuilder().put(props).build();
         node = NodeBuilder.nodeBuilder().local(false).client(false).settings(settings).build();

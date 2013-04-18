@@ -24,10 +24,12 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings;
  */
 public class TestSettings extends PropertiesSettings {
 
-    private final static Properties TESTING_PROPS = new Properties();
+    public final static Properties TESTING_PROPS = new Properties();
 
     static {
         TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
+        // see TestSettings
+        TESTING_PROPS.put(ES_PORT, "9700");
     }
 
     public TestSettings() {

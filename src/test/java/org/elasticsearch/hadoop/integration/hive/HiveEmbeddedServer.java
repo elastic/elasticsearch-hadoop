@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 
@@ -27,6 +28,7 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveInterface;
 import org.apache.hadoop.hive.service.HiveServer;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.unit.util.NTFSLocalFileSystem;
 import org.elasticsearch.hadoop.unit.util.TestUtils;
 
@@ -41,6 +43,11 @@ class HiveEmbeddedServer {
     // As such, the current implementation tricks Hive into thinking it's not local but at the same time sets up Hadoop to run locally and stops Hive from setting any classpath.
 
     private HiveServer.HiveServerHandler server;
+    private Properties testSettings;
+
+    public HiveEmbeddedServer(Properties settings) {
+        this.testSettings = settings;
+    }
 
     HiveInterface start() throws Exception {
 
@@ -63,6 +70,15 @@ class HiveEmbeddedServer {
         FileUtils.deleteQuietly(new File("/tmp/hive"));
 
         HiveConf conf = new HiveConf();
+        // copy test settings
+        Enumeration<?> names = testSettings.propertyNames();
+
+        while (names.hasMoreElements()) {
+            String key = names.nextElement().toString();
+            String value = testSettings.getProperty(key);
+            conf.set(key, value);
+        }
+
         // work-around for NTFS FS
         if (TestUtils.isWindows()) {
             conf.set("fs.file.impl", NTFSLocalFileSystem.class.getName());

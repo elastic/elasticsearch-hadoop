@@ -25,6 +25,8 @@ public class LocalES extends ExternalResource {
 
     private static ESEmbeddedServer es;
     private static final String ES_DATA_PATH = "build/es.data";
+    public static final String DATA_PORTS = "9700-9800";
+    public static final String TRANSPORT_PORTS = "9800-9900";
 
     @Override
     protected void before() throws Throwable {
@@ -32,7 +34,7 @@ public class LocalES extends ExternalResource {
 
         if (es == null) {
             System.out.println("Starting Elasticsearch...");
-            es = new ESEmbeddedServer(ES_DATA_PATH);
+            es = new ESEmbeddedServer(ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
             es.start();
         }
     }

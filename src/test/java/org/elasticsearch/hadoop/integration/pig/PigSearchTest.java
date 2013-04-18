@@ -17,7 +17,9 @@ package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.ByteArrayInputStream;
 
+import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,7 +33,7 @@ public class PigSearchTest {
     @BeforeClass
     public static void startup() throws Exception {
         // initialize Pig in local mode
-        pig = new PigServer("local");
+        pig = new PigServer(ExecType.LOCAL, TestSettings.TESTING_PROPS);
         pig.setBatchOn();
     }
 

@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;
@@ -32,6 +33,6 @@ public class CascadingLocalSearchTest {
         Pipe copy = new Pipe("copy");
         // print out
         StdOutTap out = new StdOutTap(new TextLine());
-        new LocalFlowConnector().connect(in, out, copy).complete();
+        new LocalFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, copy).complete();
     }
 }

@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;
@@ -32,14 +33,13 @@ public class CascadingLocalSaveTest {
     @Test
     public void testWriteToES() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")),
-                "src/test/resources/artists.dat");
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new LocalFlowConnector().connect(in, out, pipe).complete();
+        new LocalFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, pipe).complete();
     }
 }

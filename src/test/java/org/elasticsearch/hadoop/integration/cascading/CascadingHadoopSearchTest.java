@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.hadoop.HadoopFlowConnector;
@@ -26,11 +27,11 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("http://localhost:9200/cascading-hadoop/artists/_search?q=me*");
+        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
         Tap out = new HadoopStdOutTap();
 
-        new HadoopFlowConnector().connect(in, out, copy).complete();
+        new HadoopFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, copy).complete();
     }
 }

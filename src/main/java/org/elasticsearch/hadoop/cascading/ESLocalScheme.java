@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryResult;
@@ -133,7 +132,9 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
 
     private void initClient(Properties props) {
         if (client == null) {
-            client = new BufferedRestClient(SettingsManager.loadFrom(props).setHost(host).setPort(port).setResource(resource));
+            Settings settings = SettingsManager.loadFrom(props).setHost(host).setPort(port).setResource(resource);
+            settings.save();
+            client = new BufferedRestClient(settings);
         }
     }
 

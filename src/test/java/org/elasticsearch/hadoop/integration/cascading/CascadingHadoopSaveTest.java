@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.hadoop.HadoopFlowConnector;
@@ -38,6 +39,6 @@ public class CascadingHadoopSaveTest {
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new HadoopFlowConnector().connect(in, out, pipe).complete();
+        new HadoopFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, pipe).complete();
     }
 }

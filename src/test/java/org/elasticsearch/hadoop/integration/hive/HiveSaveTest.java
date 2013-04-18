@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class HiveSaveTest {
 
     @BeforeClass
     public static void start() throws Exception {
-        server = new HiveEmbeddedServer();
+        server = new HiveEmbeddedServer(TestSettings.TESTING_PROPS);
         server.start();
     }
 
