@@ -15,36 +15,23 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.elasticsearch.hadoop.integration.TestSettings;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
 
 public class HiveSearchTest {
 
-    private static HiveEmbeddedServer server;
-
-    @BeforeClass
-    public static void start() throws Exception {
-        server = new HiveEmbeddedServer(TestSettings.TESTING_PROPS);
-        server.start();
-    }
-
-    @AfterClass
-    public static void stop() throws Exception {
-        server.stop();
-    }
-
     @Test
-    public void basicSave() throws Exception {
-        String create = "CREATE EXTERNAL TABLE artists ("
+    public void basicLoad() throws Exception {
+
+        String create = "CREATE EXTERNAL TABLE artistsload ("
                 + "id 		BIGINT, "
                 + "name 	STRING, "
                 + "links 	STRUCT<url:STRING, picture:STRING>) "
                 + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
                 + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=me*') ";
 
-        String select = "SELECT * FROM artists";
+        String select = "SELECT * FROM artistsload";
 
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));

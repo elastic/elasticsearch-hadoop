@@ -15,28 +15,15 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.elasticsearch.hadoop.integration.TestSettings;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSaveTest {
 
-    private static HiveEmbeddedServer server;
-
-    @BeforeClass
-    public static void start() throws Exception {
-        server = new HiveEmbeddedServer(TestSettings.TESTING_PROPS);
-        server.start();
-    }
-
-    @AfterClass
-    public static void stop() throws Exception {
-        server.stop();
-    }
-
     @Test
     public void basicSave() throws Exception {
+
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
@@ -54,7 +41,7 @@ public class HiveSaveTest {
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE artists ("
+                "CREATE EXTERNAL TABLE artistssave ("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
@@ -66,7 +53,7 @@ public class HiveSaveTest {
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE artists "
+                "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
         System.out.println(server.execute(ddl));

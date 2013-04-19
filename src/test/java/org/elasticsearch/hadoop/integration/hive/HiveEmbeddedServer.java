@@ -28,7 +28,6 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveInterface;
 import org.apache.hadoop.hive.service.HiveServer;
-import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.unit.util.NTFSLocalFileSystem;
 import org.elasticsearch.hadoop.unit.util.TestUtils;
 
@@ -58,7 +57,7 @@ class HiveEmbeddedServer {
     }
 
     // Hive adds automatically the Hive builtin jars - this thread-local cleans that up
-    private static class InterceptingThreadLocal extends ThreadLocal<SessionState> {
+    private static class InterceptingThreadLocal extends InheritableThreadLocal<SessionState> {
         @Override
         public void set(SessionState value) {
             value.delete_resource(ResourceType.JAR);
