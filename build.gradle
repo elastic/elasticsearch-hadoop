@@ -25,6 +25,8 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
 
+def antlrVersion
+
 dependencies {
 	ext.hadoopVersion=hadoop10Version
 	
@@ -49,9 +51,6 @@ dependencies {
     // needed by the Hive Server tests
     testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 
 
-    // Libs dependencies (specified to cope with incompatibilities between them)
-    testRuntime "org.antlr:antlr-runtime:$antlrVersion"
-
     // Testing
     testCompile "junit:junit:$junitVersion"
 	testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
@@ -60,8 +59,6 @@ dependencies {
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
-    // specify a version of antlr that works with both hive and pig (works only during compilation)
-    testRuntime "org.antlr:antlr-runtime:$antlrVersion"
 }
 
 configurations.all {
@@ -91,6 +88,10 @@ task enableHiveTests {
     doLast() {
         project.ext.skipHive = false
 		project.ext.skipPig = true
+		antlrVersion = antlrForHiveVersion
+		dependencies {
+			testRuntime "org.antlr:antlr-runtime:$antlrForHiveVersion"
+		}
    }
 }
 
@@ -101,18 +102,19 @@ task enablePigTests {
     doLast() {
         project.ext.skipPig = false
 		project.ext.skipHive = true
-   }
+		dependencies {
+			testRuntime "org.antlr:antlr-runtime:$antlrForPigVersion"
+		}
+  }
 }
 
 task enableIntegrationTests() {
     description = "Enable all integration tests"
     group = "Verification"
-    doFirst() {
+    doLast() {
       println "Enable all integration tests"
   	  project.ext.skipCascading = false
-	  // Hive and Pig are not compatible
-      project.ext.skipHive = true
-      project.ext.skipPig = false
+	  enablePigTests()
     }
 }
 
@@ -122,12 +124,11 @@ test {
     includes = ["org/elasticsearch/hadoop/unit/**/*.class", "org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
-        events "started"
-        minGranularity 2
-        maxGranularity 2
+        events "started" , "standardOut", "standardError"
+        minGranularity 0
+        maxGranularity 0
     }
 
-	
     doFirst() {
         ext.msg = ""
         
