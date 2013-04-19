@@ -81,12 +81,12 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private RecordWriter<Object, Object> writer;
 
     public ESStorage() {
-        this(null, 0);
+        this(null, "0");
     }
 
-    public ESStorage(String host, int port) {
+    public ESStorage(String host, String port) {
         this.host = host;
-        this.port = port;
+        this.port = Integer.valueOf(port);
     }
 
     @Override
