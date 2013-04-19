@@ -15,23 +15,28 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
-import org.elasticsearch.hadoop.cascading.ESTap;
-import org.elasticsearch.hadoop.integration.TestSettings;
-import org.junit.Test;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 
-import cascading.flow.hadoop.HadoopFlowConnector;
-import cascading.pipe.Pipe;
-import cascading.tap.Tap;
+public class NullPrintStream extends PrintStream {
 
-public class CascadingHadoopSearchTest {
-
-    @Test
-    public void testReadFromES() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
-        Pipe copy = new Pipe("copy");
-        // print out
-        Tap out = new HadoopPrintStreamTap(new NullPrintStream());
-
-        new HadoopFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, copy).complete();
+    private static class NullOutputStream extends OutputStream {
+        @Override
+        public void write(int b) throws IOException {}
     }
+
+    public NullPrintStream() throws FileNotFoundException {
+        super(new NullOutputStream());
+    }
+
+    @Override
+    public void write(byte[] buf, int off, int len) {}
+
+    @Override
+    public void write(int b) {}
+
+    @Override
+    public void write(byte[] b) {}
 }
