@@ -154,6 +154,7 @@ public abstract class WritableUtils {
             for (Writable wrt : writables) {
                 list.add(fromWritable(wrt));
             }
+            return list;
         }
         else if (writable instanceof AbstractMapWritable) {
             Map<Writable, Writable> smap = (Map) writable;
