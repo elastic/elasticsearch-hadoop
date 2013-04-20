@@ -114,7 +114,7 @@ task enableIntegrationTests() {
     doLast() {
       println "Enable all integration tests"
   	  project.ext.skipCascading = false
-	  enablePigTests()
+	  enablePigTests.execute()
     }
 }
 
