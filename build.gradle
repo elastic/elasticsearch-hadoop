@@ -124,9 +124,9 @@ test {
     includes = ["org/elasticsearch/hadoop/unit/**/*.class", "org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
-        events "started" , "standardOut", "standardError"
-        minGranularity 0
-        maxGranularity 0
+        events "started" //, "standardOut", "standardError"
+        minGranularity 2
+        maxGranularity 2
     }
 
     doFirst() {

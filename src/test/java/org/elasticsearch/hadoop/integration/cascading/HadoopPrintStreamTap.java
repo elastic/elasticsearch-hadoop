@@ -35,7 +35,30 @@ import cascading.tuple.TupleEntrySchemeCollector;
 
 class HadoopPrintStreamTap extends SinkTap<JobConf, Object> {
 
-    private final PrintStream ps;
+    public enum Stream {
+        OUT {
+            @Override
+            PrintStream stream() {
+                return System.out;
+            }
+        },
+        ERR {
+            @Override
+            PrintStream stream() {
+                return System.err;
+            }
+        },
+        NULL {
+            @Override
+            PrintStream stream() {
+                return new NullPrintStream();
+            }
+        };
+
+        abstract PrintStream stream();
+    }
+
+    private final Stream stream;
 
     private static class SysoutScheme extends Scheme<JobConf, Object, Object, Object, Object> {
 
@@ -73,12 +96,12 @@ class HadoopPrintStreamTap extends SinkTap<JobConf, Object> {
     }
 
     public HadoopPrintStreamTap() {
-        this(System.out);
+        this(Stream.OUT);
     }
 
-    public HadoopPrintStreamTap(PrintStream ps) {
+    public HadoopPrintStreamTap(Stream stream) {
         super(new SysoutScheme(), SinkMode.UPDATE);
-        this.ps = ps;
+        this.stream = stream;
     }
 
     @Override
@@ -89,7 +112,7 @@ class HadoopPrintStreamTap extends SinkTap<JobConf, Object> {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<JobConf> flowProcess, Object output) throws IOException {
-        return new TupleEntrySchemeCollector(flowProcess, getScheme(), ps);
+        return new TupleEntrySchemeCollector(flowProcess, getScheme(), stream.stream());
     }
 
     @Override

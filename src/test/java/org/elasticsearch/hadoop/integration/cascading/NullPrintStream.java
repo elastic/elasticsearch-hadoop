@@ -15,19 +15,19 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Serializable;
 
-public class NullPrintStream extends PrintStream {
+public class NullPrintStream extends PrintStream implements Serializable {
 
-    private static class NullOutputStream extends OutputStream {
+    private static class NullOutputStream extends OutputStream implements Serializable {
         @Override
         public void write(int b) throws IOException {}
     }
 
-    public NullPrintStream() throws FileNotFoundException {
+    public NullPrintStream() {
         super(new NullOutputStream());
     }
 
