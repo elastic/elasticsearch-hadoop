@@ -72,7 +72,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
     private void init(TableDesc tableDesc) {
         Configuration cfg = getConf();
-        SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).setHost(host).setPort(port).save();
+        SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).clean().setHost(host).setPort(port).save();
 
         // replace the default committer when using the old API
         cfg.set("mapred.output.committer.class", ESOutputFormat.ESOutputCommitter.class.getName());

@@ -33,9 +33,9 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
  */
 public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat<Object, Object> {
 
-    static class ESRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
+    static class ESHiveRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
 
-        public ESRecordWriter(Configuration cfg) {
+        public ESHiveRecordWriter(Configuration cfg) {
             super(cfg);
         }
 
@@ -46,13 +46,13 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
 
         @Override
         public void close(boolean abort) throws IOException {
-            // TODO: check wether a proper Reporter can be passed in
+            // TODO: check whether a proper Reporter can be passed in
             super.close((Reporter) null);
         }
     }
 
     @Override
     public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
-        return new ESRecordWriter(jc);
+        return new ESHiveRecordWriter(jc);
     }
 }

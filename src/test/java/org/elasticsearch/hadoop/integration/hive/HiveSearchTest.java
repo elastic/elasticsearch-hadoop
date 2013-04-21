@@ -15,11 +15,18 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
 
 public class HiveSearchTest {
+
+    @Before
+    public void cleanConfig() {
+        System.out.println("Refreshing Hive Config...");
+        server.refreshConfig();
+    }
 
     @Test
     public void basicLoad() throws Exception {
