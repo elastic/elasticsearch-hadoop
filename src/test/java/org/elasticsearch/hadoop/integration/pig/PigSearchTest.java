@@ -50,9 +50,9 @@ public class PigSearchTest {
     public void testLoaderBasic() throws Exception {
         String script =
                 "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();" +
-                "A = LOAD 'pig/artists/_search?q=me*' USING ESStorage();" +
-                "DESCRIBE A;" +
-                "DUMP A;";
+                "A = LOAD 'pig/artists/_search?q=me*' USING ESStorage();";
+                //"DESCRIBE A;";
+                //"//DUMP A;";
         executeScript(script);
     }
 
