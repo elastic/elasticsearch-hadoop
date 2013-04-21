@@ -61,7 +61,7 @@ public class QueryResult implements Iterator<Map<String, Object>>, Closeable {
             try {
                 batch = client.query(query, offset, BATCH_SIZE);
             } catch (IOException ex) {
-                throw new IllegalStateException("Error perfoming query", ex);
+                throw new IllegalStateException("Error perfoming query [" + ex.getMessage() + "]", ex);
             }
             if (batch.isEmpty()) {
                 finished = true;
