@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.unit.util;
+package org.elasticsearch.hadoop.util;
 
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;

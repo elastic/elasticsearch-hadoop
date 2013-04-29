@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.unit.util.unit;
+package org.elasticsearch.hadoop.util.unit;
 
 import org.elasticsearch.hadoop.util.unit.ByteSizeUnit;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;

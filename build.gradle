@@ -121,7 +121,9 @@ task enableIntegrationTests() {
 test {
     systemProperties['input.path'] = 'build/classes/test/input'
     systemProperties['output.path'] = 'build/classes/test/output'
-    includes = ["org/elasticsearch/hadoop/unit/**/*.class", "org/elasticsearch/hadoop/integration/**/*Suite.class"]
+    includes = ["org/elasticsearch/hadoop/hive/*.class", 
+				"org/elasticsearch/hadoop/util/**/*.class", 
+				"org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
         events "started" //, "standardOut", "standardError"
@@ -134,15 +136,15 @@ test {
         
         if (skipCascading) {
             ext.msg += "Cascading "
-            excludes.add("**/cascading/**")
+            excludes.add("**/integration/cascading/**")
         }
         if (skipHive) {
             ext.msg += "Hive "
-            excludes.add("**/hive/**")
+            excludes.add("**/integration/hive/**")
         }
         if (skipPig) {
             ext.msg += "Pig"
-            excludes.add("**/pig/**")
+            excludes.add("**/integration/pig/**")
         }
 
         if (!msg.isEmpty())
