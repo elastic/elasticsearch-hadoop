@@ -132,47 +132,41 @@ public class ESSerDe implements SerDe {
 
             if (data instanceof LazyArray) {
                 list = ((LazyArray) data).getList();
-                if (list != null && !list.isEmpty()) {
-                    arrayContent = list.toArray(new Writable[list.size()]);
-                }
             }
             else {
                 if (data.getClass().isArray()) {
                     data = Arrays.asList((Object[]) data);
                 }
-
                 list = (List<Object>) data;
-                if (!list.isEmpty()) {
-                    arrayContent = new Writable[list.size()];
-                    for (int i = 0; i < arrayContent.length; i++) {
-                        arrayContent[i] = hiveToWritable(listElementType, list.get(i));
-                    }
+            }
+
+            if (!list.isEmpty()) {
+                arrayContent = new Writable[list.size()];
+                for (int i = 0; i < arrayContent.length; i++) {
+                    arrayContent[i] = hiveToWritable(listElementType, list.get(i));
                 }
             }
 
-            return (arrayContent != null ? new ArrayWritable(arrayContent[0].getClass(), arrayContent) : new ArrayWritable(NullWritable.class));
+            return (arrayContent != null ? new ArrayWritable(arrayContent[0].getClass(), arrayContent) : new ArrayWritable(
+                    NullWritable.class));
 
         case MAP:
             MapTypeInfo mapType = (MapTypeInfo) type;
 
             MapWritable map = new MapWritable();
-            List<Object> keys = null;
-            List<Object> values = null;
+
+            Map<Object, Object> mapContent = null;
 
             if (data instanceof LazyMap) {
-                // for lazy maps, the keys are already writable primitives so only the values need to be resolved
-                Map<Object, Object> lazyMap = ((LazyMap) data).getMap();
-
-                for (Map.Entry<Object, Object> entry : lazyMap.entrySet()) {
-                    map.put((Writable) entry.getKey(), hiveToWritable(mapType.getMapValueTypeInfo(), entry.getValue()));
-                }
+                mapContent = ((LazyMap) data).getMap();
             }
             else {
-                Map<Object, Object> mapContent = (Map<Object, Object>) data;
-                for (Map.Entry<Object, Object> entry : mapContent.entrySet()) {
-                    map.put(hiveToWritable(mapType.getMapKeyTypeInfo(), entry.getKey()),
-                            hiveToWritable(mapType.getMapValueTypeInfo(), entry.getValue()));
-                }
+                mapContent = (Map<Object, Object>) data;
+            }
+
+            for (Map.Entry<Object, Object> entry : mapContent.entrySet()) {
+                map.put(hiveToWritable(mapType.getMapKeyTypeInfo(), entry.getKey()),
+                        hiveToWritable(mapType.getMapValueTypeInfo(), entry.getValue()));
             }
 
             return map;
