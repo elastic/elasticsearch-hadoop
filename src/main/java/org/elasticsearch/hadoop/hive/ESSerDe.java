@@ -110,7 +110,7 @@ public class ESSerDe implements SerDe {
     }
 
     @SuppressWarnings("unchecked")
-    private Writable hiveToWritable(TypeInfo type, Object data) {
+    static Writable hiveToWritable(TypeInfo type, Object data) {
         if (data == null) {
             return NullWritable.get();
         }
@@ -170,7 +170,7 @@ public class ESSerDe implements SerDe {
             else {
                 Map<Object, Object> mapContent = (Map<Object, Object>) data;
                 for (Map.Entry<Object, Object> entry : mapContent.entrySet()) {
-                    map.put(hiveToWritable(mapType.getMapKeyTypeInfo(), data),
+                    map.put(hiveToWritable(mapType.getMapKeyTypeInfo(), entry.getKey()),
                             hiveToWritable(mapType.getMapValueTypeInfo(), entry.getValue()));
                 }
             }
@@ -210,7 +210,7 @@ public class ESSerDe implements SerDe {
         }
     }
 
-    private Object hiveFromWritable(TypeInfo type, Writable data) {
+    static Object hiveFromWritable(TypeInfo type, Writable data) {
         if (data == null || data instanceof NullWritable) {
             return null;
         }
