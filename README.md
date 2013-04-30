@@ -9,7 +9,27 @@ Significant effort has been invested to create a small, dependency-free, self-co
 This project is released under version 2.0 of the [Apache License][]
 
 # Installation
-We're working towards a first release and we plan to publish nightly builds soon. In the meantime, please [build](#building-the-source) the project yourself. 
+We're working towards a first release. In the meantime, grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) using any Maven-compatible tool:
+
+```xml
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>1.3.0.BUILD-SNAPSHOT</version>
+</dependency>
+```
+
+```xml
+<repositories>
+  <repository>
+    <id>sonatype-oss</id>
+    <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+	<snapshots><enabled>true</enabled></snapshots>
+  </repository>
+</repositories>
+```
+
+or [build](#building-the-source) the project yourself. 
 We do build and test the code on _each_ commit; see the current status [here](http://build.elasticsearch.org/browse/ESHADOOP)
 
 # Feedback / Q&A
