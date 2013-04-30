@@ -47,16 +47,19 @@ def customizePom(pom, gradleProject) {
 	}
 }
 
+ext.deployUsername = { hasProperty("repoUsername") ? getProperty("repoUsername") : "" }
+ext.deployPassword = { hasProperty("repoPassword") ? getProperty("repoPassword") : "" }
+
 uploadArchives {
 	repositories {
 		mavenDeployer {
 			customizePom(pom, project)
 			
 			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-				authentication(userName: sonatypeUsername, password: sonatypePassword)
+				authentication(userName: deployUsername(), password: deployPassword())
             }
 			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-				authentication(userName: sonatypeUsername, password: sonatypePassword)
+				authentication(userName: deployUsername(), password: deployPassword())
 			}
 		}
 	}
