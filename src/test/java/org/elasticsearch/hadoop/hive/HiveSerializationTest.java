@@ -29,51 +29,51 @@ import static org.junit.Assert.*;
 
 import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.*;
 
-public class HiveArrayTest {
+public class HiveSerializationTest {
 
     @Test
     public void testNull() {
-        testToWritableAndBack(voidTypeInfo, null);
+        testToHiveAndBack(voidTypeInfo, null);
     }
 
     @Test
     public void testString() {
-        testToWritableAndBack(stringTypeInfo, "some string");
+        testToHiveAndBack(stringTypeInfo, "some string");
     }
 
     @Test
     public void testLong() {
-        testToWritableAndBack(longTypeInfo, Long.MAX_VALUE);
+        testToHiveAndBack(longTypeInfo, Long.MAX_VALUE);
     }
 
     @Test
     public void testInteger() {
-        testToWritableAndBack(intTypeInfo, Integer.MAX_VALUE);
+        testToHiveAndBack(intTypeInfo, Integer.MAX_VALUE);
     }
 
     @Test
     public void testDouble() {
-        testToWritableAndBack(doubleTypeInfo, Double.MAX_VALUE);
+        testToHiveAndBack(doubleTypeInfo, Double.MAX_VALUE);
     }
 
     @Test
     public void testFloat() {
-        testToWritableAndBack(floatTypeInfo, Float.MAX_VALUE);
+        testToHiveAndBack(floatTypeInfo, Float.MAX_VALUE);
     }
 
     @Test
     public void testBoolean() {
-        testToWritableAndBack(booleanTypeInfo, Boolean.TRUE);
+        testToHiveAndBack(booleanTypeInfo, Boolean.TRUE);
     }
 
     @Test
     public void testByte() {
-        testToWritableAndBack(byteTypeInfo, Byte.MAX_VALUE);
+        testToHiveAndBack(byteTypeInfo, Byte.MAX_VALUE);
     }
 
     @Test
     public void testByteArray() {
-        testToWritableAndBack(binaryTypeInfo, "byte array".getBytes());
+        testToHiveAndBack(binaryTypeInfo, "byte array".getBytes());
     }
 
     @Test
@@ -95,7 +95,7 @@ public class HiveArrayTest {
 
     }
 
-    private void testToWritableAndBack(TypeInfo type, Object data) {
+    private void testToHiveAndBack(TypeInfo type, Object data) {
         Writable w = WritableUtils.toWritable(data);
         assertEquals(w, ESSerDe.hiveToWritable(type, ESSerDe.hiveFromWritable(type, w)));
     }
