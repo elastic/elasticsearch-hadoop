@@ -47,8 +47,8 @@ def customizePom(pom, gradleProject) {
 	}
 }
 
-ext.deployUsername = { project.hasProperty("repoUser") ? getProperty("repoUser") : "" }
-ext.deployPassword = { project.hasProperty("repoPass") ? getProperty("repoPass") : "" }
+ext.deployUsername = { project.hasProperty("repoUsername") ? getProperty("repoUsername") : "" }
+ext.deployPassword = { project.hasProperty("repoPassword") ? getProperty("repoPassword") : "" }
 
 uploadArchives {
 	repositories {
