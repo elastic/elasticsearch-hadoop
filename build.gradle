@@ -7,9 +7,6 @@ buildscript {
     }
 }
 
-description = 'ElasticSearch Hadoop'
-group = 'org.elasticsearch.hadoop'
-
 repositories {
   mavenCentral()
   maven { url "http://oss.sonatype.org/content/groups/public/" }
@@ -21,6 +18,7 @@ repositories {
 apply plugin: "java"
 apply plugin: 'eclipse'
 apply plugin: 'idea'
+apply from: "$rootDir/maven.gradle"
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
@@ -126,7 +124,7 @@ test {
 				"org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
-        events "started" //, "standardOut", "standardError"
+        events "started" , "standardOut", "standardError"
         minGranularity 2
         maxGranularity 2
     }
@@ -169,7 +167,7 @@ jar {
     manifest.attributes['Implementation-Version'] = project.version
     manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
     manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-    manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch"
+    manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
     
     def build = System.env['ESHDP.BUILD']
     if (build != null)

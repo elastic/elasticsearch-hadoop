@@ -1,0 +1,69 @@
+apply plugin: "maven"
+apply plugin: "propdeps-maven"
+
+def customizePom(pom, gradleProject) {
+    pom.whenConfigured { generatedPom ->
+
+        // eliminate test-scoped dependencies (no need in maven central poms)
+        generatedPom.dependencies.removeAll { dep ->
+            dep.scope == 'test'
+        }
+
+        // add all items necessary for maven central publication
+        generatedPom.project {
+            name = gradleProject.description
+            description = gradleProject.description
+            url = 'http://github.com/elasticsearch/elasticsearch-hadoop'
+            organization {
+                name = 'Elasticsearch'
+                url = 'http://www.elasticsearch.org/'
+            }
+            licenses {
+                license {
+                    name 'The Apache Software License, Version 2.0'
+                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution 'repo'
+                }
+            }
+            scm {
+                url = 'http://github.com/elasticsearch/elasticsearch-hadoop'
+                connection = 'scm:git:git://github.com/elasticsearch/elasticsearch-hadoop'
+                developerConnection = 'scm:git:git://github.com/elasticsearch/elasticsearch-hadoop'
+            }
+            developers {
+                developer {
+                    id = 'costin'
+                    name = 'Costin Leau'
+                    email = 'costin@elasticsearch.com'
+                    properties {
+                        twitter = 'costinl'
+                    }
+                }
+            }
+        }
+		
+		groupId = "org.elasticsearch"
+		artifactId = "elasticsearch-hadoop"
+	}
+}
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			customizePom(pom, project)
+			
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: sonatypeUsername, password: sonatypePassword)
+			}
+		}
+	}
+}
+
+install {
+    repositories.mavenInstaller {
+        customizePom(pom, project)
+    }
+}
