@@ -1,4 +1,4 @@
-# ElasticSearch Hadoop
+# ElasticSearch Hadoop [![Build Status](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
 Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
 # Requirements
@@ -30,7 +30,9 @@ We're working towards a first release. In the meantime, grab the latest nightly 
 ```
 
 or [build](#building-the-source) the project yourself. 
-We do build and test the code on _each_ commit; see the current status [here](http://build.elasticsearch.org/browse/ESHADOOP)
+
+
+We do build and test the code on _each_ commit; see our CI server [![here](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
 
 # Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
