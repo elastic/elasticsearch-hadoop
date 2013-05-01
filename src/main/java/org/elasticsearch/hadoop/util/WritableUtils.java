@@ -31,6 +31,7 @@ import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.SortedMapWritable;
@@ -56,28 +57,28 @@ public abstract class WritableUtils {
         if (object instanceof String) {
             return new Text((String) object);
         }
-        else if (object instanceof Long) {
+        if (object instanceof Long) {
             return new VLongWritable((Long) object);
         }
-        else if (object instanceof Integer) {
+        if (object instanceof Integer) {
             return new VIntWritable((Integer) object);
         }
-        else if (object instanceof Byte) {
+        if (object instanceof Byte) {
             return new ByteWritable((Byte) object);
         }
-        else if (object instanceof Double) {
+        if (object instanceof Double) {
             return new DoubleWritable((Double) object);
         }
-        else if (object instanceof Float) {
+        if (object instanceof Float) {
             return new FloatWritable((Float) object);
         }
-        else if (object instanceof Boolean) {
+        if (object instanceof Boolean) {
             return new BooleanWritable((Boolean) object);
         }
-        else if (object instanceof byte[]) {
+        if (object instanceof byte[]) {
             return new BytesWritable((byte[]) object);
         }
-        else if (object instanceof List) {
+        if (object instanceof List) {
             List<Object> list = (List<Object>) object;
             if (!list.isEmpty()) {
                 Object first = list.get(0);
@@ -87,8 +88,9 @@ public abstract class WritableUtils {
                 }
                 return new ArrayWritable(toWritable(first).getClass(), content);
             }
+            return new ArrayWritable(NullWritable.class, new Writable[0]);
         }
-        else if (object instanceof SortedSet) {
+        if (object instanceof SortedSet) {
             SortedMapWritable smap = new SortedMapWritable();
             SortedSet<Object> set = (SortedSet) object;
             for (Object obj : set) {
@@ -96,7 +98,7 @@ public abstract class WritableUtils {
             }
             return smap;
         }
-        else if (object instanceof Set) {
+        if (object instanceof Set) {
             MapWritable map = new MapWritable();
             Set<Object> set = (Set) object;
             for (Object obj : set) {
@@ -104,7 +106,7 @@ public abstract class WritableUtils {
             }
             return map;
         }
-        else if (object instanceof SortedMap) {
+        if (object instanceof SortedMap) {
             SortedMapWritable smap = new SortedMapWritable();
             Map<Object, Object> map = (Map) object;
             for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -112,7 +114,7 @@ public abstract class WritableUtils {
             }
             return smap;
         }
-        else if (object instanceof Map) {
+        if (object instanceof Map) {
             MapWritable result = new MapWritable();
             Map<Object, Object> map = (Map) object;
             for (Map.Entry<?, ?> entry : map.entrySet()) {
@@ -134,28 +136,31 @@ public abstract class WritableUtils {
         if (writable instanceof Text) {
             return ((Text) writable).toString();
         }
-        else if (writable instanceof VLongWritable) {
+        if (writable instanceof IntWritable) {
+            return ((IntWritable) writable).get();
+        }
+        if (writable instanceof VLongWritable) {
             return ((VLongWritable) writable).get();
         }
-        else if (writable instanceof VIntWritable) {
+        if (writable instanceof VIntWritable) {
             return ((VIntWritable) writable).get();
         }
-        else if (writable instanceof ByteWritable) {
+        if (writable instanceof ByteWritable) {
             return ((ByteWritable) writable).get();
         }
-        else if (writable instanceof DoubleWritable) {
+        if (writable instanceof DoubleWritable) {
             return ((DoubleWritable) writable).get();
         }
-        else if (writable instanceof FloatWritable) {
+        if (writable instanceof FloatWritable) {
             return ((FloatWritable) writable).get();
         }
-        else if (writable instanceof BooleanWritable) {
+        if (writable instanceof BooleanWritable) {
             return ((BooleanWritable) writable).get();
         }
-        else if (writable instanceof BytesWritable) {
+        if (writable instanceof BytesWritable) {
             return ((BytesWritable) writable).getBytes();
         }
-        else if (writable instanceof ArrayWritable) {
+        if (writable instanceof ArrayWritable) {
             Writable[] writables = ((ArrayWritable) writable).get();
             List<Object> list = new ArrayList<Object>(writables.length);
             for (Writable wrt : writables) {
@@ -163,7 +168,7 @@ public abstract class WritableUtils {
             }
             return list;
         }
-        else if (writable instanceof AbstractMapWritable) {
+        if (writable instanceof AbstractMapWritable) {
             Map<Writable, Writable> smap = (Map) writable;
             Set<Writable> wkeys = smap.keySet();
             Map<Object, Object> map = (writable instanceof SortedMapWritable ? new TreeMap<Object, Object>() : new LinkedHashMap<Object, Object>(wkeys.size()));
