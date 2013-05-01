@@ -1,8 +1,8 @@
-# ElasticSearch Hadoop [![Build Status](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
-Read and write data to/from ElasticSearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
+# Elasticsearch Hadoop [![Build Status](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
+Read and write data to/from Elasticsearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
 # Requirements
-ElasticSearch cluster accessible through [REST][]. That's it!
+Elasticsearch cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 
 # License
