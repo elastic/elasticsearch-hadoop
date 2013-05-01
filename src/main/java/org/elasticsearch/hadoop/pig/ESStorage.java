@@ -133,7 +133,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     }
 
     @SuppressWarnings("unchecked")
-    private static Object toObject(Object object, ResourceFieldSchema field) {
+    static Object toObject(Object object, ResourceFieldSchema field) {
         switch (field.getType()) {
         case DataType.NULL:
             return null;

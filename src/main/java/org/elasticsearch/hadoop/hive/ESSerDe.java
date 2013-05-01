@@ -147,8 +147,7 @@ public class ESSerDe implements SerDe {
                 }
             }
 
-            return (arrayContent != null ? new ArrayWritable(arrayContent[0].getClass(), arrayContent) : new ArrayWritable(
-                    NullWritable.class));
+            return (arrayContent != null ? new ArrayWritable(arrayContent[0].getClass(), arrayContent) : new ArrayWritable(NullWritable.class, new Writable[0]));
 
         case MAP:
             MapTypeInfo mapType = (MapTypeInfo) type;
