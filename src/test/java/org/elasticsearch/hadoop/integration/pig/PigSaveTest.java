@@ -89,5 +89,6 @@ public class PigSaveTest {
         pig.registerScript(new ByteArrayInputStream(script.getBytes()));
         pig.executeBatch();
         pig.discardBatch();
+        pig.setBatchOn();
     }
 }
