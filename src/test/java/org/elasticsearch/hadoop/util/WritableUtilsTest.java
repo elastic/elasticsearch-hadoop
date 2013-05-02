@@ -18,7 +18,6 @@ package org.elasticsearch.hadoop.util;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

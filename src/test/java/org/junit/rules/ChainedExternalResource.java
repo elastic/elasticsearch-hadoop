@@ -17,7 +17,6 @@ package org.junit.rules;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.junit.rules.ExternalResource;
 
 public class ChainedExternalResource extends ExternalResource {
 

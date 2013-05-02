@@ -18,7 +18,7 @@ package org.elasticsearch.hadoop.integration.hive;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSearchTest {
 

@@ -17,10 +17,10 @@ package org.elasticsearch.hadoop.util.unit;
 
 import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.*;
+
 import static org.hamcrest.MatcherAssert.*;
 
 public class TimeValueTests {

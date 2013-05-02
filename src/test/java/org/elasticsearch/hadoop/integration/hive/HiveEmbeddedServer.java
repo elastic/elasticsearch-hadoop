@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.session.SessionState;
@@ -71,7 +70,7 @@ class HiveEmbeddedServer {
     }
 
     private HiveConf configure() throws Exception {
-        FileUtils.deleteQuietly(new File("/tmp/hive"));
+        TestUtils.delete(new File("/tmp/hive"));
 
         HiveConf conf = new HiveConf();
 

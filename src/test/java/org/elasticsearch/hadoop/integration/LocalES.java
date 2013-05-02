@@ -17,7 +17,6 @@ package org.elasticsearch.hadoop.integration;
 
 import java.io.File;
 
-import org.apache.commons.io.FileUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.rules.ExternalResource;
 
@@ -48,7 +47,7 @@ public class LocalES extends ExternalResource {
             es = null;
 
             // delete data folder
-            FileUtils.deleteQuietly(new File(ES_DATA_PATH));
+            TestUtils.delete(new File(ES_DATA_PATH));
         }
     }
 }
