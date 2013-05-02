@@ -47,10 +47,10 @@ public class PigSearchTest {
     }
 
     @Test
-    public void testLoaderBasic() throws Exception {
+    public void testTuple() throws Exception {
         String script =
                 "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();" +
-                "A = LOAD 'pig/artists/_search?q=me*' USING ESStorage();";
+                "A = LOAD 'pig/tupleartists/_search?q=me*' USING ESStorage();";
                 //"DESCRIBE A;";
                 //"//DUMP A;";
         executeScript(script);

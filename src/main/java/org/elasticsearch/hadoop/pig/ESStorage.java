@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
@@ -49,6 +50,7 @@ import org.apache.pig.impl.util.Utils;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -112,7 +114,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
         Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
         String s = props.getProperty(ResourceSchema.class.getName());
-        this.schema = new ResourceSchema(Utils.getSchemaFromString(s));
+        this.schema = IOUtils.deserializeFromBase64(s);
     }
 
     // TODO: make put more lenient (if the schema is not available just shove everything on the existing type or as a big charray)
@@ -166,7 +168,10 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
             // use getAll instead of get(int) to avoid having to handle Exception...
             List<Object> tuples = ((Tuple) object).getAll();
             for (int i = 0; i < nestedFields.length; i++) {
-                map.put(nestedFields[i].getName(), toObject(tuples.get(i), nestedFields[i]));
+                String name = nestedFields[i].getName();
+                // handle schemas without names
+                name= (StringUtils.isBlank(name) ? Integer.toString(i) : name);
+                map.put(name, toObject(tuples.get(i), nestedFields[i]));
             }
             return map;
 
@@ -201,9 +206,8 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     public void checkSchema(ResourceSchema s) throws IOException {
         // save schema to back-end for JSON translation
         Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
-        // save the schema as String (as oppose to the whole class through JDK serialization)
-        String schemaAsString = s.toString();
-        props.setProperty(ResourceSchema.class.getName(), schemaAsString);
+        // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
+        props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
     }
 
     @Override
@@ -261,5 +265,10 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         } catch (InterruptedException ex) {
             throw new IOException("interrupted", ex);
         }
+    }
+
+    // added in Pig 11.x
+    public void cleanupOnSuccess(String location, Job job) throws IOException {
+        //no-op
     }
 }
