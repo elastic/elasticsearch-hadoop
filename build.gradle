@@ -106,7 +106,7 @@ task enablePigTests {
 }
 
 task enableIntegrationTests() {
-    description = "Enable all integration tests"
+    description = "Enable integration tests"
     group = "Verification"
     doLast() {
       println "Enable all integration tests"
@@ -123,7 +123,7 @@ test {
 				"org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
     testLogging {
-        events "started" , "standardOut", "standardError"
+        events "started" //, "standardOut", "standardError"
         minGranularity 2
         maxGranularity 2
     }
