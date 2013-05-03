@@ -1,0 +1,25 @@
+{
+    "total" : 20400,
+    "max_score" : 6.9483476,
+    "hits" : [{
+            "_index" : "logstash-2013.01.19",
+            "_type" : "taskmanager",
+            "_id" : "ghc7M0amRd664EsYbxKU5g",
+            "_score" : 6.9483476,
+            "_source" : {
+                "@source" : "lumberjack://server1/taskmanager_log20130119_00.00.30.txt",
+                "@tags" : [],
+                "@fields" : {
+                    "type" : "taskmanager",
+                    "source" : ["Task1"],
+                    "data" : ["START"]
+                },
+                "@timestamp" : "2013-01-18T22:09:52.000Z",
+                "@source_host" : "server1",
+                "@source_path" : "taskmanager_log20130119_00.00.30.txt",
+                "@message" : "Fri Jan 18 22:09:52 GMT 2013,Task1,START",
+                "@type" : "taskmanager"
+            }
+        }
+    ]
+}

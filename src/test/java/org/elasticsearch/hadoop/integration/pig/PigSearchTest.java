@@ -15,11 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import java.io.ByteArrayInputStream;
-
-import org.apache.pig.ExecType;
-import org.apache.pig.PigServer;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.pig.Pig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,22 +24,17 @@ import org.junit.Test;
  */
 public class PigSearchTest {
 
-    static PigServer pig;
+    static Pig pig;
 
     @BeforeClass
     public static void startup() throws Exception {
-        // initialize Pig in local mode
-        pig = new PigServer(ExecType.LOCAL, TestSettings.TESTING_PROPS);
-        pig.setBatchOn();
+        pig = new Pig();
+        pig.start();
     }
 
     @AfterClass
     public static void shutdown() {
-        // close pig
-        if (pig != null) {
-            pig.shutdown();
-            pig = null;
-        }
+        pig.stop();
     }
 
     @Test
@@ -53,12 +44,15 @@ public class PigSearchTest {
                 "A = LOAD 'pig/tupleartists/_search?q=me*' USING ESStorage();";
                 //"DESCRIBE A;";
                 //"//DUMP A;";
-        executeScript(script);
+        pig.executeScript(script);
     }
 
-    private void executeScript(String script) throws Exception {
-        pig.registerScript(new ByteArrayInputStream(script.getBytes()));
-        pig.executeBatch();
-        pig.discardBatch();
+    @Test
+    public void testBag() throws Exception {
+        String script = "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
+                      + "A = LOAD 'pig/bagartists/_search?q=me*' USING ESStorage();"
+                      + "DESCRIBE A;"
+                      + "DUMP A;";
+        pig.executeScript(script);
     }
 }
