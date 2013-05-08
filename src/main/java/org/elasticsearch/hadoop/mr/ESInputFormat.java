@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -36,7 +39,10 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.QueryResult;
+import org.elasticsearch.hadoop.rest.Node;
+import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.rest.Shard;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -48,80 +54,118 @@ import org.elasticsearch.hadoop.util.WritableUtils;
 public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ConfigurationOptions {
 
-    static class ESInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
-        private int from = 0;
-        private int size = 3;
 
-        public ESInputSplit() {
-        }
+    private static Log log = LogFactory.getLog(ESInputFormat.class);
 
-        public ESInputSplit(int from, int size) {
-            this.from = from;
-            this.size = size;
+    static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
+
+        private String nodeIp;
+        private int httpPort;
+        private String nodeId;
+        private String nodeName;
+        private String shardId;
+
+        public ShardInputSplit() {}
+
+        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard) {
+            this.nodeIp = nodeIp;
+            this.httpPort = httpPort;
+            this.nodeId = nodeId;
+            this.nodeName = nodeName;
+            this.shardId = shard.toString();
         }
 
         @Override
         public long getLength() {
-            return size;
+            // TODO: can this be computed easily?
+            return 1l;
         }
 
         @Override
         public String[] getLocations() {
-            return new String[0];
+            // TODO: check whether the host name needs to be used instead
+            return new String[] { nodeIp };
         }
 
         @Override
         public void write(DataOutput out) throws IOException {
-            out.writeInt(from);
-            out.writeInt(size);
+            out.writeUTF(nodeIp);
+            out.writeInt(httpPort);
+            out.writeUTF(nodeId);
+            out.writeUTF(nodeName);
+            out.writeUTF(shardId);
         }
 
         @Override
         public void readFields(DataInput in) throws IOException {
-            from = in.readInt();
-            size = in.readInt();
+            nodeIp = in.readUTF();
+            httpPort = in.readInt();
+            nodeId = in.readUTF();
+            nodeName = in.readUTF();
+            shardId = in.readUTF();
         }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("ShardInputSplit [node=[").append(nodeId).append("/").append(nodeName)
+                        .append("|").append(nodeIp).append(":").append(httpPort)
+                        .append("],shard=").append(shardId).append("]");
+            return builder.toString();
+        }
+
     }
 
-    // read data in small bulks (through the scan api)
-    static class ESRecordReader extends RecordReader<Text, MapWritable> implements
+
+    static class ShardRecordReader extends RecordReader<Text, MapWritable> implements
             org.apache.hadoop.mapred.RecordReader<Text, MapWritable> {
 
-        private String query;
         private int read = 0;
 
         private BufferedRestClient client;
-        private QueryResult result;
+        private QueryBuilder queryBuilder;
+        private ScrollQuery result;
 
         // minor optimization - see below
         private String currentKey;
         private MapWritable currentValue;
-        private int size = 0;
+        private long size = 0;
 
         // default constructor used by the NEW api
-        ESRecordReader() {
+        ShardRecordReader() {
         }
 
         // constructor used by the old API
-        ESRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+        ShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             reporter.setStatus(split.toString());
-            init((ESInputSplit) split, job);
+            init((ShardInputSplit) split, job);
         }
 
         // new API init call
         @Override
         public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
             context.setStatus(split.toString());
-            init((ESInputSplit) split, context.getConfiguration());
+            init((ShardInputSplit) split, context.getConfiguration());
         }
 
-        void init(ESInputSplit esSplit, Configuration cfg) {
-            size = esSplit.size;
-
+        void init(ShardInputSplit esSplit, Configuration cfg) {
             Settings settings = SettingsManager.loadFrom(cfg);
-            query = settings.getTargetResource();
+
+            // override the global settings to communicate directly with the target node
+            settings.cleanUri().setHost(esSplit.nodeIp).setPort(esSplit.httpPort);
+
             // initialize REST client
             client = new BufferedRestClient(settings);
+
+            queryBuilder = QueryBuilder.query(settings.getTargetResource())
+                    .shard(esSplit.shardId)
+                    .onlyNode(esSplit.nodeId)
+                    .time(settings.getScrollKeepAlive())
+                    .size(settings.getScrollSize());
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Initializing RecordReader from [%s]", esSplit));
+            }
         }
 
         @Override
@@ -143,18 +187,27 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public float getProgress() {
-            return ((float) getPos()) / size;
+            return size == 0 ? 0 : ((float) getPos()) / size;
         }
 
         @Override
         public void close() throws IOException {
+            if (result != null) {
+                result.close();
+                result = null;
+            }
             client.close();
         }
 
         @Override
         public boolean next(Text key, MapWritable value) throws IOException {
             if (result == null) {
-                result = client.query(query);
+                result = queryBuilder.build(client);
+                size = result.getSize();
+
+                if (log.isTraceEnabled()) {
+                    log.trace(String.format("Received scroll [%s],  size [%d] for query [%s]", result, size, queryBuilder));
+                }
             }
 
             boolean hasNext = result.hasNext();
@@ -204,14 +257,14 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     // new API - just delegates to the Old API
     //
     @Override
-    public List<InputSplit> getSplits(JobContext context) {
+    public List<InputSplit> getSplits(JobContext context) throws IOException {
         JobConf conf = (JobConf) context.getConfiguration();
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
 
     @Override
-    public ESRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return new ESRecordReader();
+    public ShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
+        return new ShardRecordReader();
     }
 
 
@@ -219,14 +272,33 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     // Old API
     //
     @Override
-    public ESInputSplit[] getSplits(JobConf job, int numSplits) {
-        //TODO: see whether we can rely on Hadoop/Pig for the number of nodes or fallback to our config
-        //TODO: ideally we could get the result set and then try to divide this per node
-        return new ESInputSplit[] { new ESInputSplit() };
+    public ShardInputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
+
+        Settings settings = SettingsManager.loadFrom(job);
+        BufferedRestClient client = new BufferedRestClient(settings);
+        Map<Shard, Node> targetShards = client.getTargetShards();
+        client.close();
+
+        if (log.isTraceEnabled()) {
+            log.trace("Creating splits for shards " + targetShards);
+        }
+
+        ShardInputSplit[] splits = new ShardInputSplit[targetShards.size()];
+
+        int index = 0;
+        for (Entry<Shard, Node> entry : targetShards.entrySet()) {
+            Shard shard = entry.getKey();
+            Node node = entry.getValue();
+            splits[index++] =
+                    new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName());
+        }
+
+        log.info(String.format("Created [%d] shard-splits", splits.length));
+        return splits;
     }
 
     @Override
-    public ESRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return new ESRecordReader(split, job, reporter);
+    public ShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
+        return new ShardRecordReader(split, job, reporter);
     }
 }

@@ -20,7 +20,11 @@ import java.util.Map;
 public class Shard {
 
     public enum State {
-        UNASSIGNED, INITIALIZING, STARTED, RELOCATING
+        UNASSIGNED, INITIALIZING, STARTED, RELOCATING;
+
+        public boolean isStarted() {
+            return STARTED == this;
+        }
     }
 
     private State state;
@@ -32,7 +36,7 @@ public class Shard {
 
     Shard(Map<String, Object> data) {
         state = State.valueOf((String) data.get("state"));
-        name = (Integer) data.get("name");
+        name = (Integer) data.get("shard");
         index = (String) data.get("index");
         relocatingNode = (String) data.get("relocating_node");
         node = (String) data.get("node");
@@ -106,11 +110,9 @@ public class Shard {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("Shard [state=").append(state).append(", primary=").append(primary).append(", node=").append(
-                node).append(", relocatingNode=").append(relocatingNode).append(", name=").append(name).append(
-                ", index=").append(index).append("]");
+        builder.append("Shard[state=").append(state).append(", primary=").append(primary).append(", node=")
+                .append(node).append(", name=")
+                .append(name).append(", index=").append(index).append("]");
         return builder.toString();
     }
-
-
 }

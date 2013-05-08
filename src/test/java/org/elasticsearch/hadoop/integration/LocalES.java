@@ -22,29 +22,47 @@ import org.junit.rules.ExternalResource;
 
 public class LocalES extends ExternalResource {
 
-    private static ESEmbeddedServer es;
+    private static ESEmbeddedServer master;
+    private static ESEmbeddedServer slave;
+
     public static final String CLUSTER_NAME = "ES-HADOOP-TEST";
     private static final String ES_DATA_PATH = "build/es.data";
-    public static final String DATA_PORTS = "9700-9800";
-    public static final String TRANSPORT_PORTS = "9800-9900";
+    public static final String DATA_PORTS = "9500-9599";
+    public static final String TRANSPORT_PORTS = "9600-9699";
+    public static final String DATA_PORTS_SLAVE = "9700-9799";
+    public static final String TRANSPORT_PORTS_SLAVE = "9800-9899";
+
+    private boolean USE_SLAVE = false;
 
     @Override
     protected void before() throws Throwable {
         TestUtils.hackHadoopStagingOnWin();
 
-        if (es == null) {
-            System.out.println("Starting Elasticsearch...");
-            es = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
-            es.start();
+        if (master == null) {
+            System.out.println("Starting Elasticsearch Master...");
+            master = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
+            master.start();
+        }
+
+        if (USE_SLAVE && slave == null) {
+            System.out.println("Starting Elasticsearch Slave...");
+            slave = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
+            slave.start();
         }
     }
 
     @Override
     protected void after() {
-        if (es != null) {
-            System.out.println("Stopping Elasticsearch...");
-            es.stop();
-            es = null;
+        if (master != null) {
+            if (USE_SLAVE && slave != null) {
+                System.out.println("Stopping Elasticsearch Slave...");
+                slave.stop();
+                slave = null;
+            }
+
+            System.out.println("Stopping Elasticsearch Master...");
+            master.stop();
+            master = null;
 
             // delete data folder
             TestUtils.delete(new File(ES_DATA_PATH));

@@ -13,31 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration;
+package org.elasticsearch.hadoop.rest;
 
-import java.util.Properties;
+import org.apache.commons.httpclient.methods.GetMethod;
 
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
+public class TestRestClient {
 
-/**
- * Tweaked settings for testing.
- */
-public class TestSettings extends PropertiesSettings {
+    private final RestClient restClient;
 
-    public final static Properties TESTING_PROPS = new Properties();
-
-    static {
-        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
-        // see TestSettings
-        TESTING_PROPS.put(ES_PORT, "9500");
+    public TestRestClient(RestClient restClient) {
+        this.restClient = restClient;
     }
 
-    public TestSettings() {
-        super(TESTING_PROPS);
+    public void waitForShards() {
+        restClient.execute(new GetMethod("_cluster/health?level=indices&wait_for_status=green"));
     }
 
-    public TestSettings(String uri) {
-        this();
-        setProperty(ES_RESOURCE, uri);
+    public void waitForShards(String index) {
+        restClient.execute(new GetMethod("_cluster/health/" + index + "?level=indices&wait_for_status=yellow"));
     }
 }

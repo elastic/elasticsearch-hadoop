@@ -20,7 +20,8 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.QueryResult;
+import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.ScrollQuery;
 
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
@@ -34,7 +35,7 @@ import cascading.tuple.TupleEntrySchemeIterator;
  * Local Cascading Tap.
  */
 // - local-mode  Tap<Properties, QueryResult, ?>
-class ESLocalTap extends Tap<Properties, QueryResult, Object> {
+class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     private String target;
     private BufferedRestClient client;
@@ -50,11 +51,11 @@ class ESLocalTap extends Tap<Properties, QueryResult, Object> {
     }
 
     @Override
-    public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, QueryResult input) throws IOException {
+    public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
         client = new BufferedRestClient(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
 
         if (input == null) {
-            input = client.query(target);
+            input = QueryBuilder.query(target).build(client);
         }
         return new TupleEntrySchemeIterator(flowProcess, getScheme(), input, getIdentifier());
     }

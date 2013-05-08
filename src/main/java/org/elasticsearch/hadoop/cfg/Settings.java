@@ -19,7 +19,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -57,6 +57,14 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_REFRESH, ES_BATCH_WRITE_REFRESH_DEFAULT));
     }
 
+    public long getScrollKeepAlive() {
+        return TimeValue.parseTimeValue(getProperty(ES_SCROLL_KEEPALIVE, ES_SCROLL_KEEPALIVE_DEFAULT)).getMillis();
+    }
+
+    public long getScrollSize() {
+        return Long.valueOf(getProperty(ES_SCROLL_SIZE, ES_SCROLL_SIZE_DEFAULT));
+    }
+
     public String getTargetUri() {
         String address = getProperty(INTERNAL_ES_TARGET_URI);
         return (!StringUtils.isBlank(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
@@ -82,9 +90,14 @@ public abstract class Settings implements InternalConfigurationOptions {
         return (!StringUtils.isBlank(targetResource) ? targetResource : !StringUtils.isBlank(resource) ? resource : getProperty(ES_RESOURCE));
     }
 
+    public Settings cleanUri() {
+        setProperty(INTERNAL_ES_TARGET_URI, "");
+        return this;
+    }
+
     public Settings clean() {
         setProperty(INTERNAL_ES_TARGET_RESOURCE, "");
-        setProperty(INTERNAL_ES_TARGET_URI, "");
+        cleanUri();
         return this;
     }
 
@@ -95,8 +108,8 @@ public abstract class Settings implements InternalConfigurationOptions {
         String targetUri = getTargetUri();
         String resource = getTargetResource();
 
-        Validate.notEmpty(targetUri, "No address specified");
-        Validate.notEmpty(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
+        Assert.hasText(targetUri, "No address specified");
+        Assert.hasText(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
 
         setProperty(INTERNAL_ES_TARGET_URI, targetUri);
         setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);

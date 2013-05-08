@@ -17,8 +17,10 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
@@ -35,6 +37,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
  * REST client used for interacting with ElasticSearch. Performs basic operations; for buffer/batching operation consider using BufferedRestClient.
@@ -45,6 +49,7 @@ public class RestClient implements Closeable {
 
     private HttpClient client;
     private ObjectMapper mapper = new ObjectMapper();
+    private TimeValue scrollKeepAlive;
 
     public RestClient(Settings settings) {
         HttpClientParams params = new HttpClientParams();
@@ -59,31 +64,18 @@ public class RestClient implements Closeable {
             throw new IllegalArgumentException("Invalid target URI " + targetUri, ex);
         }
         client.setHostConfiguration(hostConfig);
+
+        scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
     }
 
-    /**
-     * Queries ElasticSearch using pagination.
-     *
-     * @param uri query to execute
-     * @param from where to start
-     * @param size what size to request
-     * @return
-     */
-    public List<Map<String, Object>> query(String uri, long from, int size) throws IOException {
-        String q = URIUtils.addParam(uri, "from=" + from, "size=" + size);
-
-        Map hits = (Map) get(q, "hits");
-        Object h = hits.get("hits");
-        return (List<Map<String, Object>>) h;
-    }
-
-    private Object get(String q, String string) throws IOException {
+    @SuppressWarnings("unchecked")
+    private <T> T get(String q, String string) throws IOException {
         byte[] content = execute(new GetMethod(q));
         Map<String, Object> map = mapper.readValue(content, Map.class);
-        return map.get(string);
+        return (T) (string != null ? map.get(string) : map);
     }
 
-    public void bulk(String index, byte[] buffer, int bufferSize) throws IOException {
+    public void bulk(String index, byte[] buffer, int bufferSize) {
         PostMethod post = new PostMethod(index + "/_bulk");
         post.setRequestEntity(new JsonByteArrayRequestEntity(buffer, bufferSize));
         post.setContentChunked(false);
@@ -95,7 +87,7 @@ public class RestClient implements Closeable {
         execute(new PostMethod(indx + "/_refresh"));
     }
 
-    private void create(String q, byte[] value) throws IOException {
+    private void create(String q, byte[] value) {
         PostMethod post = new PostMethod(q);
         post.setRequestEntity(new ByteArrayRequestEntity(value));
         execute(post);
@@ -103,6 +95,11 @@ public class RestClient implements Closeable {
 
     public void deleteIndex(String index) throws IOException {
         execute(new DeleteMethod(index));
+    }
+
+    public List<List<Map<String, Object>>> targetShards(String query) throws IOException {
+        List<List<Map<String, Object>>> shardsJson = get(query, "shards");
+        return shardsJson;
     }
 
     @Override
@@ -120,7 +117,7 @@ public class RestClient implements Closeable {
         }
     }
 
-    private byte[] execute(HttpMethodBase method) throws IOException {
+    byte[] execute(HttpMethodBase method) {
         try {
             int status = client.executeMethod(method);
             if (status >= 300) {
@@ -130,11 +127,48 @@ public class RestClient implements Closeable {
                 } catch (IOException ex) {
                     body = "";
                 }
-                throw new IOException(String.format("[%s] on [%s] failed; server returned [%s]", method.getName(), method.getURI(), body));
+                throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s]",
+                        method.getName(), method.getURI(), client.getHostConfiguration().getHostURL(), body));
             }
             return method.getResponseBody();
+        } catch (IOException io) {
+            String target;
+            try {
+                target = method.getURI().toString();
+            } catch (IOException ex) {
+                target = method.getPath();
+            }
+            throw new IllegalStateException(String.format("Cannot get response body for [%s][%s]", method.getName(), target));
         } finally {
             method.releaseConnection();
         }
+    }
+
+    public Map<String, Node> getNodes() throws IOException {
+        Map<String, Map<String, Object>> nodesData = get("_nodes", "nodes");
+        Map<String, Node> nodes = new LinkedHashMap<String, Node>();
+
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            Node node = new Node(entry.getKey(), entry.getValue());
+            nodes.put(entry.getKey(), node);
+        }
+        return nodes;
+    }
+
+    public String[] scan(String query) throws IOException {
+        Map<String, Object> scan = get(query, null);
+        String[] data = new String[2];
+        data[0] = scan.get("_scroll_id").toString();
+        data[1] = ((Map) scan.get("hits")).get("total").toString();
+        return data;
+    }
+
+    public List<Map<String, Object>> scroll(String scrollId) throws IOException {
+        // use post instead of get to avoid some weird encoding issues (caused by the long URL)
+        PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
+        post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
+        byte[] content = execute(post);
+
+        return (List<Map<String, Object>>) ((Map) mapper.readValue(content, Map.class).get("hits")).get("hits");
     }
 }

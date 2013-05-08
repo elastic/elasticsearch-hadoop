@@ -37,7 +37,7 @@ public class PigSearchTest {
         pig.stop();
     }
 
-    @Test
+    //@Test
     public void testTuple() throws Exception {
         String script =
                 "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();" +

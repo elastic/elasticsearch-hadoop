@@ -27,7 +27,7 @@ import java.util.Set;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.QueryResult;
+import org.elasticsearch.hadoop.rest.ScrollQuery;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -42,7 +42,7 @@ import cascading.tuple.Tuples;
 /**
  * Cascading Scheme handling
  */
-class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Object[]> {
+class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
 
     private final String resource;
     private final String host;
@@ -60,7 +60,7 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
+    public void sourcePrepare(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
         Fields sourceCallFields = sourceCall.getIncomingEntry().getFields();
@@ -73,7 +73,7 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     }
 
     @Override
-    public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
+    public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         sourceCall.getInput().close();
         cleanupClient();
     }
@@ -121,12 +121,12 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, QueryResult, Object> tap, Properties conf) {
+    public void sourceConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf);
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, QueryResult, Object> tap, Properties conf) {
+    public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf);
     }
 
@@ -139,8 +139,8 @@ class ESLocalScheme extends Scheme<Properties, QueryResult, Object, Object[], Ob
     }
 
     @Override
-    public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], QueryResult> sourceCall) throws IOException {
-        QueryResult query = sourceCall.getInput();
+    public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
+        ScrollQuery query = sourceCall.getInput();
         if (query.hasNext()) {
             Map<String, Object> map = query.next();
             TupleEntry tuples = sourceCall.getIncomingEntry();

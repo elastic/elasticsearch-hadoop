@@ -46,4 +46,13 @@ public interface ConfigurationOptions {
     /** HTTP connection timeout */
     static final String ES_HTTP_TIMEOUT = "es.http.timeout";
     static final String ES_HTTP_TIMEOUT_DEFAULT = "1m";
+
+    /** Scroll keep-alive */
+    static final String ES_SCROLL_KEEPALIVE = "es.scroll.keepalive";
+    static final String ES_SCROLL_KEEPALIVE_DEFAULT = "10m";
+
+    /** Scroll size */
+    static final String ES_SCROLL_SIZE = "es.scroll.size";
+    static final String ES_SCROLL_SIZE_DEFAULT = "50";
+
 }

@@ -15,17 +15,16 @@
  */
 package org.elasticsearch.hadoop.integration.rest;
 
-import org.elasticsearch.hadoop.integration.TestSettings;
-import org.elasticsearch.hadoop.rest.RestClient;
-import org.junit.Test;
+import org.elasticsearch.hadoop.integration.LocalES;
+import org.junit.ClassRule;
+import org.junit.rules.ExternalResource;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 
-/**
- */
-public class RestTest {
+@RunWith(Suite.class)
+@Suite.SuiteClasses({ RestSaveTest.class, RestQueryTest.class })
+public class RestSuite {
 
-    @Test
-    public void testShardInfo() throws Exception {
-        BufferedRestClient client = new BufferedRestClient(new TestSettings());
-        System.out.println(client.getTargetShards());
-    }
+    @ClassRule
+    public static ExternalResource resource = new LocalES();
 }

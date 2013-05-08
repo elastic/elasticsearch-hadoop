@@ -16,18 +16,18 @@
 package org.elasticsearch.hadoop.rest;
 
 
+
 /**
  * ElasticSearch Resource (index or query).
  */
 class Resource {
 
-    private final String resource;
+    final StringBuilder resource;
     // cleaned up index with trailing "/"
-    private final String root;
-    private boolean isQuery;
+    final StringBuilder root;
 
     Resource(String resource) {
-        this.resource = resource;
+        this.resource = new StringBuilder(resource);
         int index = resource.lastIndexOf("_");
         if (index <= 0) {
             index = resource.length();
@@ -36,22 +36,16 @@ class Resource {
         if (!localRoot.endsWith("/")) {
             localRoot = localRoot + "/";
         }
-        root = localRoot;
-    }
-
-    boolean isQuery() {
-        return isQuery;
-    }
-
-    boolean isIndex() {
-        return !isQuery;
+        root = new StringBuilder(localRoot);
     }
 
     String bulkIndexing() {
         return root + "_bulk";
     }
 
-    String shardInfo() {
+    // https://github.com/elasticsearch/elasticsearch/issues/2726
+    String targetShards() {
         return root + "_search_shards";
     }
 }
+

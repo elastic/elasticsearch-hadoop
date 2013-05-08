@@ -23,24 +23,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Result streaming data from a ElasticSearch query. Performs batching underneath to retrieve data in chunks.
+ * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
  */
-public class QueryResult implements Iterator<Map<String, Object>>, Closeable {
+public class ScrollQuery implements Iterator<Map<String, Object>>, Closeable {
 
     private RestClient client;
-    private String query;
+    private String scrollId;
     private List<Map<String, Object>> batch = Collections.emptyList();
     private boolean finished = false;
 
     private int batchIndex = 0;
-    private int offset = 0;
+    private long read = 0;
+    private long size;
 
-    // number of records to get in one call
-    private final int BATCH_SIZE = 1;
-
-    QueryResult(RestClient client, String query) {
+    ScrollQuery(RestClient client, String scrollId, long size) {
         this.client = client;
-        this.query = query;
+        this.scrollId = scrollId;
+        this.size = size;
     }
 
     @Override
@@ -55,14 +54,18 @@ public class QueryResult implements Iterator<Map<String, Object>>, Closeable {
         if (finished)
             return false;
 
-        // check if a new batch is required
-        if (batch.isEmpty() || batchIndex >= BATCH_SIZE) {
-            offset += batchIndex;
-            try {
-                batch = client.query(query, offset, BATCH_SIZE);
-            } catch (IOException ex) {
-                throw new IllegalStateException("Error perfoming query [" + ex.getMessage() + "]", ex);
+        if (batch.isEmpty() || batchIndex >= batch.size()) {
+            if (read >= size) {
+                finished = true;
+                return false;
             }
+
+            try {
+                batch = client.scroll(scrollId);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
+            }
+            read += batch.size();
             if (batch.isEmpty()) {
                 finished = true;
                 return false;
@@ -70,7 +73,16 @@ public class QueryResult implements Iterator<Map<String, Object>>, Closeable {
             // reset index
             batchIndex = 0;
         }
+
         return true;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public long getRead() {
+        return read;
     }
 
     @Override
@@ -81,5 +93,12 @@ public class QueryResult implements Iterator<Map<String, Object>>, Closeable {
     @Override
     public void remove() {
         throw new UnsupportedOperationException("read-only operator");
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ScrollQuery [scrollId=").append(scrollId).append("]");
+        return builder.toString();
     }
 }

@@ -17,14 +17,15 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.Validate;
 import org.apache.hadoop.io.Writable;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -62,13 +63,16 @@ public class BufferedRestClient implements Closeable {
     }
 
     /**
-     * Returns a pageable result to the given query.
+     * Returns a pageable (scan based) result to the given query.
      *
      * @param uri
      * @return
      */
-    public QueryResult query(String uri) {
-        return new QueryResult(client, uri);
+    ScrollQuery scan(String query) throws IOException {
+        String[] scrollInfo = client.scan(query);
+        String scrollId = scrollInfo[0];
+        long totalSize = Long.parseLong(scrollInfo[1]);
+        return new ScrollQuery(client, scrollId, totalSize);
     }
 
     /**
@@ -78,7 +82,7 @@ public class BufferedRestClient implements Closeable {
      * @param object
      */
     public void addToIndex(Object object) throws IOException {
-        Validate.notEmpty(index, "no index given");
+        Assert.hasText(index, "no index given");
 
         Object d = (object instanceof Writable ? WritableUtils.fromWritable((Writable) object) : object);
 
@@ -88,7 +92,7 @@ public class BufferedRestClient implements Closeable {
         sb.append(mapper.writeValueAsString(d));
         sb.append("\n");
 
-        byte[] data = sb.toString().getBytes("UTF-8");
+        byte[] data = sb.toString().getBytes(StringUtils.UTF_8);
 
         // make some space first
         if (data.length + bufferSize >= buffer.length) {
@@ -123,11 +127,24 @@ public class BufferedRestClient implements Closeable {
         client.close();
     }
 
-    public List<Shard> getTargetShards() throws IOException {
-        List<List<Map<String, Object>>> info = client.searchShards(resource.shardInfo());
-        List<Shard> shards = new ArrayList<Shard>(info.size());
-        for (List<Map<String, Object>> obj : info) {
-            shards.add(new Shard(obj.get(0)));
+    public RestClient getRestClient() {
+        return client;
+    }
+
+    public Map<Shard, Node> getTargetShards() throws IOException {
+        Map<String, Node> nodes = client.getNodes();
+
+        List<List<Map<String, Object>>> info = client.targetShards(resource.targetShards());
+        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
+        for (List<Map<String, Object>> shardGroup : info) {
+            for (Map<String, Object> shardData : shardGroup) {
+                Shard shard = new Shard(shardData);
+                if (shard.getState().isStarted()) {
+                    Node node = nodes.get(shard.getNode());
+                    Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
+                    shards.put(shard, node);
+                }
+            }
         }
         return shards;
     }
