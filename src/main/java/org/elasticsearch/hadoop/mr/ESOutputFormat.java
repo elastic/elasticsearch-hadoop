@@ -94,6 +94,13 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
         public void abortTask(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
             //no-op
         }
+
+        @Override
+        @Deprecated
+        public void cleanupJob(org.apache.hadoop.mapred.JobContext context) throws IOException {
+            // no-op
+            // added for compatibility with hadoop 0.20.x (used by old tools, such as Cascalog)
+        }
     }
 
     protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
