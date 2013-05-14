@@ -68,8 +68,17 @@ sourceCompatibility = 1.6
 targetCompatibility = 1.6 
 
 ext.skipCascading = true
+ext.skipMR = true
 ext.skipHive = true
 ext.skipPig = true
+
+task enableMRTests {
+    description = "Enable Map/Reduce tests"
+    group = "Verification"
+    doLast() {
+        project.ext.skipMR = false
+   }
+}
 
 task enableCascadingTests {
     description = "Enable Cascading tests"
@@ -110,7 +119,8 @@ task enableIntegrationTests() {
     group = "Verification"
     doLast() {
       println "Enable all integration tests"
-  	  project.ext.skipCascading = false
+	  enableMRTests.execute()
+  	  enableCascadingTests.execute()
 	  enablePigTests.execute()
     }
 }
@@ -130,7 +140,11 @@ test {
 
     doFirst() {
         ext.msg = ""
-        
+
+        if (skipMR) {
+            ext.msg += "MapReduce "
+            excludes.add("**/integration/mr/**")
+        }
         if (skipCascading) {
             ext.msg += "Cascading "
             excludes.add("**/integration/cascading/**")
