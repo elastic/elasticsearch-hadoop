@@ -120,6 +120,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             org.apache.hadoop.mapred.RecordReader<Text, MapWritable> {
 
         private int read = 0;
+        private ShardInputSplit esSplit;
 
         private BufferedRestClient client;
         private QueryBuilder queryBuilder;
@@ -153,6 +154,8 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             // override the global settings to communicate directly with the target node
             settings.cleanUri().setHost(esSplit.nodeIp).setPort(esSplit.httpPort);
 
+            this.esSplit = esSplit;
+
             // initialize REST client
             client = new BufferedRestClient(settings);
 
@@ -163,7 +166,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
                     .size(settings.getScrollSize());
 
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Initializing RecordReader from [%s]", esSplit));
+                log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
             }
         }
 
@@ -191,6 +194,10 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public void close() throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Closing RecordReader for [%s]", esSplit));
+            }
+
             if (result != null) {
                 result.close();
                 result = null;
