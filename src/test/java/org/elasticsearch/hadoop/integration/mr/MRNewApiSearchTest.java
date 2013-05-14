@@ -15,28 +15,31 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.junit.Test;
 
-public class MROldApiSearchTest {
+public class MRNewApiSearchTest {
 
     @Test
     public void testBasicSearch() throws Exception {
-        JobConf conf = new JobConf();
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
+        Configuration conf = new Configuration();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set("mapred.job.tracker", "local");
-        conf.set("es.resource", "mroldapi/save/_search?q=*");
+        conf.set("es.resource", "mrnewapi/save/_search?q=*");
+
+        Job job = new Job(conf);
+        job.setInputFormatClass(ESInputFormat.class);
+        job.setOutputFormatClass(PrintStreamOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(MapWritable.class);
 
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 
-        JobClient.runJob(conf);
+        job.waitForCompletion(true);
     }
 }

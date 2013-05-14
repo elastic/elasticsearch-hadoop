@@ -24,14 +24,36 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.OutputCommitter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.integration.Stream;
+import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 
-public class PrintStreamOutputFormat implements OutputFormat {
+public class PrintStreamOutputFormat extends org.apache.hadoop.mapreduce.OutputFormat implements OutputFormat {
 
     private Stream stream;
+
+    private class PrintStreamRecordWriter extends org.apache.hadoop.mapreduce.RecordWriter implements RecordWriter {
+
+        @Override
+        public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+            close((Reporter) null);
+        }
+
+        @Override
+        public void write(Object key, Object value) throws IOException {
+            stream.stream().printf("%s\n", WritableUtils.fromWritable((Writable) value));
+        }
+
+        @Override
+        public void close(Reporter reporter) throws IOException {
+            stream.stream().flush();
+        }
+    }
 
     public PrintStreamOutputFormat() {
         this(Stream.NULL);
@@ -41,23 +63,28 @@ public class PrintStreamOutputFormat implements OutputFormat {
         this.stream = stream;
     }
 
+    // New API
+    @Override
+    public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+        return new PrintStreamRecordWriter();
+    }
+
+    @Override
+    public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {
+        // no-op
+    }
+
+    @Override
+    public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
+        return new ESOutputFormat.ESOutputCommitter();
+    }
+
+    // Old API
     @Override
     public RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress)
             throws IOException {
         stream = Stream.valueOf(job.get(Stream.class.getName(), Stream.NULL.name()));
-
-        return new RecordWriter() {
-
-            @Override
-            public void write(Object key, Object value) throws IOException {
-                stream.stream().printf("%s\n", WritableUtils.fromWritable((Writable) value));
-            }
-
-            @Override
-            public void close(Reporter reporter) throws IOException {
-                stream.stream().flush();
-            }
-        };
+        return new PrintStreamRecordWriter();
     }
 
     @Override

@@ -20,27 +20,23 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TextInputFormat;
-import org.apache.hadoop.mapred.lib.IdentityReducer;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.Test;
 
-public class MROldApiSaveTest {
+public class MRNewApiSaveTest {
 
-    public static class JsonMapper extends MapReduceBase implements Mapper {
+    public static class JsonMapper extends Mapper {
+
 
         @Override
-        public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+        protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
             StringTokenizer st = new StringTokenizer(value.toString(), "\t");
             Map<String, String> entry = new LinkedHashMap<String, String>();
 
@@ -51,25 +47,25 @@ public class MROldApiSaveTest {
             if (st.hasMoreTokens()) {
                 entry.put("picture", st.nextToken());
             }
-
-            output.collect(key, WritableUtils.toWritable(entry));
+            context.write(key, WritableUtils.toWritable(entry));
         }
     }
 
     @Test
     public void testBasicSave() throws Exception {
-        JobConf conf = new JobConf();
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
+        Configuration conf = new Configuration();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set("mapred.job.tracker", "local");
+        conf.set("es.resource", "mrnewapi/save");
 
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-        conf.set("es.resource", "mroldapi/save");
+        Job job = new Job(conf);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(ESOutputFormat.class);
+        job.setMapOutputValueClass(MapWritable.class);
+        job.setMapperClass(JsonMapper.class);
 
-        JobClient.runJob(conf);
+        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+
+        job.waitForCompletion(true);
     }
 }
