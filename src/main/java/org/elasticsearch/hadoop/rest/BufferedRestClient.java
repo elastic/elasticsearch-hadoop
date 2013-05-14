@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -32,6 +34,8 @@ import org.elasticsearch.hadoop.util.WritableUtils;
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
  */
 public class BufferedRestClient implements Closeable {
+
+    private static Log log = LogFactory.getLog(BufferedRestClient.class);
 
     // TODO: make this configurable
     private final byte[] buffer;
@@ -47,6 +51,7 @@ public class BufferedRestClient implements Closeable {
     private RestClient client;
     private String index;
     private Resource resource;
+    private final boolean trace;
 
     public BufferedRestClient(Settings settings) {
         this.client = new RestClient(settings);
@@ -60,6 +65,7 @@ public class BufferedRestClient implements Closeable {
         buffer = new byte[settings.getBatchSizeInBytes()];
         bufferEntriesThreshold = settings.getBatchSizeInEntries();
         requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
+        trace = log.isTraceEnabled();
     }
 
     /**
@@ -86,13 +92,17 @@ public class BufferedRestClient implements Closeable {
 
         Object d = (object instanceof Writable ? WritableUtils.fromWritable((Writable) object) : object);
 
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("{\"index\":{}}\n");
+        StringBuilder sb = new StringBuilder("{\"index\":{}}\n");
         sb.append(mapper.writeValueAsString(d));
         sb.append("\n");
 
-        byte[] data = sb.toString().getBytes(StringUtils.UTF_8);
+        String str = sb.toString();
+
+        if (trace) {
+            log.trace(String.format("Indexing object [%s]", str));
+        }
+
+        byte[] data = str.getBytes(StringUtils.UTF_8);
 
         // make some space first
         if (data.length + bufferSize >= buffer.length) {
@@ -109,6 +119,10 @@ public class BufferedRestClient implements Closeable {
     }
 
     private void flushBatch() throws IOException {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Flushing batch of [%d]", bufferSize));
+        }
+
         client.bulk(index, buffer, bufferSize);
         bufferSize = 0;
         bufferEntries = 0;
@@ -123,6 +137,10 @@ public class BufferedRestClient implements Closeable {
         if (requiresRefreshAfterBulk && executedBulkWrite) {
             // refresh batch
             client.refresh(index);
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Refreshing index [%s]", index));
+            }
         }
         client.close();
     }

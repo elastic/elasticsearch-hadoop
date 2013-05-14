@@ -54,7 +54,6 @@ import org.elasticsearch.hadoop.util.WritableUtils;
 public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ConfigurationOptions {
 
-
     private static Log log = LogFactory.getLog(ESInputFormat.class);
 
     static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
