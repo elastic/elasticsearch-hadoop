@@ -23,7 +23,7 @@ public abstract class ConfigUtils {
 
     public static String detectHostPortAddress(Configuration cfg) {
         String address = cfg.get(ESConfigConstants.ES_ADDRESS);
-        return StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
+        return !StringUtils.isBlank(address) ? address : detectHostPortAddress(null, 0, cfg);
     }
 
     public static String detectHostPortAddress(String host, int port, Configuration cfg) {
