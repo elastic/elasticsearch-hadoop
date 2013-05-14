@@ -20,6 +20,7 @@ import java.io.PrintStream;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
+import org.elasticsearch.hadoop.integration.Stream;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 import cascading.flow.FlowProcess;
@@ -34,29 +35,6 @@ import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntrySchemeCollector;
 
 class HadoopPrintStreamTap extends SinkTap<JobConf, Object> {
-
-    public enum Stream {
-        OUT {
-            @Override
-            PrintStream stream() {
-                return System.out;
-            }
-        },
-        ERR {
-            @Override
-            PrintStream stream() {
-                return System.err;
-            }
-        },
-        NULL {
-            @Override
-            PrintStream stream() {
-                return new NullPrintStream();
-            }
-        };
-
-        abstract PrintStream stream();
-    }
 
     private final Stream stream;
 

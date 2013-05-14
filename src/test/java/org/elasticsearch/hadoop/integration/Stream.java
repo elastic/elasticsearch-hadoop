@@ -13,30 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop.integration;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.Serializable;
 
-public class NullPrintStream extends PrintStream implements Serializable {
-
-    private static class NullOutputStream extends OutputStream implements Serializable {
+public enum Stream {
+    OUT {
         @Override
-        public void write(int b) throws IOException {}
-    }
+        public PrintStream stream() {
+            return System.out;
+        }
+    },
+    ERR {
+        @Override
+        public PrintStream stream() {
+            return System.err;
+        }
+    },
+    NULL {
+        @Override
+        public PrintStream stream() {
+            return new NullPrintStream();
+        }
+    };
 
-    public NullPrintStream() {
-        super(new NullOutputStream());
-    }
-
-    @Override
-    public void write(byte[] buf, int off, int len) {}
-
-    @Override
-    public void write(int b) {}
-
-    @Override
-    public void write(byte[] b) {}
+    public abstract PrintStream stream();
 }
