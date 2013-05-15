@@ -17,6 +17,9 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import cascading.flow.Flow;
 import cascading.flow.FlowElement;
 import cascading.flow.FlowProcess;
@@ -31,6 +34,8 @@ import cascading.tuple.TupleEntryIterator;
  * existing mapping for the given index.
  */
 public class ESTap extends Tap<Object, Object, Object> {
+
+    private static Log log = LogFactory.getLog(ESTap.class);
 
     private String resource;
     private boolean runningInHadoop = false;
@@ -61,22 +66,8 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public void flowConfInit(Flow<Object> flow) {
-        Class<?> clz = null;
-        try {
-            clz = Class.forName("cascading.flow.hadoop.HadoopFlow", false, getClass().getClassLoader());
-            if (clz.isInstance(flow)) {
-                runningInHadoop = true;
-            }
-        } catch (ClassNotFoundException e) {
-            runningInHadoop = false;
-        }
-        // TODO: alternative
-        //hadoopFlow = flow.getConfig() instanceof Configuration;
-
-        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, resource, fields) : new ESLocalTap(host, port, resource, fields));
-        setScheme(actualTap.getScheme());
+        initInnerTapIfNotSet(flow, "cascading.flow.hadoop.HadoopFlow");
     }
-
 
     @Override
     public boolean isSink() {
@@ -95,21 +86,25 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public void sourceConfInit(FlowProcess<Object> flowProcess, Object conf) {
+        initInnerTapIfNotSetFromFlowProcess(flowProcess);
         actualTap.sourceConfInit(flowProcess, conf);
     }
 
     @Override
     public void sinkConfInit(FlowProcess<Object> flowProcess, Object conf) {
+        initInnerTapIfNotSetFromFlowProcess(flowProcess);
         actualTap.sinkConfInit(flowProcess, conf);
     }
 
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Object> flowProcess, Object input) throws IOException {
+        initInnerTapIfNotSetFromFlowProcess(flowProcess);
         return actualTap.openForRead(flowProcess, input);
     }
 
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<Object> flowProcess, Object output) throws IOException {
+        initInnerTapIfNotSetFromFlowProcess(flowProcess);
         return actualTap.openForWrite(flowProcess, output);
     }
 
@@ -141,5 +136,30 @@ public class ESTap extends Tap<Object, Object, Object> {
     @Override
     public String toString() {
         return actualTap.toString();
+    }
+
+    private void initInnerTapIfNotSetFromFlowProcess(FlowProcess<Object> target) {
+        initInnerTapIfNotSet(target, "cascading.flow.hadoop.HadoopFlowProcess");
+    }
+
+    private void initInnerTapIfNotSet(Object target, String hadoopTypeName) {
+        if (actualTap != null) {
+            return;
+        }
+
+        Class<?> clz = null;
+        try {
+            clz = Class.forName(hadoopTypeName, false, getClass().getClassLoader());
+            if (clz.isInstance(target)) {
+                runningInHadoop = true;
+            }
+        } catch (ClassNotFoundException e) {
+            runningInHadoop = false;
+        }
+        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, resource, fields) : new ESLocalTap(host, port, resource, fields));
+        setScheme(actualTap.getScheme());
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Detected %s environment; initializing [%s]", (runningInHadoop ? "Hadoop" : "local"), actualTap.getClass().getSimpleName()));
+        }
     }
 }
