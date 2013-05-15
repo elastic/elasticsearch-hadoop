@@ -18,8 +18,8 @@ package org.elasticsearch.hadoop.cfg;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -34,7 +34,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     private String targetResource;
 
     public String getHost() {
-        return !StringUtils.isBlank(host) ? host : getProperty(ES_HOST, ES_HOST_DEFAULT);
+        return StringUtils.hasText(host) ? host : getProperty(ES_HOST, ES_HOST_DEFAULT);
     }
 
     public int getPort() {
@@ -67,7 +67,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public String getTargetUri() {
         String address = getProperty(INTERNAL_ES_TARGET_URI);
-        return (!StringUtils.isBlank(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
+        return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
     }
 
     public Settings setHost(String host) {
@@ -87,7 +87,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public String getTargetResource() {
         String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
-        return (!StringUtils.isBlank(targetResource) ? targetResource : !StringUtils.isBlank(resource) ? resource : getProperty(ES_RESOURCE));
+        return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
     }
 
     public Settings cleanUri() {
@@ -117,7 +117,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     protected String getProperty(String name, String defaultValue) {
         String value = getProperty(name);
-        if (StringUtils.isBlank(value)) {
+        if (!StringUtils.hasText(value)) {
             return defaultValue;
         }
         return value;

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.ResourceSchema;
@@ -31,6 +30,7 @@ import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  *
@@ -75,7 +75,7 @@ abstract class PigTypeUtils {
             for (int i = 0; i < nestedFields.length; i++) {
                 String name = nestedFields[i].getName();
                 // handle schemas without names
-                name = (StringUtils.isBlank(name) ? Integer.toString(i) : name);
+                name = (StringUtils.hasText(name) ? name : Integer.toString(i));
                 map.put(name, pigToObject(tuples.get(i), nestedFields[i]));
             }
             return map;
