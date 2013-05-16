@@ -22,9 +22,7 @@ import org.elasticsearch.hadoop.integration.Stream;
 import org.elasticsearch.hadoop.integration.TestSettings;
 import org.junit.Test;
 
-import cascading.flow.FlowConnectorProps;
 import cascading.flow.hadoop.HadoopFlowConnector;
-import cascading.operation.DebugLevel;
 import cascading.pipe.Pipe;
 import cascading.tap.Tap;
 

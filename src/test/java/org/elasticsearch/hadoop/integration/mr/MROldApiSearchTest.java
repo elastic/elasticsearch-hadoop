@@ -19,7 +19,9 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
 public class MROldApiSearchTest {
@@ -27,6 +29,7 @@ public class MROldApiSearchTest {
     @Test
     public void testBasicSearch() throws Exception {
         JobConf conf = new JobConf();
+        TestUtils.addProperties(conf, TestSettings.TESTING_PROPS);
         conf.setInputFormat(ESInputFormat.class);
         conf.setOutputFormat(PrintStreamOutputFormat.class);
         conf.setOutputKeyClass(Text.class);

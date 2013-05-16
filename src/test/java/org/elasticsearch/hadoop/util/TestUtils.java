@@ -16,9 +16,12 @@
 package org.elasticsearch.hadoop.util;
 
 import java.io.File;
+import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 
@@ -65,5 +68,12 @@ public class TestUtils {
             }
         }
         return file.delete() & result;
+    }
+
+    public static Configuration addProperties(Configuration conf, Properties props) {
+        for (Entry<Object, Object> entry : props.entrySet()) {
+            conf.set(entry.getKey().toString(), entry.getValue().toString());
+        }
+        return conf;
     }
 }
