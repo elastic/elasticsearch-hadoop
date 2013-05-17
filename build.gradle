@@ -23,15 +23,13 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
 
-def antlrVersion
-
 dependencies {
 	ext.hadoopVersion=hadoop10Version
 	
     compile("org.apache.hadoop:hadoop-streaming:$hadoopVersion")
 	compile("org.apache.hadoop:hadoop-tools:$hadoopVersion")
 	
-	compile("org.codehaus.jackson:jackson-mapper-asl:1.8.8")
+	compile("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
     testRuntime("log4j:log4j:$log4jVersion")
 
     // Pig
@@ -45,17 +43,22 @@ dependencies {
 	optional("cascading:cascading-hadoop:$cascadingVersion")
 	optional("cascading:cascading-local:$cascadingVersion")
     
-    // needed by the Hive Server tests
-    testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 
+    // needed by the Hive Server tests - removed since Hive 0.11
+    // testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 
 
     // Testing
     testCompile "junit:junit:$junitVersion"
 	testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
     testCompile "org.elasticsearch:elasticsearch:$esVersion"
+	// missing dependency in Hadoop 1.0.3/1.0.4
+	testCompile "commons-io:commons-io:2.1"
 	
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
+	
+	// Required by Hive + Pig
+	// testRuntime "org.antlr:antlr-runtime:$antlrVersion"
 }
 
 configurations.all {
@@ -93,12 +96,7 @@ task enableHiveTests {
     group = "Verification"
     doLast() {
         project.ext.skipHive = false
-		project.ext.skipPig = true
-		antlrVersion = antlrForHiveVersion
-		dependencies {
-			testRuntime "org.antlr:antlr-runtime:$antlrForHiveVersion"
-		}
-   }
+  }
 }
 
 task enablePigTests {
@@ -107,10 +105,6 @@ task enablePigTests {
     
     doLast() {
         project.ext.skipPig = false
-		project.ext.skipHive = true
-		dependencies {
-			testRuntime "org.antlr:antlr-runtime:$antlrForPigVersion"
-		}
   }
 }
 
@@ -122,6 +116,7 @@ task enableIntegrationTests() {
 	  enableMRTests.execute()
   	  enableCascadingTests.execute()
 	  enablePigTests.execute()
+	  //enableHiveTests.execute()
     }
 }
 
@@ -129,15 +124,20 @@ test {
     systemProperties['input.path'] = 'build/classes/test/input'
     systemProperties['output.path'] = 'build/classes/test/output'
     includes = ["org/elasticsearch/hadoop/hive/*.class", 
+				"org/elasticsearch/hadoop/pig/*.class",
+				"org/elasticsearch/hadoop/rest/*.class",
 				"org/elasticsearch/hadoop/util/**/*.class", 
 				"org/elasticsearch/hadoop/integration/**/*Suite.class"]
+
+	minHeapSize = "256m"
+	maxHeapSize = "512m"
 
     testLogging {
         events "started" //, "standardOut", "standardError"
         minGranularity 2
         maxGranularity 2
     }
-
+	
     doFirst() {
         ext.msg = ""
 
