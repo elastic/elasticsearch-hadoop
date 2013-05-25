@@ -18,7 +18,6 @@ package org.elasticsearch.hadoop.integration;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 
 /**
  * Tweaked settings for testing.
@@ -34,7 +33,7 @@ public class TestSettings extends PropertiesSettings {
     }
 
     public TestSettings() {
-        super(TESTING_PROPS);
+        super(new Properties(TESTING_PROPS));
     }
 
     public TestSettings(String uri) {
