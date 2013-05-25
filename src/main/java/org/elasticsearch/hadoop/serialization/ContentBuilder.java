@@ -240,7 +240,7 @@ public class ContentBuilder {
 
     public ContentBuilder value(Object value) {
         if (!writer.write(value, generator)) {
-            throw new SerializationException(String.format("Cannot handle type [%s], instance [%s]", value.getClass(), value));
+            throw new SerializationException(String.format("Cannot handle type [%s], instance [%s] using writer [%s]", value.getClass(), value, writer));
         }
         return this;
     }
