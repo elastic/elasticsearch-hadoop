@@ -18,16 +18,17 @@ package org.elasticsearch.hadoop.cascading;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -35,7 +36,6 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.Tuples;
 
@@ -133,6 +133,8 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private void initClient(Properties props) {
         if (client == null) {
             Settings settings = SettingsManager.loadFrom(props).setHost(host).setPort(port).setResource(resource);
+
+            SerializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
             settings.save();
             client = new BufferedRestClient(settings);
         }
@@ -157,15 +159,6 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     @SuppressWarnings("unchecked")
     @Override
     public void sink(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
-        Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
-
-        List<String> names = (List<String>) sinkCall.getContext()[0];
-        Map<String, Object> toES = new LinkedHashMap<String, Object>();
-        for (int i = 0; i < tuple.size(); i++) {
-            String name = (i < names.size() ? names.get(i) : "tuple" + i);
-            toES.put(name, tuple.getObject(i));
-        }
-
-        client.addToIndex(toES);
+        client.addToIndex(sinkCall);
     }
 }

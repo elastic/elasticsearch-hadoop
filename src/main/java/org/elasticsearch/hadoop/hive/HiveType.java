@@ -13,32 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration;
+package org.elasticsearch.hadoop.hive;
 
-import java.util.Properties;
-
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 
 /**
- * Tweaked settings for testing.
+ * Wrapper class around a Hive type - the value and its associated schema.
  */
-public class TestSettings extends PropertiesSettings {
+public class HiveType {
 
-    public final static Properties TESTING_PROPS = new Properties();
+    private Object object;
+    private TypeInfo info;
 
-    static {
-        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
-        // see TestSettings
-        TESTING_PROPS.put(ES_PORT, "9500");
+    public HiveType(Object object, TypeInfo info) {
+        this.object = object;
+        this.info = info;
     }
 
-    public TestSettings() {
-        super(TESTING_PROPS);
+    public Object getObject() {
+        return object;
     }
 
-    public TestSettings(String uri) {
-        this();
-        setProperty(ES_RESOURCE, uri);
+    public void setObject(Object object) {
+        this.object = object;
+    }
+
+    public TypeInfo getInfo() {
+        return info;
+    }
+
+    public void setInfo(TypeInfo info) {
+        this.info = info;
     }
 }

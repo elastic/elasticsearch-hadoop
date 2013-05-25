@@ -39,63 +39,6 @@ abstract class PigTypeUtils {
 
     private static final Log log = LogFactory.getLog(ESStorage.class);
 
-    @SuppressWarnings("unchecked")
-    static Object pigToObject(Object object, ResourceFieldSchema field) {
-        switch (field.getType()) {
-        case DataType.NULL:
-            return null;
-        case DataType.BOOLEAN:
-        case DataType.INTEGER:
-        case DataType.LONG:
-        case DataType.FLOAT:
-        case DataType.DOUBLE:
-        case DataType.CHARARRAY:
-            return object;
-        case DataType.BYTEARRAY:
-            return ((DataByteArray)object).get();
-
-        case DataType.MAP:
-            ResourceSchema nestedSchema = field.getSchema();
-            ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
-
-            Map<String, Object> map = new LinkedHashMap<String, Object>();
-            int index = 0;
-            for (Map.Entry<String, Object> entry : ((Map<String, Object>) object).entrySet()) {
-                map.put(entry.getKey(), pigToObject(entry.getValue(), nestedFields[index++]));
-            }
-            return map;
-
-        case DataType.TUPLE:
-            nestedSchema = field.getSchema();
-            nestedFields = nestedSchema.getFields();
-            map = new LinkedHashMap<String, Object>();
-
-            // use getAll instead of get(int) to avoid having to handle Exception...
-            List<Object> tuples = ((Tuple) object).getAll();
-            for (int i = 0; i < nestedFields.length; i++) {
-                String name = nestedFields[i].getName();
-                // handle schemas without names
-                name = (StringUtils.hasText(name) ? name : Integer.toString(i));
-                map.put(name, pigToObject(tuples.get(i), nestedFields[i]));
-            }
-            return map;
-
-        case DataType.BAG:
-            nestedSchema = field.getSchema();
-            ResourceFieldSchema bagType = nestedSchema.getFields()[0];
-            List<Object> bag = new ArrayList<Object>();
-
-            for (Tuple tuple : (DataBag) object) {
-                bag.add(pigToObject(tuple, bagType));
-            }
-            return bag;
-
-        default:
-            log.warn("Unknown type " + DataType.findTypeName(field.getType()) + "| using toString()");
-            return object.toString();
-        }
-    }
-
     static Object objectToPig(Object object) {
         if (object == null) {
             return null;

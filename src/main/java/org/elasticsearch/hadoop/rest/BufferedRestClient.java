@@ -23,12 +23,15 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.Writable;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
@@ -37,23 +40,34 @@ public class BufferedRestClient implements Closeable {
 
     private static Log log = LogFactory.getLog(BufferedRestClient.class);
 
-    // TODO: make this configurable
-    private final byte[] buffer;
-    private final int bufferEntriesThreshold;
+    // serialization artifacts
+
+    private byte[] buffer;
+    private int bufferEntriesThreshold;
 
     private int bufferSize = 0;
     private int bufferEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private BytesArray scratchPad;
+    private ValueWriter<?> valueWriter;
+
+    private boolean writeInitialized = false;
 
     private RestClient client;
     private String index;
     private Resource resource;
     private final boolean trace;
 
+    private final Settings settings;
+
+    private static final byte[] INDEX_DIRECTIVE = "{\"index\":{}}\n".getBytes(StringUtils.UTF_8);
+    private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
+
+
     public BufferedRestClient(Settings settings) {
+        this.settings = settings;
         this.client = new RestClient(settings);
         String tempIndex = settings.getTargetResource();
         if (tempIndex == null) {
@@ -62,10 +76,28 @@ public class BufferedRestClient implements Closeable {
         this.index = tempIndex;
         this.resource = new Resource(index);
 
-        buffer = new byte[settings.getBatchSizeInBytes()];
-        bufferEntriesThreshold = settings.getBatchSizeInEntries();
-        requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
         trace = log.isTraceEnabled();
+    }
+
+    /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
+
+    private void lazyInitWriting() {
+        if (!writeInitialized) {
+            writeInitialized = true;
+
+            buffer = new byte[settings.getBatchSizeInBytes()];
+            bufferEntriesThreshold = settings.getBatchSizeInEntries();
+            requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
+
+            valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), null);
+            if (scratchPad == null) {
+                scratchPad = new BytesArray(1024);
+            }
+
+            if (trace) {
+                log.trace(String.format("Instantied value writer [%s]", valueWriter));
+            }
+        }
     }
 
     /**
@@ -89,33 +121,61 @@ public class BufferedRestClient implements Closeable {
      */
     public void addToIndex(Object object) throws IOException {
         Assert.hasText(index, "no index given");
+        Assert.notNull(object, "no object data given");
 
-        Object d = (object instanceof Writable ? WritableUtils.fromWritable((Writable) object) : object);
+        lazyInitWriting();
+        scratchPad.reset();
+        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
+        ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(object).flush().close();
 
-        StringBuilder sb = new StringBuilder("{\"index\":{}}\n");
-        sb.append(mapper.writeValueAsString(d));
-        sb.append("\n");
+        doAddToIndex();
+    }
 
-        String str = sb.toString();
+    /**
+     * Writes the objects to index.
+     *
+     * @param index
+     * @param object
+     */
+    public void addToIndex(byte[] data, int size) throws IOException {
+        Assert.hasText(index, "no index given");
+        Assert.notNull(data, "no data given");
 
+        if (scratchPad == null) {
+            // minor optimization to avoid allocating data when used by Hive (which already has its own scratchPad)
+            scratchPad = new BytesArray(0);
+        }
+        lazyInitWriting();
+        scratchPad.setBytes(data, size);
+        doAddToIndex();
+    }
+
+    private void doAddToIndex() throws IOException {
         if (trace) {
-            log.trace(String.format("Indexing object [%s]", str));
+            log.trace(String.format("Indexing object [%s]", scratchPad));
         }
 
-        byte[] data = str.getBytes(StringUtils.UTF_8);
+        int entrySize = INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
 
         // make some space first
-        if (data.length + bufferSize >= buffer.length) {
+        if (entrySize + bufferSize > buffer.length) {
             flushBatch();
         }
 
-        System.arraycopy(data, 0, buffer, bufferSize, data.length);
-        bufferSize += data.length;
+        copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
+        copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
+        copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
+
         bufferEntries++;
 
         if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
             flushBatch();
         }
+    }
+
+    private void copyIntoBuffer(byte[] data, int size) {
+        System.arraycopy(data, 0, buffer, bufferSize, size);
+        bufferSize += size;
     }
 
     private void flushBatch() throws IOException {

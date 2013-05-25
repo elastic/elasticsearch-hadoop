@@ -13,32 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration;
+package org.elasticsearch.hadoop.serialization;
 
-import java.util.Properties;
-
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
+import java.io.IOException;
 
 /**
- * Tweaked settings for testing.
+ *
  */
-public class TestSettings extends PropertiesSettings {
+public class SerializationException extends RuntimeException {
 
-    public final static Properties TESTING_PROPS = new Properties();
-
-    static {
-        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
-        // see TestSettings
-        TESTING_PROPS.put(ES_PORT, "9500");
+    public SerializationException(String message) {
+        super(message);
     }
 
-    public TestSettings() {
-        super(TESTING_PROPS);
+    public SerializationException(IOException cause) {
+        this("Cannot serialize/deserialize", cause);
     }
 
-    public TestSettings(String uri) {
-        this();
-        setProperty(ES_RESOURCE, uri);
+    public SerializationException(String message, IOException cause) {
+        super(message, cause);
     }
 }

@@ -65,6 +65,12 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Long.valueOf(getProperty(ES_SCROLL_SIZE, ES_SCROLL_SIZE_DEFAULT));
     }
 
+    public String getSerializerValueWriterClassName() {
+        return getProperty(ES_SERIALIZATION_WRITER_CLASS, null);
+        //Assert.notNull(value, "no serialization writer class setup");
+        //return value;
+    }
+
     public String getTargetUri() {
         String address = getProperty(INTERNAL_ES_TARGET_URI);
         return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());

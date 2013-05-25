@@ -100,4 +100,8 @@ public abstract class StringUtils {
         // return the initial String if no whitespace is found
         return (sb.length() == sequence.length() ? sequence.toString() : sb.toString());
     }
+
+    public static String asUTFString(byte[] content, int length) {
+        return new String(content, 0, length, UTF_8);
+    }
 }

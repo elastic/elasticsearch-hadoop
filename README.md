@@ -2,7 +2,7 @@
 Read and write data to/from Elasticsearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
 # Requirements
-Elasticsearch cluster accessible through [REST][]. That's it!
+Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 
 # License

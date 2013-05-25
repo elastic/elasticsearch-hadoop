@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.rest;
 
 import java.util.Map;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
@@ -24,6 +25,7 @@ import org.elasticsearch.hadoop.rest.Node;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.Shard;
+import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +42,8 @@ public class RestQueryTest {
     @Before
     public void start() {
         settings = new TestSettings("rest/savebulk");
-        //settings.setPort(9200);
+        //testSettings.setPort(9200)
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         client = new BufferedRestClient(settings);
     }
 

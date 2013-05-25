@@ -19,17 +19,20 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.junit.Test;
 
 public class RestSaveTest {
 
     @Test
     public void testBulkWrite() throws Exception {
-        BufferedRestClient client = new BufferedRestClient(new TestSettings("rest/savebulk")
-        //.setPort(9200)
-        );
+        TestSettings testSettings = new TestSettings("rest/savebulk");
+        //testSettings.setPort(9200)
+        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        BufferedRestClient client = new BufferedRestClient(testSettings);
 
         Scanner in = new Scanner(getClass().getResourceAsStream("/artists.dat")).useDelimiter("\\n|\\t");
 

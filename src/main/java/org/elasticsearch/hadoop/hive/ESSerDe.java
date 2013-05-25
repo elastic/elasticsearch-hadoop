@@ -44,13 +44,26 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
 
+@SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
 
     private Configuration conf;
     private StructObjectInspector inspector;
     private ArrayList<String> columnNames;
+
+    // serialization artifacts
+    private BytesArray scratchPad = new BytesArray(512);
+    private ValueWriter<HiveType> valueWriter = new HiveValueWriter();
+    private HiveType hiveType = new HiveType(null, null);
+    private FastBytesWritable result = new FastBytesWritable();
+    private StructTypeInfo structTypeInfo;
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
@@ -71,6 +84,7 @@ public class ESSerDe implements SerDe {
         }
 
         inspector = ObjectInspectorFactory.getStandardStructObjectInspector(columnNames, inspectors);
+        structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
     }
 
     @Override
@@ -96,111 +110,27 @@ public class ESSerDe implements SerDe {
 
     @Override
     public Class<? extends Writable> getSerializedClass() {
-        return MapWritable.class;
+        return FastBytesWritable.class;
     }
 
     @Override
-    // TODO: maybe reuse object?
     public Writable serialize(Object data, ObjectInspector objInspector) throws SerDeException {
         //overwrite field names (as they get lost by Hive)
-        StructTypeInfo structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(objInspector);
-        structTypeInfo.setAllStructFieldNames(columnNames);
+        // StructTypeInfo structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(objInspector);
+        // structTypeInfo.setAllStructFieldNames(columnNames);
 
-        return hiveToWritable(structTypeInfo, data);
-    }
+        // serialize the type directly to json
+        scratchPad.reset();
+        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
 
-    @SuppressWarnings("unchecked")
-    static Writable hiveToWritable(TypeInfo type, Object data) {
-        if (data == null) {
-            return NullWritable.get();
-        }
+        //TODO: are there any bad side-effects of this caching  - note the given objInspector is disregarded
+        hiveType.setInfo(structTypeInfo);
+        hiveType.setObject(data);
 
-        switch (type.getCategory()) {
-        case PRIMITIVE:
-            // handle lazy objects differently as the Lazy ObjectInspector breaks the generic contract for #getPrimitive
-            if (data instanceof LazyPrimitive) {
-                return ((LazyPrimitive) data).getWritableObject();
-            }
-            // use standard
-            return (Writable) ((PrimitiveObjectInspector) TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(type)).getPrimitiveWritableObject(data);
-        case LIST: // or ARRAY
-            ListTypeInfo listType = (ListTypeInfo) type;
-            TypeInfo listElementType = listType.getListElementTypeInfo();
+        ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(hiveType).flush().close();
 
-            List<Object> list = null;
-            Writable[] arrayContent = null;
-
-            if (data instanceof LazyArray) {
-                list = ((LazyArray) data).getList();
-            }
-            else {
-                if (data.getClass().isArray()) {
-                    data = Arrays.asList((Object[]) data);
-                }
-                list = (List<Object>) data;
-            }
-
-            if (!list.isEmpty()) {
-                arrayContent = new Writable[list.size()];
-                for (int i = 0; i < arrayContent.length; i++) {
-                    arrayContent[i] = hiveToWritable(listElementType, list.get(i));
-                }
-            }
-
-            return (arrayContent != null ? new ArrayWritable(arrayContent[0].getClass(), arrayContent) : new ArrayWritable(NullWritable.class, new Writable[0]));
-
-        case MAP:
-            MapTypeInfo mapType = (MapTypeInfo) type;
-
-            MapWritable map = new MapWritable();
-
-            Map<Object, Object> mapContent = null;
-
-            if (data instanceof LazyMap) {
-                mapContent = ((LazyMap) data).getMap();
-            }
-            else {
-                mapContent = (Map<Object, Object>) data;
-            }
-
-            for (Map.Entry<Object, Object> entry : mapContent.entrySet()) {
-                map.put(hiveToWritable(mapType.getMapKeyTypeInfo(), entry.getKey()),
-                        hiveToWritable(mapType.getMapValueTypeInfo(), entry.getValue()));
-            }
-
-            return map;
-            //break;
-        case STRUCT:
-            StructTypeInfo structType = (StructTypeInfo) type;
-            List<TypeInfo> info = structType.getAllStructFieldTypeInfos();
-            List<String> names = structType.getAllStructFieldNames();
-            List<Object> content = null;
-
-            map = new MapWritable();
-
-            if (data instanceof LazyStruct) {
-                content = ((LazyStruct) data).getFieldsAsList();
-            }
-            else {
-                // shortcut in getting struct content
-                content = (data instanceof List ? (List<Object>) data : Arrays.asList((Object[]) data));
-            }
-
-            for (int structIndex = 0; structIndex < info.size(); structIndex++) {
-                map.put(new Text(names.get(structIndex)),
-                        hiveToWritable(info.get(structIndex), content.get(structIndex)));
-            }
-            return map;
-        case UNION:
-            UnionTypeInfo unionType = (UnionTypeInfo) type;
-
-            throw new UnsupportedOperationException("union not yet supported");//break;
-
-
-        default:
-            //log.warn("Unknown type " + column.type.getTypeName() + " for column " + column.name + "; using toString()");
-            return new Text(data.toString());
-        }
+        result.set(scratchPad.bytes(), scratchPad.size());
+        return result;
     }
 
     static Object hiveFromWritable(TypeInfo type, Writable data) {

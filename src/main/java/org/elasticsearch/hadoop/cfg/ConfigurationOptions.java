@@ -55,4 +55,8 @@ public interface ConfigurationOptions {
     static final String ES_SCROLL_SIZE = "es.scroll.size";
     static final String ES_SCROLL_SIZE_DEFAULT = "50";
 
+    /** Serialization settings */
+
+    /** Value writer - setup automatically; can be overridden for custom types */
+    static final String ES_SERIALIZATION_WRITER_CLASS = "es.ser.writer.class";
 }

@@ -18,10 +18,9 @@ package org.elasticsearch.hadoop.cascading;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
@@ -29,7 +28,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.util.WritableUtils;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -125,6 +124,9 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         conf.setOutputFormat(ESOutputFormat.class);
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
         Settings set = SettingsManager.loadFrom(conf);
+
+        SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
+
         // NB: there's no es:// protocol - this is just a fake placeholder that will cause exceptions if any File-based output class is used
         conf.set("mapred.output.dir", "es://" + set.getTargetUri() + "/" + set.getTargetResource());
         conf.set("mapred.output.committer.class", ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
@@ -153,15 +155,6 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     @SuppressWarnings("unchecked")
     @Override
     public void sink(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
-        Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
-
-        List<String> names = (List<String>) sinkCall.getContext()[0];
-        Map<String, Object> toES = new LinkedHashMap<String, Object>();
-        for (int i = 0; i < tuple.size(); i++) {
-            String name = (i < names.size() ? names.get(i) : "tuple" + i);
-            toES.put(name, tuple.getObject(i));
-        }
-
-        sinkCall.getOutput().collect(null, WritableUtils.toWritable(toES));
+        sinkCall.getOutput().collect(null, sinkCall);
     }
 }

@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -46,7 +47,6 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
         @Override
         public void setupJob(JobContext jobContext) throws IOException {
-            //no-op
         }
 
         @Override
@@ -109,11 +109,14 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
     protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
 
-        private final BufferedRestClient client;
+        protected final BufferedRestClient client;
         private final String uri, resource;
 
         public ESRecordWriter(Configuration cfg) {
             Settings settings = SettingsManager.loadFrom(cfg);
+
+            SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
+
             client = new BufferedRestClient(settings);
             uri = settings.getTargetUri();
             resource = settings.getTargetResource();
@@ -148,7 +151,8 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
     @Override
     public void checkOutputSpecs(JobContext context) {
-        checkOutputSpecs(null, (JobConf) context.getConfiguration());
+        // careful as it seems the info here saved by in the config is discarded
+        init(context.getConfiguration());
     }
 
     @Override
@@ -166,6 +170,10 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
     @Override
     public void checkOutputSpecs(FileSystem ignored, JobConf cfg) {
+        init(cfg);
+    }
+
+    private void init(Configuration cfg) {
         Settings settings = SettingsManager.loadFrom(cfg);
         Validate.notEmpty(settings.getTargetResource(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 

@@ -18,10 +18,13 @@ package org.elasticsearch.hadoop.cascading;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
@@ -50,9 +53,23 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
         return target;
     }
 
+
+    @Override
+    public void sinkConfInit(FlowProcess<Properties> flowProcess, Properties conf) {
+        Settings settings = SettingsManager.loadFrom(conf);
+
+        if (!StringUtils.hasText(settings.getSerializerValueWriterClassName())) {
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, CascadingValueWriter.class.getName());
+        }
+
+        super.sinkConfInit(flowProcess, conf);
+    }
+
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
-        client = new BufferedRestClient(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        // will be closed by the tuple once its done
+        client = new BufferedRestClient(settings);
 
         if (input == null) {
             input = QueryBuilder.query(target).build(client);

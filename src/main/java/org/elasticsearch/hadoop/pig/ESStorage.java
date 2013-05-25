@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.pig;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -33,7 +32,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.pig.LoadFunc;
 import org.apache.pig.ResourceSchema;
-import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.ResourceStatistics;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.StoreMetadata;
@@ -41,9 +39,11 @@ import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.UDFContext;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
@@ -76,6 +76,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private ResourceSchema schema;
     private RecordReader<Text, MapWritable> reader;
     private RecordWriter<Object, Object> writer;
+    private PigTuple pigTuple;
 
     public ESStorage() {
         this(null, "0");
@@ -88,7 +89,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
-        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location).save();
+        init(location, job);
     }
 
     @Override
@@ -110,24 +111,19 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
         String s = props.getProperty(ResourceSchema.class.getName());
         this.schema = IOUtils.deserializeFromBase64(s);
+        this.pigTuple = new PigTuple(schema);
     }
 
     // TODO: make put more lenient (if the schema is not available just shove everything on the existing type or as a big charray)
     @Override
     public void putNext(Tuple t) throws IOException {
-        ResourceFieldSchema[] fields = schema.getFields();
-
-        Map<String, Object> data = new LinkedHashMap<String, Object>(fields.length);
-
-        for (int i = 0; i < fields.length; i++) {
-            data.put(fields[i].getName(), PigTypeUtils.pigToObject(t.get(i), fields[i]));
-        }
+        pigTuple.setTuple(t);
 
         if (trace) {
-            log.trace("Writing out tuple " + data);
+            log.trace("Writing out tuple " + t);
         }
         try {
-            writer.write(null, data);
+            writer.write(null, pigTuple);
         } catch (InterruptedException ex) {
             throw new IOException("interrupted", ex);
         }
@@ -161,12 +157,17 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         // no-op
     }
 
+    private void init(String location, Job job) {
+        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location);
+        SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
+        settings.save();
+    }
+
     //
     // LoadFunc
     //
-
     public void setLocation(String location, Job job) throws IOException {
-        SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location).save();
+        init(location, job);
     }
 
 

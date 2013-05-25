@@ -123,7 +123,7 @@ task enableIntegrationTests() {
 test {
     systemProperties['input.path'] = 'build/classes/test/input'
     systemProperties['output.path'] = 'build/classes/test/output'
-    includes = ["org/elasticsearch/hadoop/hive/*.class", 
+    includes = ["org/elasticsearch/hadoop/serialization/*.class", 
 				"org/elasticsearch/hadoop/pig/*.class",
 				"org/elasticsearch/hadoop/rest/*.class",
 				"org/elasticsearch/hadoop/util/**/*.class", 

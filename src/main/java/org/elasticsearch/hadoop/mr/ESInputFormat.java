@@ -126,9 +126,10 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         private QueryBuilder queryBuilder;
         private ScrollQuery result;
 
-        // minor optimization - see below
-        private String currentKey;
+        // reuse objects
+        private Text currentKey = new Text();
         private MapWritable currentValue;
+
         private long size = 0;
 
         // default constructor used by the NEW api
@@ -177,8 +178,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public Text getCurrentKey() throws IOException {
-            // new API clients can use the object as is so do a copy
-            return new Text(currentKey);
+            return currentKey;
         }
 
         @Override
@@ -224,7 +224,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
             Map<String, Object> next = result.next();
             // we save the key as is since under the old API, we don't have to create a new Text() object
-            currentKey = next.get("_id").toString();
+            currentKey.set(next.get("_id").toString());
             currentValue = (MapWritable) WritableUtils.toWritable(next.get("_source"));
 
             if (key != null) {
