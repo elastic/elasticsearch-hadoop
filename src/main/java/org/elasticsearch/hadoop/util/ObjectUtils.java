@@ -29,7 +29,7 @@ public abstract class ObjectUtils {
         }
         try {
             return (T) clz.newInstance();
-        } catch (ReflectiveOperationException e) {
+        } catch (Exception e) {
             throw new IllegalStateException(String.format("Cannot instantiate class [%s]", className), e);
         }
     }
