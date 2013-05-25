@@ -20,7 +20,6 @@ import java.util.Collections;
 
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
