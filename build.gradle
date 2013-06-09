@@ -23,11 +23,59 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
 
-dependencies {
-	ext.hadoopVersion=hadoop10Version
+def List hadoop = []
+def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
+
+// Hadoop aliases
+def hadoopStableVersion = hadoop11Version
+def hadoopYarnVersion = hadoop2Version
+def hadoopVersion = hadoopStableVersion 
+
+switch (hadoopDistro) {
+
+  // Hadoop YARN/2.0.x
+  case "hadoopYarn":
+    hadoopVersion = hadoopYarnVersion
+    println "Using Apache Hadoop YARN [$hadoopVersion]"
+    hadoop = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
+
+    break;
+  // Hadoop 1.2.x
+  case "hadoop12":
+    hadoopVersion = hadoop12Version
+    println "Using Apache Hadoop 1.2.x [$hadoopVersion]"
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
+
+    break;
 	
-    compile("org.apache.hadoop:hadoop-streaming:$hadoopVersion")
-	compile("org.apache.hadoop:hadoop-tools:$hadoopVersion")
+  // Hadoop 1.1.x
+  case "hadoop11":
+    hadoopVersion = hadoop11Version
+    println "Using Apache Hadoop 1.1.x [$hadoopVersion]"
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
+
+    break;
+
+  // Hadoop 1.0.x
+  case "hadoop10":
+    hadoopVersion = hadoop10Version
+    println "Using Apache Hadoop 1.0.x [$hadoopVersion]"
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
+
+    break;
+
+  default:
+    println "Using Apache Hadoop Stable [$hadoopVersion]"
+    hadoopVersion = hadoopStableVersion
+    hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
+              "org.apache.hadoop:hadoop-tools:$hadoopVersion"] 
+}
+
+dependencies {
+	compile hadoop
 	
 	compile("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
     testRuntime("log4j:log4j:$log4jVersion")
@@ -50,8 +98,11 @@ dependencies {
     testCompile "junit:junit:$junitVersion"
 	testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
     testCompile "org.elasticsearch:elasticsearch:$esVersion"
-	// missing dependency in Hadoop 1.0.3/1.0.4
-	testCompile "commons-io:commons-io:2.1"
+	
+	if (hadoopVersion.contains("1.0.")) {
+		// missing dependency in Hadoop 1.0.3/1.0.4
+		testCompile "commons-io:commons-io:2.1"
+	}
 	
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"
