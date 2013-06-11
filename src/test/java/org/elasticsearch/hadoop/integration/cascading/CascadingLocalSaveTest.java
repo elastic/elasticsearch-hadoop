@@ -40,6 +40,6 @@ public class CascadingLocalSaveTest {
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new LocalFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, pipe).complete();
+        new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, pipe).complete();
     }
 }

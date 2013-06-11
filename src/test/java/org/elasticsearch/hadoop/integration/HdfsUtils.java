@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
@@ -35,7 +36,9 @@ public class HdfsUtils {
         try {
             JobConf hadoopConfig = HdpBootstrap.hadoopConfig();
             FileSystem fs = FileSystem.get(hadoopConfig);
-            fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
+            if (!(fs instanceof LocalFileSystem)) {
+                fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
+            }
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

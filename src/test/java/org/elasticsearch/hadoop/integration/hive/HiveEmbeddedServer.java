@@ -30,6 +30,8 @@ import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveInterface;
 import org.apache.hadoop.hive.service.HiveServer;
+import org.elasticsearch.hadoop.integration.HdfsUtils;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.TestUtils;
 import org.elasticsearch.hadoop.util.NTFSLocalFileSystem;
 
@@ -76,6 +78,8 @@ class HiveEmbeddedServer {
 
         refreshConfig(conf);
 
+        HdpBootstrap.hackHadoopStagingOnWin();
+
         // work-around for NTFS FS
         if (TestUtils.isWindows()) {
             conf.set("fs.file.impl", NTFSLocalFileSystem.class.getName());
@@ -91,12 +95,14 @@ class HiveEmbeddedServer {
         conf.set("hive.added.jars.path", "");
         conf.set("hive.added.files.path", "");
         conf.set("hive.added.archives.path", "");
+        conf.set("fs.default.name", "file:///");
 
         // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)
         Field field = Configuration.class.getDeclaredField("properties");
         field.setAccessible(true);
         Properties props = (Properties) field.get(conf);
         props.remove("mapred.job.tracker");
+        props.setProperty("fs.default.name", "file:///");
 
         // intercept SessionState to clean the threadlocal
         Field tss = SessionState.class.getDeclaredField("tss");

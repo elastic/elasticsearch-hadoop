@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,6 +32,8 @@ public class HiveSearchTest {
     @Test
     public void basicLoad() throws Exception {
 
+        String registerJar = "ADD JAR " + Provisioner.HDFS_ES_HDP_LIB + " ;";
+
         String create = "CREATE EXTERNAL TABLE artistsload ("
                 + "id 		BIGINT, "
                 + "name 	STRING, "
@@ -40,6 +43,7 @@ public class HiveSearchTest {
 
         String select = "SELECT * FROM artistsload";
 
+        //System.out.println(server.execute(registerJar));
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
     }

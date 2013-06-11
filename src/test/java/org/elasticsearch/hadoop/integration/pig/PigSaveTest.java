@@ -50,7 +50,7 @@ public class PigSaveTest {
     @Test
     public void testTuple() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                //"REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 // "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, links:tuple(url:chararray, picture: chararray));" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 //"ILLUSTRATE A;" +
@@ -71,7 +71,7 @@ public class PigSaveTest {
     @Test
     public void testBag() throws Exception {
         String script =
-                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                //"REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +

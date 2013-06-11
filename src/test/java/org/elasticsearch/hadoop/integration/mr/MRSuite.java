@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class, MRNewApiSaveTest.class, MRNewApiSearchTest.class })
+@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class , MRNewApiSaveTest.class, MRNewApiSearchTest.class })
 public class MRSuite {
     @ClassRule
     public static ExternalResource resource = new LocalES();

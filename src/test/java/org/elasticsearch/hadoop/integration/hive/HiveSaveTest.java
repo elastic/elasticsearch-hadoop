@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
@@ -23,6 +24,7 @@ public class HiveSaveTest {
 
     @Test
     public void testBasicSave() throws Exception {
+        String registerJar = "ADD JAR " + Provisioner.HDFS_ES_HDP_LIB + " ;";
 
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -55,6 +57,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
+        //System.out.println(server.execute(registerJar));
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -65,6 +68,8 @@ public class HiveSaveTest {
     @Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
+        String registerJar = "ADD JAR " + Provisioner.HDFS_ES_HDP_LIB + " ;";
+
         // load the raw data as a native, managed table
         // and then insert its content into the external one
         String localTable = "CREATE TABLE compoundsource ("
@@ -100,6 +105,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE compoundsave "
                 + "SELECT rid, mapids, rdata FROM compoundsource";
 
+        //System.out.println(server.execute(registerJar));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));

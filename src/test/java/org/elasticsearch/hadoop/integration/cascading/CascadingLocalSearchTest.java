@@ -33,6 +33,6 @@ public class CascadingLocalSearchTest {
         Pipe copy = new Pipe("copy");
         // print out
         StdOutTap out = new StdOutTap(new TextLine());
-        new LocalFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, copy).complete();
+        new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, copy).complete();
     }
 }

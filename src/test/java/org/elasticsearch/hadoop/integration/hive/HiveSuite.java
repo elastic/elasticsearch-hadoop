@@ -15,8 +15,11 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;
@@ -56,4 +59,9 @@ public class HiveSuite {
 
     @ClassRule
     public static ExternalResource resource = new ChainedExternalResource(new LocalES(), hive);
+
+    @BeforeClass
+    public static void setup() {
+        HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+    }
 }

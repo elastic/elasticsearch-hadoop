@@ -77,9 +77,9 @@ public class HdpBootstrap {
         conf.setBoolean("mapred.used.genericoptionsparser", true);
 
         // provision by default
-        Provisioner.provision(conf);
+        //Provisioner.provision(conf);
 
-        HdfsUtils.rmr(conf, ".staging");
+        //HdfsUtils.rmr(conf, ".staging");
         return conf;
     }
 
@@ -93,5 +93,9 @@ public class HdpBootstrap {
         }
 
         return props;
+    }
+
+    public static boolean isJtLocal(Configuration cfg) {
+        return "local".equals(cfg.get("mapred.job.tracker"));
     }
 }
