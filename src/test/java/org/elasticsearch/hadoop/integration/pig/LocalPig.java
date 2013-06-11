@@ -13,29 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.pig;
+package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.ByteArrayInputStream;
+import java.util.Properties;
 
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.util.TestSettings;
 
 /**
  * Wrapper around Pig.
  */
-public class Pig {
+public class LocalPig {
 
     private PigServer pig;
 
     public void start() {
         try {
-            pig = new PigServer(ExecType.LOCAL, new TestSettings().getProperties());
+            pig = createPig();
         } catch (ExecException ex) {
             throw new IllegalStateException("Cannot create pig server", ex);
         }
         pig.setBatchOn();
+    }
+
+    protected PigServer createPig() throws ExecException {
+        HdpBootstrap.hackHadoopStagingOnWin();
+        Properties properties = new TestSettings().getProperties();
+        properties.put("mapred.job.tracker", "local");
+        properties.put("fs.default.name", "file:///");
+        return new PigServer(ExecType.LOCAL, properties);
     }
 
     public void stop() {

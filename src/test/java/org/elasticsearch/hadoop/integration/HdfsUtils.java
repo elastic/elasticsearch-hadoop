@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -26,13 +27,27 @@ import org.apache.hadoop.mapred.JobConf;
  */
 public class HdfsUtils {
 
-    public static void copyFromLocal(String localPath) throws IOException {
+    public static void copyFromLocal(String localPath) {
         copyFromLocal(localPath, localPath);
     }
 
-    public static void copyFromLocal(String localPath, String destination) throws IOException {
-        JobConf hadoopConfig = HdpBootstrap.hadoopConfig();
-        FileSystem fs = FileSystem.get(hadoopConfig);
-        fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
+    public static void copyFromLocal(String localPath, String destination) {
+        try {
+            JobConf hadoopConfig = HdpBootstrap.hadoopConfig();
+            FileSystem fs = FileSystem.get(hadoopConfig);
+            fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public static boolean rmr(Configuration cfg, String path) {
+        FileSystem fs;
+        try {
+            fs = FileSystem.get(cfg);
+            return fs.delete(new Path(path), true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

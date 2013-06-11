@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import org.elasticsearch.hadoop.pig.Pig;
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
@@ -26,11 +26,11 @@ import org.junit.Test;
  */
 public class PigSaveTest {
 
-    static Pig pig;
+    static LocalPig pig;
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new Pig();
+        pig = new LocalPig();
         pig.start();
 
         // initialize Pig in local mode
@@ -50,6 +50,7 @@ public class PigSaveTest {
     @Test
     public void testTuple() throws Exception {
         String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 // "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, links:tuple(url:chararray, picture: chararray));" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 //"ILLUSTRATE A;" +
@@ -70,6 +71,7 @@ public class PigSaveTest {
     @Test
     public void testBag() throws Exception {
         String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +

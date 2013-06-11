@@ -34,7 +34,7 @@ public class HdpBootstrap {
     /**
      * Hack to allow Hadoop client to run on windows (which otherwise fails due to some permission problem).
      */
-    private static void hackHadoopStagingOnWin() {
+    public static void hackHadoopStagingOnWin() {
         // do the assignment only on Windows systems
         if (TestUtils.isWindows()) {
             // 0655 = -rwxr-xr-x
@@ -74,9 +74,12 @@ public class HdpBootstrap {
         }
 
         JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
         // provision by default
         Provisioner.provision(conf);
 
+        HdfsUtils.rmr(conf, ".staging");
         return conf;
     }
 

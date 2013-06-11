@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import org.elasticsearch.hadoop.pig.Pig;
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,11 +24,11 @@ import org.junit.Test;
  */
 public class PigSearchTest {
 
-    static Pig pig;
+    static LocalPig pig;
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new Pig();
+        pig = new LocalPig();
         pig.start();
     }
 
@@ -40,6 +40,7 @@ public class PigSearchTest {
     //@Test
     public void testTuple() throws Exception {
         String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();" +
                 "A = LOAD 'pig/tupleartists/_search?q=me*' USING ESStorage();";
                 //"DESCRIBE A;";
@@ -49,7 +50,9 @@ public class PigSearchTest {
 
     @Test
     public void testBag() throws Exception {
-        String script = "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
+        String script =
+                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
                       + "A = LOAD 'pig/bagartists/_search?q=me*' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";

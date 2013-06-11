@@ -34,8 +34,9 @@ import org.elasticsearch.hadoop.util.Assert;
  */
 public abstract class Provisioner {
 
-    private static final String ESHADOOP_TESTING_JAR;
-    private static final String[] CASCADING_JARS;
+    public static final String ESHADOOP_TESTING_JAR;
+    public static final String HDFS_ES_HDP_LIB = "/eshdp/libs/es-hadoop.jar";
+    public static final String[] CASCADING_JARS;
 
     static {
         // init ES-Hadoop JAR

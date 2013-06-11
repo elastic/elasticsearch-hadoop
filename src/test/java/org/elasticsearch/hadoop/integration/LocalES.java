@@ -35,8 +35,6 @@ public class LocalES extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
-        //TestUtils.hackHadoopStagingOnWin();
-
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
             master = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);

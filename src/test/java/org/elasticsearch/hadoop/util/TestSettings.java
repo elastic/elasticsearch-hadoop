@@ -56,7 +56,8 @@ public class TestSettings extends PropertiesSettings {
     }
 
     public TestSettings() {
-        super(new Properties(TESTING_PROPS));
+        super(new Properties());
+        getProperties().putAll(TESTING_PROPS);
     }
 
     public TestSettings(String uri) {

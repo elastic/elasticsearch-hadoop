@@ -15,24 +15,15 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import org.elasticsearch.hadoop.integration.HdfsUtils;
-import org.elasticsearch.hadoop.integration.LocalES;
-import org.elasticsearch.hadoop.integration.Provisioner;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.apache.pig.ExecType;
+import org.apache.pig.PigServer;
+import org.apache.pig.backend.executionengine.ExecException;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ PigSaveTest.class, PigSearchTest.class })
-public class PigSuite {
+public class RemotePig extends LocalPig {
 
-    @ClassRule
-    public static ExternalResource resource = new LocalES();
-
-    @BeforeClass
-    public static void setup() {
-        HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+    @Override
+    protected PigServer createPig() throws ExecException {
+        return new PigServer(ExecType.MAPREDUCE, HdpBootstrap.asProperties(HdpBootstrap.hadoopConfig()));
     }
 }
