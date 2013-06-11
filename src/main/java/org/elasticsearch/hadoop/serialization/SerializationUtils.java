@@ -27,10 +27,8 @@ public abstract class SerializationUtils {
 
         if (!StringUtils.hasText(settings.getSerializerValueWriterClassName())) {
             settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            logger.debug(String.format("Using pre-defined serializer [%s] as default", settings.getSerializerValueWriterClassName()));
         }
-
-        Log logger = (log != null ? log : LogFactory.getLog(clazz));
-
-        logger.info(String.format("Using pre-defined serializer [%s] instead of default", settings.getSerializerValueWriterClassName()));
     }
 }
