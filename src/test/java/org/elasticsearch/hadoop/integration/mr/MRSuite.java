@@ -15,7 +15,9 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.LocalES;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -26,4 +28,9 @@ import org.junit.runners.Suite;
 public class MRSuite {
     @ClassRule
     public static ExternalResource resource = new LocalES();
+
+    @BeforeClass
+    public static void setupHdfs() throws Exception {
+        HdfsUtils.copyFromLocal("src/test/resources/artists.dat");
+    }
 }

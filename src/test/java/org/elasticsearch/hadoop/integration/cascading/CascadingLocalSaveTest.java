@@ -16,7 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;

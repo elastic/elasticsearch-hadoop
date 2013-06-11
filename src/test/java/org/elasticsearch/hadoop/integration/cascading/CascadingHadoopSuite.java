@@ -15,7 +15,12 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.integration.HdfsUtils;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.Provisioner;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -27,4 +32,13 @@ public class CascadingHadoopSuite {
 
     @ClassRule
     public static ExternalResource resource = new LocalES();
+
+    public static Configuration configuration;
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        configuration = Provisioner.cascading(HdpBootstrap.hadoopConfig());
+        System.out.println(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration));
+        HdfsUtils.copyFromLocal("src/test/resources/artists.dat");
+    }
 }

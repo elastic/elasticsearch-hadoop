@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.util;
+package org.elasticsearch.hadoop.integration;
 
-import java.io.File;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
@@ -23,16 +23,20 @@ import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
+import org.elasticsearch.hadoop.util.TestSettings;
 
-public class TestUtils {
+public class HdpBootstrap {
+
+    private static boolean hackVerified = false;
 
     /**
      * Hack to allow Hadoop client to run on windows (which otherwise fails due to some permission problem).
      */
-    public static void hackHadoopStagingOnWin() {
+    private static void hackHadoopStagingOnWin() {
         // do the assignment only on Windows systems
-        if (isWindows()) {
+        if (TestUtils.isWindows()) {
             // 0655 = -rwxr-xr-x
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
@@ -51,29 +55,40 @@ public class TestUtils {
         }
     }
 
-    public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().startsWith("win");
-    }
-
-    public static boolean delete(File file) {
-        if (file == null || !file.exists()) {
-            return false;
-        }
-
-        boolean result = true;
-        if (file.isDirectory()) {
-            String[] children = file.list();
-            for (int i = 0; i < children.length; i++) {
-                result &= delete(new File(file, children[i]));
-            }
-        }
-        return file.delete() & result;
-    }
-
-    public static Configuration addProperties(Configuration conf, Properties props) {
+    public static JobConf addProperties(JobConf conf, Properties props) {
         for (Entry<Object, Object> entry : props.entrySet()) {
             conf.set(entry.getKey().toString(), entry.getValue().toString());
         }
         return conf;
+    }
+
+    public static JobConf hadoopConfig() {
+        if (!hackVerified) {
+            hackVerified = true;
+            // check local execution
+            if ("local".equals(TestSettings.TESTING_PROPS.get("mapred.job.tracker"))) {
+                hackHadoopStagingOnWin();
+            }
+            // damn HADOOP-9123
+            System.setProperty("path.separator", ":");
+        }
+
+        JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS);
+        // provision by default
+        Provisioner.provision(conf);
+
+        return conf;
+    }
+
+    public static Properties asProperties(Configuration cfg) {
+        Properties props = new Properties();
+
+        if (cfg != null) {
+            for (Map.Entry<String, String> entry : cfg) {
+                props.setProperty(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return props;
     }
 }

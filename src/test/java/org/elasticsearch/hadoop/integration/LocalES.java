@@ -17,7 +17,6 @@ package org.elasticsearch.hadoop.integration;
 
 import java.io.File;
 
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.rules.ExternalResource;
 
 public class LocalES extends ExternalResource {
@@ -36,7 +35,7 @@ public class LocalES extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
-        TestUtils.hackHadoopStagingOnWin();
+        //TestUtils.hackHadoopStagingOnWin();
 
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");

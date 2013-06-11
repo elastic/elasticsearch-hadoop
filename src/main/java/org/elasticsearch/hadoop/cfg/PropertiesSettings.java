@@ -24,7 +24,7 @@ import org.elasticsearch.hadoop.util.Assert;
  */
 public class PropertiesSettings extends Settings {
 
-    private final Properties props;
+    protected final Properties props;
 
     public PropertiesSettings(Properties props) {
         Assert.notNull(props, "Non-null properties expected");

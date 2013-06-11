@@ -16,7 +16,7 @@
 package org.elasticsearch.hadoop.integration.cascading;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.junit.Test;
 
 import cascading.flow.hadoop.HadoopFlowConnector;
@@ -25,7 +25,7 @@ import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.hadoop.TextDelimited;
 import cascading.tap.Tap;
-import cascading.tap.hadoop.Lfs;
+import cascading.tap.hadoop.Hfs;
 import cascading.tuple.Fields;
 
 public class CascadingHadoopSaveTest {
@@ -33,12 +33,12 @@ public class CascadingHadoopSaveTest {
     @Test
     public void testWriteToES() throws Exception {
         // local file-system source
-        Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
         Tap out = new ESTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new HadoopFlowConnector(TestSettings.TESTING_PROPS).connect(in, out, pipe).complete();
+        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
     }
 }

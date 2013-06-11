@@ -2,15 +2,4 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
 <configuration>
-
-<property>
-  <name>fs.default.name</name>
-  <value>file:///</value>
-</property>
-
-<property>
-  <name>mapred.job.tracker</name>
-  <value>local</value>
-</property>
-
 </configuration>

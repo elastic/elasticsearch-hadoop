@@ -31,9 +31,8 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.Test;
 
@@ -60,15 +59,14 @@ public class MROldApiSaveTest {
 
     @Test
     public void testBasicSave() throws Exception {
-        JobConf conf = new JobConf();
-        TestUtils.addProperties(conf, TestSettings.TESTING_PROPS);
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
         conf.setInputFormat(TextInputFormat.class);
         conf.setOutputFormat(ESOutputFormat.class);
         conf.setMapOutputValueClass(MapWritable.class);
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("mapred.job.tracker", "local");
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         conf.set("es.resource", "mroldapi/save");

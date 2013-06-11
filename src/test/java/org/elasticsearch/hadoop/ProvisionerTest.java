@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop;
 
-import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
-import org.elasticsearch.hadoop.integration.Stream;
+import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.Test;
 
-import cascading.flow.hadoop.HadoopFlowConnector;
-import cascading.pipe.Pipe;
-import cascading.tap.Tap;
-
-public class CascadingHadoopSearchTest {
+public class ProvisionerTest {
 
     @Test
-    public void testReadFromES() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
-        Pipe copy = new Pipe("copy");
-        // print out
-        Tap out = new HadoopPrintStreamTap(Stream.NULL);
-
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, copy).complete();
+    public void testBasicProvisier() {
+        Provisioner.provision(HdpBootstrap.hadoopConfig());
     }
 }

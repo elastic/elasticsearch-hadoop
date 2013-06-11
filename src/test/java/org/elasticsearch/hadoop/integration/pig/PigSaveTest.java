@@ -15,9 +15,9 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.pig.Pig;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -20,7 +20,7 @@ import java.io.ByteArrayInputStream;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.util.TestSettings;
 
 /**
  * Wrapper around Pig.
@@ -31,7 +31,7 @@ public class Pig {
 
     public void start() {
         try {
-            pig = new PigServer(ExecType.LOCAL, TestSettings.TESTING_PROPS);
+            pig = new PigServer(ExecType.LOCAL, new TestSettings().getProperties());
         } catch (ExecException ex) {
             throw new IllegalStateException("Cannot create pig server", ex);
         }

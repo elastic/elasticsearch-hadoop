@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.integration.TestSettings;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 public class RestSaveTest {

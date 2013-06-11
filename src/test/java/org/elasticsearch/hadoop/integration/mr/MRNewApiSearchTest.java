@@ -19,19 +19,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
-import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
 public class MRNewApiSearchTest {
 
     @Test
     public void testBasicSearch() throws Exception {
-        Configuration conf = new Configuration();
-        TestUtils.addProperties(conf, TestSettings.TESTING_PROPS);
+        Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("mapred.job.tracker", "local");
         conf.set("es.resource", "mrnewapi/save/_search?q=*");
 
         Job job = new Job(conf);

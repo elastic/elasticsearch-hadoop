@@ -224,6 +224,12 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
+// jar used for testing Hadoop remotely (es-hadoop + tests)
+task hadoopTestingJar(type: Jar) {
+	classifier = 'testing'
+	from sourceSets.test.output
+	from sourceSets.main.output
+}
 
 jar {
     manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
@@ -266,5 +272,6 @@ task wrapper(type: Wrapper) {
     gradleVersion = '1.4'
 }
 
-assemble.dependsOn = ['jar', 'sourcesJar']
+// skip creation of javadoc jars 
+assemble.dependsOn = ['jar', 'hadoopTestingJar']
 defaultTasks 'build'

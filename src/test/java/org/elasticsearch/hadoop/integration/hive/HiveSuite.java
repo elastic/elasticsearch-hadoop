@@ -16,7 +16,7 @@
 package org.elasticsearch.hadoop.integration.hive;
 
 import org.elasticsearch.hadoop.integration.LocalES;
-import org.elasticsearch.hadoop.integration.TestSettings;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;

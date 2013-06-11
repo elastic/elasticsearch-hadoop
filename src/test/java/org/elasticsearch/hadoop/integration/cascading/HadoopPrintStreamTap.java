@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -34,11 +35,16 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntrySchemeCollector;
 
-class HadoopPrintStreamTap extends SinkTap<JobConf, Object> {
+class HadoopPrintStreamTap extends SinkTap<JobConf, Object> implements Serializable {
+
+    /** */
+    private static final long serialVersionUID = 1L;
 
     private final Stream stream;
 
-    private static class SysoutScheme extends Scheme<JobConf, Object, Object, Object, Object> {
+    private static class SysoutScheme extends Scheme<JobConf, Object, Object, Object, Object> implements Serializable {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, Object, Object> tap, JobConf conf) {

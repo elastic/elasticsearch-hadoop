@@ -15,29 +15,24 @@
  */
 package org.elasticsearch.hadoop.integration;
 
-import java.util.Properties;
+import java.io.IOException;
 
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 
 /**
- * Tweaked settings for testing.
+ *
  */
-public class TestSettings extends PropertiesSettings {
+public class HdfsUtils {
 
-    public final static Properties TESTING_PROPS = new Properties();
-
-    static {
-        TESTING_PROPS.put(ES_BATCH_SIZE_BYTES, "8kb");
-        // see TestSettings
-        TESTING_PROPS.put(ES_PORT, "9500");
+    public static void copyFromLocal(String localPath) throws IOException {
+        copyFromLocal(localPath, localPath);
     }
 
-    public TestSettings() {
-        super(new Properties(TESTING_PROPS));
-    }
-
-    public TestSettings(String uri) {
-        this();
-        setProperty(ES_RESOURCE, uri);
+    public static void copyFromLocal(String localPath, String destination) throws IOException {
+        JobConf hadoopConfig = HdpBootstrap.hadoopConfig();
+        FileSystem fs = FileSystem.get(hadoopConfig);
+        fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
     }
 }
