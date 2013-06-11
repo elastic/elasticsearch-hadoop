@@ -83,7 +83,8 @@ public class RestClient implements Closeable {
     }
 
     public void refresh(String index) throws IOException {
-        String indx = index.substring(0, index.indexOf("/"));
+        int slash = index.indexOf("/");
+        String indx = (slash < 0) ? index : index.substring(0, slash);
         execute(new PostMethod(indx + "/_refresh"));
     }
 

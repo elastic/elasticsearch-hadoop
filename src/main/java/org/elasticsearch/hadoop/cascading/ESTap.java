@@ -135,7 +135,7 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public String toString() {
-        return actualTap.toString();
+        return (actualTap !=null ? actualTap.toString() : getClass().getSimpleName() + "[\"" + getScheme() + "\"]" + "[not initialized]");
     }
 
     private void initInnerTapIfNotSetFromFlowProcess(FlowProcess<Object> target) {
