@@ -57,7 +57,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
-        //System.out.println(server.execute(registerJar));
+        System.out.println(server.execute(registerJar));
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -68,7 +68,7 @@ public class HiveSaveTest {
     @Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
-        String registerJar = "ADD JAR " + Provisioner.HDFS_ES_HDP_LIB + " ;";
+        String registerJar = "ADD JAR '" + Provisioner.HDFS_ES_HDP_LIB + "' ;";
 
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -85,7 +85,7 @@ public class HiveSaveTest {
 
 
         // load the data - use the URI just to be sure
-        String uri = getClass().getClassLoader().getResource("hive-compound.dat").getPath();
+        String uri = HiveSuite.hdfsResource;
         String load = "LOAD DATA INPATH '" + uri + "' OVERWRITE INTO TABLE compoundSource";
 
 
@@ -105,7 +105,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE compoundsave "
                 + "SELECT rid, mapids, rdata FROM compoundsource";
 
-        //System.out.println(server.execute(registerJar));
+        System.out.println(server.execute(registerJar));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));

@@ -76,10 +76,13 @@ public class HdpBootstrap {
         JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
 
-        // provision by default
-        //Provisioner.provision(conf);
+        // provision if not local
+        if (!isJtLocal(conf)) {
+            Provisioner.provision(conf);
+            HdfsUtils.rmr(conf, ".staging");
+        }
 
-        //HdfsUtils.rmr(conf, ".staging");
+
         return conf;
     }
 

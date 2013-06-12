@@ -92,7 +92,7 @@ dependencies {
 	optional("cascading:cascading-local:$cascadingVersion")
     
     // needed by the Hive Server tests - removed since Hive 0.11
-    // testRuntime "$hiveGroup:hive-builtins:$hiveVersion" 
+    // testRuntime "$hiveGroup:hive-builtins:$hiveVersion"
 
     // Testing
     testCompile "junit:junit:$junitVersion"
@@ -110,6 +110,9 @@ dependencies {
 	
 	// Required by Hive + Pig
 	// testRuntime "org.antlr:antlr-runtime:$antlrVersion"
+	
+	// Required by Hive
+	testRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
 }
 
 configurations.all {

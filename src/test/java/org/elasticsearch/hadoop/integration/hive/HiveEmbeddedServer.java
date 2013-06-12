@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -24,13 +25,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
-import org.apache.hadoop.hive.service.HiveInterface;
 import org.apache.hadoop.hive.service.HiveServer;
-import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.TestUtils;
 import org.elasticsearch.hadoop.util.NTFSLocalFileSystem;
@@ -41,9 +42,11 @@ import org.elasticsearch.hadoop.util.NTFSLocalFileSystem;
  *
  * Additionally it wrangles the Hive internals so it rather executes the jobs locally not within a child JVM (which Hive calls local) or external.
  */
-class HiveEmbeddedServer {
+class HiveEmbeddedServer implements HiveInstance {
     // Implementation note: For some reason when running inside local mode, Hive spawns a child VM which is not just problematic (win or *nix) but it does not copies the classpath nor creates any jars
     // As such, the current implementation tricks Hive into thinking it's not local but at the same time sets up Hadoop to run locally and stops Hive from setting any classpath.
+
+    private static Log log = LogFactory.getLog(HiveEmbeddedServer.class);
 
     private HiveServer.HiveServerHandler server;
     private Properties testSettings;
@@ -53,13 +56,12 @@ class HiveEmbeddedServer {
         this.testSettings = settings;
     }
 
-    HiveInterface start() throws Exception {
-
+    public void start() throws Exception {
+        log.info("Starting Hive Local/Embedded Server...");
         if (server == null) {
             config = configure();
             server = new HiveServer.HiveServerHandler(config);
         }
-        return server;
     }
 
     // Hive adds automatically the Hive builtin jars - this thread-local cleans that up
@@ -136,13 +138,19 @@ class HiveEmbeddedServer {
         refreshConfig(config);
     }
 
-    List<String> execute(String cmd) throws Exception {
+    public List<String> execute(String cmd) throws Exception {
+        if (cmd.toUpperCase().startsWith("ADD JAR")) {
+            // skip the jar since we're running in local mode
+            System.out.println("Skipping ADD JAR in local/embedded mode");
+            return Collections.emptyList();
+        }
         server.execute(cmd);
         return server.fetchAll();
     }
 
-    void stop() {
+    public void stop() {
         if (server != null) {
+            log.info("Stopping Hive Local/Embedded Server...");
             server.clean();
             server.shutdown();
             server = null;

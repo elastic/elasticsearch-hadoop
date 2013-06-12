@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.util.Properties;
+
 import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
@@ -31,15 +33,23 @@ import org.junit.runners.Suite;
 //@Suite.SuiteClasses({ HiveSearchTest.class })
 public class HiveSuite {
 
-    static HiveEmbeddedServer server;
+    static HiveInstance server;
+    static boolean isLocal = true;
+
     static String cleanDdl = "DROP DATABASE IF EXISTS test CASCADE";
     static String createDB = "CREATE DATABASE test";
     static String useDB = "USE test";
 
+    static String hdfsResource = HiveSuite.class.getClassLoader().getResource("hive-compound.dat").getPath();
+
     public static ExternalResource hive = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            server = new HiveEmbeddedServer(TestSettings.TESTING_PROPS);
+            Properties props = new TestSettings().getProperties();
+            String hive = props.getProperty("hive", "local");
+
+            isLocal = "local".equals(hive);
+            server = (isLocal ? new HiveEmbeddedServer(props) : new HiveJdbc(hive));
             server.start();
 
             server.execute(cleanDdl);
@@ -51,9 +61,9 @@ public class HiveSuite {
         protected void after() {
             try {
                 server.execute(cleanDdl);
+                server.stop();
             } catch (Exception ex) {
             }
-            server.stop();
         }
     };
 
@@ -63,5 +73,9 @@ public class HiveSuite {
     @BeforeClass
     public static void setup() {
         HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+        if (!isLocal) {
+            hdfsResource = "/eshdp/hive/hive-compund.dat";
+            HdfsUtils.copyFromLocal("src/test/resources/hive-compound.dat", hdfsResource);
+        }
     }
 }

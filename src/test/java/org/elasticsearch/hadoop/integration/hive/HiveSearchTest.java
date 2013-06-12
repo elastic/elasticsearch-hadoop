@@ -26,7 +26,7 @@ public class HiveSearchTest {
     @Before
     public void cleanConfig() {
         System.out.println("Refreshing Hive Config...");
-        server.refreshConfig();
+        //server.refreshConfig();
     }
 
     @Test
@@ -43,7 +43,7 @@ public class HiveSearchTest {
 
         String select = "SELECT * FROM artistsload";
 
-        //System.out.println(server.execute(registerJar));
+        System.out.println(server.execute(registerJar));
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
     }
