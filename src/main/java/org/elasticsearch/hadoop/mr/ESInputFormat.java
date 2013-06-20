@@ -230,7 +230,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             else if (next.get("fields") != null)
                 currentValue = (MapWritable) WritableUtils.toWritable(next.get("fields"));
             else
-                currentValue = new MapWritable() // none of the requested fields exist on the document
+                currentValue = new MapWritable(); // none of the requested fields exist on the document
 
 
             if (key != null) {
