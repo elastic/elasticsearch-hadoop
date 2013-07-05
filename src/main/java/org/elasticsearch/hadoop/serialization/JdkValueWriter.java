@@ -79,13 +79,6 @@ public class JdkValueWriter implements ValueWriter<Object> {
             }
             generator.writeEndArray();
         }
-        else if (value instanceof Iterable) {
-            generator.writeBeginArray();
-            for (Object o : (Iterable<?>) value) {
-                write(o, generator);
-            }
-            generator.writeEndArray();
-        }
         else if (value instanceof Map) {
             generator.writeBeginObject();
             for (Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
@@ -93,6 +86,13 @@ public class JdkValueWriter implements ValueWriter<Object> {
                 write(entry.getValue(), generator);
             }
             generator.writeEndObject();
+        }
+        else if (value instanceof Iterable) {
+            generator.writeBeginArray();
+            for (Object o : (Iterable<?>) value) {
+                write(o, generator);
+            }
+            generator.writeEndArray();
         }
         else if (value instanceof Date) {
             throw new UnsupportedOperationException();
