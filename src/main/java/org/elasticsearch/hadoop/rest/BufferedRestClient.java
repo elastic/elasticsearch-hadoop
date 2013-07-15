@@ -214,13 +214,16 @@ public class BufferedRestClient implements Closeable {
 
         List<List<Map<String, Object>>> info = client.targetShards(resource.targetShards());
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
+
         for (List<Map<String, Object>> shardGroup : info) {
+            // find the first started shard in each group (round-robin)
             for (Map<String, Object> shardData : shardGroup) {
                 Shard shard = new Shard(shardData);
-                if (shard.getState().isStarted() && shard.isPrimary()) {
+                if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
                     Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
                     shards.put(shard, node);
+                    break;
                 }
             }
         }
