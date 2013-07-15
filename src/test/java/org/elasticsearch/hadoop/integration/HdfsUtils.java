@@ -37,7 +37,10 @@ public class HdfsUtils {
             JobConf hadoopConfig = HdpBootstrap.hadoopConfig();
             FileSystem fs = FileSystem.get(hadoopConfig);
             if (!(fs instanceof LocalFileSystem)) {
-                fs.copyFromLocalFile(false, true, new Path(localPath), new Path(destination));
+                Path src = new Path(localPath);
+                Path dst = new Path(destination);
+                fs.copyFromLocalFile(false, true, src, dst);
+                System.out.println(String.format("Copying [%s] to [%s]", src, dst));
             }
         } catch (IOException ex) {
             throw new RuntimeException(ex);

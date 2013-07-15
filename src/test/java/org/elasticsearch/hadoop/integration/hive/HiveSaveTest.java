@@ -15,19 +15,30 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.elasticsearch.hadoop.integration.Provisioner;
+import org.elasticsearch.hadoop.integration.HdfsUtils;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSaveTest {
 
+
+    @Before
+    public void provision() {
+        // provision on each test run since LOAD DATA _moves_ the file
+        if (!isLocal) {
+            hdfsResource = "/eshdp/hive/hive-compund.dat";
+            HdfsUtils.copyFromLocal(originalResource, hdfsResource);
+        }
+    }
+
     @Test
     public void testBasicSave() throws Exception {
-        String registerJar = "ADD JAR " + Provisioner.HDFS_ES_HDP_LIB + " ;";
-
         // load the raw data as a native, managed table
         // and then insert its content into the external one
+
+        String jar = "ADD JAR /tmp/es-hadoop.jar";
         String localTable = "CREATE TABLE source ("
                 + "id       BIGINT, "
                 + "name     STRING, "
@@ -36,9 +47,7 @@ public class HiveSaveTest {
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/source/' ";
 
-        // load the data - use the URI just to be sure
-        String uri = getClass().getClassLoader().getResource("artists.dat").getPath();
-        String load = "LOAD DATA INPATH '" + uri + "' OVERWRITE INTO TABLE source";
+        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE source";
 
         // create external table
         String ddl =
@@ -57,7 +66,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
-        System.out.println(server.execute(registerJar));
+        System.out.println(server.execute(jar));
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -68,7 +77,8 @@ public class HiveSaveTest {
     @Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
-        String registerJar = "ADD JAR '" + Provisioner.HDFS_ES_HDP_LIB + "' ;";
+
+        String jar = "ADD JAR /tmp/es-hadoop.jar";
 
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -105,7 +115,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE compoundsave "
                 + "SELECT rid, mapids, rdata FROM compoundsource";
 
-        System.out.println(server.execute(registerJar));
+        System.out.println(server.execute(jar));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));

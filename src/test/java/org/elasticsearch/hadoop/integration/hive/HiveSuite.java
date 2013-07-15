@@ -15,12 +15,18 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
 import org.elasticsearch.hadoop.integration.HdfsUtils;
+import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
@@ -40,7 +46,16 @@ public class HiveSuite {
     static String createDB = "CREATE DATABASE test";
     static String useDB = "USE test";
 
-    static String hdfsResource = HiveSuite.class.getClassLoader().getResource("hive-compound.dat").getPath();
+    static String originalResource;
+    static String hdfsResource = originalResource;
+
+    static {
+        try {
+            originalResource = HiveSuite.class.getClassLoader().getResource("hive-compound.dat").toURI().toString();
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     public static ExternalResource hive = new ExternalResource() {
         @Override
@@ -72,10 +87,16 @@ public class HiveSuite {
 
     @BeforeClass
     public static void setup() {
-        HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
         if (!isLocal) {
+            HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+            // copy jar to DistributedCache
+            try {
+                DistributedCache.addArchiveToClassPath(new Path(Provisioner.HDFS_ES_HDP_LIB), HdpBootstrap.hadoopConfig());
+            } catch (IOException ex) {
+                throw new RuntimeException("Cannot provision Hive", ex);
+            }
             hdfsResource = "/eshdp/hive/hive-compund.dat";
-            HdfsUtils.copyFromLocal("src/test/resources/hive-compound.dat", hdfsResource);
+            HdfsUtils.copyFromLocal(originalResource, hdfsResource);
         }
     }
 }
