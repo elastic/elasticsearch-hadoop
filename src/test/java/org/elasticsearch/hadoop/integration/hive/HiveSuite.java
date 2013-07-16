@@ -47,11 +47,12 @@ public class HiveSuite {
     static String useDB = "USE test";
 
     static String originalResource;
-    static String hdfsResource = originalResource;
+    static String hdfsResource;
 
     static {
         try {
             originalResource = HiveSuite.class.getClassLoader().getResource("hive-compound.dat").toURI().toString();
+            hdfsResource = originalResource;
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }

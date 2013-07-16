@@ -38,7 +38,7 @@ public class HiveSaveTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String jar = "ADD JAR /tmp/es-hadoop.jar";
+        //String jar = "ADD JAR /tmp/es-hadoop.jar";
         String localTable = "CREATE TABLE source ("
                 + "id       BIGINT, "
                 + "name     STRING, "
@@ -66,7 +66,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
-        System.out.println(server.execute(jar));
+        //System.out.println(server.execute(jar));
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -78,7 +78,7 @@ public class HiveSaveTest {
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
 
-        String jar = "ADD JAR /tmp/es-hadoop.jar";
+        //String jar = "ADD JAR /tmp/es-hadoop.jar";
 
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -115,7 +115,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE compoundsave "
                 + "SELECT rid, mapids, rdata FROM compoundsource";
 
-        System.out.println(server.execute(jar));
+        //System.out.println(server.execute(jar));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));

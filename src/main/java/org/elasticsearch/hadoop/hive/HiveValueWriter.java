@@ -22,6 +22,10 @@ import org.apache.hadoop.hive.serde2.lazy.LazyArray;
 import org.apache.hadoop.hive.serde2.lazy.LazyMap;
 import org.apache.hadoop.hive.serde2.lazy.LazyPrimitive;
 import org.apache.hadoop.hive.serde2.lazy.LazyStruct;
+import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryArray;
+import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryMap;
+import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryPrimitive;
+import org.apache.hadoop.hive.serde2.lazybinary.LazyBinaryStruct;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
@@ -71,6 +75,9 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             if (data instanceof LazyPrimitive) {
                 writable = ((LazyPrimitive<?, ?>) data).getWritableObject();
             }
+            else if (data instanceof LazyBinaryPrimitive) {
+                writable = ((LazyBinaryPrimitive<?, ?>) data).getWritableObject();
+            }
             else {
                 // unwrap writable
                 writable = (Writable) ((PrimitiveObjectInspector) TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(type)).getPrimitiveWritableObject(data);
@@ -85,8 +92,15 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             TypeInfo listElementType = listType.getListElementTypeInfo();
 
             generator.writeBeginArray();
-            if (data instanceof LazyArray || data instanceof List) {
-                List<?> list = (data instanceof LazyArray ? ((LazyArray) data).getList() : (List<?>) data);
+            if (data instanceof LazyArray || data instanceof LazyBinaryArray || data instanceof List) {
+                List<?> list = null;
+                if (data instanceof List) {
+                    list = (List<?>) data;
+                }
+                else {
+                    list = (data instanceof LazyArray ? ((LazyArray) data).getList() : ((LazyBinaryArray) data).getList());
+                }
+
                 for (Object object : list) {
                     if (!write(object, listElementType, generator)) {
                         return false;
@@ -116,6 +130,9 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             if (data instanceof LazyMap) {
                 mapContent = ((LazyMap) data).getMap();
             }
+            else if (data instanceof LazyBinaryMap) {
+                mapContent = ((LazyBinaryMap) data).getMap();
+            }
             else {
                 mapContent = (Map<?, ?>) data;
             }
@@ -141,8 +158,14 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
 
             generator.writeBeginObject();
             // handle the list
-            if (data instanceof LazyStruct || data instanceof List) {
-                List<?> content = (data instanceof LazyStruct ? ((LazyStruct) data).getFieldsAsList() : (List<?>) data);
+            if (data instanceof LazyStruct || data instanceof LazyBinaryStruct || data instanceof List) {
+                List<?> content = null;
+                if (content instanceof List) {
+                    content = (List<?>) data;
+                }
+                else {
+                    content = (data instanceof LazyStruct ? ((LazyStruct) data).getFieldsAsList() : ((LazyBinaryStruct)data).getFieldsAsList());
+                }
                 for (int structIndex = 0; structIndex < info.size(); structIndex++) {
                     generator.writeFieldName(names.get(structIndex));
                     if (!write(content.get(structIndex), info.get(structIndex), generator)) {
