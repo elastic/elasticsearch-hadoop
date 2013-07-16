@@ -127,14 +127,11 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             MapTypeInfo mapType = (MapTypeInfo) type;
             Map<?, ?> mapContent = null;
 
-            if (data instanceof LazyMap) {
-                mapContent = ((LazyMap) data).getMap();
-            }
-            else if (data instanceof LazyBinaryMap) {
-                mapContent = ((LazyBinaryMap) data).getMap();
+            if (data instanceof Map) {
+                mapContent = (Map<?, ?>) data;
             }
             else {
-                mapContent = (Map<?, ?>) data;
+                mapContent = (data instanceof LazyMap ? ((LazyMap) data).getMap() : ((LazyBinaryMap) data).getMap());
             }
 
             generator.writeBeginObject();
@@ -160,11 +157,11 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             // handle the list
             if (data instanceof LazyStruct || data instanceof LazyBinaryStruct || data instanceof List) {
                 List<?> content = null;
-                if (content instanceof List) {
+                if (data instanceof List) {
                     content = (List<?>) data;
                 }
                 else {
-                    content = (data instanceof LazyStruct ? ((LazyStruct) data).getFieldsAsList() : ((LazyBinaryStruct)data).getFieldsAsList());
+                    content = (data instanceof LazyStruct ? ((LazyStruct) data).getFieldsAsList() : ((LazyBinaryStruct) data).getFieldsAsList());
                 }
                 for (int structIndex = 0; structIndex < info.size(); structIndex++) {
                     generator.writeFieldName(names.get(structIndex));
