@@ -5,9 +5,6 @@ Read and write data to/from Elasticsearch within Hadoop/MapReduce libraries. Aut
 Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 
-# License
-This project is released under version 2.0 of the [Apache License][]
-
 # Installation
 We're working towards a first release. In the meantime, grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) using any Maven-compatible tool:
 
@@ -194,6 +191,27 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine.
 
 To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build\libs`.
+
+# License
+This project is released under version 2.0 of the [Apache License][]
+
+```
+This software is licensed under the Apache 2 license, quoted below.
+
+Copyright 2009-2013 ElasticSearch <http://www.elasticsearch.org>
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+```
 
 
 
