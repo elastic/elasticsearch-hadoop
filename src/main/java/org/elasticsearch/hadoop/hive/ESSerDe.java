@@ -64,8 +64,8 @@ public class ESSerDe implements SerDe {
 
         // the column names are saved as the given inspector to #serialize doesn't preserves them (maybe because it's an external table)
         // use the class since StructType requires it ...
-        columnNames = new ArrayList<String>(StringUtils.tokenize(tbl.getProperty("columns"), ","));
-        List<TypeInfo> colTypes = TypeInfoUtils.getTypeInfosFromTypeString(tbl.getProperty("columns.types"));
+        columnNames = new ArrayList<String>(StringUtils.tokenize(tbl.getProperty(HiveConstants.COLUMNS), ","));
+        List<TypeInfo> colTypes = TypeInfoUtils.getTypeInfosFromTypeString(tbl.getProperty(HiveConstants.COLUMNS_TYPES));
 
         // create a standard Object Inspector - note we're not using it for serialization/deserialization
         List<ObjectInspector> inspectors = new ArrayList<ObjectInspector>();

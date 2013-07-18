@@ -56,7 +56,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
     private static Log log = LogFactory.getLog(ESInputFormat.class);
 
-    static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
+    protected static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
 
         private String nodeIp;
         private int httpPort;
@@ -116,7 +116,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     }
 
 
-    static class ShardRecordReader extends RecordReader<Text, MapWritable> implements
+    protected static class ShardRecordReader extends RecordReader<Text, MapWritable> implements
             org.apache.hadoop.mapred.RecordReader<Text, MapWritable> {
 
         private int read = 0;
@@ -133,11 +133,11 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         private long size = 0;
 
         // default constructor used by the NEW api
-        ShardRecordReader() {
+        public ShardRecordReader() {
         }
 
         // constructor used by the old API
-        ShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+        public ShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             reporter.setStatus(split.toString());
             init((ShardInputSplit) split, job);
         }
@@ -265,6 +265,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     @Override
     public List<InputSplit> getSplits(JobContext context) throws IOException {
         JobConf conf = (JobConf) context.getConfiguration();
+        // NOTE: this method expects a ShardInputSplit to be returned (which implements both the old and the new API).
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
 
@@ -275,10 +276,10 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
 
     //
-    // Old API
+    // Old API - if this method is replaced, make sure to return a new/old-API compatible InputSplit
     //
     @Override
-    public ShardInputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
+    public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
         Settings settings = SettingsManager.loadFrom(job);
         BufferedRestClient client = new BufferedRestClient(settings);

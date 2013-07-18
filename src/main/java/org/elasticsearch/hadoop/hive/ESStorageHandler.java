@@ -27,9 +27,11 @@ import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.Assert;
+
+import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 
 /**
  * Hive storage for writing data into an ElasticSearch index.
@@ -45,7 +47,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
     @Override
     public Class<? extends InputFormat> getInputFormatClass() {
-        return ESInputFormat.class;
+        return ESHiveInputFormat.class;
     }
 
     @Override
@@ -83,7 +85,10 @@ public class ESStorageHandler extends DefaultStorageHandler {
         settings.save();
 
         // replace the default committer when using the old API
-        cfg.set("mapred.output.committer.class", ESOutputFormat.ESOutputCommitter.class.getName());
+        cfg.set(OUTPUT_COMMITTER, ESOutputFormat.ESOutputCommitter.class.getName());
+
+        Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
+                "no table location [%s] declared by Hive resulting in abnormal execution;", TABLE_LOCATION));
     }
 
     @Override

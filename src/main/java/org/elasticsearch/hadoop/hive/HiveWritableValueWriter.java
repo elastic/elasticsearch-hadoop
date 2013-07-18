@@ -52,7 +52,7 @@ public class HiveWritableValueWriter extends WritableValueWriter {
             generator.writeNumber(((ShortWritable) writable).get());
         }
         // HiveDecimal - Hive 0.11+
-        else if (writable != null && "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable".equals(writable.getClass().getName())){
+        else if (writable != null && HiveConstants.DECIMAL_WRITABLE.equals(writable.getClass().getName())) {
             generator.writeString(writable.toString());
         }
         else {

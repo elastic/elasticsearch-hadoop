@@ -36,9 +36,24 @@ public class HiveSearchTest {
                 + "name 	STRING, "
                 + "links 	STRUCT<url:STRING, picture:STRING>) "
                 + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=me*') ";
+                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
 
         String select = "SELECT * FROM artistsload";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+    }
+
+    @Test
+    public void basicCountOperator() throws Exception {
+        String create = "CREATE EXTERNAL TABLE artistscount ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
+
+        String select = "SELECT count(*) FROM artistscount";
 
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
