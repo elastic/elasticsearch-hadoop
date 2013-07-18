@@ -15,8 +15,10 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.io.Closeable;
 
-public interface Generator {
+
+public interface Generator extends Closeable {
 
     void writeBeginArray();
 
