@@ -28,9 +28,11 @@ class Resource {
 
     Resource(String resource) {
         this.resource = new StringBuilder(resource);
-        int index = resource.lastIndexOf("_");
+        int index = resource.lastIndexOf("_search");
         if (index <= 0) {
-            index = resource.length();
+            index = resource.lastIndexOf("_");
+            if (index <= 0)
+                index = resource.length();
         }
         String localRoot = resource.substring(0, index);
         if (!localRoot.endsWith("/")) {

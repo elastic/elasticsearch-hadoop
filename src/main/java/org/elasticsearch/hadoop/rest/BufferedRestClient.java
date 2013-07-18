@@ -63,6 +63,8 @@ public class BufferedRestClient implements Closeable {
     private final Settings settings;
 
     private static final byte[] INDEX_DIRECTIVE = "{\"index\":{}}\n".getBytes(StringUtils.UTF_8);
+    private static final byte[] INDEX_DIRECTIVE_WITH_ID_START = "{\"index\":{\"_id\":".getBytes(StringUtils.UTF_8);
+    private static final byte[] INDEX_DIRECTIVE_WITH_ID_END = "}}\n".getBytes(StringUtils.UTF_8);
     private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
 
 
@@ -120,12 +122,32 @@ public class BufferedRestClient implements Closeable {
      * @param object
      */
     public void addToIndex(Object object) throws IOException {
+        addToIndex(null, object);
+    }
+
+    /**
+     * Writes the objects to index.
+     *
+     * @param index
+     * @param object
+     */
+    public void addToIndex(Object id, Object object) throws IOException {
         Assert.hasText(index, "no index given");
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
+        if (id == null) {
+            // _id will be generated server side
+            bos.write(INDEX_DIRECTIVE);
+        }
+        else {
+            bos.write(INDEX_DIRECTIVE_WITH_ID_START);
+            // generate json for _id to ensure correct escaping
+            ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(id).flush().close();
+            bos.write(INDEX_DIRECTIVE_WITH_ID_END);
+        }
         ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(object).flush().close();
 
         doAddToIndex();
@@ -155,14 +177,13 @@ public class BufferedRestClient implements Closeable {
             log.trace(String.format("Indexing object [%s]", scratchPad));
         }
 
-        int entrySize = INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
+        int entrySize = CARRIER_RETURN.length + scratchPad.size();
 
         // make some space first
         if (entrySize + bufferSize > buffer.length) {
             flushBatch();
         }
 
-        copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
         copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
         copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
 

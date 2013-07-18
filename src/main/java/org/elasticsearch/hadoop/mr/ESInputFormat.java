@@ -225,7 +225,13 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             Map<String, Object> next = result.next();
             // we save the key as is since under the old API, we don't have to create a new Text() object
             currentKey.set(next.get("_id").toString());
-            currentValue = (MapWritable) WritableUtils.toWritable(next.get("_source"));
+            if (next.get("_source") != null)
+                currentValue = (MapWritable) WritableUtils.toWritable(next.get("_source"));
+            else if (next.get("fields") != null)
+                currentValue = (MapWritable) WritableUtils.toWritable(next.get("fields"));
+            else
+                currentValue = new MapWritable(); // none of the requested fields exist on the document
+
 
             if (key != null) {
                 key.set(currentKey);

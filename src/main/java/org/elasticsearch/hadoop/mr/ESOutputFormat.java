@@ -34,6 +34,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.apache.hadoop.io.Text;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -124,7 +125,12 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
 
         @Override
         public void write(Object key, Object value) throws IOException {
-            client.addToIndex(value);
+            // if the key of the record is Text, use this as the elasticsearch _id
+            // otherwise leave to generating server-side.
+            if (key instanceof Text)
+                client.addToIndex(key, value);
+            else
+                client.addToIndex(value);
         }
 
         @Override
