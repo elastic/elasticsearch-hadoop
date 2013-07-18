@@ -26,7 +26,6 @@ import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
