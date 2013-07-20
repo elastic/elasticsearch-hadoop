@@ -47,7 +47,7 @@ public class ContentConsumer {
         return (T) token();
     }
 
-    private static void seekToken(String path, Parser parser) {
+    static void seekToken(String path, Parser parser) {
         // return current token if no path is given
         if (!StringUtils.hasText(path)) {
             return;
@@ -59,26 +59,26 @@ public class ContentConsumer {
     }
 
     private static boolean doSeekToken(String targetNode, ListIterator<String> listIterator, Parser parser) {
-        Token token = parser.nextToken();
-        if (token == null) {
-            // end of the line
-            return false;
-        }
-
-        if (token == Token.FIELD_NAME) {
-            if (targetNode.equals(parser.currentName())) {
-                if (listIterator.hasNext()) {
-                    return doSeekToken(listIterator.next(), listIterator, parser);
-                }
-                else {
-                    // found path
-                    return true;
-                }
-            }
-        }
-        // incomplete tree, finish current block (if possible) and continue
-        parser.skipChildren();
-        return doSeekToken(targetNode, listIterator, parser);
+        Token token = null;
+        
+		while ((token = parser.nextToken()) != null) {
+			if (token == Token.FIELD_NAME) {
+				// found node, go one level deep
+				if (targetNode.equals(parser.currentName())) {
+					if (listIterator.hasNext()) {
+						return doSeekToken(listIterator.next(), listIterator, parser);
+					} else {
+						return true;
+					}
+				}
+				else {
+					// get field token (can be value, object or array)
+					parser.nextToken();
+					parser.skipChildren();
+				}
+			}
+		}
+        return false;
     }
 
     public Object token() {
