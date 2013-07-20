@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.Map;
 
 public interface Parser extends Closeable {
@@ -106,8 +107,6 @@ public interface Parser extends Closeable {
     void skipChildren();
 
     String currentName();
-
-    Map<String, Object> map();
 
     String text();
 

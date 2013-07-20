@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 
 public class JsonPathTest {
 
-	Parser parser;
+	private Parser parser;
 
 	@Before
 	public void before() {

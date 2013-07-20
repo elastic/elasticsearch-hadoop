@@ -33,7 +33,7 @@ public class ContentConsumer {
         this.reader = reader;
     }
 
-    public static ContentConsumer consume(Parser parser, ValueReader reader) {
+    public static ContentConsumer consumer(Parser parser, ValueReader reader) {
         return new ContentConsumer(parser, reader);
     }
 
@@ -84,8 +84,7 @@ public class ContentConsumer {
     public Object token() {
         Object result = reader.read(parser);
         if (result == null) {
-            throw new SerializationException(String.format("Cannot parse [%s] using reader [%s]", reader.failedToken(),
-                    reader));
+            throw new SerializationException(String.format("Cannot parse [%s] using reader [%s]", reader.failedToken(), reader));
         }
         return result;
     }

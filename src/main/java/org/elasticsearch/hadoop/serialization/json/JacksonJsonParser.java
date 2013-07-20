@@ -17,17 +17,12 @@ package org.elasticsearch.hadoop.serialization.json;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.SerializationException;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
-import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.hadoop.serialization.Parser;
 
 public class JacksonJsonParser implements Parser {
@@ -121,73 +116,6 @@ public class JacksonJsonParser implements Parser {
         }
     }
 
-    @Override
-    public Map<String, Object> map() {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
-
-        Token t = currentToken();
-
-        if (t == null) {
-            t = nextToken();
-        }
-        if (t == Token.START_OBJECT) {
-            t = nextToken();
-        }
-        for (; t == Token.FIELD_NAME; t = nextToken()) {
-            // Must point to field name
-            String fieldName = currentName();
-            // And then the value...
-            t = nextToken();
-            Object value = readValue(t);
-            map.put(fieldName, value);
-        }
-        return map;
-    }
-
-    private List<Object> list(Token t) {
-        List<Object> list = new ArrayList<Object>();
-        while ((t = nextToken()) != Token.END_ARRAY) {
-            list.add(readValue(t));
-        }
-        return list;
-    }
-
-    private Object readValue(Token t) {
-        if (t == Token.VALUE_NULL) {
-            return null;
-        }
-        else if (t == Token.VALUE_STRING) {
-            return text();
-        }
-        else if (t == Token.VALUE_NUMBER) {
-            NumberType numberType = numberType();
-            if (numberType == NumberType.INT) {
-                return intValue();
-            }
-            else if (numberType == NumberType.LONG) {
-                return longValue();
-            }
-            else if (numberType == NumberType.FLOAT) {
-                return floatValue();
-            }
-            else if (numberType == NumberType.DOUBLE) {
-                return doubleValue();
-            }
-        }
-        else if (t == Token.VALUE_BOOLEAN) {
-            return booleanValue();
-        }
-        else if (t == Token.START_OBJECT) {
-            return map();
-        }
-        else if (t == Token.START_ARRAY) {
-            return list(t);
-        }
-        else if (t == Token.VALUE_EMBEDDED_OBJECT) {
-            return binaryValue();
-        }
-        return null;
-    }
 
     @Override
     public String text() {
@@ -308,6 +236,6 @@ public class JacksonJsonParser implements Parser {
         case BIG_DECIMAL:
             return NumberType.DOUBLE;
         }
-        throw new ElasticSearchIllegalStateException("No matching token for number_type [" + numberType + "]");
+        throw new SerializationException("No matching token for number_type [" + numberType + "]");
     }
 }

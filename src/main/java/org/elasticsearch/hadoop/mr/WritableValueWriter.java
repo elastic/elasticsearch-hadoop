@@ -92,10 +92,6 @@ public class WritableValueWriter implements ValueWriter<Writable> {
             BytesWritable bw = (BytesWritable) writable;
             generator.writeBinary(bw.getBytes(), 0, bw.getLength());
         }
-        else if (writable instanceof BytesWritable) {
-            BytesWritable bw = (BytesWritable) writable;
-            generator.writeBinary(bw.getBytes(), 0, bw.getLength());
-        }
         else if (writable instanceof MD5Hash) {
             generator.writeString(writable.toString());
         }

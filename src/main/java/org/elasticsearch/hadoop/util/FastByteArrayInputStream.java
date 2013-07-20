@@ -241,7 +241,7 @@ public class FastByteArrayInputStream extends InputStream {
      * generating an <tt>IOException</tt>.
      * <p/>
      */
-    public void close() throws IOException {}
+    public void close() {}
 
     public BytesArray bytes() {
         return data;
