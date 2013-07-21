@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.ValueReader;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
@@ -51,6 +52,7 @@ public class BufferedRestClient implements Closeable {
     private boolean executedBulkWrite = false;
 
     private BytesArray scratchPad;
+    private ValueReader valueReader;
     private ValueWriter<?> valueWriter;
 
     private boolean writeInitialized = false;
@@ -76,6 +78,7 @@ public class BufferedRestClient implements Closeable {
         this.index = tempIndex;
         this.resource = new Resource(index);
 
+        this.valueReader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), null);
         trace = log.isTraceEnabled();
     }
 

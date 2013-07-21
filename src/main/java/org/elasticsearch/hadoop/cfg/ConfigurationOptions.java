@@ -21,42 +21,45 @@ package org.elasticsearch.hadoop.cfg;
 public interface ConfigurationOptions {
 
     /** ElasticSearch host **/
-    static final String ES_HOST = "es.host";
-    static final String ES_HOST_DEFAULT = "localhost";
+    String ES_HOST = "es.host";
+    String ES_HOST_DEFAULT = "localhost";
 
     /** ElasticSearch port **/
-    static final String ES_PORT = "es.port";
-    static final String ES_PORT_DEFAULT = "9200";
+    String ES_PORT = "es.port";
+    String ES_PORT_DEFAULT = "9200";
 
     /** ElasticSearch index or query (so called location) */
-    static final String ES_RESOURCE = "es.resource";
+    String ES_RESOURCE = "es.resource";
 
     /** ElasticSearch batch size given in bytes */
-    static final String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
-    static final String ES_BATCH_SIZE_BYTES_DEFAULT = "10mb";
+    String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
+    String ES_BATCH_SIZE_BYTES_DEFAULT = "10mb";
 
     /** ElasticSearch batch size given in entries */
-    static final String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
-    static final String ES_BATCH_SIZE_ENTRIES_DEFAULT = "0";
+    String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
+    String ES_BATCH_SIZE_ENTRIES_DEFAULT = "0";
 
     /** Whether to trigger an index refresh after doing batch writing */
-    static final String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";
-    static final String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
+    String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";
+    String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
 
     /** HTTP connection timeout */
-    static final String ES_HTTP_TIMEOUT = "es.http.timeout";
-    static final String ES_HTTP_TIMEOUT_DEFAULT = "1m";
+    String ES_HTTP_TIMEOUT = "es.http.timeout";
+    String ES_HTTP_TIMEOUT_DEFAULT = "1m";
 
     /** Scroll keep-alive */
-    static final String ES_SCROLL_KEEPALIVE = "es.scroll.keepalive";
-    static final String ES_SCROLL_KEEPALIVE_DEFAULT = "10m";
+    String ES_SCROLL_KEEPALIVE = "es.scroll.keepalive";
+    String ES_SCROLL_KEEPALIVE_DEFAULT = "10m";
 
     /** Scroll size */
-    static final String ES_SCROLL_SIZE = "es.scroll.size";
-    static final String ES_SCROLL_SIZE_DEFAULT = "50";
+    String ES_SCROLL_SIZE = "es.scroll.size";
+    String ES_SCROLL_SIZE_DEFAULT = "50";
 
     /** Serialization settings */
 
     /** Value writer - setup automatically; can be overridden for custom types */
-    static final String ES_SERIALIZATION_WRITER_CLASS = "es.ser.writer.class";
+    String ES_SERIALIZATION_WRITER_CLASS = "es.ser.writer.class";
+    
+    /** Value reader - setup automatically; can be overridden for custom types */
+    String ES_SERIALIZATION_READER_CLASS = "es.ser.reader.class";
 }

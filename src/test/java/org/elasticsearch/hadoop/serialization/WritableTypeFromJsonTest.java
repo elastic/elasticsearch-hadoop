@@ -22,7 +22,6 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings("deprecation")
 public class WritableTypeFromJsonTest {
 
     private ValueReader vr = new WritableValueReader();
@@ -54,7 +53,7 @@ public class WritableTypeFromJsonTest {
 
     @Test
     public void testDouble() {
-        writableTypeFromJson("123.3");
+        writableTypeFromJson("12.3e8");
     }
 
     @Test

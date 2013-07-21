@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
 
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -24,7 +25,6 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 public class QueryBuilder {
 
     private final String query;
-    // TODO: read the default from the settings
     private TimeValue time = TimeValue.timeValueMinutes(10);
     private long size = 50;
     private String shard;
@@ -35,6 +35,11 @@ public class QueryBuilder {
         this.query = query;
     }
 
+    public static QueryBuilder query(Settings settings) {
+    	return new QueryBuilder(settings.getTargetResource())
+    	           .time(settings.getScrollKeepAlive())
+    	           .size(settings.getScrollSize());
+    }
     public static QueryBuilder query(String query) {
         return new QueryBuilder(query);
     }

@@ -43,6 +43,7 @@ import org.elasticsearch.hadoop.rest.Node;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.Shard;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -157,14 +158,14 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
             this.esSplit = esSplit;
 
+            SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
+
             // initialize REST client
             client = new BufferedRestClient(settings);
 
-            queryBuilder = QueryBuilder.query(settings.getTargetResource())
+            queryBuilder = QueryBuilder.query(settings)
                     .shard(esSplit.shardId)
-                    .onlyNode(esSplit.nodeId)
-                    .time(settings.getScrollKeepAlive())
-                    .size(settings.getScrollSize());
+                    .onlyNode(esSplit.nodeId);
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
@@ -183,7 +184,6 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public MapWritable getCurrentValue() {
-            // new API clients can use the object as is so do a copy
             return currentValue;
         }
 

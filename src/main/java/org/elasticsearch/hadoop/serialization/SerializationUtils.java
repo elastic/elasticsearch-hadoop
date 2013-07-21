@@ -31,4 +31,13 @@ public abstract class SerializationUtils {
             logger.debug(String.format("Using pre-defined serializer [%s] as default", settings.getSerializerValueWriterClassName()));
         }
     }
+    
+    public static void setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
+
+        if (!StringUtils.hasText(settings.getSerializerValueReaderClassName())) {
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            logger.debug(String.format("Using pre-defined serializer [%s] as default", settings.getSerializerValueReaderClassName()));
+        }
+    }
 }

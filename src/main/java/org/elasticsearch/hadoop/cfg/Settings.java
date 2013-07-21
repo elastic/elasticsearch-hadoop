@@ -71,6 +71,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         //return value;
     }
 
+    public String getSerializerValueReaderClassName() {
+        return getProperty(ES_SERIALIZATION_READER_CLASS, null);
+    }
+
     public String getTargetUri() {
         String address = getProperty(INTERNAL_ES_TARGET_URI);
         return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
