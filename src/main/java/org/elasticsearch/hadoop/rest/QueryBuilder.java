@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.rest;
 import java.io.IOException;
 
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -36,9 +37,8 @@ public class QueryBuilder {
     }
 
     public static QueryBuilder query(Settings settings) {
-    	return new QueryBuilder(settings.getTargetResource())
-    	           .time(settings.getScrollKeepAlive())
-    	           .size(settings.getScrollSize());
+        return new QueryBuilder(settings.getTargetResource()).time(settings.getScrollKeepAlive()).size(
+                settings.getScrollSize());
     }
     public static QueryBuilder query(String query) {
         return new QueryBuilder(query);
@@ -96,10 +96,10 @@ public class QueryBuilder {
         return sb.toString();
     }
 
-    public ScrollQuery build(BufferedRestClient client) {
+    public ScrollQuery build(BufferedRestClient client, ScrollReader reader) {
         String scrollUri = assemble();
         try {
-            return client.scan(scrollUri);
+            return client.scan(scrollUri, reader);
         } catch (IOException ex) {
             throw new IllegalStateException("Cannot build scroll [" + scrollUri + "]", ex);
         }

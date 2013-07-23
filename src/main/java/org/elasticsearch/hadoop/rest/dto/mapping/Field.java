@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.elasticsearch.hadoop.serialization.FieldType;
+
 public class Field implements Serializable {
-
-
 
     private final String name;
     private final FieldType type;
@@ -37,7 +37,7 @@ public class Field implements Serializable {
     public Field(String name, FieldType type, Collection<Field> properties) {
         this.name = name;
         this.type = type;
-        this.properties = (properties != null ? (Field[]) properties.toArray() : null);
+        this.properties = (properties != null ? properties.toArray(new Field[properties.size()]) : null);
     }
 
     public Field[] properties() { return properties; }

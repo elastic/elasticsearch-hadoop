@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.rest;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -24,7 +25,10 @@ import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
+import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.SimpleValueReader;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.Before;
@@ -44,6 +48,7 @@ public class RestQueryTest {
         settings = new TestSettings("rest/savebulk");
         //testSettings.setPort(9200)
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         client = new BufferedRestClient(settings);
     }
 
@@ -62,12 +67,13 @@ public class RestQueryTest {
     @Test
     public void testQueryBuilder() throws Exception {
         QueryBuilder qb = QueryBuilder.query("rest/savebulk/_search?q=me*");
+        Field mapping = client.getMapping();
+        ScrollReader reader = new ScrollReader(new SimpleValueReader(), mapping);
 
         int count = 0;
-        for (ScrollQuery query = qb.build(client); query.hasNext();) {
-            Map<String, Object> map = query.next();
-            //System.out.println(map);
-            assertNotNull(map);
+        for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
+            Object[] next = query.next();
+            assertNotNull(next);
             count++;
         }
 
@@ -79,19 +85,20 @@ public class RestQueryTest {
         BufferedRestClient client = new BufferedRestClient(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
 
+        Field mapping = client.getMapping();
+        ScrollReader reader = new ScrollReader(new SimpleValueReader(), mapping);
+
         String nodeId = targetShards.values().iterator().next().getId();
         ScrollQuery query = QueryBuilder.query("rest/savebulk/_search?q=me*")
                 .shard("0")
                 .onlyNode(nodeId)
-                .time(settings.getScrollKeepAlive())
-                .size(settings.getScrollSize())
-                .build(client);
+                .build(client, reader);
 
         int count = 0;
         for (; query.hasNext();) {
-            Map<String, Object> map = query.next();
-            //System.out.println(map);
-            assertNotNull(map);
+            Object[] next = query.next();
+            System.out.println(Arrays.toString(next));
+            assertNotNull(next);
             count++;
         }
 

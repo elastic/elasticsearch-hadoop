@@ -20,26 +20,30 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+
+import org.elasticsearch.hadoop.serialization.ScrollReader;
 
 /**
  * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
  */
 public class ScrollQuery implements Iterator<Object>, Closeable {
 
-    private RestClient client;
+    private BufferedRestClient client;
     private String scrollId;
-    private List<Object> batch = Collections.emptyList();
+    private List<Object[]> batch = Collections.emptyList();
     private boolean finished = false;
 
     private int batchIndex = 0;
     private long read = 0;
     private long size;
 
-    ScrollQuery(RestClient client, String scrollId, long size) {
+    private final ScrollReader reader;
+
+    ScrollQuery(BufferedRestClient client, String scrollId, long size, ScrollReader reader) {
         this.client = client;
         this.scrollId = scrollId;
         this.size = size;
+        this.reader = reader;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
             }
 
             try {
-                batch = client.scroll(scrollId);
+                batch = client.scroll(scrollId, reader);
             } catch (IOException ex) {
                 throw new IllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
@@ -86,7 +90,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
     }
 
     @Override
-    public Object next() {
+    public Object[] next() {
         return batch.get(batchIndex++);
     }
 

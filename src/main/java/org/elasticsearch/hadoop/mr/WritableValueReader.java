@@ -1,6 +1,5 @@
 package org.elasticsearch.hadoop.mr;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -15,79 +14,94 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.elasticsearch.hadoop.serialization.Parser;
+import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.SimpleValueReader;
-import org.elasticsearch.hadoop.serialization.Parser.Token;
 
 public class WritableValueReader extends SimpleValueReader {
 
-	protected Object list(Parser parser) {
-		Token t = parser.currentToken();
+    @Override
+    public Map createMap() {
+        return new MapWritable();
+    }
 
-		if (t == null) {
-			t = parser.nextToken();
-		}
-		if (t == Token.START_ARRAY) {
-			t = parser.nextToken();
-		}
+    @Override
+    public Object createArray(FieldType type) {
+        Class<? extends Writable> arrayType = null;
 
-		List<Writable> lw = new ArrayList<Writable>();
-		for (; t != Token.END_ARRAY; t = parser.nextToken()) {
-			lw.add((Writable) read(t, parser));
-		}
-		
-		Writable[] values = (lw.isEmpty() ?  new Writable[0] : lw.toArray(new Writable[lw.size()]));
-		Class<? extends Writable> type = (lw.isEmpty() ? NullWritable.get().getClass() : lw.get(0).getClass());
-		return new ArrayWritable(type, values);
-	}
+        switch (type) {
+        case NULL:
+            arrayType = NullWritable.class;
+            break;
+        case STRING:
+            arrayType = Text.class;
+            break;
+        case INTEGER:
+            arrayType = IntWritable.class;
+            break;
+        case LONG:
+            arrayType = LongWritable.class;
+            break;
+        case FLOAT:
+            arrayType = FloatWritable.class;
+            break;
+        case DOUBLE:
+            arrayType = DoubleWritable.class;
+            break;
+        case BOOLEAN:
+            arrayType = BooleanWritable.class;
+            break;
+        case DATE:
+            throw new UnsupportedOperationException("wip");
+        case BINARY:
+            arrayType = BytesWritable.class;
+            break;
+        }
 
-	@Override
-	protected Map<?, ?> createMap() {
-		return new MapWritable();
-	}
-	
-	@Override
-	protected Object fieldName(String name) {
-		return new Text(name);
-	}
+        return new ArrayWritable(arrayType);
+    }
 
-	@Override
-	protected Object intValue(Parser parser) {
-		return new IntWritable(parser.intValue());
-	}
+    @Override
+    public void addToArray(Object array, List<Object> values) {
+        ((ArrayWritable) array).set(values.toArray(new Writable[values.size()]));
+    }
 
-	@Override
-	protected Object binaryValue(Parser parser) {
-		return new BytesWritable(parser.binaryValue());
-	}
+    @Override
+    protected Object binaryValue(byte[] value) {
+        return new BytesWritable(value);
+    }
 
-	@Override
-	protected Object booleanValue(Parser parser) {
-		return new BooleanWritable(parser.booleanValue());
-	}
+    @Override
+    protected Object booleanValue(String value) {
+        return new BooleanWritable(Boolean.parseBoolean(value));
+    }
 
-	@Override
-	protected Object doubleValue(Parser parser) {
-		return new DoubleWritable(parser.doubleValue());
-	}
+    @Override
+    protected Object doubleValue(String value) {
+        return new DoubleWritable(Double.parseDouble(value));
+    }
 
-	@Override
-	protected Object floatValue(Parser parser) {
-		return new FloatWritable(parser.floatValue());
-	}
+    @Override
+    protected Object floatValue(String value) {
+        return new FloatWritable(Float.parseFloat(value));
+    }
 
-	@Override
-	protected Object longValue(Parser parser) {
-		return new LongWritable(parser.longValue());
-	}
+    @Override
+    protected Object longValue(String value) {
+        return new LongWritable(Long.parseLong(value));
+    }
 
-	@Override
-	protected Object nullValue(Parser parser) {
-		return NullWritable.get();
-	}
+    @Override
+    protected Object intValue(String value) {
+        return new IntWritable(Integer.parseInt(value));
+    }
 
-	@Override
-	protected Object textValue(Parser parser) {
-		return new Text(parser.text());
-	}
+    @Override
+    protected Object textValue(String value) {
+        return new Text(value);
+    }
+
+    @Override
+    protected Object nullValue(String value) {
+        return NullWritable.get();
+    }
 }

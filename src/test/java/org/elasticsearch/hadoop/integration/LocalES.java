@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration;
 
 import java.io.File;
 
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.rules.ExternalResource;
 
 public class LocalES extends ExternalResource {

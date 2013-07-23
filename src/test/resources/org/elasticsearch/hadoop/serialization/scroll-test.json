@@ -1,0 +1,56 @@
+{
+    "_scroll_id" : "c2NhbjswOzE7dG90YWxfaGl0czo0Ow==",
+    "took" : 20,
+    "timed_out" : false,
+    "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+    },
+    "hits" : {
+        "total" : 4,
+        "max_score" : 0.0,
+        "hits" : [{
+                "_index" : "rest",
+                "_type" : "savebulk",
+                "_id" : "iKgZY29_TCeUBKcsZKOynA",
+                "_score" : 0.0,
+                "_source" : {
+                    "name" : "Katie Melua",
+                    "url" : "http://www.last.fm/music/Katie+Melua",
+                    "picture" : "http://userserve-ak.last.fm/serve/252/38702721.png"
+                }
+            }, {
+                "_index" : "rest",
+                "_type" : "savebulk",
+                "_id" : "lc_UrFzbRtChtaW4miAyXg",
+                "_score" : 0.0,
+                "_source" : {
+                    "name" : "Maria Mena",
+                    "url" : "http://www.last.fm/music/Maria+Mena",
+                    "picture" : "http://userserve-ak.last.fm/serve/252/13556587.jpg"
+                }
+            }, {
+                "_index" : "rest",
+                "_type" : "savebulk",
+                "_id" : "Kr26xQUzS5Gj9_UR3-alQw",
+                "_score" : 0.0,
+                "_source" : {
+                    "name" : "Nikolas Metaxas",
+                    "url" : "http://www.last.fm/music/Nikolas+Metaxas",
+                    "picture" : "http://userserve-ak.last.fm/serve/252/61486893.png"
+                }
+            }, {
+                "_index" : "rest",
+                "_type" : "savebulk",
+                "_id" : "7Hm_sC5vR2OmyGht8OWE_g",
+                "_score" : 0.0,
+                "_source" : {
+                    "name" : "Paolo Meneguzzi",
+                    "url" : "http://www.last.fm/music/Paolo+Meneguzzi",
+                    "picture" : "http://userserve-ak.last.fm/serve/252/8575439.jpg"
+                }
+            }
+        ]
+    }
+}

@@ -23,6 +23,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import org.apache.commons.codec.binary.Base64;
+import org.elasticsearch.hadoop.serialization.SerializationException;
 
 /**
  * Utility class used internally for the Pig support.
@@ -38,7 +39,7 @@ public abstract class IOUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Serializable> T deserializeFromBase64(String data) throws IOException {
+    public static <T extends Serializable> T deserializeFromBase64(String data) {
         byte[] rawData = Base64.decodeBase64(data.getBytes());
         try {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(rawData));
@@ -47,6 +48,8 @@ public abstract class IOUtils {
             return (T) o;
         } catch (ClassNotFoundException ex) {
             throw new IllegalStateException("cannot deserialize object", ex);
+        } catch (IOException ex) {
+            throw new SerializationException("cannot deserialize object", ex);
         }
     }
 }

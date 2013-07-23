@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.FieldReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
@@ -55,7 +56,6 @@ public class BufferedRestClient implements Closeable {
     private boolean executedBulkWrite = false;
 
     private BytesArray scratchPad;
-    private FieldReader valueReader;
     private ValueWriter<?> valueWriter;
 
     private boolean writeInitialized = false;
@@ -81,8 +81,6 @@ public class BufferedRestClient implements Closeable {
         this.index = tempIndex;
         this.resource = new Resource(index);
 
-        String valueReader = settings.getSerializerValueReaderClassName();
-        this.valueReader = (StringUtils.hasText(valueReader) ? ObjectUtils.<FieldReader> instantiate(valueReader, null) : null);
         trace = log.isTraceEnabled();
     }
 
@@ -113,11 +111,11 @@ public class BufferedRestClient implements Closeable {
      * @param uri
      * @return
      */
-    ScrollQuery scan(String query) throws IOException {
+    ScrollQuery scan(String query, ScrollReader reader) throws IOException {
         String[] scrollInfo = client.scan(query);
         String scrollId = scrollInfo[0];
         long totalSize = Long.parseLong(scrollInfo[1]);
-        return new ScrollQuery(client, scrollId, totalSize);
+        return new ScrollQuery(this, scrollId, totalSize, reader);
     }
 
     /**
@@ -239,5 +237,9 @@ public class BufferedRestClient implements Closeable {
 
     public Field getMapping() throws IOException {
         return Field.parseField((Map<String, Object>) client.getMapping(resource.getMapping()).entrySet().iterator().next().getValue());
+    }
+
+    public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
+        return reader.read(client.scroll(scrollId));
     }
 }

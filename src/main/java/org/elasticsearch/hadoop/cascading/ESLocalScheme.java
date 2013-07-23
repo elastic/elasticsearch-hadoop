@@ -144,8 +144,9 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         ScrollQuery query = sourceCall.getInput();
         if (query.hasNext()) {
-            Map<String, Object> map = query.next();
+            Map map = (Map) query.next()[1];
             TupleEntry tuples = sourceCall.getIncomingEntry();
+
             // TODO: verify ordering guarantees
             Set<String> keys = map.keySet();
             //tuples.set(new TupleEntry(new Fields(keys.toArray(new String[keys.size()])),

@@ -16,8 +16,6 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.io.Closeable;
-import java.util.List;
-import java.util.Map;
 
 public interface Parser extends Closeable {
     enum Token {
@@ -88,7 +86,7 @@ public interface Parser extends Closeable {
         VALUE_NULL {
             @Override
             public boolean isValue() {
-                return false;
+                return true;
             }
         };
 

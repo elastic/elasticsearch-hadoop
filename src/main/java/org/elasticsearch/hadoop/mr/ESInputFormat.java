@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.mr;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +45,12 @@ import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.FieldReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -125,6 +130,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         private int read = 0;
         private ShardInputSplit esSplit;
+        private ScrollReader scrollReader;
 
         private BufferedRestClient client;
         private QueryBuilder queryBuilder;
@@ -161,7 +167,19 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
             this.esSplit = esSplit;
 
+            // initialize mapping/ scroll reader 
             SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
+            String valueReader = settings.getSerializerValueReaderClassName();
+            FieldReader reader = ObjectUtils.<FieldReader> instantiate(valueReader, null);
+            String mappingData = cfg.get(MAPPING_PROPERTY);
+
+            Field mapping = null;
+
+            if (StringUtils.hasText(mappingData)) {
+                mapping = IOUtils.deserializeFromBase64(mappingData);
+            }
+
+            scrollReader = new ScrollReader(reader, mapping);
 
             // initialize REST client
             client = new BufferedRestClient(settings);
@@ -211,7 +229,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         @Override
         public boolean next(Text key, MapWritable value) throws IOException {
             if (result == null) {
-                result = queryBuilder.build(client);
+                result = queryBuilder.build(client, scrollReader);
                 size = result.getSize();
 
                 if (log.isTraceEnabled()) {
@@ -225,10 +243,10 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
                 return false;
             }
 
-            Map<String, Object> next = result.next();
+            Object[] next = result.next();
             // we save the key as is since under the old API, we don't have to create a new Text() object
-            currentKey.set(next.get("_id").toString());
-            currentValue = (MapWritable) WritableUtils.toWritable(next.get("_source"));
+            currentKey.set(next[0].toString());
+            currentValue = (MapWritable) next[1];
 
             if (key != null) {
                 key.set(currentKey);

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
-import org.elasticsearch.hadoop.integration.TestUtils;
 
 /**
  * Tweaked settings for testing.

@@ -23,142 +23,132 @@ import java.util.Map;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 
+
 /**
- * Basic value reader handling the common parsing tasks.
+ * Basic value reader handling using the implied JSON type.
  */
 public class SimpleValueReader implements FieldReader {
 
-	private CharSequence failedToken;
+    @Override
+    public Object readValue(Parser parser, String value, FieldType esType) {
 
-	@Override
-	public Object read(Parser parser) {
-		Token token = parser.currentToken();
+        if (esType == null) {
+            // fallback to JSON
+            Token currentToken = parser.currentToken();
+            if (!currentToken.isValue()) {
+                return false;
+            }
 
-		if (token == null) {
-			token = parser.nextToken();
-		}
+            switch (currentToken) {
+            case VALUE_NULL:
+                esType = FieldType.NULL;
+                break;
+            case VALUE_BOOLEAN:
+                esType = FieldType.BOOLEAN;
+                break;
+            case VALUE_STRING:
+                esType = FieldType.STRING;
+                break;
+            case VALUE_NUMBER:
+                NumberType numberType = parser.numberType();
+                switch (numberType) {
+                case INT:
+                    esType = FieldType.INTEGER;
+                    break;
+                case LONG:
+                    esType = FieldType.LONG;
+                    break;
+                case FLOAT:
+                    esType = FieldType.FLOAT;
+                    break;
+                case DOUBLE:
+                    esType = FieldType.DOUBLE;
+                    break;
+                }
+                break;
+            }
+        }
 
-		try {
-			return read(token, parser);
-		} catch (RuntimeException ex) {
-			failedToken = parser.currentName();
-			throw ex;
-		}
-	}
+        switch (esType) {
+        case NULL:
+            return nullValue(value);
+        case STRING:
+            return textValue(value);
+        case INTEGER:
+            return intValue(value);
+        case LONG:
+            return longValue(value);
+        case FLOAT:
+            return floatValue(value);
+        case DOUBLE:
+            return doubleValue(value);
+        case BOOLEAN:
+            return booleanValue(value);
+        case BINARY:
+            return binaryValue(parser.binaryValue());
+        case DATE:
+            return date(value);
+        case IP:
+            throw new UnsupportedOperationException("not implemented yet");
+        case OBJECT:
+            throw new UnsupportedOperationException("not implemented yet");
+        }
+        return null;
+    }
 
-	protected Object list(Parser parser) {
-		Token t = parser.currentToken();
+    @Override
+    public Map createMap() {
+        return new LinkedHashMap<Object, Object>();
+    }
 
-		if (t == null) {
-			t = parser.nextToken();
-		}
-		if (t == Token.START_ARRAY) {
-			t = parser.nextToken();
-		}
+    @Override
+    public void addToMap(Object map, Object key, Object value) {
+        ((Map) map).put(key, value);
+    }
 
-		List<Object> list = createList();
-		for (; t != Token.END_ARRAY; t = parser.nextToken()) {
-			list.add(read(t, parser));
-		}
-		return list;
-	}
-	
-	protected List<Object> createList() {
-		return new ArrayList<Object>();
-	}
+    @Override
+    public Object createArray(FieldType type) {
+        return new ArrayList<Object>();
+    }
 
-	@SuppressWarnings("unchecked")
-	protected Object map(Parser parser) {
-		Token t = parser.currentToken();
+    @Override
+    public void addToArray(Object array, List<Object> value) {
+        ((List) array).addAll(value);
+    }
 
-		if (t == null) {
-			t = parser.nextToken();
-		}
-		if (t == Token.START_OBJECT) {
-			t = parser.nextToken();
-		}
+    protected Object binaryValue(byte[] value) {
+        return value;
+    }
 
-		Map map = createMap();
-		for (; t == Token.FIELD_NAME; t = parser.nextToken()) {
-			// Must point to field name
-			Object fieldName = fieldName(parser.currentName());
-			// And then the value...
-			t = parser.nextToken();
-			map.put(fieldName, read(t, parser));
-		}
-		return map;
-	}
+    protected Object booleanValue(String value) {
+        return Boolean.parseBoolean(value);
+    }
 
-	protected Object fieldName(String name) {
-		return name;
-	}
+    protected Object doubleValue(String value) {
+        return Double.parseDouble(value);
+    }
 
-	protected Map<?, ?> createMap() {
-		return new LinkedHashMap<Object, Object>();
-	}
+    protected Object floatValue(String value) {
+        return Float.parseFloat(value);
+    }
 
-	protected Object read(Token t, Parser parser) {
-		if (t == Token.VALUE_NULL) {
-			return nullValue(parser);
-		} else if (t == Token.VALUE_STRING) {
-			return textValue(parser);
-		} else if (t == Token.VALUE_NUMBER) {
-			NumberType numberType = parser.numberType();
-			if (numberType == NumberType.INT) {
-				return intValue(parser);
-			} else if (numberType == NumberType.LONG) {
-				return longValue(parser);
-			} else if (numberType == NumberType.FLOAT) {
-				return floatValue(parser);
-			} else if (numberType == NumberType.DOUBLE) {
-				return doubleValue(parser);
-			}
-		} else if (t == Token.VALUE_BOOLEAN) {
-			return booleanValue(parser);
-		} else if (t == Token.START_OBJECT) {
-			return map(parser);
-		} else if (t == Token.START_ARRAY) {
-			return list(parser);
-		} else if (t == Token.VALUE_EMBEDDED_OBJECT) {
-			return binaryValue(parser);
-		}
-		return null;
-	}
+    protected Object longValue(String value) {
+        return Long.parseLong(value);
+    }
 
-	protected Object binaryValue(Parser parser) {
-		return parser.binaryValue();
-	}
+    protected Object intValue(String value) {
+        return Integer.parseInt(value);
+    }
 
-	protected Object booleanValue(Parser parser) {
-		return parser.booleanValue();
-	}
+    protected Object textValue(String value) {
+        return value;
+    }
 
-	protected Object doubleValue(Parser parser) {
-		return parser.doubleValue();
-	}
+    protected Object nullValue(String value) {
+        return null;
+    }
 
-	protected Object floatValue(Parser parser) {
-		return parser.floatValue();
-	}
-
-	protected Object longValue(Parser parser) {
-		return parser.longValue();
-	}
-
-	protected Object intValue(Parser parser) {
-		return parser.intValue();
-	}
-
-	protected Object textValue(Parser parser) {
-		return parser.text();
-	}
-
-	protected Object nullValue(Parser parser) {
-		return null;
-	}
-
-	@Override
-	public CharSequence failedToken() {
-		return failedToken;
-	}
+    private Object date(String value) {
+        throw new UnsupportedOperationException("wip");
+    }
 }

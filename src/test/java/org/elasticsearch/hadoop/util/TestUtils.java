@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.integration;
+package org.elasticsearch.hadoop.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class TestUtils {
 
@@ -36,5 +39,19 @@ public class TestUtils {
 
     public static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().startsWith("win");
+    }
+
+    public static byte[] fromInputStream(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length;
+        try {
+            while ((length = in.read(buffer)) != -1)
+                out.write(buffer, 0, length);
+        } finally {
+            in.close(); // call this in a finally block
+        }
+
+        return out.toByteArray();
     }
 }

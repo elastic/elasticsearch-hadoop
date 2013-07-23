@@ -15,25 +15,21 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.util.List;
+
 
 /**
  * Translates a JSON field to an actual object. Implementations should only handle the conversion and not influence the parser outside the conversion.
  */
 public interface FieldReader {
 
-    /**
-     * Returns a non-null object if the content was understood, null otherwise.
-     *
-     * @param parser
-     * @return a non-null object if the content was understood, null otherwise.
-     */
-    Object read(Parser parser, FieldType esType);
+    Object readValue(Parser parser, String value, FieldType esType);
 
-    /**
-     * Returns the failed token (for debugging purposes) in case the reader cannot understand the parser content.
-     *
-     * @return
-     */
-    CharSequence failedToken();
+    Object createMap();
 
+    void addToMap(Object map, Object key, Object value);
+
+    Object createArray(FieldType type);
+
+    void addToArray(Object array, List<Object> values);
 }

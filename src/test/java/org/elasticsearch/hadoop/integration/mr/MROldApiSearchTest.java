@@ -36,6 +36,7 @@ public class MROldApiSearchTest {
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set("es.resource", "mroldapi/save/_search?q=*");
 
+        // un-comment to print results to the console (works only in local mode)
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 
         JobClient.runJob(conf);

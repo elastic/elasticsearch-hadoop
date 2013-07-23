@@ -1,31 +1,27 @@
 package org.elasticsearch.hadoop.serialization;
 
-import java.io.InputStream;
-
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class ValueReaderTest {
-	
-	private Parser parser;
-	
-	@Before
-	public void before() {
-		InputStream in = getClass().getResourceAsStream("parser-test.json");
-		parser = new JacksonJsonParser(in);
-	}
 
-	@After
-	public void after() {
-		parser.close();
-	}
+    private byte[] content;
 
-	@Test
-	public void testSimplePathReader() throws Exception {
-		ContentConsumer consumer = ContentConsumer.consumer(parser, new SimpleValueReader());
-		System.out.println(consumer.consume(Object.class));
-		consumer.close();
-	}
+    @Before
+    public void before() throws Exception {
+        content = TestUtils.fromInputStream(getClass().getResourceAsStream("scroll-test.json"));
+    }
+
+    @After
+    public void after() {
+        content = null;
+    }
+
+    @Test
+    public void testSimplePathReader() throws Exception {
+        ScrollReader reader = new ScrollReader(new SimpleValueReader(), null);
+        System.out.println(reader.read(content));
+    }
 }

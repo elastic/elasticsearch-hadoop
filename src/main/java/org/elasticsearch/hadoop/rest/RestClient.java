@@ -173,9 +173,6 @@ public class RestClient implements Closeable {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
         PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
         post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
-        byte[] content = execute(post);
-
-        return content;
-        //return (List<Map<String, Object>>) ((Map) mapper.readValue(content, Map.class).get("hits")).get("hits");
+        return execute(post);
     }
 }

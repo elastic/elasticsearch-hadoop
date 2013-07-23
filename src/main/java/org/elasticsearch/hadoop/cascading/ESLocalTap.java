@@ -21,9 +21,11 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.mr.WritableValueReader;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -72,7 +74,7 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
         client = new BufferedRestClient(settings);
 
         if (input == null) {
-            input = QueryBuilder.query(target).build(client);
+            input = QueryBuilder.query(target).build(client, new ScrollReader(new WritableValueReader(), null));
         }
         return new TupleEntrySchemeIterator(flowProcess, getScheme(), input, getIdentifier());
     }
