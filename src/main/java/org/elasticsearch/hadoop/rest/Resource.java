@@ -47,5 +47,9 @@ class Resource {
     String targetShards() {
         return root + "_search_shards";
     }
+
+    String getMapping() {
+        return root + "_mapping";
+    }
 }
 

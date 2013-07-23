@@ -29,10 +29,10 @@ import org.apache.commons.codec.binary.Base64;
  */
 public abstract class IOUtils {
 
-    public static String serializeToBase64(Serializable schema) throws IOException {
+    public static String serializeToBase64(Serializable object) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(schema);
+        oos.writeObject(object);
         oos.close();
         return new String(Base64.encodeBase64(baos.toByteArray(), false, true));
     }

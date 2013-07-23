@@ -17,11 +17,9 @@ package org.elasticsearch.hadoop.serialization;
 
 
 /**
- * Translates a value to its JSON-like structure.
+ * Translates a JSON field to an actual object. Implementations should only handle the conversion and not influence the parser outside the conversion.
  */
-public interface ValueReader {
-
-    Object NULL = new Object();
+public interface FieldReader {
 
     /**
      * Returns a non-null object if the content was understood, null otherwise.
@@ -29,7 +27,7 @@ public interface ValueReader {
      * @param parser
      * @return a non-null object if the content was understood, null otherwise.
      */
-    Object read(Parser parser);
+    Object read(Parser parser, FieldType esType);
 
     /**
      * Returns the failed token (for debugging purposes) in case the reader cannot understand the parser content.

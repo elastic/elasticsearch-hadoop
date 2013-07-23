@@ -39,11 +39,13 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.Node;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
-import org.elasticsearch.hadoop.rest.Shard;
+import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.rest.dto.Shard;
+import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
@@ -55,6 +57,7 @@ import org.elasticsearch.hadoop.util.WritableUtils;
 public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ConfigurationOptions {
 
+    private static final String MAPPING_PROPERTY = "es.internal.mr.mapping";
     private static Log log = LogFactory.getLog(ESInputFormat.class);
 
     protected static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
@@ -284,11 +287,20 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         Settings settings = SettingsManager.loadFrom(job);
         BufferedRestClient client = new BufferedRestClient(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
+        Field mapping = client.getMapping();
         client.close();
 
+        log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
+
         if (log.isTraceEnabled()) {
+            log.trace(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
             log.trace("Creating splits for shards " + targetShards);
         }
+
+        //TODO: implement this more efficiently
+        String savedMapping = IOUtils.serializeToBase64(mapping);
+        // TODO: externalize
+        job.set(MAPPING_PROPERTY, savedMapping);
 
         ShardInputSplit[] splits = new ShardInputSplit[targetShards.size()];
 

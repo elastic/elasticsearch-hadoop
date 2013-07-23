@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.dto;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ public class Node {
     private String ipAddress;
     private int httpPort;
 
-    Node(String id, Map<String, Object> data) {
+    public Node(String id, Map<String, Object> data) {
         this.id = id;
         name = data.get("name").toString();
         String httpAddr = data.get("http_address").toString();

@@ -25,11 +25,11 @@ import java.util.Map;
 /**
  * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
  */
-public class ScrollQuery implements Iterator<Map<String, Object>>, Closeable {
+public class ScrollQuery implements Iterator<Object>, Closeable {
 
     private RestClient client;
     private String scrollId;
-    private List<Map<String, Object>> batch = Collections.emptyList();
+    private List<Object> batch = Collections.emptyList();
     private boolean finished = false;
 
     private int batchIndex = 0;
@@ -86,7 +86,7 @@ public class ScrollQuery implements Iterator<Map<String, Object>>, Closeable {
     }
 
     @Override
-    public Map<String, Object> next() {
+    public Object next() {
         return batch.get(batchIndex++);
     }
 

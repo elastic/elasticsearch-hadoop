@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.dto;
 
 import java.util.Map;
 
@@ -34,7 +34,7 @@ public class Shard {
     private Integer name;
     private String index;
 
-    Shard(Map<String, Object> data) {
+    public Shard(Map<String, Object> data) {
         state = State.valueOf((String) data.get("state"));
         name = (Integer) data.get("shard");
         index = (String) data.get("index");

@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -82,7 +83,7 @@ public class RestClient implements Closeable {
         execute(post);
     }
 
-    public void refresh(String index) throws IOException {
+    public void refresh(String index) {
         int slash = index.indexOf("/");
         String indx = (slash < 0) ? index : index.substring(0, slash);
         execute(new PostMethod(indx + "/_refresh"));
@@ -94,13 +95,28 @@ public class RestClient implements Closeable {
         execute(post);
     }
 
-    public void deleteIndex(String index) throws IOException {
+    public void deleteIndex(String index) {
         execute(new DeleteMethod(index));
     }
 
     public List<List<Map<String, Object>>> targetShards(String query) throws IOException {
         List<List<Map<String, Object>>> shardsJson = get(query, "shards");
         return shardsJson;
+    }
+
+    public Map<String, Node> getNodes() throws IOException {
+        Map<String, Map<String, Object>> nodesData = get("_nodes", "nodes");
+        Map<String, Node> nodes = new LinkedHashMap<String, Node>();
+
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            Node node = new Node(entry.getKey(), entry.getValue());
+            nodes.put(entry.getKey(), node);
+        }
+        return nodes;
+    }
+
+    public Map<String, Object> getMapping(String query) throws IOException {
+        return (Map<String, Object>) get(query, null);
     }
 
     @Override
@@ -145,17 +161,6 @@ public class RestClient implements Closeable {
         }
     }
 
-    public Map<String, Node> getNodes() throws IOException {
-        Map<String, Map<String, Object>> nodesData = get("_nodes", "nodes");
-        Map<String, Node> nodes = new LinkedHashMap<String, Node>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            nodes.put(entry.getKey(), node);
-        }
-        return nodes;
-    }
-
     public String[] scan(String query) throws IOException {
         Map<String, Object> scan = get(query, null);
         String[] data = new String[2];
@@ -164,12 +169,13 @@ public class RestClient implements Closeable {
         return data;
     }
 
-    public List<Map<String, Object>> scroll(String scrollId) throws IOException {
+    public byte[] scroll(String scrollId) throws IOException {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
         PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
         post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
         byte[] content = execute(post);
 
-        return (List<Map<String, Object>>) ((Map) mapper.readValue(content, Map.class).get("hits")).get("hits");
+        return content;
+        //return (List<Map<String, Object>>) ((Map) mapper.readValue(content, Map.class).get("hits")).get("hits");
     }
 }

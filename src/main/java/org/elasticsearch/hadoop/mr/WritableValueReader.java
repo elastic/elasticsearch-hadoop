@@ -72,7 +72,7 @@ public class WritableValueReader extends SimpleValueReader {
 	}
 
 	@Override
-	protected Object floatVale(Parser parser) {
+	protected Object floatValue(Parser parser) {
 		return new FloatWritable(parser.floatValue());
 	}
 

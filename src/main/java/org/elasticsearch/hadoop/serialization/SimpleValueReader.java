@@ -26,7 +26,7 @@ import org.elasticsearch.hadoop.serialization.Parser.Token;
 /**
  * Basic value reader handling the common parsing tasks.
  */
-public class SimpleValueReader implements ValueReader {
+public class SimpleValueReader implements FieldReader {
 
 	private CharSequence failedToken;
 
@@ -109,7 +109,7 @@ public class SimpleValueReader implements ValueReader {
 			} else if (numberType == NumberType.LONG) {
 				return longValue(parser);
 			} else if (numberType == NumberType.FLOAT) {
-				return floatVale(parser);
+				return floatValue(parser);
 			} else if (numberType == NumberType.DOUBLE) {
 				return doubleValue(parser);
 			}
@@ -137,7 +137,7 @@ public class SimpleValueReader implements ValueReader {
 		return parser.doubleValue();
 	}
 
-	protected Object floatVale(Parser parser) {
+	protected Object floatValue(Parser parser) {
 		return parser.floatValue();
 	}
 

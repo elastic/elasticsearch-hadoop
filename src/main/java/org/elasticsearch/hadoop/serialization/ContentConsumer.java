@@ -25,15 +25,15 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class ContentConsumer {
 
     private final Parser parser;
-    private final ValueReader reader;
+    private final FieldReader reader;
 
-    private ContentConsumer(Parser parser, ValueReader reader) {
+    private ContentConsumer(Parser parser, FieldReader reader) {
         Assert.notNull(parser);
         this.parser = parser;
         this.reader = reader;
     }
 
-    public static ContentConsumer consumer(Parser parser, ValueReader reader) {
+    public static ContentConsumer consumer(Parser parser, FieldReader reader) {
         return new ContentConsumer(parser, reader);
     }
 
