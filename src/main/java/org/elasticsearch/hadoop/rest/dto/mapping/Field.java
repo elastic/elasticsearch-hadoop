@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.rest.dto.mapping;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -56,20 +57,25 @@ public class Field implements Serializable {
         String name = entry.getKey();
         Object value = entry.getValue();
 
-        Map<String, Object> content = (Map<String, Object>) value;
-        if ("properties".equals(name)) {
+        // nested object
+        if (value instanceof Map) {
+            Map<String, Object> content = (Map<String, Object>) value;
+
             List<Field> fields = new ArrayList<Field>(content.size());
             for (Entry<String, Object> e : content.entrySet()) {
-                fields.add(parseField(e));
+                if (e.getValue() instanceof Map || "type".equals(e.getKey())) {
+                    fields.add(parseField(e));
+                }
             }
             return new Field(name, FieldType.OBJECT, fields);
         }
+        // it must be "type" - filtering was applied above
         else {
-            return new Field(name, FieldType.parse(content.get("type").toString().toUpperCase()));
+            return new Field(name, FieldType.parse(value.toString().toUpperCase()));
         }
     }
 
     public String toString() {
-        return (type == FieldType.OBJECT ? properties.toString() : String.format("%s=%s", name, type));
+        return (type == FieldType.OBJECT ? Arrays.toString(properties) : String.format("%s=%s", name, type));
     }
 }

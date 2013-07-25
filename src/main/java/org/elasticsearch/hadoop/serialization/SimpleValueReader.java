@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
+import org.elasticsearch.hadoop.util.Assert;
 
 
 /**
@@ -31,43 +32,6 @@ public class SimpleValueReader implements FieldReader {
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
-
-        if (esType == null) {
-            // fallback to JSON
-            Token currentToken = parser.currentToken();
-            if (!currentToken.isValue()) {
-                return false;
-            }
-
-            switch (currentToken) {
-            case VALUE_NULL:
-                esType = FieldType.NULL;
-                break;
-            case VALUE_BOOLEAN:
-                esType = FieldType.BOOLEAN;
-                break;
-            case VALUE_STRING:
-                esType = FieldType.STRING;
-                break;
-            case VALUE_NUMBER:
-                NumberType numberType = parser.numberType();
-                switch (numberType) {
-                case INT:
-                    esType = FieldType.INTEGER;
-                    break;
-                case LONG:
-                    esType = FieldType.LONG;
-                    break;
-                case FLOAT:
-                    esType = FieldType.FLOAT;
-                    break;
-                case DOUBLE:
-                    esType = FieldType.DOUBLE;
-                    break;
-                }
-                break;
-            }
-        }
 
         switch (esType) {
         case NULL:

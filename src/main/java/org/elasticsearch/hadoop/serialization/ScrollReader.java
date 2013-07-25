@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
@@ -109,7 +110,7 @@ public class ScrollReader {
             return list(fieldMapping);
         }
 
-        FieldType esType = esMapping.get(fieldMapping);
+        FieldType esType = mapping(fieldMapping);
 
         if (t.isValue()) {
             return parseValue(esType);
@@ -131,7 +132,7 @@ public class ScrollReader {
             t = parser.nextToken();
         }
 
-        Object array = reader.createArray(esMapping.get(fieldMapping));
+        Object array = reader.createArray(mapping(fieldMapping));
         List<Object> content = new ArrayList<Object>();
         for (; t != Token.END_ARRAY; t = parser.nextToken()) {
             content.add(read(t, fieldMapping));
@@ -179,4 +180,48 @@ public class ScrollReader {
 
         return map;
     }
+
+    private FieldType mapping(String fieldMapping) {
+        FieldType esType = esMapping.get(fieldMapping);
+
+        if (esType != null) {
+            return esType;
+        }
+
+        // fall back to JSON
+        Token currentToken = parser.currentToken();
+        if (!currentToken.isValue()) {
+            Assert.notNull(esType, "Expected a value but got " + currentToken);
+        }
+
+        switch (currentToken) {
+        case VALUE_NULL:
+            esType = FieldType.NULL;
+                break;
+        case VALUE_BOOLEAN:
+            esType = FieldType.BOOLEAN;
+                break;
+        case VALUE_STRING:
+            esType = FieldType.STRING;
+                break;
+        case VALUE_NUMBER:
+            NumberType numberType = parser.numberType();
+            switch (numberType) {
+            case INT:
+                esType = FieldType.INTEGER;
+                break;
+            case LONG:
+                esType = FieldType.LONG;
+                break;
+            case FLOAT:
+                esType = FieldType.FLOAT;
+                break;
+            case DOUBLE:
+                esType = FieldType.DOUBLE;
+                break;
+            }
+                break;
+            }
+        return esType;
+        }
 }
