@@ -15,11 +15,10 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import java.util.Arrays;
-
-import org.apache.commons.codec.binary.Base64;
 import org.codehaus.jackson.Base64Variants;
 import org.elasticsearch.hadoop.mr.WritableValueReader;
+import org.elasticsearch.hadoop.serialization.Parser.NumberType;
+import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,7 +85,31 @@ public class WritableTypeFromJsonTest {
     private void writableTypeFromJson(String json) {
         JacksonJsonParser parser = new JacksonJsonParser(json.getBytes());
         parser.nextToken();
-        Object readValue = vr.readValue(parser, parser.text(), null);
+        Object readValue = vr.readValue(parser, parser.text(), fromJson(parser, parser.currentToken()));
         System.out.println(readValue);
+    }
+    
+    private static FieldType fromJson(Parser parser, Token currentToken) {
+        switch (currentToken) {
+        case VALUE_NULL:
+            return FieldType.NULL;
+        case VALUE_BOOLEAN:
+            return FieldType.BOOLEAN;
+        case VALUE_STRING:
+            return FieldType.STRING;
+        case VALUE_NUMBER:
+            NumberType numberType = parser.numberType();
+            switch (numberType) {
+            case INT:
+                return FieldType.INTEGER;
+            case LONG:
+                return FieldType.LONG;
+            case FLOAT:
+                return FieldType.FLOAT;
+            case DOUBLE:
+                return FieldType.DOUBLE;
+            }
+        }
+        return null;
     }
 }
