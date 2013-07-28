@@ -107,7 +107,7 @@ dependencies {
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
-	testRuntime "joda-time:joda-time:$jodaVersion"
+	optional("joda-time:joda-time:$jodaVersion")
 	
 	// Required by Hive + Pig
 	// testRuntime "org.antlr:antlr-runtime:$antlrVersion"

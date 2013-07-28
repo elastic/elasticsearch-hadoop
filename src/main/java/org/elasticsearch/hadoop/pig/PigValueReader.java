@@ -1,0 +1,25 @@
+package org.elasticsearch.hadoop.pig;
+
+import java.util.List;
+
+import org.apache.pig.data.DataByteArray;
+import org.apache.pig.data.TupleFactory;
+import org.elasticsearch.hadoop.serialization.SimpleValueReader;
+
+public class PigValueReader extends SimpleValueReader {
+
+	@Override
+	public Object addToArray(Object array, List<Object> value) {
+		return TupleFactory.getInstance().newTupleNoCopy(value);
+	}
+
+	@Override
+	protected Object binaryValue(byte[] value) {
+		return new DataByteArray(value);
+	}
+
+	@Override
+	protected Object date(String value) {
+		return DateConverter.convertFromES(value);
+	}
+}

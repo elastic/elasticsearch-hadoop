@@ -3,6 +3,8 @@ package org.elasticsearch.hadoop.mr;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.bind.DatatypeConverter;
+
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
@@ -51,9 +53,12 @@ public class WritableValueReader extends SimpleValueReader {
             arrayType = BooleanWritable.class;
             break;
         case DATE:
-            throw new UnsupportedOperationException("wip");
+            arrayType = LongWritable.class;
         case BINARY:
             arrayType = BytesWritable.class;
+            break;
+        case OBJECT:
+            arrayType = MapWritable.class;
             break;
         }
 
@@ -61,8 +66,9 @@ public class WritableValueReader extends SimpleValueReader {
     }
 
     @Override
-    public void addToArray(Object array, List<Object> values) {
+    public Object addToArray(Object array, List<Object> values) {
         ((ArrayWritable) array).set(values.toArray(new Writable[values.size()]));
+        return array;
     }
 
     @Override
@@ -89,8 +95,8 @@ public class WritableValueReader extends SimpleValueReader {
     protected Object longValue(String value) {
         return new LongWritable(Long.parseLong(value));
     }
-
-    @Override
+    
+	@Override
     protected Object intValue(String value) {
         return new IntWritable(Integer.parseInt(value));
     }
@@ -104,4 +110,10 @@ public class WritableValueReader extends SimpleValueReader {
     protected Object nullValue(String value) {
         return NullWritable.get();
     }
+    
+    @Override
+	protected Object date(String value) {
+    	// convert String to Long
+    	return new LongWritable(DatatypeConverter.parseDateTime(value).getTimeInMillis());
+	}
 }

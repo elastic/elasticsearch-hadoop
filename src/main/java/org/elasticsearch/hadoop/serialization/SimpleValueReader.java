@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,12 +73,13 @@ public class SimpleValueReader implements FieldReader {
 
     @Override
     public Object createArray(FieldType type) {
-        return new ArrayList<Object>();
+    	// no need to create a collection, we'll just reuse the one passed to #addToArray
+        return Collections.emptyList();
     }
 
     @Override
-    public void addToArray(Object array, List<Object> value) {
-        ((List) array).addAll(value);
+    public Object addToArray(Object array, List<Object> value) {
+        return value;
     }
 
     protected Object binaryValue(byte[] value) {
@@ -112,7 +114,7 @@ public class SimpleValueReader implements FieldReader {
         return null;
     }
 
-    private Object date(String value) {
+    protected Object date(String value) {
         throw new UnsupportedOperationException("wip");
     }
 }

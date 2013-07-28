@@ -31,5 +31,5 @@ public interface FieldReader {
 
     Object createArray(FieldType type);
 
-    void addToArray(Object array, List<Object> values);
+    Object addToArray(Object array, List<Object> values);
 }

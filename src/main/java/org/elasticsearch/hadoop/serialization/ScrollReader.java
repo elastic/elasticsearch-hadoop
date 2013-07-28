@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
@@ -33,10 +35,13 @@ import org.elasticsearch.hadoop.util.Assert;
  */
 public class ScrollReader {
 
+    private static final Log log = LogFactory.getLog(ScrollReader.class);
+
     private Parser parser;
     private final FieldReader reader;
     private final Map<String, FieldType> esMapping;
-
+    private final boolean trace = log.isTraceEnabled();
+    
     public ScrollReader(FieldReader reader, Field rootField) {
         this.reader = reader;
 
@@ -55,6 +60,10 @@ public class ScrollReader {
         Assert.notNull(content);
         this.parser = new JacksonJsonParser(content);
 
+        if (trace) {
+        	log.trace("Parsing content " + new String(content));
+        }
+        
         try {
             return read();
         } finally {
@@ -80,17 +89,25 @@ public class ScrollReader {
             results.add(readHit());
         }
 
+        if (trace) {
+        	log.trace("Read objects " + results);
+        }
         return results;
     }
 
     private Object[] readHit() {
         Token t = parser.currentToken();
-        Object[] result = new Object[2];
-        Assert.isTrue(t == Token.START_OBJECT, "expected object");
+        Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
         Assert.notNull(ParsingUtils.seek("_id", parser), "no id found");
+        Object[] result = new Object[2];
         result[0] = parser.text();
         Assert.notNull(ParsingUtils.seek("_source", parser), "no _source found");
         result[1] = read(t, null);
+        
+        if (trace) {
+        	log.trace(String.format("Read hit result [%s]=[%s]", result[0], result[1]));
+        }
+
         return result;
     }
 
@@ -119,7 +136,9 @@ public class ScrollReader {
     }
 
     private Object parseValue(FieldType esType) {
-        return reader.readValue(parser, parser.text(), esType);
+        Object obj = reader.readValue(parser, parser.text(), esType);
+        parser.nextToken();
+        return obj;
     }
 
     protected Object list(String fieldMapping) {
@@ -134,14 +153,14 @@ public class ScrollReader {
 
         Object array = reader.createArray(mapping(fieldMapping));
         List<Object> content = new ArrayList<Object>();
-        for (; t != Token.END_ARRAY; t = parser.nextToken()) {
-            content.add(read(t, fieldMapping));
+        for (; parser.currentToken() != Token.END_ARRAY;) {
+            content.add(read(parser.currentToken(), fieldMapping));
         }
 
         // eliminate END_ARRAY
         parser.nextToken();
 
-        reader.addToArray(array, content);
+        array = reader.addToArray(array, content);
         return array;
     }
 
@@ -157,12 +176,12 @@ public class ScrollReader {
 
         Object map = reader.createMap();
 
-        for (; t != Token.END_OBJECT; t = parser.nextToken()) {
+        for (; parser.currentToken() != Token.END_OBJECT; ) {
             String currentName = parser.currentName();
             String nodeMapping = fieldMapping;
 
             if (nodeMapping != null) {
-                nodeMapping += fieldMapping + "/" + currentName;
+                nodeMapping = fieldMapping + "/" + currentName;
             }
             else {
                 nodeMapping = currentName;
@@ -171,12 +190,11 @@ public class ScrollReader {
             // Must point to field name
             Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
             // And then the value...
-            t = parser.nextToken();
-            reader.addToMap(map, fieldName, read(t, nodeMapping));
+            reader.addToMap(map, fieldName, read(parser.nextToken(), nodeMapping));
         }
 
         // eliminate END_OBJECT
-        parser.nextToken();
+       	parser.nextToken();
 
         return map;
     }
@@ -191,7 +209,8 @@ public class ScrollReader {
         // fall back to JSON
         Token currentToken = parser.currentToken();
         if (!currentToken.isValue()) {
-            Assert.notNull(esType, "Expected a value but got " + currentToken);
+            // nested type
+        	return FieldType.OBJECT;
         }
 
         switch (currentToken) {

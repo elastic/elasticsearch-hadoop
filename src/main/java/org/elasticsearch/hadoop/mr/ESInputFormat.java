@@ -18,7 +18,6 @@ package org.elasticsearch.hadoop.mr;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,6 @@ import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
  * ElasticSearch {@link InputFormat} for streaming data (typically based on a query) from ElasticSearch.
@@ -125,8 +123,8 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     }
 
 
-    protected static class ShardRecordReader extends RecordReader<Text, MapWritable> implements
-            org.apache.hadoop.mapred.RecordReader<Text, MapWritable> {
+    protected static abstract class ShardRecordReader<K,V> extends RecordReader<K, V> implements
+            org.apache.hadoop.mapred.RecordReader<K, V> {
 
         private int read = 0;
         private ShardInputSplit esSplit;
@@ -137,8 +135,8 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         private ScrollQuery result;
 
         // reuse objects
-        private Text currentKey = new Text();
-        private MapWritable currentValue;
+        private K currentKey;
+        private V currentValue;
 
         private long size = 0;
 
@@ -199,12 +197,12 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         }
 
         @Override
-        public Text getCurrentKey() throws IOException {
+        public K getCurrentKey() throws IOException {
             return currentKey;
         }
 
         @Override
-        public MapWritable getCurrentValue() {
+        public V getCurrentValue() {
             return currentValue;
         }
 
@@ -227,7 +225,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         }
 
         @Override
-        public boolean next(Text key, MapWritable value) throws IOException {
+        public boolean next(K key, V value) throws IOException {
             if (result == null) {
                 result = queryBuilder.build(client, scrollReader);
                 size = result.getSize();
@@ -244,35 +242,23 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             }
 
             Object[] next = result.next();
-            // we save the key as is since under the old API, we don't have to create a new Text() object
-            currentKey.set(next[0].toString());
-            currentValue = (MapWritable) next[1];
-
-            if (key != null) {
-                key.set(currentKey);
-            }
-            if (value != null) {
-                value.clear();
-                value.putAll(currentValue);
-            }
+            currentKey = setCurrentKey(currentKey, key, next[0]);
+            currentValue = setCurrentValue(currentValue, value, next[1]);
 
             // keep on counting
             read++;
             return true;
         }
 
+		@Override
+        public abstract K createKey();
 
         @Override
-        public Text createKey() {
-            // old API does object pooling so return just the naked object
-            return new Text();
-        }
+        public abstract V createValue();
 
-        @Override
-        public MapWritable createValue() {
-            // old API does object pooling so return just the naked object
-            return new MapWritable();
-        }
+        protected abstract K setCurrentKey(K oldApiKey, K newApiKey, Object object);
+		
+        protected abstract V setCurrentValue(V oldApiValue, V newApiKey, Object object);
 
         @Override
         public long getPos() {
@@ -280,6 +266,48 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
         }
     }
 
+    protected static class WritableShardRecordReader extends ShardRecordReader<Text, MapWritable> {
+    	public WritableShardRecordReader() {
+			super();
+		}
+
+		public WritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+			super(split, job, reporter);
+		}
+
+		@Override
+		public Text createKey() {
+			return new Text();
+		}
+
+		@Override
+		public MapWritable createValue() {
+			return new MapWritable();
+		}
+
+		@Override
+		protected Text setCurrentKey(Text oldApiKey, Text newApiKey, Object object) {
+			String val = object.toString();
+			oldApiKey.set(val);
+
+			// new API might not be used
+            if (newApiKey != null) {
+            	newApiKey.set(val);
+            }
+            return oldApiKey;
+		}
+
+		@Override
+		protected MapWritable setCurrentValue(MapWritable oldApiValue, MapWritable newApiKey, Object object) {
+			MapWritable val = (MapWritable) object;
+            if (newApiKey != null) {
+                newApiKey.clear();
+                newApiKey.putAll(val);
+            }
+            return val;
+		}
+    }
+    
     //
     // new API - just delegates to the Old API
     //
@@ -292,7 +320,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
     @Override
     public ShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return new ShardRecordReader();
+        return new WritableShardRecordReader();
     }
 
 
@@ -336,6 +364,6 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
     @Override
     public ShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return new ShardRecordReader(split, job, reporter);
+        return new WritableShardRecordReader(split, job, reporter);
     }
 }

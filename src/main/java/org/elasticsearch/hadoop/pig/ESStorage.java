@@ -17,14 +17,13 @@ package org.elasticsearch.hadoop.pig;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.OutputFormat;
@@ -41,11 +40,9 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.WritableUtils;
 
 /**
  * Pig storage for reading and writing data into an ElasticSearch index.
@@ -74,7 +71,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private String relativeLocation;
     private String signature;
     private ResourceSchema schema;
-    private RecordReader<Text, MapWritable> reader;
+    private RecordReader<String, Map> reader;
     private RecordWriter<Object, Object> writer;
     private PigTuple pigTuple;
 
@@ -103,7 +100,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         return new ESOutputFormat();
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings("unchecked")
     @Override
     public void prepareToWrite(RecordWriter writer) throws IOException {
         this.writer = writer;
@@ -160,6 +157,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private void init(String location, Job job) {
         Settings settings = SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location);
         SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
+        SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         settings.save();
     }
 
@@ -181,7 +179,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     @SuppressWarnings("rawtypes")
     @Override
     public InputFormat getInputFormat() throws IOException {
-        return new ESInputFormat();
+        return new ESPigInputFormat();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -198,11 +196,13 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
                 return null;
             }
 
-            Map<Object, Object> data = (Map<Object, Object>) WritableUtils.fromWritable(reader.getCurrentValue());
-            Tuple tuple = TupleFactory.getInstance().newTuple(data.size());
+            Map dataMap = reader.getCurrentValue();
+            Tuple tuple = TupleFactory.getInstance().newTuple(dataMap.size());
+
             int i = 0;
-            for (Entry<Object, Object> entry : data.entrySet()) {
-                tuple.set(i++, PigTypeUtils.objectToPig(entry.getValue()));
+            Set<Entry<?,?>> entrySet = dataMap.entrySet();
+            for (Map.Entry entry : entrySet) {
+                tuple.set(i++, entry.getValue());
             }
 
             if (trace) {
