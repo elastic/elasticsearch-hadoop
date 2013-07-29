@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 /**

@@ -28,10 +28,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.mr.WritableValueReader;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;

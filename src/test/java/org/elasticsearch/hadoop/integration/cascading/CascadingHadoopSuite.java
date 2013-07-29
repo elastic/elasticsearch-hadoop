@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
