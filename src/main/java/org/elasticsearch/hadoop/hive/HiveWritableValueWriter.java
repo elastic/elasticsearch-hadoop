@@ -38,9 +38,9 @@ public class HiveWritableValueWriter extends WritableValueWriter {
 
     @Override
     public boolean write(Writable writable, Generator generator) {
-        //TODO: convert to ISO-8601
+        // pass the UNIX epoch
         if (writable instanceof TimestampWritable) {
-            generator.writeString(((TimestampWritable) writable).toString());
+            generator.writeNumber(((TimestampWritable) writable).getTimestamp().getTime());
         }
         else if (writable instanceof ByteWritable) {
             generator.writeNumber(((ByteWritable) writable).get());

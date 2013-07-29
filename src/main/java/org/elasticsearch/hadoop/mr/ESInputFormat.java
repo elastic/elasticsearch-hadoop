@@ -57,8 +57,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
  *
  * <p/>This class implements both the "old" (<tt>org.apache.hadoop.mapred</tt>) and the "new" (<tt>org.apache.hadoop.mapreduce</tt>) API.
  */
-public class ESInputFormat extends InputFormat<Text, MapWritable> implements
-        org.apache.hadoop.mapred.InputFormat<Text, MapWritable>, ConfigurationOptions {
+public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V>,
+        ConfigurationOptions {
 
     private static final String MAPPING_PROPERTY = "es.internal.mr.mapping";
     private static Log log = LogFactory.getLog(ESInputFormat.class);
@@ -165,7 +165,7 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
             this.esSplit = esSplit;
 
-            // initialize mapping/ scroll reader 
+            // initialize mapping/ scroll reader
             SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
             String valueReader = settings.getSerializerValueReaderClassName();
             FieldReader reader = ObjectUtils.<FieldReader> instantiate(valueReader, null);
@@ -193,7 +193,16 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
 
         @Override
         public boolean nextKeyValue() throws IOException {
-            return next(null, null);
+            // new API call routed to old API
+            if (currentKey == null) {
+                currentKey = createKey();
+            }
+            if (currentValue == null) {
+                currentValue = createValue();
+            }
+
+            // FIXME: does the new API mandate a new instance each time (?)
+            return next(currentKey, currentValue);
         }
 
         @Override
@@ -250,14 +259,14 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
             return true;
         }
 
-		@Override
+        @Override
         public abstract K createKey();
 
         @Override
         public abstract V createValue();
 
         protected abstract K setCurrentKey(K oldApiKey, K newApiKey, Object object);
-		
+
         protected abstract V setCurrentValue(V oldApiValue, V newApiKey, Object object);
 
         @Override
@@ -267,47 +276,50 @@ public class ESInputFormat extends InputFormat<Text, MapWritable> implements
     }
 
     protected static class WritableShardRecordReader extends ShardRecordReader<Text, MapWritable> {
-    	public WritableShardRecordReader() {
-			super();
-		}
+        public WritableShardRecordReader() {
+            super();
+        }
 
-		public WritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
-			super(split, job, reporter);
-		}
+        public WritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+            super(split, job, reporter);
+        }
 
-		@Override
-		public Text createKey() {
-			return new Text();
-		}
+        @Override
+        public Text createKey() {
+            return new Text();
+        }
 
-		@Override
-		public MapWritable createValue() {
-			return new MapWritable();
-		}
+        @Override
+        public MapWritable createValue() {
+            return new MapWritable();
+        }
 
-		@Override
-		protected Text setCurrentKey(Text oldApiKey, Text newApiKey, Object object) {
-			String val = object.toString();
-			oldApiKey.set(val);
+        @Override
+        protected Text setCurrentKey(Text oldApiKey, Text newApiKey, Object object) {
+            String val = object.toString();
+            if (oldApiKey == null) {
+                oldApiKey = new Text();
+                oldApiKey.set(val);
+            }
 
-			// new API might not be used
+            // new API might not be used
             if (newApiKey != null) {
-            	newApiKey.set(val);
+                newApiKey.set(val);
             }
             return oldApiKey;
-		}
+        }
 
-		@Override
-		protected MapWritable setCurrentValue(MapWritable oldApiValue, MapWritable newApiKey, Object object) {
-			MapWritable val = (MapWritable) object;
+        @Override
+        protected MapWritable setCurrentValue(MapWritable oldApiValue, MapWritable newApiKey, Object object) {
+            MapWritable val = (MapWritable) object;
             if (newApiKey != null) {
                 newApiKey.clear();
                 newApiKey.putAll(val);
             }
             return val;
-		}
+        }
     }
-    
+
     //
     // new API - just delegates to the Old API
     //

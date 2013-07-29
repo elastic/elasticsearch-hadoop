@@ -20,6 +20,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileSplit;
@@ -36,7 +37,7 @@ import org.elasticsearch.hadoop.mr.ESInputFormat;
 // A quick example would be {@link org.apache.hadoop.hive.ql.io.HiveInputFormat.HiveInputSplit#getPath()} which, in case the actual InputSplit is not a
 // {@link org.apache.hadoop.mapred.FileSplit}, returns an invalid Path.
 
-public class ESHiveInputFormat extends ESInputFormat {
+public class ESHiveInputFormat extends ESInputFormat<Text, MapWritable> {
 
     static class ESHiveSplit extends FileSplit {
         InputSplit delegate;

@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.pig.PigValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -82,6 +83,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
         SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, LogFactory.getLog(ESSerDe.class));
+        SerializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, LogFactory.getLog(ESSerDe.class));
         settings.save();
 
         // replace the default committer when using the old API
