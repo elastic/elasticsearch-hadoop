@@ -17,8 +17,6 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.util.List;
 
-import org.apache.hadoop.io.Writable;
-import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
@@ -26,10 +24,11 @@ import org.elasticsearch.hadoop.serialization.ValueWriter;
 import cascading.scheme.SinkCall;
 import cascading.tuple.Tuple;
 
+/**
+ * Basic delegate around {@link JdkValueWriter} that handles the unwraping of {@link SinkCall}
+ */
 public class CascadingValueWriter implements ValueWriter<SinkCall> {
 
-    private boolean writeUnknownTypes;
-    private final ValueWriter<Writable> writableWriter;
     private final ValueWriter<Object> jdkWriter;
 
     public CascadingValueWriter() {
@@ -37,8 +36,6 @@ public class CascadingValueWriter implements ValueWriter<SinkCall> {
     }
 
     public CascadingValueWriter(boolean writeUnknownTypes) {
-        this.writeUnknownTypes = writeUnknownTypes;
-        writableWriter = new WritableValueWriter(writeUnknownTypes);
         jdkWriter = new JdkValueWriter(writeUnknownTypes);
     }
 

@@ -15,21 +15,16 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.serialization.Parser.NumberType;
-import org.elasticsearch.hadoop.serialization.Parser.Token;
-import org.elasticsearch.hadoop.util.Assert;
-
 
 /**
  * Basic value reader handling using the implied JSON type.
  */
-public class SimpleValueReader implements FieldReader {
+public class JdkValueReader implements ValueReader {
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
@@ -73,7 +68,7 @@ public class SimpleValueReader implements FieldReader {
 
     @Override
     public Object createArray(FieldType type) {
-    	// no need to create a collection, we'll just reuse the one passed to #addToArray
+        // no need to create a collection, we'll just reuse the one passed to #addToArray
         return Collections.emptyList();
     }
 

@@ -32,7 +32,7 @@ public abstract class SerializationUtils {
         }
     }
 
-    public static void setValueReaderIfNotSet(Settings settings, Class<? extends FieldReader> clazz, Log log) {
+    public static void setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
 
         if (!StringUtils.hasText(settings.getSerializerValueReaderClassName())) {
             settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_CLASS, clazz.getName());

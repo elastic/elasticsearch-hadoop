@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * Translates a JSON field to an actual object. Implementations should only handle the conversion and not influence the parser outside the conversion.
  */
-public interface FieldReader {
+public interface ValueReader {
 
     Object readValue(Parser parser, String value, FieldType esType);
 

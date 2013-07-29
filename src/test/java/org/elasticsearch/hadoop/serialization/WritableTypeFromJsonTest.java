@@ -25,7 +25,7 @@ import org.junit.Test;
 
 public class WritableTypeFromJsonTest {
 
-    private FieldReader vr = new WritableValueReader();
+    private ValueReader vr = new WritableValueReader();
 
     @Before
     public void start() {

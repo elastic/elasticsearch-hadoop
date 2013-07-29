@@ -38,11 +38,11 @@ public class ScrollReader {
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
     private Parser parser;
-    private final FieldReader reader;
+    private final ValueReader reader;
     private final Map<String, FieldType> esMapping;
     private final boolean trace = log.isTraceEnabled();
     
-    public ScrollReader(FieldReader reader, Field rootField) {
+    public ScrollReader(ValueReader reader, Field rootField) {
         this.reader = reader;
 
         Map<String, FieldType> flds = null;

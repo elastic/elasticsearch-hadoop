@@ -21,7 +21,7 @@ public class ValueReaderTest {
 
     @Test
     public void testSimplePathReader() throws Exception {
-        ScrollReader reader = new ScrollReader(new SimpleValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
         System.out.println(reader.read(content));
     }
 }

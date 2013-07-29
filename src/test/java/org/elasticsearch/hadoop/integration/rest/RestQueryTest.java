@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.SimpleValueReader;
+import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.Before;
@@ -68,7 +68,7 @@ public class RestQueryTest {
     public void testQueryBuilder() throws Exception {
         QueryBuilder qb = QueryBuilder.query("rest/savebulk/_search?q=me*");
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new SimpleValueReader(), mapping);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping);
 
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
@@ -86,7 +86,7 @@ public class RestQueryTest {
         Map<Shard, Node> targetShards = client.getTargetShards();
 
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new SimpleValueReader(), mapping);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping);
 
         String nodeId = targetShards.values().iterator().next().getId();
         ScrollQuery query = QueryBuilder.query("rest/savebulk/_search?q=me*")

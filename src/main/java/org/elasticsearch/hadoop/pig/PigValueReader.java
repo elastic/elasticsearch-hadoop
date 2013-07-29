@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.TupleFactory;
-import org.elasticsearch.hadoop.serialization.SimpleValueReader;
+import org.elasticsearch.hadoop.serialization.JdkValueReader;
 
-public class PigValueReader extends SimpleValueReader {
+public class PigValueReader extends JdkValueReader {
 
 	@Override
 	public Object addToArray(Object array, List<Object> value) {

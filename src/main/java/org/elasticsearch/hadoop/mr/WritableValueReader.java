@@ -17,9 +17,9 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.serialization.FieldType;
-import org.elasticsearch.hadoop.serialization.SimpleValueReader;
+import org.elasticsearch.hadoop.serialization.JdkValueReader;
 
-public class WritableValueReader extends SimpleValueReader {
+public class WritableValueReader extends JdkValueReader {
 
     @Override
     public Map createMap() {

@@ -28,7 +28,10 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.WritableValueReader;
+import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.serialization.JdkValueReader;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -126,6 +129,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Settings set = SettingsManager.loadFrom(conf);
 
         SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
+        SerializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(ESTap.class));
 
         // NB: there's no es:// protocol - this is just a fake placeholder that will cause exceptions if any File-based output class is used
         conf.set("mapred.output.dir", "es://" + set.getTargetUri() + "/" + set.getTargetResource());
