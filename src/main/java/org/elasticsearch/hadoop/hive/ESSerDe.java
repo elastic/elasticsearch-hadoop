@@ -67,11 +67,11 @@ public class ESSerDe implements SerDe {
         columnNames = new ArrayList<String>(StringUtils.tokenize(tbl.getProperty(HiveConstants.COLUMNS), ","));
         List<TypeInfo> colTypes = TypeInfoUtils.getTypeInfosFromTypeString(tbl.getProperty(HiveConstants.COLUMNS_TYPES));
 
-        // create a standard Object Inspector - note we're not using it for serialization/deserialization
+        // create a standard writable Object Inspector - used later on by serialization/deserialization
         List<ObjectInspector> inspectors = new ArrayList<ObjectInspector>();
 
         for (TypeInfo typeInfo : colTypes) {
-            inspectors.add(TypeInfoUtils.getStandardJavaObjectInspectorFromTypeInfo(typeInfo));
+            inspectors.add(TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(typeInfo));
         }
 
         inspector = ObjectInspectorFactory.getStandardStructObjectInspector(columnNames, inspectors);

@@ -58,4 +58,19 @@ public class HiveSearchTest {
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
     }
+
+    @Test
+    public void basicArrayMapping() throws Exception {
+        String create = "CREATE EXTERNAL TABLE compoundarray ("
+                + "rid      INT, "
+                + "mapids   ARRAY<INT>, "
+                + "rdata    MAP<STRING, STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'hive/compound/_search?q=*') ";
+
+        String select = "SELECT * FROM compoundarray";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+    }
 }
