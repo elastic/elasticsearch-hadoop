@@ -39,7 +39,7 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
         generator.writeBeginObject();
 
         for (ResourceFieldSchema field : schema.getFields()) {
-            if (!write(field, generator, true)) {
+            if (!write(field, generator, true, true)) {
                 return false;
             }
         }
@@ -52,14 +52,17 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
     }
 
 
-    private boolean write(ResourceFieldSchema field, Generator generator, boolean writeFieldName) {
+    private boolean write(ResourceFieldSchema field, Generator generator, boolean writeFieldName, boolean notAnArray) {
         byte type = field.getType();
 
         if (writeFieldName) {
             generator.writeFieldName(field.getName());
         }
 
-        generator.writeBeginObject();
+
+        if (notAnArray) {
+            generator.writeBeginObject();
+        }
 
         String esType = "string";
 
@@ -97,12 +100,13 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
             generator.writeBeginObject();
 
             for (ResourceFieldSchema nestedField : field.getSchema().getFields()) {
-                if (!write(nestedField, generator, true)) {
+                if (!write(nestedField, generator, true, true)) {
                     return false;
                 }
             }
 
             generator.writeEndObject();
+            esType = null;
             break;
 
         case DataType.TUPLE:
@@ -113,22 +117,30 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
             for (ResourceFieldSchema nestedField : field.getSchema().getFields()) {
                 String name = nestedField.getName();
                 // handle schemas without names
-                name = (StringUtils.hasText(name) ? name : Integer.toString(index++));
+                name = (StringUtils.hasText(name) ? name : "t" + Integer.toString(index++));
                 generator.writeFieldName(name);
 
-                if (!write(nestedField, generator, false)) {
+                if (!write(nestedField, generator, false, true)) {
                     return false;
                 }
-
             }
 
             generator.writeEndObject();
+            esType = null;
             break;
 
         case DataType.BAG:
-            if (!write(field.getSchema().getFields()[0], generator, true)) {
+            // is an array
+            ResourceFieldSchema bagTupleSchema = field.getSchema().getFields()[0];
+            //            String bagTupleName = bagTupleSchema.getName();
+            //            bagTupleName = (StringUtils.hasText(bagTupleName) ? bagTupleName : "b");
+            //            generator.writeFieldName(bagTupleName);
+
+            // skip the name since it's an array
+            if (!write(bagTupleSchema, generator, false, false)) {
                 return false;
             }
+            esType = null;
             break;
 
         case DataType.CHARARRAY:
@@ -138,9 +150,14 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
 
         }
 
-        generator.writeFieldName("type");
-        generator.writeString(esType);
-        generator.writeEndObject();
+        if (esType != null) {
+            generator.writeFieldName("type");
+            generator.writeString(esType);
+        }
+
+        if (notAnArray) {
+            generator.writeEndObject();
+        }
         return true;
     }
 }
