@@ -28,9 +28,6 @@ import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-/**
- *
- */
 public class PigValueWriter implements ValueWriter<PigTuple> {
 
     private final boolean writeUnknownTypes;
@@ -93,8 +90,8 @@ public class PigValueWriter implements ValueWriter<PigTuple> {
             break;
         // DateTime introduced in Pig 11
         case 30: //DataType.DATETIME
-        	generator.writeNumber(DateConverter.convertToES(object));
-        	break;
+            generator.writeNumber(DateConverter.convertToES(object));
+            break;
         case DataType.MAP:
             ResourceSchema nestedSchema = field.getSchema();
             ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
