@@ -29,7 +29,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
-import org.elasticsearch.hadoop.rest.ValidationUtils;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
@@ -133,7 +133,7 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf);
 
-        ValidationUtils.checkIndexExistence(SettingsManager.loadFrom(conf), client);
+        InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf), client);
     }
 
     private void initClient(Properties props) {

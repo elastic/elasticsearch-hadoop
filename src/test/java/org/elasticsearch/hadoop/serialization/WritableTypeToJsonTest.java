@@ -43,7 +43,6 @@ import org.junit.Test;
 @SuppressWarnings("deprecation")
 public class WritableTypeToJsonTest {
 
-    private Generator toJson;
     private static FastByteArrayOutputStream out;
 
     @BeforeClass
@@ -53,13 +52,11 @@ public class WritableTypeToJsonTest {
 
     @Before
     public void start() {
-        toJson = new JacksonJsonGenerator(out);
         out.reset();
     }
 
     @After
     public void after() {
-        toJson = null;
         out.reset();
     }
 
@@ -152,7 +149,7 @@ public class WritableTypeToJsonTest {
     }
 
     private void writableTypeToJson(Writable obj) {
-        ContentBuilder.generate(toJson, new WritableValueWriter(false)).value(obj).flush().close();
+        ContentBuilder.generate(out, new WritableValueWriter(false)).value(obj).flush().close();
         System.out.println(out.bytes());
     }
 }

@@ -34,7 +34,6 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.hive.HiveType;
 import org.elasticsearch.hadoop.hive.HiveValueWriter;
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,7 +45,6 @@ import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.*;
 
 public class HiveTypeToJsonTest {
 
-    private Generator toJson;
     private static FastByteArrayOutputStream out;
 
     @BeforeClass
@@ -56,13 +54,11 @@ public class HiveTypeToJsonTest {
 
     @Before
     public void start() {
-        toJson = new JacksonJsonGenerator(out);
         out.reset();
     }
 
     @After
     public void after() {
-        toJson = null;
         out.reset();
     }
 
@@ -148,7 +144,7 @@ public class HiveTypeToJsonTest {
     }
 
     private void hiveTypeToJson(HiveType obj) {
-        ContentBuilder.generate(toJson, new HiveValueWriter()).value(obj).flush().close();
+        ContentBuilder.generate(out, new HiveValueWriter()).value(obj).flush().close();
         System.out.println(out.bytes());
     }
 }

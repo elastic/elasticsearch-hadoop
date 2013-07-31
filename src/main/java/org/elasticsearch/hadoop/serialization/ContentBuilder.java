@@ -15,12 +15,17 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.io.OutputStream;
+
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
 public class ContentBuilder {
 
     private final Generator generator;
     private final ValueWriter writer;
+
 
     private ContentBuilder(Generator generator, ValueWriter writer) {
         Assert.notNull(generator);
@@ -28,8 +33,12 @@ public class ContentBuilder {
         this.writer = writer;
     }
 
-    public static ContentBuilder generate(Generator generator, ValueWriter writer) {
-        return new ContentBuilder(generator, writer);
+    public static ContentBuilder generate(ValueWriter writer) {
+        return new ContentBuilder(new JacksonJsonGenerator(new FastByteArrayOutputStream()), writer);
+    }
+
+    public static ContentBuilder generate(OutputStream bos, ValueWriter writer) {
+        return new ContentBuilder(new JacksonJsonGenerator(bos), writer);
     }
 
     public ContentBuilder nullValue() {
@@ -248,6 +257,10 @@ public class ContentBuilder {
     public ContentBuilder flush() {
         generator.flush();
         return this;
+    }
+
+    public OutputStream content() {
+        return (OutputStream) generator.getOutputTarget();
     }
 
     public void close() {

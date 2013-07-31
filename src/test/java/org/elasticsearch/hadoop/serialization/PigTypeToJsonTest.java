@@ -36,7 +36,6 @@ import org.junit.Test;
 
 public class PigTypeToJsonTest {
 
-    private Generator toJson;
     private static FastByteArrayOutputStream out;
 
     @BeforeClass
@@ -46,13 +45,11 @@ public class PigTypeToJsonTest {
 
     @Before
     public void start() {
-        toJson = new JacksonJsonGenerator(out);
         out.reset();
     }
 
     @After
     public void after() {
-        toJson = null;
         out.reset();
     }
 
@@ -142,7 +139,7 @@ public class PigTypeToJsonTest {
     }
 
     private void pigTypeToJson(PigTuple obj) {
-        ContentBuilder.generate(toJson, new PigValueWriter()).value(obj).flush().close();
+        ContentBuilder.generate(out, new PigValueWriter()).value(obj).flush().close();
         System.out.println(out.bytes());
     }
 }

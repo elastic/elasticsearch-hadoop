@@ -118,7 +118,7 @@ public class ESSerDe implements SerDe {
         hiveType.setInfo(structTypeInfo);
         hiveType.setObject(data);
 
-        ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(hiveType).flush().close();
+        ContentBuilder.generate(bos, valueWriter).value(hiveType).flush().close();
 
         result.set(scratchPad.bytes(), scratchPad.size());
         return result;

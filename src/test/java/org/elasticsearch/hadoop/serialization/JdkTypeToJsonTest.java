@@ -38,13 +38,11 @@ public class JdkTypeToJsonTest {
 
     @Before
     public void start() {
-        toJson = new JacksonJsonGenerator(out);
         out.reset();
     }
 
     @After
     public void after() {
-        toJson = null;
         out.reset();
     }
 
@@ -109,7 +107,7 @@ public class JdkTypeToJsonTest {
     }
 
     private void jdkTypeToJson(Object obj) {
-        ContentBuilder.generate(toJson, new JdkValueWriter(false)).value(obj).flush().close();
+        ContentBuilder.generate(out, new JdkValueWriter(false)).value(obj).flush().close();
         System.out.println(out.bytes());
     }
 }

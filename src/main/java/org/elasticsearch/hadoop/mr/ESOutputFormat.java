@@ -32,7 +32,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.ValidationUtils;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -181,7 +181,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
         // lazy-init
         BufferedRestClient client = null;
 
-        ValidationUtils.checkIndexExistence(settings, client);
+        InitializationUtils.checkIndexExistence(settings, client);
 
         log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }
