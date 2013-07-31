@@ -15,7 +15,10 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import java.util.Properties;
+
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
@@ -42,4 +45,21 @@ public class CascadingLocalSaveTest {
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
         new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, pipe).complete();
     }
+
+    @Test(expected = Exception.class)
+    public void testIndexAutoCreateDisabled() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
+
+        // local file-system source
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap out = new ESTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+
+        // rename "id" -> "garbage"
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+        new LocalFlowConnector(properties).connect(in, out, pipe).complete();
+    }
+
 }

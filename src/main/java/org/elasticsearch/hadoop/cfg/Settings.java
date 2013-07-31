@@ -67,12 +67,14 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public String getSerializerValueWriterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_CLASS, null);
-        //Assert.notNull(value, "no serialization writer class setup");
-        //return value;
     }
 
     public String getSerializerValueReaderClassName() {
         return getProperty(ES_SERIALIZATION_READER_CLASS, null);
+    }
+
+    public boolean getIndexAutoCreate() {
+        return Booleans.parseBoolean(getProperty(ES_INDEX_AUTO_CREATE, ES_INDEX_AUTO_CREATE_DEFAULT));
     }
 
     public String getTargetUri() {

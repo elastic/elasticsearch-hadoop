@@ -31,6 +31,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
@@ -70,6 +71,24 @@ public class MROldApiSaveTest {
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         conf.set("es.resource", "mroldapi/save");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIndexAutoCreateDisabled() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         JobClient.runJob(conf);
     }

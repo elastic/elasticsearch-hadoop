@@ -59,7 +59,17 @@ public interface ConfigurationOptions {
 
     /** Value writer - setup automatically; can be overridden for custom types */
     String ES_SERIALIZATION_WRITER_CLASS = "es.ser.writer.class";
-    
+
     /** Value reader - setup automatically; can be overridden for custom types */
     String ES_SERIALIZATION_READER_CLASS = "es.ser.reader.class";
+
+    /** Index settings */
+
+    String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
+    String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
+
+    /** Mapping settings */
+
+    String ES_MAPPING_AUTO_CREATE = "es.index.mapping.auto.create";
+    String ES_MAPPING_AUTO_CREATE_DEFAULT = "yes";
 }

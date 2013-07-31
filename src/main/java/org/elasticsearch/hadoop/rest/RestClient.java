@@ -26,11 +26,13 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpMethodBase;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.logging.Log;
@@ -135,9 +137,13 @@ public class RestClient implements Closeable {
     }
 
     byte[] execute(HttpMethodBase method) {
+        return execute(method, true);
+    }
+
+    byte[] execute(HttpMethodBase method, boolean checkStatus) {
         try {
             int status = client.executeMethod(method);
-            if (status >= 300) {
+            if (checkStatus && status >= HttpStatus.SC_MULTI_STATUS) {
                 String body;
                 try {
                     body = method.getResponseBodyAsString();
@@ -174,5 +180,11 @@ public class RestClient implements Closeable {
         PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
         post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
         return execute(post);
+    }
+
+    public boolean exists(String index) {
+        HeadMethod headMethod = new HeadMethod(index);
+        execute(headMethod, false);
+        return (headMethod.getStatusCode() == HttpStatus.SC_OK);
     }
 }

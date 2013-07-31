@@ -24,7 +24,7 @@ class Resource {
 
     final StringBuilder resource;
     // cleaned up index with trailing "/"
-    final StringBuilder root;
+    final String root;
 
     Resource(String resource) {
         this.resource = new StringBuilder(resource);
@@ -36,7 +36,7 @@ class Resource {
         if (!localRoot.endsWith("/")) {
             localRoot = localRoot + "/";
         }
-        root = new StringBuilder(localRoot);
+        root = localRoot;
     }
 
     String bulkIndexing() {
@@ -50,6 +50,10 @@ class Resource {
 
     String getMapping() {
         return root + "_mapping";
+    }
+
+    String indexAndType() {
+        return root;
     }
 }
 

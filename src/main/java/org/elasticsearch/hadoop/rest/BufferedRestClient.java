@@ -194,18 +194,23 @@ public class BufferedRestClient implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
-        if (bufferSize > 0) {
-            flushBatch();
-        }
-        if (requiresRefreshAfterBulk && executedBulkWrite) {
-            // refresh batch
-            client.refresh(index);
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Refreshing index [%s]", index));
+    public void close() {
+        try {
+            if (bufferSize > 0) {
+                flushBatch();
             }
+            if (requiresRefreshAfterBulk && executedBulkWrite) {
+                // refresh batch
+                client.refresh(index);
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Refreshing index [%s]", index));
+                }
+            }
+        } catch (IOException ex) {
+            log.warn("Cannot flush data batch", ex);
         }
+
         client.close();
     }
 
@@ -240,5 +245,9 @@ public class BufferedRestClient implements Closeable {
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
         return reader.read(client.scroll(scrollId));
+    }
+
+    public boolean indexExists() {
+        return client.exists(resource.indexAndType());
     }
 }

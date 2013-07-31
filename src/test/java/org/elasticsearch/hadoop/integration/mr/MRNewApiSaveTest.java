@@ -26,6 +26,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
@@ -64,6 +65,25 @@ public class MRNewApiSaveTest {
         job.setMapperClass(JsonMapper.class);
 
         TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+
+        job.waitForCompletion(true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIndexAutoCreateDisabled() throws Exception {
+        Configuration conf = HdpBootstrap.hadoopConfig();
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        Job job = new Job(conf);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(ESOutputFormat.class);
+        job.setMapOutputValueClass(MapWritable.class);
+        job.setMapperClass(JsonMapper.class);
+
+        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         job.waitForCompletion(true);
     }

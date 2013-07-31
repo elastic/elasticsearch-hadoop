@@ -17,7 +17,6 @@ package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
 
-import org.apache.commons.lang.Validate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,7 +32,9 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.ValidationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.Assert;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -150,7 +151,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
     }
 
     @Override
-    public void checkOutputSpecs(JobContext context) {
+    public void checkOutputSpecs(JobContext context) throws IOException {
         // careful as it seems the info here saved by in the config is discarded
         init(context.getConfiguration());
     }
@@ -169,13 +170,18 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
     }
 
     @Override
-    public void checkOutputSpecs(FileSystem ignored, JobConf cfg) {
+    public void checkOutputSpecs(FileSystem ignored, JobConf cfg) throws IOException {
         init(cfg);
     }
 
-    private void init(Configuration cfg) {
+    private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        Validate.notEmpty(settings.getTargetResource(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
+        Assert.hasText(settings.getTargetResource(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
+
+        // lazy-init
+        BufferedRestClient client = null;
+
+        ValidationUtils.checkIndexExistence(settings, client);
 
         log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }
