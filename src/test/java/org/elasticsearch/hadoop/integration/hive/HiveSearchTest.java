@@ -15,20 +15,13 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSearchTest {
 
-    @Before
-    public void cleanConfig() {
-        System.out.println("Refreshing Hive Config...");
-        //server.refreshConfig();
-    }
-
-    @Test
+    //@Test
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE artistsload ("
@@ -69,6 +62,39 @@ public class HiveSearchTest {
                 + "TBLPROPERTIES('es.resource' = 'hive/compound/_search?q=*') ";
 
         String select = "SELECT * FROM compoundarray";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+    }
+
+    //@Test
+    public void basicTimestampLoad() throws Exception {
+        String create = "CREATE EXTERNAL TABLE timestampload ("
+                + "id       BIGINT, "
+                + "date     TIMESTAMP, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'hive/artiststimestamp/_search?q=*') ";
+
+        String select = "SELECT date FROM timestampload";
+        String select2 = "SELECT unix_timestamp(), date FROM timestampload";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+        System.out.println(server.execute(select2));
+    }
+
+    @Test
+    public void javaMethodInvocation() throws Exception {
+        String create = "CREATE EXTERNAL TABLE methodInvocation ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
+
+        String select = "SELECT java_method(\"java.lang.System\", \"currentTimeMillis\") FROM methodInvocation LIMIT 1";
 
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));

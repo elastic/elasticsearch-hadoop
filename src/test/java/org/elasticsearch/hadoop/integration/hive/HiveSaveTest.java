@@ -122,4 +122,43 @@ public class HiveSaveTest {
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(insert));
     }
+
+    @Test
+    public void testTimestampSave() throws Exception {
+        String localTable = "CREATE TABLE timestampsource ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING) "
+                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
+                + "LOCATION '/tmp/hive/warehouse/timestampsource/' ";
+
+        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE timestampsource";
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE artiststimestampsave ("
+                + "id       BIGINT, "
+                + "date     TIMESTAMP, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
+                + "TBLPROPERTIES('es.resource' = 'hive/artiststimestamp') ";
+
+        String currentDate = "SELECT *, from_unixtime(unix_timestamp()) from timestampsource";
+
+        // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
+        // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
+        String insert =
+                "INSERT OVERWRITE TABLE artiststimestampsave "
+                + "SELECT NULL, to_date(from_unixtime(unix_timestamp())), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
+
+        //System.out.println(server.execute(jar));
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(currentDate));
+        System.out.println(server.execute(insert));
+    }
 }
