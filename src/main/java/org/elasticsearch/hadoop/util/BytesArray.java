@@ -25,7 +25,7 @@ public class BytesArray {
     int size;
 
     public BytesArray(int size) {
-        this(new byte[size], size);
+        this(new byte[size], 0);
     }
 
     public BytesArray(byte[] data, int size) {
