@@ -16,17 +16,17 @@
 package org.elasticsearch.hadoop.rest;
 
 
-
 /**
- * ElasticSearch Resource (index or query).
+ * ElasticSearch Rest Resource (index or query).
  */
-class Resource {
+public class Resource {
 
-    final StringBuilder resource;
-    // cleaned up index with trailing "/"
-    final String root;
+    private final StringBuilder resource;
+    // cleaned up index and type with trailing "/"
+    private final String root;
+    private final String type;
 
-    Resource(String resource) {
+    public Resource(String resource) {
         this.resource = new StringBuilder(resource);
         int index = resource.lastIndexOf("_");
         if (index <= 0) {
@@ -37,6 +37,8 @@ class Resource {
             localRoot = localRoot + "/";
         }
         root = localRoot;
+        index = localRoot.substring(0, root.length() - 1).lastIndexOf("/");
+        type = root.substring(index, root.length() - 1);
     }
 
     String bulkIndexing() {
@@ -48,12 +50,16 @@ class Resource {
         return root + "_search_shards";
     }
 
-    String getMapping() {
+    String mapping() {
         return root + "_mapping";
     }
 
     String indexAndType() {
         return root;
+    }
+
+    public String type() {
+        return type;
     }
 }
 

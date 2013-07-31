@@ -130,7 +130,7 @@ public class BufferedRestClient implements Closeable {
         lazyInitWriting();
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
-        ContentBuilder.generate(new JacksonJsonGenerator(bos), valueWriter).value(object).flush().close();
+        ContentBuilder.generate(bos, valueWriter).value(object).flush().close();
 
         doAddToIndex();
     }
@@ -240,7 +240,7 @@ public class BufferedRestClient implements Closeable {
     }
 
     public Field getMapping() throws IOException {
-        return Field.parseField((Map<String, Object>) client.getMapping(resource.getMapping()).entrySet().iterator().next().getValue());
+        return Field.parseField((Map<String, Object>) client.getMapping(resource.mapping()).entrySet().iterator().next().getValue());
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
@@ -249,5 +249,9 @@ public class BufferedRestClient implements Closeable {
 
     public boolean indexExists() {
         return client.exists(resource.indexAndType());
+    }
+
+    public void putMapping(BytesArray mapping) {
+        client.putMapping(resource.mapping(), mapping.bytes());
     }
 }

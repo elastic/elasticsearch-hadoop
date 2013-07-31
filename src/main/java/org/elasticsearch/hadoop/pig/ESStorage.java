@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -41,6 +42,8 @@ import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 
@@ -151,7 +154,9 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
     @Override
     public void storeSchema(ResourceSchema schema, String location, Job job) throws IOException {
-        // no-op
+        Configuration cfg = job.getConfiguration();
+
+        InitializationUtils.saveSchemaIfNeeded(cfg, new PigSchemaWriter(new Resource(SettingsManager.loadFrom(cfg).getTargetResource()).type()), schema, log);
     }
 
     private void init(String location, Job job) {

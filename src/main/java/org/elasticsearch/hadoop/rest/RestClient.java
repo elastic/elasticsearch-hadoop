@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -182,9 +183,15 @@ public class RestClient implements Closeable {
         return execute(post);
     }
 
-    public boolean exists(String index) {
-        HeadMethod headMethod = new HeadMethod(index);
+    public boolean exists(String indexOrType) {
+        HeadMethod headMethod = new HeadMethod(indexOrType);
         execute(headMethod, false);
         return (headMethod.getStatusCode() == HttpStatus.SC_OK);
+    }
+
+    public void putMapping(String mapping, byte[] bytes) {
+        PutMethod put = new PutMethod(mapping);
+        put.setRequestEntity(new ByteArrayRequestEntity(bytes));
+        execute(put);
     }
 }
