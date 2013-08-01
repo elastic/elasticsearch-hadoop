@@ -88,14 +88,53 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     }
 
     @Override
-    public void setStoreLocation(String location, Job job) throws IOException {
-        init(location, job);
+    public String relToAbsPathForStoreLocation(String location, Path curDir) throws IOException {
+        return location;
     }
 
     @Override
-    public String relToAbsPathForStoreLocation(String location, Path curDir) throws IOException {
-        // TODO: do processing here
-        return location;
+    public void setStoreFuncUDFContextSignature(String signature) {
+        this.signature = signature;
+    }
+
+    @Override
+    public void checkSchema(ResourceSchema s) throws IOException {
+        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
+
+        // save schema to back-end for JSON translation
+        if (props.getProperty(ResourceSchema.class.getName()) == null) {
+            // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
+            props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
+            // save the instance for front end use and add marker field
+            schema = s;
+            props.put(ResourceSchema.class.getName() + ".instance", Boolean.TRUE);
+        }
+    }
+
+    @Override
+    public void setStoreLocation(String location, Job job) throws IOException {
+        init(location, job);
+
+        // since this method is called multiple times (front and backend) do some sanity checks
+
+        // check flag for schema initialization
+        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
+
+        Object conf = props.get(ResourceSchema.class.getName() + ".instance");
+
+        if (conf != null) {
+            props.remove(ResourceSchema.class.getName() + ".instance");
+            Configuration cfg = job.getConfiguration();
+            InitializationUtils.saveSchemaIfNeeded(cfg, new PigSchemaWriter(new Resource(SettingsManager.loadFrom(cfg).getTargetResource()).type()), schema, log);
+        }
+    }
+
+    private void init(String location, Job job) {
+        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location);
+        boolean changed = false;
+        changed |= SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
+        changed |= SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
+        settings.save();
     }
 
     @Override
@@ -103,7 +142,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         return new ESOutputFormat();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void prepareToWrite(RecordWriter writer) throws IOException {
         this.writer = writer;
@@ -130,22 +169,18 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     }
 
     @Override
-    public void setStoreFuncUDFContextSignature(String signature) {
-        this.signature = signature;
-    }
-
-    @Override
     public void cleanupOnFailure(String location, Job job) throws IOException {
         // no special clean-up required
     }
 
-    @Override
-    public void checkSchema(ResourceSchema s) throws IOException {
-        // save schema to back-end for JSON translation
-        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
-        // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
-        props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
+    // added in Pig 11.x
+    public void cleanupOnSuccess(String location, Job job) throws IOException {
+        //no-op
     }
+
+    //
+    // Store metadata - kinda of useless due to its life-cycle
+    //
 
     @Override
     public void storeStatistics(ResourceStatistics stats, String location, Job job) throws IOException {
@@ -154,17 +189,10 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
     @Override
     public void storeSchema(ResourceSchema schema, String location, Job job) throws IOException {
-        Configuration cfg = job.getConfiguration();
-
-        InitializationUtils.saveSchemaIfNeeded(cfg, new PigSchemaWriter(new Resource(SettingsManager.loadFrom(cfg).getTargetResource()).type()), schema, log);
+        // no-op
+        // this method is called _after_ the data (instead of before) has been written, which makes it useless
     }
 
-    private void init(String location, Job job) {
-        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location);
-        SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
-        SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
-        settings.save();
-    }
 
     //
     // LoadFunc
@@ -193,7 +221,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         this.reader = reader;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Tuple getNext() throws IOException {
         try {
@@ -218,10 +246,5 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         } catch (InterruptedException ex) {
             throw new IOException("interrupted", ex);
         }
-    }
-
-    // added in Pig 11.x
-    public void cleanupOnSuccess(String location, Job job) throws IOException {
-        //no-op
     }
 }

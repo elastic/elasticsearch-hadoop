@@ -23,21 +23,27 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class SerializationUtils {
 
-    public static void setValueWriterIfNotSet(Settings settings, Class<? extends ValueWriter<?>> clazz, Log log) {
+    public static boolean setValueWriterIfNotSet(Settings settings, Class<? extends ValueWriter<?>> clazz, Log log) {
 
         if (!StringUtils.hasText(settings.getSerializerValueWriterClassName())) {
             settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
             logger.debug(String.format("Using pre-defined writer serializer [%s] as default", settings.getSerializerValueWriterClassName()));
+            return true;
         }
+
+        return false;
     }
 
-    public static void setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
+    public static boolean setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
 
         if (!StringUtils.hasText(settings.getSerializerValueReaderClassName())) {
             settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
             logger.debug(String.format("Using pre-defined reader serializer [%s] as default", settings.getSerializerValueReaderClassName()));
+            return true;
         }
+
+        return false;
     }
 }
