@@ -189,7 +189,11 @@ public class RestClient implements Closeable {
         return (headMethod.getStatusCode() == HttpStatus.SC_OK);
     }
 
-    public void putMapping(String mapping, byte[] bytes) {
+    public void putMapping(String index, String mapping, byte[] bytes) {
+        // create index first (if needed) - it might return 403
+        execute(new PutMethod(index), false);
+
+        // create actual mapping
         PutMethod put = new PutMethod(mapping);
         put.setRequestEntity(new ByteArrayRequestEntity(bytes));
         execute(put);

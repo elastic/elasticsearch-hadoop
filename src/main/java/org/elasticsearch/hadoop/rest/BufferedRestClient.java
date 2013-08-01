@@ -252,6 +252,6 @@ public class BufferedRestClient implements Closeable {
     }
 
     public void putMapping(BytesArray mapping) {
-        client.putMapping(resource.mapping(), mapping.bytes());
+        client.putMapping(resource.index(), resource.mapping(), mapping.bytes());
     }
 }
