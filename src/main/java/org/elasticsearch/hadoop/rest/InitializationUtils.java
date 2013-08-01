@@ -52,13 +52,14 @@ public abstract class InitializationUtils {
                 }
                 else {
                     log.info(String.format("No mapping found [%s], creating one based on given schema", settings.getTargetResource()));
+                    ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
+                    BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
+                    builder.close();
+                    client.putMapping(content);
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Creating ES mapping [%s] from schema [%s]", content.toString(), schema));
+                    }
                 }
-            }
-            else {
-                ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
-                BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
-                builder.close();
-                client.putMapping(content);
             }
             client.close();
         }
