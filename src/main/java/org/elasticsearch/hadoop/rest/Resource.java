@@ -25,20 +25,22 @@ public class Resource {
     // cleaned up index and type with trailing "/"
     private final String root;
     private final String type;
+    private final String index;
 
     public Resource(String resource) {
         this.resource = new StringBuilder(resource);
-        int index = resource.lastIndexOf("_");
-        if (index <= 0) {
-            index = resource.length();
+        int location = resource.lastIndexOf("_");
+        if (location <= 0) {
+            location = resource.length();
         }
-        String localRoot = resource.substring(0, index);
+        String localRoot = resource.substring(0, location);
         if (!localRoot.endsWith("/")) {
             localRoot = localRoot + "/";
         }
         root = localRoot;
-        index = localRoot.substring(0, root.length() - 1).lastIndexOf("/");
-        type = root.substring(index, root.length() - 1);
+        location = localRoot.substring(0, root.length() - 1).lastIndexOf("/");
+        type = root.substring(location + 1, root.length() - 1);
+        index = root.substring(0, location);
     }
 
     String bulkIndexing() {
@@ -60,6 +62,10 @@ public class Resource {
 
     public String type() {
         return type;
+    }
+
+    public String index() {
+        return index;
     }
 }
 
