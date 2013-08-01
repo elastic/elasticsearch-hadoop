@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.pig;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.data.DataType;
+import org.elasticsearch.hadoop.rest.EsType;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -59,41 +60,40 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
             generator.writeFieldName(field.getName());
         }
 
-
         if (notAnArray) {
             generator.writeBeginObject();
         }
 
-        String esType = "string";
+        EsType esType = EsType.STRING;
 
         switch (type) {
         case DataType.ERROR:
         case DataType.UNKNOWN:
             return false;
         case DataType.BOOLEAN:
-            esType = "boolean";
+            esType = EsType.BOOLEAN;
             break;
         case DataType.INTEGER:
-            esType = "integer";
+            esType = EsType.INTEGER;
             break;
         case DataType.LONG:
-            esType = "long";
+            esType = EsType.LONG;
             break;
         case DataType.FLOAT:
-            esType = "float";
+            esType = EsType.FLOAT;
             break;
         case DataType.DOUBLE:
-            esType = "double";
+            esType = EsType.DOUBLE;
             break;
         case DataType.BYTE:
-            esType = "byte";
+            esType = EsType.BYTE;
             break;
         case DataType.BYTEARRAY:
-            esType = "binary";
+            esType = EsType.BINARY;
             break;
         // DateTime introduced in Pig 11
         case 30: //DataType.DATETIME
-            esType = "date";
+            esType = EsType.DATE;
             break;
         case DataType.MAP:
             generator.writeFieldName("properties");
@@ -152,7 +152,7 @@ class PigSchemaWriter implements ValueWriter<ResourceSchema> {
 
         if (esType != null) {
             generator.writeFieldName("type");
-            generator.writeString(esType);
+            generator.writeString(esType.value());
         }
 
         if (notAnArray) {

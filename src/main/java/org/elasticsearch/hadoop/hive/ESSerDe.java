@@ -24,7 +24,6 @@ import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
@@ -37,17 +36,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
 
-    private Configuration conf;
     private StructObjectInspector inspector;
-    private ArrayList<String> columnNames;
 
     // serialization artifacts
     private BytesArray scratchPad = new BytesArray(512);
@@ -58,23 +53,7 @@ public class ESSerDe implements SerDe {
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
-        this.conf = conf;
-
-        // extract column info - don't use Hive constants as they were renamed in 0.9 breaking compatibility
-
-        // the column names are saved as the given inspector to #serialize doesn't preserves them (maybe because it's an external table)
-        // use the class since StructType requires it ...
-        columnNames = new ArrayList<String>(StringUtils.tokenize(tbl.getProperty(HiveConstants.COLUMNS), ","));
-        List<TypeInfo> colTypes = TypeInfoUtils.getTypeInfosFromTypeString(tbl.getProperty(HiveConstants.COLUMNS_TYPES));
-
-        // create a standard writable Object Inspector - used later on by serialization/deserialization
-        List<ObjectInspector> inspectors = new ArrayList<ObjectInspector>();
-
-        for (TypeInfo typeInfo : colTypes) {
-            inspectors.add(TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(typeInfo));
-        }
-
-        inspector = ObjectInspectorFactory.getStandardStructObjectInspector(columnNames, inspectors);
+        inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
     }
 
@@ -106,10 +85,6 @@ public class ESSerDe implements SerDe {
 
     @Override
     public Writable serialize(Object data, ObjectInspector objInspector) throws SerDeException {
-        //overwrite field names (as they get lost by Hive)
-        // StructTypeInfo structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(objInspector);
-        // structTypeInfo.setAllStructFieldNames(columnNames);
-
         // serialize the type directly to json
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);

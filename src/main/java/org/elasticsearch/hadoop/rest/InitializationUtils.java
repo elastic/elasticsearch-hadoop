@@ -41,7 +41,7 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static <T> void saveSchemaIfNeeded(Configuration conf, ValueWriter<T> schemaWriter, T schema, Log log) {
+    public static <T> void saveSchemaIfNeeded(Object conf, ValueWriter<T> schemaWriter, T schema, Log log) {
         Settings settings = SettingsManager.loadFrom(conf);
 
         if (settings.getIndexAutoCreate()) {

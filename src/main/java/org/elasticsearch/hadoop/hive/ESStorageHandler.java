@@ -16,18 +16,23 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.Map;
+import java.util.Properties;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
+import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -41,6 +46,8 @@ import static org.elasticsearch.hadoop.hive.HiveConstants.*;
  */
 @SuppressWarnings({ "deprecation", "rawtypes" })
 public class ESStorageHandler extends DefaultStorageHandler {
+
+    private static Log log = LogFactory.getLog(ESStorageHandler.class);
 
     private String host;
     private int port = 0;
@@ -74,6 +81,13 @@ public class ESStorageHandler extends DefaultStorageHandler {
     @Override
     public void configureOutputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
         init(tableDesc);
+        Properties tableProperties = tableDesc.getProperties();
+
+        Properties jobPropCopy = new Properties();
+        jobPropCopy.putAll(jobProperties);
+
+        StandardStructObjectInspector inspector = HiveUtils.structObjectInspector(tableProperties);
+        InitializationUtils.saveSchemaIfNeeded(jobPropCopy, new HiveSchemaWriter(new Resource(SettingsManager.loadFrom(jobPropCopy).getTargetResource()).type()), inspector, log);
     }
 
     private void init(TableDesc tableDesc) {
