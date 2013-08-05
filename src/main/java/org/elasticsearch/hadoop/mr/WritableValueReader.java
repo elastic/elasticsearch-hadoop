@@ -3,8 +3,6 @@ package org.elasticsearch.hadoop.mr;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
@@ -53,7 +51,8 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = BooleanWritable.class;
             break;
         case DATE:
-            arrayType = LongWritable.class;
+            arrayType = dateType();
+            break;
         case BINARY:
             arrayType = BytesWritable.class;
             break;
@@ -69,6 +68,10 @@ public class WritableValueReader extends JdkValueReader {
     public Object addToArray(Object array, List<Object> values) {
         ((ArrayWritable) array).set(values.toArray(new Writable[values.size()]));
         return array;
+    }
+
+    protected Class<? extends Writable> dateType() {
+        return Text.class;
     }
 
     @Override
@@ -95,8 +98,8 @@ public class WritableValueReader extends JdkValueReader {
     protected Object longValue(String value) {
         return new LongWritable(Long.parseLong(value));
     }
-    
-	@Override
+
+    @Override
     protected Object intValue(String value) {
         return new IntWritable(Integer.parseInt(value));
     }
@@ -110,10 +113,9 @@ public class WritableValueReader extends JdkValueReader {
     protected Object nullValue(String value) {
         return NullWritable.get();
     }
-    
+
     @Override
-	protected Object date(String value) {
-    	// convert String to Long
-    	return new LongWritable(DatatypeConverter.parseDateTime(value).getTimeInMillis());
-	}
+    protected Object date(String value) {
+        return new Text(value);
+    }
 }
