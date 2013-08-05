@@ -21,7 +21,7 @@ import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSearchTest {
 
-    //@Test
+    @Test
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE artistsload ("
@@ -67,7 +67,7 @@ public class HiveSearchTest {
         System.out.println(server.execute(select));
     }
 
-    //@Test
+    @Test
     public void basicTimestampLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE timestampload ("
                 + "id       BIGINT, "

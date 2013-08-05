@@ -33,7 +33,7 @@ public class HiveSaveTest {
         }
     }
 
-    //@Test
+    @Test
     public void testBasicSave() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -74,7 +74,7 @@ public class HiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
-    //@Test
+    @Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
 
