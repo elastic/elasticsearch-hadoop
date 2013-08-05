@@ -79,4 +79,17 @@ public class PigSaveTest {
                 "STORE B INTO 'pig/bagartists' USING org.elasticsearch.hadoop.pig.ESStorage();";
         pig.executeScript(script);
     }
-}
+
+    @Test
+    public void testTimestamp() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE name, CurrentTime(), url;" +
+                "ILLUSTRATE B;" +
+                "STORE B INTO 'pig/timestamp' USING org.elasticsearch.hadoop.pig.ESStorage();";
+
+        pig.executeScript(script);
+    }
+    }

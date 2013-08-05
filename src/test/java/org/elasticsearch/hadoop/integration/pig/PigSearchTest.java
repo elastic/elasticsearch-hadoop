@@ -37,7 +37,7 @@ public class PigSearchTest {
         pig.stop();
     }
 
-    //@Test
+    @Test
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -54,6 +54,17 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
                       + "A = LOAD 'pig/bagartists/_search?q=me*' USING ESStorage();"
+                      + "DESCRIBE A;"
+                      + "DUMP A;";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testTimestamp() throws Exception {
+        String script =
+                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
+                      + "A = LOAD 'pig/timestamp/_search?q=me*' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
