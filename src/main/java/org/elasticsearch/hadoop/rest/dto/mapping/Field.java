@@ -19,6 +19,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -32,13 +34,17 @@ public class Field implements Serializable {
     private final Field[] properties;
 
     public Field(String name, FieldType type) {
-        this(name, type, null);
+        this(name, type, (Field[]) null);
     }
 
     public Field(String name, FieldType type, Collection<Field> properties) {
+        this(name, type, (properties != null ? properties.toArray(new Field[properties.size()]) : null));
+    }
+
+    Field(String name, FieldType type, Field[] properties) {
         this.name = name;
         this.type = type;
-        this.properties = (properties != null ? properties.toArray(new Field[properties.size()]) : null);
+        this.properties = properties;
     }
 
     public Field[] properties() { return properties; }
@@ -50,32 +56,70 @@ public class Field implements Serializable {
     public String name() { return name; }
 
     public static Field parseField(Map<String, Object> content) {
-        return parseField(content.entrySet().iterator().next());
+        return parseField(content.entrySet().iterator().next(), null);
     }
 
-    private static Field parseField(Entry<String, Object> entry) {
-        String name = entry.getKey();
+    public static Map<String, FieldType> toLookupMap(Field field) {
+        if (field == null) {
+            return Collections.<String, FieldType> emptyMap();
+        }
+
+        Map<String, FieldType> map = new LinkedHashMap<String, FieldType>();
+
+        for (Field nestedField : field.properties()) {
+            add(map, nestedField, null);
+        }
+
+        return map;
+    }
+
+    static void add(Map<String, FieldType> fields, Field field, String parentName) {
+        if (FieldType.OBJECT == field.type()) {
+            if (parentName != null) {
+                parentName = parentName + "." + field.name();
+            }
+            for (Field nestedField : field.properties()) {
+                add(fields, nestedField, parentName);
+            }
+        }
+        else {
+            fields.put(field.name(), field.type());
+        }
+    }
+    private static Field parseField(Entry<String, Object> entry, String previousKey) {
+        // can be "type" or field name
+        String key = entry.getKey();
         Object value = entry.getValue();
 
         // nested object
         if (value instanceof Map) {
             Map<String, Object> content = (Map<String, Object>) value;
 
+            // check type first
+            Object type = content.get("type");
+            if (type instanceof String) {
+                return new Field(key, FieldType.parse(type.toString().toUpperCase()));
+            }
+
+            // no type - iterate through types
             List<Field> fields = new ArrayList<Field>(content.size());
             for (Entry<String, Object> e : content.entrySet()) {
-                if (e.getValue() instanceof Map || "type".equals(e.getKey())) {
-                    fields.add(parseField(e));
+                if (e.getValue() instanceof Map) {
+                    Field fl = parseField(e, key);
+                    if (fl.type == FieldType.OBJECT && "properties".equals(fl.name)) {
+                        return new Field(key, fl.type, fl.properties);
+                    }
+                    fields.add(fl);
                 }
             }
-            return new Field(name, FieldType.OBJECT, fields);
+            return new Field(key, FieldType.OBJECT, fields);
         }
-        // it must be "type" - filtering was applied above
-        else {
-            return new Field(name, FieldType.parse(value.toString().toUpperCase()));
-        }
+
+
+        throw new IllegalArgumentException("invalid map received " + entry);
     }
 
     public String toString() {
-        return (type == FieldType.OBJECT ? Arrays.toString(properties) : String.format("%s=%s", name, type));
+        return String.format("%s=%s", name, (type == FieldType.OBJECT ? Arrays.toString(properties) : type));
     }
 }
