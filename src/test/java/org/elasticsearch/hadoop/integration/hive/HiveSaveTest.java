@@ -33,7 +33,7 @@ public class HiveSaveTest {
         }
     }
 
-    @Test
+    //@Test
     public void testBasicSave() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -74,7 +74,7 @@ public class HiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
-    @Test
+    //@Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
 
@@ -152,7 +152,7 @@ public class HiveSaveTest {
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
         String insert =
                 "INSERT OVERWRITE TABLE artiststimestampsave "
-                + "SELECT NULL, to_date(from_unixtime(unix_timestamp())), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
+                + "SELECT NULL, from_unixtime(unix_timestamp()), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
 
         //System.out.println(server.execute(jar));
         System.out.println(server.execute(ddl));

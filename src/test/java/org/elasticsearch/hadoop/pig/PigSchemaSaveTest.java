@@ -15,15 +15,13 @@
  */
 package org.elasticsearch.hadoop.pig;
 
-import org.apache.pig.ResourceSchema;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.Utils;
-import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 /**
  *
@@ -43,16 +41,5 @@ public class PigSchemaSaveTest {
         Schema schemaFromString = Utils.getSchemaFromString("name:bytearray,links:{(missing:chararray)}");
         Schema schemaSaved = IOUtils.deserializeFromBase64(IOUtils.serializeToBase64(schemaFromString));
         assertEquals(schemaFromString.toString(), schemaSaved.toString());
-    }
-
-    @Test
-    public void testSchemaToJsonTest() throws Exception {
-        ResourceSchema schema = new ResourceSchema(Utils.getSchemaFromString("name:bytearray,links:{(missing:chararray)}"));
-        System.out.println(schema.toString());
-
-        ContentBuilder builder = ContentBuilder.generate(new PigSchemaWriter("test")).value(schema).flush();
-        FastByteArrayOutputStream out = ((FastByteArrayOutputStream) builder.content());
-        builder.close();
-        System.out.println(new String(out.bytes().toString()));
     }
 }

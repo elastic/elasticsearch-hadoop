@@ -105,28 +105,12 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         if (props.getProperty(ResourceSchema.class.getName()) == null) {
             // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
             props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
-            // save the instance for front end use and add marker field
-            schema = s;
-            props.put(ResourceSchema.class.getName() + ".instance", Boolean.TRUE);
         }
     }
 
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
         init(location, job);
-
-        // since this method is called multiple times (front and backend) do some sanity checks
-
-        // check flag for schema initialization
-        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
-
-        Object conf = props.get(ResourceSchema.class.getName() + ".instance");
-
-        if (conf != null) {
-            props.remove(ResourceSchema.class.getName() + ".instance");
-            Configuration cfg = job.getConfiguration();
-            InitializationUtils.saveSchemaIfNeeded(cfg, new PigSchemaWriter(new Resource(SettingsManager.loadFrom(cfg).getTargetResource()).type()), schema, log);
-        }
     }
 
     private void init(String location, Job job) {

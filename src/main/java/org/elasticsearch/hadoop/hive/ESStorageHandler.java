@@ -81,13 +81,6 @@ public class ESStorageHandler extends DefaultStorageHandler {
     @Override
     public void configureOutputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
         init(tableDesc);
-        Properties tableProperties = tableDesc.getProperties();
-
-        Properties jobPropCopy = new Properties();
-        jobPropCopy.putAll(jobProperties);
-
-        StandardStructObjectInspector inspector = HiveUtils.structObjectInspector(tableProperties);
-        InitializationUtils.saveSchemaIfNeeded(jobPropCopy, new HiveSchemaWriter(new Resource(SettingsManager.loadFrom(jobPropCopy).getTargetResource()).type()), inspector, log);
     }
 
     private void init(TableDesc tableDesc) {

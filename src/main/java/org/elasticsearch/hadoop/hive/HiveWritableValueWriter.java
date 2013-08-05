@@ -15,6 +15,10 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Calendar;
+
+import javax.xml.bind.DatatypeConverter;
+
 import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
@@ -40,7 +44,10 @@ public class HiveWritableValueWriter extends WritableValueWriter {
     public boolean write(Writable writable, Generator generator) {
         // pass the UNIX epoch
         if (writable instanceof TimestampWritable) {
-            generator.writeNumber(((TimestampWritable) writable).getTimestamp().getTime());
+        	long ts = ((TimestampWritable) writable).getTimestamp().getTime();
+        	Calendar cal = Calendar.getInstance();
+        	cal.setTimeInMillis(ts);
+            generator.writeString(DatatypeConverter.printDateTime(cal));
         }
         else if (writable instanceof ByteWritable) {
             generator.writeNumber(((ByteWritable) writable).get());

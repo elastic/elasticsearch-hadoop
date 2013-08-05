@@ -90,7 +90,7 @@ public class PigValueWriter implements ValueWriter<PigTuple> {
             break;
         // DateTime introduced in Pig 11
         case 30: //DataType.DATETIME
-            generator.writeNumber(DateConverter.convertToES(object));
+            generator.writeString(DateConverter.convertToES(object));
             break;
         case DataType.MAP:
             ResourceSchema nestedSchema = field.getSchema();

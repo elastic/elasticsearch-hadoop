@@ -1,5 +1,7 @@
 package org.elasticsearch.hadoop.pig;
 
+import java.util.Calendar;
+
 import javax.xml.bind.DatatypeConverter;
 
 import org.apache.pig.data.DataType;
@@ -16,7 +18,7 @@ class DateConverter {
 		pig11Available = "datetime".equals(DataType.findTypeName((byte) 30));
 	}
 	
-	static long convertToES(Object pigDate) {
+	static String convertToES(Object pigDate) {
 		return (pig11Available ? Pig11OrHigherConverter.convertToES(pigDate) : PigUpTo10Converter.convertToES(pigDate));
 	}
 	
@@ -25,9 +27,14 @@ class DateConverter {
 	}
 	
 	private static abstract class PigUpTo10Converter {
-		static long convertToES(Object pigDate) {
+		static String convertToES(Object pigDate) {
 			if (pigDate instanceof Number) {
-				return ((Number) pigDate).longValue();
+				Calendar cal = Calendar.getInstance();
+				cal.setTimeInMillis(((Number) pigDate).longValue());
+				return DatatypeConverter.printDateTime(cal);
+			}
+			if (pigDate instanceof String) {
+				return ((String) pigDate);
 			}
 			throw new IllegalArgumentException(String.format("Cannot convert [%s] to date", pigDate));
 		}
@@ -38,13 +45,13 @@ class DateConverter {
 	}
 	
 	private static abstract class Pig11OrHigherConverter {
-		static long convertToES(Object pigDate) {
+		static String convertToES(Object pigDate) {
 			DateTime dt = (DateTime) pigDate;
-			return dt.getMillis();
+			return dt.toString(ISODateTimeFormat.dateOptionalTimeParser());
 		}
 		
 		static Object convertFromES(String esDate) {
-			return ISODateTimeFormat.dateTime().parseDateTime(esDate);
+			return ISODateTimeFormat.dateOptionalTimeParser().parseDateTime(esDate);
 		}
 	}
 }
