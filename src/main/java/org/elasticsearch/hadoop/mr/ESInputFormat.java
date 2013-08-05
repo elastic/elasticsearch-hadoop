@@ -70,15 +70,17 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private String nodeId;
         private String nodeName;
         private String shardId;
+        private String mapping;
 
         public ShardInputSplit() {}
 
-        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard) {
+        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard, String mapping) {
             this.nodeIp = nodeIp;
             this.httpPort = httpPort;
             this.nodeId = nodeId;
             this.nodeName = nodeName;
             this.shardId = shard.toString();
+            this.mapping = mapping;
         }
 
         @Override
@@ -100,6 +102,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             out.writeUTF(nodeId);
             out.writeUTF(nodeName);
             out.writeUTF(shardId);
+            out.writeUTF(mapping);
         }
 
         @Override
@@ -109,6 +112,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             nodeId = in.readUTF();
             nodeName = in.readUTF();
             shardId = in.readUTF();
+            mapping = in.readUTF();
         }
 
         @Override
@@ -169,12 +173,15 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
             String valueReader = settings.getSerializerValueReaderClassName();
             ValueReader reader = ObjectUtils.<ValueReader> instantiate(valueReader, null);
-            String mappingData = cfg.get(MAPPING_PROPERTY);
+            String mappingData = esSplit.mapping;
 
             Field mapping = null;
 
             if (StringUtils.hasText(mappingData)) {
                 mapping = IOUtils.deserializeFromBase64(mappingData);
+            }
+            else {
+                log.warn(String.format("No mapping found for [%s] - either no index exists or the split configuration has been corrupted", esSplit));
             }
 
             scrollReader = new ScrollReader(reader, mapping);
@@ -339,6 +346,8 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     //
     // Old API - if this method is replaced, make sure to return a new/old-API compatible InputSplit
     //
+
+    // Note: data written to the JobConf will be silently discarded
     @Override
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
@@ -349,16 +358,12 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         client.close();
 
         log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
-
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
-            log.trace("Creating splits for shards " + targetShards);
-        }
-
         //TODO: implement this more efficiently
         String savedMapping = IOUtils.serializeToBase64(mapping);
-        // TODO: externalize
-        job.set(MAPPING_PROPERTY, savedMapping);
+
+        if (log.isTraceEnabled()) {
+            log.trace("Creating splits for shards " + targetShards);
+        }
 
         ShardInputSplit[] splits = new ShardInputSplit[targetShards.size()];
 
@@ -367,7 +372,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             Shard shard = entry.getKey();
             Node node = entry.getValue();
             splits[index++] =
-                    new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName());
+                        new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName(), savedMapping);
         }
 
         log.info(String.format("Created [%d] shard-splits", splits.length));
