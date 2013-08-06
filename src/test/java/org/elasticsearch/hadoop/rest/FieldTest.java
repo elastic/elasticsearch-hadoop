@@ -24,10 +24,16 @@ import org.junit.Test;
 public class FieldTest {
 
     @Test
-    public void testMappingParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("mapping.json"), Map.class);
+    public void testNestedObjectParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
         Field fl = Field.parseField(value);
         System.out.println(fl);
+    }
 
+    @Test
+    public void testBasicParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("basic.json"), Map.class);
+        Field fl = Field.parseField(value);
+        System.out.println(fl);
     }
 }
