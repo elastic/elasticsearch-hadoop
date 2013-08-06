@@ -37,8 +37,8 @@ public class QueryBuilder {
     }
 
     public static QueryBuilder query(Settings settings) {
-        return new QueryBuilder(settings.getTargetResource()).time(settings.getScrollKeepAlive()).size(
-                settings.getScrollSize());
+        return new QueryBuilder(settings.getTargetResource()).time(settings.getScrollKeepAlive()).
+                                size(settings.getScrollSize());
     }
     public static QueryBuilder query(String query) {
         return new QueryBuilder(query);
