@@ -161,4 +161,40 @@ public class HiveSaveTest {
         System.out.println(server.execute(currentDate));
         System.out.println(server.execute(insert));
     }
+
+    @Test
+    public void testFieldAlias() throws Exception {
+        String localTable = "CREATE TABLE aliassource ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING) "
+                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
+                + "LOCATION '/tmp/hive/warehouse/aliassource/' ";
+
+        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE aliassource";
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE aliassave ("
+                + "daTE     TIMESTAMP, "
+                + "Name     STRING, "
+                + "links    STRUCT<uRl:STRING, pICture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
+                + "TBLPROPERTIES('es.resource' = 'hive/aliassave' ," +
+                                "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123')";
+
+        // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
+        // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
+        String insert =
+                "INSERT OVERWRITE TABLE aliassave "
+                + "SELECT from_unixtime(unix_timestamp()), s.name, named_struct('uRl', s.url, 'pICture', s.picture) FROM aliassource s";
+
+        //System.out.println(server.execute(jar));
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(insert));
+    }
 }

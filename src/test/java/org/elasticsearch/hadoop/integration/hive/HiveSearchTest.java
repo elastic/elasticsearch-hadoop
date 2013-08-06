@@ -101,4 +101,20 @@ public class HiveSearchTest {
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
     }
+
+    @Test
+    public void columnAliases() throws Exception {
+        String create = "CREATE EXTERNAL TABLE aliasload ("
+                + "daTE     TIMESTAMP, "
+                + "Name     STRING, "
+                + "links    STRUCT<uRl:STRING, pICture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'hive/aliassave/_search?q=*' ," +
+                                "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123')";
+
+        String select = "SELECT * FROM aliasload";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+    }
 }
