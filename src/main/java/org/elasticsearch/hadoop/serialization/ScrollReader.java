@@ -168,7 +168,7 @@ public class ScrollReader {
             String nodeMapping = fieldMapping;
 
             if (nodeMapping != null) {
-                nodeMapping = fieldMapping + "." + currentName;
+                nodeMapping = fieldMapping + "/" + currentName;
             }
             else {
                 nodeMapping = currentName;
