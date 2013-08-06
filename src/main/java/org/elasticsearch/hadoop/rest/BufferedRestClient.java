@@ -240,7 +240,7 @@ public class BufferedRestClient implements Closeable {
     }
 
     public Field getMapping() throws IOException {
-        return Field.parseField((Map<String, Object>) client.getMapping(resource.mapping()).entrySet().iterator().next().getValue());
+        return Field.parseField((Map<String, Object>) client.getMapping(resource.mapping()));
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
