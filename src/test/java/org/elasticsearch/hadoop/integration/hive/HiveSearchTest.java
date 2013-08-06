@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
@@ -53,6 +54,7 @@ public class HiveSearchTest {
     }
 
     @Test
+    @Ignore
     public void basicArrayMapping() throws Exception {
         String create = "CREATE EXTERNAL TABLE compoundarray ("
                 + "rid      INT, "
