@@ -32,7 +32,6 @@ import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;

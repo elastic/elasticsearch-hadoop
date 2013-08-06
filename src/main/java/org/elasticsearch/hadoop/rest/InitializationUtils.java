@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
-import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;

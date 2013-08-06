@@ -18,7 +18,6 @@ package org.elasticsearch.hadoop.serialization;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;

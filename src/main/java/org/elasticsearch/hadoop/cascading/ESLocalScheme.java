@@ -24,15 +24,13 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
-import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
-import org.elasticsearch.hadoop.util.Assert;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
