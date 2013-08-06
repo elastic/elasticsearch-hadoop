@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
     private final FieldAlias alias;
 
     public HiveValueWriter() {
-        this(new FieldAlias(Collections.<String, String> emptyMap()));
+        this(new FieldAlias());
     }
 
     public HiveValueWriter(FieldAlias alias) {

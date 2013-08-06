@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -23,6 +24,10 @@ import java.util.Map;
 class FieldAlias {
 
     private final Map<String, String> hiveToES;
+
+    public FieldAlias() {
+        this.hiveToES = new LinkedHashMap<String, String>();
+    }
 
     public FieldAlias(Map<String, String> alias) {
         this.hiveToES = alias;
