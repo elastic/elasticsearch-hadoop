@@ -60,7 +60,6 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V>,
         ConfigurationOptions {
 
-    private static final String MAPPING_PROPERTY = "es.internal.mr.mapping";
     private static Log log = LogFactory.getLog(ESInputFormat.class);
 
     protected static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
