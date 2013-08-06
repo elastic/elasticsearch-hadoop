@@ -15,16 +15,26 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Map;
+
 /**
- * Holder class for various Hive configuration options. Exists mainly since the Hive classes have been refactored/renamed between releases which are not backwards compatible.
+ * Basic class for field aliasing since Hive column names are restricted to: [0-9a-z_] and cannot start with numbers. Without any mapping, the alias will convert all hive columns to lower case.n
  */
-interface HiveConstants {
+class FieldAlias {
 
-    String OUTPUT_COMMITTER = "mapred.output.committer.class";
-    String COLUMNS = "columns";
-    String COLUMNS_TYPES = "columns.types";
+    private final Map<String, String> hiveToES;
 
-    String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
-    String TABLE_LOCATION = "location";
-    String COLUMN_ALIASES = "es.column.aliases";
+    public FieldAlias(Map<String, String> alias) {
+        this.hiveToES = alias;
+    }
+
+    String toES(String string) {
+        String alias = hiveToES.get(string);
+        if (alias == null) {
+            // ES fields are all lowercase
+            alias = string.toLowerCase();
+            hiveToES.put(string, alias);
+        }
+        return alias;
+    }
 }

@@ -16,12 +16,16 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
+import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -44,5 +48,31 @@ abstract class HiveUtils {
         }
 
         return ObjectInspectorFactory.getStandardStructObjectInspector(columnNames, inspectors);
+    }
+
+    static StructTypeInfo typeInfo(StructObjectInspector inspector) {
+        return (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
+    }
+
+    static FieldAlias alias(Properties tableProperties) {
+        List<String> aliases = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.COLUMN_ALIASES), ",");
+
+        Map<String, String> aliasMap = new LinkedHashMap<String, String>();
+
+        if (aliases != null) {
+            for (String string : aliases) {
+                // split alias
+                string = string.trim();
+                int index = string.indexOf(":");
+                if (index > 0) {
+                    String key = string.substring(0, index);
+                    // save the lower case version as well since Hive does that for top-level keys
+                    aliasMap.put(key, string.substring(index + 1));
+                    aliasMap.put(key.toLowerCase(), string.substring(index + 1));
+                }
+            }
+        }
+
+        return new FieldAlias(aliasMap);
     }
 }

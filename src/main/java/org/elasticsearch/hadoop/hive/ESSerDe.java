@@ -28,7 +28,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
@@ -46,15 +45,18 @@ public class ESSerDe implements SerDe {
 
     // serialization artifacts
     private BytesArray scratchPad = new BytesArray(512);
-    private ValueWriter<HiveType> valueWriter = new HiveValueWriter();
+    private ValueWriter<HiveType> valueWriter;
     private HiveType hiveType = new HiveType(null, null);
     private FastBytesWritable result = new FastBytesWritable();
     private StructTypeInfo structTypeInfo;
+    private FieldAlias alias;
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
-        structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
+        structTypeInfo = HiveUtils.typeInfo(inspector);
+        alias = HiveUtils.alias(tbl);
+        valueWriter = new HiveValueWriter(alias);
     }
 
     @Override
@@ -63,8 +65,7 @@ public class ESSerDe implements SerDe {
             return null;
         }
 
-        StructTypeInfo structTypeInfo = (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
-        return hiveFromWritable(structTypeInfo, blob);
+        return hiveFromWritable(structTypeInfo, blob, alias);
     }
 
     @Override
@@ -99,7 +100,7 @@ public class ESSerDe implements SerDe {
         return result;
     }
 
-    static Object hiveFromWritable(TypeInfo type, Writable data) {
+    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
         if (data == null || data instanceof NullWritable) {
             return null;
         }
@@ -113,7 +114,7 @@ public class ESSerDe implements SerDe {
 
             List<Object> list = new ArrayList<Object>();
             for (Writable writable : aw.get()) {
-                list.add(hiveFromWritable(listElementType, writable));
+                list.add(hiveFromWritable(listElementType, writable, alias));
             }
 
             return list;
@@ -129,8 +130,8 @@ public class ESSerDe implements SerDe {
             MapWritable map = (MapWritable) data;
             Text reuse = new Text();
             for (int index = 0; index < names.size(); index++) {
-                reuse.set(names.get(index));
-                struct.add(hiveFromWritable(info.get(index), map.get(reuse)));
+                reuse.set(alias.toES(names.get(index)));
+                struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias));
             }
             return struct;
         }

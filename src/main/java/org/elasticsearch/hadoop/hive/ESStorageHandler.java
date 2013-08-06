@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,14 +24,11 @@ import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
-import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
-import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -48,9 +44,6 @@ import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 public class ESStorageHandler extends DefaultStorageHandler {
 
     private static Log log = LogFactory.getLog(ESStorageHandler.class);
-
-    private String host;
-    private int port = 0;
 
     @Override
     public Class<? extends InputFormat> getInputFormatClass() {
@@ -85,7 +78,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
     private void init(TableDesc tableDesc) {
         Configuration cfg = getConf();
-        Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).clean().setHost(host).setPort(port);
+        Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).clean();
 
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
         SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, LogFactory.getLog(ESSerDe.class));

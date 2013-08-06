@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,14 +46,16 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
 
     private final boolean writeUnknownTypes;
     private final ValueWriter<Writable> writableWriter;
+    private final FieldAlias alias;
 
     public HiveValueWriter() {
-        this(false);
+        this(new FieldAlias(Collections.<String, String> emptyMap()));
     }
 
-    public HiveValueWriter(boolean writeUnknownTypes) {
-        this.writeUnknownTypes = writeUnknownTypes;
-        writableWriter = new HiveWritableValueWriter(writeUnknownTypes);
+    public HiveValueWriter(FieldAlias alias) {
+        this.writeUnknownTypes = false;
+        this.writableWriter = new HiveWritableValueWriter(false);
+        this.alias = alias;
     }
 
     @Override
@@ -138,7 +141,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             for (Map.Entry<?, ?> entry : mapContent.entrySet()) {
                 //write(entry.getKey(), mapType.getMapKeyTypeInfo(), generator);
                 // TODO: handle non-strings
-                generator.writeFieldName(entry.getKey().toString());
+                generator.writeFieldName(alias.toES(entry.getKey().toString()));
 
                 if (!write(entry.getValue(), mapType.getMapValueTypeInfo(), generator)) {
                     return false;
@@ -164,7 +167,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
                     content = (data instanceof LazyStruct ? ((LazyStruct) data).getFieldsAsList() : ((LazyBinaryStruct) data).getFieldsAsList());
                 }
                 for (int structIndex = 0; structIndex < info.size(); structIndex++) {
-                    generator.writeFieldName(names.get(structIndex));
+                    generator.writeFieldName(alias.toES(names.get(structIndex)));
                     if (!write(content.get(structIndex), info.get(structIndex), generator)) {
                         return false;
                     }
@@ -174,7 +177,7 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
             else {
                 Object[] content = (Object[]) data;
                 for (int structIndex = 0; structIndex < info.size(); structIndex++) {
-                    generator.writeFieldName(names.get(structIndex));
+                    generator.writeFieldName(alias.toES(names.get(structIndex)));
                     if (!write(content[structIndex], info.get(structIndex), generator)) {
                         return false;
                     }
