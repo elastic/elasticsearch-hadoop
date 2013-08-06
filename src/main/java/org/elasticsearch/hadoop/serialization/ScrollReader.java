@@ -79,9 +79,6 @@ public class ScrollReader {
             results.add(readHit());
         }
 
-        if (trace) {
-            log.trace("Read objects " + results);
-        }
         return results;
     }
 
@@ -171,7 +168,7 @@ public class ScrollReader {
             String nodeMapping = fieldMapping;
 
             if (nodeMapping != null) {
-                nodeMapping = fieldMapping + "/" + currentName;
+                nodeMapping = fieldMapping + "." + currentName;
             }
             else {
                 nodeMapping = currentName;
