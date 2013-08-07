@@ -27,9 +27,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
-import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.*;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -83,10 +81,7 @@ public class BufferedRestClient implements Closeable {
         this.index = tempIndex;
         this.resource = new Resource(index);
 
-        if (this.settings.getParentIdPath() != null)
-            enableParentChildIndex = true;
-        else
-            enableParentChildIndex = false;
+        enableParentChildIndex = (this.settings.getParentIdPath() != null);
 
         trace = log.isTraceEnabled();
     }
@@ -183,10 +178,11 @@ public class BufferedRestClient implements Closeable {
             flushBatch();
         }
 
-        if (enableParentChildIndex)
+        if (enableParentChildIndex){
             copyIntoBuffer(indexFiledWithParentValue, indexFiledWithParentValue.length);
-        else
+        }else{
             copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
+        }
 
         copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
         copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
