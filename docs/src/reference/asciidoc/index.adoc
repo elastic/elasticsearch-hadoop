@@ -9,8 +9,6 @@ This is the reference documentation of {eh} project.
 
 include::preface.adoc[]
 
-include::intro.adoc[]
-
 include::core.adoc[]
 
 include::resources.adoc[]
