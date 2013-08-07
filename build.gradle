@@ -313,6 +313,15 @@ jar {
     manifest.attributes['Repository-Revision'] = rev
 }
 
+asciidoctor {
+	sourceDir = file("docs/src/reference/asciidoc")
+    options = [
+        attributes: [
+            'source-highlighter': 'highlightjs'
+        ]
+    ]
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
