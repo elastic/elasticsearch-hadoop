@@ -24,21 +24,26 @@ import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public class PigValueWriter implements ValueWriter<PigTuple> {
+public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     private final boolean writeUnknownTypes;
+    private FieldAlias alias;
 
     public PigValueWriter() {
         writeUnknownTypes = false;
     }
 
-    public PigValueWriter(boolean writeUnknownTypes) {
-        this.writeUnknownTypes = writeUnknownTypes;
+    @Override
+    public void setSettings(Settings settings) {
+        alias = FieldAlias.load(settings);
     }
+
 
     @Override
     public boolean write(PigTuple type, Generator generator) {
@@ -49,7 +54,7 @@ public class PigValueWriter implements ValueWriter<PigTuple> {
         byte type = (field != null ? field.getType() : DataType.findType(object));
 
         if (writeFieldName) {
-            generator.writeFieldName(field.getName());
+            generator.writeFieldName(alias.toES(field.getName()));
         }
 
         if (object == null) {
@@ -100,7 +105,7 @@ public class PigValueWriter implements ValueWriter<PigTuple> {
             int index = 0;
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
-                generator.writeFieldName(entry.getKey().toString());
+                generator.writeFieldName(alias.toES(entry.getKey().toString()));
                 write(entry.getValue(), nestedFields[index++], generator, false);
             }
             generator.writeEndObject();
@@ -117,7 +122,7 @@ public class PigValueWriter implements ValueWriter<PigTuple> {
             for (int i = 0; i < nestedFields.length; i++) {
                 String name = nestedFields[i].getName();
                 // handle schemas without names
-                name = (StringUtils.hasText(name) ? name : Integer.toString(i));
+                name = (StringUtils.hasText(name) ? alias.toES(name) : Integer.toString(i));
                 generator.writeFieldName(name);
                 write(tuples.get(i), nestedFields[i], generator, false);
             }

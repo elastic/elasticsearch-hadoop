@@ -47,7 +47,7 @@ public class PigSaveTest {
         pig.stop();
     }
 
-    @Test
+    //@Test
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -68,7 +68,7 @@ public class PigSaveTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testBag() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -80,7 +80,7 @@ public class PigSaveTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testTimestamp() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -92,4 +92,17 @@ public class PigSaveTest {
 
         pig.executeScript(script);
     }
+
+    @Test
+    public void testFieldAlias() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (Id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE name, CurrentTime() AS timestamp, url, picture;" +
+                "ILLUSTRATE B;" +
+                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.column.aliases=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');";
+
+        pig.executeScript(script);
     }
+}

@@ -16,8 +16,10 @@
 package org.elasticsearch.hadoop.pig;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.Set;
 
@@ -43,6 +45,7 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Pig storage for reading and writing data into an ElasticSearch index.
@@ -58,15 +61,14 @@ import org.elasticsearch.hadoop.util.IOUtils;
  * </pre>
  *
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
- * or passed to the {@link #ESStorage(String, int)} constructor.
+ * or passed to the {@link #ESStorage(String)} constructor.
  */
 public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMetadata {
 
     private static final Log log = LogFactory.getLog(ESStorage.class);
     private final boolean trace = log.isTraceEnabled();
 
-    private final String host;
-    private int port = 0;
+    private Properties properties;
 
     private String relativeLocation;
     private String signature;
@@ -76,12 +78,19 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private PigTuple pigTuple;
 
     public ESStorage() {
-        this(null, "0");
+        this(null);
     }
 
-    public ESStorage(String host, String port) {
-        this.host = host;
-        this.port = Integer.valueOf(port);
+    public ESStorage(String configuration) {
+        if (StringUtils.hasText(configuration)) {
+            try {
+                properties = new Properties();
+                // replace ; with line separators
+                properties.load(new StringReader(configuration.replace(';', '\n')));
+            } catch (IOException ex) {
+                throw new IllegalArgumentException("Cannot parse options " + properties, ex);
+            }
+        }
     }
 
     @Override
@@ -111,7 +120,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     }
 
     private void init(String location, Job job) {
-        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).setHost(host).setPort(port).setResource(location);
+        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).merge(properties).setResource(location);
         boolean changed = false;
         changed |= SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
         changed |= SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
