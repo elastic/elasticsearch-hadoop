@@ -8,7 +8,7 @@ Scalable {mr} model:: {eh} is built around {mr}: _every_ operation done in {eh} 
 
 Facilitates data co-location:: {eh} fully integrates with Hadoop exposing its network access information, allowing co-located {es} and Hadoop clusters to be aware of each other and reduce network IO.
 
-Support both 'old'(+mapred+) & 'new'(+mapreduce) {mr} APIs:: {eh} automatically adjusts to your environment; one does not have to change between using the +mapred+ or +mapreduce+ APIs - both are supported, by the same classes, at the same time.
+Both 'old'(+mapred+) & 'new'(+mapreduce+) {mr} APIs supported:: {eh} automatically adjusts to your environment; one does not have to change between using the +mapred+ or +mapreduce+ APIs - both are supported, by the same classes, at the same time.
 
 Cascading support:: Cascading is an application framework for Java developers to simply develop robust applications on Apache Hadoop. And with {eh}, Cascading can run its flows directly onto {es}.
 
