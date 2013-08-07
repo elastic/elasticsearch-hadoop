@@ -1,0 +1,3 @@
+[[mapreduce]]
+== {mr} integration
+
