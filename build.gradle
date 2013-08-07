@@ -244,7 +244,7 @@ javadoc {
 
 		links = [
 			"http://download.oracle.com/javase/6/docs/api",
-			"http://commons.apache.org/proper/commons-logging/commons-logging-1.1.1/apidocs/",
+			"http://commons.apache.org/proper/commons-logging/apidocs/",
 			"http://hadoop.apache.org/common/docs/r1.1.2/api/",
 			//"http://hbase.apache.org/apidocs/",
 			"http://pig.apache.org/docs/r0.11.1/api/",
