@@ -47,7 +47,7 @@ public class PigSaveTest {
         pig.stop();
     }
 
-    //@Test
+    @Test
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -68,7 +68,7 @@ public class PigSaveTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testBag() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -80,7 +80,7 @@ public class PigSaveTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testTimestamp() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
