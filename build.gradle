@@ -33,7 +33,7 @@ def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 
 // Hadoop aliases
-def hadoopStableVersion = hadoop11Version
+def hadoopStableVersion = hadoop12Version
 def hadoopYarnVersion = hadoop2Version
 def hadoopVersion = hadoopStableVersion 
 
