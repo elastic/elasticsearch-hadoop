@@ -1,0 +1,18 @@
+= Elasticsearch Hadoop reference documentation
+:toc:
+:icons:
+:eh: Elasticsearch Hadoop
+:es: Elasticsearch
+:mr: Map/Reduce
+
+This is the reference documentation of {eh} project.
+
+include::preface.adoc[]
+
+include::intro.adoc[]
+
+include::core.adoc[]
+
+include::resources.adoc[]
+
+include::appendix.adoc[]
