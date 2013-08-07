@@ -1,9 +1,9 @@
 [preface]
-== Preface
+== About {eh}
 
-{eh} allows code running within Hadoop (and the run-times built upon it such as Hive and Pig) to interact with {es}, to index and query data transparently using the {es} engine. Data can flow bi-directionally, meaning applications can read and/or write to and from {es} using its REST interface. An important goal is to provide excellent, native support so that the interaction is as transparent as possible. 
-{eh} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that interacting with {es} is just like using resources within the Hadoop cluster.This document assumes the reader already has a basic familiarity with {es} and Hadoop concepts. 
+{eh} is a stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
+Data flows 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
+{eh} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. 
 
-While every effort has been made to ensure that this documentation is comprehensive and without error, nevertheless some topics might require more explanations and some typos might have crept in. If you do spot any mistakes or even more serious errors and you have a few cycles during lunch, lease do bring the error to the attention of the {eh} team by raising an issue or contact us (see http://www.elasticsearch.org/community/[the community] page for more information).
+include::intro/features.adoc[]
 
-Thank you.

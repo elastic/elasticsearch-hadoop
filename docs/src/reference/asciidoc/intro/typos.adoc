@@ -1,0 +1,5 @@
+This document assumes the reader already has a basic familiarity with {es} and Hadoop concepts. 
+
+While every effort has been made to ensure that this documentation is comprehensive and without error, nevertheless some topics might require more explanations and some typos might have crept in. If you do spot any mistakes or even more serious errors and you have a few cycles during lunch, lease do bring the error to the attention of the {eh} team by raising an issue or contact us (see http://www.elasticsearch.org/community/[the community] page for more information).
+
+Thank you.
