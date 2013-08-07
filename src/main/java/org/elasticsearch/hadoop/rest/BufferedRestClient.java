@@ -109,8 +109,9 @@ public class BufferedRestClient implements Closeable {
     /**
      * Returns a pageable (scan based) result to the given query.
      *
-     * @param uri
-     * @return
+     * @param query scan query
+     * @param reader scroll reader
+     * @return a scroll query
      */
     ScrollQuery scan(String query, ScrollReader reader) throws IOException {
         String[] scrollInfo = client.scan(query);
@@ -122,8 +123,7 @@ public class BufferedRestClient implements Closeable {
     /**
      * Writes the objects to index.
      *
-     * @param index
-     * @param object
+     * @param object object to add to the index
      */
     public void addToIndex(Object object) throws IOException {
         Assert.hasText(index, "no index given");
@@ -140,8 +140,8 @@ public class BufferedRestClient implements Closeable {
     /**
      * Writes the objects to index.
      *
-     * @param index
-     * @param object
+     * @param data as a byte array
+     * @param size the length to use from the given array
      */
     public void addToIndex(byte[] data, int size) throws IOException {
         Assert.hasText(index, "no index given");
