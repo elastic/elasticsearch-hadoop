@@ -37,6 +37,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     public PigValueWriter() {
         writeUnknownTypes = false;
+        alias = new FieldAlias();
     }
 
     @Override
