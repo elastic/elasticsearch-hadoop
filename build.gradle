@@ -1,3 +1,5 @@
+description = 'Elasticsearch Hadoop'
+
 buildscript {
     repositories {
         maven { url 'http://repo.springsource.org/plugins-release' }
@@ -237,9 +239,9 @@ javadoc {
 
 		groups = [
 		'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
-		'Elasticsearch Cascading' : ['org.elasticsearch.hadoop.cascading.*'],
-		'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive.*'],
-		'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig.*'],
+		'Elasticsearch Cascading' : ['org.elasticsearch.hadoop.cascading*'],
+		'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
+		'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
 		]
 
 		links = [
@@ -253,7 +255,11 @@ javadoc {
 			"http://docs.cascading.org/cascading/2.1/javadoc/"
 		]
 
-		exclude "org/elasticsearch/hadoop/rest/**,org/elasticsearch/hadoop/serialization/**,org/elasticsearch/hadoop/util/**"
+		excludes = [
+			"org/elasticsearch/hadoop/rest/**", 
+			"org/elasticsearch/hadoop/serialization/**", 
+			"org/elasticsearch/hadoop/util/**"
+		]
 	}
 
 	title = "${rootProject.description} ${version} API"
