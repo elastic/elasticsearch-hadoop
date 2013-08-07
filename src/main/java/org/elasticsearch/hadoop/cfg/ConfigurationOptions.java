@@ -68,4 +68,7 @@ public interface ConfigurationOptions {
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
 
+    /** Parent path */
+    String ES_PARENT_ID_PATH = "es.index.parent.path";
+
 }

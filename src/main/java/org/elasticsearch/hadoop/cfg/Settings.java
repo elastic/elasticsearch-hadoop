@@ -77,6 +77,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_INDEX_AUTO_CREATE, ES_INDEX_AUTO_CREATE_DEFAULT));
     }
 
+    public String getParentIdPath() {
+        return getProperty(ES_PARENT_ID_PATH, null);
+    }
+
     public String getTargetUri() {
         String address = getProperty(INTERNAL_ES_TARGET_URI);
         return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());

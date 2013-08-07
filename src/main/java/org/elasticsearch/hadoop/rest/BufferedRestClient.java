@@ -32,6 +32,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -56,6 +57,7 @@ public class BufferedRestClient implements Closeable {
     private boolean executedBulkWrite = false;
 
     private BytesArray scratchPad;
+    private byte[] indexFiledWithParentValue;
     private ValueWriter<?> valueWriter;
 
     private boolean writeInitialized = false;
@@ -66,6 +68,8 @@ public class BufferedRestClient implements Closeable {
     private final boolean trace;
 
     private final Settings settings;
+
+    private final boolean enableParentChildIndex;
 
     private static final byte[] INDEX_DIRECTIVE = "{\"index\":{}}\n".getBytes(StringUtils.UTF_8);
     private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
@@ -80,6 +84,11 @@ public class BufferedRestClient implements Closeable {
         }
         this.index = tempIndex;
         this.resource = new Resource(index);
+
+        if (this.settings.getParentIdPath() != null)
+            enableParentChildIndex = true;
+        else
+            enableParentChildIndex = false;
 
         trace = log.isTraceEnabled();
     }
@@ -153,6 +162,7 @@ public class BufferedRestClient implements Closeable {
         }
         lazyInitWriting();
         scratchPad.setBytes(data, size);
+
         doAddToIndex();
     }
 
@@ -161,14 +171,26 @@ public class BufferedRestClient implements Closeable {
             log.trace(String.format("Indexing object [%s]", scratchPad));
         }
 
-        int entrySize = INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
+        if (enableParentChildIndex){
+            String parentId = this.getParentId(scratchPad.bytes(), this.settings.getParentIdPath());
+            indexFiledWithParentValue = ("{\"index\":{ \"_parent\" : \"" + parentId + "\"}}\n").getBytes(StringUtils.UTF_8);
+        }
+
+
+        int entrySize = enableParentChildIndex ?
+                indexFiledWithParentValue.length + CARRIER_RETURN.length + scratchPad.size() :
+                INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
 
         // make some space first
         if (entrySize + bufferSize > buffer.length) {
             flushBatch();
         }
 
-        copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
+        if (enableParentChildIndex)
+            copyIntoBuffer(indexFiledWithParentValue, indexFiledWithParentValue.length);
+        else
+            copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
+
         copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
         copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
 
@@ -177,6 +199,13 @@ public class BufferedRestClient implements Closeable {
         if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
             flushBatch();
         }
+
+    }
+
+    private String getParentId(byte[] data, String parentIdPath ){
+        Parser parser = new JacksonJsonParser(data);
+        ParsingUtils.seek(parentIdPath, parser);
+        return parser.text();
     }
 
     private void copyIntoBuffer(byte[] data, int size) {
