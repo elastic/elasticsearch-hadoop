@@ -140,6 +140,10 @@ public abstract class Settings implements InternalConfigurationOptions {
     public abstract void setProperty(String name, String value);
 
     public Settings merge(Properties properties) {
+        if (properties == null) {
+            return this;
+        }
+
         Enumeration<?> propertyNames = properties.propertyNames();
 
         Object prop = null;
