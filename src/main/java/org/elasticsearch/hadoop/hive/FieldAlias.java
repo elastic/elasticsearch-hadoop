@@ -19,7 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Basic class for field aliasing since Hive column names are restricted to: [0-9a-z_] and cannot start with numbers. Without any mapping, the alias will convert all hive columns to lower case.n
+ * Basic class for field aliasing since Hive column names are restricted to: [0-9a-z_] and cannot start with numbers. Without any mapping, the alias will convert all hive columns to lower case.
+ * Note that hive does this automatically for top-level fields but not for nested ones.
  */
 class FieldAlias {
 
