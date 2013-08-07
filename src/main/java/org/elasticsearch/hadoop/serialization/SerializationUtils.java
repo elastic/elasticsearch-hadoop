@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class SerializationUtils {
@@ -45,5 +46,27 @@ public abstract class SerializationUtils {
         }
 
         return false;
+    }
+
+    public static ValueReader instantiateValueReader(Settings settings) {
+        String valueReader = settings.getSerializerValueReaderClassName();
+        ValueReader reader = ObjectUtils.<ValueReader> instantiate(valueReader, null);
+
+        if (reader instanceof SettingsAware) {
+            ((SettingsAware) reader).setSettings(settings);
+        }
+
+        return reader;
+    }
+
+    public static ValueWriter instantiateValueWriter(Settings settings) {
+        String valueWriter = settings.getSerializerValueWriterClassName();
+        ValueWriter writer = ObjectUtils.<ValueWriter> instantiate(valueWriter, null);
+
+        if (writer instanceof SettingsAware) {
+            ((SettingsAware) writer).setSettings(settings);
+        }
+
+        return writer;
     }
 }

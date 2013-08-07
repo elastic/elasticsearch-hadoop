@@ -44,6 +44,7 @@ import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.serialization.ValueReader;
@@ -170,8 +171,8 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
             // initialize mapping/ scroll reader
             SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
-            String valueReader = settings.getSerializerValueReaderClassName();
-            ValueReader reader = ObjectUtils.<ValueReader> instantiate(valueReader, null);
+            ValueReader reader = SerializationUtils.instantiateValueReader(settings);
+
             String mappingData = esSplit.mapping;
 
             Field mapping = null;
