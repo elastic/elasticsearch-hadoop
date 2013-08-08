@@ -18,5 +18,5 @@ Hive support:: Run Hive queries against {es} for advanced analystics and _real_t
 
 REST based:: {eh} uses {es} REST interface for communication, allowing for flexible deployments by minimizing the number of ports needed to be open within a network.
 
-Self contained:: the library has been designed to be small and efficient. This includes the library jar itself which requires no extra library to be added to Hadoop outside {eh} itself. Further more, we keep a close eye on the jar size itself so that distributing {eh} within your cluster is simple and fast.
+Self contained:: the library has been designed to be small and efficient. At around 150KB and _no_ extra dependencies outside Hadoop itself, distributing {eh} within your cluster is simple and fast.
 

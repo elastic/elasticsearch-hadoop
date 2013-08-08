@@ -27,4 +27,4 @@ Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.1
 
 === Pig
 
-Pig 0.10.0 or higher. We recomend using the latest release of Pig (currently 0.11.1.).
+Pig 0.10.0 or higher. We recomend using the latest release of Pig (currently 0.11.1).
