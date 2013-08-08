@@ -1,3 +1,76 @@
 [[mapreduce]]
 == {mr} integration
 
+For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}.
+
+=== Instalation
+
+In order to use {eh}, the jar needs to be available to the job class path. At ~150kB and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options], be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+
+.CLI example
+----
+$ bin/hadoop jar myJar.jar -Dlibjars=elasticsearch-hadoop.jar
+----
+
+==== Writing data to {es}
+
+With {eh}, {mr} jobs can write data to {es} making it searchable through http://www.elasticsearch.org/guide/reference/glossary/#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
+
+===== 'Old' (+org.apache.hadoop.mapred+) API
+
+To write data to ES, use +org.elasticsearch.hadoop.mr.ESOutputFormat+ on your job along with the relevant configuration <<configuration,properties>>:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.resource", "radio/artists");       // index used for storing data
+conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
+...
+JobClient.runJob(conf);
+----
+
+===== 'New' (+org.apache.hadoop.mapreduce+) API
+
+Using the 'new' is strikingly similar - in fact, the exact same class (+org.elasticsearch.hadoop.mr.ESOutputFormat+) is used:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource", "radio/artists");       // index used for storing data
+Job job = new Job(conf);
+job.setOutputFormat(ESOutputFormat.class);      // use dedicated output format
+...
+job.waitForCompletion(true);
+----
+
+
+==== Reading data from {es}
+
+In a similar fashion, to read data from {es}, one needs to use +org.elasticsearch.hadoop.mr.ESInputFormat+ class.
+While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
+
+===== 'Old' (+org.apache.hadoop.mapred+) API
+
+Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
+conf.setInputFormat(ESInputFormat.class);               // use dedicated input format
+...
+JobClient.runJob(conf);
+----
+
+===== 'New' (+org.apache.hadoop.mapreduce+) API
+
+As expected, the +mapreduce+ API version is quite similar:
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
+Job job = new Job(conf);                                // use dedicated input format
+job.setInputFormat(ESInputFormat.class);
+...
+job.waitForCompletion(true);
+----
