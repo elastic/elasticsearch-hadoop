@@ -1,6 +1,8 @@
 
 include::core/intro.adoc[]
 
+include::core/configuration.adoc[]
+
 include::core/mr.adoc[]
 
 include::core/cascading.adoc[]
