@@ -1,9 +1,9 @@
 [[mapreduce]]
 == {mr} integration
 
-For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}.
+For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to +Map+s of +Writable+ objects and vice-versa.
 
-=== Instalation
+=== Installation
 
 In order to use {eh}, the jar needs to be available to the job class path. At ~150kB and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options], be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
@@ -12,9 +12,40 @@ In order to use {eh}, the jar needs to be available to the job class path. At ~1
 $ bin/hadoop jar myJar.jar -Dlibjars=elasticsearch-hadoop.jar
 ----
 
+=== Hadoop +Writable+ to {es} type mapping
+
+{eh} automatically converts Hadoop built-in +Writable+ types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
+
+.+Writable+ Conversion Table
+
+[options="header"]
+|===
+| +Writable+ | {es} type
+
+| +null+            | null
+| +NullWritable+    | null
+| +Text+            | string
+| +UTF8+            | string
+| +ByteWritable+    | byte
+| +IntWritable+     | int
+| +VInt+            | int
+| +LongWritable+    | long
+| +VLongWritable+   | long
+| +ByteWritable+    | binary
+| +DoubleWritable+  | double
+| +FloatWritable+   | float
+| +BooleanWritable+ | boolean
+| +MD5Writable+     | string
+| +ArrayWritable+   | array
+| +AbstractMapWritable+ | map
+
+|===
+
 === Writing data to {es}
 
 With {eh}, {mr} jobs can write data to {es} making it searchable through http://www.elasticsearch.org/guide/reference/glossary/#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
+
++ESOutputFormat+ expects a +Map<Writable, Writable>+ value that it will convert into a JSON document; the key is ignored.
 
 ==== 'Old' (+org.apache.hadoop.mapred+) API
 
@@ -49,6 +80,8 @@ job.waitForCompletion(true);
 In a similar fashion, to read data from {es}, one needs to use +org.elasticsearch.hadoop.mr.ESInputFormat+ class.
 While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
 
++ESInputFormat+ returns a +Map<Writable, Writable>+ converted from the JSON documents returned by {es} and a null (to be ignored) key.
+
 ==== 'Old' (+org.apache.hadoop.mapred+) API
 
 Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
@@ -76,10 +109,6 @@ job.waitForCompletion(true);
 ----
 
 ////
-== Hadoop +Writable+ to {es} type mapping
-
-.TODO
-add conversion table
 
 == Putting it all together
 
