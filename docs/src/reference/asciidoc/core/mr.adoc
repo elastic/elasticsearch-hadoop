@@ -12,11 +12,11 @@ In order to use {eh}, the jar needs to be available to the job class path. At ~1
 $ bin/hadoop jar myJar.jar -Dlibjars=elasticsearch-hadoop.jar
 ----
 
-==== Writing data to {es}
+=== Writing data to {es}
 
 With {eh}, {mr} jobs can write data to {es} making it searchable through http://www.elasticsearch.org/guide/reference/glossary/#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
 
-===== 'Old' (+org.apache.hadoop.mapred+) API
+==== 'Old' (+org.apache.hadoop.mapred+) API
 
 To write data to ES, use +org.elasticsearch.hadoop.mr.ESOutputFormat+ on your job along with the relevant configuration <<configuration,properties>>:
 
@@ -29,7 +29,7 @@ conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
 JobClient.runJob(conf);
 ----
 
-===== 'New' (+org.apache.hadoop.mapreduce+) API
+==== 'New' (+org.apache.hadoop.mapreduce+) API
 
 Using the 'new' is strikingly similar - in fact, the exact same class (+org.elasticsearch.hadoop.mr.ESOutputFormat+) is used:
 
@@ -44,12 +44,12 @@ job.waitForCompletion(true);
 ----
 
 
-==== Reading data from {es}
+=== Reading data from {es}
 
 In a similar fashion, to read data from {es}, one needs to use +org.elasticsearch.hadoop.mr.ESInputFormat+ class.
 While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
 
-===== 'Old' (+org.apache.hadoop.mapred+) API
+==== 'Old' (+org.apache.hadoop.mapred+) API
 
 Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
 
@@ -62,7 +62,7 @@ conf.setInputFormat(ESInputFormat.class);               // use dedicated input f
 JobClient.runJob(conf);
 ----
 
-===== 'New' (+org.apache.hadoop.mapreduce+) API
+==== 'New' (+org.apache.hadoop.mapreduce+) API
 
 As expected, the +mapreduce+ API version is quite similar:
 [source,java]
@@ -74,3 +74,16 @@ job.setInputFormat(ESInputFormat.class);
 ...
 job.waitForCompletion(true);
 ----
+
+////
+== Hadoop +Writable+ to {es} type mapping
+
+.TODO
+add conversion table
+
+== Putting it all together
+
+.TODO
+add example
+
+////
