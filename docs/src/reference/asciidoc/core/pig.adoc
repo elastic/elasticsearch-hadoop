@@ -1,6 +1,7 @@
 [[pig]]
 == Apache Pig support
 
+[quote, Pig web-site]
 ____
 http://pig.apache.org/[Apache Pig] is a platform for analyzing large data sets that consists of a high-level language for expressing data analysis programs, coupled with infrastructure for evaluating these programs.
 
@@ -41,33 +42,34 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 
 | +null+            | null
 | +chararray+       | string
-| +int+     		| int
-| +long+   			| long
-| +double+  		| double
-| +float+			| float
-| +bytearray+    	| binary
-| +tuple+     		| map
-| +bag+     		| array
-| +map+ 			| map
+| +int+             | int
+| +long+            | long
+| +double+          | double
+| +float+           | float
+| +bytearray+       | binary
+| +tuple+           | map
+| +bag+             | array
+| +map+             | map
 
-| +boolean+ * 		| boolean
-| +datetime+ **		| date
+| +boolean+ *       | boolean
+| +datetime+ **     | date
 
 |===
 
-~ (*) available in Pig 0.10 or higher
-~ (*) available in Pig 0.11 or higher
+~ ( * ) available in Pig 0.10 or higher
 
-NOTES: While {es} understands the Pig types up to version 0.11, it is backwards compatible with Pig 0.9
+~ ( ** ) available in Pig 0.11 or higher
+
+NOTE: While {es} understands the Pig types up to version 0.11, it is backwards compatible with Pig 0.9
 
 === Writing data to {es}
 
 {es} is exposed as a native +Storage+ to Pig so it can be used to store data into it:
 
 ----
-A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);		-- load data from HDFS into Pig
-B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;															-- transform the data
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);										-- save the result to Elasticsearch
+A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);     -- load data from HDFS into Pig
+B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;                                                            -- transform the data
+STORE B INTO 'radio/artists' <1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                                     -- save the result to Elasticsearch
 ----
 
 <1> {es} resource (index and type) associated with the given storage
