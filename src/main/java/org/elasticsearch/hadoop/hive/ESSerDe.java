@@ -16,7 +16,10 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
@@ -26,6 +29,7 @@ import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.ListTypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.MapTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.io.ArrayWritable;
@@ -118,6 +122,20 @@ public class ESSerDe implements SerDe {
             }
 
             return list;
+        }
+
+        case MAP: {
+            MapTypeInfo mapType = (MapTypeInfo) type;
+            MapWritable mw = (MapWritable) data;
+
+            Map<Object, Object> map = new LinkedHashMap<Object, Object>();
+
+            for (Entry<Writable, Writable> entry : mw.entrySet()) {
+                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias),
+                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias));
+            }
+
+            return map;
         }
         case STRUCT: {
             StructTypeInfo structType = (StructTypeInfo) type;
