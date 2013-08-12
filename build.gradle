@@ -319,7 +319,7 @@ asciidoctor {
 		doctype: 'book',
         attributes: [
             'source-highlighter': 'highlightjs',
-			icons: '',
+			icons: 'font',
 			toc: ''
         ]
     ]
