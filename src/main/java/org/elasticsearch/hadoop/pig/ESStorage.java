@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.OutputFormat;
@@ -128,7 +129,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     }
 
     @Override
-    public OutputFormat<Object, Object> getOutputFormat() throws IOException {
+    public OutputFormat<Object, Map<Writable, Writable>> getOutputFormat() throws IOException {
         return new ESOutputFormat();
     }
 
