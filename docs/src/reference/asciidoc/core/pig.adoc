@@ -51,14 +51,14 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 | +bag+             | array
 | +map+             | map
 
-| +boolean+ *       | boolean
-| +datetime+ **     | date
+| +boolean+ ^*^     | boolean
+| +datetime+ ^**^   | date
 
 |===
 
-~ ( * ) available in Pig 0.10 or higher
+~( * ) available in Pig 0.10 or higher~
 
-~ ( ** ) available in Pig 0.11 or higher
+~( ** ) available in Pig 0.11 or higher~
 
 NOTE: While {es} understands the Pig types up to version 0.11, it is backwards compatible with Pig 0.9
 
