@@ -316,6 +316,7 @@ jar {
 asciidoctor {
 	sourceDir = file("docs/src/reference/asciidoc")
     options = [
+		doctype: 'book',
         attributes: [
             'source-highlighter': 'highlightjs'
         ]
