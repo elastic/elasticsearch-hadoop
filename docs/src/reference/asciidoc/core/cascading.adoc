@@ -4,7 +4,7 @@
 http://www.cascading.org/[Cascading] is a application framework for Java developers abstracting the {mr} API and focusing on http://docs.cascading.org/cascading/2.1/userguide/html/ch03.html[data processing] 
 in terms of 'tuples' http://docs.cascading.org/cascading/2.1/userguide/html/ch03s08.html['flowing'] through http://docs.cascading.org/cascading/2.1/userguide/html/ch03s02.html[pipes] between http://docs.cascading.org/cascading/2.1/userguide/html/ch03s05.html['taps'], 
 from input (called +SourceTap+) to output (named +SinkTap+). As the data flows, various operations are applied to the tuple; the whole system being transformed to {mr} operations at runtime.
-With {eh}, {es} can be plugged into Cascading flows as a +SourceTap+ or +SinkTap+.
+With {eh}, {es} can be plugged into Cascading flows as a +SourceTap+ or +SinkTap+ through +ESTap+.
 
 ****
 .Local or Hadoop mode?
@@ -12,7 +12,7 @@ Cascading supports two 'execution' modes or http://docs.cascading.org/cascading/
 local:: for unit testing and quick POCs. Every thing runs only on the local machine and file-system.
 hadoop:: production mode - conencts to a proper Hadoop cluster (as oppose to the 'local' mode which is running just on the local machine)
 
-{eh} supports *both* platforms automatically. One does not have to choose between different classes - the same {eh} classes support both Cascading mode transparently.
+{eh} supports *both* platforms automatically. One does not have to choose between different classes, +EsTap+ can be used as both +sink+ or +source+, in both modes transparently.
 ****
 
 === Installation
@@ -25,4 +25,24 @@ Just like other libraries, {eh} needs to be available in the jar classpath (eith
 Depending on the http://docs.cascading.org/cascading/2.1/userguide/html/ch03s04.html[platform] used, Cascading can use internally either +Writable+ or JDK types for its tuples. {es} handles both transparently 
 (see the {mr} <<type-conversion-writable,conversion>> section) though we recommend using the same types (if possible) in both cases to avoid the overhead of maintaining two different versions.
 
-==
+=== Writing data to {es}
+
+Simply hook, +ESTap+ into the Cascading flow:
+
+[source,java]
+----
+Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
+new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Eleasti")).complete();
+----
+
+=== Reading data from {es}
+
+Just the same, add +ESTap+ on the other end of a pipe, to read (instead of writing) to it.
+
+[source,java]
+----
+Tap in = new ESTap("radio/artists/_search?q=me*");
+Tap out = new StdOut(new TextLine());
+new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
+----
