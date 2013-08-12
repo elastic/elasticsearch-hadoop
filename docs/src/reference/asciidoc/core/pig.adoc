@@ -69,7 +69,7 @@ NOTE: While {es} understands the Pig types up to version 0.11, it is backwards c
 ----
 A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);     -- load data from HDFS into Pig
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;                                                            -- transform the data
-STORE B INTO 'radio/artists' <1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                                     -- save the result to Elasticsearch
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                                          -- save the result to {es}
 ----
 
 <1> {es} resource (index and type) associated with the given storage
@@ -80,7 +80,7 @@ STORE B INTO 'radio/artists' <1> USING org.elasticsearch.hadoop.pig.ESStorage(<2
 As you would expect, loading the data is straight forward:
 
 ----
-A = LOAD 'radio/artists/_search?q=me*' <1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);
+A = LOAD 'radio/artists/_search?q=me*'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                               -- load data from {es} into Pig
 DUMP A;
 ----
 
