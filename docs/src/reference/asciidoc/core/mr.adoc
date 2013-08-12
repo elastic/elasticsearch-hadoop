@@ -12,6 +12,7 @@ In order to use {eh}, the jar needs to be available to the job class path. At ~1
 $ bin/hadoop jar myJar.jar -Dlibjars=elasticsearch-hadoop.jar
 ----
 
+[[type-conversion-writable]]
 === Hadoop +Writable+ to {es} type mapping
 
 {eh} automatically converts Hadoop built-in +Writable+ types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
