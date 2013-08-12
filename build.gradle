@@ -318,7 +318,9 @@ asciidoctor {
     options = [
 		doctype: 'book',
         attributes: [
-            'source-highlighter': 'highlightjs'
+            'source-highlighter': 'highlightjs',
+			icons: '',
+			toc: ''
         ]
     ]
 }

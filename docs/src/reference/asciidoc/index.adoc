@@ -1,6 +1,5 @@
 = Elasticsearch Hadoop reference documentation
-:toc:
-:icons:
+
 :eh: Elasticsearch Hadoop
 :es: Elasticsearch
 :mr: Map/Reduce
