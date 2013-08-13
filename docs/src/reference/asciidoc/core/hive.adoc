@@ -1,0 +1,113 @@
+[[hive]]
+== Apache Hive integration
+
+[quote, Hive website]
+____
+http://hive.apache.org/[Hive] is a data warehouse system for Hadoop that facilitates easy data summarization, ad-hoc queries, and the analysis of large datasets stored in Hadoop compatible file systems. 
+____
+
+Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
+
+=== Installation
+
+Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/Hive/languagemanual-cli.html#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
+
+----
+ADD /path/elasticsearch-hadoop.jar;
+----
+
+NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
+on various machines.
+
+As an alternative, when using the command-line or if the +hive-site.xml+ configuration can be modified, one can register additional jars through the 'hive.aux.jars.path' option (that accepts an URI as well):
+
+.CLI configuration
+----
+bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
+----
+
+.+hive-ste.xml+ configuration
+[source,xml]
+----
+<property>
+  <name>hive.aux.jars.path</name>
+  <value>/path/elasticsearch-hadoop.jar</value>
+  <description>A comma separated list (with no spaces) of the jar files</description>
+</property>
+----
+
+[[type-conversion-hive]]
+=== Type conversion
+
+Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
+and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
+
+[cols="^,^",options="header"]
+
+|===
+| Hive type | {es} type
+
+| +void+            | +null+
+| +boolean+       	| +boolean+
+| +tinyint+         | +byte+
+| +smallint+		| +short+
+| +int+             | +int+
+| +bigint+          | +long+
+| +double+          | +double+
+| +float+           | +float+
+| +string+          | +string+
+| +binary+ 		    | +binary+
+| +timestamp+       | +date+
+| +struct+          | +map+
+| +map+             | +map+
+| +array+           | +array+
+| +union+           | not supported yet
+
+2+h| Available in Hive 0.11 or higher
+
+| +decimal+		    | +string+
+
+|===
+
+NOTE: While {es} understands Hive types up to version 0.11, it is backwards compatible with Hive 0.9
+
+=== Writing data to {es}
+
+With {eh}, {es} becomes just an external https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTable[table] in which data can be loaded or read from:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    name    STRING,
+    links   STRUCT<url:STRING, picture:STRING>)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+TBLPROPERTIES('es.resource' = 'radio/artists/'<2>);
+
+// insert data to {es} from another table called 'source'
+INSERT OVERWRITE TABLE artists 
+    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
+----
+
+<1> {es} Hive +StorageHandler+
+<2> {es} resource (index and type) associated with the given storage
+
+=== Reading data from {es}
+
+Reading from {es} is strinkingly similar:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    name    STRING,
+    links   STRUCT<url:STRING, picture:STRING>)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
+
+// stream data from {es}
+SELECT * FROM artists;
+----
+
+<1> same {es} Hive +StorageHandler+
+<2> {es} resource (in case of reading, a query) associated with the given storage

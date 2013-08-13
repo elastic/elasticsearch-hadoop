@@ -1,0 +1,61 @@
+[[configuration]]
+== Configuration options
+
+{eh} behavior can be customized through the properties below, typically by setting them on the target job Hadoop +Configuration+. However some of them can be specified through other means depending on the library used (see the relevant section).
+
+****
+{eh} uses the same conventions and reasonable defaults as {es} so you can try out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration option, please _do ask_ for more information.
+****
+
+NOTE: All configuration properties start with the +es+ prefix. The namespace +es.internal+ is reserved by the library for its internal use and should _not_ be used by the user at any point.
+
+=== Required settings
+
+.+es.resource+
+{es} resource location, relative to the {es} host/port (see below). Can be either an index/type (for writing) or a search query.
+
+.Examples
+----
+es.resource = twitter/costinl                   # write to index 'twitter', type 'costinl'
+es.resource = twitter/costinl/_search?q=hadoop  # read from index 'twitter', type 'costinl' entries matching 'hadoop'
+----
+
+=== Optional settings
+
+==== Network
++es.host+ (default localhost)::
+{es} cluster node. When using {es} remotely, _do_ set this option.
+
++es.port+ (default 9200)::
+HTTP/REST port used for connecting to {es}.
+
++es.http.timeout+ (default 1m)::
+Timeout for HTTP/REST connections to {es}.
+
++es.scroll.keepalive+ (default 10m)::
+The maximum duration of result scrolls between query requests.
+
++es.scroll.size+ (default 50)::
+Number of results/items returned by each individual scroll.
+
+==== Index
+
++es.index.auto.create+ (default yes)::
+Whether {eh} should create an index (if its missing) when writing data to {es} or fail.
+
+==== Serialization
+
++es.batch.size.bytes+ (default 10mb)::
+Size (in bytes) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API
+
++es.batch.size.entries+ (default 0/disabled)::
+Size (in entries) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API. Companion to +es.batch.size.bytes+, once one matches, the batch update is executed.
+
++es.batch.write.refresh+ (default true)::
+Whether to invoke an http://www.elasticsearch.org/guide/reference/api/admin-indices-refresh/[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
+
++es.ser.reader.class+ (default _depends on the library used_)::
+Name of the +ValueReader+ implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+
++es.ser.writer.class+ (default _depends on the library used_)::
+Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.

@@ -16,11 +16,13 @@
 package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -39,7 +41,7 @@ import org.elasticsearch.hadoop.util.Assert;
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
  */
-public class ESOutputFormat extends OutputFormat<Object, Object> implements org.apache.hadoop.mapred.OutputFormat<Object, Object>, ConfigurationOptions {
+public class ESOutputFormat extends OutputFormat<Object, Map<Writable, Writable>> implements org.apache.hadoop.mapred.OutputFormat<Object, Map<Writable, Writable>>, ConfigurationOptions {
 
     private static Log log = LogFactory.getLog(ESOutputFormat.class);
 
@@ -108,7 +110,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
         }
     }
 
-    protected static class ESRecordWriter extends RecordWriter<Object, Object> implements org.apache.hadoop.mapred.RecordWriter<Object, Object> {
+    protected static class ESRecordWriter extends RecordWriter<Object, Map<Writable, Writable>> implements org.apache.hadoop.mapred.RecordWriter<Object, Map<Writable, Writable>> {
 
         protected final BufferedRestClient client;
         private final String uri, resource;
@@ -124,7 +126,7 @@ public class ESOutputFormat extends OutputFormat<Object, Object> implements org.
         }
 
         @Override
-        public void write(Object key, Object value) throws IOException {
+        public void write(Object key, Map<Writable, Writable> value) throws IOException {
             client.addToIndex(value);
         }
 

@@ -1,0 +1,30 @@
+Before running {eh}, please do check out the requirements below. This is even more so important when deploying {eh} across a cluster where the software on some machines might be slightly out of sync. While {eh} tries its best to fall back and do various validations of its environment, doing a quick sanity check especially during upgrades can save you a lot of headaches.
+
+== Requirements
+
+{eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Cascading or Pig) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
+
+=== JDK
+
+JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the latest JDK 6.0 - currently update 45, or if possible, JDK 7.0 - currently update 25.
+
+=== {es}
+
+version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}.
+
+=== Hadoop
+
+Hadoop 1.x (ideally the latest stable versions in the 1.x line, currently 1.1.2 or 1.2.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
+If that is not the case, please drop us a line to see what we can do to fix that.
+
+=== Cascading
+
+Version 2.1.x (currently 2.1.6) is required.
+
+=== Hive
+
+Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.11.0).
+
+=== Pig
+
+Pig 0.10.0 or higher. We recomend using the latest release of Pig (currently 0.11.1).

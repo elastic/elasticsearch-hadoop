@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +32,7 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
 /**
  * Hive specific OutputFormat.
  */
-public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat<Object, Object> {
+public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat<Object, Map<Writable, Writable>> {
 
     static class ESHiveRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
 

@@ -1,9 +1,14 @@
+description = 'Elasticsearch Hadoop'
+
 buildscript {
     repositories {
         maven { url 'http://repo.springsource.org/plugins-release' }
+        maven { url 'http://dl.bintray.com/content/aalmiray/asciidoctor' }
+        maven { url 'http://jcenter.bintray.com' }
     }
     dependencies {
-        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.3'
+        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.3')
+		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.4.1')
     }
 }
 
@@ -22,12 +27,13 @@ apply from: "$rootDir/maven.gradle"
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
+apply plugin: 'asciidoctor'
 
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 
 // Hadoop aliases
-def hadoopStableVersion = hadoop11Version
+def hadoopStableVersion = hadoop12Version
 def hadoopYarnVersion = hadoop2Version
 def hadoopVersion = hadoopStableVersion 
 
@@ -218,6 +224,47 @@ test {
 	}
 }
 
+javadoc {
+	ext.srcDir = file("${projectDir}/docs/src/api")
+	
+
+	configure(options) {
+		//stylesheetFile = file("${rootProject.projectDir}/docs/src/api/javadoc.css")
+		//overview = "${rootProject.projectDir}/docs/src/api/overview.html"
+		docFilesSubDirs = true
+		outputLevel = org.gradle.external.javadoc.JavadocOutputLevel.QUIET
+		breakIterator = true
+		author = true
+		showFromProtected()
+
+		groups = [
+		'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
+		'Elasticsearch Cascading' : ['org.elasticsearch.hadoop.cascading*'],
+		'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
+		'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
+		]
+
+		links = [
+			"http://download.oracle.com/javase/6/docs/api",
+			"http://commons.apache.org/proper/commons-logging/apidocs/",
+			"http://hadoop.apache.org/common/docs/r1.1.2/api/",
+			//"http://hbase.apache.org/apidocs/",
+			"http://pig.apache.org/docs/r0.11.1/api/",
+			"http://hive.apache.org/docs/r0.11.0/api/",
+			"https://builds.apache.org/job/Thrift/javadoc/",
+			"http://docs.cascading.org/cascading/2.1/javadoc/"
+		]
+
+		excludes = [
+			"org/elasticsearch/hadoop/rest/**", 
+			"org/elasticsearch/hadoop/serialization/**", 
+			"org/elasticsearch/hadoop/util/**"
+		]
+	}
+
+	title = "${rootProject.description} ${version} API"
+}
+
 task sourcesJar(type: Jar, dependsOn:classes) {
     classifier = 'sources'
     from sourceSets.main.allJava
@@ -264,6 +311,24 @@ jar {
     }
 
     manifest.attributes['Repository-Revision'] = rev
+}
+
+asciidoctor {
+	//logDocuments = true
+	sourceDir = file("docs/src/reference/asciidoc")
+	sourceDocumentName = file("docs/src/reference/asciidoc/index.adoc")
+    options = [
+		doctype: 'book',
+        attributes: [
+            'source-highlighter': 'highlightjs',
+			icons: 'font',
+			badges: '',
+			toc2: '',
+			//stylesheet: 'github.css',
+			copycss: ''
+			//'linkcss!': ''
+        ]
+    ]
 }
 
 artifacts {
