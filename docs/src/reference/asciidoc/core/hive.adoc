@@ -39,7 +39,7 @@ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 [[type-conversion-hive]]
 === Type conversion
 
-Hive provides various types for defining data and internally uses different implementations depending ont he target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
+Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
 and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
 [options="header"]
@@ -69,5 +69,45 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 
 ~( * ) available in Hive 0.11 or higher~
 
-
 NOTE: While {es} understands Hive types up to version 0.11, it is backwards compatible with Hive 0.9
+
+=== Writing data to {es}
+
+With {eh}, {es} becomes just a https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTable[table] in which data can be loaded or read from:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    name    STRING,
+    links   STRUCT<url:STRING, picture:STRING>)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+TBLPROPERTIES('es.resource' = 'radio/artists/');<2>
+
+// insert data to {es} from another table called 'source'
+INSERT OVERWRITE TABLE artists 
+    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
+----
+
+<1> {es} Hive +StorageHandler+
+<2> {es} resource (index and type) associated with the given storage
+
+=== Reading data from {es}
+
+Reading from {es} is strinkingly similar:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    name    STRING,
+    links   STRUCT<url:STRING, picture:STRING>)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
+
+// stream data from {es}
+SELECT * FROM artists;
+----
+
+<1> same {es} Hive +StorageHandler+
+<2> {es} resource (in case of reading, a query) associated with the given storage
