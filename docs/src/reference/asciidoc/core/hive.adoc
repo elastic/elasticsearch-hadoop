@@ -82,7 +82,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists/');<2>
+TBLPROPERTIES('es.resource' = 'radio/artists/'<2>);
 
 // insert data to {es} from another table called 'source'
 INSERT OVERWRITE TABLE artists 
