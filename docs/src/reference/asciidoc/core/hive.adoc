@@ -1,2 +1,37 @@
 [[hive]]
 == Apache Hive integration
+
+[quote, Hive website]
+____
+Hive is a data warehouse system for Hadoop that facilitates easy data summarization, ad-hoc queries, and the analysis of large datasets stored in Hadoop compatible file systems. 
+____
+
+Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
+
+=== Installation
+
+Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/Hive/languagemanual-cli.html#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
+
+----
+ADD /path/elasticsearch-hadoop.jar;
+----
+
+NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
+on various machines.
+
+As an alternative, when using the command-line or if the +hive-site.xml+ configuration can be modified, one can register additional jars through the 'hive.aux.jars.path' option (that accepts an URI as well):
+
+.CLI configuration
+----
+bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
+----
+
+.+hive-ste.xml+ configuration
+[source,xml]
+----
+<property>
+  <name>hive.aux.jars.path</name>
+  <value>/path/elasticsearch-hadoop.jar</value>
+  <description>A comma separated list (with no spaces) of the jar files</description>
+</property>
+----
