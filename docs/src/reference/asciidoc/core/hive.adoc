@@ -45,7 +45,7 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 [cols="^,^",options="header"]
 
 |===
-| **Hive Type** | {es} type
+| Hive type | {es} type
 
 | +void+            | +null+
 | +boolean+       	| +boolean+
