@@ -42,10 +42,10 @@ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
 and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
-[options="header"]
+[cols="^,^",options="header"]
 
 |===
-| +Hive Data Type+ | {es} type
+| **Hive Type** | {es} type
 
 | +void+            | +null+
 | +boolean+       	| +boolean+
@@ -61,13 +61,13 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 | +struct+          | +map+
 | +map+             | +map+
 | +array+           | +array+
-| +union+           | +not supported yet+
+| +union+           | not supported yet
 
-| +decimal+ ^*^     | +string+
+2+h| Available in Hive 0.11 or higher
+
+| +decimal+		    | +string+
 
 |===
-
-~( * ) available in Hive 0.11 or higher~
 
 NOTE: While {es} understands Hive types up to version 0.11, it is backwards compatible with Hive 0.9
 
