@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
@@ -45,13 +46,9 @@ public class BufferedRestClient implements Closeable {
 
     private static Log log = LogFactory.getLog(BufferedRestClient.class);
 
+    private RestClientBuffer bufferWriter;
     // serialization artifacts
-
-    private byte[] buffer;
     private int bufferEntriesThreshold;
-
-    private int bufferSize = 0;
-    private int bufferEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
 
@@ -67,8 +64,6 @@ public class BufferedRestClient implements Closeable {
 
     private final Settings settings;
 
-    private static final byte[] INDEX_DIRECTIVE = "{\"index\":{}}\n".getBytes(StringUtils.UTF_8);
-    private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
 
 
     public BufferedRestClient(Settings settings) {
@@ -80,7 +75,6 @@ public class BufferedRestClient implements Closeable {
         }
         this.index = tempIndex;
         this.resource = new Resource(index);
-
         trace = log.isTraceEnabled();
     }
 
@@ -90,7 +84,10 @@ public class BufferedRestClient implements Closeable {
         if (!writeInitialized) {
             writeInitialized = true;
 
-            buffer = new byte[settings.getBatchSizeInBytes()];
+            bufferWriter = ConfigurationOptions.ES_INDEX_WRITE_STRATEGY_UPSERT.equals(settings.getWriteStrategy()) ?
+                    new UpsertRestClientBuffer(settings.getBatchSizeInBytes()):
+                    new IndexRestClientBuffer(settings.getBatchSizeInBytes());
+
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
@@ -109,7 +106,6 @@ public class BufferedRestClient implements Closeable {
     /**
      * Returns a pageable (scan based) result to the given query.
      *
-     * @param uri
      * @return
      */
     ScrollQuery scan(String query, ScrollReader reader) throws IOException {
@@ -122,7 +118,6 @@ public class BufferedRestClient implements Closeable {
     /**
      * Writes the objects to index.
      *
-     * @param index
      * @param object
      */
     public void addToIndex(Object object) throws IOException {
@@ -140,8 +135,6 @@ public class BufferedRestClient implements Closeable {
     /**
      * Writes the objects to index.
      *
-     * @param index
-     * @param object
      */
     public void addToIndex(byte[] data, int size) throws IOException {
         Assert.hasText(index, "no index given");
@@ -161,44 +154,31 @@ public class BufferedRestClient implements Closeable {
             log.trace(String.format("Indexing object [%s]", scratchPad));
         }
 
-        int entrySize = INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
-
-        // make some space first
-        if (entrySize + bufferSize > buffer.length) {
+        if(!bufferWriter.hasCapacityFor(scratchPad)){
             flushBatch();
         }
 
-        copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
-        copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
-        copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
+        bufferWriter.write(scratchPad);
 
-        bufferEntries++;
-
-        if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
+        if (bufferEntriesThreshold > 0 && bufferWriter.numEntries() >= bufferEntriesThreshold) {
             flushBatch();
         }
-    }
-
-    private void copyIntoBuffer(byte[] data, int size) {
-        System.arraycopy(data, 0, buffer, bufferSize, size);
-        bufferSize += size;
     }
 
     private void flushBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Flushing batch of [%d]", bufferSize));
+            log.debug(String.format("Flushing batch of [%d] bytes", bufferWriter.size()));
         }
 
-        client.bulk(index, buffer, bufferSize);
-        bufferSize = 0;
-        bufferEntries = 0;
+        client.bulk(index, bufferWriter.getBuffer(), bufferWriter.size());
+        bufferWriter.reset();
         executedBulkWrite = true;
     }
 
     @Override
     public void close() {
         try {
-            if (bufferSize > 0) {
+            if (writeInitialized && bufferWriter.size() > 0) {
                 flushBatch();
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {

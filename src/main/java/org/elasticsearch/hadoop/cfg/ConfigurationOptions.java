@@ -68,4 +68,9 @@ public interface ConfigurationOptions {
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
 
+    /** Write strategy settings */
+    String ES_INDEX_WRITE_STRATEGY = "es.index.write.strategy";
+    String ES_INDEX_WRITE_STRATEGY_DEFAULT = "index";
+    String ES_INDEX_WRITE_STRATEGY_UPSERT = "upsert";
+
 }

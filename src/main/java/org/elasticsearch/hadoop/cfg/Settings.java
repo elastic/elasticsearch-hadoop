@@ -82,6 +82,11 @@ public abstract class Settings implements InternalConfigurationOptions {
         return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
     }
 
+    public String getWriteStrategy() {
+        return getProperty(ES_INDEX_WRITE_STRATEGY, ES_INDEX_WRITE_STRATEGY_DEFAULT);
+    }
+
+
     public Settings setHost(String host) {
         this.host = host;
         return this;
