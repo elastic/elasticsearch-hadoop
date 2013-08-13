@@ -1,7 +1,12 @@
 [[cascading]]
 == Cascading support
 
-http://www.cascading.org/[Cascading] is a application framework for Java developers abstracting the {mr} API and focusing on http://docs.cascading.org/cascading/2.1/userguide/html/ch03.html[data processing] 
+[quote, Cascading website]
+____
+http://www.cascading.org/[Cascading] is a data processing API and processing query planner used for defining, sharing, and executing data-processing workflows on a single computing node or distributed computing cluster. 
+____
+
+Cascading abstracting the {mr} API and focusing on http://docs.cascading.org/cascading/2.1/userguide/html/ch03.html[data processing] 
 in terms of 'tuples' http://docs.cascading.org/cascading/2.1/userguide/html/ch03s08.html['flowing'] through http://docs.cascading.org/cascading/2.1/userguide/html/ch03s02.html[pipes] between http://docs.cascading.org/cascading/2.1/userguide/html/ch03s05.html['taps'], 
 from input (called +SourceTap+) to output (named +SinkTap+). As the data flows, various operations are applied to the tuple; the whole system being transformed to {mr} operations at runtime.
 With {eh}, {es} can be plugged into Cascading flows as a +SourceTap+ or +SinkTap+ through +ESTap+.
