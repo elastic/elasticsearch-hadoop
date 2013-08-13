@@ -314,13 +314,17 @@ jar {
 }
 
 asciidoctor {
+	//logDocuments = true
 	sourceDir = file("docs/src/reference/asciidoc")
+	sourceDocumentName = file("docs/src/reference/asciidoc/index.adoc")
     options = [
 		doctype: 'book',
         attributes: [
             'source-highlighter': 'highlightjs',
 			icons: 'font',
-			toc: '',
+			badges: '',
+			toc2: '',
+			//stylesheet: 'github.css',
 			copycss: ''
 			//'linkcss!': ''
         ]
