@@ -6,7 +6,7 @@ ____
 Hive is a data warehouse system for Hadoop that facilitates easy data summarization, ad-hoc queries, and the analysis of large datasets stored in Hadoop compatible file systems. 
 ____
 
-Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
+http://hive.apache.org/[Hive] abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
 
 === Installation
 
@@ -47,23 +47,23 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 |===
 | +Hive Data Type+ | {es} type
 
-| +void+            | null
-| +boolean+       	| boolean
-| +tinyint+         | byte
-| +smallint+		| short
-| +int+             | int
-| +bigint+          | long
-| +double+          | double
-| +float+           | float
-| +string+          | string
-| +binary+ 		    | binary
-| +timestamp+       | date
-| +struct+          | map
-| +map+             | map
-| +array+           | array
-| +union+           | not supported yet
+| +void+            | +null+
+| +boolean+       	| +boolean+
+| +tinyint+         | +byte+
+| +smallint+		| +short+
+| +int+             | +int+
+| +bigint+          | +long+
+| +double+          | +double+
+| +float+           | +float+
+| +string+          | +string+
+| +binary+ 		    | +binary+
+| +timestamp+       | +date+
+| +struct+          | +map+
+| +map+             | +map+
+| +array+           | +array+
+| +union+           | +not supported yet+
 
-| +decimal+ ^*^     | string
+| +decimal+ ^*^     | +string+
 
 |===
 
