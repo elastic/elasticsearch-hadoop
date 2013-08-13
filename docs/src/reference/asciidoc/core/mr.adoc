@@ -1,11 +1,11 @@
 [[mapreduce]]
 == {mr} integration
 
-For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to +Map+s of +Writable+ objects and vice-versa.
+For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to +Map+ of +Writable+ objects and vice-versa.
 
 === Installation
 
-In order to use {eh}, the jar needs to be available to the job class path. At ~150kB and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options], be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the jar needs to be available to the job class path. At ~+150kB+ and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options], be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 .CLI example
 ----
