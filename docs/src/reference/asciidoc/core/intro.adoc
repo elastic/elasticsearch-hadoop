@@ -8,7 +8,7 @@ This part of the documentation explains the core functionality of {eh} starting 
 
 <<cascading>>:: describes how to use Cascading and {eh}.
 
-<<hive>>: Hive users should refer to this section.
+<<hive>>:: Hive users should refer to this section.
 
 <<pig>>:: how-to on using {es} in Pig scripts through {eh}.
 
