@@ -35,3 +35,39 @@ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
   <description>A comma separated list (with no spaces) of the jar files</description>
 </property>
 ----
+
+[[type-conversion-hive]]
+=== Type conversion
+
+Hive provides various types for defining data and internally uses different implementations depending ont he target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
+and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
+
+[options="header"]
+
+|===
+| +Hive Data Type+ | {es} type
+
+| +void+            | null
+| +boolean+       	| boolean
+| +tinyint+         | byte
+| +smallint+		| short
+| +int+             | int
+| +bigint+          | long
+| +double+          | double
+| +float+           | float
+| +string+          | string
+| +binary+ 		    | binary
+| +timestamp+       | date
+| +struct+          | map
+| +map+             | map
+| +array+           | array
+| +union+           | not supported yet
+
+| +decimal+ ^*^     | string
+
+|===
+
+~( * ) available in Hive 0.11 or higher~
+
+
+NOTE: While {es} understands Hive types up to version 0.11, it is backwards compatible with Hive 0.9
