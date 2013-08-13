@@ -1,7 +1,7 @@
 [[pig]]
 == Apache Pig support
 
-[quote, Pig web-site]
+[quote, Pig website]
 ____
 http://pig.apache.org/[Apache Pig] is a platform for analyzing large data sets that consists of a high-level language for expressing data analysis programs, coupled with infrastructure for evaluating these programs.
 
@@ -16,7 +16,7 @@ In order to use {eh}, its jar needs to be in Pig's classpath. There are various 
 REGISTER /path/elasticsearch-hadoop.jar;
 ----
 
-Note that the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
+NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
 on various machines.
 
 As an alternative, when using the command-line, one can register additional jars through the '-Dpig.additional.jars' option (that accepts an URI as well):
