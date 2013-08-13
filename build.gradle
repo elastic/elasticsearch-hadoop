@@ -320,7 +320,9 @@ asciidoctor {
         attributes: [
             'source-highlighter': 'highlightjs',
 			icons: 'font',
-			toc: ''
+			toc: '',
+			copycss: ''
+			//'linkcss!': ''
         ]
     ]
 }
