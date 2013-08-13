@@ -10,7 +10,7 @@ With {eh}, {es} can be plugged into Cascading flows as a +SourceTap+ or +SinkTap
 .Local or Hadoop mode?
 Cascading supports two 'execution' modes or http://docs.cascading.org/cascading/2.1/userguide/html/ch03s04.html[platforms]:
 
-local:: for unit testing and quick POCs. Everything runs only on the local machine and file-system.
+Local:: for unit testing and quick POCs. Everything runs only on the local machine and file-system.
 Hadoop:: production mode - connects to a proper Hadoop cluster (as oppose to the 'local' mode which is running just on the local machine).
 
 {eh} supports *both* platforms automatically. One does not have to choose between different classes, +EsTap+ can be used as both +sink+ or +source+, in both modes transparently.
@@ -32,7 +32,8 @@ Simply hook, +ESTap+ into the Cascading flow:
 
 [source,java]
 ----
-Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
+				"src/test/resources/artists.dat");
 Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Eleasti")).complete();
 ----
