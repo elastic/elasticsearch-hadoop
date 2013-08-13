@@ -23,39 +23,39 @@ es.resource = twitter/costinl/_search?q=hadoop  # read from index 'twitter', typ
 === Optional settings
 
 ==== Network
-.+es.host+ (default +localhost+)
++es.host+ (default localhost)::
 {es} cluster node. When using {es} remotely, _do_ set this option.
 
-.+es.port+ (default +9200+)
++es.port+ (default 9200)::
 HTTP/REST port used for connecting to {es}.
 
-.+es.http.timeout+ (default +1m+)
++es.http.timeout+ (default 1m)::
 Timeout for HTTP/REST connections to {es}.
 
-.+es.scroll.keepalive+ (default +10m+)
++es.scroll.keepalive+ (default 10m)::
 The maximum duration of result scrolls between query requests.
 
-.+es.scroll.size+ (default +50+)
++es.scroll.size+ (default 50)::
 Number of results/items returned by each individual scroll.
 
 ==== Index
 
-.+es.index.auto.create+ (default +yes+)
++es.index.auto.create+ (default yes)::
 Whether {eh} should create an index (if its missing) when writing data to {es} or fail.
 
 ==== Serialization
 
-.+es.batch.size.bytes+ (default +10mb+)
++es.batch.size.bytes+ (default 10mb)::
 Size (in bytes) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API
 
-.+es.batch.size.entries+ (default +0+/+disabled+)
++es.batch.size.entries+ (default 0/disabled)::
 Size (in entries) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API. Companion to +es.batch.size.bytes+, once one matches, the batch update is executed.
 
-.+es.batch.write.refresh+ (default +true+)
++es.batch.write.refresh+ (default true)::
 Whether to invoke an http://www.elasticsearch.org/guide/reference/api/admin-indices-refresh/[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
-.+es.ser.reader.class+ (default _depends on the library used_)
++es.ser.reader.class+ (default _depends on the library used_)::
 Name of the +ValueReader+ implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-.+es.ser.writer.class+ (default _depends on the library used_)
++es.ser.writer.class+ (default _depends on the library used_)::
 Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
