@@ -5,40 +5,40 @@ For low-level or performance-sensitive environments, {eh} provides dedicated +In
 
 === Installation
 
-In order to use {eh}, the jar needs to be available to the job class path. At ~+150kB+ and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options], be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the jar needs to be available to the job class path. At ~+150kB+ and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 .CLI example
 ----
-$ bin/hadoop jar myJar.jar -Dlibjars=elasticsearch-hadoop.jar
+$ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 ----
 
 [[type-conversion-writable]]
-=== Hadoop +Writable+ to {es} type mapping
+=== Type conversion
 
 {eh} automatically converts Hadoop built-in +Writable+ types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
 
 .+Writable+ Conversion Table
 
-[options="header"]
+[cols="^,^",options="header"]
 |===
-| +Writable+ | {es} type
+| +*Writable*+ | {es} type
 
-| +null+            | null
-| +NullWritable+    | null
-| +Text+            | string
-| +UTF8+            | string
-| +ByteWritable+    | byte
-| +IntWritable+     | int
-| +VInt+            | int
-| +LongWritable+    | long
-| +VLongWritable+   | long
-| +ByteWritable+    | binary
-| +DoubleWritable+  | double
-| +FloatWritable+   | float
-| +BooleanWritable+ | boolean
-| +MD5Writable+     | string
-| +ArrayWritable+   | array
-| +AbstractMapWritable+ | map
+| +null+            | +null+
+| +NullWritable+    | +null+
+| +Text+            | +string+
+| +UTF8+            | +string+
+| +ByteWritable+    | +byte+
+| +IntWritable+     | +int+
+| +VInt+            | +int+
+| +LongWritable+    | +long+
+| +VLongWritable+   | +long+
+| +ByteWritable+    | +binary+
+| +DoubleWritable+  | +double+
+| +FloatWritable+   | +float+
+| +BooleanWritable+ | +boolean+
+| +MD5Writable+     | +string+
+| +ArrayWritable+   | +array+
+| +AbstractMapWritable+ | +map+
 
 |===
 
