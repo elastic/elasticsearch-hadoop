@@ -34,6 +34,8 @@ pig -Dpig.additional.jars=hdfs://<cluster-name>:<cluster-port>/<path>/elasticsea
 [[type-conversion-pig]]
 === Type conversion
 
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+
 Pig internally uses native java types for most of its types and {eh} abides to that convention.
 [cols="^,^",options="header"]
 

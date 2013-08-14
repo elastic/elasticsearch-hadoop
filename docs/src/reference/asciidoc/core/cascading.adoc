@@ -31,6 +31,8 @@ Just like other libraries, {eh} needs to be available in the jar classpath (eith
 Depending on the http://docs.cascading.org/cascading/2.1/userguide/html/ch03s04.html[platform] used, Cascading can use internally either +Writable+ or JDK types for its tuples. {es} handles both transparently 
 (see the {mr} <<type-conversion-writable,conversion>> section) though we recommend using the same types (if possible) in both cases to avoid the overhead of maintaining two different versions.
 
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+
 === Writing data to {es}
 
 Simply hook, +ESTap+ into the Cascading flow:

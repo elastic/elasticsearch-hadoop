@@ -39,6 +39,8 @@ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 [[type-conversion-hive]]
 === Type conversion
 
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+
 Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
 and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
