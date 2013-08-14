@@ -10,3 +10,5 @@ include::core/cascading.adoc[]
 include::core/hive.adoc[]
 
 include::core/pig.adoc[]
+
+include::core/mapping.adoc[]
