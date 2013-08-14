@@ -86,6 +86,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_INDEX_WRITE_STRATEGY, ES_INDEX_WRITE_STRATEGY_DEFAULT);
     }
 
+    public String getIdPath() {
+        return getProperty(ES_ID_PATH, ES_ID_PATH_DEFAULT);
+    }
+
 
     public Settings setHost(String host) {
         this.host = host;

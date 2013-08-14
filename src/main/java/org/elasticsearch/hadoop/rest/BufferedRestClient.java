@@ -85,7 +85,7 @@ public class BufferedRestClient implements Closeable {
             writeInitialized = true;
 
             bufferWriter = ConfigurationOptions.ES_INDEX_WRITE_STRATEGY_UPSERT.equals(settings.getWriteStrategy()) ?
-                    new UpsertRestClientBuffer(settings.getBatchSizeInBytes()):
+                    new UpsertRestClientBuffer(settings.getBatchSizeInBytes(), settings.getIdPath()):
                     new IndexRestClientBuffer(settings.getBatchSizeInBytes());
 
             bufferEntriesThreshold = settings.getBatchSizeInEntries();

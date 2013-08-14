@@ -73,4 +73,7 @@ public interface ConfigurationOptions {
     String ES_INDEX_WRITE_STRATEGY_DEFAULT = "index";
     String ES_INDEX_WRITE_STRATEGY_UPSERT = "upsert";
 
+    String ES_ID_PATH = "es.id.path";
+    String ES_ID_PATH_DEFAULT = "url_id";
+
 }
