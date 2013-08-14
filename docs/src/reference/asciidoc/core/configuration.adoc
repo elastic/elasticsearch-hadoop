@@ -38,6 +38,7 @@ The maximum duration of result scrolls between query requests.
 +es.scroll.size+ (default 50)::
 Number of results/items returned by each individual scroll.
 
+[[configuration-options-index]]
 ==== Index
 
 +es.index.auto.create+ (default yes)::
