@@ -60,3 +60,17 @@ Name of the +ValueReader+ implementation for converting JSON to objects. This is
 
 +es.ser.writer.class+ (default _depends on the library used_)::
 Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+
+[[runtime-configuration]]
+== Hadoop Runtime options
+
+When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
+
+=== Speculative execution
+
+'Speculative execution' is an *optimization*, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching, having duplicate tasks means at most a waste of computation resources however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates.
+Since the 'speculative execution' behavior can be triggered by external factors (such as network or CPU load which in turn cause false positive) even in stable environments (virtualized clusters are particularly prone to this) and has a direct impact on data, {eh} disables this *optimization* for data safety.
+
+In all cases, {eh} sets the +mapred.maptasks.speculative.execution+ and +mapred.reduce.tasks.speculative.execution+ to +false+ ; depending on the integration (such as Hive and Pig), there might be additional settings relevant to this topic affected by {eh}.
+
+This behavior can be controlled through the +es.runtime.speculative.execution+ option however we *strongly* recommend against changing it and make no guarantees about the data any more since there aren't any about the runtime.
