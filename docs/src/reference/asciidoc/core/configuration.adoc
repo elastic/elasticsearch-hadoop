@@ -66,7 +66,7 @@ Name of the +ValueWriter+ implementation for converting objects to JSON. This is
 
 When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
 
-IMPORTANT: Unfortunately, these settings need to be setup manually before the job / script configuration. Since {eh} is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.
+IMPORTANT: Unfortunately, these settings need to be setup *manually* *before* the job / script configuration. Since {eh} is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.
 
 === Speculative execution
 
@@ -97,5 +97,6 @@ or by passing them to the command line:
 
 [source,txt]
 ----
-$ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false -Dmapred.reduce.tasks.speculative.execution=false <jar>
+$ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
+                 -Dmapred.reduce.tasks.speculative.execution=false <jar>
 ----
