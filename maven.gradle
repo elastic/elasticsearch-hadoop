@@ -50,8 +50,16 @@ def customizePom(pom, gradleProject) {
 ext.deployUsername = { project.hasProperty("repoUsername") ? getProperty("repoUsername") : "" }
 ext.deployPassword = { project.hasProperty("repoPassword") ? getProperty("repoPassword") : "" }
 
+repositories {
+	flatDir {
+		name "fileRepo"
+		dirs "repo"
+	}
+}
+
 uploadArchives {
 	repositories {
+		//add project.repositories.fileRepo
 		mavenDeployer {
 			customizePom(pom, project)
 			
