@@ -9,3 +9,5 @@ include::intro/typos.adoc[]
 include::intro/features.adoc[]
 
 include::intro/requirements.adoc[]
+
+include::intro/download.adoc[]
