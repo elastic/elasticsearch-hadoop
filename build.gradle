@@ -275,6 +275,7 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
+
 // jar used for testing Hadoop remotely (es-hadoop + tests)
 task hadoopTestingJar(type: Jar) {
 	classifier = 'testing'
@@ -338,6 +339,12 @@ asciidoctor {
 artifacts {
     archives sourcesJar
     archives javadocJar
+
+	// include YARN is available
+	ext.yarn = file("$libsDir/$name-$version-yarn.jar")
+	if (yarn.exists()) {
+		archives yarn
+	}
 }
 
 task wrapper(type: Wrapper) {
