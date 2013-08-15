@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
@@ -32,7 +31,8 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
 /**
  * Hive specific OutputFormat.
  */
-public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat<Object, Map<Writable, Writable>> {
+@SuppressWarnings("rawtypes")
+public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat {
 
     static class ESHiveRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
 
@@ -59,7 +59,7 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
     }
 
     @Override
-    public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
+    public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
         return new ESHiveRecordWriter(jc);
     }
 }
