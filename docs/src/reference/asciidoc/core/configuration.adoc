@@ -61,13 +61,41 @@ Name of the +ValueReader+ implementation for converting JSON to objects. This is
 +es.ser.writer.class+ (default _depends on the library used_)::
 Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-==== Runtime
-+es.runtime.disable.speculative.execution+ (default true)::
+[[runtime-configuration]]
+== Hadoop Runtime options
+
+When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
+
+IMPORTANT: Unfortunately, these settings need to be setup manually before the job / script configuration. Since {eh} is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.
+
+=== Speculative execution
+
 [quote, Yahoo! developer network]
 ____
 As most of the tasks in a job are coming to a close, http://developer.yahoo.com/hadoop/tutorial/module4.html#tolerance[speculative execution] will schedule redundant copies of the remaining tasks across several nodes which do not have other work to perform. Therefore, the same input can be processed multiple times in parallel, to exploit differences in machine capabilities.
 ____
 
-In other words, speculative execution is an *optimization*, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching, having duplicate tasks means at most a waste of computation resources however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates.
+In other words, speculative execution is an *optimization*, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching or reading resources, having duplicate tasks is harmless and means at most a waste of computation resources; however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates.
 Since the 'speculative execution' behavior can be triggered by external factors (such as network or CPU load which in turn cause false positive) even in stable environments (virtualized clusters are particularly prone to this) and has a direct impact on data, {eh} disables this optimization for data safety.
-In all cases, {eh} sets the +mapred.maptasks.speculative.execution+ and +mapred.reduce.tasks.speculative.execution+ to +false+ ; depending on the integration (such as Hive and Pig), there might be additional settings relevant to this topic affected by {eh}. While behavior can be controlled through the present option, we *strongly* recommend against changing it and make no guarantees about the data any more since there aren't any about the runtime.
+
+Speculative execution can be disabled for the map and reduce phase - we recommend disabling in both cases - by setting to +false+ the following two properties:
+
++mapred.map.tasks.speculative.execution+
++mapred.reduce.tasks.speculative.execution+
+
+One can either set the properties by name manually on the +Configuration+/+JobConf+ client:
+
+[source,java]
+----
+jobConf.setSpeculativeExecution(false);
+// or
+configuration.setBoolean("mapred.map.tasks.speculative.execution", false);
+configuration.setBoolean("mapred.reduce.tasks.speculative.execution", false);
+----
+
+or by passing them to the command line:
+
+[source,txt]
+----
+$ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false -Dmapred.reduce.tasks.speculative.execution=false <jar>
+----
