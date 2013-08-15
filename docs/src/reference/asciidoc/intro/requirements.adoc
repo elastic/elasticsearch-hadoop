@@ -17,6 +17,14 @@ version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower
 Hadoop 1.x (ideally the latest stable versions in the 1.x line, currently 1.1.2 or 1.2.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
 If that is not the case, please drop us a line to see what we can do to fix that.
 
+=== YARN / Hadoop 2.x
+
+{eh} can run on Yarn / Hadoop 2.x but considering its *alpha* status, it is not recommended for production use.
+Since YARN breaks binary backwards compatibility with Hadoop 1.x, a dedicated {eh} needs to be used.
+See the <<download>> section for more information.
+
+CAUTION: Many Hadoop distribution ship both YARN and Hadoop 1.x (also labeled MRv1) in the same package but running only one package at a time. If you are using MRv1, do use the normal {eh} distribution.
+
 === Cascading
 
 Version 2.1.x (currently 2.1.6) is required.
