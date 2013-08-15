@@ -1,5 +1,7 @@
 Before running {eh}, please do check out the requirements below. This is even more so important when deploying {eh} across a cluster where the software on some machines might be slightly out of sync. While {eh} tries its best to fall back and do various validations of its environment, doing a quick sanity check especially during upgrades can save you a lot of headaches.
 
+NOTE: make sure to verify *all* nodes in a cluster when checking the version of a certain artifact.
+
 == Requirements
 
 {eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Cascading or Pig) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
@@ -8,14 +10,56 @@ Before running {eh}, please do check out the requirements below. This is even mo
 
 JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the latest JDK 6.0 - currently update 45, or if possible, JDK 7.0 - currently update 25.
 
+One can check the available JDK version from the command line:
+
+[source]
+----
+# java -version
+----
+
 === {es}
 
 version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}.
+
+The {es} version is shown in its folder name:
+
+[source]
+----
+# ls
+elasticsearch-0.90.3
+----
+
+If {es} is running (locally or remotely), one can find out through REST its version:
+
+[source]
+----
+# curl -XGET http://localhost:9200
+{
+  "ok" : true,
+  "status" : 200,
+  "name" : "Sergeant Fury",
+  "version" : {
+    "number" : "0.90.3",
+    "snapshot_build" : false,
+    "lucene_version" : "4.3.1"
+  },
+  "tagline" : "You Know, for Search"
+}
+----
+
 
 === Hadoop
 
 Hadoop 1.x (ideally the latest stable versions in the 1.x line, currently 1.1.2 or 1.2.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
 If that is not the case, please drop us a line to see what we can do to fix that.
+
+To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
+
+[source]
+----
+# bin/hadoop version
+Hadoop 1.2.1
+----
 
 === YARN / Hadoop 2.x
 
@@ -29,10 +73,33 @@ CAUTION: Many Hadoop distribution ship both YARN and Hadoop 1.x (also labeled MR
 
 Version 2.1.x (currently 2.1.6) is required.
 
+Since Cascading is a library, the best way to find out the target version is to look at its file name:
+
+[source]
+----
+# ls
+cascading-2.1.6.jar
+----
+
 === Hive
 
 Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.11.0).
 
+One can find out the Hive version from its folder name or command-line:
+
+[source]
+----
+# bin/hive -version
+Hive version 0.11.0
+----
 === Pig
 
 Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.11.1).
+
+In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
+
+[source]
+----
+# bin/pig -i
+Apache Pig version 0.11.1
+----
