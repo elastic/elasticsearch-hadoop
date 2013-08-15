@@ -6,10 +6,8 @@
 
 This is the reference documentation of {eh} project.
 
-include::preface.adoc[]
+include::intro/index.adoc[]
 
-include::core.adoc[]
+include::core/index.adoc[]
 
-include::resources.adoc[]
-
-include::appendix.adoc[]
+include::appendix/index.adoc[]
