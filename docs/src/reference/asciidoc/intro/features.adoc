@@ -1,4 +1,4 @@
-== Key features of {eh}
+=== Key features of {eh}
 
 The key features of {eh} include:
 
