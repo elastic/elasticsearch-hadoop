@@ -8,6 +8,8 @@ For low-level or performance-sensitive environments, {eh} provides dedicated +In
 In order to use {eh}, the jar needs to be available to the job class path. At ~+150kB+ and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 .CLI example
+
+[source,bash]
 ----
 $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 ----
@@ -57,6 +59,7 @@ To write data to ES, use +org.elasticsearch.hadoop.mr.ESOutputFormat+ on your jo
 [source,java]
 ----
 JobConf conf = new JobConf();
+conf.setSpeculativeExecution(false);			// disable speculative execution when writing to ES
 conf.set("es.resource", "radio/artists");       // index used for storing data
 conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
 ...
@@ -71,6 +74,9 @@ Using the 'new' is strikingly similar - in fact, the exact same class (+org.elas
 ----
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists");       // index used for storing data
+// disable speculative execution when writing to ES
+conf.setBoolean("mapred.map.tasks.speculative.execution", false);
+conf.setBoolean("mapred.reduce.tasks.speculative.execution", false);
 Job job = new Job(conf);
 job.setOutputFormat(ESOutputFormat.class);      // use dedicated output format
 ...
