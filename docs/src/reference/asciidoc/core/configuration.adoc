@@ -93,9 +93,9 @@ configuration.setBoolean("mapred.map.tasks.speculative.execution", false);
 configuration.setBoolean("mapred.reduce.tasks.speculative.execution", false);
 ----
 
-or by passing them to the command line:
+or by passing them as arguments to the command line:
 
-[source,txt]
+[source,bash]
 ----
 $ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
                  -Dmapred.reduce.tasks.speculative.execution=false <jar>
