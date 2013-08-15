@@ -1,4 +1,4 @@
 [appendix]
 = Appendix
 
-include:: appendix/license.adoc
+include::appendix/license.adoc
