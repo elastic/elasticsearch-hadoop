@@ -1,0 +1,4 @@
+[appendix]
+= Appendix
+
+include:: appendix/license.adoc
