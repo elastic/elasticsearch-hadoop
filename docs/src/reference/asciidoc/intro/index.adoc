@@ -8,3 +8,5 @@ Data flows 'bi-directionaly' so that applications can leverage transparently the
 include::intro/typos.adoc[]
 
 include::intro/features.adoc[]
+
+include::intro/requirements.adoc[]
