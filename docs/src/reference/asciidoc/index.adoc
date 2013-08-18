@@ -1,10 +1,10 @@
 = Elasticsearch Hadoop reference documentation
-
 :eh: Elasticsearch Hadoop
 :es: Elasticsearch
 :mr: Map/Reduce
+:description: Reference documentation of {eh}
 
-This is the reference documentation of {eh} project.
+Welcome to the reference documentation of {eh} project.
 
 include::intro/index.adoc[]
 
