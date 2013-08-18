@@ -12,9 +12,10 @@ JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the lates
 
 One can check the available JDK version from the command line:
 
-[source]
+[source, bash]
 ----
-# java -version
+$ java -version
+java version "1.6.0_45"
 ----
 
 === {es}
@@ -23,9 +24,9 @@ version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower
 
 The {es} version is shown in its folder name:
 
-[source]
+[source, bash]
 ----
-# ls
+$ ls
 elasticsearch-0.90.3
 ----
 
@@ -33,7 +34,7 @@ If {es} is running (locally or remotely), one can find out through REST its vers
 
 [source]
 ----
-# curl -XGET http://localhost:9200
+$ curl -XGET http://localhost:9200
 {
   "ok" : true,
   "status" : 200,
@@ -55,9 +56,9 @@ If that is not the case, please drop us a line to see what we can do to fix that
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
-[source]
+[source, bash]
 ----
-# bin/hadoop version
+$ bin/hadoop version
 Hadoop 1.2.1
 ----
 
@@ -73,9 +74,9 @@ Version 2.1.x (currently 2.1.6) is required.
 
 Since Cascading is a library, the best way to find out the target version is to look at its file name:
 
-[source]
+[source, bash]
 ----
-# ls
+$ ls
 cascading-2.1.6.jar
 ----
 
@@ -85,9 +86,9 @@ Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.1
 
 One can find out the Hive version from its folder name or command-line:
 
-[source]
+[source, bash]
 ----
-# bin/hive -version
+$ bin/hive -version
 Hive version 0.11.0
 ----
 === Pig
@@ -96,8 +97,8 @@ Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.
 
 In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
 
-[source]
+[source, bash]
 ----
-# bin/pig -i
+$ bin/pig -i
 Apache Pig version 0.11.1
 ----
