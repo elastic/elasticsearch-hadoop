@@ -65,7 +65,7 @@ but also enable snapshots in the repository definition:
   <repository>
     <id>sonatype-oss</id>
     <url>http://oss.sonatype.org/content/repositories/releases</url>
-	<snapshots><enabled>true</enabled></snapshots> <1>
+    <snapshots><enabled>true</enabled></snapshots> <1>
   </repository>
 </repositories>
 ----
