@@ -59,7 +59,7 @@ To write data to ES, use +org.elasticsearch.hadoop.mr.ESOutputFormat+ on your jo
 [source,java]
 ----
 JobConf conf = new JobConf();
-conf.setSpeculativeExecution(false);			// disable speculative execution when writing to ES
+conf.setSpeculativeExecution(false);            // disable speculative execution when writing to ES
 conf.set("es.resource", "radio/artists");       // index used for storing data
 conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
 ...
