@@ -15,6 +15,7 @@ NOTE: All configuration properties start with the +es+ prefix. The namespace +es
 {es} resource location, relative to the {es} host/port (see below). Can be either an index/type (for writing) or a search query.
 
 .Examples
+[source,ini]
 ----
 es.resource = twitter/costinl                   # write to index 'twitter', type 'costinl'
 es.resource = twitter/costinl/_search?q=hadoop  # read from index 'twitter', type 'costinl' entries matching 'hadoop'
@@ -62,7 +63,7 @@ Name of the +ValueReader+ implementation for converting JSON to objects. This is
 Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
 [[runtime-configuration]]
-== Hadoop Runtime options
+== Hadoop runtime options
 
 When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
 
