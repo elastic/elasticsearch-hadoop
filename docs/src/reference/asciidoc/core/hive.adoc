@@ -58,7 +58,7 @@ TBLPROPERTIES('es.resource' = 'radio/artists/',
 === Mapping
 
 By default, {eh} uses the Hive table schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Hive cannot
-be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Hive field name+:++{es field name}++
+be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Hive field name+:++{es} field name++
 
 To wit:
 
