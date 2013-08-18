@@ -329,11 +329,36 @@ asciidoctor {
 			icons: 'font',
 			badges: '',
 			toc2: '',
+			sectanchors: '',
 			//stylesheet: 'github.css',
 			copycss: ''
 			//'linkcss!': ''
         ]
     ]
+}
+
+task distZip(type: Zip, dependsOn: [asciidoctor, jar, sourcesJar, javadocJar]) {
+    group = "Distribution"
+    //classifier = "dist"
+    description = "Builds -${classifier} archive, containing all jars and docs, suitable for download page."
+
+    ext.baseDir = "${project.name}-${project.version}";
+
+    from(".") {
+        //include "README.md"
+        include "LICENSE.txt"
+        include "NOTICE.txt"
+        into "${baseDir}"
+        expand(yyyy: new Date().format("yyyy"), version: project.version)
+    }
+
+    from("build/asciidoc") {
+        into "${baseDir}/docs"
+    }
+
+    into ("${baseDir}/dist") {
+        from "build/libs"
+    }
 }
 
 artifacts {
