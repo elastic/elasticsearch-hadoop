@@ -8,6 +8,7 @@ http://pig.apache.org/[Apache Pig] is a platform for analyzing large data sets t
 ____
 It provides a high-level, powerful, _scripting_-like transformation language which gets compiled into {mr} jobs at runtime by the Pig 'compiler'. To simplify working with arbitrary data, Pig associates a 'schema' (or type information) with each data set for validation and performance. This in turn, breaks it down into 'discrete' data types that can be transformed through various operators or custom functions (or http://pig.apache.org/docs/r0.11.1/udf.html[UDF]s). Data can be loaded from and stored to various storages such as the local file-system or HDFS, and with {eh} into {es} as well.
 
+[[pig-installation]]
 === Installation
 
 In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.11.1/basic.html#register[REGISTER] command is used:
@@ -36,7 +37,53 @@ $ pig \
 script.pig
 ----
 
-[[type-conversion-pig]]
+[[pig-configuration]]
+=== Configuration
+
+With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop +Configuration+ object) as a constructor parameter when declaring +ESStorage+:
+
+[source]
+----
+STORE B INTO 'radio/artists'<1> USING 
+	org.elasticsearch.hadoop.pig.ESStorage
+	         ('es.resource = radio/artists/<1> ;<2>
+              es.index.auto.create = false' <3>);
+----
+
+<1> {eh} configuration (target resource)
+<2> +;+ as configuration properties separator
+<3> another {eh} configuration (disable automatic index creation)
+
+TIP: To avoid having to specify the fully qualified class name (+org.elasticsearch.hadoop.pig.ESStorage+), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[+DEFINE+] command:
+
+[source]
+----
+DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');"
+----
+
+Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication.
+
+[[pig-alias]]
+=== Mapping
+
+Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Pig field name+ : ++{es field name}++
+
+For example:
+
+[source]
+----
+LOAD '...' USING ESStorage('<1>es.column.aliases=date:@timestamp<2>, uRL:url<3>')
+----
+
+<1> name mapping for two fields
+<2> Pig column +date+ mapped in {es} to +@timestamp+
+<3> Pig column +url+ mapped in {es} to +url_123+
+
+TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Pig column names to lower-case. Because Pig is **case sensitive**, {eh} handles the reverse
+field mapping as well. It is recommended to use the default Pig style and use upper-case names only for commands and avoid mixed-case names.
+
+[[pig-type-conversion]]
 === Type conversion
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
