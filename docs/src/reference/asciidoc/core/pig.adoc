@@ -44,15 +44,15 @@ With Pig, one can specify the <<configuration,configuration>> properties (as an 
 
 [source]
 ----
-STORE B INTO 'radio/artists'<1> USING 
-	org.elasticsearch.hadoop.pig.ESStorage
-	         ('es.resource = radio/artists/<1> ;<2>
-              es.index.auto.create = false' <3>);
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
+	         ('es.http.timeout = 5m<2> ;<3>
+               es.index.auto.create = false' <4>);
 ----
 
 <1> {eh} configuration (target resource)
-<2> +;+ as configuration properties separator
-<3> another {eh} configuration (disable automatic index creation)
+<2> {eh} option (http timeout)
+<3> +;+ as configuration properties separator
+<4> another {eh} configuration (disable automatic index creation)
 
 TIP: To avoid having to specify the fully qualified class name (+org.elasticsearch.hadoop.pig.ESStorage+), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[+DEFINE+] command:
 
@@ -61,13 +61,14 @@ TIP: To avoid having to specify the fully qualified class name (+org.elasticsear
 DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');"
 ----
 
-Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication.
+Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication. In fact, for the reminder of this section, 
+the Pig alias will be implied and +ESStorage+ will be used (instead of the fully qualified class name) for abbreviation.
 
 [[pig-alias]]
 === Mapping
 
 Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
-be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Pig field name+ : ++{es field name}++
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Pig field name+ : ++{es} field name++
 
 For example:
 
@@ -129,7 +130,7 @@ A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
 -- transform data
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 -- save the result to Elasticsearch
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);
+STORE B INTO 'radio/artists'<1> USING ESStorage(<2>);
 ----
 
 <1> {es} resource (index and type) associated with the given storage
@@ -142,7 +143,7 @@ As you would expect, loading the data is straight forward:
 [source]
 ----
 -- load data from Elasticsearch into Pig
-A = LOAD 'radio/artists/_search?q=me*'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);
+A = LOAD 'radio/artists/_search?q=me*'<1> USING ESStorage(<2>);
 DUMP A;
 ----
 
