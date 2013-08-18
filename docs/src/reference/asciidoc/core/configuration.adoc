@@ -18,7 +18,7 @@ NOTE: All configuration properties start with the +es+ prefix. The namespace +es
 [source,ini]
 ----
 es.resource = twitter/costinl                   # write to index 'twitter', type 'costinl'
-es.resource = twitter/costinl/_search?q=hadoop  # read from index 'twitter', type 'costinl' entries matching 'hadoop'
+es.resource = twitter/costinl/_search?q=hadoop  # read entries matching 'hadoop' from 'twitter/costinl'
 ----
 
 === Optional settings
