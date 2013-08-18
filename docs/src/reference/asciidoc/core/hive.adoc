@@ -39,7 +39,45 @@ or if the +hive-site.xml+ configuration can be modified, one can register additi
 </property>
 ----
 
-[[type-conversion-hive]]
+[[hive-configuration]]
+=== Configuration
+
+When using Hive, one can use +TBLPROPERTIES+ to specify the <<configuration,configuration>> properties (as an alternative to Hadoop +Configuration+ object) when declaring the external table backed by {es}:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (...)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
+TBLPROPERTIES('es.resource' = 'radio/artists/',
+              'es.index.auto.create' = 'false') <1>;
+----
+
+<1> {eh} settings
+
+[[hive-alias]]
+=== Mapping
+
+By default, {eh} uses the Hive table schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Hive cannot
+be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Hive field name+:++{es field name}++
+
+To wit:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (...)
+STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
+TBLPROPERTIES('es.resource' = 'radio/artists/',
+            <1>'es.column.aliases' = 'date:@timestamp<2>, url:url_123<3>');
+----
+
+<1> name mapping for two fields
+<2> Hive column +date+ mapped in {es} to +@timestamp+
+<3> Hive column +url+ mapped in {es} to +url_123+
+
+TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Hive column names to lower-case. This poses no issue as Hive is **case insensitive**
+however it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
+
+[[hive-type-conversion]]
 === Type conversion
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
@@ -53,15 +91,15 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 | Hive type | {es} type
 
 | +void+            | +null+
-| +boolean+       	| +boolean+
+| +boolean+         | +boolean+
 | +tinyint+         | +byte+
-| +smallint+		| +short+
+| +smallint+        | +short+
 | +int+             | +int+
 | +bigint+          | +long+
 | +double+          | +double+
 | +float+           | +float+
 | +string+          | +string+
-| +binary+ 		    | +binary+
+| +binary+          | +binary+
 | +timestamp+       | +date+
 | +struct+          | +map+
 | +map+             | +map+
@@ -70,7 +108,7 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 
 2+h| Available in Hive 0.11 or higher
 
-| +decimal+		    | +string+
+| +decimal+         | +string+
 
 |===
 
@@ -99,7 +137,7 @@ INSERT OVERWRITE TABLE artists
 
 === Reading data from {es}
 
-Reading from {es} is strinkingly similar:
+Reading from {es} is strikingly similar:
 
 [source,sql]
 ----
