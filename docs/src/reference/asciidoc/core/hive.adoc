@@ -86,7 +86,7 @@ CREATE EXTERNAL TABLE artists (
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
 TBLPROPERTIES('es.resource' = 'radio/artists/'<2>);
 
--- insert data to {es} from another table called 'source'
+-- insert data to Elasticsearch from another table called 'source'
 INSERT OVERWRITE TABLE artists 
     SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
 ----
@@ -107,7 +107,7 @@ CREATE EXTERNAL TABLE artists (
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
 TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
 
--- stream data from {es}
+-- stream data from Elasticsearch
 SELECT * FROM artists;
 ----
 
