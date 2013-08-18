@@ -345,11 +345,11 @@ task distZip(type: Zip, dependsOn: [asciidoctor, jar, sourcesJar, javadocJar]) {
     ext.baseDir = "${project.name}-${project.version}";
 
     from(".") {
-        //include "README.md"
+        include "README.md"
         include "LICENSE.txt"
         include "NOTICE.txt"
         into "${baseDir}"
-        expand(yyyy: new Date().format("yyyy"), version: project.version)
+        //expand(yyyy: new Date().format("yyyy"), version: project.version)
     }
 
     from("build/asciidoc") {

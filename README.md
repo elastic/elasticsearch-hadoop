@@ -202,7 +202,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 
 ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine.
 
-To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build\libs`.
+To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build/libs`.
 
 # License
 This project is released under version 2.0 of the [Apache License][]
