@@ -2,7 +2,7 @@
 [[license]]
 = License
 
-{eh} is an open-source project, released under version 2.0 of the http://www.apache.org/licenses/LICENSE-2.0.html[Apache license]:
+{eh} is Open Source, released under http://www.apache.org/licenses/LICENSE-2.0.html[Apache 2 license]:
 
 ----
 This software is licensed under the Apache 2 license, quoted below.
