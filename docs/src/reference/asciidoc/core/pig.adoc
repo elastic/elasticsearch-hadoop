@@ -12,6 +12,7 @@ It provides a high-level, powerful, _scripting_-like transformation language whi
 
 In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.11.1/basic.html#register[REGISTER] command is used:
 
+[source]
 ----
 REGISTER /path/elasticsearch-hadoop.jar;
 ----
@@ -19,16 +20,20 @@ REGISTER /path/elasticsearch-hadoop.jar;
 NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
 on various machines.
 
-As an alternative, when using the command-line, one can register additional jars through the '-Dpig.additional.jars' option (that accepts an URI as well):
+As an alternative, when using the command-line, one can register additional jars through the +-Dpig.additional.jars+ option (that accepts an URI as well):
 
+[source,bash]
 ----
-pig -Dpig.additional.jars=/path/elasticsearch-hadoop.jar:<other.jars> script.pig
+$ pig -Dpig.additional.jars=/path/elasticsearch-hadoop.jar:<other.jars> script.pig
 ----
 
 or if the jars are on HDFS
 
+[source,bash]
 ----
-pig -Dpig.additional.jars=hdfs://<cluster-name>:<cluster-port>/<path>/elasticsearch-hadoop.jar:<other.jars> script.pig
+$ pig \
+-Dpig.additional.jars=hdfs://<cluster-name>:<cluster-port>/<path>/elasticsearch-hadoop.jar:<other.jars> \
+script.pig
 ----
 
 [[type-conversion-pig]]
@@ -69,10 +74,15 @@ NOTE: While {es} understands the Pig types up to version 0.11, it is backwards c
 
 {es} is exposed as a native +Storage+ to Pig so it can be used to store data into it:
 
+[source]
 ----
-A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);     -- load data from HDFS into Pig
-B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;                                                            -- transform the data
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                                          -- save the result to {es}
+-- load data from HDFS into Pig using a schema
+A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
+                    AS (id:long, name, url:chararray, picture: chararray);
+-- transform data
+B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
+-- save the result to Elasticsearch
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);
 ----
 
 <1> {es} resource (index and type) associated with the given storage
@@ -82,8 +92,10 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>
 
 As you would expect, loading the data is straight forward:
 
+[source]
 ----
-A = LOAD 'radio/artists/_search?q=me*'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);                               -- load data from {es} into Pig
+-- load data from Elasticsearch into Pig
+A = LOAD 'radio/artists/_search?q=me*'<1> USING org.elasticsearch.hadoop.pig.ESStorage(<2>);
 DUMP A;
 ----
 
