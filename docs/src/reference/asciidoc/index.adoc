@@ -1,5 +1,6 @@
 = Elasticsearch Hadoop
-:doctype: 	book
+:doctype: book
+:icons: 
 :eh: Elasticsearch Hadoop
 :es: Elasticsearch
 :mr: Map/Reduce
