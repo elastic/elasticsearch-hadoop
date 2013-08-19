@@ -12,7 +12,7 @@ JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the lates
 
 One can check the available JDK version from the command line:
 
-[source, bash]
+[source,bash]
 ----
 $ java -version
 java version "1.6.0_45"
@@ -24,7 +24,7 @@ version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower
 
 The {es} version is shown in its folder name:
 
-[source, bash]
+[source,bash]
 ----
 $ ls
 elasticsearch-0.90.3
@@ -32,7 +32,7 @@ elasticsearch-0.90.3
 
 If {es} is running (locally or remotely), one can find out through REST its version:
 
-[source]
+[source,js]
 ----
 $ curl -XGET http://localhost:9200
 {
@@ -91,6 +91,7 @@ One can find out the Hive version from its folder name or command-line:
 $ bin/hive -version
 Hive version 0.11.0
 ----
+
 === Pig
 
 Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.11.1).

@@ -1,17 +1,18 @@
 [[configuration]]
 == Configuration options
 
-{eh} behavior can be customized through the properties below, typically by setting them on the target job Hadoop +Configuration+. However some of them can be specified through other means depending on the library used (see the relevant section).
+{eh} behavior can be customized through the properties below, typically by setting them on the target job Hadoop `Configuration`. However some of them can be specified through other means depending on the library used (see the relevant section).
 
 ****
 {eh} uses the same conventions and reasonable defaults as {es} so you can try out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration option, please _do ask_ for more information.
 ****
 
-NOTE: All configuration properties start with the +es+ prefix. The namespace +es.internal+ is reserved by the library for its internal use and should _not_ be used by the user at any point.
+NOTE: All configuration properties start with the `es` prefix. The namespace `es.internal` is reserved by the library for its internal use and should _not_ be used by the user at any point.
 
+[float]
 === Required settings
 
-.+es.resource+
+.`es.resource`
 {es} resource location, relative to the {es} host/port (see below). Can be either an index/type (for writing) or a search query.
 
 .Examples
@@ -21,46 +22,50 @@ es.resource = twitter/costinl                   # write to index 'twitter', type
 es.resource = twitter/costinl/_search?q=hadoop  # read entries matching 'hadoop' from 'twitter/costinl'
 ----
 
+[float]
 === Optional settings
 
+[float]
 ==== Network
-+es.host+ (default localhost)::
+`es.host` (default localhost)::
 {es} cluster node. When using {es} remotely, _do_ set this option.
 
-+es.port+ (default 9200)::
+`es.port` (default 9200)::
 HTTP/REST port used for connecting to {es}.
 
-+es.http.timeout+ (default 1m)::
+`es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
 
-+es.scroll.keepalive+ (default 10m)::
+`es.scroll.keepalive` (default 10m)::
 The maximum duration of result scrolls between query requests.
 
-+es.scroll.size+ (default 50)::
+`es.scroll.size` (default 50)::
 Number of results/items returned by each individual scroll.
 
 [[configuration-options-index]]
+[float]
 ==== Index
 
-+es.index.auto.create+ (default yes)::
+`es.index.auto.create` (default yes)::
 Whether {eh} should create an index (if its missing) when writing data to {es} or fail.
 
+[float]
 ==== Serialization
 
-+es.batch.size.bytes+ (default 10mb)::
+`es.batch.size.bytes` (default 10mb)::
 Size (in bytes) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API
 
-+es.batch.size.entries+ (default 0/disabled)::
-Size (in entries) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API. Companion to +es.batch.size.bytes+, once one matches, the batch update is executed.
+`es.batch.size.entries` (default 0/disabled)::
+Size (in entries) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API. Companion to `es.batch.size.bytes`, once one matches, the batch update is executed.
 
-+es.batch.write.refresh+ (default true)::
+`es.batch.write.refresh` (default true)::
 Whether to invoke an http://www.elasticsearch.org/guide/reference/api/admin-indices-refresh/[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
-+es.ser.reader.class+ (default _depends on the library used_)::
-Name of the +ValueReader+ implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+`es.ser.reader.class` (default _depends on the library used_)::
+Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-+es.ser.writer.class+ (default _depends on the library used_)::
-Name of the +ValueWriter+ implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+`es.ser.writer.class` (default _depends on the library used_)::
+Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
 [[runtime-configuration]]
 == Hadoop runtime options
@@ -69,6 +74,7 @@ When using {eh}, it is important to be aware of the following Hadoop configurati
 
 IMPORTANT: Unfortunately, these settings need to be setup *manually* *before* the job / script configuration. Since {eh} is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.
 
+[float]
 === Speculative execution
 
 [quote, Yahoo! developer network]
@@ -79,12 +85,12 @@ ____
 In other words, speculative execution is an *optimization*, enabled by default, that allows Hadoop to create duplicates tasks of those which it considers hanged or slowed down. When doing data crunching or reading resources, having duplicate tasks is harmless and means at most a waste of computation resources; however when writing data to an external store, this can cause data corruption through duplicates or unnecessary updates.
 Since the 'speculative execution' behavior can be triggered by external factors (such as network or CPU load which in turn cause false positive) even in stable environments (virtualized clusters are particularly prone to this) and has a direct impact on data, {eh} disables this optimization for data safety.
 
-Speculative execution can be disabled for the map and reduce phase - we recommend disabling in both cases - by setting to +false+ the following two properties:
+Speculative execution can be disabled for the map and reduce phase - we recommend disabling in both cases - by setting to `false` the following two properties:
 
-+mapred.map.tasks.speculative.execution+
-+mapred.reduce.tasks.speculative.execution+
+`mapred.map.tasks.speculative.execution`
+`mapred.reduce.tasks.speculative.execution`
 
-One can either set the properties by name manually on the +Configuration+/+JobConf+ client:
+One can either set the properties by name manually on the `Configuration`/`JobConf` client:
 
 [source,java]
 ----

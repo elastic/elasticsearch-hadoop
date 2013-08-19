@@ -1,11 +1,12 @@
 [[mapreduce]]
 == {mr} integration
 
-For low-level or performance-sensitive environments, {eh} provides dedicated +InputFormat+ and +OutputFormat+ implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to +Map+ of +Writable+ objects and vice-versa.
+For low-level or performance-sensitive environments, {eh} provides dedicated `InputFormat` and `OutputFormat` implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to `Map` of `Writable` objects and vice-versa.
 
+[float]
 === Installation
 
-In order to use {eh}, the jar needs to be available to the job class path. At ~+150kB+ and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic+Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the jar needs to be available to the job class path. At ~`150kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 .CLI example
 
@@ -15,46 +16,49 @@ $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 ----
 
 [[type-conversion-writable]]
+[float]
 === Type conversion
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-{eh} automatically converts Hadoop built-in +Writable+ types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
+{eh} automatically converts Hadoop built-in `Writable` types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
 
-.+Writable+ Conversion Table
+.`Writable` Conversion Table
 
 [cols="^,^",options="header"]
 |===
-| +*Writable*+ | {es} type
+| `Writable` | {es} type
 
-| +null+            | +null+
-| +NullWritable+    | +null+
-| +Text+            | +string+
-| +UTF8+            | +string+
-| +ByteWritable+    | +byte+
-| +IntWritable+     | +int+
-| +VInt+            | +int+
-| +LongWritable+    | +long+
-| +VLongWritable+   | +long+
-| +ByteWritable+    | +binary+
-| +DoubleWritable+  | +double+
-| +FloatWritable+   | +float+
-| +BooleanWritable+ | +boolean+
-| +MD5Writable+     | +string+
-| +ArrayWritable+   | +array+
-| +AbstractMapWritable+ | +map+
+| `null`            | `null`
+| `NullWritable`    | `null`
+| `Text`            | `string`
+| `UTF8`            | `string`
+| `ByteWritable`    | `byte`
+| `IntWritable`     | `int`
+| `VInt`            | `int`
+| `LongWritable`    | `long`
+| `VLongWritable`   | `long`
+| `ByteWritable`    | `binary`
+| `DoubleWritable`  | `double`
+| `FloatWritable`   | `float`
+| `BooleanWritable` | `boolean`
+| `MD5Writable`     | `string`
+| `ArrayWritable`   | `array`
+| `AbstractMapWritable` | `map`
 
 |===
 
+[float]
 === Writing data to {es}
 
 With {eh}, {mr} jobs can write data to {es} making it searchable through http://www.elasticsearch.org/guide/reference/glossary/#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
 
-+ESOutputFormat+ expects a +Map<Writable, Writable>+ value that it will convert into a JSON document; the key is ignored.
+`ESOutputFormat` expects a `Map<Writable, Writable>` value that it will convert into a JSON document; the key is ignored.
 
-==== 'Old' (+org.apache.hadoop.mapred+) API
+[float]
+==== 'Old' (`org.apache.hadoop.mapred`) API
 
-To write data to ES, use +org.elasticsearch.hadoop.mr.ESOutputFormat+ on your job along with the relevant configuration <<configuration,properties>>:
+To write data to ES, use `org.elasticsearch.hadoop.mr.ESOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
 
 [source,java]
 ----
@@ -66,9 +70,10 @@ conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
 JobClient.runJob(conf);
 ----
 
-==== 'New' (+org.apache.hadoop.mapreduce+) API
+[float]
+==== 'New' (`org.apache.hadoop.mapreduce`) API
 
-Using the 'new' is strikingly similar - in fact, the exact same class (+org.elasticsearch.hadoop.mr.ESOutputFormat+) is used:
+Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.ESOutputFormat`) is used:
 
 [source,java]
 ----
@@ -84,14 +89,16 @@ job.waitForCompletion(true);
 ----
 
 
+[float]
 === Reading data from {es}
 
-In a similar fashion, to read data from {es}, one needs to use +org.elasticsearch.hadoop.mr.ESInputFormat+ class.
+In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.ESInputFormat` class.
 While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
 
-+ESInputFormat+ returns a +Map<Writable, Writable>+ converted from the JSON documents returned by {es} and a null (to be ignored) key.
+`ESInputFormat` returns a `Map<Writable, Writable>` converted from the JSON documents returned by {es} and a null (to be ignored) key.
 
-==== 'Old' (+org.apache.hadoop.mapred+) API
+[float]
+==== 'Old' (`org.apache.hadoop.mapred`) API
 
 Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
 
@@ -104,9 +111,10 @@ conf.setInputFormat(ESInputFormat.class);               // use dedicated input f
 JobClient.runJob(conf);
 ----
 
-==== 'New' (+org.apache.hadoop.mapreduce+) API
+[float]
+==== 'New' (`org.apache.hadoop.mapreduce`) API
 
-As expected, the +mapreduce+ API version is quite similar:
+As expected, the `mapreduce` API version is quite similar:
 [source,java]
 ----
 Configuration conf = new Configuration();
