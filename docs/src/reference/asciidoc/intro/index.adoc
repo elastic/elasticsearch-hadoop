@@ -1,13 +1,16 @@
 = About {eh}
 
+[partintro]
+--
 {eh} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
 Data flows 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
 {eh} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. 
 
-include::intro/typos.adoc[]
+include::typos.adoc[]
+--
 
-include::intro/features.adoc[]
+include::features.adoc[]
 
-include::intro/requirements.adoc[]
+// include::requirements.adoc[]
 
-include::intro/download.adoc[]
+// include::download.adoc[]

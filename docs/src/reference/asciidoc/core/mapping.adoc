@@ -18,17 +18,18 @@ Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses o
 By default, {es} provides http://www.elasticsearch.org/guide/reference/api/index_/[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
 
 [[auto-mapping-type-loss]]
-It is important to remember that automatic mapping uses the payload values to identify its http://www.elasticsearch.org/guide/reference/mapping/core-types/[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - +byte+, +short+, +int+, +long+ are all placed in the same +integer+ 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
+It is important to remember that automatic mapping uses the payload values to identify its http://www.elasticsearch.org/guide/reference/mapping/core-types/[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - `byte`, `short`, `int`, `long` are all placed in the same `integer` 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
 
-numbers mapped only as +long+/+double+:: Whenever {es} encounters a number, it will allocate the largest type for it since it does not know the exact number type of the field. Allocating a small type (such as +byte+, +int+ or +float+) can lead to problems if a future document is larger, so {es} uses a safe default. 
-incorrect mapping:: This happens when a string field contains only numbers (say +1234+) - {es} has no information that the number is actually a string and thus it map the field as a number. The same issue tends to occur with dates and strings.
+numbers mapped only as `long`/`double`:: Whenever {es} encounters a number, it will allocate the largest type for it since it does not know the exact number type of the field. Allocating a small type (such as `byte`, `int` or `float`) can lead to problems if a future document is larger, so {es} uses a safe default. 
+incorrect mapping:: This happens when a string field contains only numbers (say `1234`) - {es} has no information that the number is actually a string and thus it map the field as a number. The same issue tends to occur with dates and strings.
 
-Only if the defaults need to be overridden and/or if you experience the problems exposed below, consider using <<explicit mapping>>.
+Only if the defaults need to be overridden and/or if you experience the problems exposed below, consider using <<explicit-mapping>>.
 
 ==== Disabling automatic mapping
 
-{es} allows 'automatic index creation' as well as 'dynamic mapping' (for extra fields present in documents) to be disabled through the +action.auto_create_index+ and +index.mapper.dynamic+ settings on the nodes config files. As a safety net, {eh} provides a dedicated configuration <<configuration-options-index,option>> +es.index.auto.create+ which allows {eh} to either create the index or not without having to modify the {es} cluster options.
+{es} allows 'automatic index creation' as well as 'dynamic mapping' (for extra fields present in documents) to be disabled through the `action.auto_create_index` and `index.mapper.dynamic` settings on the nodes config files. As a safety net, {eh} provides a dedicated configuration <<configuration-options-index,option>> `es.index.auto.create` which allows {eh} to either create the index or not without having to modify the {es} cluster options.
 
+[[explicit-mapping]]
 === Explicit mapping
 
 Explicit or manual mapping should be considered only when the defaults need to be overridden and/or if you experience the problems exposed above. 

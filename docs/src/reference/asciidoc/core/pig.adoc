@@ -9,11 +9,11 @@ ____
 It provides a high-level, powerful, _scripting_-like transformation language which gets compiled into {mr} jobs at runtime by the Pig 'compiler'. To simplify working with arbitrary data, Pig associates a 'schema' (or type information) with each data set for validation and performance. This in turn, breaks it down into 'discrete' data types that can be transformed through various operators or custom functions (or http://pig.apache.org/docs/r0.11.1/udf.html[UDF]s). Data can be loaded from and stored to various storages such as the local file-system or HDFS, and with {eh} into {es} as well.
 
 [[pig-installation]]
+[float]
 === Installation
 
 In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.11.1/basic.html#register[REGISTER] command is used:
 
-[source]
 ----
 REGISTER /path/elasticsearch-hadoop.jar;
 ----
@@ -21,7 +21,7 @@ REGISTER /path/elasticsearch-hadoop.jar;
 NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
 on various machines.
 
-As an alternative, when using the command-line, one can register additional jars through the +-Dpig.additional.jars+ option (that accepts an URI as well):
+As an alternative, when using the command-line, one can register additional jars through the `-Dpig.additional.jars` option (that accepts an URI as well):
 
 [source,bash]
 ----
@@ -38,11 +38,11 @@ script.pig
 ----
 
 [[pig-configuration]]
+[float]
 === Configuration
 
-With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop +Configuration+ object) as a constructor parameter when declaring +ESStorage+:
+With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop `Configuration` object) as a constructor parameter when declaring `ESStorage`:
 
-[source]
 ----
 STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
 	         ('es.http.timeout = 5m<2> ;<3>
@@ -51,40 +51,40 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
 
 <1> {eh} configuration (target resource)
 <2> {eh} option (http timeout)
-<3> +;+ as configuration properties separator
+<3> `;` as configuration properties separator
 <4> another {eh} configuration (disable automatic index creation)
 
-TIP: To avoid having to specify the fully qualified class name (+org.elasticsearch.hadoop.pig.ESStorage+), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[+DEFINE+] command:
+TIP: To avoid having to specify the fully qualified class name (`org.elasticsearch.hadoop.pig.ESStorage`), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[`DEFINE`] command:
 
-[source]
 ----
 DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');"
 ----
 
 Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication. In fact, for the reminder of this section, 
-the Pig alias will be implied and +ESStorage+ will be used (instead of the fully qualified class name) for abbreviation.
+the Pig alias will be implied and `ESStorage` will be used (instead of the fully qualified class name) for abbreviation.
 
 [[pig-alias]]
+[float]
 === Mapping
 
 Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
-be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Pig field name+ : ++{es} field name++
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.column.aliases` setting which accepts a comma-separated list of names mapping in the following format: ``Pig field name` : ``{es} field name``
 
 For example:
 
-[source]
 ----
 LOAD '...' USING ESStorage('<1>es.column.aliases=date:@timestamp<2>, uRL:url<3>')
 ----
 
 <1> name mapping for two fields
-<2> Pig column +date+ mapped in {es} to +@timestamp+
-<3> Pig column +url+ mapped in {es} to +url_123+
+<2> Pig column `date` mapped in {es} to `@timestamp`
+<3> Pig column `url` mapped in {es} to `url_123`
 
 TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Pig column names to lower-case. Because Pig is **case sensitive**, {eh} handles the reverse
 field mapping as well. It is recommended to use the default Pig style and use upper-case names only for commands and avoid mixed-case names.
 
 [[pig-type-conversion]]
+[float]
 === Type conversion
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
@@ -95,34 +95,34 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 |===
 | Pig type | {es} type
 
-| +null+            | +null+
-| +chararray+       | +string+
-| +int+             | +int+
-| +long+            | +long+
-| +double+          | +double+
-| +float+           | +float+
-| +bytearray+       | +binary+
-| +tuple+           | +map+
-| +bag+             | +array+
-| +map+             | +map+
+| `null`            | `null`
+| `chararray`       | `string`
+| `int`             | `int`
+| `long`            | `long`
+| `double`          | `double`
+| `float`           | `float`
+| `bytearray`       | `binary`
+| `tuple`           | `map`
+| `bag`             | `array`
+| `map`             | `map`
 
-2+h| Available in Pig 0.10 or higher
+2`h| Available in Pig 0.10 or higher
 
-| +boolean+ 	    | +boolean+
+| `boolean` 	    | `boolean`
 
-2+h| Available in Pig 0.11 or higher
+2`h| Available in Pig 0.11 or higher
 
-| +datetime+ 	    | +date+
+| `datetime` 	    | `date`
 
 |===
 
 NOTE: While {es} understands the Pig types up to version 0.11, it is backwards compatible with Pig 0.9
 
+[float]
 === Writing data to {es}
 
-{es} is exposed as a native +Storage+ to Pig so it can be used to store data into it:
+{es} is exposed as a native `Storage` to Pig so it can be used to store data into it:
 
-[source]
 ----
 -- load data from HDFS into Pig using a schema
 A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
@@ -136,11 +136,11 @@ STORE B INTO 'radio/artists'<1> USING ESStorage(<2>);
 <1> {es} resource (index and type) associated with the given storage
 <2> additional configuration parameters can be passed here - in this case the defaults are used
 
+[float]
 === Reading data from {es}
 
 As you would expect, loading the data is straight forward:
 
-[source]
 ----
 -- load data from Elasticsearch into Pig
 A = LOAD 'radio/artists/_search?q=me*'<1> USING ESStorage(<2>);
