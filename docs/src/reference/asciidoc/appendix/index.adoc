@@ -1,6 +1,6 @@
 
-include::appendix/resources.adoc[]
+include::resources.adoc[]
 
-include::appendix/license.adoc[]
+include::license.adoc[]
 
 

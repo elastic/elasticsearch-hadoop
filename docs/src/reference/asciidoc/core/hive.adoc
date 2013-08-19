@@ -8,11 +8,11 @@ ____
 
 Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
 
+[float]
 === Installation
 
 Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/Hive/languagemanual-cli.html#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
 
-[source]
 ----
 ADD /path/elasticsearch-hadoop.jar;
 ----
@@ -27,9 +27,9 @@ As an alternative, one can use the command-line:
 ----
 $ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 ----
-or if the +hive-site.xml+ configuration can be modified, one can register additional jars through the +hive.aux.jars.path+ option (that accepts an URI as well):
+or if the `hive-site.xml` configuration can be modified, one can register additional jars through the `hive.aux.jars.path` option (that accepts an URI as well):
 
-.+hive-ste.xml+ configuration
+.`hive-ste.xml` configuration
 [source,xml]
 ----
 <property>
@@ -40,9 +40,10 @@ or if the +hive-site.xml+ configuration can be modified, one can register additi
 ----
 
 [[hive-configuration]]
+[float]
 === Configuration
 
-When using Hive, one can use +TBLPROPERTIES+ to specify the <<configuration,configuration>> properties (as an alternative to Hadoop +Configuration+ object) when declaring the external table backed by {es}:
+When using Hive, one can use `TBLPROPERTIES` to specify the <<configuration,configuration>> properties (as an alternative to Hadoop `Configuration` object) when declaring the external table backed by {es}:
 
 [source,sql]
 ----
@@ -55,10 +56,11 @@ TBLPROPERTIES('es.resource' = 'radio/artists/',
 <1> {eh} settings
 
 [[hive-alias]]
+[float]
 === Mapping
 
 By default, {eh} uses the Hive table schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Hive cannot
-be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the +es.column.aliases+ setting which accepts a comma-separated list of names mapping in the following format: ++Hive field name+:++{es} field name++
+be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the `es.column.aliases` setting which accepts a comma-separated list of names mapping in the following format: ``Hive field name`:``{es} field name``
 
 To wit:
 
@@ -71,18 +73,19 @@ TBLPROPERTIES('es.resource' = 'radio/artists/',
 ----
 
 <1> name mapping for two fields
-<2> Hive column +date+ mapped in {es} to +@timestamp+
-<3> Hive column +url+ mapped in {es} to +url_123+
+<2> Hive column `date` mapped in {es} to `@timestamp`
+<3> Hive column `url` mapped in {es} to `url_123`
 
 TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Hive column names to lower-case. This poses no issue as Hive is **case insensitive**
 however it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
 
 [[hive-type-conversion]]
+[float]
 === Type conversion
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
+Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual`Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
 and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
 [cols="^,^",options="header"]
@@ -90,33 +93,34 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 |===
 | Hive type | {es} type
 
-| +void+            | +null+
-| +boolean+         | +boolean+
-| +tinyint+         | +byte+
-| +smallint+        | +short+
-| +int+             | +int+
-| +bigint+          | +long+
-| +double+          | +double+
-| +float+           | +float+
-| +string+          | +string+
-| +binary+          | +binary+
-| +timestamp+       | +date+
-| +struct+          | +map+
-| +map+             | +map+
-| +array+           | +array+
-| +union+           | not supported yet
+| `void`            | `null`
+| `boolean`         | `boolean`
+| `tinyint`         | `byte`
+| `smallint`        | `short`
+| `int`             | `int`
+| `bigint`          | `long`
+| `double`          | `double`
+| `float`           | `float`
+| `string`          | `string`
+| `binary`          | `binary`
+| `timestamp`       | `date`
+| `struct`          | `map`
+| `map`             | `map`
+| `array`           | `array`
+| `union`           | not supported yet
 
-2+h| Available in Hive 0.11 or higher
+2`h| Available in Hive 0.11 or higher
 
-| +decimal+         | +string+
+| `decimal`         | `string`
 
 |===
 
 NOTE: While {es} understands Hive types up to version 0.11, it is backwards compatible with Hive 0.9
 
+[float]
 === Writing data to {es}
 
-With {eh}, {es} becomes just an external https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL#LanguageManualDDL-CreateTable[table] in which data can be loaded or read from:
+With {eh}, {es} becomes just an external https://cwiki.apache.org/confluence/display/Hive/LanguageManual`DDL#LanguageManualDDL-CreateTable[table] in which data can be loaded or read from:
 
 [source,sql]
 ----
@@ -132,9 +136,10 @@ INSERT OVERWRITE TABLE artists
     SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
 ----
 
-<1> {es} Hive +StorageHandler+
+<1> {es} Hive `StorageHandler`
 <2> {es} resource (index and type) associated with the given storage
 
+[float]
 === Reading data from {es}
 
 Reading from {es} is strikingly similar:
@@ -152,5 +157,5 @@ TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
 SELECT * FROM artists;
 ----
 
-<1> same {es} Hive +StorageHandler+
+<1> same {es} Hive `StorageHandler`
 <2> {es} resource (in case of reading, a query) associated with the given storage

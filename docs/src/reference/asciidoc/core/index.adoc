@@ -1,14 +1,13 @@
+include::intro.adoc[]
 
-include::core/intro.adoc[]
+include::configuration.adoc[]
 
-include::core/configuration.adoc[]
+include::mr.adoc[]
 
-include::core/mr.adoc[]
+include::cascading.adoc[]
 
-include::core/cascading.adoc[]
+include::hive.adoc[]
 
-include::core/hive.adoc[]
+include::pig.adoc[]
 
-include::core/pig.adoc[]
-
-include::core/mapping.adoc[]
+include::mapping.adoc[]

@@ -16,10 +16,10 @@ Memory/IO Efficient:: {eh} is focused on performance. From pull-based parsing, t
 
 Facilitates data co-location:: {eh} fully integrates with Hadoop exposing its network access information, allowing co-located {es} and Hadoop clusters to be aware of each other and reduce network IO.
 
-Both 'old'(+mapred+) & 'new'(+mapreduce+) {mr} APIs supported:: {eh} automatically adjusts to your environment; one does not have to change between using the +mapred+ or +mapreduce+ APIs - both are supported, by the same classes, at the same time.
+Both 'old'(`mapred`) & 'new'(`mapreduce`) {mr} APIs supported:: {eh} automatically adjusts to your environment; one does not have to change between using the `mapred` or `mapreduce` APIs - both are supported, by the same classes, at the same time.
 
 Cascading support:: Cascading is an application framework for Java developers to simply develop robust applications on Apache Hadoop. And with {eh}, Cascading can run its flows directly onto {es}.
 
-Pig support:: {eh} supports Apache Pig exposing {es} as a _native_ Pig +Storage+. Run your Pig scripts against {es} without any modifications to your configuration or the Pig client.
+Pig support:: {eh} supports Apache Pig exposing {es} as a _native_ Pig `Storage`. Run your Pig scripts against {es} without any modifications to your configuration or the Pig client.
 
 Hive support:: Run Hive queries against {es} for advanced analystics and _real_time_ reponses. {eh} exposes {es} as a Hive table so your scripts can crunch through data faster then ever.

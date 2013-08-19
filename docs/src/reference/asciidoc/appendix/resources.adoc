@@ -8,7 +8,7 @@ Source repository:: http://github.com/elasticsearch/elasticsearch-hadoop[GitHub]
 
 Issue tracker:: http://github.com/elasticsearch/elasticsearch-hadoop/issues[GitHub]
 
-Mailing list / forum:: https://groups.google.com/forum/?fromgroups#!forum/elasticsearch[Google Groups] - please add +[Hadoop]+ prefix to the topic message
+Mailing list / forum:: https://groups.google.com/forum/?fromgroups#!forum/elasticsearch[Google Groups] - please add `[Hadoop]` prefix to the topic message
 
 Twitter:: http://twitter.com/elasticsearch[Elasticsearch], http://twitter.com/costinl[Costin Leau]
 
