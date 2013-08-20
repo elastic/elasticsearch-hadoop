@@ -53,7 +53,7 @@ TBLPROPERTIES('es.resource' = 'radio/artists/',
               'es.index.auto.create' = 'false') <1>;
 ----
 
-<1> {eh} settings
+<1> {eh} setting
 
 [[hive-alias]]
 [float]
