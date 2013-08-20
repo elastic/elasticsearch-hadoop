@@ -1,5 +1,7 @@
 include::intro.adoc[]
 
+include::arch.adoc[]
+
 include::configuration.adoc[]
 
 include::mr.adoc[]
