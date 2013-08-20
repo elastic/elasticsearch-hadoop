@@ -4,7 +4,6 @@
 [quote, Pig website]
 ____
 http://pig.apache.org/[Apache Pig] is a platform for analyzing large data sets that consists of a high-level language for expressing data analysis programs, coupled with infrastructure for evaluating these programs.
-
 ____
 It provides a high-level, powerful, _scripting_-like transformation language which gets compiled into {mr} jobs at runtime by the Pig 'compiler'. To simplify working with arbitrary data, Pig associates a 'schema' (or type information) with each data set for validation and performance. This in turn, breaks it down into 'discrete' data types that can be transformed through various operators or custom functions (or http://pig.apache.org/docs/r0.11.1/udf.html[UDF]s). Data can be loaded from and stored to various storages such as the local file-system or HDFS, and with {eh} into {es} as well.
 
@@ -68,7 +67,7 @@ the Pig alias will be implied and `ESStorage` will be used (instead of the fully
 === Mapping
 
 Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
-be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.column.aliases` setting which accepts a comma-separated list of names mapping in the following format: ``Pig field name` : ``{es} field name``
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.column.aliases` setting which accepts a comma-separated list of names mapping in the following format: `Pig field name` : `{es} field name`
 
 For example:
 
@@ -106,11 +105,11 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 | `bag`             | `array`
 | `map`             | `map`
 
-2`h| Available in Pig 0.10 or higher
+2+h| Available in Pig 0.10 or higher
 
 | `boolean` 	    | `boolean`
 
-2`h| Available in Pig 0.11 or higher
+2+h| Available in Pig 0.11 or higher
 
 | `datetime` 	    | `date`
 
