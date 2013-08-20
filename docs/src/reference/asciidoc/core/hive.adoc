@@ -29,7 +29,7 @@ $ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 ----
 or if the `hive-site.xml` configuration can be modified, one can register additional jars through the `hive.aux.jars.path` option (that accepts an URI as well):
 
-.`hive-ste.xml` configuration
+.`hive-site.xml` configuration
 [source,xml]
 ----
 <property>
