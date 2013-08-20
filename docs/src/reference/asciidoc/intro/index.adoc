@@ -1,4 +1,4 @@
-= About {eh}
+= About
 
 [partintro]
 --
