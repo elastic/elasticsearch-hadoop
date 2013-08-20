@@ -4,7 +4,7 @@
 {eh} behavior can be customized through the properties below, typically by setting them on the target job Hadoop `Configuration`. However some of them can be specified through other means depending on the library used (see the relevant section).
 
 ****
-{eh} uses the same conventions and reasonable defaults as {es} so you can try out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration option, please _do ask_ for more information.
+{eh} uses the same conventions and reasonable defaults as {es} so you can give it a try out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration option, please _do ask_ for more information.
 ****
 
 NOTE: All configuration properties start with the `es` prefix. The namespace `es.internal` is reserved by the library for its internal use and should _not_ be used by the user at any point.
