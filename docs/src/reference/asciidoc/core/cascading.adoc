@@ -26,7 +26,34 @@ Hadoop:: production mode - connects to a proper Hadoop cluster (as oppose to the
 
 Just like other libraries, {eh} needs to be available in the jar classpath (either by being manually deployed in the cluster or shipped along with the Hadoop job).
 
-[[type-conversion-cascading]]
+[[cascading-configuration]]
+[float]
+=== Configuration
+
+Cascading is configured through a `Map<Object, Object>`, typically a `Properties` object which indicates the various Cascading settings and also the application jar:
+
+[source,java]
+----
+Properties props = new Properties();
+AppProps.setApplicationJarClass(props, Main.class);
+FlowConnector flow = new HadoopFlowConnector(props);
+----
+
+{eh} options can be specified in the same way, these being picked up automatically by all `ESTap`s down the flow:
+
+[source,java]
+----
+Properties props = new Properties();
+props.setProperty("es.index.auto.create", "false"); <1>
+...
+FlowConnector flow = new HadoopFlowConnector(props);
+----
+
+<1> set {eh} option
+
+This approach can be used for local and remote/Hadoop flows - simply use the appropriate `FlowConnector`.
+
+[[cascading-type-conversion]]
 [float]
 === Type conversion
 
@@ -44,9 +71,12 @@ Simply hook, `ESTap` into the Cascading flow:
 ----
 Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
 				"src/test/resources/artists.dat");
-Tap out = new ESTap("radio/artists", new Fields("name", "url", "picture"));
+Tap out = new ESTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Eleasti")).complete();
 ----
+
+<1> {eh} resource (index and type)
+<2> Cascading tuple declaration
 
 [float]
 === Reading data from {es}
@@ -55,7 +85,9 @@ Just the same, add `ESTap` on the other end of a pipe, to read (instead of writi
 
 [source,java]
 ----
-Tap in = new ESTap("radio/artists/_search?q=me*");
+Tap in = new ESTap("radio/artists/_search?q=me*" <1>);
 Tap out = new StdOut(new TextLine());
 new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
 ----
+
+<1> {eh} resource (index and type)
