@@ -95,13 +95,14 @@ public class JdkValueWriter implements ValueWriter<Object> {
             generator.writeEndArray();
         }
         else if (value instanceof Date) {
-            throw new UnsupportedOperationException();
+            generator.writeNumber(((Date)value).getTime());
         }
         else if (value instanceof Calendar) {
+            generator.writeNumber(((Calendar)value).getTimeInMillis());
             throw new UnsupportedOperationException();
         }
         else if (value instanceof Timestamp) {
-            throw new UnsupportedOperationException();
+            generator.writeNumber(((Timestamp)value).getTime());
         }
         else {
             if (writeUnknownTypes) {
