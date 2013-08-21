@@ -19,6 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.junit.Test;
@@ -30,6 +31,24 @@ public class MRNewApiSearchTest {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set("es.resource", "mrnewapi/save/_search?q=*");
+
+        Job job = new Job(conf);
+        job.setInputFormatClass(ESInputFormat.class);
+        job.setOutputFormatClass(PrintStreamOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(MapWritable.class);
+
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        job.waitForCompletion(true);
+    }
+
+    @Test
+    public void testSearchNonExistingIndex() throws Exception {
+        Configuration conf = HdpBootstrap.hadoopConfig();
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
+        conf.set("es.resource", "foobar/save/_search?q=*");
 
         Job job = new Job(conf);
         job.setInputFormatClass(ESInputFormat.class);
