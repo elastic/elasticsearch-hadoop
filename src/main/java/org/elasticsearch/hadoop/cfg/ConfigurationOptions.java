@@ -68,4 +68,7 @@ public interface ConfigurationOptions {
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
 
+    String ES_INDEX_READ_MISSING_AS_EMPTY = "es.index.read.missing.as.empty";
+    String ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT = "false";
+
 }

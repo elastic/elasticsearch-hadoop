@@ -354,14 +354,22 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         Settings settings = SettingsManager.loadFrom(job);
         BufferedRestClient client = new BufferedRestClient(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
-        Field mapping = client.getMapping();
+
+        String savedMapping = null;
+        if (!targetShards.isEmpty()) {
+            Field mapping = client.getMapping();
+            //TODO: implement this more efficiently
+            savedMapping = IOUtils.serializeToBase64(mapping);
+            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
+        }
+
         client.close();
 
-        log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
-        //TODO: implement this more efficiently
-        String savedMapping = IOUtils.serializeToBase64(mapping);
+        if (settings.getIndexReadMissingAsEmpty() && targetShards.isEmpty()) {
+            log.info(String.format("Index [%s] missing - treating it as empty", settings.getTargetResource()));
+        }
 
-        if (log.isTraceEnabled()) {
+        else if (log.isTraceEnabled()) {
             log.trace("Creating splits for shards " + targetShards);
         }
 

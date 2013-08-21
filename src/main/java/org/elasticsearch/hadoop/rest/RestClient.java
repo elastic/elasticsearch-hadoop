@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ public class RestClient implements Closeable {
     private HttpClient client;
     private ObjectMapper mapper = new ObjectMapper();
     private TimeValue scrollKeepAlive;
+    private boolean indexReadMissingAsEmpty;
 
     public RestClient(Settings settings) {
         HttpClientParams params = new HttpClientParams();
@@ -70,11 +72,15 @@ public class RestClient implements Closeable {
         client.setHostConfiguration(hostConfig);
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
+        indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
     }
 
     @SuppressWarnings("unchecked")
     private <T> T get(String q, String string) throws IOException {
-        byte[] content = execute(new GetMethod(q));
+        return parseContent(execute(new GetMethod(q)), string);
+    }
+
+    private <T> T parseContent(byte[] content, String string) throws IOException {
         Map<String, Object> map = mapper.readValue(content, Map.class);
         return (T) (string != null ? map.get(string) : map);
     }
@@ -103,7 +109,22 @@ public class RestClient implements Closeable {
     }
 
     public List<List<Map<String, Object>>> targetShards(String query) throws IOException {
-        List<List<Map<String, Object>>> shardsJson = get(query, "shards");
+        List<List<Map<String, Object>>> shardsJson = null;
+
+        if (indexReadMissingAsEmpty) {
+            GetMethod get = new GetMethod(query);
+            byte[] content = execute(get, false);
+            if (get.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                shardsJson = Collections.emptyList();
+            }
+            else {
+                shardsJson = parseContent(content, "shards");
+            }
+        }
+        else {
+            shardsJson = get(query, "shards");
+        }
+
         return shardsJson;
     }
 
@@ -170,6 +191,7 @@ public class RestClient implements Closeable {
 
     public String[] scan(String query) throws IOException {
         Map<String, Object> scan = get(query, null);
+
         String[] data = new String[2];
         data[0] = scan.get("_scroll_id").toString();
         data[1] = ((Map) scan.get("hits")).get("total").toString();
