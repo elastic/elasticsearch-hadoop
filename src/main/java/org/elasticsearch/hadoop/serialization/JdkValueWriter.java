@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.xml.bind.DatatypeConverter;
+
 /**
  * Value writer for JDK types.
  */
@@ -95,13 +97,17 @@ public class JdkValueWriter implements ValueWriter<Object> {
             generator.writeEndArray();
         }
         else if (value instanceof Date) {
-            throw new UnsupportedOperationException();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime((Date) value);
+            generator.writeString(DatatypeConverter.printDateTime(cal));
         }
         else if (value instanceof Calendar) {
-            throw new UnsupportedOperationException();
+            generator.writeString(DatatypeConverter.printDateTime((Calendar) value));
         }
         else if (value instanceof Timestamp) {
-            throw new UnsupportedOperationException();
+            Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(((Timestamp) value).getTime());
+            generator.writeString(DatatypeConverter.printDateTime(cal));
         }
         else {
             if (writeUnknownTypes) {
