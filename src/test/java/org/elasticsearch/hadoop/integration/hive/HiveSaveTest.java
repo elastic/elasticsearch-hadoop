@@ -47,7 +47,7 @@ public class HiveSaveTest {
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/source/' ";
 
-        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE source";
+        String load = loadData("source");
 
         // create external table
         String ddl =
@@ -95,8 +95,7 @@ public class HiveSaveTest {
 
 
         // load the data - use the URI just to be sure
-        String uri = HiveSuite.hdfsResource;
-        String load = "LOAD DATA INPATH '" + uri + "' OVERWRITE INTO TABLE compoundSource";
+        String load = loadData("compoundSource");
 
 
         // create external table
@@ -133,7 +132,7 @@ public class HiveSaveTest {
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/timestampsource/' ";
 
-        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE timestampsource";
+        String load = loadData("timestampsource");
 
         // create external table
         String ddl =
@@ -172,7 +171,7 @@ public class HiveSaveTest {
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/aliassource/' ";
 
-        String load = "LOAD DATA INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE aliassource";
+        String load = loadData("aliassource");
 
         // create external table
         String ddl =
@@ -196,5 +195,9 @@ public class HiveSaveTest {
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(insert));
+    }
+
+    private String loadData(String tableName) {
+        return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }
 }

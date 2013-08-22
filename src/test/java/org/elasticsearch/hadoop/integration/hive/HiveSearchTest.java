@@ -117,4 +117,20 @@ public class HiveSearchTest {
         System.out.println(server.execute(create));
         System.out.println(server.execute(select));
     }
+
+    @Test
+    public void testMissingIndex() throws Exception {
+        String create = "CREATE EXTERNAL TABLE missing ("
+                + "daTE     TIMESTAMP, "
+                + "Name     STRING, "
+                + "links    STRUCT<uRl:STRING, pICture:STRING>) "
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "TBLPROPERTIES('es.resource' = 'foobar/missing/_search?q=*' ," +
+                                "'es.index.read.missing.as.empty' = 'true')";
+
+        String select = "SELECT * FROM missing";
+
+        System.out.println(server.execute(create));
+        System.out.println(server.execute(select));
+    }
 }
