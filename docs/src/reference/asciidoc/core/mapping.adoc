@@ -13,6 +13,11 @@ Need to split strings into token, do data validation or eliminate unneeded data 
 Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses on what is missing by recognizing and leveraging existing features. 
 ////
 
+[[mapping-date]]
+=== Time/Date mapping
+
+When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the http://www.elasticsearch.org/guide/reference/mapping/date-format/[date format] section in {eh} reference documentation for more information.
+
 === Automatic mapping
 
 By default, {es} provides http://www.elasticsearch.org/guide/reference/api/index_/[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
