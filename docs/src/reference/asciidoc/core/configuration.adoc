@@ -49,6 +49,9 @@ Number of results/items returned by each individual scroll.
 `es.index.auto.create` (default yes)::
 Whether {eh} should create an index (if its missing) when writing data to {es} or fail.
 
+`es.index.read.missing.as.empty` (default no)::
+Whether {eh} will allow reading of non existing indices (and return an empty data set) or not (and throw an exception)
+
 [float]
 ==== Serialization
 
