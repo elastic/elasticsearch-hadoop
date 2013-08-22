@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  */
 class FieldAlias {
 
-    private static final String COLUMN_ALIASES = "es.column.aliases";
+    private static final String MAPPING_NAMES = "es.mapping.names";
 
     private final Map<String, String> pigToES;
 
@@ -51,7 +51,7 @@ class FieldAlias {
     }
 
     static FieldAlias load(Settings settings) {
-        List<String> aliases = StringUtils.tokenize(settings.getProperty(COLUMN_ALIASES), ",");
+        List<String> aliases = StringUtils.tokenize(settings.getProperty(MAPPING_NAMES), ",");
 
         Map<String, String> aliasMap = new LinkedHashMap<String, String>();
 

@@ -67,12 +67,12 @@ the Pig alias will be implied and `ESStorage` will be used (instead of the fully
 === Mapping
 
 Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
-be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.column.aliases` setting which accepts a comma-separated list of names mapping in the following format: `Pig field name` : `{es} field name`
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of names mapping in the following format: `Pig field name` : `{es} field name`
 
 For example:
 
 ----
-LOAD '...' USING ESStorage('<1>es.column.aliases=date:@timestamp<2>, uRL:url<3>')
+LOAD '...' USING ESStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
 ----
 
 <1> name mapping for two fields

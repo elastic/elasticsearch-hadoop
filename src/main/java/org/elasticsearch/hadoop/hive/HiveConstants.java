@@ -26,5 +26,5 @@ interface HiveConstants {
 
     String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
     String TABLE_LOCATION = "location";
-    String COLUMN_ALIASES = "es.column.aliases";
+    String MAPPING_NAMES = "es.mapping.names";
 }

@@ -55,7 +55,7 @@ abstract class HiveUtils {
     }
 
     static FieldAlias alias(Properties tableProperties) {
-        List<String> aliases = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.COLUMN_ALIASES), ",");
+        List<String> aliases = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.MAPPING_NAMES), ",");
 
         Map<String, String> aliasMap = new LinkedHashMap<String, String>();
 

@@ -101,8 +101,9 @@ public class PigSaveTest {
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (Id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, CurrentTime() AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.column.aliases=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');";
+                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
+        System.out.println("TEST FIELD ALIAS**** ");
         pig.executeScript(script);
     }
 }

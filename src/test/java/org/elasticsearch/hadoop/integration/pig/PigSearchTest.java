@@ -74,7 +74,7 @@ public class PigSearchTest {
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.column.aliases=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');"
+ "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');"
                       + "A = LOAD 'pig/fieldalias/_search?q=me*' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
