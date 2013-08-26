@@ -1,12 +1,9 @@
 = Elasticsearch Hadoop
-:doctype: book
 :icons: 
 :eh: Elasticsearch Hadoop
 :es: Elasticsearch
 :mr: Map/Reduce
 :description: Reference documentation of {eh}
-
-// a2x: --xsltproc-opts "--stringparam chunk.section.depth 1"
 
 Welcome to the reference documentation of {eh} project.
 
