@@ -1,5 +1,5 @@
 [[architecture]]
-== {eh} and Hadoop
+== Architecture
 
 At the core, {eh} integrates two _distributed_ systems: *Hadoop*, a batch-oriented computing platform and *{es}*, a real-time search and analytics engine. From a high-level view both provide a computational component: Hadoop through {mr} and {es} through its search and aggregation.
 
