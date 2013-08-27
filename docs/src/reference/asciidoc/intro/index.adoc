@@ -2,15 +2,17 @@
 
 [partintro]
 --
-{eh} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
+{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
 Data flows 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
-{eh} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. 
+{ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster.
+[[project-name-alias]]
+While the official name of the project is {ehtm} throught out the documentation the term {eh} will be used instead to increase readability.
 
 include::typos.adoc[]
 --
 
 include::features.adoc[]
 
-// include::requirements.adoc[]
+include::requirements.adoc[]
 
-// include::download.adoc[]
+include::download.adoc[]
