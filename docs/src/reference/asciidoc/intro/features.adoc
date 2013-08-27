@@ -1,6 +1,6 @@
 == Key features
 
-The key features of {eh} include:
+The key features of {ehtm} include:
 
 Scalable {mr} model:: {eh} is built around {mr}: _every_ operation done in {eh} results in multiple Hadoop tasks (based on the number of target shards) that interact, in parallel with {es}.
 

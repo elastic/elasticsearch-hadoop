@@ -1,6 +1,7 @@
-= Elasticsearch Hadoop
+= Elasticsearch for Apache Hadoop (TM)
 :icons: 
-:eh: Elasticsearch Hadoop
+:ehtm: Elasticsearch for Apache Hadoop (TM)
+:eh: elasticsearch-hadoop
 :es: Elasticsearch
 :mr: Map/Reduce
 :description: Reference documentation of {eh}
