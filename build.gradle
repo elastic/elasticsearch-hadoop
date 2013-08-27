@@ -318,6 +318,7 @@ jar {
 	}
 }
 
+// this is in just as a convenience - the official docs are generated through an external process
 asciidoctor {
 	//logDocuments = true
 	sourceDir = file("docs/src/reference/asciidoc")
@@ -337,7 +338,7 @@ asciidoctor {
     ]
 }
 
-task distZip(type: Zip, dependsOn: [asciidoctor, jar, sourcesJar, javadocJar]) {
+task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
     //classifier = "dist"
     description = "Builds -${classifier} archive, containing all jars and docs, suitable for download page."
