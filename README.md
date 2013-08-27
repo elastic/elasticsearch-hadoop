@@ -200,7 +200,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 
 # Building the source
 
-ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine.
+ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default, it automatically runs unit tests. For integration testing, one can enable the various test suites through the `enableXXX` tasks (run `gradlew tasks enable` for hints). To enable all integration tests, use `gradlew enableIntegrationTests test build`
 
 To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build/libs`.
 
