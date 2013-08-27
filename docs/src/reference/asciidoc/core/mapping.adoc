@@ -1,5 +1,5 @@
 [[mapping]]
-== Mapping and Type conversion
+== Mapping and Types
 
 As explained in the previous sections, {eh} integrates closely with the Hadoop ecosystem and perform close introspection of the type information so that the data flow between {es} and Hadoop is as transparent as possible.
 This section takes a closer look at how the type conversion takes place and how data is mapped between the two systems.
