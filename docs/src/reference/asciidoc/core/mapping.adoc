@@ -7,7 +7,7 @@ This section takes a closer look at how the type conversion takes place and how 
 === Converting data to {es}
 
 By design, {eh} provides no data transformation or mapping layer itself simply because there is no need for them: Hadoop is designed to do ETL and some libraries (like Pig and Hive) provide type information themselves; further more {es} has rich support for mapping out of the box including automatic detection,  dynamic/schema-less mapping, templates and full manual control. 
-Need to split strings into token, do data validation or eliminate unneeded data ? there are plenty of ways to do that in Hadoop before reading/writing data from/to {es}; need control over how data is stored in {es} ? use {es} APIs to define the  http://www.elasticsearch.org/guide/reference/api/admin-indices-put-mapping/[mapping], to update http://www.elasticsearch.org/guide/reference/api/admin-indices-update-settings/[settings] or add generic http://www.elasticsearch.org/guide/reference/mapping/meta/[meta-data].
+Need to split strings into token, do data validation or eliminate unneeded data ? there are plenty of ways to do that in Hadoop before reading/writing data from/to {es}; need control over how data is stored in {es} ? use {es} APIs to define the  {ref}/indices-put-mapping.html[mapping], to update {ref}/indices-update-settings.html/[settings] or add generic {ref}/mapping-meta.html[meta-data].
 
 //// 
 Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses on what is missing by recognizing and leveraging existing features. 
@@ -16,14 +16,14 @@ Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses o
 [[mapping-date]]
 === Time/Date mapping
 
-When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the http://www.elasticsearch.org/guide/reference/mapping/date-format/[date format] section in {eh} reference documentation for more information.
+When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping/date-format.html/[date format] section in {eh} reference documentation for more information.
 
 === Automatic mapping
 
-By default, {es} provides http://www.elasticsearch.org/guide/reference/api/index_/[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
+By default, {es} provides {ref}/docs-index_.html/[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
 
 [[auto-mapping-type-loss]]
-It is important to remember that automatic mapping uses the payload values to identify its http://www.elasticsearch.org/guide/reference/mapping/core-types/[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - `byte`, `short`, `int`, `long` are all placed in the same `integer` 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
+It is important to remember that automatic mapping uses the payload values to identify its {ref}/mapping-core-types.html[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - `byte`, `short`, `int`, `long` are all placed in the same `integer` 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
 
 numbers mapped only as `long`/`double`:: Whenever {es} encounters a number, it will allocate the largest type for it since it does not know the exact number type of the field. Allocating a small type (such as `byte`, `int` or `float`) can lead to problems if a future document is larger, so {es} uses a safe default. 
 incorrect mapping:: This happens when a string field contains only numbers (say `1234`) - {es} has no information that the number is actually a string and thus it map the field as a number. The same issue tends to occur with dates and strings.
@@ -38,6 +38,6 @@ Only if the defaults need to be overridden and/or if you experience the problems
 === Explicit mapping
 
 Explicit or manual mapping should be considered only when the defaults need to be overridden and/or if you experience the problems exposed above. 
-Refer to {es} http://www.elasticsearch.org/guide/reference/api/admin-indices-create-index/[create index] and http://www.elasticsearch.org/guide/reference/api/admin-indices-put-mapping/[mapping] documentation on how to define an index and its types - note that these need to be present *before* data is being uploaded to {es} (otherwise automatic mapping will be used by {es}, if enabled).
+Refer to {es} {ref}/indices-create-index.html[create index] and {ref}/indices-put-mapping.html/[mapping] documentation on how to define an index and its types - note that these need to be present *before* data is being uploaded to {es} (otherwise automatic mapping will be used by {es}, if enabled).
 
-TIP: In most cases, http://www.elasticsearch.org/guide/reference/api/admin-indices-templates/[templates] are quite handy as they are automatically applied to new indices created that match the pattern; in other words instead of defining the mapping per index, one can just define the template once and then have it applied to all indices that match its pattern.
+TIP: In most cases, {ref}/indices-templates.html[templates] are quite handy as they are automatically applied to new indices created that match the pattern; in other words instead of defining the mapping per index, one can just define the template once and then have it applied to all indices that match its pattern.

@@ -21,7 +21,7 @@ $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-{eh} automatically converts Hadoop built-in `Writable` types to {es} http://www.elasticsearch.org/guide/reference/mapping/core-types/[types] (and back) as shown in the table below:
+{eh} automatically converts Hadoop built-in `Writable` types to {es} {ref}/mapping-core-types.html/[types] (and back) as shown in the table below:
 
 .`Writable` Conversion Table
 
@@ -51,7 +51,7 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 [float]
 === Writing data to {es}
 
-With {eh}, {mr} jobs can write data to {es} making it searchable through http://www.elasticsearch.org/guide/reference/glossary/#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
+With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
 
 `ESOutputFormat` expects a `Map<Writable, Writable>` value that it will convert into a JSON document; the key is ignored.
 

@@ -56,13 +56,13 @@ Whether {eh} will allow reading of non existing indices (and return an empty dat
 ==== Serialization
 
 `es.batch.size.bytes` (default 10mb)::
-Size (in bytes) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API
+Size (in bytes) for batch writes using {es} {ref}/docs-bulk.html[bulk] API
 
 `es.batch.size.entries` (default 0/disabled)::
-Size (in entries) for batch writes using {es} http://www.elasticsearch.org/guide/reference/api/bulk/[bulk] API. Companion to `es.batch.size.bytes`, once one matches, the batch update is executed.
+Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API. Companion to `es.batch.size.bytes`, once one matches, the batch update is executed.
 
 `es.batch.write.refresh` (default true)::
-Whether to invoke an http://www.elasticsearch.org/guide/reference/api/admin-indices-refresh/[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
+Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
 `es.ser.reader.class` (default _depends on the library used_)::
 Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.

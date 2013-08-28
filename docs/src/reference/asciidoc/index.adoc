@@ -1,9 +1,10 @@
 = Elasticsearch for Apache Hadoop
 :icons: 
-:ehtm: Elasticsearch for Apache Hadoop
-:eh: elasticsearch-hadoop
-:es: Elasticsearch
-:mr: Map/Reduce
+:ehtm: 	Elasticsearch for Apache Hadoop
+:eh: 	elasticsearch-hadoop
+:es: 	Elasticsearch
+:mr: 	Map/Reduce
+:ref:  	http://www.elasticsearch.org/guide/elasticsearch/reference/current
 :description: Reference documentation of {eh}
 
 Welcome to the reference documentation of {eh} project.
