@@ -16,7 +16,7 @@ Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses o
 [[mapping-date]]
 === Time/Date mapping
 
-When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping/date-format.html[date format] section in {eh} reference documentation for more information.
+When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping-date-format.html[date format] section in {eh} reference documentation for more information.
 
 === Automatic mapping
 
