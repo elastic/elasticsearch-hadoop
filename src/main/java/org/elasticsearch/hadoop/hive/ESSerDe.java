@@ -94,8 +94,7 @@ public class ESSerDe implements SerDe {
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
 
-        //TODO: are there any bad side-effects of this caching?  - note the given objInspector is disregarded
-        hiveType.setInfo(structTypeInfo);
+        hiveType.setObjectInspector(objInspector);
         hiveType.setObject(data);
 
         ContentBuilder.generate(bos, valueWriter).value(hiveType).flush().close();

@@ -197,6 +197,35 @@ public class HiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testExternalSerDe() throws Exception {
+        String localTable = "CREATE TABLE externalserde ("
+                + "data       STRING) "
+                + "ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' "
+                + "WITH SERDEPROPERTIES ('input.regex'='(.*)') "
+                + "LOCATION '/tmp/hive/warehouse/externalserde/' ";
+
+        String load = loadData("externalserde");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE externalserdetest ("
+                + "data     STRING)"
+                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
+                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
+                + "TBLPROPERTIES('es.resource' = 'hive/externalserde')";
+
+        String insert =
+                "INSERT OVERWRITE TABLE externalserdetest "
+                + "SELECT s.data FROM externalserde s";
+
+        //System.out.println(server.execute(jar));
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(insert));
+    }
+
     private String loadData(String tableName) {
         return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }

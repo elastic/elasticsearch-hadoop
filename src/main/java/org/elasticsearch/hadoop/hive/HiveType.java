@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 
 /**
  * Wrapper class around a Hive type - the value and its associated schema.
@@ -23,11 +23,11 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 public class HiveType {
 
     private Object object;
-    private TypeInfo info;
+    private ObjectInspector oi;
 
-    public HiveType(Object object, TypeInfo info) {
+    public HiveType(Object object, ObjectInspector info) {
         this.object = object;
-        this.info = info;
+        this.oi = info;
     }
 
     public Object getObject() {
@@ -38,11 +38,11 @@ public class HiveType {
         this.object = object;
     }
 
-    public TypeInfo getInfo() {
-        return info;
+    public ObjectInspector getObjectInspector() {
+        return oi;
     }
 
-    public void setInfo(TypeInfo info) {
-        this.info = info;
+    public void setObjectInspector(ObjectInspector oi) {
+        this.oi = oi;
     }
 }

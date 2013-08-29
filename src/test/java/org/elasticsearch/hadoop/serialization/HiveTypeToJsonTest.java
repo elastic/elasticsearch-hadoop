@@ -25,7 +25,9 @@ import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
+import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.BooleanWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.FloatWritable;
@@ -46,6 +48,17 @@ import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.*;
 public class HiveTypeToJsonTest {
 
     private static FastByteArrayOutputStream out;
+
+    private static class MyHiveType extends HiveType {
+
+        public MyHiveType(Object object, ObjectInspector info) {
+            super(object, info);
+        }
+
+        public MyHiveType(Object object, TypeInfo info) {
+            super(object, TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(info));
+        }
+    }
 
     @BeforeClass
     public static void beforeClass() {
@@ -69,70 +82,70 @@ public class HiveTypeToJsonTest {
 
     @Test
     public void testNull() {
-        hiveTypeToJson(new HiveType(null, voidTypeInfo));
+        hiveTypeToJson(new MyHiveType(null, voidTypeInfo));
     }
 
     @Test
     public void testString() {
-        hiveTypeToJson(new HiveType(new Text("some string"), stringTypeInfo));
+        hiveTypeToJson(new MyHiveType(new Text("some string"), stringTypeInfo));
     }
 
     @Test
     public void testLong() {
-        hiveTypeToJson(new HiveType(new LongWritable(Long.MAX_VALUE), longTypeInfo));
+        hiveTypeToJson(new MyHiveType(new LongWritable(Long.MAX_VALUE), longTypeInfo));
     }
 
     @Test
     public void testInteger() {
-        hiveTypeToJson(new HiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo));
+        hiveTypeToJson(new MyHiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo));
     }
 
     @Test
     public void testDouble() {
-        hiveTypeToJson(new HiveType(new DoubleWritable(Double.MAX_VALUE), doubleTypeInfo));
+        hiveTypeToJson(new MyHiveType(new DoubleWritable(Double.MAX_VALUE), doubleTypeInfo));
     }
 
     @Test
     public void testFloat() {
-        hiveTypeToJson(new HiveType(new FloatWritable(Float.MAX_VALUE), floatTypeInfo));
+        hiveTypeToJson(new MyHiveType(new FloatWritable(Float.MAX_VALUE), floatTypeInfo));
     }
 
     @Test
     public void testBoolean() {
-        hiveTypeToJson(new HiveType(new BooleanWritable(Boolean.TRUE), booleanTypeInfo));
+        hiveTypeToJson(new MyHiveType(new BooleanWritable(Boolean.TRUE), booleanTypeInfo));
     }
 
     @Test
     public void testByte() {
         // byte is not recognized by the schema
-        hiveTypeToJson(new HiveType(new ByteWritable(Byte.MAX_VALUE), byteTypeInfo));
+        hiveTypeToJson(new MyHiveType(new ByteWritable(Byte.MAX_VALUE), byteTypeInfo));
     }
 
     @Test
     public void testShort() {
         // byte is not recognized by the schema
-        hiveTypeToJson(new HiveType(new ShortWritable(Short.MAX_VALUE), shortTypeInfo));
+        hiveTypeToJson(new MyHiveType(new ShortWritable(Short.MAX_VALUE), shortTypeInfo));
     }
 
     @Test
     public void testByteArray() {
-        hiveTypeToJson(new HiveType(new BytesWritable("byte array".getBytes()), binaryTypeInfo));
+        hiveTypeToJson(new MyHiveType(new BytesWritable("byte array".getBytes()), binaryTypeInfo));
     }
 
     @Test
     public void testDecimal() {
-        hiveTypeToJson(new HiveType(new HiveDecimalWritable(new HiveDecimal(BigDecimal.ONE)), decimalTypeInfo));
+        hiveTypeToJson(new MyHiveType(new HiveDecimalWritable(new HiveDecimal(BigDecimal.ONE)), decimalTypeInfo));
     }
 
     @Test
     public void testList() {
-        hiveTypeToJson(new HiveType(Arrays.asList(new Object[] { new Text("one"), new Text("two") }),
+        hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("one"), new Text("two") }),
                 getListTypeInfo(stringTypeInfo)));
     }
 
     @Test
     public void testMap() {
-        hiveTypeToJson(new HiveType(Collections.singletonMap(new IntWritable(1), new Text("key")), getMapTypeInfo(
+        hiveTypeToJson(new MyHiveType(Collections.singletonMap(new IntWritable(1), new Text("key")), getMapTypeInfo(
                 intTypeInfo, stringTypeInfo)));
     }
 
@@ -140,7 +153,8 @@ public class HiveTypeToJsonTest {
     public void testStruct() {
         List<String> names = Arrays.asList(new String[] { "one", "two" });
         List<TypeInfo> types = Arrays.asList(new TypeInfo[] { stringTypeInfo, intTypeInfo });
-        hiveTypeToJson(new HiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }), getStructTypeInfo(names, types)));
+        hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }),
+                getStructTypeInfo(names, types)));
     }
 
     private void hiveTypeToJson(HiveType obj) {
