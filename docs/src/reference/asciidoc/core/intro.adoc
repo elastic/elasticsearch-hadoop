@@ -1,10 +1,11 @@
+[[reference]]
 = Reference
 
 [partintro]
 --
 This part of the documentation explains the core functionality of {eh} starting with the configuration options and architecture and gradually explaining the various major features. We recommend going through the entire documentation even superficially when trying out {eh} for the first time, however those in a rush, can jump directly to the desired sections:
 
-<<architecture>>:: overview of the {eh} architecture and how it maps on top of {mr}
+<<arch>>:: overview of the {eh} architecture and how it maps on top of {mr}
 
 <<configuration>>:: explore the various configuration switches in {eh}
 
