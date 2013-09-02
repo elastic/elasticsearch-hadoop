@@ -1,5 +1,7 @@
+[[about]]
 = About
 
+[[about-intro]]
 [partintro]
 --
 {ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
