@@ -70,7 +70,7 @@ Name of the `ValueReader` implementation for converting JSON to objects. This is
 `es.ser.writer.class` (default _depends on the library used_)::
 Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-[[runtime-configuration]]
+[[configuration-runtime]]
 == Hadoop runtime options
 
 When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
