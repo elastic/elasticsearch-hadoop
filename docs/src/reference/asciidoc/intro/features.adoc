@@ -1,3 +1,4 @@
+[[features]]
 == Key features
 
 The key features of {ehtm} include:
