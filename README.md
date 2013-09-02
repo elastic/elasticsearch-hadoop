@@ -1,4 +1,4 @@
-# Elasticsearch Hadoop [![Build Status](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
+# Elasticsearch Hadoop [![Build Status](https://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
 Read and write data to/from Elasticsearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
 # Requirements
@@ -28,7 +28,7 @@ We're working towards a first release. In the meantime, grab the latest nightly 
 
 or [build](#building-the-source) the project yourself. 
 
-We do build and test the code on _each_ commit; see our CI server [![here](http://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
+We do build and test the code on _each_ commit; see our CI server [![here](https://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
 
 ## Hadoop 2.0/YARN build
 
