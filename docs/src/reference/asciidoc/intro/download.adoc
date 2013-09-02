@@ -40,7 +40,7 @@ Additionally, one can use the following repository which contains both releases 
 </repositories>
 ----
 
-
+[[download-dev]]
 === Development Builds
 
 Development (or nightly or snapshots) builds are published daily at the aforementioned 'sonatype-oss' repository. Make sure to
