@@ -26,7 +26,6 @@ Hadoop:: production mode - connects to a proper Hadoop cluster (as oppose to the
 
 Just like other libraries, {eh} needs to be available in the jar classpath (either by being manually deployed in the cluster or shipped along with the Hadoop job).
 
-[[cascading-configuration]]
 [float]
 === Configuration
 
@@ -53,7 +52,6 @@ FlowConnector flow = new HadoopFlowConnector(props);
 
 This approach can be used for local and remote/Hadoop flows - simply use the appropriate `FlowConnector`.
 
-[[cascading-type-conversion]]
 [float]
 === Type conversion
 
@@ -62,6 +60,7 @@ Depending on the http://docs.cascading.org/cascading/2.1/userguide/htmlch03s04.h
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
+[[cascading-writing]]
 [float]
 === Writing data to {es}
 
