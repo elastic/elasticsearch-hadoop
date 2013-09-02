@@ -4,6 +4,7 @@
 As explained in the previous sections, {eh} integrates closely with the Hadoop ecosystem and perform close introspection of the type information so that the data flow between {es} and Hadoop is as transparent as possible.
 This section takes a closer look at how the type conversion takes place and how data is mapped between the two systems.
 
+[float]
 === Converting data to {es}
 
 By design, {eh} provides no data transformation or mapping layer itself simply because there is no need for them: Hadoop is designed to do ETL and some libraries (like Pig and Hive) provide type information themselves; further more {es} has rich support for mapping out of the box including automatic detection,  dynamic/schema-less mapping, templates and full manual control. 
@@ -13,11 +14,13 @@ Need to split strings into token, do data validation or eliminate unneeded data 
 Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses on what is missing by recognizing and leveraging existing features. 
 ////
 
+[float]
 [[mapping-date]]
 === Time/Date mapping
 
 When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping-date-format.html[date format] section in {eh} reference documentation for more information.
 
+[float]
 === Automatic mapping
 
 By default, {es} provides {ref}/docs-index_.html[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
@@ -30,10 +33,12 @@ incorrect mapping:: This happens when a string field contains only numbers (say 
 
 Only if the defaults need to be overridden and/or if you experience the problems exposed below, consider using <<explicit-mapping>>.
 
+[float]
 ==== Disabling automatic mapping
 
 {es} allows 'automatic index creation' as well as 'dynamic mapping' (for extra fields present in documents) to be disabled through the `action.auto_create_index` and `index.mapper.dynamic` settings on the nodes config files. As a safety net, {eh} provides a dedicated configuration <<configuration-options-index,option>> `es.index.auto.create` which allows {eh} to either create the index or not without having to modify the {es} cluster options.
 
+[float]
 [[explicit-mapping]]
 === Explicit mapping
 
