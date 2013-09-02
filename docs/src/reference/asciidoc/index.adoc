@@ -7,6 +7,7 @@
 :ref:  	http://www.elasticsearch.org/guide/elasticsearch/reference/current
 :description: Reference documentation of {eh}
 
+[[welcome]]
 Welcome to the reference documentation of {eh} project.
 
 include::intro/index.adoc[]
