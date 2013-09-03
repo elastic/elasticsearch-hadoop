@@ -13,6 +13,7 @@ It provides a high-level, powerful, _scripting_-like transformation language whi
 
 In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.11.1/basic.html#register[REGISTER] command is used:
 
+[source,sql]
 ----
 REGISTER /path/elasticsearch-hadoop.jar;
 ----
@@ -42,6 +43,7 @@ script.pig
 
 With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop `Configuration` object) as a constructor parameter when declaring `ESStorage`:
 
+[source,sql]
 ----
 STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
 	         ('es.http.timeout = 5m<2> ;<3>
@@ -55,8 +57,9 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
 
 TIP: To avoid having to specify the fully qualified class name (`org.elasticsearch.hadoop.pig.ESStorage`), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[`DEFINE`] command:
 
+[source,sql]
 ----
-DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');"
+DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');
 ----
 
 Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication. In fact, for the reminder of this section, 
@@ -71,6 +74,7 @@ be used with {es} (invalid characters, existing names with different layout, etc
 
 For example:
 
+[source,sql]
 ----
 LOAD '...' USING ESStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
 ----
@@ -122,6 +126,7 @@ NOTE: While {es} understands the Pig types up to version 0.11, it is backwards c
 
 {es} is exposed as a native `Storage` to Pig so it can be used to store data into it:
 
+[source,sql]
 ----
 -- load data from HDFS into Pig using a schema
 A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
@@ -140,6 +145,7 @@ STORE B INTO 'radio/artists'<1> USING ESStorage(<2>);
 
 As you would expect, loading the data is straight forward:
 
+[source,sql]
 ----
 -- load data from Elasticsearch into Pig
 A = LOAD 'radio/artists/_search?q=me*'<1> USING ESStorage(<2>);
