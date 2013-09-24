@@ -51,6 +51,11 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         public void setupJob(JobContext jobContext) throws IOException {
         }
 
+        // compatibility check with Hadoop 0.20.2
+        @Deprecated
+        public void cleanupJob(JobContext jobContext) throws IOException {
+        }
+
         @Override
         public void setupTask(TaskAttemptContext taskContext) throws IOException {
             //no-op
@@ -71,6 +76,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         public void abortTask(TaskAttemptContext taskContext) throws IOException {
             //no-op
         }
+
     }
 
     public static class ESOldAPIOutputCommitter extends org.apache.hadoop.mapred.OutputCommitter {
@@ -147,8 +153,8 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // new API - just delegates to the Old API
     //
     @Override
-    public ESRecordWriter getRecordWriter(TaskAttemptContext context) {
-        return getRecordWriter(null, (JobConf) context.getConfiguration(), null, context);
+    public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
+        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(), null, context);
     }
 
     @Override
@@ -166,7 +172,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // old API
     //
     @Override
-    public ESRecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) {
+    public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) {
         return new ESRecordWriter(job);
     }
 

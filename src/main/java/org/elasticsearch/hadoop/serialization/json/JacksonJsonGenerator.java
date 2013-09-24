@@ -19,23 +19,41 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.commons.lang.SerializationException;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class JacksonJsonGenerator implements Generator {
 
+    private static final boolean JACKSON_16;
     private static final JsonFactory JSON_FACTORY;
     private final JsonGenerator generator;
 
     static {
+        Class<?> versionClass = null;
+        try {
+            versionClass = Class.forName("org.codehaus.jackson.Version", false, JacksonJsonGenerator.class.getClassLoader());
+        } catch (Exception ex) {
+            // ignore
+        }
+        JACKSON_16 = (versionClass != null);
+
+        if (JACKSON_16) {
+            LogFactory.getLog(JacksonJsonGenerator.class).warn(
+                    "Old Jackson version (pre-1.7) detected; consider upgrading to improve performance");
+        }
+
         JSON_FACTORY = new JsonFactory();
         JSON_FACTORY.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
     }
 
     public JacksonJsonGenerator(OutputStream out) {
         try {
-            this.generator = JSON_FACTORY.createJsonGenerator(out);
+            // use dedicated method to lower Jackson requirement
+            this.generator = JSON_FACTORY.createJsonGenerator(out, JsonEncoding.UTF8);
         } catch (IOException ex) {
             throw new SerializationException(ex);
         }
@@ -102,7 +120,12 @@ public class JacksonJsonGenerator implements Generator {
     @Override
     public void writeUTF8String(byte[] text, int offset, int len) {
         try {
-            generator.writeUTF8String(text, offset, len);
+            if (JACKSON_16) {
+                generator.writeUTF8String(text, offset, len);
+            }
+            else {
+                generator.writeString(new String(text, offset, len, StringUtils.UTF_8));
+            }
         } catch (IOException ex) {
             throw new SerializationException(ex);
         }

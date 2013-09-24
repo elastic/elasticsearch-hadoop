@@ -117,7 +117,7 @@ public abstract class Provisioner {
             }
 
             new GenericOptionsParser(cfg, list.toArray(new String[list.size()]));
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new IllegalStateException(ex);
         }
     }

@@ -39,6 +39,7 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
@@ -81,7 +82,9 @@ public class RestClient implements Closeable {
     }
 
     private <T> T parseContent(byte[] content, String string) throws IOException {
-        Map<String, Object> map = mapper.readValue(content, Map.class);
+        // create parser manually to lower Jackson requirements
+        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
+        Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
         return (T) (string != null ? map.get(string) : map);
     }
 

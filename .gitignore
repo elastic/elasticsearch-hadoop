@@ -9,3 +9,4 @@ build
 *.iws
 *.log
 metastore_db
+.idea
