@@ -17,6 +17,8 @@ package org.elasticsearch.hadoop.integration;
 
 import java.io.File;
 
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.rules.ExternalResource;
 
@@ -33,9 +35,19 @@ public class LocalES extends ExternalResource {
     public static final String TRANSPORT_PORTS_SLAVE = "9800-9899";
 
     private boolean USE_SLAVE = false;
+    private boolean disabled = false;
 
     @Override
     protected void before() throws Throwable {
+
+        String host = HdpBootstrap.hadoopConfig().get("es.host");
+        String port = HdpBootstrap.hadoopConfig().get("es.port");
+        if (StringUtils.hasText(host) || StringUtils.hasText(port)) {
+            disabled = true;
+            LogFactory.getLog(getClass()).warn("es.host/port specified; assuming an external instance and bailing out...");
+            return;
+        }
+
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
             master = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
