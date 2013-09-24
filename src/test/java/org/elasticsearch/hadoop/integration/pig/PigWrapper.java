@@ -18,16 +18,18 @@ package org.elasticsearch.hadoop.integration.pig;
 import java.io.ByteArrayInputStream;
 import java.util.Properties;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 
 /**
  * Wrapper around Pig.
  */
-public class LocalPig {
+public class PigWrapper {
 
     private PigServer pig;
 
@@ -43,8 +45,16 @@ public class LocalPig {
     protected PigServer createPig() throws ExecException {
         HdpBootstrap.hackHadoopStagingOnWin();
         Properties properties = new TestSettings().getProperties();
+        String pigHost = properties.getProperty("pig");
+        // remote Pig instance
+        if (StringUtils.hasText(pigHost) && !"local".equals(pig)) {
+            LogFactory.getLog(PigWrapper.class).info("Executing Pig in Map/Reduce mode");
+            return new PigServer(ExecType.MAPREDUCE, properties);
+        }
+
+        // use local instance
+        LogFactory.getLog(PigWrapper.class).info("Executing Pig in local mode");
         properties.put("mapred.job.tracker", "local");
-        properties.put("fs.default.name", "file:///");
         return new PigServer(ExecType.LOCAL, properties);
     }
 

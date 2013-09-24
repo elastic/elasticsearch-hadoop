@@ -24,11 +24,11 @@ import org.junit.Test;
  */
 public class PigSearchTest {
 
-    static LocalPig pig;
+    static PigWrapper pig;
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new LocalPig();
+        pig = new PigWrapper();
         pig.start();
     }
 

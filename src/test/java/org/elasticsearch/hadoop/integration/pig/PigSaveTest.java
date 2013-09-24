@@ -26,11 +26,11 @@ import org.junit.Test;
  */
 public class PigSaveTest {
 
-    static LocalPig pig;
+    static PigWrapper pig;
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new LocalPig();
+        pig = new PigWrapper();
         pig.start();
 
         // initialize Pig in local mode
