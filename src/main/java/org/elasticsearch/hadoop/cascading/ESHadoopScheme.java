@@ -129,8 +129,9 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
         SerializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(ESTap.class));
 
-        // NB: there's no es:// protocol - this is just a fake placeholder that will cause exceptions if any File-based output class is used
-        conf.set("mapred.output.dir", "es://" + set.getTargetUri() + "/" + set.getTargetResource());
+        // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
+        //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
+        conf.set("mapred.output.dir", set.getTargetResource());
         conf.set("mapred.output.committer.class", ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
     }
 
