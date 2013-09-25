@@ -56,4 +56,12 @@ public class HdfsUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static String qualify(String path, Configuration config) {
+        try {
+            return new Path(path).makeQualified(FileSystem.get(config)).toString();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot qualify " + path);
+        }
+    }
 }

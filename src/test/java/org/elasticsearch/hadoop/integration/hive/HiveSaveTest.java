@@ -25,11 +25,17 @@ public class HiveSaveTest {
 
 
     @Before
-    public void provision() {
+    public void provision() throws Exception {
         // provision on each test run since LOAD DATA _moves_ the file
         if (!isLocal) {
             hdfsResource = "/eshdp/hive/hive-compund.dat";
             HdfsUtils.copyFromLocal(originalResource, hdfsResource);
+        }
+
+        String jar = "ADD JAR " + HiveSuite.hdfsEsLib;
+
+        if (!isLocal) {
+            System.out.println(server.execute(jar));
         }
     }
 
@@ -38,7 +44,6 @@ public class HiveSaveTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        //String jar = "ADD JAR /tmp/es-hadoop.jar";
         String localTable = "CREATE TABLE source ("
                 + "id       BIGINT, "
                 + "name     STRING, "
@@ -55,18 +60,16 @@ public class HiveSaveTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
-                + "TBLPROPERTIES('es.resource' = 'hive/artists') ";
+                + tableProps("hive/artists");
 
-        String selectTest = "SELECT NULL, s.name, struct(s.url, s.picture) FROM source s";
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM source s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE artistssave "
                 + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
-        //System.out.println(server.execute(jar));
+        System.out.println(ddl);
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -77,8 +80,6 @@ public class HiveSaveTest {
     @Test
     // see http://shmsoft.blogspot.ro/2011/10/loading-inner-maps-in-hive.html
     public void testCompoundSave() throws Exception {
-
-        //String jar = "ADD JAR /tmp/es-hadoop.jar";
 
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -104,8 +105,7 @@ public class HiveSaveTest {
                 + "rid      INT, "
                 + "mapids   ARRAY<INT>, "
                 + "rdata    MAP<INT, STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/compound') ";
+                + tableProps("hive/compound");
 
         String selectTest = "SELECT rid, mapids, rdata FROM compoundsource";
 
@@ -114,7 +114,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE compoundsave "
                 + "SELECT rid, mapids, rdata FROM compoundsource";
 
-        //System.out.println(server.execute(jar));
+        System.out.println(ddl);
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));
@@ -141,9 +141,7 @@ public class HiveSaveTest {
                 + "date     TIMESTAMP, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
-                + "TBLPROPERTIES('es.resource' = 'hive/artiststimestamp') ";
+                + tableProps("hive/artiststimestamp");
 
         String currentDate = "SELECT *, from_unixtime(unix_timestamp()) from timestampsource";
 
@@ -153,7 +151,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE artiststimestampsave "
                 + "SELECT NULL, from_unixtime(unix_timestamp()), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
 
-        //System.out.println(server.execute(jar));
+        System.out.println(ddl);
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -179,10 +177,7 @@ public class HiveSaveTest {
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
-                + "TBLPROPERTIES('es.resource' = 'hive/aliassave' ," +
-                                "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123')";
+                + tableProps("hive/aliassave", "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
@@ -190,7 +185,7 @@ public class HiveSaveTest {
                 "INSERT OVERWRITE TABLE aliassave "
                 + "SELECT from_unixtime(unix_timestamp()), s.name, named_struct('uRl', s.url, 'pICture', s.picture) FROM aliassource s";
 
-        //System.out.println(server.execute(jar));
+        System.out.println(ddl);
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -211,15 +206,13 @@ public class HiveSaveTest {
         String ddl =
                 "CREATE EXTERNAL TABLE externalserdetest ("
                 + "data     STRING)"
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "WITH SERDEPROPERTIES ('serder.foo' = 'serder.bar') "
-                + "TBLPROPERTIES('es.resource' = 'hive/externalserde')";
+                + tableProps("hive/externalserde");
 
         String insert =
                 "INSERT OVERWRITE TABLE externalserdetest "
                 + "SELECT s.data FROM externalserde s";
 
-        //System.out.println(server.execute(jar));
+        System.out.println(ddl);
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
@@ -229,4 +222,5 @@ public class HiveSaveTest {
     private String loadData(String tableName) {
         return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }
+
 }

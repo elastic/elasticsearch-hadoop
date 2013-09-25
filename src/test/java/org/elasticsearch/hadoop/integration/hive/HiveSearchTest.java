@@ -29,8 +29,7 @@ public class HiveSearchTest {
                 + "id 		BIGINT, "
                 + "name 	STRING, "
                 + "links 	STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
+                + tableProps("hive/artists/_search?q=*");
 
         String select = "SELECT * FROM artistsload";
 
@@ -44,8 +43,7 @@ public class HiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
+                + tableProps("hive/artists/_search?q=*");
 
         String select = "SELECT count(*) FROM artistscount";
 
@@ -60,8 +58,7 @@ public class HiveSearchTest {
                 + "rid      INT, "
                 + "mapids   ARRAY<INT>, "
                 + "rdata    MAP<STRING, STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/compound/_search?q=*') ";
+                + tableProps("hive/compound/_search?q=*");
 
         String select = "SELECT * FROM compoundarray";
 
@@ -76,8 +73,7 @@ public class HiveSearchTest {
                 + "date     TIMESTAMP, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/artiststimestamp/_search?q=*') ";
+                + tableProps("hive/artiststimestamp/_search?q=*");
 
         String select = "SELECT date FROM timestampload";
         String select2 = "SELECT unix_timestamp(), date FROM timestampload";
@@ -93,8 +89,7 @@ public class HiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/artists/_search?q=*') ";
+                + tableProps("hive/artists/_search?q=*");
 
         String select = "SELECT java_method(\"java.lang.System\", \"currentTimeMillis\") FROM methodInvocation LIMIT 1";
 
@@ -108,9 +103,7 @@ public class HiveSearchTest {
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'hive/aliassave/_search?q=*' ," +
-                                "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123')";
+                + tableProps("hive/aliassave/_search?q=*", "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123'");
 
         String select = "SELECT * FROM aliasload";
 
@@ -124,9 +117,7 @@ public class HiveSearchTest {
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + "STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' "
-                + "TBLPROPERTIES('es.resource' = 'foobar/missing/_search?q=*' ," +
-                                "'es.index.read.missing.as.empty' = 'true')";
+                + tableProps("foobar/missing/_search?q=*", "'es.index.read.missing.as.empty' = 'true'");
 
         String select = "SELECT * FROM missing";
 

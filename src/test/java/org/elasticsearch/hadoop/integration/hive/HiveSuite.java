@@ -19,12 +19,14 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -47,6 +49,9 @@ public class HiveSuite {
 
     static String originalResource;
     static String hdfsResource;
+    static String hdfsEsLib;
+    static Configuration hadoopConfig;
+
 
     static {
         try {
@@ -86,17 +91,46 @@ public class HiveSuite {
     public static ExternalResource resource = new ChainedExternalResource(new LocalES(), hive);
 
     @BeforeClass
-    public static void setup() {
+    public static void setup() throws Exception {
         if (!isLocal) {
+            hadoopConfig = HdpBootstrap.hadoopConfig();
+
             HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+            hdfsEsLib = HdfsUtils.qualify(Provisioner.HDFS_ES_HDP_LIB, hadoopConfig);
             // copy jar to DistributedCache
             try {
-                DistributedCache.addArchiveToClassPath(new Path(Provisioner.HDFS_ES_HDP_LIB), HdpBootstrap.hadoopConfig());
+                DistributedCache.addArchiveToClassPath(new Path(Provisioner.HDFS_ES_HDP_LIB), hadoopConfig);
             } catch (IOException ex) {
                 throw new RuntimeException("Cannot provision Hive", ex);
             }
+
             hdfsResource = "/eshdp/hive/hive-compund.dat";
             HdfsUtils.copyFromLocal(originalResource, hdfsResource);
+            hdfsResource = HdfsUtils.qualify(hdfsResource, hadoopConfig);
         }
+    }
+
+
+    public static String tableProps(String resource, String... params) {
+        StringBuilder sb = new StringBuilder("STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' ");
+
+        sb.append("TBLPROPERTIES('es.resource' = '" + resource + "' ");
+
+        for (String string : params) {
+            sb.append(",");
+            sb.append(string);
+        }
+
+        if (!isLocal) {
+            String host = hadoopConfig.get("es.host");
+            if (StringUtils.hasText(host)) {
+                sb.append(",'es.host'='" + host + "'");
+            }
+            String port = hadoopConfig.get("es.port");
+            sb.append(",'es.port'='" + port + "'");
+        }
+
+        sb.append(")");
+        return sb.toString();
     }
 }
