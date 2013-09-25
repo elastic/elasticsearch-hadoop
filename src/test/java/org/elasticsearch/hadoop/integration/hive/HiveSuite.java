@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
@@ -35,9 +36,11 @@ import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
-//@Suite.SuiteClasses({ HiveSaveTest.class })
+//@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
+@Suite.SuiteClasses({ HiveSearchTest.class })
 public class HiveSuite {
 
     static HiveInstance server;
@@ -132,5 +135,19 @@ public class HiveSuite {
 
         sb.append(")");
         return sb.toString();
+    }
+
+    public static void provisionEsLib() throws Exception {
+        // provision on each test run since LOAD DATA _moves_ the file
+        if (!isLocal) {
+            hdfsResource = "/eshdp/hive/hive-compund.dat";
+            HdfsUtils.copyFromLocal(originalResource, hdfsResource);
+        }
+
+        String jar = "ADD JAR " + HiveSuite.hdfsEsLib;
+
+        if (!isLocal) {
+            System.out.println(server.execute(jar));
+        }
     }
 }

@@ -15,12 +15,19 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 public class HiveSearchTest {
+
+    @Before
+    public void provision() throws Exception {
+        provisionEsLib();
+    }
+
 
     @Test
     public void basicLoad() throws Exception {

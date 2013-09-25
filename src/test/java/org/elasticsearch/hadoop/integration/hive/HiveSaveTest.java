@@ -26,17 +26,7 @@ public class HiveSaveTest {
 
     @Before
     public void provision() throws Exception {
-        // provision on each test run since LOAD DATA _moves_ the file
-        if (!isLocal) {
-            hdfsResource = "/eshdp/hive/hive-compund.dat";
-            HdfsUtils.copyFromLocal(originalResource, hdfsResource);
-        }
-
-        String jar = "ADD JAR " + HiveSuite.hdfsEsLib;
-
-        if (!isLocal) {
-            System.out.println(server.execute(jar));
-        }
+        provisionEsLib();
     }
 
     @Test
