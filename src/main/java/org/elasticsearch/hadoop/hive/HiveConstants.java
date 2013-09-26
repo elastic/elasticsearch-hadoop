@@ -23,7 +23,7 @@ interface HiveConstants {
     String OUTPUT_COMMITTER = "mapred.output.committer.class";
     String COLUMNS = "columns";
     String COLUMNS_TYPES = "columns.types";
-    String UNNAMED_COLUMN_PREFIX = "_col";
+    String UNNAMED_COLUMN_PREFIX="_col";
 
     String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
     String TABLE_LOCATION = "location";
