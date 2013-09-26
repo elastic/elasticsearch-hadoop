@@ -118,7 +118,7 @@ public class FastByteArrayOutputStream extends OutputStream {
      * @see java.io.ByteArrayOutputStream#count
      */
     public int size() {
-        return data.size;
+        return data.size();
     }
 
     /**
@@ -130,7 +130,7 @@ public class FastByteArrayOutputStream extends OutputStream {
      * @see java.io.ByteArrayInputStream#count
      */
     public void reset() {
-        data.size = 0;
+        data.reset();
     }
 
     public String toString() {
