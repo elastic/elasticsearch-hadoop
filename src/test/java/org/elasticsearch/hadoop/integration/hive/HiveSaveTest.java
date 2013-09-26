@@ -57,7 +57,7 @@ public class HiveSaveTest {
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE artistssave "
-                + "SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));

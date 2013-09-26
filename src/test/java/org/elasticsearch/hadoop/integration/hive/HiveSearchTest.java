@@ -15,9 +15,13 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
@@ -41,7 +45,9 @@ public class HiveSearchTest {
         String select = "SELECT * FROM artistsload";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
     }
 
     @Test
@@ -55,7 +61,9 @@ public class HiveSearchTest {
         String select = "SELECT count(*) FROM artistscount";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
     }
 
     @Test
@@ -70,7 +78,9 @@ public class HiveSearchTest {
         String select = "SELECT * FROM compoundarray";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
     }
 
     @Test
@@ -86,7 +96,9 @@ public class HiveSearchTest {
         String select2 = "SELECT unix_timestamp(), date FROM timestampload";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
         System.out.println(server.execute(select2));
     }
 
@@ -101,7 +113,9 @@ public class HiveSearchTest {
         String select = "SELECT java_method(\"java.lang.System\", \"currentTimeMillis\") FROM methodInvocation LIMIT 1";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(containsNoNull(result));
     }
 
     @Test
@@ -115,7 +129,9 @@ public class HiveSearchTest {
         String select = "SELECT * FROM aliasload";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(containsNoNull(result));
     }
 
     @Test
@@ -129,6 +145,18 @@ public class HiveSearchTest {
         String select = "SELECT * FROM missing";
 
         System.out.println(server.execute(create));
-        System.out.println(server.execute(select));
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(containsNoNull(result));
+    }
+
+    private static boolean containsNoNull(List<String> str) {
+        for (String string : str) {
+            if (string.contains("NULL")) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

@@ -31,6 +31,7 @@ public class JacksonJsonGenerator implements Generator {
     private static final boolean JACKSON_16;
     private static final JsonFactory JSON_FACTORY;
     private final JsonGenerator generator;
+    private final OutputStream out;
 
     static {
         Class<?> versionClass = null;
@@ -52,6 +53,7 @@ public class JacksonJsonGenerator implements Generator {
 
     public JacksonJsonGenerator(OutputStream out) {
         try {
+            this.out = out;
             // use dedicated method to lower Jackson requirement
             this.generator = JSON_FACTORY.createJsonGenerator(out, JsonEncoding.UTF8);
         } catch (IOException ex) {
@@ -234,6 +236,7 @@ public class JacksonJsonGenerator implements Generator {
 
     @Override
     public Object getOutputTarget() {
-        return generator.getOutputTarget();
+        //return generator.getOutputTarget();
+        return out;
     }
 }

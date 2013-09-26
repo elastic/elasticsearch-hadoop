@@ -39,8 +39,8 @@ import org.junit.runners.Suite;
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 @RunWith(Suite.class)
-//@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
-@Suite.SuiteClasses({ HiveSearchTest.class })
+@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
+//@Suite.SuiteClasses({ HiveSearchTest.class })
 public class HiveSuite {
 
     static HiveInstance server;

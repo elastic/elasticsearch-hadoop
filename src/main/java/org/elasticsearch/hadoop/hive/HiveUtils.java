@@ -73,6 +73,20 @@ abstract class HiveUtils {
             }
         }
 
+        // add default aliases for serialization (_colX -> mapping name)
+        List<String> columnNames = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.COLUMNS), ",");
+        for (int i = 0; i < columnNames.size(); i++) {
+            String colName = columnNames.get(i);
+            if (aliases != null) {
+                // check alias first
+                String alias = aliasMap.get(colName);
+                if (alias != null) {
+                    colName = alias;
+                }
+            }
+            aliasMap.put(HiveConstants.UNNAMED_COLUMN_PREFIX + i, colName);
+        }
+
         return new FieldAlias(aliasMap);
     }
 }
