@@ -28,15 +28,12 @@ import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
