@@ -5,6 +5,8 @@ es.host=192.168.1.50
 es.batch.size.bytes=8kb
 es.port=9500
 
+pig=local
+
 # M&R
 fs.default.name=file:///
 mapred.job.tracker=local
@@ -21,6 +23,10 @@ mapred.job.tracker=local
 #fs.maprfs.impl=com.mapr.fs.MapRFileSystem
 #fs.default.name=maprfs://mapr:7222
 #mapred.job.tracker=mapr:9001
+#hadoop.spoofed.user.uid=0
+#hadoop.spoofed.user.gid=0
+#hadoop.spoofed.user.username=root
+# hive=jdbc:hive://mapr:10000
 
 # Intel
 #fs.default.name=hdfs://idhvm:8020
