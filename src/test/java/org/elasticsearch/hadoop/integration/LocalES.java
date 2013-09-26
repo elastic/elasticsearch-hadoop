@@ -42,9 +42,9 @@ public class LocalES extends ExternalResource {
 
         String host = HdpBootstrap.hadoopConfig().get("es.host");
         String port = HdpBootstrap.hadoopConfig().get("es.port");
-        if (StringUtils.hasText(host) || StringUtils.hasText(port)) {
+        if (StringUtils.hasText(host)) {
             disabled = true;
-            LogFactory.getLog(getClass()).warn("es.host/port specified; assuming an external instance and bailing out...");
+            LogFactory.getLog(getClass()).warn("es.host specified; assuming an external instance and bailing out...");
             return;
         }
 
