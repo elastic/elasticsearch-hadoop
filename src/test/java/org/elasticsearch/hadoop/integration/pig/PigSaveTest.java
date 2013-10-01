@@ -15,11 +15,14 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.util.Date;
+
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -81,12 +84,14 @@ public class PigSaveTest {
     }
 
     @Test
+    @Ignore
     public void testTimestamp() throws Exception {
+        long millis = new Date().getTime();
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
-                "B = FOREACH A GENERATE name, CurrentTime(), url;" +
+                "B = FOREACH A GENERATE name, ToDate(" + millis + "l), url;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig/timestamp' USING org.elasticsearch.hadoop.pig.ESStorage();";
 
@@ -95,11 +100,12 @@ public class PigSaveTest {
 
     @Test
     public void testFieldAlias() throws Exception {
+        long millis = new Date().getTime();
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (Id:long, name:chararray, url:chararray, picture: chararray);" +
-                "B = FOREACH A GENERATE name, CurrentTime() AS timestamp, url, picture;" +
+                "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
