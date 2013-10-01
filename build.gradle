@@ -8,7 +8,7 @@ buildscript {
     }
     dependencies {
         classpath('org.springframework.build.gradle:propdeps-plugin:0.0.3')
-		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.4.1')
+		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.5.0')
     }
 }
 
@@ -326,7 +326,7 @@ asciidoctor {
     options = [
 		doctype: 'book',
         attributes: [
-            'source-highlighter': 'highlightjs',
+			'source-highlighter': 'highlightjs',
 			icons: 'font',
 			badges: '',
 			toc2: '',
