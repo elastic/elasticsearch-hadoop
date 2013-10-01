@@ -42,7 +42,7 @@ public class JacksonJsonGenerator implements Generator {
         }
         JACKSON_16 = (versionClass != null);
 
-        if (JACKSON_16) {
+        if (!JACKSON_16) {
             LogFactory.getLog(JacksonJsonGenerator.class).warn(
                     "Old Jackson version (pre-1.7) detected; consider upgrading to improve performance");
         }
