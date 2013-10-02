@@ -109,7 +109,17 @@ public class PigSaveTest {
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
-        System.out.println("TEST FIELD ALIAS**** ");
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testEmptyComplexStructures() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE (), [], {} ;" +
+                "STORE B INTO 'pig/emptyconst' USING org.elasticsearch.hadoop.pig.ESStorage();";
+
         pig.executeScript(script);
     }
 }

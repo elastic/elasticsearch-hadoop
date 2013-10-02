@@ -100,6 +100,14 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             break;
         case DataType.MAP:
             ResourceSchema nestedSchema = field.getSchema();
+
+            // empty tuple shortcut
+            if (nestedSchema == null) {
+                generator.writeBeginObject();
+                generator.writeEndObject();
+                break;
+            }
+
             ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
 
             generator.writeBeginObject();
@@ -114,6 +122,14 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
         case DataType.TUPLE:
             nestedSchema = field.getSchema();
+
+            // empty tuple shortcut
+            if (nestedSchema == null) {
+                generator.writeBeginObject();
+                generator.writeEndObject();
+                break;
+            }
+
             nestedFields = nestedSchema.getFields();
 
             // use getAll instead of get(int) to avoid having to handle Exception...
@@ -132,6 +148,14 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
         case DataType.BAG:
             nestedSchema = field.getSchema();
+
+            // empty tuple shortcut
+            if (nestedSchema == null) {
+                generator.writeBeginArray();
+                generator.writeEndArray();
+                break;
+            }
+
             ResourceFieldSchema bagType = nestedSchema.getFields()[0];
 
             generator.writeBeginArray();
