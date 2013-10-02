@@ -84,7 +84,6 @@ public class PigSaveTest {
     }
 
     @Test
-    @Ignore
     public void testTimestamp() throws Exception {
         long millis = new Date().getTime();
         String script =
