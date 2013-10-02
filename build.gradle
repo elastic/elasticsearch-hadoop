@@ -359,6 +359,7 @@ task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
 
     into ("${baseDir}/dist") {
         from "build/libs"
+		exclude "*-testing.jar"
     }
 }
 
