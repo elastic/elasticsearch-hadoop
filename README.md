@@ -89,7 +89,7 @@ es.http.timeout=<timeout for http connections> # defaults to 1m
 ## [MapReduce][]
 
 For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to ElasticSearch. To use them, add the `es-hadoop` jar to your job classpath
-(either by bundling the library along - it's less then 40kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
+(either by bundling the library along - it's ~150kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
 
 Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `ESInputFormat` and `ESOutputFormat` classes.
 
