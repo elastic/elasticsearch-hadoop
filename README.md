@@ -71,7 +71,9 @@ We're interested in your feedback! You can find us on the User [mailing list](ht
 ## Configuration Properties
 
 All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
-The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used. The full list is available [here](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)
+The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used. 
+
+The full list is available [here](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)
 
 ### Required
 ```
