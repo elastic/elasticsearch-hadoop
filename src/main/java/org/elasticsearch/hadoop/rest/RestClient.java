@@ -89,7 +89,7 @@ public class RestClient implements Closeable {
     }
 
     public void bulk(String index, byte[] buffer, int bufferSize) {
-        // empty buffer, ignore
+        //empty buffer, ignore
         if (bufferSize == 0) {
             return;
         }

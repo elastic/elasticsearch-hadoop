@@ -21,6 +21,7 @@ import java.util.Scanner;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
@@ -49,5 +50,13 @@ public class RestSaveTest {
         }
 
         client.close();
+    }
+
+    @Test
+    public void testEmptyBulkWrite() throws Exception {
+        TestSettings testSettings = new TestSettings("rest/emptybulk");
+        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        RestClient client = new RestClient(testSettings);
+        client.bulk("rest/emptybulk", new byte[0], 0);
     }
 }

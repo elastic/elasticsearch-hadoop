@@ -146,6 +146,7 @@ public class BufferedRestClient implements Closeable {
     public void addToIndex(byte[] data, int size) throws IOException {
         Assert.hasText(index, "no index given");
         Assert.notNull(data, "no data given");
+        Assert.isTrue(size > 0, "no data given");
 
         if (scratchPad == null) {
             // minor optimization to avoid allocating data when used by Hive (which already has its own scratchPad)
