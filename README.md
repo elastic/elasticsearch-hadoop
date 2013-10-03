@@ -6,7 +6,7 @@ See the official [project page](http://www.elasticsearch.org/overview/hadoop/) a
 # Requirements
 Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
-See the reference documentation (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html)[chapter] for detailed information.
+For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html).
 
 # Installation
 
@@ -60,7 +60,7 @@ We also publish a YARN-based binary (since YARN is not backwards compatible with
 </dependency>
 ```
 
-More information in this (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/download.html)[chapter].
+More information in this [section](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/download.html).
 
 # Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
@@ -70,10 +70,8 @@ We're interested in your feedback! You can find us on the User [mailing list](ht
 
 ## Configuration Properties
 
-All options described in detailed in the reference (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)[documentation].
-
 All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
-The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used (see the relevant documentation below). The full list is available [here](http://github.com/elasticsearch/elasticsearch-hadoop/tree/master/src/main/java/org/elasticsearch/hadoop/cfg/ConfigurationOptions.java).
+The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used. The full list is available [here](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)
 
 ### Required
 ```
