@@ -89,6 +89,11 @@ public class RestClient implements Closeable {
     }
 
     public void bulk(String index, byte[] buffer, int bufferSize) {
+        // empty buffer, ignore
+        if (bufferSize == 0) {
+            return;
+        }
+
         PostMethod post = new PostMethod(index + "/_bulk");
         post.setRequestEntity(new JsonByteArrayRequestEntity(buffer, bufferSize));
         post.setContentChunked(false);
