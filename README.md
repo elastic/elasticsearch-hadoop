@@ -1,7 +1,7 @@
 # Elasticsearch Hadoop [![Build Status](http://build.elasticsearch.com/job/es-hadoop/badge/icon)](http://build.elasticsearch.com/view/Hadoop/) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
 Elasticsearch real-time search and analytics natively integrated with Hadoop. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
 
-See the official (http://www.elasticsearch.org/overview/hadoop/)[project page] and (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html)[documentation] for more, in-depth information.
+See the official [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for more, in-depth information.
 
 # Requirements
 Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
@@ -10,7 +10,7 @@ See the reference documentation (http://www.elasticsearch.org/guide/en/elasticse
 
 # Installation
 
-## Release `1.3.0 M1`
+## Release 1.3.0 M1
 Available through any Maven-compatible tool:
 
 ```xml
