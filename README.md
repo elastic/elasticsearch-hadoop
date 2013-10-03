@@ -1,12 +1,29 @@
-# Elasticsearch Hadoop [![Build Status](https://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
-Read and write data to/from Elasticsearch within Hadoop/MapReduce libraries. Automatically converts data to/from JSON. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
+# Elasticsearch Hadoop [![Build Status](http://build.elasticsearch.com/job/es-hadoop/badge/icon)](http://build.elasticsearch.com/view/Hadoop/) [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
+Elasticsearch real-time search and analytics natively integrated with Hadoop. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
+
+See the official (http://www.elasticsearch.org/overview/hadoop/)[project page] and (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html)[documentation] for more, in-depth information.
 
 # Requirements
 Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
+See the reference documentation (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html)[chapter] for detailed information.
 
 # Installation
-We're working towards a first release. In the meantime, grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) using any Maven-compatible tool:
+
+## Release `1.3.0 M1`
+Available through any Maven-compatible tool:
+
+```xml
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>1.3.0.M1</version>
+</dependency>
+```
+or as a stand-alone [ZIP](https://download.elasticsearch.org/hadoop/hadoop-latest.zip).
+
+## Development Snapshot
+Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) again through Maven:
 
 ```xml
 <dependency>
@@ -28,7 +45,7 @@ We're working towards a first release. In the meantime, grab the latest nightly 
 
 or [build](#building-the-source) the project yourself. 
 
-We do build and test the code on _each_ commit; see our CI server [![here](https://54.225.158.147:3000)](http://build.elasticsearch.org/browse/ESHADOOP-MASTER) 
+We do build and test the code on _each_ commit; see our CI server [![here](http://build.elasticsearch.com/job/es-hadoop/badge/icon)](http://build.elasticsearch.com/view/Hadoop/) 
 
 ## Hadoop 2.0/YARN build
 
@@ -43,15 +60,19 @@ We also publish a YARN-based binary (since YARN is not backwards compatible with
 </dependency>
 ```
 
+More information in this (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/download.html)[chapter].
+
 # Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
 
 # Usage
 
+
 ## Configuration Properties
 
-All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
+All options described in detailed in the reference (http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)[documentation].
 
+All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
 The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used (see the relevant documentation below). The full list is available [here](http://github.com/elasticsearch/elasticsearch-hadoop/tree/master/src/main/java/org/elasticsearch/hadoop/cfg/ConfigurationOptions.java).
 
 ### Required
@@ -68,6 +89,7 @@ es.http.timeout=<timeout for http connections> # defaults to 1m
 ```
 
 ## [MapReduce][]
+
 For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to ElasticSearch. To use them, add the `es-hadoop` jar to your job classpath
 (either by bundling the library along - it's less then 40kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
 
