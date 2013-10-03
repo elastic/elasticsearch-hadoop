@@ -37,6 +37,7 @@ import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
@@ -63,6 +64,7 @@ public class RestClient implements Closeable {
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
 
         client = new HttpClient(params);
+
         HostConfiguration hostConfig = new HostConfiguration();
         String targetUri = settings.getTargetUri();
         try {
@@ -71,6 +73,10 @@ public class RestClient implements Closeable {
             throw new IllegalArgumentException("Invalid target URI " + targetUri, ex);
         }
         client.setHostConfiguration(hostConfig);
+
+        HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
+        // make sure to disable Nagle's protocol
+        connectionParams.setTcpNoDelay(true);
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
