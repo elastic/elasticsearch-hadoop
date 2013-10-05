@@ -15,16 +15,17 @@
  */
 package org.elasticsearch.hadoop.integration;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 
@@ -45,7 +46,9 @@ public class HdpBootstrap {
             // handle jar permissions as well - temporarily disable for CDH 4 / YARN
             try {
                 Class<?> tdcm = Class.forName("org.apache.hadoop.filecache.TrackerDistributedCacheManager");
-                FsPermission perm = (FsPermission) FieldUtils.readStaticField(tdcm, "PUBLIC_CACHE_OBJECT_PERM", true);
+                Field field = ReflectionUtils.findField(tdcm, "PUBLIC_CACHE_OBJECT_PERM");
+                ReflectionUtils.makeAccessible(field);
+                FsPermission perm = (FsPermission) ReflectionUtils.getField(field, null);
                 perm.fromShort((short) 0650);
             } catch (ClassNotFoundException cnfe) {
                 //ignore
