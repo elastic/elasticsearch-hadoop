@@ -18,12 +18,12 @@ package org.elasticsearch.hadoop.serialization.json;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.lang.SerializationException;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 import org.elasticsearch.hadoop.serialization.Parser;
+import org.elasticsearch.hadoop.serialization.SerializationException;
 
 public class JacksonJsonParser implements Parser {
 

@@ -18,12 +18,12 @@ package org.elasticsearch.hadoop.serialization.json;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.commons.lang.SerializationException;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.SerializationException;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class JacksonJsonGenerator implements Generator {
