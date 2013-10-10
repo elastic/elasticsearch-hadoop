@@ -7,7 +7,7 @@ buildscript {
         maven { url 'http://jcenter.bintray.com' }
     }
     dependencies {
-        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.3')
+        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.4')
 		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.5.0')
     }
 }
@@ -31,6 +31,7 @@ apply plugin: 'asciidoctor'
 // report plugins
 apply plugin: 'findbugs'
 apply plugin: 'pmd'
+apply plugin: 'jacoco'
 
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -131,8 +132,13 @@ configurations.all {
   }
 }
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6 
+compileJava {
+    sourceCompatibility = 1.6
+    targetCompatibility = 1.6 
+
+//    options.compilerArgs << "-Xlint:unchecked"
+//    options.compilerArgs << "-Xlint:deprecation"
+}
 
 ext.skipCascading = true
 ext.skipMR = true
@@ -365,6 +371,21 @@ pmdMain {
 findbugsTest.enabled = false
 pmdTest.enabled = false   
 
+jacoco {
+    toolVersion = "0.6.3.201306030806"
+}
+
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        csv.enabled false
+        html.enabled true
+    }
+}
+
+// packaging
+
 task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
     //classifier = "dist"
@@ -403,7 +424,7 @@ artifacts {
 
 task wrapper(type: Wrapper) {
     description = 'Generates gradlew[.bat] scripts'
-    gradleVersion = '1.4'
+    gradleVersion = '1.8'
 }
 
 // skip creation of javadoc jars 
