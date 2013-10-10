@@ -31,7 +31,6 @@ apply plugin: 'asciidoctor'
 // report plugins
 apply plugin: 'findbugs'
 apply plugin: 'pmd'
-apply plugin: 'jacoco'
 
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -231,6 +230,14 @@ test {
         if (!msg.isEmpty())
             println "Skipping [$msg] Tests";
 	}
+	
+//	jacoco {
+//        def enableJacoco = project.hasProperty("jacocoCoverage") ? project.getProperty("jacocoCoverage") : "false"
+//        enabled = enableJacoco
+//       
+//        if (enabled == "true")
+//            println "Enabling Jacoco Coverage"
+//    }
 }
 
 javadoc {
@@ -370,19 +377,6 @@ pmdMain {
 
 findbugsTest.enabled = false
 pmdTest.enabled = false   
-
-jacoco {
-    toolVersion = "0.6.3.201306030806"
-}
-
-
-jacocoTestReport {
-    reports {
-        xml.enabled true
-        csv.enabled false
-        html.enabled true
-    }
-}
 
 // packaging
 
