@@ -28,6 +28,9 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-idea'
 apply plugin: 'propdeps-eclipse'
 apply plugin: 'asciidoctor'
+// report plugins
+apply plugin: 'findbugs'
+apply plugin: 'pmd'
 
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -337,6 +340,27 @@ asciidoctor {
         ]
     ]
 }
+
+// reporting
+
+findbugsMain {
+  ignoreFailures = true
+  reports {
+    xml.enabled = true
+    html.enabled = false
+  }
+}
+
+pmdMain {
+  ignoreFailures = true
+  reports {
+    xml.enabled = true
+    html.enabled = true
+  }
+}
+
+findbugsTest.enabled = false
+pmdTest.enabled = false   
 
 task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
