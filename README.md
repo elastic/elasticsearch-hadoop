@@ -60,7 +60,7 @@ We also publish a YARN-based binary (since YARN is not backwards compatible with
 </dependency>
 ```
 
-More information in this [section](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/download.html).
+More information in this [section](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/install.html).
 
 # Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
