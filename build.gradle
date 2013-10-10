@@ -345,6 +345,9 @@ asciidoctor {
 
 findbugsMain {
   ignoreFailures = true
+  effort = "max"
+  reportLevel = "high"
+  
   reports {
     xml.enabled = true
     html.enabled = false
