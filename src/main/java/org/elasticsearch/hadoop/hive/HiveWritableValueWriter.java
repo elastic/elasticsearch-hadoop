@@ -67,6 +67,10 @@ public class HiveWritableValueWriter extends WritableValueWriter {
         else if (writable != null && HiveConstants.DATE_WRITABLE.equals(writable.getClass().getName())) {
             generator.writeString(DateWritableWriter.toES(writable));
         }
+        // HiveVarcharWritable - Hive 0.12+
+        else if (writable != null && HiveConstants.VARCHAR_WRITABLE.equals(writable.getClass().getName())) {
+            generator.writeString(writable.toString());
+        }
         else {
             return super.write(writable, generator);
         }
