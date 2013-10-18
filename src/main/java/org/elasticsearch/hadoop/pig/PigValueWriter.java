@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.pig;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.SerializationException;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -98,6 +100,12 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
         case 30: //DataType.DATETIME
             generator.writeString(DateConverter.convertToES(object));
             break;
+        // DateTime introduced in Pig 12
+        case 65: //DataType.BIGINTEGER
+            throw new SerializationException("Big integers are not supported by Elasticsearch - consider using a different type (such as string)");
+        // DateTime introduced in Pig 12
+        case 70: //DataType.BIGDECIMAL
+            throw new SerializationException("Big decimals are not supported by Elasticsearch - consider using a different type (such as string)");
         case DataType.MAP:
             ResourceSchema nestedSchema = field.getSchema();
 
