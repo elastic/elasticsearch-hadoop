@@ -32,6 +32,7 @@ public class ESEmbeddedServer {
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
         props.setProperty("es.index.store.type", "memory");
+        props.setProperty("gateway.type", "none");
 
         Settings settings = ImmutableSettings.settingsBuilder().put(props).build();
         node = NodeBuilder.nodeBuilder().local(false).client(false).settings(settings).clusterName(clusterName).build();
