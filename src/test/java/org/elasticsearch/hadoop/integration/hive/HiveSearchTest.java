@@ -124,7 +124,7 @@ public class HiveSearchTest {
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps("hive/aliassave/_search?q=*", "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123'");
+                + tableProps("hive/aliassave/_search?q=*", "'es.mapping.names' = 'daTE:@timestamp, uRl:url_123'");
 
         String select = "SELECT * FROM aliasload";
 
