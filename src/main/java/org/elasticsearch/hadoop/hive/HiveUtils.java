@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
 import org.apache.hadoop.hive.serde2.objectinspector.StandardStructObjectInspector;
@@ -31,6 +32,21 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 abstract class HiveUtils {
+
+    // Date type available since Hive 0.12
+    static final boolean DATE_WRITABLE_AVAILABLE;
+
+    static {
+        ClassLoader cl = (TimestampWritable.class.getClassLoader());
+        Class<?> clz = null;
+        try {
+            clz = cl.loadClass(HiveConstants.DATE_WRITABLE);
+        } catch (Exception ex) {
+            // ignore
+        }
+
+        DATE_WRITABLE_AVAILABLE = (clz != null);
+    }
 
     static StandardStructObjectInspector structObjectInspector(Properties tableProperties) {
         // extract column info - don't use Hive constants as they were renamed in 0.9 breaking compatibility

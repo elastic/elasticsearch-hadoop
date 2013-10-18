@@ -26,6 +26,7 @@ interface HiveConstants {
     String UNNAMED_COLUMN_PREFIX="_col";
 
     String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
+    String DATE_WRITABLE = "org.apache.hadoop.hive.serde2.io.DateWritable";
     String TABLE_LOCATION = "location";
     String MAPPING_NAMES = "es.mapping.names";
 }
