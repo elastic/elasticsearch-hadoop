@@ -91,6 +91,7 @@ class HiveEmbeddedServer implements HiveInstance {
         conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse");
         conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db");
         conf.set("hive.exec.scratchdir", "/tmp/hive");
+        conf.set("hive.scratch.dir.permission", "650");
         conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db;create=true");
         conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");
