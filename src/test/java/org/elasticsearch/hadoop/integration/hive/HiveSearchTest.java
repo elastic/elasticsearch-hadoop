@@ -170,6 +170,23 @@ public class HiveSearchTest {
         assertTrue(containsNoNull(result));
     }
 
+    @Test
+    public void testVarcharLoad() throws Exception {
+
+        String create = "CREATE EXTERNAL TABLE varcharload ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/varcharsave/_search?q=*");
+
+        String select = "SELECT * FROM varcharload";
+
+        System.out.println(server.execute(create));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
+    }
+
     private static boolean containsNoNull(List<String> str) {
         for (String string : str) {
             if (string.contains("NULL")) {

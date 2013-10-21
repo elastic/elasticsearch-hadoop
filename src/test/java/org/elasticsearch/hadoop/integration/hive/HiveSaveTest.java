@@ -248,6 +248,38 @@ public class HiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testVarcharSave() throws Exception {
+        String localTable = "CREATE TABLE varcharSource ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING) "
+                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
+                + "LOCATION '/tmp/hive/warehouse/varcharSource/' ";
+
+        String load = loadData("source");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE varcharsave ("
+                + "id       BIGINT, "
+                + "name     VARCHAR(10), "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/varcharsave");
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE varcharsave "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(insert));
+    }
+
     private String loadData(String tableName) {
         return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }
