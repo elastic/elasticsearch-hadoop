@@ -136,8 +136,9 @@ compileJava {
     sourceCompatibility = 1.6
     targetCompatibility = 1.6 
 
-//    options.compilerArgs << "-Xlint:unchecked"
-//    options.compilerArgs << "-Xlint:deprecation"
+    options.compilerArgs << "-Xlint:unchecked"
+    options.compilerArgs << "-Xlint:deprecation"
+	options.compilerArgs << "-Xlint:options"
 }
 
 ext.skipCascading = true
