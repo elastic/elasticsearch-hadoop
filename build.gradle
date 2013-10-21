@@ -31,6 +31,7 @@ apply plugin: 'asciidoctor'
 // report plugins
 apply plugin: 'findbugs'
 apply plugin: 'pmd'
+apply plugin: 'jacoco'
 
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -199,7 +200,7 @@ test {
 				"org/elasticsearch/hadoop/integration/**/*Suite.class"]
 
 	minHeapSize = "256m"
-	maxHeapSize = "512m"
+	maxHeapSize = "768m"
 
     testLogging {
         events "started" //, "standardOut", "standardError"
@@ -231,13 +232,13 @@ test {
             println "Skipping [$msg] Tests";
 	}
 	
-//	jacoco {
-//        def enableJacoco = project.hasProperty("jacocoCoverage") ? project.getProperty("jacocoCoverage") : "false"
-//        enabled = enableJacoco
-//       
-//        if (enabled == "true")
-//            println "Enabling Jacoco Coverage"
-//    }
+	jacoco {
+        def jacocoEnabled = project.hasProperty("jacocoCoverage")
+		enabled = jacocoEnabled
+       
+        if (jacocoEnabled)
+            println "Enabling Jacoco Coverage"
+    }
 }
 
 javadoc {
@@ -265,8 +266,8 @@ javadoc {
 			"http://commons.apache.org/proper/commons-logging/apidocs/",
 			"http://hadoop.apache.org/common/docs/r1.1.2/api/",
 			//"http://hbase.apache.org/apidocs/",
-			"http://pig.apache.org/docs/r0.11.1/api/",
-			"http://hive.apache.org/docs/r0.11.0/api/",
+			"http://pig.apache.org/docs/r0.12.0/api/",
+			"http://hive.apache.org/docs/r0.12.0/api/",
 			"https://builds.apache.org/job/Thrift/javadoc/",
 			"http://docs.cascading.org/cascading/2.1/javadoc/"
 		]
@@ -373,6 +374,18 @@ pmdMain {
     xml.enabled = true
     html.enabled = true
   }
+}
+
+jacoco {
+	toolVersion = "0.6.3.201306030806"
+}
+
+jacocoTestReport {
+	reports {
+		xml.enabled true
+		csv.enabled true
+		html.enabled true
+	}
 }
 
 findbugsTest.enabled = false
