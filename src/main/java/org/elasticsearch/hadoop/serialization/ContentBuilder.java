@@ -21,6 +21,7 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
+@SuppressWarnings("rawtypes")
 public class ContentBuilder {
 
     private final Generator generator;
@@ -247,6 +248,7 @@ public class ContentBuilder {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public ContentBuilder value(Object value) {
         if (!writer.write(value, generator)) {
             throw new SerializationException(String.format("Cannot handle type [%s], instance [%s] using writer [%s]", value.getClass(), value, writer));
