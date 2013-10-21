@@ -117,9 +117,14 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 
 | `datetime` 	    | `date`
 
+2+h| Available in Pig 0.12 or higher
+
+| `biginteger` 	    | `not supported`
+| `bigdecimal` 	    | `not supported`
+
 |===
 
-NOTE: While {es} understands the Pig types up to version 0.11, it is backwards compatible with Pig 0.9
+NOTE: While {es} understands the Pig types up to version 0.12, it is backwards compatible with Pig 0.9
 
 [float]
 === Writing data to {es}
