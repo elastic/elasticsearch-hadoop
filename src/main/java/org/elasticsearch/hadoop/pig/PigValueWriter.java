@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.pig;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 

@@ -35,6 +35,8 @@ import cascading.tuple.TupleEntryIterator;
 @SuppressWarnings("rawtypes")
 class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
+    private static final long serialVersionUID = 7910041489511719399L;
+
     private String target;
 
     public ESHadoopTap(String host, int port, String index, Fields fields) {

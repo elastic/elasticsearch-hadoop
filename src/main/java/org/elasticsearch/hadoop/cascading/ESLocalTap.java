@@ -37,8 +37,9 @@ import cascading.tuple.TupleEntrySchemeIterator;
 /**
  * Local Cascading Tap.
  */
-// - local-mode  Tap<Properties, QueryResult, ?>
 class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
+
+    private static final long serialVersionUID = 8644631529427137615L;
 
     private String target;
     private BufferedRestClient client;
@@ -62,12 +63,12 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
         if (input == null) {
             input = QueryBuilder.query(target).build(client, new ScrollReader(new JdkValueReader(), null));
         }
-        return new TupleEntrySchemeIterator(flowProcess, getScheme(), input, getIdentifier());
+        return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }
 
     @Override
     public TupleEntryCollector openForWrite(FlowProcess<Properties> flowProcess, Object output) throws IOException {
-        return new TupleEntrySchemeCollector(flowProcess, getScheme(), output);
+        return new TupleEntrySchemeCollector<Properties, Object>(flowProcess, getScheme(), output);
     }
 
     @Override

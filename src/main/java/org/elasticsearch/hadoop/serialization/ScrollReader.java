@@ -225,8 +225,16 @@ public class ScrollReader {
             case DOUBLE:
                 esType = FieldType.DOUBLE;
                 break;
+            case BIG_DECIMAL:
+                throw new UnsupportedOperationException();
+            case BIG_INTEGER:
+                throw new UnsupportedOperationException();
+            default:
+                break;
             }
                 break;
+        default:
+            break;
             }
         return esType;
         }

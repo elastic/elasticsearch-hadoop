@@ -73,7 +73,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private String relativeLocation;
     private String signature;
     private ResourceSchema schema;
-    private RecordReader<String, Map> reader;
+    private RecordReader<String, Map<?, ?>> reader;
     private RecordWriter<Object, Object> writer;
     private PigTuple pigTuple;
 
@@ -127,6 +127,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         settings.save();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public OutputFormat<Object, Map<Writable, Writable>> getOutputFormat() throws IOException {
         return new ESOutputFormat();

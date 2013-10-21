@@ -156,8 +156,11 @@ public class ESSerDe implements SerDe {
         case UNION: {
             throw new UnsupportedOperationException("union not yet supported");//break;
         }
+
+        case PRIMITIVE:
+        default:
+            // return as is
+            return data;
         }
-        // return as is
-        return data;
     }
 }

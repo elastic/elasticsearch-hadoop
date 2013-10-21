@@ -33,7 +33,10 @@ import cascading.tuple.TupleEntryIterator;
  * If no fields are specified or are associated with the incoming tuple, the Tap will create name each field "field[num]" - this allows the document to be parsed by ES but will most likely conflict with the
  * existing mapping for the given index.
  */
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class ESTap extends Tap<Object, Object, Object> {
+
+    private static final long serialVersionUID = 2062780701366901965L;
 
     private static Log log = LogFactory.getLog(ESTap.class);
 

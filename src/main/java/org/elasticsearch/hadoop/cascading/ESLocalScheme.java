@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -44,6 +43,7 @@ import cascading.tuple.Tuples;
 /**
  * Cascading Scheme handling
  */
+@SuppressWarnings("serial")
 class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
 
     private final String resource;
@@ -149,11 +149,12 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         ScrollQuery query = sourceCall.getInput();
         if (query.hasNext()) {
-            Map map = (Map) query.next()[1];
+            @SuppressWarnings("unchecked")
+            Map<String, ?> map = (Map<String, ?>) query.next()[1];
             TupleEntry tuples = sourceCall.getIncomingEntry();
 
             // TODO: verify ordering guarantees
-            Set<String> keys = map.keySet();
+            //Set<String> keys = map.keySet();
             //tuples.set(new TupleEntry(new Fields(keys.toArray(new String[keys.size()])),
 
             tuples.setTuple(Tuples.create(new ArrayList<Object>(map.values())));
@@ -162,7 +163,6 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void sink(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
         client.addToIndex(sinkCall);

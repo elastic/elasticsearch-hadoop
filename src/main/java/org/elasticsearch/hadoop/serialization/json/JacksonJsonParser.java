@@ -94,6 +94,8 @@ public class JacksonJsonParser implements Parser {
             return Token.END_ARRAY;
         case VALUE_EMBEDDED_OBJECT:
             return Token.VALUE_EMBEDDED_OBJECT;
+        case NOT_AVAILABLE:
+            throw new UnsupportedOperationException();
         }
         throw new SerializationException("No matching token for json_token [" + token + "]");
     }

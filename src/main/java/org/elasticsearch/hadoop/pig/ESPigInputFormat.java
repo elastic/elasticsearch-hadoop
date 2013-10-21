@@ -40,6 +40,7 @@ public class ESPigInputFormat extends ESInputFormat<String, Map> {
             return oldApiKey;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected Map setCurrentValue(Map oldApiValue, Map newApiKey, Object object) {
             Map map = (Map) object;
@@ -56,12 +57,12 @@ public class ESPigInputFormat extends ESInputFormat<String, Map> {
     }
 
     @Override
-    public ShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
+    public PigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
         return new PigShardRecordReader();
     }
 
     @Override
-    public ShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
+    public PigShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
         return new PigShardRecordReader(split, job, reporter);
     }
 }

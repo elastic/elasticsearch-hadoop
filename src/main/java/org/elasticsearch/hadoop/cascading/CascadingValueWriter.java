@@ -27,7 +27,7 @@ import cascading.tuple.Tuple;
 /**
  * Basic delegate around {@link JdkValueWriter} that handles the unwraping of {@link SinkCall}
  */
-public class CascadingValueWriter implements ValueWriter<SinkCall> {
+public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> {
 
     private final ValueWriter<Object> jdkWriter;
 
@@ -39,10 +39,11 @@ public class CascadingValueWriter implements ValueWriter<SinkCall> {
         jdkWriter = new JdkValueWriter(writeUnknownTypes);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public boolean write(SinkCall sinkCall, Generator generator) {
+    public boolean write(SinkCall<Object[], ?> sinkCall, Generator generator) {
         Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
-        List<String> names = (List<String>) ((Object[]) sinkCall.getContext())[0];
+        List<String> names = (List<String>) sinkCall.getContext()[0];
 
         generator.writeBeginObject();
         for (int i = 0; i < tuple.size(); i++) {

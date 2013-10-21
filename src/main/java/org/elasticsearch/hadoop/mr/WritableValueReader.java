@@ -19,6 +19,7 @@ import org.elasticsearch.hadoop.serialization.JdkValueReader;
 
 public class WritableValueReader extends JdkValueReader {
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Map createMap() {
         return new MapWritable();
@@ -59,6 +60,8 @@ public class WritableValueReader extends JdkValueReader {
         case OBJECT:
             arrayType = MapWritable.class;
             break;
+        case IP:
+            throw new UnsupportedOperationException();
         }
 
         return new ArrayWritable(arrayType);

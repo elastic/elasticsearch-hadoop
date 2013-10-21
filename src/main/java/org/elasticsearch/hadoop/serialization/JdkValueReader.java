@@ -56,11 +56,13 @@ public class JdkValueReader implements ValueReader {
         return null;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Map createMap() {
         return new LinkedHashMap<Object, Object>();
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void addToMap(Object map, Object key, Object value) {
         ((Map) map).put(key, value);

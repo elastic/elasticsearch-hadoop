@@ -96,7 +96,7 @@ public class ESHiveInputFormat extends ESInputFormat<Text, MapWritable> {
     }
 
     @Override
-    public ShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
+    public WritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
         return new WritableShardRecordReader(((ESHiveSplit) split).delegate, job, reporter);
     }
 }

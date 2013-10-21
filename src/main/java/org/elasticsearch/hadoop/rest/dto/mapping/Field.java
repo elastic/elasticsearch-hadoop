@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 
 import org.elasticsearch.hadoop.serialization.FieldType;
 
+@SuppressWarnings("serial")
 public class Field implements Serializable {
 
     private final String name;
@@ -93,6 +94,7 @@ public class Field implements Serializable {
 
         // nested object
         if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> content = (Map<String, Object>) value;
 
             // check type first

@@ -82,11 +82,11 @@ public class RestClient implements Closeable {
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
     }
 
-    @SuppressWarnings("unchecked")
     private <T> T get(String q, String string) throws IOException {
         return parseContent(execute(new GetMethod(q)), string);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T parseContent(byte[] content, String string) throws IOException {
         // create parser manually to lower Jackson requirements
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
@@ -153,6 +153,7 @@ public class RestClient implements Closeable {
         return nodes;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> getMapping(String query) throws IOException {
         return (Map<String, Object>) get(query, null);
     }
@@ -208,7 +209,7 @@ public class RestClient implements Closeable {
 
         String[] data = new String[2];
         data[0] = scan.get("_scroll_id").toString();
-        data[1] = ((Map) scan.get("hits")).get("total").toString();
+        data[1] = ((Map<?, ?>) scan.get("hits")).get("total").toString();
         return data;
     }
 

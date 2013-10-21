@@ -335,9 +335,10 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public ShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return new WritableShardRecordReader();
+    public ShardRecordReader<K, V> createRecordReader(InputSplit split, TaskAttemptContext context) {
+        return (ShardRecordReader<K, V>) new WritableShardRecordReader();
     }
 
 
@@ -385,8 +386,9 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         return splits;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public ShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return new WritableShardRecordReader(split, job, reporter);
+    public ShardRecordReader<K, V> getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
+        return (ShardRecordReader<K, V>) new WritableShardRecordReader(split, job, reporter);
     }
 }
