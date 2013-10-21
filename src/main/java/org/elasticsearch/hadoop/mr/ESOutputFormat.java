@@ -39,7 +39,7 @@ import org.elasticsearch.hadoop.util.Assert;
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings("rawtypes") // since this class implements two generic interfaces, to avoid dealing with 4 types in every declaration, we force raw types...
 public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat, ConfigurationOptions {
 
     private static Log log = LogFactory.getLog(ESOutputFormat.class);
@@ -154,7 +154,8 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
-        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(), null, context);
+        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(),
+                null, context);
     }
 
     @Override
