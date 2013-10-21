@@ -169,7 +169,9 @@ public abstract class WritableUtils {
             return list;
         }
         if (writable instanceof AbstractMapWritable) {
-            Map<Writable, Writable> smap = (Map) writable;
+            // AbstractMap writable doesn't provide any generic signature so we force it
+            @SuppressWarnings("unchecked")
+            Map<Writable, Writable> smap = (Map<Writable, Writable>) writable;
             Set<Writable> wkeys = smap.keySet();
             Map<Object, Object> map = (writable instanceof SortedMapWritable ? new TreeMap<Object, Object>() : new LinkedHashMap<Object, Object>(wkeys.size()));
 
