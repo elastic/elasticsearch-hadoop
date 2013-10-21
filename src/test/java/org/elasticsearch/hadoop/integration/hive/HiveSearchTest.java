@@ -103,6 +103,26 @@ public class HiveSearchTest {
     }
 
     @Test
+    @Ignore // cast isn't fully supported for date as it throws CCE
+    public void basicDateLoad() throws Exception {
+        String create = "CREATE EXTERNAL TABLE dateload ("
+                + "id       BIGINT, "
+                + "date     DATE, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/datesave/_search?q=*");
+
+        String select = "SELECT date FROM dateload";
+        String select2 = "SELECT unix_timestamp(), date FROM dateload";
+
+        System.out.println(server.execute(create));
+        List<String> result = server.execute(select);
+        System.out.println(result);
+        assertTrue("Hive returned null", containsNoNull(result));
+        System.out.println(server.execute(select2));
+    }
+
+    @Test
     public void javaMethodInvocation() throws Exception {
         String create = "CREATE EXTERNAL TABLE methodInvocation ("
                 + "id       BIGINT, "

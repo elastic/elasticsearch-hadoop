@@ -15,8 +15,8 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
@@ -167,7 +167,7 @@ public class HiveSaveTest {
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps("hive/aliassave", "'es.column.aliases' = 'daTE:@timestamp, uRl:url_123'");
+                + tableProps("hive/aliassave", "'es.mapping.names' = 'daTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
@@ -179,6 +179,45 @@ public class HiveSaveTest {
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
+        System.out.println(server.execute(insert));
+    }
+
+    @Test
+    @Ignore // cast isn't fully supported for date as it throws CCE
+    public void testDateSave() throws Exception {
+        String localTable = "CREATE TABLE datesource ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING) "
+                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
+                + "LOCATION '/tmp/hive/warehouse/datesource/' ";
+
+        String load = loadData("datesource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE datesave ("
+                + "id       BIGINT, "
+                + "date     DATE, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/datesave");
+
+        // this works
+        String someDate = "SELECT cast('2013-10-21' as date) from datesource";
+
+
+        // this does not
+        String insert =
+                "INSERT OVERWRITE TABLE datesave "
+                + "SELECT NULL, cast('2013-10-21' as date), s.name, named_struct('url', s.url, 'picture', s.picture) FROM datesource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(someDate));
         System.out.println(server.execute(insert));
     }
 
@@ -212,5 +251,4 @@ public class HiveSaveTest {
     private String loadData(String tableName) {
         return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }
-
 }
