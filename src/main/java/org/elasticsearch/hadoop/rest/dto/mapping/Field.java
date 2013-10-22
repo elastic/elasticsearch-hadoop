@@ -100,7 +100,9 @@ public class Field implements Serializable {
             // check type first
             Object type = content.get("type");
             if (type instanceof String) {
-                return new Field(key, FieldType.parse(type.toString().toUpperCase()));
+                FieldType fieldType = FieldType.parse(type.toString().toUpperCase());
+                if (FieldType.isRelevant(fieldType))
+                    return new Field(key, fieldType);
             }
 
             // no type - iterate through types
