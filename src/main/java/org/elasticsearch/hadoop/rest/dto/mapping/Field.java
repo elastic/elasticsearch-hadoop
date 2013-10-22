@@ -100,9 +100,18 @@ public class Field implements Serializable {
             // check type first
             Object type = content.get("type");
             if (type instanceof String) {
-                FieldType fieldType = FieldType.parse(type.toString().toUpperCase());
-                if (FieldType.isRelevant(fieldType))
+                String typeString = type.toString();
+                // check if its internal
+                if (typeString.startsWith("_")) {
+                    return null;
+                }
+                FieldType fieldType = FieldType.parse(typeString.toUpperCase());
+                if (FieldType.isRelevant(fieldType)) {
                     return new Field(key, fieldType);
+                }
+                else {
+                    return null;
+                }
             }
 
             // no type - iterate through types
@@ -110,10 +119,12 @@ public class Field implements Serializable {
             for (Entry<String, Object> e : content.entrySet()) {
                 if (e.getValue() instanceof Map) {
                     Field fl = parseField(e, key);
-                    if (fl.type == FieldType.OBJECT && "properties".equals(fl.name)) {
+                    if (fl != null && fl.type == FieldType.OBJECT && "properties".equals(fl.name)) {
                         return new Field(key, fl.type, fl.properties);
                     }
-                    fields.add(fl);
+                    if (fl != null) {
+                        fields.add(fl);
+                    }
                 }
             }
             return new Field(key, FieldType.OBJECT, fields);

@@ -1,0 +1,7 @@
+{
+    "person" : {
+        "properties" : {
+            "my_attachment" : { "type" : "attachment" }
+        }
+    }
+}

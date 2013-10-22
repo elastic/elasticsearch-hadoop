@@ -36,4 +36,32 @@ public class FieldTest {
         Field fl = Field.parseField(value);
         System.out.println(fl);
     }
+
+    @Test
+    public void testMultiFieldParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_field.json"), Map.class);
+        Field fl = Field.parseField(value);
+        System.out.println(fl);
+    }
+
+    @Test
+    public void testCompletionParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("completion.json"), Map.class);
+        Field fl = Field.parseField(value);
+        System.out.println(fl);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGeolocationParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
+        Field fl = Field.parseField(value);
+        System.out.println(fl);
+    }
+
+    @Test
+    public void testUnsupportedParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("attachment.json"), Map.class);
+        Field fl = Field.parseField(value);
+        System.out.println(fl);
+    }
 }
