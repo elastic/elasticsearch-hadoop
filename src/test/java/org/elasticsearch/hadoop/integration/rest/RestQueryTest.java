@@ -82,7 +82,6 @@ public class RestQueryTest {
 
     @Test
     public void testQueryShards() throws Exception {
-        BufferedRestClient client = new BufferedRestClient(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
 
         Field mapping = client.getMapping();
