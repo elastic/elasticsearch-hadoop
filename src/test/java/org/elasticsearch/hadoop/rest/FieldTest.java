@@ -19,7 +19,10 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 public class FieldTest {
 
@@ -27,41 +30,58 @@ public class FieldTest {
     public void testNestedObjectParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
+        assertEquals("artiststimestamp", fl.name());
+        Field[] properties = fl.properties();
+        Field first = properties[0];
+        assertEquals("date", first.name());
+        assertEquals(FieldType.DATE, first.type());
+        Field second = properties[1];
+        assertEquals(FieldType.OBJECT, second.type());
+        assertEquals("links", second.name());
+        Field[] secondProps = second.properties();
+        assertEquals("url", secondProps[0].name());
+        assertEquals(FieldType.STRING, secondProps[0].type());
     }
 
     @Test
     public void testBasicParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("basic.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
     }
 
     @Test
     public void testMultiFieldParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_field.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
+        assertEquals("tweet", fl.name());
+        assertEquals(1, fl.properties().length);
+        Field nested = fl.properties()[0];
+        assertEquals("name", nested.name());
+        assertEquals(FieldType.STRING, nested.type());
     }
 
     @Test
     public void testCompletionParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("completion.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
+        assertEquals("song", fl.name());
+        Field[] props = fl.properties();
+        assertEquals(1, props.length);
+        assertEquals("name", props[0].name());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testGeolocationParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
+        assertEquals(0, fl.properties().length);
     }
 
     @Test
     public void testUnsupportedParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("attachment.json"), Map.class);
         Field fl = Field.parseField(value);
-        System.out.println(fl);
+        assertEquals("person", fl.name());
+        assertEquals(0, fl.properties().length);
     }
 }

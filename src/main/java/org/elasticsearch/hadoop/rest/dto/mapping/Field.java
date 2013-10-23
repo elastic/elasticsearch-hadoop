@@ -87,6 +87,8 @@ public class Field implements Serializable {
             fields.put(field.name(), field.type());
         }
     }
+
+    @SuppressWarnings("unchecked")
     private static Field parseField(Entry<String, Object> entry, String previousKey) {
         // can be "type" or field name
         String key = entry.getKey();
@@ -94,18 +96,23 @@ public class Field implements Serializable {
 
         // nested object
         if (value instanceof Map) {
-            @SuppressWarnings("unchecked")
             Map<String, Object> content = (Map<String, Object>) value;
 
             // check type first
             Object type = content.get("type");
             if (type instanceof String) {
                 String typeString = type.toString();
-                // check if its internal
-                if (typeString.startsWith("_")) {
-                    return null;
+                FieldType fieldType = FieldType.parse(typeString);
+
+                // handle multi_field separately
+                if (FieldType.MULTI_FIELD == fieldType) {
+                    // get fields
+                    Map<String, Object> fields = (Map<String, Object>) content.get("fields");
+                    // return default field
+                    Map<String, Object> defaultField = (Map<String, Object>) fields.get(key);
+                    return new Field(key, FieldType.parse(defaultField.get("type").toString()));
                 }
-                FieldType fieldType = FieldType.parse(typeString.toUpperCase());
+
                 if (FieldType.isRelevant(fieldType)) {
                     return new Field(key, fieldType);
                 }

@@ -20,6 +20,8 @@ public enum FieldType {
 
     // compound types
     OBJECT,
+    MULTI_FIELD,
+
     NESTED,
 
     // not supported yet
@@ -35,7 +37,6 @@ public enum FieldType {
     ENVELOPE,
 
     // ignored
-    MULTI_FIELD,
     COMPLETION;
 
     private static final Set<String> KNOWN_TYPES = new LinkedHashSet<String>();
@@ -47,11 +48,12 @@ public enum FieldType {
     }
 
     public static FieldType parse(String name) {
-        return (KNOWN_TYPES.contains(name) ? FieldType.valueOf(name) : null);
+        String n = (name != null ? name.toUpperCase() : name);
+        return (KNOWN_TYPES.contains(n) ? FieldType.valueOf(n) : null);
     }
 
     public static boolean isRelevant(FieldType fieldType) {
-        if (fieldType == null || COMPLETION == fieldType || MULTI_FIELD == fieldType) {
+        if (fieldType == null || COMPLETION == fieldType) {
             return false;
         }
 

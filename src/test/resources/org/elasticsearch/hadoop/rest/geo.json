@@ -1,6 +1,10 @@
 {
-    "location" : {
-        "type" : "point",
-        "coordinates" : [45.0, -45.0]
+    "restaurant" : {
+        "properties" : {
+            "location" : {
+                "type" : "point",
+                "coordinates" : [45.0, -45.0]
+            }
+        }
     }
 }
