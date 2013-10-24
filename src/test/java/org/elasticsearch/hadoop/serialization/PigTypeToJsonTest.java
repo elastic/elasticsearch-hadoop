@@ -17,6 +17,8 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.data.DataByteArray;
@@ -111,8 +113,11 @@ public class PigTypeToJsonTest {
 
     @Test
     public void testMap() {
-        pigTypeToJson(createTuple(Collections.singletonMap("key", "value"),
-                createSchema("map: [chararray]")));
+        Map<String, Number> map = new LinkedHashMap<String, Number>();
+        map.put("one", 1);
+        map.put("two", 2);
+        map.put("three", 3);
+        pigTypeToJson(createTuple(map, createSchema("map: [int]")));
     }
 
     @Test

@@ -118,11 +118,10 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
 
             generator.writeBeginObject();
-            int index = 0;
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
                 generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                write(entry.getValue(), nestedFields[index++], generator, false);
+                write(entry.getValue(), nestedFields[0], generator, false);
             }
             generator.writeEndObject();
             break;
