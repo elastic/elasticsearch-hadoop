@@ -46,8 +46,7 @@ public class MROldApiSaveTest {
             StringTokenizer st = new StringTokenizer(value.toString(), "\t");
             Map<String, String> entry = new LinkedHashMap<String, String>();
 
-            // ignore number
-            st.nextElement();
+            entry.put("number", st.nextToken());
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
             if (st.hasMoreTokens()) {
@@ -71,6 +70,24 @@ public class MROldApiSaveTest {
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         conf.set("es.resource", "mroldapi/save");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
+    public void testSaveWithId() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set("es.mapping.id", "number");
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+        conf.set("es.resource", "mroldapi/savewithid");
 
         JobClient.runJob(conf);
     }

@@ -41,9 +41,21 @@ public class BytesArray {
         return size;
     }
 
-    public void setBytes(byte[] array, int size) {
+    public int capacity() {
+        return bytes.length;
+    }
+
+    public void bytes(byte[] array, int size) {
         this.bytes = array;
         this.size = size;
+    }
+
+    public void size(int size) {
+        this.size = size;
+    }
+
+    public void increment(int delta) {
+        this.size += delta;
     }
 
     @Override

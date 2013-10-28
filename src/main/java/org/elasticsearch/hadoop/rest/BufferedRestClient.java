@@ -28,12 +28,13 @@ import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.IdExtractor;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -44,30 +45,28 @@ public class BufferedRestClient implements Closeable {
     private static Log log = LogFactory.getLog(BufferedRestClient.class);
 
     // serialization artifacts
-
-    private byte[] buffer;
     private int bufferEntriesThreshold;
 
-    private int bufferSize = 0;
+    private final BytesArray bytes = new BytesArray(0);
     private int bufferEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
 
     private BytesArray scratchPad;
     private ValueWriter<?> valueWriter;
+    private IdExtractor idExtractor;
 
     private boolean writeInitialized = false;
 
     private RestClient client;
     private String index;
     private Resource resource;
+    private final Operation operation;
     private final boolean trace;
 
     private final Settings settings;
 
-    private static final byte[] INDEX_DIRECTIVE = "{\"index\":{}}\n".getBytes(StringUtils.UTF_8);
     private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
-
 
     public BufferedRestClient(Settings settings) {
         this.settings = settings;
@@ -78,28 +77,32 @@ public class BufferedRestClient implements Closeable {
         }
         this.index = tempIndex;
         this.resource = new Resource(index);
+        this.operation = Operation.fromString(settings.getOperation());
 
         trace = log.isTraceEnabled();
     }
 
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
-
     private void lazyInitWriting() {
         if (!writeInitialized) {
             writeInitialized = true;
 
-            buffer = new byte[settings.getBatchSizeInBytes()];
+            bytes.bytes(new byte[settings.getBatchSizeInBytes()], 0);
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-            valueWriter = SerializationUtils.instantiateValueWriter(settings);
+            valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
+            idExtractor = (StringUtils.hasText(settings.getMappingId()) ? ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
 
             if (scratchPad == null) {
                 scratchPad = new BytesArray(1024);
             }
 
             if (trace) {
-                log.trace(String.format("Instantied value writer [%s]", valueWriter));
+                log.trace(String.format("Instantiated value writer [%s]", valueWriter));
+                if (idExtractor != null) {
+                    log.trace(String.format("Instantiated id extractor [%s]", idExtractor));
+                }
             }
         }
     }
@@ -123,7 +126,7 @@ public class BufferedRestClient implements Closeable {
      *
      * @param object object to add to the index
      */
-    public void addToIndex(Object object) throws IOException {
+    public void writeToIndex(Object object) throws IOException {
         Assert.hasText(index, "no index given");
         Assert.notNull(object, "no object data given");
 
@@ -132,7 +135,7 @@ public class BufferedRestClient implements Closeable {
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
         ContentBuilder.generate(bos, valueWriter).value(object).flush().close();
 
-        doAddToIndex();
+        doWriteToIndex(object);
     }
 
     /**
@@ -141,7 +144,7 @@ public class BufferedRestClient implements Closeable {
      * @param data as a byte array
      * @param size the length to use from the given array
      */
-    public void addToIndex(byte[] data, int size) throws IOException {
+    public void writeToIndex(byte[] data, int size) throws IOException {
         Assert.hasText(index, "no index given");
         Assert.notNull(data, "no data given");
         Assert.isTrue(size > 0, "no data given");
@@ -151,24 +154,30 @@ public class BufferedRestClient implements Closeable {
             scratchPad = new BytesArray(0);
         }
         lazyInitWriting();
-        scratchPad.setBytes(data, size);
-        doAddToIndex();
+        scratchPad.bytes(data, size);
+        doWriteToIndex(null);
     }
 
-    private void doAddToIndex() throws IOException {
-        if (trace) {
-            log.trace(String.format("Indexing object [%s]", scratchPad));
-        }
-
-        int entrySize = INDEX_DIRECTIVE.length + CARRIER_RETURN.length + scratchPad.size();
+    private void doWriteToIndex(Object object) throws IOException {
+        String id = (idExtractor != null ? idExtractor.id(object) : null);
+        int entrySize = operation.jsonSize(id) + CARRIER_RETURN.length + scratchPad.size();
 
         // make some space first
-        if (entrySize + bufferSize > buffer.length) {
+        if (entrySize + bytes.size() > bytes.capacity()) {
             flushBatch();
         }
 
-        copyIntoBuffer(INDEX_DIRECTIVE, INDEX_DIRECTIVE.length);
+        if (trace) {
+            BytesArray ba = new BytesArray(256);
+            operation.writeHeader(id, ba);
+            log.trace(String.format("header [%s]|object [%s]", ba, scratchPad));
+        }
+
+        // write header
+        operation.writeHeader(id, bytes);
+        // write object
         copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
+        // write new line
         copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
 
         bufferEntries++;
@@ -179,17 +188,17 @@ public class BufferedRestClient implements Closeable {
     }
 
     private void copyIntoBuffer(byte[] data, int size) {
-        System.arraycopy(data, 0, buffer, bufferSize, size);
-        bufferSize += size;
+        System.arraycopy(data, 0, bytes.bytes(), bytes.size(), size);
+        bytes.increment(size);
     }
 
     private void flushBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Flushing batch of [%d]", bufferSize));
+            log.debug(String.format("Flushing batch of [%d]", bytes.size()));
         }
 
-        client.bulk(index, buffer, bufferSize);
-        bufferSize = 0;
+        client.bulk(index, bytes.bytes(), bytes.size());
+        bytes.reset();
         bufferEntries = 0;
         executedBulkWrite = true;
     }
@@ -197,7 +206,7 @@ public class BufferedRestClient implements Closeable {
     @Override
     public void close() {
         try {
-            if (bufferSize > 0) {
+            if (bytes.size() > 0) {
                 flushBatch();
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {

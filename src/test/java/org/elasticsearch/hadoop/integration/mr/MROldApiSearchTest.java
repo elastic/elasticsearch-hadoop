@@ -44,6 +44,23 @@ public class MROldApiSearchTest {
     }
 
     @Test
+    public void testSearchWithId() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(ESInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(MapWritable.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set("es.resource", "mroldapi/savewithid/_search?q=*");
+
+        // un-comment to print results to the console (works only in local mode)
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
     public void testSearchNonExistingIndex() throws Exception {
         JobConf conf = HdpBootstrap.hadoopConfig();
 

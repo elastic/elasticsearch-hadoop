@@ -247,6 +247,6 @@ public class FastByteArrayInputStream extends InputStream {
     }
 
     public void setBytes(byte[] data, int size) {
-        this.data.setBytes(data, size);
+        this.data.bytes(data, size);
     }
 }

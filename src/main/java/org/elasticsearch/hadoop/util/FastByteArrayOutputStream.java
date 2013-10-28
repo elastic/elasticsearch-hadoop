@@ -107,7 +107,7 @@ public class FastByteArrayOutputStream extends OutputStream {
     }
 
     public void setBytes(byte[] data, int size) {
-        this.data.setBytes(data, size);
+        this.data.bytes(data, size);
     }
 
     /**
@@ -125,7 +125,7 @@ public class FastByteArrayOutputStream extends OutputStream {
      * Resets the <code>count</code> field of this byte array output
      * stream to zero, so that all currently accumulated output in the
      * output stream is discarded. The output stream can be used again,
-     * reusing the already allocated buffer space.
+     * reusing the already capacity buffer space.
      *
      * @see java.io.ByteArrayInputStream#count
      */

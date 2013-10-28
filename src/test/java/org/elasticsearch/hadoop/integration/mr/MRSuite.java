@@ -24,7 +24,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class , MRNewApiSaveTest.class, MRNewApiSearchTest.class })
+@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class, MRNewApiSaveTest.class,
+        MRNewApiSearchTest.class })
 //@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class })
 public class MRSuite {
     @ClassRule

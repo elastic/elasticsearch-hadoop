@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.serialization;
 
-/**
- * Enumeration of the supported Elasticsearch Types
- */
-public enum EsType {
+public interface IdExtractor {
 
-    BOOLEAN, BINARY, BYTE, SHORT, INTEGER, LONG, FLOAT, DOUBLE, STRING, DATE;
-
-    public String value() {
-        return name().toLowerCase();
-    }
+    String id(Object target);
 }

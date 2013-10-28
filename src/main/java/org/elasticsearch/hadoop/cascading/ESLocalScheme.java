@@ -165,6 +165,6 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     @Override
     public void sink(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
-        client.addToIndex(sinkCall);
+        client.writeToIndex(sinkCall);
     }
 }

@@ -16,13 +16,16 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.IdExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class InitializationUtils {
 
@@ -38,6 +41,17 @@ public abstract class InitializationUtils {
                         settings.getTargetResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
             }
         }
+    }
+
+    public static boolean setIdExtractorIfNotSet(Settings settings, Class<? extends IdExtractor> clazz, Log log) {
+        if (!StringUtils.hasText(settings.getMappingIdExtractorClassName())) {
+            settings.setProperty(ConfigurationOptions.ES_MAPPING_ID_EXTRACTOR_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            logger.debug(String.format("Using pre-defined id extractor [%s] as default", settings.getMappingIdExtractorClassName()));
+            return true;
+        }
+
+        return false;
     }
 
     public static <T> void saveSchemaIfNeeded(Object conf, ValueWriter<T> schemaWriter, T schema, Log log) {

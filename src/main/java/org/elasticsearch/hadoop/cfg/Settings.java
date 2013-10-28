@@ -15,14 +15,14 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
-import java.util.Enumeration;
-import java.util.Properties;
-
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
+
+import java.util.Enumeration;
+import java.util.Properties;
 
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
@@ -79,6 +79,18 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public boolean getIndexReadMissingAsEmpty() {
         return Booleans.parseBoolean(getProperty(ES_INDEX_READ_MISSING_AS_EMPTY, ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT));
+    }
+
+    public String getOperation() {
+        return getProperty(ES_OPERATION, ES_OPERATION_DEFAULT);
+    }
+
+    public String getMappingId() {
+        return getProperty(ES_MAPPING_ID, null);
+    }
+
+    public String getMappingIdExtractorClassName() {
+        return getProperty(ES_MAPPING_ID_EXTRACTOR_CLASS, null);
     }
 
     public String getTargetUri() {

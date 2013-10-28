@@ -64,11 +64,19 @@ public interface ConfigurationOptions {
     String ES_SERIALIZATION_READER_CLASS = "es.ser.reader.class";
 
     /** Index settings */
-
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
 
     String ES_INDEX_READ_MISSING_AS_EMPTY = "es.index.read.missing.as.empty";
     String ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT = "false";
 
+    /** Operation types */
+    String ES_OPERATION = "es.operation";
+    String ES_OPERATION_INDEX = "index";
+    String ES_OPERATION_CREATE = "create";
+    String ES_OPERATION_DELETE = "delete";
+    String ES_OPERATION_DEFAULT = ES_OPERATION_INDEX;
+
+    String ES_MAPPING_ID = "es.mapping.id";
+    String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
 }

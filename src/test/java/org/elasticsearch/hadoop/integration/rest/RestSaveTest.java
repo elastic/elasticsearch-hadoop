@@ -45,7 +45,7 @@ public class RestSaveTest {
             line.put("name", in.next());
             line.put("url", in.next());
             line.put("picture", in.next());
-            client.addToIndex(line);
+            client.writeToIndex(line);
             line.clear();
         }
 

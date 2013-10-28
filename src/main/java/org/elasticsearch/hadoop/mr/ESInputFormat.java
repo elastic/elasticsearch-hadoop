@@ -15,14 +15,6 @@
  */
 package org.elasticsearch.hadoop.mr;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -30,11 +22,7 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.*;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -48,7 +36,16 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.serialization.ValueReader;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * ElasticSearch {@link InputFormat} for streaming data (typically based on a query) from ElasticSearch.
@@ -169,7 +166,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
             // initialize mapping/ scroll reader
             SerializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
-            ValueReader reader = SerializationUtils.instantiateValueReader(settings);
+            ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
 
             String mappingData = esSplit.mapping;
 

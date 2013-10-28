@@ -15,6 +15,9 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
+
 public abstract class ObjectUtils {
 
     @SuppressWarnings("unchecked")
@@ -32,5 +35,19 @@ public abstract class ObjectUtils {
         } catch (Exception e) {
             throw new IllegalStateException(String.format("Cannot instantiate class [%s]", className), e);
         }
+    }
+
+    public static <T> T instantiate(String className, Settings settings) {
+        return instantiate(className, null, settings);
+    }
+
+    public static <T> T instantiate(String className, ClassLoader loader, Settings settings) {
+        T obj = instantiate(className, loader);
+
+        if (obj instanceof SettingsAware) {
+            ((SettingsAware) obj).setSettings(settings);
+        }
+
+        return obj;
     }
 }
