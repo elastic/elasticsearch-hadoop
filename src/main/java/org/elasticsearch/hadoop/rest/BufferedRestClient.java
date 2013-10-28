@@ -27,15 +27,11 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
-import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.IdExtractor;
+import org.elasticsearch.hadoop.serialization.BulkCommands;
+import org.elasticsearch.hadoop.serialization.Command;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
@@ -47,26 +43,18 @@ public class BufferedRestClient implements Closeable {
     // serialization artifacts
     private int bufferEntriesThreshold;
 
-    private final BytesArray bytes = new BytesArray(0);
-    private int bufferEntries = 0;
+    private final BytesArray data = new BytesArray(0);
+    private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
-
-    private BytesArray scratchPad;
-    private ValueWriter<?> valueWriter;
-    private IdExtractor idExtractor;
 
     private boolean writeInitialized = false;
 
     private RestClient client;
     private String index;
     private Resource resource;
-    private final Operation operation;
-    private final boolean trace;
-
+    private Command command;
     private final Settings settings;
-
-    private static final byte[] CARRIER_RETURN = "\n".getBytes(StringUtils.UTF_8);
 
     public BufferedRestClient(Settings settings) {
         this.settings = settings;
@@ -77,9 +65,6 @@ public class BufferedRestClient implements Closeable {
         }
         this.index = tempIndex;
         this.resource = new Resource(index);
-        this.operation = Operation.fromString(settings.getOperation());
-
-        trace = log.isTraceEnabled();
     }
 
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
@@ -87,23 +72,11 @@ public class BufferedRestClient implements Closeable {
         if (!writeInitialized) {
             writeInitialized = true;
 
-            bytes.bytes(new byte[settings.getBatchSizeInBytes()], 0);
+            data.bytes(new byte[settings.getBatchSizeInBytes()], 0);
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-            valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
-            idExtractor = (StringUtils.hasText(settings.getMappingId()) ? ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
-
-            if (scratchPad == null) {
-                scratchPad = new BytesArray(1024);
-            }
-
-            if (trace) {
-                log.trace(String.format("Instantiated value writer [%s]", valueWriter));
-                if (idExtractor != null) {
-                    log.trace(String.format("Instantiated id extractor [%s]", idExtractor));
-                }
-            }
+            this.command = BulkCommands.create(settings);
         }
     }
 
@@ -131,10 +104,6 @@ public class BufferedRestClient implements Closeable {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        scratchPad.reset();
-        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
-        ContentBuilder.generate(bos, valueWriter).value(object).flush().close();
-
         doWriteToIndex(object);
     }
 
@@ -149,64 +118,47 @@ public class BufferedRestClient implements Closeable {
         Assert.notNull(data, "no data given");
         Assert.isTrue(size > 0, "no data given");
 
-        if (scratchPad == null) {
-            // minor optimization to avoid allocating data when used by Hive (which already has its own scratchPad)
-            scratchPad = new BytesArray(0);
-        }
-        lazyInitWriting();
-        scratchPad.bytes(data, size);
-        doWriteToIndex(null);
+        throw new UnsupportedOperationException();
+        //        if (scratchPad == null) {
+        //            // minor optimization to avoid allocating data when used by Hive (which already has its own scratchPad)
+        //            scratchPad = new BytesArray(0);
+        //        }
+        //        lazyInitWriting();
+        //        scratchPad.bytes(data, size);
+        //        doWriteToIndex(null);
     }
 
     private void doWriteToIndex(Object object) throws IOException {
-        String id = (idExtractor != null ? idExtractor.id(object) : null);
-        int entrySize = operation.jsonSize(id) + CARRIER_RETURN.length + scratchPad.size();
+        int entrySize = command.prepare(object);
 
         // make some space first
-        if (entrySize + bytes.size() > bytes.capacity()) {
+        if (entrySize + data.size() > data.capacity()) {
             flushBatch();
         }
 
-        if (trace) {
-            BytesArray ba = new BytesArray(256);
-            operation.writeHeader(id, ba);
-            log.trace(String.format("header [%s]|object [%s]", ba, scratchPad));
-        }
+        command.write(object, data);
+        dataEntries++;
 
-        // write header
-        operation.writeHeader(id, bytes);
-        // write object
-        copyIntoBuffer(scratchPad.bytes(), scratchPad.size());
-        // write new line
-        copyIntoBuffer(CARRIER_RETURN, CARRIER_RETURN.length);
-
-        bufferEntries++;
-
-        if (bufferEntriesThreshold > 0 && bufferEntries >= bufferEntriesThreshold) {
+        if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
             flushBatch();
         }
-    }
-
-    private void copyIntoBuffer(byte[] data, int size) {
-        System.arraycopy(data, 0, bytes.bytes(), bytes.size(), size);
-        bytes.increment(size);
     }
 
     private void flushBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Flushing batch of [%d]", bytes.size()));
+            log.debug(String.format("Flushing batch of [%d]", data.size()));
         }
 
-        client.bulk(index, bytes.bytes(), bytes.size());
-        bytes.reset();
-        bufferEntries = 0;
+        client.bulk(index, data.bytes(), data.size());
+        data.reset();
+        dataEntries = 0;
         executedBulkWrite = true;
     }
 
     @Override
     public void close() {
         try {
-            if (bytes.size() > 0) {
+            if (data.size() > 0) {
                 flushBatch();
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {
