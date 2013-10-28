@@ -41,8 +41,7 @@ public class MRNewApiSaveTest {
             StringTokenizer st = new StringTokenizer(value.toString(), "\t");
             Map<String, String> entry = new LinkedHashMap<String, String>();
 
-            // ignore number
-            st.nextElement();
+            entry.put("number", st.nextToken());
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
             if (st.hasMoreTokens()) {
@@ -57,6 +56,24 @@ public class MRNewApiSaveTest {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set("es.resource", "mrnewapi/save");
+
+        Job job = new Job(conf);
+        job.setInputFormatClass(TextInputFormat.class);
+        job.setOutputFormatClass(ESOutputFormat.class);
+        job.setMapOutputValueClass(MapWritable.class);
+        job.setMapperClass(JsonMapper.class);
+
+        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+
+        job.waitForCompletion(true);
+    }
+
+    @Test
+    public void testSaveWithId() throws Exception {
+        Configuration conf = HdpBootstrap.hadoopConfig();
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set("es.resource", "mrnewapi/savewithid");
+        conf.set("es.mapping.id", "number");
 
         Job job = new Job(conf);
         job.setInputFormatClass(TextInputFormat.class);

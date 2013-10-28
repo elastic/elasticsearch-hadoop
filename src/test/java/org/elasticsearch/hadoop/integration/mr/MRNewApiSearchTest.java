@@ -44,6 +44,23 @@ public class MRNewApiSearchTest {
     }
 
     @Test
+    public void testSearchWithId() throws Exception {
+        Configuration conf = HdpBootstrap.hadoopConfig();
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set("es.resource", "mrnewapi/savewithid/_search?q=*");
+
+        Job job = new Job(conf);
+        job.setInputFormatClass(ESInputFormat.class);
+        job.setOutputFormatClass(PrintStreamOutputFormat.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(MapWritable.class);
+
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        job.waitForCompletion(true);
+    }
+
+    @Test
     public void testSearchNonExistingIndex() throws Exception {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
