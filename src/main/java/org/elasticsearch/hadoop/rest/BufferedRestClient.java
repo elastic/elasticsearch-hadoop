@@ -119,13 +119,6 @@ public class BufferedRestClient implements Closeable {
         Assert.isTrue(size > 0, "no data given");
 
         throw new UnsupportedOperationException();
-        //        if (scratchPad == null) {
-        //            // minor optimization to avoid allocating data when used by Hive (which already has its own scratchPad)
-        //            scratchPad = new BytesArray(0);
-        //        }
-        //        lazyInitWriting();
-        //        scratchPad.bytes(data, size);
-        //        doWriteToIndex(null);
     }
 
     private void doWriteToIndex(Object object) throws IOException {
