@@ -30,8 +30,13 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+import static org.junit.Assert.*;
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MRNewApiSaveTest {
 
     public static class JsonMapper extends Mapper {
@@ -53,41 +58,82 @@ public class MRNewApiSaveTest {
 
     @Test
     public void testBasicSave() throws Exception {
-        Configuration conf = HdpBootstrap.hadoopConfig();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mrnewapi/save");
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save");
 
-        Job job = new Job(conf);
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(ESOutputFormat.class);
-        job.setMapOutputValueClass(MapWritable.class);
-        job.setMapperClass(JsonMapper.class);
-
-        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
-
-        job.waitForCompletion(true);
+        new Job(conf).waitForCompletion(true);
     }
 
     @Test
     public void testSaveWithId() throws Exception {
-        Configuration conf = HdpBootstrap.hadoopConfig();
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testCreateWithId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
+        Configuration conf = createConf();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mrnewapi/savewithid");
-        conf.set("es.mapping.id", "number");
+        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
 
-        Job job = new Job(conf);
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(ESOutputFormat.class);
-        job.setMapOutputValueClass(MapWritable.class);
-        job.setMapperClass(JsonMapper.class);
+        assertFalse("job should have failed", new Job(conf).waitForCompletion(true));
+    }
 
-        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateWithoutId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
-        job.waitForCompletion(true);
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testUpdateWithId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testUpdateWithoutUpsert() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
+
+        assertFalse("job should have failed", new Job(conf).waitForCompletion(true));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
 
@@ -98,10 +144,6 @@ public class MRNewApiSaveTest {
         job.setMapperClass(JsonMapper.class);
 
         TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
-
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
-        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
-
-        job.waitForCompletion(true);
+        return job.getConfiguration();
     }
 }

@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
@@ -28,53 +30,38 @@ public class MRNewApiSearchTest {
 
     @Test
     public void testBasicSearch() throws Exception {
-        Configuration conf = HdpBootstrap.hadoopConfig();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mrnewapi/save/_search?q=*");
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save/_search?q=*");
 
-        Job job = new Job(conf);
-        job.setInputFormatClass(ESInputFormat.class);
-        job.setOutputFormatClass(PrintStreamOutputFormat.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(MapWritable.class);
-
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
-        job.waitForCompletion(true);
+        new Job(conf).waitForCompletion(true);
     }
 
     @Test
     public void testSearchWithId() throws Exception {
-        Configuration conf = HdpBootstrap.hadoopConfig();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mrnewapi/savewithid/_search?q=*");
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid/_search?q=*");
 
-        Job job = new Job(conf);
-        job.setInputFormatClass(ESInputFormat.class);
-        job.setOutputFormatClass(PrintStreamOutputFormat.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(MapWritable.class);
-
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
-        job.waitForCompletion(true);
+        new Job(conf).waitForCompletion(true);
     }
 
     @Test
     public void testSearchNonExistingIndex() throws Exception {
+        Configuration conf = createConf();
+        conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set("es.resource", "foobar/save/_search?q=*");
-
         Job job = new Job(conf);
         job.setInputFormatClass(ESInputFormat.class);
         job.setOutputFormatClass(PrintStreamOutputFormat.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(MapWritable.class);
-
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
-        job.waitForCompletion(true);
+        return job.getConfiguration();
     }
 }
