@@ -33,9 +33,6 @@ public class MROldApiSearchTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save/_search?q=*");
 
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
         JobClient.runJob(conf);
     }
 
@@ -43,9 +40,6 @@ public class MROldApiSearchTest {
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid/_search?q=*");
-
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 
         JobClient.runJob(conf);
     }
@@ -56,9 +50,6 @@ public class MROldApiSearchTest {
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
         conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
 
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
         JobClient.runJob(conf);
     }
 
@@ -66,9 +57,6 @@ public class MROldApiSearchTest {
     public void testSearchCreated() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid/_search?q=*");
-
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 
         JobClient.runJob(conf);
     }
@@ -78,9 +66,6 @@ public class MROldApiSearchTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update/_search?q=*");
 
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-
         JobClient.runJob(conf);
     }
 
@@ -89,9 +74,6 @@ public class MROldApiSearchTest {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert/_search?q=*");
-
-        // un-comment to print results to the console (works only in local mode)
-        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
 
         JobClient.runJob(conf);
     }
@@ -108,5 +90,4 @@ public class MROldApiSearchTest {
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         return conf;
     }
-
 }
