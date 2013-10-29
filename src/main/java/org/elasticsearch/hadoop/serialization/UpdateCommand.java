@@ -25,9 +25,9 @@ public class UpdateCommand extends AbstractCommand {
     private final boolean UPSERT_DOC;
 
     private final byte[] HEADER_PREFIX = ("{\"" + ConfigurationOptions.ES_OPERATION_UPDATE + "\":{\"_id\":\"").getBytes(StringUtils.UTF_8);
-    private final byte[] HEADER_SUFFIX = ("\"}}\n{\"doc\":").getBytes(StringUtils.UTF_8);
-    private final byte[] BODY_NO_DOC_UPSERT_SUFFIX = ("}").getBytes(StringUtils.UTF_8);
-    private final byte[] BODY_DOC_UPSERT_SUFFIX = (",\"doc_as_upsert\":true}").getBytes(StringUtils.UTF_8);
+    private final byte[] HEADER_SUFFIX_DOC_UPSERT = ("\"}}\n{\"doc_as_upsert\":true,\"doc\":").getBytes(StringUtils.UTF_8);
+    private final byte[] HEADER_SUFFIX_NO_DOC_UPSERT = ("\"}}\n{\"doc\":").getBytes(StringUtils.UTF_8);
+    private final byte[] BODY_DOC_UPSERT_SUFFIX = ("}").getBytes(StringUtils.UTF_8);
 
 
     UpdateCommand(Settings settings) {
@@ -47,7 +47,7 @@ public class UpdateCommand extends AbstractCommand {
 
     @Override
     protected byte[] headerSuffix() {
-        return HEADER_SUFFIX;
+        return (UPSERT_DOC ? HEADER_SUFFIX_DOC_UPSERT : HEADER_SUFFIX_NO_DOC_UPSERT);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class UpdateCommand extends AbstractCommand {
 
     @Override
     public int prepare(Object object) {
-        return super.prepare(object) + (UPSERT_DOC ? BODY_DOC_UPSERT_SUFFIX.length : BODY_NO_DOC_UPSERT_SUFFIX.length);
+        return super.prepare(object) + BODY_DOC_UPSERT_SUFFIX.length;
     }
 
     @Override
@@ -66,11 +66,6 @@ public class UpdateCommand extends AbstractCommand {
         // write document
         super.writeSource(object, buffer);
         // append body
-        if (UPSERT_DOC) {
-            copyIntoBuffer(BODY_DOC_UPSERT_SUFFIX, buffer);
-        }
-        else {
-            copyIntoBuffer(BODY_NO_DOC_UPSERT_SUFFIX, buffer);
-        }
+        copyIntoBuffer(BODY_DOC_UPSERT_SUFFIX, buffer);
     }
 }
