@@ -80,7 +80,7 @@ public class MROldApiSaveTest {
     @Test
     public void testCreateWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
 
@@ -90,7 +90,7 @@ public class MROldApiSaveTest {
     @Test(expected = IOException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
 
@@ -100,7 +100,7 @@ public class MROldApiSaveTest {
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
         JobClient.runJob(conf);
@@ -109,7 +109,7 @@ public class MROldApiSaveTest {
     @Test
     public void testUpdateWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
@@ -119,7 +119,7 @@ public class MROldApiSaveTest {
     @Test(expected = IOException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
         conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
