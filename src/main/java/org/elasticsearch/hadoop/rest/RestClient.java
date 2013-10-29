@@ -94,7 +94,7 @@ public class RestClient implements Closeable {
         return (T) (string != null ? map.get(string) : map);
     }
 
-    public void bulk(String index, byte[] buffer, int bufferSize) {
+    public void bulk(String index, byte[] buffer, int bufferSize) throws IOException {
         //empty buffer, ignore
         if (bufferSize == 0) {
             return;
@@ -103,7 +103,31 @@ public class RestClient implements Closeable {
         PostMethod post = new PostMethod(index + "/_bulk");
         post.setRequestEntity(new JsonByteArrayRequestEntity(buffer, bufferSize));
         post.setContentChunked(false);
-        execute(post);
+
+        if (log.isTraceEnabled()) {
+            log.trace("Sending bulk request " + new String(buffer, 0, bufferSize, StringUtils.UTF_8));
+        }
+
+        byte[] content = execute(post);
+        // create parser manually to lower Jackson requirements
+        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
+        Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
+        List<Object> items = (List<Object>) map.get("items");
+
+        boolean failed = false;
+
+        for (Object item : items) {
+            Map<String, String> messages = (Map<String, String>) ((Map) item).values().iterator().next();
+            String message = messages.get("error");
+            if (StringUtils.hasText(message)) {
+                throw new IllegalStateException(String.format(
+                        "Bulk request on index [%s] failed; at least one error reported [%s]", index, message));
+            }
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("Received bulk response " + new String(content));
+        }
     }
 
     public void refresh(String index) {
