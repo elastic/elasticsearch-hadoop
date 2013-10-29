@@ -55,13 +55,19 @@ public class UpdateCommand extends AbstractCommand {
         throw new UnsupportedOperationException("Id is required but none was given");
     }
 
+
+    @Override
+    public int prepare(Object object) {
+        return super.prepare(object) + (UPSERT_DOC ? BODY_DOC_UPSERT_SUFFIX.length : BODY_NO_DOC_UPSERT_SUFFIX.length);
+    }
+
     @Override
     protected void writeSource(Object object, BytesArray buffer) {
         // write document
         super.writeSource(object, buffer);
         // append body
         if (UPSERT_DOC) {
-            super.copyIntoBuffer(BODY_DOC_UPSERT_SUFFIX, buffer);
+            copyIntoBuffer(BODY_DOC_UPSERT_SUFFIX, buffer);
         }
         else {
             copyIntoBuffer(BODY_NO_DOC_UPSERT_SUFFIX, buffer);
