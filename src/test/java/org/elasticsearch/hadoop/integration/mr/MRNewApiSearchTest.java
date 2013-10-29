@@ -53,6 +53,31 @@ public class MRNewApiSearchTest {
         new Job(conf).waitForCompletion(true);
     }
 
+    @Test
+    public void testSearchCreated() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid/_search?q=*");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testSearchUpdated() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update/_search?q=*");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
+        Configuration conf = createConf();
+        conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert/_search?q=*");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
     private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);
