@@ -82,7 +82,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public String getOperation() {
-        return getProperty(ES_OPERATION, ES_OPERATION_DEFAULT);
+        return getProperty(ES_OPERATION, ES_OPERATION_DEFAULT).toLowerCase();
     }
 
     public String getMappingId() {
