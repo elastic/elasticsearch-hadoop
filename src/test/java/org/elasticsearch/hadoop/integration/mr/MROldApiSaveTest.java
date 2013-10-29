@@ -62,16 +62,7 @@ public class MROldApiSaveTest {
 
     @Test
     public void testBasicIndex() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
 
         JobClient.runJob(conf);
@@ -79,35 +70,16 @@ public class MROldApiSaveTest {
 
     @Test
     public void testBasicIndexWithId() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
 
         JobClient.runJob(conf);
     }
 
     @Test
     public void testCreateWithId() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
@@ -117,17 +89,7 @@ public class MROldApiSaveTest {
 
     @Test(expected = IOException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
@@ -137,17 +99,7 @@ public class MROldApiSaveTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUpdateWithoutId() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
@@ -156,17 +108,7 @@ public class MROldApiSaveTest {
 
     @Test
     public void testUpdateWithId() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
@@ -176,17 +118,7 @@ public class MROldApiSaveTest {
 
     @Test(expected = IOException.class)
     public void testUpdateWithoutUpsert() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(TextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
-        conf.setMapperClass(JsonMapper.class);
-        conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
-
-        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
@@ -197,6 +129,14 @@ public class MROldApiSaveTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        JobClient.runJob(conf);
+    }
+
+    private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(TextInputFormat.class);
@@ -207,9 +147,6 @@ public class MROldApiSaveTest {
         conf.setBoolean("mapred.used.genericoptionsparser", true);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
-        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
-
-        JobClient.runJob(conf);
+        return conf;
     }
 }

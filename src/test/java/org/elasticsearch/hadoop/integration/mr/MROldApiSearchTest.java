@@ -15,8 +15,10 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -28,13 +30,7 @@ public class MROldApiSearchTest {
 
     @Test
     public void testBasicSearch() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
@@ -45,13 +41,7 @@ public class MROldApiSearchTest {
 
     @Test
     public void testSearchWithId() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
@@ -62,13 +52,7 @@ public class MROldApiSearchTest {
 
     @Test
     public void testSearchNonExistingIndex() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
         conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
 
@@ -80,13 +64,7 @@ public class MROldApiSearchTest {
 
     @Test
     public void testSearchCreated() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
@@ -97,13 +75,7 @@ public class MROldApiSearchTest {
 
     @Test
     public void testSearchUpdated() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
@@ -114,13 +86,7 @@ public class MROldApiSearchTest {
 
     @Test(expected = IllegalStateException.class)
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
-        JobConf conf = HdpBootstrap.hadoopConfig();
-
-        conf.setInputFormat(ESInputFormat.class);
-        conf.setOutputFormat(PrintStreamOutputFormat.class);
-        conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert/_search?q=*");
 
@@ -129,4 +95,18 @@ public class MROldApiSearchTest {
 
         JobClient.runJob(conf);
     }
+
+    private JobConf createJobConf() {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(ESInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(MapWritable.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+        return conf;
+    }
+
 }
