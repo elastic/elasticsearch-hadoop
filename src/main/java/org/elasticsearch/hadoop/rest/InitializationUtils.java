@@ -23,11 +23,21 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.IdExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class InitializationUtils {
+
+    public static void checkIdForOperation(Settings settings) {
+        String operation = settings.getOperation();
+
+        if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
+            Assert.isTrue(StringUtils.hasText(settings.getMappingId()),
+                    String.format("Operation [%s] requires an id but none (%s)was specified", operation, ConfigurationOptions.ES_MAPPING_ID));
+        }
+    }
 
     public static void checkIndexExistence(Settings settings, BufferedRestClient client) {
         // check index existence

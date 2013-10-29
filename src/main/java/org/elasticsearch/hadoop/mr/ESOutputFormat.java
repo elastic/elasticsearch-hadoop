@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -34,8 +36,6 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.MapWritableIdExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
-
-import java.io.IOException;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -191,6 +191,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         // lazy-init
         BufferedRestClient client = null;
 
+        InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings, client);
 
         log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
