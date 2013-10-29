@@ -35,8 +35,11 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MROldApiSaveTest {
 
     public static class JsonMapper extends MapReduceBase implements Mapper {
@@ -58,7 +61,7 @@ public class MROldApiSaveTest {
     }
 
     @Test
-    public void testBasicSave() throws Exception {
+    public void testBasicIndex() throws Exception {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(TextInputFormat.class);
@@ -69,13 +72,13 @@ public class MROldApiSaveTest {
         conf.setBoolean("mapred.used.genericoptionsparser", true);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-        conf.set("es.resource", "mroldapi/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
 
         JobClient.runJob(conf);
     }
 
     @Test
-    public void testSaveWithId() throws Exception {
+    public void testBasicIndexWithId() throws Exception {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(TextInputFormat.class);
@@ -84,10 +87,110 @@ public class MROldApiSaveTest {
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.mapping.id", "number");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
-        conf.set("es.resource", "mroldapi/savewithid");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
+    public void testCreateWithId() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateWithoutId() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
+    public void testUpdateWithId() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+
+        JobClient.runJob(conf);
+    }
+
+    @Test(expected = IOException.class)
+    public void testUpdateWithoutUpsert() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(TextInputFormat.class);
+        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapperClass(JsonMapper.class);
+        conf.setReducerClass(IdentityReducer.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+
+        FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
+
+        conf.set(ConfigurationOptions.ES_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
 
         JobClient.runJob(conf);
     }

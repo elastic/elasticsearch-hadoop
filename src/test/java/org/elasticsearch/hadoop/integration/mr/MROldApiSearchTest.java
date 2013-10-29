@@ -35,7 +35,7 @@ public class MROldApiSearchTest {
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(MapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mroldapi/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
@@ -52,7 +52,7 @@ public class MROldApiSearchTest {
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(MapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.set("es.resource", "mroldapi/savewithid/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
@@ -70,7 +70,59 @@ public class MROldApiSearchTest {
         conf.setOutputValueClass(MapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set("es.resource", "foobar/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
+
+        // un-comment to print results to the console (works only in local mode)
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
+    public void testSearchCreated() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(ESInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(MapWritable.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid/_search?q=*");
+
+        // un-comment to print results to the console (works only in local mode)
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        JobClient.runJob(conf);
+    }
+
+    @Test
+    public void testSearchUpdated() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(ESInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(MapWritable.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update/_search?q=*");
+
+        // un-comment to print results to the console (works only in local mode)
+        //PrintStreamOutputFormat.stream(conf, Stream.OUT);
+
+        JobClient.runJob(conf);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(ESInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        conf.setOutputValueClass(MapWritable.class);
+        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert/_search?q=*");
 
         // un-comment to print results to the console (works only in local mode)
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
