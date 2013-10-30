@@ -156,7 +156,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
+TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=*'<2>);
 
 -- stream data from Elasticsearch
 SELECT * FROM artists;
