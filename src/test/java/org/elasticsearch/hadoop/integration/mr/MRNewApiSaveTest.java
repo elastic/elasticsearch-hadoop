@@ -98,7 +98,7 @@ public class MRNewApiSaveTest {
     public void testUpdateWithoutId() throws Exception {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -108,7 +108,7 @@ public class MRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -118,7 +118,7 @@ public class MRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
         conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
 
         assertFalse("job should have failed", new Job(conf).waitForCompletion(true));
@@ -127,7 +127,7 @@ public class MRNewApiSaveTest {
     @Test(expected = IllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/non-existing");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         new Job(conf).waitForCompletion(true);
