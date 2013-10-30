@@ -40,8 +40,8 @@ abstract class AbstractCommand implements Command {
 
     AbstractCommand(Settings settings) {
         this.valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
-        this.idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
-                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
+        this.idExtractor = (StringUtils.hasText(settings.getMappingId()) ? ObjectUtils.<IdExtractor> instantiate(
+                settings.getMappingIdExtractorClassName(), settings) : null);
 
         if (log.isTraceEnabled()) {
             log.trace(String.format("Instantiated value writer [%s]", valueWriter));
@@ -53,12 +53,21 @@ abstract class AbstractCommand implements Command {
 
     @Override
     public int prepare(Object object) {
-        String id = extractId(object);
-
         int entrySize = 0;
 
-        if (StringUtils.hasText(id)) {
-            idAsBytes = id.getBytes(StringUtils.UTF_8);
+        if (object instanceof SerializedObject) {
+            SerializedObject so = ((SerializedObject) object);
+            idAsBytes = so.id;
+        }
+
+        else {
+            String id = extractId(object);
+            if (StringUtils.hasText(id)) {
+                idAsBytes = id.getBytes(StringUtils.UTF_8);
+            }
+        }
+
+        if (idAsBytes != null) {
             entrySize += headerPrefix().length;
             entrySize += idAsBytes.length;
             entrySize += headerSuffix().length;
@@ -68,20 +77,26 @@ abstract class AbstractCommand implements Command {
                 throw new IllegalArgumentException(String.format(
                         "Operation [%s] requires an id but none was given/found", this.toString()));
             }
-
-            idAsBytes = null;
-            entrySize += header().length;
+            else {
+                entrySize += header().length;
+            }
         }
 
         if (isSourceRequired()) {
-            serialize(object);
-            // add the trailing \n
-            entrySize += scratchPad.size() + 1;
+            if (object instanceof SerializedObject) {
+                entrySize += ((SerializedObject) object).size;
+            }
+            else {
+                serialize(object);
+                // add the trailing \n
+                entrySize += scratchPad.size();
+            }
+            // trailing \n
+            entrySize++;
         }
 
         return entrySize;
     }
-
 
     @Override
     public void write(Object object, BytesArray buffer) {
@@ -120,8 +135,15 @@ abstract class AbstractCommand implements Command {
 
     protected void writeSource(Object object, BytesArray buffer) {
         // object was serialized - just write it down
-        System.arraycopy(scratchPad.bytes(), 0, buffer.bytes(), buffer.size(), scratchPad.size());
-        buffer.increment(scratchPad.size());
+        if (object instanceof SerializedObject) {
+            SerializedObject so = (SerializedObject) object;
+            System.arraycopy(so.data, 0, buffer.bytes(), buffer.size(), so.size);
+            buffer.increment(so.size);
+        }
+        else {
+            System.arraycopy(scratchPad.bytes(), 0, buffer.bytes(), buffer.size(), scratchPad.size());
+            buffer.increment(scratchPad.size());
+        }
     }
 
     private void writeTrailingReturn(BytesArray buffer) {

@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.BulkCommands;
 import org.elasticsearch.hadoop.serialization.Command;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.SerializedObject;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 
@@ -47,7 +48,7 @@ public class BufferedRestClient implements Closeable {
     private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
-
+    private SerializedObject objectAlreadySerialized;
     private boolean writeInitialized = false;
 
     private RestClient client;
@@ -73,6 +74,7 @@ public class BufferedRestClient implements Closeable {
             writeInitialized = true;
 
             data.bytes(new byte[settings.getBatchSizeInBytes()], 0);
+            objectAlreadySerialized = new SerializedObject();
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
@@ -113,18 +115,24 @@ public class BufferedRestClient implements Closeable {
      * @param data as a byte array
      * @param size the length to use from the given array
      */
-    public void writeToIndex(byte[] data, int size) throws IOException {
+    public void writeToIndex(byte[] data, int size, byte[] id) throws IOException {
         Assert.hasText(index, "no index given");
         Assert.notNull(data, "no data given");
         Assert.isTrue(size > 0, "no data given");
 
-        throw new UnsupportedOperationException();
+        lazyInitWriting();
+
+        objectAlreadySerialized.data = data;
+        objectAlreadySerialized.size = size;
+        objectAlreadySerialized.id = id;
+
+        doWriteToIndex(objectAlreadySerialized);
     }
 
     private void doWriteToIndex(Object object) throws IOException {
         int entrySize = command.prepare(object);
 
-        // make some space first
+        // check space first
         if (entrySize + data.size() > data.capacity()) {
             flushBatch();
         }

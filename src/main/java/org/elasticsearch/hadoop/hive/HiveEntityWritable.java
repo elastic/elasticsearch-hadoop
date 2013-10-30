@@ -23,56 +23,55 @@ import org.apache.hadoop.io.BinaryComparable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Replacement of {@link BytesWritable} that allows direct access to the underlying byte array without copying.
+ * Used to wrap already json serialized hive entities.
  */
-public class FastBytesWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
+public class HiveEntityWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
 
     private int size;
     private byte[] bytes;
+    private byte[] id = new byte[0];
 
-    public FastBytesWritable() {
+    public HiveEntityWritable() {
         bytes = null;
     }
 
-    /**
-     * Create a BytesWritable using the byte array as the initial value.
-     * @param bytes This array becomes the backing storage for the object.
-     */
-    public FastBytesWritable(byte[] bytes, int size) {
-        set(bytes, size);
-    }
-
-    /**
-     * Get the current size of the buffer.
-     */
     public int getLength() {
-        return size;
+        return size + id.length;
     }
 
-    public void set(byte[] bytes, int size) {
+    public byte[] getBytes() {
+        return bytes;
+    }
+
+    public void setContent(byte[] bytes, int size) {
         this.bytes = bytes;
         this.size = size;
     }
-    /**
-     * Get the data from the BytesWritable.
-     * @return The data is only valid between 0 and getLength() - 1.
-     */
-    public byte[] getBytes() {
-        return bytes;
+
+    public void setId(byte[] id) {
+        this.id = id;
+    }
+
+    public byte[] getId() {
+        return id;
     }
 
     // inherit javadoc
     public void readFields(DataInput in) throws IOException {
         size = in.readInt();
         in.readFully(bytes, 0, size);
+        in.readFully(id, 0, id.length);
     }
 
     // inherit javadoc
     public void write(DataOutput out) throws IOException {
         out.writeInt(size);
         out.write(bytes, 0, size);
+        out.write(id, 0, id.length);
     }
 
     public int hashCode() {
@@ -83,7 +82,7 @@ public class FastBytesWritable extends BinaryComparable implements WritableCompa
      * Are the two byte sequences equal?
      */
     public boolean equals(Object right_obj) {
-        if (right_obj instanceof FastBytesWritable)
+        if (right_obj instanceof HiveEntityWritable)
             return super.equals(right_obj);
         return false;
     }
@@ -92,26 +91,20 @@ public class FastBytesWritable extends BinaryComparable implements WritableCompa
      * Generate the stream of bytes as hex pairs separated by ' '.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer(3 * size);
-        for (int idx = 0; idx < size; idx++) {
-            // if not the first, put a blank separator in
-            if (idx != 0) {
-                sb.append(' ');
-            }
-            String num = Integer.toHexString(0xff & bytes[idx]);
-            // if it is only one digit, add a leading 0.
-            if (num.length() < 2) {
-                sb.append('0');
-            }
-            sb.append(num);
+        StringBuilder sb = new StringBuilder();
+        if (id != null && id.length > 0) {
+            sb.append("id[");
+            sb.append(new String(id, 0, id.length, StringUtils.UTF_8));
+            sb.append("]=");
         }
+        sb.append(new String(bytes, 0, size, StringUtils.UTF_8));
         return sb.toString();
     }
 
 
     public static class Comparator extends WritableComparator {
         public Comparator() {
-            super(FastBytesWritable.class);
+            super(HiveEntityWritable.class);
         }
 
         /**
@@ -123,6 +116,6 @@ public class FastBytesWritable extends BinaryComparable implements WritableCompa
     }
 
     static { // register this comparator
-        WritableComparator.define(FastBytesWritable.class, new Comparator());
+        WritableComparator.define(HiveEntityWritable.class, new Comparator());
     }
 }

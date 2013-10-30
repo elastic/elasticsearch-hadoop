@@ -37,10 +37,15 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.IdExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
@@ -51,9 +56,10 @@ public class ESSerDe implements SerDe {
     private BytesArray scratchPad = new BytesArray(512);
     private ValueWriter<HiveType> valueWriter;
     private HiveType hiveType = new HiveType(null, null);
-    private FastBytesWritable result = new FastBytesWritable();
+    private HiveEntityWritable result = new HiveEntityWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
+    private IdExtractor idExtractor;
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
@@ -61,6 +67,9 @@ public class ESSerDe implements SerDe {
         structTypeInfo = HiveUtils.typeInfo(inspector);
         alias = HiveUtils.alias(tbl);
         valueWriter = new HiveValueWriter(alias);
+        Settings settings = SettingsManager.loadFrom(tbl);
+        idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
+                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
     }
 
     @Override
@@ -85,21 +94,24 @@ public class ESSerDe implements SerDe {
 
     @Override
     public Class<? extends Writable> getSerializedClass() {
-        return FastBytesWritable.class;
+        return HiveEntityWritable.class;
     }
 
     @Override
     public Writable serialize(Object data, ObjectInspector objInspector) throws SerDeException {
-        // serialize the type directly to json
+        // serialize the type directly to json (to avoid converting to Writable and then serializing)
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
 
         hiveType.setObjectInspector(objInspector);
         hiveType.setObject(data);
-
         ContentBuilder.generate(bos, valueWriter).value(hiveType).flush().close();
 
-        result.set(scratchPad.bytes(), scratchPad.size());
+        result.setContent(scratchPad.bytes(), scratchPad.size());
+        if (idExtractor != null) {
+            String id = idExtractor.id(hiveType);
+            result.setId(id.getBytes(StringUtils.UTF_8));
+        }
         return result;
     }
 

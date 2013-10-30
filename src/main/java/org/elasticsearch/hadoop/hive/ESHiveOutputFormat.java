@@ -42,12 +42,12 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
 
         @Override
         public void write(Writable w) throws IOException {
-            if (w instanceof FastBytesWritable) {
-                FastBytesWritable fbw = ((FastBytesWritable) w);
-                client.writeToIndex(fbw.getBytes(), fbw.getLength());
+            if (w instanceof HiveEntityWritable) {
+                HiveEntityWritable hew = ((HiveEntityWritable) w);
+                client.writeToIndex(hew.getBytes(), hew.getLength(), hew.getId());
             }
             else {
-                throw new IllegalArgumentException(String.format("Unexpected type; expected [%s], received [%s]", FastBytesWritable.class, w));
+                throw new IllegalArgumentException(String.format("Unexpected type; expected [%s], received [%s]", HiveEntityWritable.class, w));
             }
         }
 
