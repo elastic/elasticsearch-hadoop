@@ -94,6 +94,7 @@ public class RestClient implements Closeable {
         return (T) (string != null ? map.get(string) : map);
     }
 
+    @SuppressWarnings("unchecked")
     public void bulk(String index, byte[] buffer, int bufferSize) throws IOException {
         //empty buffer, ignore
         if (bufferSize == 0) {
@@ -113,8 +114,6 @@ public class RestClient implements Closeable {
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
         Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
         List<Object> items = (List<Object>) map.get("items");
-
-        boolean failed = false;
 
         for (Object item : items) {
             Map<String, String> messages = (Map<String, String>) ((Map) item).values().iterator().next();
