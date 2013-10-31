@@ -136,6 +136,16 @@ public class HiveSuite {
         return sb.toString();
     }
 
+    public static void before() throws Exception {
+        provisionEsLib();
+    }
+
+    public static void after() throws Exception {
+        if (server instanceof HiveEmbeddedServer) {
+            ((HiveEmbeddedServer) server).removeESSettings();
+        }
+    }
+
     public static void provisionEsLib() throws Exception {
         // provision on each test run since LOAD DATA _moves_ the file
         if (!isLocal) {

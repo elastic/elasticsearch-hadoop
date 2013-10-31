@@ -15,7 +15,9 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.apache.hadoop.hive.service.HiveServerException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -29,8 +31,13 @@ public class HiveSaveTest {
 
 
     @Before
-    public void provision() throws Exception {
-        provisionEsLib();
+    public void before() throws Exception {
+        HiveSuite.before();
+    }
+
+    @After
+    public void after() throws Exception {
+        HiveSuite.after();
     }
 
     @Test
@@ -282,7 +289,7 @@ public class HiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
-    @Test
+    @Test(expected = HiveServerException.class)
     public void testCreateWithDuplicates() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -296,7 +303,7 @@ public class HiveSaveTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/createsaveduplicate",
+                + tableProps("hive/createsave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                              "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -314,6 +321,75 @@ public class HiveSaveTest {
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
     }
+
+    @Test
+    public void testUpdateWithId() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("updatesource");
+        String load = loadData("updatesource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE updatesave ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/updatesave",
+                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
+
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM updatesource s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE updatesave "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatesource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
+
+    @Test(expected = HiveServerException.class)
+    public void testUpdateWithoutUpsert() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("updatewoupsertsource");
+        String load = loadData("updatewoupsertsource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE updatewoupsertsave ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/updatewoupsertsave",
+                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'",
+                             "'" + ConfigurationOptions.ES_UPSERT_DOC + "'='false'");
+
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM updatewoupsertsource s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE updatewoupsertsave "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatewoupsertsource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
 
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("

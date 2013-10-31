@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -115,16 +116,22 @@ class HiveEmbeddedServer implements HiveInstance {
         return conf;
     }
 
-    private void refreshConfig(HiveConf conf) {
+    private void removeESSettings(HiveConf conf) {
         //delete all "es" properties
+        Set<String> props = testSettings.stringPropertyNames();
         Iterator<Map.Entry<String, String>> iter = conf.iterator();
         while (iter.hasNext()) {
             Entry<String, String> entry = iter.next();
-            if (entry.getKey().startsWith("es.")) {
-                iter.remove();
+            String key = entry.getKey();
+            // remove transient settings only to avoid reloading the configuration (which might override some manual settings)
+            if (key.startsWith("es.") && !props.contains(key)) {
+                // NB: don't use remove since the iterator works on a copy not on the real thing
+                conf.unset(key);
             }
         }
-
+    }
+    private void refreshConfig(HiveConf conf) {
+        removeESSettings(conf);
         // copy test settings
         Enumeration<?> names = testSettings.propertyNames();
 
@@ -135,8 +142,14 @@ class HiveEmbeddedServer implements HiveInstance {
         }
     }
 
-    public void refreshConfig() {
-        refreshConfig(config);
+    public void removeESSettings() {
+        removeESSettings(config);
+
+        // clear session state
+        //        SessionState sessionState = SessionState.get();
+        //        if (sessionState != null) {
+        //            cleanConfig(sessionState.getConf());
+        //        }
     }
 
     public List<String> execute(String cmd) throws Exception {

@@ -23,8 +23,4 @@ public class SerializedObject {
     public byte[] data;
     public int size;
     public byte[] id;
-
-    public int totalSize() {
-        return size + (id != null ? id.length : 0);
-    }
 }

@@ -33,14 +33,15 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
 
     private int size;
     private byte[] bytes;
-    private byte[] id = new byte[0];
+    private byte[] id;
+    private int idSize;
 
     public HiveEntityWritable() {
         bytes = null;
     }
 
     public int getLength() {
-        return size + id.length;
+        return size + idSize;
     }
 
     public byte[] getBytes() {
@@ -54,6 +55,7 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
 
     public void setId(byte[] id) {
         this.id = id;
+        this.size += idSize;
     }
 
     public byte[] getId() {
@@ -64,14 +66,20 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
     public void readFields(DataInput in) throws IOException {
         size = in.readInt();
         in.readFully(bytes, 0, size);
-        in.readFully(id, 0, id.length);
+        idSize = in.readInt();
+        if (idSize != 0) {
+            in.readFully(id, 0, idSize);
+        }
     }
 
     // inherit javadoc
     public void write(DataOutput out) throws IOException {
         out.writeInt(size);
         out.write(bytes, 0, size);
-        out.write(id, 0, id.length);
+        out.writeInt(idSize);
+        if (idSize > 0) {
+            out.write(id, 0, idSize);
+        }
     }
 
     public int hashCode() {
@@ -92,9 +100,9 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        if (id != null && id.length > 0) {
+        if (idSize > 0) {
             sb.append("id[");
-            sb.append(new String(id, 0, id.length, StringUtils.UTF_8));
+            sb.append(new String(id, 0, idSize, StringUtils.UTF_8));
             sb.append("]=");
         }
         sb.append(new String(bytes, 0, size, StringUtils.UTF_8));

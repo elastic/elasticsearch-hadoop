@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -28,8 +29,13 @@ import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 public class HiveSearchTest {
 
     @Before
-    public void provision() throws Exception {
+    public void before() throws Exception {
         provisionEsLib();
+    }
+
+    @After
+    public void after() throws Exception {
+        HiveSuite.after();
     }
 
 
