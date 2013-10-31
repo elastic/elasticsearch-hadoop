@@ -39,6 +39,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.IdExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
@@ -49,6 +50,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
+
+    private Properties tableProperties;
 
     private StructObjectInspector inspector;
 
@@ -61,15 +64,15 @@ public class ESSerDe implements SerDe {
     private FieldAlias alias;
     private IdExtractor idExtractor;
 
+    private boolean writeInitialized = false;
+
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         alias = HiveUtils.alias(tbl);
-        valueWriter = new HiveValueWriter(alias);
-        Settings settings = SettingsManager.loadFrom(tbl);
-        idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
-                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
+
+        this.tableProperties = tbl;
     }
 
     @Override
@@ -99,6 +102,8 @@ public class ESSerDe implements SerDe {
 
     @Override
     public Writable serialize(Object data, ObjectInspector objInspector) throws SerDeException {
+        lazyInitializeWrite();
+
         // serialize the type directly to json (to avoid converting to Writable and then serializing)
         scratchPad.reset();
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
@@ -114,6 +119,21 @@ public class ESSerDe implements SerDe {
         }
         return result;
     }
+
+    private void lazyInitializeWrite() {
+        if (writeInitialized) {
+            return;
+        }
+        writeInitialized = true;
+        Settings settings = SettingsManager.loadFrom(tableProperties);
+        // TODO: externalize
+        valueWriter = new HiveValueWriter(alias);
+        InitializationUtils.setIdExtractorIfNotSet(settings, HiveIdExtractor.class, null);
+
+        idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
+                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
+    }
+
 
     static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
         if (data == null || data instanceof NullWritable) {

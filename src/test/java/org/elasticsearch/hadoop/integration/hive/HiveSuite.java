@@ -116,9 +116,11 @@ public class HiveSuite {
 
         sb.append("TBLPROPERTIES('es.resource' = '" + resource + "' ");
 
-        for (String string : params) {
-            sb.append(",");
-            sb.append(string);
+        if (params != null && params.length > 0) {
+            for (String string : params) {
+                sb.append(",");
+                sb.append(string);
+            }
         }
 
         if (!isLocal) {

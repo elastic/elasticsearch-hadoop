@@ -15,12 +15,16 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class HiveSaveTest {
 
 
@@ -34,14 +38,7 @@ public class HiveSaveTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = "CREATE TABLE source ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "url      STRING, "
-                + "picture  STRING) "
-                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
-                + "LOCATION '/tmp/hive/warehouse/source/' ";
-
+        String localTable = createTable("source");
         String load = loadData("source");
 
         // create external table
@@ -114,14 +111,7 @@ public class HiveSaveTest {
 
     @Test
     public void testTimestampSave() throws Exception {
-        String localTable = "CREATE TABLE timestampsource ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "url      STRING, "
-                + "picture  STRING) "
-                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
-                + "LOCATION '/tmp/hive/warehouse/timestampsource/' ";
-
+        String localTable = createTable("timestampsource");
         String load = loadData("timestampsource");
 
         // create external table
@@ -151,14 +141,7 @@ public class HiveSaveTest {
 
     @Test
     public void testFieldAlias() throws Exception {
-        String localTable = "CREATE TABLE aliassource ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "url      STRING, "
-                + "picture  STRING) "
-                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
-                + "LOCATION '/tmp/hive/warehouse/aliassource/' ";
-
+        String localTable = createTable("aliassource");
         String load = loadData("aliassource");
 
         // create external table
@@ -185,14 +168,7 @@ public class HiveSaveTest {
     @Test
     @Ignore // cast isn't fully supported for date as it throws CCE
     public void testDateSave() throws Exception {
-        String localTable = "CREATE TABLE datesource ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "url      STRING, "
-                + "picture  STRING) "
-                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
-                + "LOCATION '/tmp/hive/warehouse/datesource/' ";
-
+        String localTable = createTable("datesource");
         String load = loadData("datesource");
 
         // create external table
@@ -250,15 +226,8 @@ public class HiveSaveTest {
 
     @Test
     public void testVarcharSave() throws Exception {
-        String localTable = "CREATE TABLE varcharSource ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "url      STRING, "
-                + "picture  STRING) "
-                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
-                + "LOCATION '/tmp/hive/warehouse/varcharSource/' ";
-
-        String load = loadData("source");
+        String localTable = createTable("varcharsource");
+        String load = loadData("varcharsource");
 
         // create external table
         String ddl =
@@ -271,13 +240,90 @@ public class HiveSaveTest {
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE varcharsave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM varcharsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testCreate() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("createsource");
+        String load = loadData("createsource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE createsave ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/createsave",
+                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM createsource s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE createsave "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testCreateWithDuplicates() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("createsourceduplicate");
+        String load = loadData("createsourceduplicate");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE createsaveduplicate ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/createsaveduplicate",
+                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM createsourceduplicate s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE createsaveduplicate "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsourceduplicate s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
+    private String createTable(String tableName) {
+        return String.format("CREATE TABLE %s ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING) "
+                + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
+                + "LOCATION '/tmp/hive/warehouse/%s/' "
+                , tableName, tableName);
     }
 
     private String loadData(String tableName) {

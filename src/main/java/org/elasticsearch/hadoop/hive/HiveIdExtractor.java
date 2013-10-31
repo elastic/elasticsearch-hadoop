@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Map;
+
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
@@ -40,7 +42,7 @@ public class HiveIdExtractor implements IdExtractor, SettingsAware {
                         String.format("Id field [%s] needs to be a primitive; found [%s]", id, foi.getTypeName()));
 
                 // expecting a writeable - simply do a toString
-                return soi.getStructFieldData(target, field).toString();
+                return soi.getStructFieldData(type.getObject(), field).toString();
             }
         }
 
@@ -49,6 +51,8 @@ public class HiveIdExtractor implements IdExtractor, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
-        id = settings.getMappingId().trim().toLowerCase();
+        Map<String, String> columnNames = HiveUtils.columnMap(settings);
+        // replace column name with _colX (which is what Hive uses during serialization)
+        id = columnNames.get(settings.getMappingId().trim().toLowerCase());
     }
 }

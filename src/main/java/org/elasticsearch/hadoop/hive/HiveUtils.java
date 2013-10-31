@@ -16,9 +16,11 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
@@ -29,6 +31,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 abstract class HiveUtils {
@@ -90,19 +93,45 @@ abstract class HiveUtils {
         }
 
         // add default aliases for serialization (_colX -> mapping name)
-        List<String> columnNames = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.COLUMNS), ",");
-        for (int i = 0; i < columnNames.size(); i++) {
-            String colName = columnNames.get(i);
+        Map<String, String> columnMap = columnMap(tableProperties);
+
+        for (Entry<String, String> entry : columnMap.entrySet()) {
+            String columnName = entry.getKey();
+            String columnIndex = entry.getValue();
+
             if (aliases != null) {
-                // check alias first
-                String alias = aliasMap.get(colName);
+                String alias = aliasMap.get(columnName);
                 if (alias != null) {
-                    colName = alias;
+                    columnName = alias;
                 }
             }
-            aliasMap.put(HiveConstants.UNNAMED_COLUMN_PREFIX + i, colName);
+
+            aliasMap.put(columnIndex, columnName);
         }
 
         return new FieldAlias(aliasMap);
+    }
+
+    static Map<String, String> columnMap(Properties tableProperties) {
+        return columnMap(tableProperties.getProperty(HiveConstants.COLUMNS));
+    }
+
+    static Map<String, String> columnMap(Settings settings) {
+        return columnMap(settings.getProperty(HiveConstants.COLUMNS));
+    }
+
+    // returns a map of {<column-name>:_colX}
+    private static Map<String, String> columnMap(String columnString) {
+        // add default aliases for serialization (mapping name -> _colX)
+        List<String> columnNames = StringUtils.tokenize(columnString, ",");
+        if (columnNames.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, String> columns = new LinkedHashMap<String, String>();
+        for (int i = 0; i < columnNames.size(); i++) {
+            columns.put(columnNames.get(i), HiveConstants.UNNAMED_COLUMN_PREFIX + i);
+        }
+        return columns;
     }
 }

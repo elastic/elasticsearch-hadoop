@@ -89,12 +89,7 @@ public class MROldApiSaveTest {
 
     @Test(expected = IOException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
-        JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
-
-        JobClient.runJob(conf);
+        testCreateWithId();
     }
 
     @Test(expected = IllegalArgumentException.class)
