@@ -50,4 +50,12 @@ public abstract class ObjectUtils {
 
         return obj;
     }
+
+    public static boolean isEmpty(byte[] array) {
+        return (array == null || array.length == 0);
+    }
+
+    public static boolean isEmpty(String[] array) {
+        return (array == null || array.length == 0);
+    }
 }

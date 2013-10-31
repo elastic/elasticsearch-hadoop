@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.pig;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -43,9 +44,10 @@ import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
 /**
  * Pig storage for reading and writing data into an ElasticSearch index.
@@ -78,17 +80,19 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private PigTuple pigTuple;
 
     public ESStorage() {
-        this(null);
+        this(new String[0]);
     }
 
-    public ESStorage(String configuration) {
-        if (StringUtils.hasText(configuration)) {
+    public ESStorage(String... configuration) {
+        if (!ObjectUtils.isEmpty(configuration)) {
             try {
                 properties = new Properties();
-                // replace ; with line separators
-                properties.load(new StringReader(configuration.replace(';', '\n')));
+                for (String string : configuration) {
+                    // replace ; with line separators
+                    properties.load(new StringReader(string));
+                }
             } catch (IOException ex) {
-                throw new IllegalArgumentException("Cannot parse options " + properties, ex);
+                throw new IllegalArgumentException("Cannot parse options " + Arrays.toString(configuration), ex);
             }
         }
     }
@@ -122,8 +126,11 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     private void init(String location, Job job) {
         Settings settings = SettingsManager.loadFrom(job.getConfiguration()).merge(properties).setResource(location);
         boolean changed = false;
+        InitializationUtils.checkIdForOperation(settings);
+
         changed |= SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
         changed |= SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
+        changed |= InitializationUtils.setIdExtractorIfNotSet(settings, PigIdExtractor.class, log);
         settings.save();
     }
 

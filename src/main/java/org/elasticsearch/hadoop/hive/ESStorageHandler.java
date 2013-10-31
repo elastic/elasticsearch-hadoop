@@ -83,6 +83,9 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
         // NB: ESSerDe is already initialized at this stage
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
+
+        InitializationUtils.checkIdForOperation(settings);
+
         SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         SerializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
         InitializationUtils.setIdExtractorIfNotSet(settings, HiveIdExtractor.class, log);

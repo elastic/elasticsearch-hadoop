@@ -16,12 +16,14 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.backend.executionengine.ExecJob;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
@@ -68,8 +70,14 @@ public class PigWrapper {
 
     public void executeScript(String script) throws Exception {
         pig.registerScript(new ByteArrayInputStream(script.getBytes()));
-        pig.executeBatch();
+        List<ExecJob> executeBatch = pig.executeBatch();
+        for (ExecJob execJob : executeBatch) {
+            if (execJob.getStatus() == ExecJob.JOB_STATUS.FAILED) {
+                throw new IllegalStateException("Pig execution failed");
+            }
+        }
         pig.discardBatch();
         pig.setBatchOn();
+
     }
 }

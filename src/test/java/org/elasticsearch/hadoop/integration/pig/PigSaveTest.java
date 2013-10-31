@@ -17,16 +17,19 @@ package org.elasticsearch.hadoop.integration.pig;
 
 import java.util.Date;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PigSaveTest {
 
     static PigWrapper pig;
@@ -116,9 +119,63 @@ public class PigSaveTest {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
-                "B = FOREACH A GENERATE (), [], {} ;" +
+                "AL = LIMIT A 10;" +
+                "B = FOREACH AL GENERATE (), [], {};" +
                 "STORE B INTO 'pig/emptyconst' USING org.elasticsearch.hadoop.pig.ESStorage();";
 
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testCreateWithId() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
+                "STORE B INTO 'pig/createwithid' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
+                                + ConfigurationOptions.ES_MAPPING_ID + "=id');";
+        pig.executeScript(script);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
+        testCreateWithId();
+    }
+
+    @Test(expected = Exception.class)
+    public void testUpdateWithoutId() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
+                "STORE B INTO 'pig/updatewoid' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=update');";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testUpdateWithId() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
+                "STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
+                                + ConfigurationOptions.ES_MAPPING_ID + "=id');";
+        pig.executeScript(script);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testUpdateWithoutUpsert() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
+                "STORE B INTO 'pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
+                                + ConfigurationOptions.ES_MAPPING_ID + "=id','"
+                                + ConfigurationOptions.ES_UPSERT_DOC + "=false');";
         pig.executeScript(script);
     }
 }
