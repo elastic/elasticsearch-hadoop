@@ -194,6 +194,10 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings, client);
 
+        if (cfg.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
+            log.warn("Speculative execution enabled for reducer - consider disabling it to prevent data corruption");
+        }
+
         log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }
 }
