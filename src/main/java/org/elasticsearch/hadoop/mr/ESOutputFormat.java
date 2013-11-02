@@ -159,10 +159,13 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setIdExtractorIfNotSet(settings, MapWritableIdExtractor.class, log);
             client = new BufferedRestClient(settings);
+            resource = settings.getTargetResource();
 
             // create the index if needed
             if (client.touch()) {
-                client.refresh();
+                if (client.waitForYellow()) {
+                    log.warn(String.format("Timed out waiting for index [%s] to reach yellow health", resource));
+                }
             }
 
             Map<Shard, Node> targetShards = client.getTargetPrimaryShards();
@@ -183,7 +186,6 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             settings.cleanUri().setHost(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
             client = new BufferedRestClient(settings);
             uri = settings.getTargetUri();
-            resource = settings.getTargetResource();
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));

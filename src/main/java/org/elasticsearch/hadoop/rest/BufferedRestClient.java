@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializedObject;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
@@ -243,7 +244,7 @@ public class BufferedRestClient implements Closeable {
         return client.touch(resource.index());
     }
 
-    public void refresh() {
-        client.refresh(resource.index());
+    public boolean waitForYellow() throws IOException {
+        return client.health(resource.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
     }
 }

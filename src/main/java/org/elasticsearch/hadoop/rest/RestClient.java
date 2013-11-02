@@ -59,6 +59,10 @@ public class RestClient implements Closeable {
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
 
+    public enum HEALTH {
+        RED, YELLOW, GREEN
+    }
+
     public RestClient(Settings settings) {
         HttpClientParams params = new HttpClientParams();
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
@@ -263,5 +267,16 @@ public class RestClient implements Closeable {
         PutMethod put = new PutMethod(mapping);
         put.setRequestEntity(new ByteArrayRequestEntity(bytes));
         execute(put);
+    }
+
+    public boolean health(String index, HEALTH health, TimeValue timeout) throws IOException {
+        StringBuilder sb = new StringBuilder("/_cluster/health/");
+        sb.append(index);
+        sb.append("?wait_for_status=");
+        sb.append(health.name().toLowerCase());
+        sb.append("&timeout=");
+        sb.append(timeout.toString());
+
+        return (Boolean.TRUE.equals(get(sb.toString(), "timed_out")));
     }
 }
