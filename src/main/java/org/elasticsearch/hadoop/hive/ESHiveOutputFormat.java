@@ -42,6 +42,11 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
 
         @Override
         public void write(Writable w) throws IOException {
+            if (!initialized) {
+                initialized = true;
+                init();
+            }
+
             if (w instanceof HiveEntityWritable) {
                 HiveEntityWritable hew = ((HiveEntityWritable) w);
                 client.writeToIndex(hew.getBytes(), hew.getLength(), hew.getId());
