@@ -86,6 +86,7 @@ public class MROldApiSearchTest {
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(MapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.setNumReduceTasks(0);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         return conf;

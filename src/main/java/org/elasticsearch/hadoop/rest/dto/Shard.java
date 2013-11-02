@@ -17,7 +17,7 @@ package org.elasticsearch.hadoop.rest.dto;
 
 import java.util.Map;
 
-public class Shard {
+public class Shard implements Comparable<Shard> {
 
     public enum State {
         UNASSIGNED, INITIALIZING, STARTED, RELOCATING;
@@ -31,12 +31,12 @@ public class Shard {
     private boolean primary;
     private String node;
     private String relocatingNode;
-    private Integer name;
+    private Integer id;
     private String index;
 
     public Shard(Map<String, Object> data) {
         state = State.valueOf((String) data.get("state"));
-        name = (Integer) data.get("shard");
+        id = (Integer) data.get("shard");
         index = (String) data.get("index");
         relocatingNode = (String) data.get("relocating_node");
         node = (String) data.get("node");
@@ -48,7 +48,7 @@ public class Shard {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((index == null) ? 0 : index.hashCode());
-        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((node == null) ? 0 : node.hashCode());
         return result;
     }
@@ -68,11 +68,11 @@ public class Shard {
         }
         else if (!index.equals(other.index))
             return false;
-        if (name == null) {
-            if (other.name != null)
+        if (id == null) {
+            if (other.id != null)
                 return false;
         }
-        else if (!name.equals(other.name))
+        else if (!id.equals(other.id))
             return false;
         if (node == null) {
             if (other.node != null)
@@ -100,7 +100,7 @@ public class Shard {
     }
 
     public Integer getName() {
-        return name;
+        return id;
     }
 
     public String getIndex() {
@@ -112,7 +112,12 @@ public class Shard {
         StringBuilder builder = new StringBuilder();
         builder.append("Shard[state=").append(state).append(", primary=").append(primary).append(", node=")
                 .append(node).append(", name=")
-                .append(name).append(", index=").append(index).append("]");
+                .append(id).append(", index=").append(index).append("]");
         return builder.toString();
+    }
+
+    @Override
+    public int compareTo(Shard o) {
+        return o.id - id;
     }
 }

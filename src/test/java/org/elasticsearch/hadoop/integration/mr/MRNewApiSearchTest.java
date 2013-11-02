@@ -86,6 +86,7 @@ public class MRNewApiSearchTest {
         job.setOutputFormatClass(PrintStreamOutputFormat.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(MapWritable.class);
+        job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
         return job.getConfiguration();
     }

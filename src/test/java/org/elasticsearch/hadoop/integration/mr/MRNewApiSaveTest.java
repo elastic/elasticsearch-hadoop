@@ -142,6 +142,7 @@ public class MRNewApiSaveTest {
         job.setOutputFormatClass(ESOutputFormat.class);
         job.setMapOutputValueClass(MapWritable.class);
         job.setMapperClass(JsonMapper.class);
+        job.setNumReduceTasks(0);
 
         TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
         return job.getConfiguration();

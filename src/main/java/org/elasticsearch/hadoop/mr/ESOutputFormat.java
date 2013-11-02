@@ -16,14 +16,23 @@
 package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -33,6 +42,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.serialization.MapWritableIdExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
@@ -40,7 +51,8 @@ import org.elasticsearch.hadoop.util.Assert;
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
  */
-@SuppressWarnings("rawtypes") // since this class implements two generic interfaces, to avoid dealing with 4 types in every declaration, we force raw types...
+@SuppressWarnings("rawtypes")
+// since this class implements two generic interfaces, to avoid dealing with 4 types in every declaration, we force raw types...
 public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat, ConfigurationOptions {
 
     private static Log log = LogFactory.getLog(ESOutputFormat.class);
@@ -49,13 +61,11 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     public static class ESOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {
 
         @Override
-        public void setupJob(JobContext jobContext) throws IOException {
-        }
+        public void setupJob(JobContext jobContext) throws IOException {}
 
         // compatibility check with Hadoop 0.20.2
         @Deprecated
-        public void cleanupJob(JobContext jobContext) throws IOException {
-        }
+        public void cleanupJob(JobContext jobContext) throws IOException {}
 
         @Override
         public void setupTask(TaskAttemptContext taskContext) throws IOException {
@@ -118,23 +128,103 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     protected static class ESRecordWriter extends RecordWriter implements org.apache.hadoop.mapred.RecordWriter {
 
-        protected final BufferedRestClient client;
-        private final String uri, resource;
+        protected final Configuration cfg;
+        protected boolean initialized = false;
+
+        protected BufferedRestClient client;
+        private String uri, resource;
 
         public ESRecordWriter(Configuration cfg) {
-            Settings settings = SettingsManager.loadFrom(cfg);
-
-            SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
-            InitializationUtils.setIdExtractorIfNotSet(settings, MapWritableIdExtractor.class, log);
-
-            client = new BufferedRestClient(settings);
-            uri = settings.getTargetUri();
-            resource = settings.getTargetResource();
+            this.cfg = cfg;
         }
 
         @Override
         public void write(Object key, Object value) throws IOException {
+            if (!initialized) {
+                initialized = true;
+                init();
+            }
             client.writeToIndex(value);
+        }
+
+        protected void init() throws IOException {
+            //int instances = detectNumberOfInstances(cfg);
+            int currentInstance = detectCurrentInstance(cfg);
+
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("ESRecordWriter instance [%s] initiating discovery of target shard", currentInstance));
+            }
+
+            Settings settings = SettingsManager.loadFrom(cfg);
+            SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
+            InitializationUtils.setIdExtractorIfNotSet(settings, MapWritableIdExtractor.class, log);
+            client = new BufferedRestClient(settings);
+
+            // create the index if needed
+            if (client.touch()) {
+                client.refresh();
+            }
+
+            Map<Shard, Node> targetShards = client.getTargetPrimaryShards();
+            List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
+            // make sure the order is strict
+            Collections.sort(orderedShards);
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("ESRecordWriter instance [%s] discovered %s primary shards %s", currentInstance, orderedShards.size(), orderedShards));
+            }
+
+            //int min = Math.min(instances, targetShards.size());
+            int bucket = currentInstance % targetShards.size();
+            Shard chosenShard = orderedShards.get(bucket);
+            Node targetNode = targetShards.get(chosenShard);
+
+            client.close();
+            // override the global settings to communicate directly with the target node
+            settings.cleanUri().setHost(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
+            client = new BufferedRestClient(settings);
+            uri = settings.getTargetUri();
+            resource = settings.getTargetResource();
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
+            }
+        }
+
+        private static int detectNumberOfInstances(Configuration conf) throws IOException {
+            int numReducers = conf.getInt("mapred.reduce.tasks", 1);
+            // no reducers
+            if (numReducers < 1) {
+                String dir = conf.get("mapreduce.job.dir");
+                Path path = JobSubmissionFiles.getJobSplitMetaFile(new Path(dir));
+
+                FSDataInputStream in = path.getFileSystem(conf).open(path);
+
+                try {
+                    // skip "META-SPL" in UTF-8
+                    byte[] header = new byte[8];
+                    in.readFully(header);
+                    // skip version
+                    WritableUtils.readVInt(in);
+                    // read number of splits
+                    return WritableUtils.readVInt(in);
+                } finally {
+                    try {
+                        in.close();
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                }
+            }
+            return numReducers;
+        }
+
+
+        private int detectCurrentInstance(Configuration conf) {
+            TaskAttemptID attempt = TaskAttemptID.forName(conf.get("mapred.task.id"));
+            Assert.notNull(attempt,
+                    "Unable to determine task id - please report your distro/setting through the issue tracker");
+
+            return attempt.getTaskID().getId();
         }
 
         @Override
@@ -148,6 +238,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.trace(String.format("Closing RecordWriter [%s][%s]", uri, resource));
             }
             client.close();
+            initialized = false;
         }
     }
 
@@ -186,7 +277,8 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        Assert.hasText(settings.getTargetResource(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
+        Assert.hasText(settings.getTargetResource(),
+                String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init
         BufferedRestClient client = null;
@@ -194,8 +286,15 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings, client);
 
-        if (cfg.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
-            log.warn("Speculative execution enabled for reducer - consider disabling it to prevent data corruption");
+        if (cfg.get("mapred.reduce.tasks") != null) {
+            if (cfg.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
+                log.warn("Speculative execution enabled for reducer - consider disabling it to prevent data corruption");
+            }
+        }
+        else {
+            if (cfg.getBoolean("mapred.map.tasks.speculative.execution", true)) {
+                log.warn("Speculative execution enabled for mapper - consider disabling it to prevent data corruption");
+            }
         }
 
         log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));

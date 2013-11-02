@@ -140,6 +140,8 @@ public class MROldApiSaveTest {
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.setNumReduceTasks(0);
+        conf.setNumMapTasks(2);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         return conf;
