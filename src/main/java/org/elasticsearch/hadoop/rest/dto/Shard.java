@@ -118,6 +118,6 @@ public class Shard implements Comparable<Shard> {
 
     @Override
     public int compareTo(Shard o) {
-        return o.id - id;
+        return id - o.id;
     }
 }
