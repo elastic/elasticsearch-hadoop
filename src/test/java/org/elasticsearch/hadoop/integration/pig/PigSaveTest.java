@@ -56,6 +56,7 @@ public class PigSaveTest {
     @Test
     public void testTuple() throws Exception {
         String script =
+                "SET mapred.map.tasks 2;" +
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 // "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, links:tuple(url:chararray, picture: chararray));" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
