@@ -23,6 +23,7 @@ import java.util.StringTokenizer;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -41,6 +42,14 @@ import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MROldApiSaveTest {
+
+    public static class SplittableTextInputFormat extends TextInputFormat {
+
+        @Override
+        public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
+            return super.getSplits(job, job.getInt("actual.splits", 3));
+        }
+    }
 
     public static class JsonMapper extends MapReduceBase implements Mapper {
 
@@ -134,14 +143,15 @@ public class MROldApiSaveTest {
     private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
-        conf.setInputFormat(TextInputFormat.class);
+        conf.setInputFormat(SplittableTextInputFormat.class);
         conf.setOutputFormat(ESOutputFormat.class);
         conf.setMapOutputValueClass(MapWritable.class);
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
-        conf.setNumReduceTasks(0);
         conf.setNumMapTasks(2);
+        conf.setInt("actual.splits", 2);
+        conf.setNumReduceTasks(0);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         return conf;

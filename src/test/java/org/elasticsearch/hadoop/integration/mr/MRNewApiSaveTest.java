@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -145,6 +146,10 @@ public class MRNewApiSaveTest {
         job.setNumReduceTasks(0);
 
         TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+        File fl = new File("src/test/resources/artists.dat");
+        long splitSize = fl.length() / 3;
+        TextInputFormat.setMaxInputSplitSize(job, splitSize);
+        TextInputFormat.setMinInputSplitSize(job, 50);
         return job.getConfiguration();
     }
 }
