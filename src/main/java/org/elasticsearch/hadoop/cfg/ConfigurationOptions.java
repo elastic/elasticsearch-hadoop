@@ -70,6 +70,11 @@ public interface ConfigurationOptions {
     String ES_INDEX_READ_MISSING_AS_EMPTY = "es.index.read.missing.as.empty";
     String ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT = "false";
 
+    /** Mapping types */
+    String ES_MAPPING_ID = "es.mapping.id";
+    String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
+    String ES_MAPPING_PARENT = "es.mapping.parent";
+
     /** Operation types */
     String ES_WRITE_OPERATION = "es.write.operation";
     String ES_OPERATION_INDEX = "index";
@@ -77,9 +82,6 @@ public interface ConfigurationOptions {
     String ES_OPERATION_UPDATE = "update";
     String ES_OPERATION_DELETE = "delete";
     String ES_WRITE_OPERATION_DEFAULT = ES_OPERATION_INDEX;
-
-    String ES_MAPPING_ID = "es.mapping.id";
-    String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
 
     String ES_UPSERT_DOC = "es.upsert.doc";
     String ES_UPSERT_DOC_DEFAULT = "true";

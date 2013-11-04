@@ -28,6 +28,11 @@ public class BytesArray {
         this(new byte[size], 0);
     }
 
+    public BytesArray(byte[] data) {
+        this.bytes = data;
+        this.size = data.length;
+    }
+
     public BytesArray(byte[] data, int size) {
         this.bytes = data;
         this.size = size;

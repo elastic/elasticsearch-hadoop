@@ -35,6 +35,7 @@ import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -139,6 +140,18 @@ public class MROldApiSaveTest {
 
         JobClient.runJob(conf);
     }
+
+    public void testParentChild() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
+
+        RestUtils.putMapping("mroldapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+
+        JobClient.runJob(conf);
+    }
+
 
     private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();
