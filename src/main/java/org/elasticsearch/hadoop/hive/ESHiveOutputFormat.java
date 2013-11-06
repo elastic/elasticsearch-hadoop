@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.util.BytesArray;
 
 /**
  * Hive specific OutputFormat.
@@ -35,6 +36,8 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
 public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat {
 
     static class ESHiveRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
+
+        private BytesArray ba = new BytesArray(0);
 
         public ESHiveRecordWriter(Configuration cfg) {
             super(cfg);
@@ -49,7 +52,8 @@ public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputForm
 
             if (w instanceof HiveEntityWritable) {
                 HiveEntityWritable hew = ((HiveEntityWritable) w);
-                client.writeToIndex(hew.getBytes(), hew.getLength(), hew.getId());
+                ba.bytes(hew.getBytes(), hew.getLength());
+                client.writeProcessedToIndex(ba);
             }
             else {
                 throw new IllegalArgumentException(String.format("Unexpected type; expected [%s], received [%s]", HiveEntityWritable.class, w));

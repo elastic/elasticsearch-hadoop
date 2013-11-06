@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
@@ -37,32 +39,30 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.FieldExtractor;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.BulkCommands;
+import org.elasticsearch.hadoop.serialization.Command;
+import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {
 
-    private Properties tableProperties;
+    private static Log log = LogFactory.getLog(ESSerDe.class);
 
+    private Properties tableProperties;
     private StructObjectInspector inspector;
 
     // serialization artifacts
     private BytesArray scratchPad = new BytesArray(512);
-    private ValueWriter<HiveType> valueWriter;
     private HiveType hiveType = new HiveType(null, null);
     private HiveEntityWritable result = new HiveEntityWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
-    private FieldExtractor idExtractor;
+    private Command command;
 
     private boolean writeInitialized = false;
 
@@ -70,8 +70,7 @@ public class ESSerDe implements SerDe {
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
-        alias = HiveUtils.alias(tbl);
-
+        alias = HiveUtils.alias(new PropertiesSettings(tbl));
         this.tableProperties = tbl;
     }
 
@@ -106,17 +105,11 @@ public class ESSerDe implements SerDe {
 
         // serialize the type directly to json (to avoid converting to Writable and then serializing)
         scratchPad.reset();
-        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
-
         hiveType.setObjectInspector(objInspector);
         hiveType.setObject(data);
-        ContentBuilder.generate(bos, valueWriter).value(hiveType).flush().close();
 
+        command.write(hiveType).write(scratchPad);
         result.setContent(scratchPad.bytes(), scratchPad.size());
-        if (idExtractor != null) {
-            String id = idExtractor.field(hiveType);
-            result.setId(id.getBytes(StringUtils.UTF_8));
-        }
         return result;
     }
 
@@ -126,12 +119,10 @@ public class ESSerDe implements SerDe {
         }
         writeInitialized = true;
         Settings settings = SettingsManager.loadFrom(tableProperties);
-        // TODO: externalize
-        valueWriter = new HiveValueWriter(alias);
-        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, null);
 
-        idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
-                ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
+        SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
+        this.command = BulkCommands.create(settings);
     }
 
 

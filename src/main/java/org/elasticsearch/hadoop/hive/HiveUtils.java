@@ -73,8 +73,8 @@ abstract class HiveUtils {
         return (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
     }
 
-    static FieldAlias alias(Properties tableProperties) {
-        List<String> aliases = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.MAPPING_NAMES), ",");
+    static FieldAlias alias(Settings settings) {
+        List<String> aliases = StringUtils.tokenize(settings.getProperty(HiveConstants.MAPPING_NAMES), ",");
 
         Map<String, String> aliasMap = new LinkedHashMap<String, String>();
 
@@ -93,7 +93,7 @@ abstract class HiveUtils {
         }
 
         // add default aliases for serialization (_colX -> mapping name)
-        Map<String, String> columnMap = columnMap(tableProperties);
+        Map<String, String> columnMap = columnMap(settings);
 
         for (Entry<String, String> entry : columnMap.entrySet()) {
             String columnName = entry.getKey();
@@ -110,10 +110,6 @@ abstract class HiveUtils {
         }
 
         return new FieldAlias(aliasMap);
-    }
-
-    static Map<String, String> columnMap(Properties tableProperties) {
-        return columnMap(tableProperties.getProperty(HiveConstants.COLUMNS));
     }
 
     static Map<String, String> columnMap(Settings settings) {

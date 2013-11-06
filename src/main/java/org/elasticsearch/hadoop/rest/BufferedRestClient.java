@@ -30,7 +30,6 @@ import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.BulkCommands;
 import org.elasticsearch.hadoop.serialization.Command;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.SerializedObject;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -50,7 +49,7 @@ public class BufferedRestClient implements Closeable {
     private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
-    private SerializedObject objectAlreadySerialized;
+    private BytesRef objectAlreadySerialized;
     private boolean writeInitialized = false;
 
     private RestClient client;
@@ -76,7 +75,7 @@ public class BufferedRestClient implements Closeable {
             writeInitialized = true;
 
             data.bytes(new byte[settings.getBatchSizeInBytes()], 0);
-            objectAlreadySerialized = new SerializedObject();
+            objectAlreadySerialized = new BytesRef();
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
@@ -108,7 +107,7 @@ public class BufferedRestClient implements Closeable {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        doWriteToIndex(object);
+        doWriteToIndex(command.write(object));
     }
 
     /**
@@ -117,23 +116,17 @@ public class BufferedRestClient implements Closeable {
      * @param data as a byte array
      * @param size the length to use from the given array
      */
-    public void writeToIndex(byte[] data, int size, byte[] id) throws IOException {
+    public void writeProcessedToIndex(BytesArray ba) throws IOException {
         Assert.hasText(index, "no index given");
-        Assert.notNull(data, "no data given");
-        Assert.isTrue(size > 0, "no data given");
+        Assert.notNull(ba, "no data given");
+        Assert.isTrue(ba.size() > 0, "no data given");
 
         lazyInitWriting();
-
-        objectAlreadySerialized.data = data;
-        objectAlreadySerialized.size = size;
-        objectAlreadySerialized.id = id;
-
+        objectAlreadySerialized.add(ba);
         doWriteToIndex(objectAlreadySerialized);
     }
 
-    private void doWriteToIndex(Object object) throws IOException {
-        BytesRef payload = command.write(object);
-
+    private void doWriteToIndex(BytesRef payload) throws IOException {
         // check space first
         if (payload.size() > data.available()) {
             flushBatch();
@@ -142,7 +135,6 @@ public class BufferedRestClient implements Closeable {
         payload.write(data);
 
         dataEntries++;
-
         if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
             flushBatch();
         }

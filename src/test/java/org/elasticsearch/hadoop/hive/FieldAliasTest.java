@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.hive;
 
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -27,7 +28,7 @@ public class FieldAliasTest {
     public void testFieldMap() throws Exception {
         Properties tableProperties = new Properties();
         tableProperties.put("es.column.aliases", "timestamp:@timestamp , foo:123foo");
-        FieldAlias alias = HiveUtils.alias(tableProperties);
+        FieldAlias alias = HiveUtils.alias(new PropertiesSettings(tableProperties));
         assertEquals("@timestamp", alias.toES("timestamp"));
         assertEquals("123foo", alias.toES("foo"));
         assertEquals("bar", alias.toES("BaR"));

@@ -26,27 +26,25 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.UnionObjectInspector;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 
 /**
  * Main value writer for hive. However since Hive expects a Writable type to be passed to the record reader,
  * the raw JSON data needs to be wrapped (and unwrapped by {@link HiveEntityWritable}).
  */
-public class HiveValueWriter implements ValueWriter<HiveType> {
+public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
 
     private final boolean writeUnknownTypes;
     private final ValueWriter<Writable> writableWriter;
-    private final FieldAlias alias;
+    private FieldAlias alias;
 
     public HiveValueWriter() {
-        this(new FieldAlias());
-    }
-
-    public HiveValueWriter(FieldAlias alias) {
         this.writeUnknownTypes = false;
         this.writableWriter = new HiveWritableValueWriter(false);
-        this.alias = alias;
+        this.alias = new FieldAlias();
     }
 
     @Override
@@ -129,7 +127,13 @@ public class HiveValueWriter implements ValueWriter<HiveType> {
         return true;
     }
 
+
     protected boolean handleUnknown(Object value, ObjectInspector oi, Generator generator) {
         return false;
+    }
+
+    @Override
+    public void setSettings(Settings settings) {
+        alias = HiveUtils.alias(settings);
     }
 }
