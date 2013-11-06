@@ -71,9 +71,20 @@ public interface ConfigurationOptions {
     String ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT = "false";
 
     /** Mapping types */
+    String ES_MAPPING_DEFAULT_EXTRACTOR_CLASS = "es.mapping.default.extractor.class";
+
     String ES_MAPPING_ID = "es.mapping.id";
     String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
     String ES_MAPPING_PARENT = "es.mapping.parent";
+    String ES_MAPPING_PARENT_EXTRACTOR_CLASS = "es.mapping.parent.extractor.class";
+    String ES_MAPPING_VERSION = "es.mapping.version";
+    String ES_MAPPING_VERSION_EXTRACTOR_CLASS = "es.mapping.version.extractor.class";
+    String ES_MAPPING_ROUTING = "es.mapping.routing";
+    String ES_MAPPING_ROUTING_EXTRACTOR_CLASS = "es.mapping.routing.extractor.class";
+    String ES_MAPPING_TTL = "es.mapping.ttl";
+    String ES_MAPPING_TTL_EXTRACTOR_CLASS = "es.mapping.ttl.extractor.class";
+    String ES_MAPPING_TIMESTAMP = "es.mapping.timestamp";
+    String ES_MAPPING_TIMESTAMP_EXTRACTOR_CLASS = "es.mapping.timestamp.extractor.class";
 
     /** Operation types */
     String ES_WRITE_OPERATION = "es.write.operation";

@@ -21,25 +21,24 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.IdExtractor;
-import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
-public class HiveIdExtractor implements IdExtractor, SettingsAware {
+public class HiveFieldExtractor extends ConstantFieldExtractor {
 
-    private String id;
+    private String fieldName;
 
     @Override
-    public String id(Object target) {
+    protected String extractField(Object target) {
         if (target instanceof HiveType) {
             HiveType type = (HiveType) target;
             ObjectInspector inspector = type.getObjectInspector();
             if (inspector instanceof StructObjectInspector) {
                 StructObjectInspector soi = (StructObjectInspector) inspector;
-                StructField field = soi.getStructFieldRef(id);
+                StructField field = soi.getStructFieldRef(fieldName);
                 ObjectInspector foi = field.getFieldObjectInspector();
                 Assert.isTrue(foi.getCategory() == ObjectInspector.Category.PRIMITIVE,
-                        String.format("Id field [%s] needs to be a primitive; found [%s]", id, foi.getTypeName()));
+                        String.format("Field [%s] needs to be a primitive; found [%s]", fieldName, foi.getTypeName()));
 
                 // expecting a writeable - simply do a toString
                 return soi.getStructFieldData(type.getObject(), field).toString();
@@ -51,8 +50,9 @@ public class HiveIdExtractor implements IdExtractor, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
+        super.setSettings(settings);
         Map<String, String> columnNames = HiveUtils.columnMap(settings);
         // replace column name with _colX (which is what Hive uses during serialization)
-        id = columnNames.get(settings.getMappingId().trim().toLowerCase());
+        fieldName = columnNames.get(getFieldName().toLowerCase());
     }
 }

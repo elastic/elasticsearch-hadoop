@@ -15,7 +15,11 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-public interface IdExtractor {
+/**
+ * Basic extractor (for serialization purposes) of a field. Typically used with {@link SettingsAware} for configuration/injection purposes.
+ *
+ */
+public interface FieldExtractor {
 
-    String id(Object target);
+    String field(Object target);
 }

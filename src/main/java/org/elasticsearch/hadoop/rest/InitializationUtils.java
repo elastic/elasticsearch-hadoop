@@ -21,7 +21,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.IdExtractor;
+import org.elasticsearch.hadoop.serialization.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -53,11 +53,11 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static boolean setIdExtractorIfNotSet(Settings settings, Class<? extends IdExtractor> clazz, Log log) {
+    public static boolean setFieldExtractorIfNotSet(Settings settings, Class<? extends FieldExtractor> clazz, Log log) {
         if (!StringUtils.hasText(settings.getMappingIdExtractorClassName())) {
-            settings.setProperty(ConfigurationOptions.ES_MAPPING_ID_EXTRACTOR_CLASS, clazz.getName());
+            settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
-            logger.debug(String.format("Using pre-defined id extractor [%s] as default", settings.getMappingIdExtractorClassName()));
+            logger.debug(String.format("Using pre-defined field extractor [%s] as default", settings.getMappingIdExtractorClassName()));
             return true;
         }
 

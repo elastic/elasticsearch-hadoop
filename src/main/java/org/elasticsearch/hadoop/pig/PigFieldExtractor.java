@@ -19,33 +19,29 @@ import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.IdExtractor;
-import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
-public class PigIdExtractor implements IdExtractor, SettingsAware {
+public class PigFieldExtractor extends ConstantFieldExtractor {
 
-    private String id;
+    private String fieldName;
 
     @Override
-    public String id(Object target) {
+    protected String extractField(Object target) {
         if (target instanceof PigTuple) {
             PigTuple pt = (PigTuple) target;
             ResourceFieldSchema[] fields = pt.getSchema().getSchema().getFields();
 
-
             for (int i = 0; i < fields.length; i++) {
                 ResourceFieldSchema field = fields[i];
-                if (id.equals(field.getName())) {
+                if (fieldName.equals(field.getName())) {
                     byte type = field.getType();
-                    Assert.isTrue(
-                            DataType.isAtomic(type),
-                            String.format("Unsupported data type [%s] for id [%s]; use only 'primitives'", DataType.findTypeName(type), id));
-
+                    Assert.isTrue(DataType.isAtomic(type),
+                            String.format("Unsupported data type [%s] for field [%s]; use only 'primitives'", DataType.findTypeName(type), fieldName));
                     try {
                         return pt.getTuple().get(i).toString();
                     } catch (ExecException ex) {
-                        throw new IllegalStateException(String.format("Cannot retrieve id field [%s]", id), ex);
+                        throw new IllegalStateException(String.format("Cannot retrieve field [%s]", fieldName), ex);
                     }
                 }
             }
@@ -56,6 +52,7 @@ public class PigIdExtractor implements IdExtractor, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
-        id = settings.getMappingId().trim().toLowerCase();
+        super.setSettings(settings);
+        fieldName = getFieldName();
     }
 }

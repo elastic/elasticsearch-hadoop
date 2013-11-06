@@ -20,24 +20,25 @@ import java.util.Map;
 import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.cfg.Settings;
 
-public class MapWritableIdExtractor implements IdExtractor, SettingsAware {
+public class MapWritableFieldExtractor extends ConstantFieldExtractor {
 
-    private Text id;
+    private Text fieldName;
 
+    @SuppressWarnings("rawtypes")
     @Override
-    public String id(Object target) {
+    protected String extractField(Object target) {
         if (target instanceof Map) {
             Map map = (Map) target;
-            Object w = map.get(id);
+            Object w = map.get(fieldName);
             // since keys are likely primitives, just do a toString
             return (w != null ? w.toString() : null);
         }
-
         return null;
     }
 
     @Override
     public void setSettings(Settings settings) {
-        id = new Text(settings.getMappingId());
+        super.setSettings(settings);
+        fieldName = new Text(getFieldName());
     }
 }

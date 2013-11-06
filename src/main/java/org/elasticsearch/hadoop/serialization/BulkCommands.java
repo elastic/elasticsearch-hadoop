@@ -26,17 +26,21 @@ public abstract class BulkCommands {
     public static Command create(Settings settings) {
 
         String operation = settings.getOperation();
+        CommandFactory factory = null;
 
         if (ConfigurationOptions.ES_OPERATION_CREATE.equals(operation)) {
-            return new CreateCommand(settings);
+            factory = new CreateCommandFactory(settings);
         }
-        if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
-            return new IndexCommand(settings);
+        else if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
+            factory = new IndexCommandFactory(settings);
         }
-        if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
-            return new UpdateCommand(settings);
+        else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
+            factory = new UpdateCommandFactory(settings);
+        }
+        else {
+            throw new IllegalArgumentException("Unknown operation " + operation);
         }
 
-        throw new IllegalArgumentException("Unknown operation " + operation);
+        return factory.createCommand();
     }
 }

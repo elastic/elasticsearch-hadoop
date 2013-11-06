@@ -66,11 +66,11 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public String getSerializerValueWriterClassName() {
-        return getProperty(ES_SERIALIZATION_WRITER_CLASS, null);
+        return getProperty(ES_SERIALIZATION_WRITER_CLASS);
     }
 
     public String getSerializerValueReaderClassName() {
-        return getProperty(ES_SERIALIZATION_READER_CLASS, null);
+        return getProperty(ES_SERIALIZATION_READER_CLASS);
     }
 
     public boolean getIndexAutoCreate() {
@@ -86,11 +86,55 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public String getMappingId() {
-        return getProperty(ES_MAPPING_ID, null);
+        return getProperty(ES_MAPPING_ID);
+    }
+
+    public String getMappingParent() {
+        return getProperty(ES_MAPPING_PARENT);
+    }
+
+    public String getMappingVersion() {
+        return getProperty(ES_MAPPING_VERSION);
+    }
+
+    public String getMappingRouting() {
+        return getProperty(ES_MAPPING_ROUTING);
+    }
+
+    public String getMappingTtl() {
+        return getProperty(ES_MAPPING_TTL);
+    }
+
+    public Object getMappingTimestamp() {
+        return getProperty(ES_MAPPING_TIMESTAMP);
+    }
+
+    public String getMappingDefaultClassExtractor() {
+        return getProperty(ES_MAPPING_DEFAULT_EXTRACTOR_CLASS);
     }
 
     public String getMappingIdExtractorClassName() {
-        return getProperty(ES_MAPPING_ID_EXTRACTOR_CLASS, null);
+        return getProperty(ES_MAPPING_ID_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingParentExtractorClassName() {
+        return getProperty(ES_MAPPING_PARENT_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingVersionExtractorClassName() {
+        return getProperty(ES_MAPPING_VERSION_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingRoutingExtractorClassName() {
+        return getProperty(ES_MAPPING_ROUTING_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingTtlExtractorClassName() {
+        return getProperty(ES_MAPPING_TTL_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingTimestampExtractorClassName() {
+        return getProperty(ES_MAPPING_TIMESTAMP_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
     }
 
     public boolean getUpsertDoc() {

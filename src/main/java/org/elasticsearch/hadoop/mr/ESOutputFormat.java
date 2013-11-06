@@ -44,7 +44,7 @@ import org.elasticsearch.hadoop.rest.BufferedRestClient;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
-import org.elasticsearch.hadoop.serialization.MapWritableIdExtractor;
+import org.elasticsearch.hadoop.serialization.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -157,7 +157,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             Settings settings = SettingsManager.loadFrom(cfg);
             SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
-            InitializationUtils.setIdExtractorIfNotSet(settings, MapWritableIdExtractor.class, log);
+            InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
             client = new BufferedRestClient(settings);
             resource = settings.getTargetResource();
 
@@ -239,7 +239,9 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Closing RecordWriter [%s][%s]", uri, resource));
             }
-            client.close();
+            if (client != null) {
+                client.close();
+            }
             initialized = false;
         }
     }

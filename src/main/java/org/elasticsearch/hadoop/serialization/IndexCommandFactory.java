@@ -17,31 +17,15 @@ package org.elasticsearch.hadoop.serialization;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.StringUtils;
 
-class IndexCommand extends AbstractCommand {
+class IndexCommandFactory extends AbstractCommandFactory {
 
-    private final byte[] HEADER = ("{\"" + ConfigurationOptions.ES_OPERATION_INDEX + "\":{}}\n").getBytes(StringUtils.UTF_8);
-    private final byte[] HEADER_PREFIX = ("{\"" + ConfigurationOptions.ES_OPERATION_INDEX + "\":{\"_id\":\"").getBytes(StringUtils.UTF_8);
-    private final byte[] HEADER_SUFFIX = ("\"}}\n").getBytes(StringUtils.UTF_8);
-
-
-    IndexCommand(Settings settings) {
+    public IndexCommandFactory(Settings settings) {
         super(settings);
     }
 
     @Override
-    protected byte[] headerPrefix() {
-        return HEADER_PREFIX;
-    }
-
-    @Override
-    protected byte[] headerSuffix() {
-        return HEADER_SUFFIX;
-    }
-
-    @Override
-    protected byte[] header() {
-        return HEADER;
+    protected String getOperation() {
+        return ConfigurationOptions.ES_OPERATION_INDEX;
     }
 }

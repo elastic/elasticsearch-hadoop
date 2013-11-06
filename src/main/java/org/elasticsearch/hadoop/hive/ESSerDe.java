@@ -41,7 +41,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.IdExtractor;
+import org.elasticsearch.hadoop.serialization.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -62,7 +62,7 @@ public class ESSerDe implements SerDe {
     private HiveEntityWritable result = new HiveEntityWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
-    private IdExtractor idExtractor;
+    private FieldExtractor idExtractor;
 
     private boolean writeInitialized = false;
 
@@ -114,7 +114,7 @@ public class ESSerDe implements SerDe {
 
         result.setContent(scratchPad.bytes(), scratchPad.size());
         if (idExtractor != null) {
-            String id = idExtractor.id(hiveType);
+            String id = idExtractor.field(hiveType);
             result.setId(id.getBytes(StringUtils.UTF_8));
         }
         return result;
@@ -128,10 +128,10 @@ public class ESSerDe implements SerDe {
         Settings settings = SettingsManager.loadFrom(tableProperties);
         // TODO: externalize
         valueWriter = new HiveValueWriter(alias);
-        InitializationUtils.setIdExtractorIfNotSet(settings, HiveIdExtractor.class, null);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, null);
 
         idExtractor = (StringUtils.hasText(settings.getMappingId()) ?
-                ObjectUtils.<IdExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
+                ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings) : null);
     }
 
 

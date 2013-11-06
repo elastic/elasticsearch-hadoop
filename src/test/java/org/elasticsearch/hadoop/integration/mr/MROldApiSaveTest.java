@@ -141,6 +141,7 @@ public class MROldApiSaveTest {
         JobClient.runJob(conf);
     }
 
+    @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");

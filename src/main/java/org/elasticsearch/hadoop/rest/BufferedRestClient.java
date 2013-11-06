@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.SerializedObject;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
@@ -131,14 +132,15 @@ public class BufferedRestClient implements Closeable {
     }
 
     private void doWriteToIndex(Object object) throws IOException {
-        int entrySize = command.prepare(object);
+        BytesRef payload = command.write(object);
 
         // check space first
-        if (entrySize + data.size() > data.capacity()) {
+        if (payload.size() > data.available()) {
             flushBatch();
         }
 
-        command.write(object, data);
+        payload.write(data);
+
         dataEntries++;
 
         if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
@@ -148,7 +150,7 @@ public class BufferedRestClient implements Closeable {
 
     private void flushBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Flushing batch of [%d]", data.size()));
+            log.debug(String.format("Flushing batch of [%d] bytes/[%s] entries", data.size(), dataEntries));
         }
 
         client.bulk(index, data.bytes(), data.size());

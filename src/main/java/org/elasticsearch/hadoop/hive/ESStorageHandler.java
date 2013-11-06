@@ -88,7 +88,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
 
         SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         SerializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
-        InitializationUtils.setIdExtractorIfNotSet(settings, HiveIdExtractor.class, log);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
 
         settings.save();
 

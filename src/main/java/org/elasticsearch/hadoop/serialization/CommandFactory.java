@@ -15,22 +15,8 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import org.elasticsearch.hadoop.util.BytesRef;
+interface CommandFactory {
 
+    Command createCommand();
 
-/**
- * Bulk command to execute.
- */
-public interface Command {
-
-    /**
-     * Serialized the given object as a {@link BytesRef}.
-     * Note that the {@link BytesRef} is not guaranteed to be unique - in fact,
-     * expect the same instance to be reused by multiple calls.
-     * In other words, make a copy if you need to hang on to this object.
-     *
-     * @param object
-     * @return
-     */
-    BytesRef write(Object object);
 }

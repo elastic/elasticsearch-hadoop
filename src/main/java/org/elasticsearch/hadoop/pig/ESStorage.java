@@ -130,7 +130,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
 
         changed |= SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
         changed |= SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
-        changed |= InitializationUtils.setIdExtractorIfNotSet(settings, PigIdExtractor.class, log);
+        changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
         settings.save();
     }
 

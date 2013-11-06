@@ -15,9 +15,10 @@
  */
 package org.elasticsearch.hadoop.util;
 
+
 /**
- * Wrapper class around a bytes array that can be used as a reference.
- * Used to allow the array to be resized.
+ * Wrapper class around a bytes array so that it can be passed as reference even if the underlying array is modified.
+ * Allows only a part of the array to be used (slicing).
  */
 public class BytesArray {
 
@@ -48,6 +49,10 @@ public class BytesArray {
 
     public int capacity() {
         return bytes.length;
+    }
+
+    public int available() {
+        return bytes.length - size;
     }
 
     public void bytes(byte[] array, int size) {
