@@ -49,7 +49,7 @@ public class BufferedRestClient implements Closeable {
     private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
-    private BytesRef objectAlreadySerialized;
+    private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
 
     private RestClient client;
@@ -75,7 +75,7 @@ public class BufferedRestClient implements Closeable {
             writeInitialized = true;
 
             data.bytes(new byte[settings.getBatchSizeInBytes()], 0);
-            objectAlreadySerialized = new BytesRef();
+            trivialBytesRef = new BytesRef();
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
@@ -122,9 +122,9 @@ public class BufferedRestClient implements Closeable {
         Assert.isTrue(ba.size() > 0, "no data given");
 
         lazyInitWriting();
-        objectAlreadySerialized.clear();
-        objectAlreadySerialized.add(ba);
-        doWriteToIndex(objectAlreadySerialized);
+        trivialBytesRef.reset();
+        trivialBytesRef.add(ba);
+        doWriteToIndex(trivialBytesRef);
     }
 
     private void doWriteToIndex(BytesRef payload) throws IOException {
@@ -133,7 +133,7 @@ public class BufferedRestClient implements Closeable {
             flushBatch();
         }
 
-        payload.write(data);
+        payload.copyTo(data);
 
         dataEntries++;
         if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {

@@ -41,7 +41,7 @@ class TemplatedCommand implements Command {
 
     @Override
     public BytesRef write(Object object) {
-        ref.clear();
+        ref.reset();
 
         // write before object
         writeTemplate(beforeObject, object);

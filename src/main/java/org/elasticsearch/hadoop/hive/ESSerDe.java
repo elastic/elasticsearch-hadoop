@@ -59,7 +59,7 @@ public class ESSerDe implements SerDe {
     // serialization artifacts
     private BytesArray scratchPad = new BytesArray(512);
     private HiveType hiveType = new HiveType(null, null);
-    private HiveEntityWritable result = new HiveEntityWritable();
+    private HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
     private Command command;
@@ -96,7 +96,7 @@ public class ESSerDe implements SerDe {
 
     @Override
     public Class<? extends Writable> getSerializedClass() {
-        return HiveEntityWritable.class;
+        return HiveBytesArrayWritable.class;
     }
 
     @Override
@@ -108,8 +108,8 @@ public class ESSerDe implements SerDe {
         hiveType.setObjectInspector(objInspector);
         hiveType.setObject(data);
 
-        command.write(hiveType).write(scratchPad);
-        result.setContent(scratchPad.bytes(), scratchPad.size());
+        command.write(hiveType).copyTo(scratchPad);
+        result.setContent(scratchPad);
         return result;
     }
 

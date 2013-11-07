@@ -23,40 +23,48 @@ import org.apache.hadoop.io.BinaryComparable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
+import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Replacement of {@link BytesWritable} that allows direct access to the underlying byte array without copying.
  * Used to wrap already json serialized hive entities.
  */
-public class HiveEntityWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
+public class HiveBytesArrayWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
 
-    private int size;
-    private byte[] bytes;
+    private BytesArray ba;
 
-    public HiveEntityWritable() {
-        bytes = null;
+    public HiveBytesArrayWritable() {
+        ba = null;
     }
 
     public int getLength() {
-        return size;
+        return (ba != null ? ba.size() : 0);
     }
 
     public byte[] getBytes() {
-        return bytes;
+        return (ba != null ? ba.bytes() : BytesArray.EMPTY);
     }
 
-    public void setContent(byte[] bytes, int size) {
-        this.bytes = bytes;
-        this.size = size;
+    public void setContent(BytesArray ba) {
+        this.ba = ba;
+    }
+
+    public BytesArray getContent() {
+        return ba;
     }
 
     public void readFields(DataInput in) throws IOException {
-        size = in.readInt();
+        int size = in.readInt();
+        byte[] bytes = new byte[size];
         in.readFully(bytes, 0, size);
+        ba = new BytesArray(bytes);
     }
 
     public void write(DataOutput out) throws IOException {
+        int size = (ba != null ? ba.size() : 0);
+        byte[] bytes = (ba != null ? ba.bytes() : BytesArray.EMPTY);
+
         out.writeInt(size);
         out.write(bytes, 0, size);
     }
@@ -69,7 +77,7 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
      * Are the two byte sequences equal?
      */
     public boolean equals(Object right_obj) {
-        if (right_obj instanceof HiveEntityWritable)
+        if (right_obj instanceof HiveBytesArrayWritable)
             return super.equals(right_obj);
         return false;
     }
@@ -78,15 +86,13 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
      * Generate the stream of bytes as hex pairs separated by ' '.
      */
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(new String(bytes, 0, size, StringUtils.UTF_8));
-        return sb.toString();
+        return (ba != null ? new String(ba.bytes(), 0, ba.size(), StringUtils.UTF_8) : "");
     }
 
 
     public static class Comparator extends WritableComparator {
         public Comparator() {
-            super(HiveEntityWritable.class);
+            super(HiveBytesArrayWritable.class);
         }
 
         /**
@@ -98,6 +104,6 @@ public class HiveEntityWritable extends BinaryComparable implements WritableComp
     }
 
     static { // register this comparator
-        WritableComparator.define(HiveEntityWritable.class, new Comparator());
+        WritableComparator.define(HiveBytesArrayWritable.class, new Comparator());
     }
 }

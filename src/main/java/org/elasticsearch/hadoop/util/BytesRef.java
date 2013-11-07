@@ -46,15 +46,13 @@ public class BytesRef {
         return size;
     }
 
-    public void write(BytesArray to) {
+    public void copyTo(BytesArray to) {
         if (list == null) {
             return;
         }
         for (Object ref : list) {
             if (ref instanceof BytesArray) {
-                BytesArray ba = (BytesArray) ref;
-                System.arraycopy(ba.bytes(), 0, to.bytes(), to.size(), ba.size());
-                to.increment(ba.size());
+                ((BytesArray) ref).copyTo(to);
             }
             else {
                 byte[] bytes = (byte[]) ref;
@@ -64,7 +62,7 @@ public class BytesRef {
         }
     }
 
-    public void clear() {
+    public void reset() {
         if (list != null) {
             list.clear();
         }

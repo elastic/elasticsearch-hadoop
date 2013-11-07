@@ -22,8 +22,10 @@ package org.elasticsearch.hadoop.util;
  */
 public class BytesArray {
 
-    byte[] bytes;
-    int size;
+    public static final byte[] EMPTY = new byte[0];
+
+    byte[] bytes = EMPTY;
+    int size = 0;
 
     public BytesArray(int size) {
         this(new byte[size], 0);
@@ -60,6 +62,10 @@ public class BytesArray {
         this.size = size;
     }
 
+    public void bytes(String from) {
+        UnicodeUtil.UTF16toUTF8(from, 0, from.length(), this);
+    }
+
     public void size(int size) {
         this.size = size;
     }
@@ -70,10 +76,15 @@ public class BytesArray {
 
     @Override
     public String toString() {
-        return new String(bytes, 0, size, StringUtils.UTF_8);
+        return StringUtils.asUTFString(bytes, size);
     }
 
     public void reset() {
         size = 0;
+    }
+
+    public void copyTo(BytesArray to) {
+        System.arraycopy(bytes, 0, to.bytes(), to.size(), size);
+        to.increment(size);
     }
 }

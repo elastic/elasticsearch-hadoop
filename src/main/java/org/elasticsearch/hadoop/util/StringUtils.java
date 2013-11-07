@@ -27,6 +27,7 @@ import java.util.StringTokenizer;
 public abstract class StringUtils {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
+    public static final String EMPTY = "";
 
     public static boolean hasLength(CharSequence sequence) {
         return (sequence != null && sequence.length() > 0);
@@ -69,10 +70,10 @@ public abstract class StringUtils {
 
     public static String concatenate(Object[] array, String delimiter) {
         if (array == null || array.length == 0) {
-            return "";
+            return EMPTY;
         }
         if (delimiter == null) {
-            delimiter = "";
+            delimiter = EMPTY;
         }
 
         StringBuilder sb = new StringBuilder();
@@ -87,7 +88,7 @@ public abstract class StringUtils {
 
     public static String deleteWhitespace(CharSequence sequence) {
         if (!hasLength(sequence)) {
-            return "";
+            return EMPTY;
         }
 
         StringBuilder sb = new StringBuilder(sequence.length());
@@ -102,6 +103,6 @@ public abstract class StringUtils {
     }
 
     public static String asUTFString(byte[] content, int length) {
-        return new String(content, 0, length, UTF_8);
+        return (content == null || length == 0 ? EMPTY : new String(content, 0, length, UTF_8));
     }
 }

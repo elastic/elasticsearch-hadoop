@@ -66,7 +66,7 @@ public class CommandTest {
     @Test
     public void testNoHeader() throws Exception {
         assumeFalse(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
-        create(settings()).write(map).write(ba);
+        create(settings()).write(map).copyTo(ba);
         String result = prefix() + "}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -77,7 +77,7 @@ public class CommandTest {
         noId = true;
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<1>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_id\":\"1\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -87,7 +87,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_parent\":\"5\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -97,7 +97,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_version\":\"3\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -107,7 +107,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_ttl\":\"2\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -117,7 +117,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_timestamp\":\"3\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -127,7 +127,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_routing\":\"4\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -140,7 +140,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "s");
 
-        create(settings).write(map).write(ba);
+        create(settings).write(map).copyTo(ba);
         String result = "{\"" + operation + "\":{\"_id\":\"1\",\"_routing\":\"v\",\"_ttl\":\"2\"}}" + map();
         assertEquals(result, ba.toString());
     }
@@ -150,7 +150,7 @@ public class CommandTest {
         assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
         Settings set = settings();
         set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "");
-        create(set).write(map).write(ba);
+        create(set).write(map).copyTo(ba);
     }
 
     private Command create(Settings settings) {

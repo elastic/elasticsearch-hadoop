@@ -33,7 +33,7 @@ import org.elasticsearch.hadoop.serialization.ValueWriter;
 
 /**
  * Main value writer for hive. However since Hive expects a Writable type to be passed to the record reader,
- * the raw JSON data needs to be wrapped (and unwrapped by {@link HiveEntityWritable}).
+ * the raw JSON data needs to be wrapped (and unwrapped by {@link HiveBytesArrayWritable}).
  */
 public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
 
