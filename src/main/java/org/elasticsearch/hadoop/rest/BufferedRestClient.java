@@ -122,6 +122,7 @@ public class BufferedRestClient implements Closeable {
         Assert.isTrue(ba.size() > 0, "no data given");
 
         lazyInitWriting();
+        objectAlreadySerialized.clear();
         objectAlreadySerialized.add(ba);
         doWriteToIndex(objectAlreadySerialized);
     }
