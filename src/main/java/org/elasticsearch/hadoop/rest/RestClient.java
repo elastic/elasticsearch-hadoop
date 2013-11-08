@@ -110,7 +110,7 @@ public class RestClient implements Closeable {
         post.setContentChunked(false);
 
         if (log.isTraceEnabled()) {
-            log.trace("Sending bulk request " + new String(buffer, 0, bufferSize, StringUtils.UTF_8));
+            log.trace("Sending bulk request " + StringUtils.asUTFString(buffer, bufferSize));
         }
 
         byte[] content = execute(post);

@@ -21,9 +21,29 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.StringUtils;
 
 class TemplatedCommand implements Command {
+
+    static class FieldWriter {
+        final FieldExtractor extractor;
+        final BytesArray pad;
+
+        FieldWriter(FieldExtractor extractor) {
+            this(extractor, new BytesArray(64));
+        }
+
+        FieldWriter(FieldExtractor extractor, BytesArray pad) {
+            this.extractor = extractor;
+            this.pad = pad;
+        }
+
+        BytesArray write(Object object) {
+            String value = extractor.field(object);
+            Assert.notNull(value, String.format("[%s] cannot extract value from object [%s]", extractor, object));
+            pad.bytes(value);
+            return pad;
+        }
+    }
 
     private final Collection<Object> beforeObject;
     private final Collection<Object> afterObject;
@@ -61,10 +81,7 @@ class TemplatedCommand implements Command {
                 ref.add((byte[]) item);
             }
             else {
-                FieldExtractor extractor = (FieldExtractor) item;
-                String value = extractor.field(object);
-                Assert.notNull(value, String.format("[%s] cannot extract value from object [%s]", extractor, object));
-                ref.add(value.getBytes(StringUtils.UTF_8));
+                ref.add(((FieldWriter) item).write(object));
             }
         }
     }

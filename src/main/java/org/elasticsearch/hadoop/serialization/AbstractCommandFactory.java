@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.TemplatedCommand.FieldWriter;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -149,7 +150,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
                     accumulator.setLength(0);
                     lastString = null;
                 }
-                compacted.add(object);
+                compacted.add(new FieldWriter((FieldExtractor) object));
             }
             else {
                 String str = object.toString();
