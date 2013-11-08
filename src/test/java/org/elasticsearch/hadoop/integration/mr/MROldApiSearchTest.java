@@ -16,7 +16,6 @@
 package org.elasticsearch.hadoop.integration.mr;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -24,6 +23,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
 
 public class MROldApiSearchTest {
@@ -84,7 +84,7 @@ public class MROldApiSearchTest {
         conf.setInputFormat(ESInputFormat.class);
         conf.setOutputFormat(PrintStreamOutputFormat.class);
         conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(MapWritable.class);
+        conf.setOutputValueClass(LinkedMapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.setNumReduceTasks(0);
 

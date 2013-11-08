@@ -15,14 +15,26 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -38,14 +50,6 @@ import org.elasticsearch.hadoop.serialization.ValueReader;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * ElasticSearch {@link InputFormat} for streaming data (typically based on a query) from ElasticSearch.
@@ -277,7 +281,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
     }
 
-    protected static class WritableShardRecordReader extends ShardRecordReader<Text, MapWritable> {
+    protected static class WritableShardRecordReader extends ShardRecordReader<Text, Map<Writable, Writable>> {
         public WritableShardRecordReader() {
             super();
         }
@@ -292,8 +296,8 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
 
         @Override
-        public MapWritable createValue() {
-            return new MapWritable();
+        public Map<Writable, Writable> createValue() {
+            return new LinkedMapWritable();
         }
 
         @Override
@@ -311,9 +315,10 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             return oldApiKey;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
-        protected MapWritable setCurrentValue(MapWritable oldApiValue, MapWritable newApiKey, Object object) {
-            MapWritable val = (MapWritable) object;
+        protected Map<Writable, Writable> setCurrentValue(Map<Writable, Writable> oldApiValue, Map<Writable, Writable> newApiKey, Object object) {
+            Map<Writable, Writable> val = (Map<Writable, Writable>) object;
             if (newApiKey != null) {
                 newApiKey.clear();
                 newApiKey.putAll(val);

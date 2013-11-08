@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobClient;
@@ -35,6 +34,7 @@ import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -159,7 +159,7 @@ public class MROldApiSaveTest {
 
         conf.setInputFormat(SplittableTextInputFormat.class);
         conf.setOutputFormat(ESOutputFormat.class);
-        conf.setMapOutputValueClass(MapWritable.class);
+        conf.setMapOutputValueClass(LinkedMapWritable.class);
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);

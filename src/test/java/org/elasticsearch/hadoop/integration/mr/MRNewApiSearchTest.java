@@ -18,12 +18,12 @@ package org.elasticsearch.hadoop.integration.mr;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
 
 public class MRNewApiSearchTest {
@@ -85,7 +85,7 @@ public class MRNewApiSearchTest {
         job.setInputFormatClass(ESInputFormat.class);
         job.setOutputFormatClass(PrintStreamOutputFormat.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(MapWritable.class);
+        job.setOutputValueClass(LinkedMapWritable.class);
         job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
         return job.getConfiguration();

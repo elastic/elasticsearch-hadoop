@@ -23,13 +23,13 @@ import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -141,7 +141,7 @@ public class MRNewApiSaveTest {
         Job job = new Job(conf);
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(ESOutputFormat.class);
-        job.setMapOutputValueClass(MapWritable.class);
+        job.setMapOutputValueClass(LinkedMapWritable.class);
         job.setMapperClass(JsonMapper.class);
         job.setNumReduceTasks(0);
 

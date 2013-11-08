@@ -10,7 +10,6 @@ import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -22,7 +21,7 @@ public class WritableValueReader extends JdkValueReader {
     @SuppressWarnings("rawtypes")
     @Override
     public Map createMap() {
-        return new MapWritable();
+        return new LinkedMapWritable();
     }
 
     @Override
@@ -58,7 +57,7 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = BytesWritable.class;
             break;
         case OBJECT:
-            arrayType = MapWritable.class;
+            arrayType = LinkedMapWritable.class;
             break;
         case IP:
             throw new UnsupportedOperationException();

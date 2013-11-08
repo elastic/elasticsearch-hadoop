@@ -24,13 +24,13 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MD5Hash;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.UTF8;
 import org.apache.hadoop.io.VIntWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
@@ -141,7 +141,7 @@ public class WritableTypeToJsonTest {
 
     @Test
     public void testMap() {
-        MapWritable map = new MapWritable();
+        LinkedMapWritable map = new LinkedMapWritable();
         map.put(new Text("key"), new IntWritable(1));
         map.put(new BooleanWritable(Boolean.TRUE), new ArrayWritable(new String[] { "one", "two" }));
         writableTypeToJson(map);

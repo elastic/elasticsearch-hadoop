@@ -126,6 +126,7 @@ public class ESSerDe implements SerDe {
     }
 
 
+    @SuppressWarnings("unchecked")
     static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
         if (data == null || data instanceof NullWritable) {
             return null;
@@ -148,7 +149,7 @@ public class ESSerDe implements SerDe {
 
         case MAP: {
             MapTypeInfo mapType = (MapTypeInfo) type;
-            MapWritable mw = (MapWritable) data;
+            Map<Writable, Writable> mw = (Map<Writable, Writable>) data;
 
             Map<Object, Object> map = new LinkedHashMap<Object, Object>();
 
