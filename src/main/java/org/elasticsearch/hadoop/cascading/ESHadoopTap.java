@@ -44,6 +44,7 @@ class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
         setScheme(new ESHadoopScheme(host, port, index, fields));
     }
 
+
     @Override
     public String getIdentifier() {
         return target;
@@ -51,8 +52,9 @@ class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     @Override
     public TupleEntryIterator openForRead(FlowProcess<JobConf> flowProcess, RecordReader input) throws IOException {
-        // ignore given input (org.apache.hadoop.mapred.MapTask$TrackedRecordReader) since it uses only one split
-        return new HadoopTupleEntrySchemeIterator(flowProcess, this, null);
+        // when running local - ignore given input (org.apache.hadoop.mapred.MapTask$TrackedRecordReader) since it uses only one split
+        RecordReader in = (flowProcess.getConfigCopy().get("mapred.job.tracker").equalsIgnoreCase("local") ? null : input);
+        return new HadoopTupleEntrySchemeIterator(flowProcess, this, in);
     }
 
     @Override

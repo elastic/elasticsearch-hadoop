@@ -38,6 +38,7 @@ public class CascadingHadoopSuite {
     @BeforeClass
     public static void setup() throws Exception {
         configuration = HdpBootstrap.hadoopConfig();
+        configuration.setNumReduceTasks(0);
         if (!HdpBootstrap.isJtLocal(configuration)) {
             configuration = Provisioner.cascading(configuration);
         }

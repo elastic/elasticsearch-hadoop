@@ -47,7 +47,7 @@ public class ESTap extends Tap<Object, Object, Object> {
     private String host;
     private int port;
 
-    // TODO: add defaults fallback
+    // TODO: add defaults fall back
     public ESTap(String resource) {
         this(resource, null);
     }

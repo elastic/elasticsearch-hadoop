@@ -20,6 +20,9 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 import cascading.flow.local.LocalFlowConnector;
+import cascading.operation.aggregator.Count;
+import cascading.pipe.Every;
+import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
@@ -30,9 +33,12 @@ public class CascadingLocalSearchTest {
     @Test
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-local/artists/_search?q=me*");
-        Pipe copy = new Pipe("copy");
+        Pipe pipe = new Pipe("copy");
+        pipe = new GroupBy(pipe);
+        pipe = new Every(pipe, new Count());
+
         // print out
         StdOutTap out = new StdOutTap(new TextLine());
-        new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, copy).complete();
+        new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, pipe).complete();
     }
 }

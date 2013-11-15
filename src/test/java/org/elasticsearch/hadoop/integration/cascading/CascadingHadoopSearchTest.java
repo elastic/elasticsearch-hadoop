@@ -21,6 +21,9 @@ import org.elasticsearch.hadoop.integration.Stream;
 import org.junit.Test;
 
 import cascading.flow.hadoop.HadoopFlowConnector;
+import cascading.operation.aggregator.Count;
+import cascading.pipe.Every;
+import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.tap.Tap;
 
@@ -31,8 +34,21 @@ public class CascadingHadoopSearchTest {
         Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
         Pipe copy = new Pipe("copy");
         // print out
-        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+        Tap out = new HadoopPrintStreamTap(Stream.OUT);
 
         new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, copy).complete();
+    }
+
+
+    @Test
+    public void testCountFromES() throws Exception {
+        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
+        Pipe pipe = new Pipe("copy");
+        pipe = new GroupBy(pipe);
+        pipe = new Every(pipe, new Count());
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.OUT);
+
+        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
     }
 }
