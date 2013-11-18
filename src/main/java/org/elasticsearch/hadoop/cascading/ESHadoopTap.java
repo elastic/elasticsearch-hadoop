@@ -52,9 +52,7 @@ class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     @Override
     public TupleEntryIterator openForRead(FlowProcess<JobConf> flowProcess, RecordReader input) throws IOException {
-        // when running local - ignore given input (org.apache.hadoop.mapred.MapTask$TrackedRecordReader) since it uses only one split
-        RecordReader in = (flowProcess.getConfigCopy().get("mapred.job.tracker").equalsIgnoreCase("local") ? null : input);
-        return new HadoopTupleEntrySchemeIterator(flowProcess, this, in);
+        return new HadoopTupleEntrySchemeIterator(flowProcess, this, input);
     }
 
     @Override
