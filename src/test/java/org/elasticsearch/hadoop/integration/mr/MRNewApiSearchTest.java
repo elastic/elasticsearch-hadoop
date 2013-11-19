@@ -78,6 +78,18 @@ public class MRNewApiSearchTest {
         new Job(conf).waitForCompletion(true);
     }
 
+    @Test
+    public void testParentChild() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child/_search?q=*");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
+
+        //conf.set(Stream.class.getName(), "OUT");
+        new Job(conf).waitForCompletion(true);
+    }
+
+
     private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
         conf.setBoolean("mapred.used.genericoptionsparser", true);

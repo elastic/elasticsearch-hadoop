@@ -78,6 +78,17 @@ public class MROldApiSearchTest {
         JobClient.runJob(conf);
     }
 
+    @Test
+    public void testParentChild() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child/_search?q=*");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
+
+        //conf.set(Stream.class.getName(), "OUT");
+        JobClient.runJob(conf);
+    }
+
     private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();
 

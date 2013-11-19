@@ -74,7 +74,7 @@ public class PigSearchTest {
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
- "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');"
                       + "A = LOAD 'pig/fieldalias/_search?q=me*' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
@@ -91,4 +91,16 @@ public class PigSearchTest {
                       + "DUMP A;";
         pig.executeScript(script);
     }
+
+    @Test
+    public void testParentChild() throws Exception {
+        String script =
+                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true');"
+                + "A = LOAD 'pig/child/_search?q=me*' USING ESStorage();"
+                      + "DESCRIBE A;"
+                      + "DUMP A;";
+        pig.executeScript(script);
+    }
+
 }

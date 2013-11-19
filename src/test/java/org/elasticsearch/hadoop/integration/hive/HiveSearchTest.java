@@ -193,6 +193,22 @@ public class HiveSearchTest {
         assertTrue("Hive returned null", containsNoNull(result));
     }
 
+    @Test
+    public void testParentChild() throws Exception {
+        String create = "CREATE EXTERNAL TABLE childload ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/child/_search?q=*", "'es.index.read.missing.as.empty' = 'true'");
+
+        String select = "SELECT * FROM childload";
+
+        System.out.println(server.execute(create));
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(containsNoNull(result));
+    }
+
     private static boolean containsNoNull(List<String> str) {
         for (String string : str) {
             if (string.contains("NULL")) {

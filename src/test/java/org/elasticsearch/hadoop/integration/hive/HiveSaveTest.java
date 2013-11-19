@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import org.apache.hadoop.hive.service.HiveServerException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.util.RestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -381,6 +382,38 @@ public class HiveSaveTest {
         String insert =
                 "INSERT OVERWRITE TABLE updatewoupsertsave "
                 + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatewoupsertsource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testParentChild() throws Exception {
+        RestUtils.putMapping("hive/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+
+        String localTable = createTable("childsource");
+        String load = loadData("childsource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE child ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/child",
+                             "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='id'",
+                             "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
+
+        String selectTest = "SELECT s.id, struct(s.url, s.picture) FROM childsource s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE child "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM childsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));

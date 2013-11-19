@@ -20,6 +20,7 @@ import java.util.Date;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -177,6 +178,20 @@ public class PigSaveTest {
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id','"
                                 + ConfigurationOptions.ES_UPSERT_DOC + "=false');";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testParentChild() throws Exception {
+        RestUtils.putMapping("pig/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
+                "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
+                "STORE B INTO 'pig/child' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                                + ConfigurationOptions.ES_MAPPING_PARENT + "=id','"
+                                + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no');";
         pig.executeScript(script);
     }
 }

@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -130,6 +131,18 @@ public class MRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/non-existing");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testParentChild() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
+
+        RestUtils.putMapping("mrnewapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         new Job(conf).waitForCompletion(true);
     }
