@@ -70,6 +70,9 @@ public class ESTap extends Tap<Object, Object, Object> {
     @Override
     public void flowConfInit(Flow<Object> flow) {
         initInnerTapIfNotSet(flow, "cascading.flow.hadoop.HadoopFlow");
+        if (runningInHadoop) {
+            SerializationUtils.addToken(flow.getConfig());
+        }
     }
 
     @Override
@@ -138,7 +141,7 @@ public class ESTap extends Tap<Object, Object, Object> {
 
     @Override
     public String toString() {
-        return (actualTap !=null ? actualTap.toString() : getClass().getSimpleName() + "[\"" + getScheme() + "\"]" + "[not initialized]");
+        return (actualTap != null ? actualTap.toString() : getClass().getSimpleName() + "[\"" + getScheme() + "\"]" + "[not initialized]");
     }
 
     private void initInnerTapIfNotSetFromFlowProcess(FlowProcess<Object> target) {
