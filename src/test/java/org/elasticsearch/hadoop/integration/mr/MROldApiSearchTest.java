@@ -89,6 +89,16 @@ public class MROldApiSearchTest {
         JobClient.runJob(conf);
     }
 
+    //@Test
+    public void testNested() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested/_search?q=*");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        //conf.set(Stream.class.getName(), "OUT");
+        JobClient.runJob(conf);
+    }
+
     private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();
 

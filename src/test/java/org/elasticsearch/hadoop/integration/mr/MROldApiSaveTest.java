@@ -153,6 +153,16 @@ public class MROldApiSaveTest {
         JobClient.runJob(conf);
     }
 
+    //@Test
+    public void testNested() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        RestUtils.putMapping("mroldapi/nested", "org/elasticsearch/hadoop/integration/mr-nested.json");
+
+        JobClient.runJob(conf);
+    }
 
     private JobConf createJobConf() {
         JobConf conf = HdpBootstrap.hadoopConfig();

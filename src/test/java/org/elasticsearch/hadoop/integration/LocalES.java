@@ -71,7 +71,11 @@ public class LocalES extends ExternalResource {
             }
 
             System.out.println("Stopping Elasticsearch Master...");
-            master.stop();
+            try {
+                master.stop();
+            } catch (Exception ex) {
+                // ignore
+            }
             master = null;
 
             // delete data folder
