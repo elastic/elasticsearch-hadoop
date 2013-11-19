@@ -26,8 +26,11 @@ import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import cascading.util.Update;
+
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ CascadingHadoopSaveTest.class, CascadingHadoopSearchTest.class })
+//@Suite.SuiteClasses({ CascadingHadoopSearchTest.class })
 public class CascadingHadoopSuite {
 
     @ClassRule
@@ -38,7 +41,9 @@ public class CascadingHadoopSuite {
     @BeforeClass
     public static void setup() throws Exception {
         configuration = HdpBootstrap.hadoopConfig();
-        configuration.setNumReduceTasks(0);
+        System.setProperty(Update.UPDATE_CHECK_SKIP, "true");
+
+        //configuration.setNumReduceTasks(0);
         if (!HdpBootstrap.isJtLocal(configuration)) {
             configuration = Provisioner.cascading(configuration);
         }

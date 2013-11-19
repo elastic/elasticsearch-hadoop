@@ -15,40 +15,88 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import java.util.Map;
+
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.Stream;
 import org.junit.Test;
 
+import cascading.flow.FlowDef;
+import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowConnector;
+import cascading.operation.BaseOperation;
+import cascading.operation.Function;
+import cascading.operation.FunctionCall;
 import cascading.operation.aggregator.Count;
+import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
 public class CascadingHadoopSearchTest {
+
+    public static class FieldExtractor extends BaseOperation implements Function {
+        public FieldExtractor(Fields fieldDeclaration) {
+            super(2, fieldDeclaration);
+        }
+
+        public void operate(FlowProcess flowProcess, FunctionCall functionCall) {
+            TupleEntry argument = functionCall.getArguments();
+            String doc_id = argument.getString(0);
+            MapWritable map = (MapWritable) argument.getObject(1);
+
+            Tuple result = new Tuple();
+            result.add(doc_id);
+
+            if (getFieldDeclaration().size() > 1) {
+                for (int i = 0; i < getFieldDeclaration().size(); i++) {
+                    Comparable field = getFieldDeclaration().get(i);
+                    for (Map.Entry<Writable, Writable> s : map.entrySet()) {
+                        if (field.compareTo(s.getKey().toString()) == 0) {
+                            result.add(s.getValue());
+                            break;
+                        }
+                    }
+                }
+            }
+
+            functionCall.getOutputCollector().add(result);
+        }
+    }
 
     @Test
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
-        Pipe copy = new Pipe("copy");
+        Pipe pipe = new Pipe("copy");
         // print out
-        Tap out = new HadoopPrintStreamTap(Stream.OUT);
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+        //Tap out = new Hfs(new TextDelimited(), "cascadingbug-1", SinkMode.REPLACE);
+        FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
 
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, copy).complete();
+        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
     }
 
 
-    @Test
+    //@Test
     public void testCountFromES() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
+        Fields args = new Fields("doc_id", "description");
+        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*", args);
         Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, new Fields("doc_id", "description"), new FieldExtractor(args), Fields.RESULTS);
         pipe = new GroupBy(pipe);
         pipe = new Every(pipe, new Count());
-        // print out
-        Tap out = new HadoopPrintStreamTap(Stream.OUT);
 
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+        //Tap out = new Hfs(new TextDelimited(), "cascadingbug-2", SinkMode.REPLACE);
+        FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
+        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef).complete();
     }
 }

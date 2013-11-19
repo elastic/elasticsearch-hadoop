@@ -19,6 +19,7 @@ import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.junit.Test;
 
+import cascading.flow.FlowDef;
 import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
@@ -39,6 +40,10 @@ public class CascadingHadoopSaveTest {
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
+
+
+        FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
+
+        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef).complete();
     }
 }
