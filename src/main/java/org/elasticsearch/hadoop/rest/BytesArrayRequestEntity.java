@@ -19,28 +19,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.commons.httpclient.methods.RequestEntity;
+import org.elasticsearch.hadoop.util.BytesArray;
 
 /**
  * Wrapper around byte arrays that are not fully filled up.
  */
-class JsonByteArrayRequestEntity implements RequestEntity {
+class BytesArrayRequestEntity implements RequestEntity {
 
-    private byte[] content;
-    private int length;
+    private final BytesArray ba;
 
-    public JsonByteArrayRequestEntity(byte[] content, int length) {
-        this.content = content;
-        this.length = length;
+    public BytesArrayRequestEntity(BytesArray ba) {
+        this.ba = ba;
     }
 
     @Override
     public long getContentLength() {
-        return length;
+        return ba.size();
     }
 
     @Override
     public void writeRequest(OutputStream out) throws IOException {
-        out.write(content, 0, length);
+        out.write(ba.bytes(), 0, ba.size());
     }
 
     @Override

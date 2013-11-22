@@ -28,8 +28,9 @@ public interface ConfigurationOptions {
     String ES_PORT = "es.port";
     String ES_PORT_DEFAULT = "9200";
 
-    /** ElasticSearch index or query (so called location) */
+    /** ElasticSearch index */
     String ES_RESOURCE = "es.resource";
+    String ES_QUERY = "es.query";
 
     /** ElasticSearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";

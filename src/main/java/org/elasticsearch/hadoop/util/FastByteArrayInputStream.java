@@ -69,6 +69,10 @@ public class FastByteArrayInputStream extends InputStream {
      */
     protected int count;
 
+    public FastByteArrayInputStream(byte[] data) {
+        this(new BytesArray(data));
+    }
+
     /**
      * Creates a <code>ByteArrayInputStream</code>
      * so that it  uses <code>buf</code> as its
@@ -149,7 +153,7 @@ public class FastByteArrayInputStream extends InputStream {
         if (len <= 0) {
             return 0;
         }
-        System.arraycopy(b, off, data.bytes, data.size, len);
+        System.arraycopy(data.bytes, pos, b, off, len);
         pos += len;
         return len;
     }

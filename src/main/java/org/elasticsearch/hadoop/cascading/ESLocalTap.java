@@ -61,7 +61,7 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
         client = new BufferedRestClient(settings);
 
         if (input == null) {
-            input = QueryBuilder.query(target).build(client, new ScrollReader(new JdkValueReader(), null));
+            input = QueryBuilder.query(settings).build(client, new ScrollReader(new JdkValueReader(), null));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }

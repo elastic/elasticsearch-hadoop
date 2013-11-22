@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.util;
 
-
 /**
  * Wrapper class around a bytes array so that it can be passed as reference even if the underlying array is modified.
  * Allows only a part of the array to be used (slicing).
@@ -41,6 +40,10 @@ public class BytesArray {
         this.size = size;
     }
 
+    public BytesArray(String source) {
+        bytes(source);
+    }
+
     public byte[] bytes() {
         return bytes;
     }
@@ -63,15 +66,12 @@ public class BytesArray {
     }
 
     public void bytes(String from) {
+        size = 0;
         UnicodeUtil.UTF16toUTF8(from, 0, from.length(), this);
     }
 
     public void size(int size) {
         this.size = size;
-    }
-
-    public void increment(int delta) {
-        this.size += delta;
     }
 
     @Override
@@ -84,7 +84,36 @@ public class BytesArray {
     }
 
     public void copyTo(BytesArray to) {
-        System.arraycopy(bytes, 0, to.bytes(), to.size(), size);
-        to.increment(size);
+        to.add(bytes, 0, size);
+    }
+
+    public void add(int b) {
+        int newcount = size + 1;
+        checkSize(newcount);
+        bytes[size] = (byte) b;
+        size = newcount;
+    }
+
+    public void add(byte[] b) {
+        if (b == null || b.length == 0) {
+            return;
+        }
+        add(b, 0, b.length);
+    }
+
+    public void add(byte[] b, int off, int len) {
+        if (len == 0) {
+            return;
+        }
+        int newcount = size + len;
+        checkSize(newcount);
+        System.arraycopy(b, off, bytes, size, len);
+        size = newcount;
+    }
+
+    private void checkSize(int newcount) {
+        if (newcount > bytes.length) {
+            bytes = ArrayUtils.grow(bytes, newcount);
+        }
     }
 }

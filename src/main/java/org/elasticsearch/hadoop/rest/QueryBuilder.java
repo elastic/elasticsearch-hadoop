@@ -16,32 +16,93 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 public class QueryBuilder {
 
-    private final String query;
+    private final Resource resource;
+
+    private Map<String, String> uriQuery = new LinkedHashMap<String, String>();
+    private BytesArray bodyQuery;
+
     private TimeValue time = TimeValue.timeValueMinutes(10);
     private long size = 50;
     private String shard;
     private String node;
 
-    private QueryBuilder(String query) {
-        Assert.hasText(query, "Invalid query");
-        this.query = query;
+    QueryBuilder(Settings settings) {
+        this.resource = new Resource(settings);
+        String query = settings.getQuery();
+        Assert.hasText(query, "no/empty query was given");
+        parseQuery(query.trim());
+    }
+
+    QueryBuilder(Resource resource, String query) {
+        this.resource = resource;
+        Assert.hasText(query, "no/empty query was given");
+        parseQuery(query.trim());
     }
 
     public static QueryBuilder query(Settings settings) {
-        return new QueryBuilder(settings.getTargetResource()).time(settings.getScrollKeepAlive()).
-                                size(settings.getScrollSize());
+        return new QueryBuilder(settings).
+                        time(settings.getScrollKeepAlive()).
+                        size(settings.getScrollSize());
     }
-    public static QueryBuilder query(String query) {
-        return new QueryBuilder(query);
+
+
+    private void parseQuery(String query) {
+        // uri query
+        if (query.startsWith("?")) {
+            uriQuery.putAll(initUriQuery(query));
+        }
+        else if (query.startsWith("{")) {
+            // TODO: add early, basic JSON validation
+            bodyQuery = new BytesArray(query);
+        }
+        else {
+            try {
+                // must be a resource
+                InputStream in = IOUtils.open(query);
+                // peek the stream
+                int first = in.read();
+                if ('q' == first) {
+                    uriQuery.putAll(initUriQuery(IOUtils.asString(in)));
+                }
+                else {
+                    bodyQuery = new BytesArray(1024);
+                    bodyQuery.add(first);
+                    IOUtils.asBytes(bodyQuery, in);
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+    }
+
+    private Map<String, String> initUriQuery(String query) {
+        // strip leading ?
+        if (query.startsWith("?")) {
+            query = query.substring(1);
+        }
+        Map<String, String> params = new LinkedHashMap<String, String>();
+        for (String token : query.split("&")) {
+            int indexOf = token.indexOf("=");
+            Assert.isTrue(indexOf > 0, String.format("Cannot token [%s] in uri query [%s]", token, query));
+            params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+        }
+        return params;
     }
 
     public QueryBuilder size(long size) {
@@ -68,12 +129,13 @@ public class QueryBuilder {
     }
 
     private String assemble() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(query);
-        sb.append("&search_type=scan&scroll=");
-        sb.append(time.minutes());
-        sb.append("m&size=");
-        sb.append(size);
+        StringBuilder sb = new StringBuilder(resource.indexAndType());
+        sb.append("/_search?");
+
+        // override infrastructure params
+        uriQuery.put("search_type", "scan");
+        uriQuery.put("scroll", String.valueOf(time.minutes()));
+        uriQuery.put("size", String.valueOf(size));
 
         StringBuilder pref = new StringBuilder();
         if (StringUtils.hasText(shard)) {
@@ -89,8 +151,18 @@ public class QueryBuilder {
         }
 
         if (pref.length() > 0) {
-            sb.append("&preference=");
-            sb.append(pref.toString());
+            uriQuery.put("preference", pref.toString());
+        }
+
+        // append params
+        for (Iterator<Entry<String, String>> it = uriQuery.entrySet().iterator(); it.hasNext();) {
+            Entry<String, String> entry = it.next();
+            sb.append(entry.getKey());
+            sb.append("=");
+            sb.append(entry.getValue());
+            if (it.hasNext()) {
+                sb.append("&");
+            }
         }
 
         return sb.toString();
@@ -99,7 +171,7 @@ public class QueryBuilder {
     public ScrollQuery build(BufferedRestClient client, ScrollReader reader) {
         String scrollUri = assemble();
         try {
-            return client.scan(scrollUri, reader);
+            return client.scan(scrollUri, bodyQuery, reader);
         } catch (IOException ex) {
             throw new IllegalStateException("Cannot build scroll [" + scrollUri + "]", ex);
         }

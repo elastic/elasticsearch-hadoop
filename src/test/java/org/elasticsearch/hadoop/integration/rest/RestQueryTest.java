@@ -66,7 +66,9 @@ public class RestQueryTest {
 
     @Test
     public void testQueryBuilder() throws Exception {
-        QueryBuilder qb = QueryBuilder.query("rest/savebulk/_search?q=me*");
+        Settings sets = settings.copy();
+        sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
+        QueryBuilder qb = QueryBuilder.query(sets);
         Field mapping = client.getMapping();
         ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping);
 
@@ -87,8 +89,11 @@ public class RestQueryTest {
         Field mapping = client.getMapping();
         ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping);
 
+        Settings sets = settings.copy();
+        sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
+
         String nodeId = targetShards.values().iterator().next().getId();
-        ScrollQuery query = QueryBuilder.query("rest/savebulk/_search?q=me*")
+        ScrollQuery query = QueryBuilder.query(sets)
                 .shard("0")
                 .onlyNode(nodeId)
                 .build(client, reader);

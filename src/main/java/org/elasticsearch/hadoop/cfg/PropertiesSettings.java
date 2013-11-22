@@ -40,4 +40,9 @@ public class PropertiesSettings extends Settings {
     public void setProperty(String name, String value) {
         props.setProperty(name, value);
     }
+
+    @Override
+    public Settings copy() {
+        return new PropertiesSettings((Properties) props.clone());
+    }
 }

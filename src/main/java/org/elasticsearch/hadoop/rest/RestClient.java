@@ -44,6 +44,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -99,18 +100,18 @@ public class RestClient implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    public void bulk(String index, byte[] buffer, int bufferSize) throws IOException {
+    public void bulk(Resource resource, BytesArray buffer) throws IOException {
         //empty buffer, ignore
-        if (bufferSize == 0) {
+        if (buffer.size() == 0) {
             return;
         }
 
-        PostMethod post = new PostMethod(index + "/_bulk");
-        post.setRequestEntity(new JsonByteArrayRequestEntity(buffer, bufferSize));
+        PostMethod post = new PostMethod(resource.bulk());
+        post.setRequestEntity(new BytesArrayRequestEntity(buffer));
         post.setContentChunked(false);
 
         if (log.isTraceEnabled()) {
-            log.trace("Sending bulk request " + StringUtils.asUTFString(buffer, bufferSize));
+            log.trace("Sending bulk request " + buffer.toString());
         }
 
         byte[] content = execute(post);
@@ -124,7 +125,7 @@ public class RestClient implements Closeable {
             String message = messages.get("error");
             if (StringUtils.hasText(message)) {
                 throw new IllegalStateException(String.format(
-                        "Bulk request on index [%s] failed; at least one error reported [%s]", index, message));
+                        "Bulk request on index [%s] failed; at least one error reported [%s]", resource.indexAndType(), message));
             }
         }
 
@@ -133,27 +134,19 @@ public class RestClient implements Closeable {
         }
     }
 
-    public void refresh(String index) {
-        int slash = index.indexOf("/");
-        String indx = (slash < 0) ? index : index.substring(0, slash);
-        execute(new PostMethod(indx + "/_refresh"));
-    }
-
-    private void create(String q, byte[] value) {
-        PostMethod post = new PostMethod(q);
-        post.setRequestEntity(new ByteArrayRequestEntity(value));
-        execute(post);
+    public void refresh(Resource resource) {
+        execute(new PostMethod(resource.refresh()));
     }
 
     public void deleteIndex(String index) {
         execute(new DeleteMethod(index));
     }
 
-    public List<List<Map<String, Object>>> targetShards(String query) throws IOException {
+    public List<List<Map<String, Object>>> targetShards(Resource resource) throws IOException {
         List<List<Map<String, Object>>> shardsJson = null;
 
         if (indexReadMissingAsEmpty) {
-            GetMethod get = new GetMethod(query);
+            GetMethod get = new GetMethod(resource.targetShards());
             byte[] content = execute(get, false);
             if (get.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 shardsJson = Collections.emptyList();
@@ -163,7 +156,7 @@ public class RestClient implements Closeable {
             }
         }
         else {
-            shardsJson = get(query, "shards");
+            shardsJson = get(resource.targetShards(), "shards");
         }
 
         return shardsJson;
@@ -231,8 +224,14 @@ public class RestClient implements Closeable {
         }
     }
 
-    public String[] scan(String query) throws IOException {
-        Map<String, Object> scan = get(query, null);
+    public String[] scan(String query, BytesArray body) throws IOException {
+        PostMethod post = new PostMethod(query);
+        if (body != null && body.size() > 0) {
+            post.setContentChunked(false);
+            post.setRequestEntity(new BytesArrayRequestEntity(body));
+        }
+
+        Map<String, Object> scan = parseContent(execute(post), null);
 
         String[] data = new String[2];
         data[0] = scan.get("_scroll_id").toString();
@@ -243,6 +242,7 @@ public class RestClient implements Closeable {
     public byte[] scroll(String scrollId) throws IOException {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
         PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
+        post.setContentChunked(false);
         post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
         return execute(post);
     }

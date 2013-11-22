@@ -55,9 +55,7 @@ public class BytesRef {
                 ((BytesArray) ref).copyTo(to);
             }
             else {
-                byte[] bytes = (byte[]) ref;
-                System.arraycopy(bytes, 0, to.bytes(), to.size(), bytes.length);
-                to.increment(bytes.length);
+                to.add((byte[]) ref);
             }
         }
     }

@@ -60,12 +60,7 @@ public class FastByteArrayOutputStream extends OutputStream {
      * @param b the byte to be written.
      */
     public void write(int b) {
-        int newcount = data.size + 1;
-        if (newcount > data.bytes.length) {
-            data.bytes = ArrayUtils.grow(data.bytes, newcount);
-        }
-        data.bytes[data.size] = (byte) b;
-        data.size = newcount;
+        data.add(b);
     }
 
     /**
@@ -79,15 +74,7 @@ public class FastByteArrayOutputStream extends OutputStream {
      * @param len the number of bytes to write.
      */
     public void write(byte b[], int off, int len) {
-        if (len == 0) {
-            return;
-        }
-        int newcount = data.size + len;
-        if (newcount > data.bytes.length) {
-            data.bytes = ArrayUtils.grow(data.bytes, newcount);
-        }
-        System.arraycopy(b, off, data.bytes, data.size, len);
-        data.size = newcount;
+        data.add(b, off, len);
     }
 
     /**

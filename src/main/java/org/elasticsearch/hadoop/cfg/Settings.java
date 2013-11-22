@@ -161,9 +161,18 @@ public abstract class Settings implements InternalConfigurationOptions {
         return this;
     }
 
+    public Settings setQuery(String query) {
+        setProperty(ES_QUERY, query);
+        return this;
+    }
+
     public String getTargetResource() {
         String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
         return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
+    }
+
+    public String getQuery() {
+        return getProperty(ES_QUERY);
     }
 
     public Settings cleanUri() {
@@ -171,11 +180,18 @@ public abstract class Settings implements InternalConfigurationOptions {
         return this;
     }
 
-    public Settings clean() {
+    public Settings cleanResource() {
         setProperty(INTERNAL_ES_TARGET_RESOURCE, "");
+        return this;
+    }
+
+    public Settings clean() {
+        cleanResource();
         cleanUri();
         return this;
     }
+
+    public abstract Settings copy();
 
     /**
      * Saves the settings state after validating them.

@@ -36,4 +36,11 @@ public class HadoopSettings extends Settings {
     public void setProperty(String name, String value) {
         cfg.set(name, value);
     }
+
+    @Override
+    public Settings copy() {
+        // force internal init
+        cfg.size();
+        return new HadoopSettings(new Configuration(cfg));
+    }
 }

@@ -53,7 +53,6 @@ public class BufferedRestClient implements Closeable {
     private boolean writeInitialized = false;
 
     private RestClient client;
-    private String index;
     private Resource resource;
     private Command command;
     private final Settings settings;
@@ -61,12 +60,7 @@ public class BufferedRestClient implements Closeable {
     public BufferedRestClient(Settings settings) {
         this.settings = settings;
         this.client = new RestClient(settings);
-        String tempIndex = settings.getTargetResource();
-        if (tempIndex == null) {
-            tempIndex = "";
-        }
-        this.index = tempIndex;
-        this.resource = new Resource(index);
+        this.resource = new Resource(settings);
     }
 
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
@@ -90,8 +84,8 @@ public class BufferedRestClient implements Closeable {
      * @param reader scroll reader
      * @return a scroll query
      */
-    ScrollQuery scan(String query, ScrollReader reader) throws IOException {
-        String[] scrollInfo = client.scan(query);
+    ScrollQuery scan(String query, BytesArray body, ScrollReader reader) throws IOException {
+        String[] scrollInfo = client.scan(query, body);
         String scrollId = scrollInfo[0];
         long totalSize = Long.parseLong(scrollInfo[1]);
         return new ScrollQuery(this, scrollId, totalSize, reader);
@@ -103,7 +97,6 @@ public class BufferedRestClient implements Closeable {
      * @param object object to add to the index
      */
     public void writeToIndex(Object object) throws IOException {
-        Assert.hasText(index, "no index given");
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
@@ -117,7 +110,6 @@ public class BufferedRestClient implements Closeable {
      * @param size the length to use from the given array
      */
     public void writeProcessedToIndex(BytesArray ba) throws IOException {
-        Assert.hasText(index, "no index given");
         Assert.notNull(ba, "no data given");
         Assert.isTrue(ba.size() > 0, "no data given");
 
@@ -146,7 +138,7 @@ public class BufferedRestClient implements Closeable {
             log.debug(String.format("Flushing batch of [%d] bytes/[%s] entries", data.size(), dataEntries));
         }
 
-        client.bulk(index, data.bytes(), data.size());
+        client.bulk(resource, data);
         data.reset();
         dataEntries = 0;
         executedBulkWrite = true;
@@ -160,10 +152,10 @@ public class BufferedRestClient implements Closeable {
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {
                 // refresh batch
-                client.refresh(index);
+                client.refresh(resource);
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", index));
+                    log.debug(String.format("Refreshing index [%s]", resource));
                 }
             }
         } catch (IOException ex) {
@@ -180,7 +172,7 @@ public class BufferedRestClient implements Closeable {
     public Map<Shard, Node> getTargetShards() throws IOException {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resource.targetShards());
+        List<List<Map<String, Object>>> info = client.targetShards(resource);
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
 
         for (List<Map<String, Object>> shardGroup : info) {
@@ -201,7 +193,7 @@ public class BufferedRestClient implements Closeable {
     public Map<Shard, Node> getTargetPrimaryShards() throws IOException {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resource.targetShards());
+        List<List<Map<String, Object>>> info = client.targetShards(resource);
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
 
         for (List<Map<String, Object>> shardGroup : info) {

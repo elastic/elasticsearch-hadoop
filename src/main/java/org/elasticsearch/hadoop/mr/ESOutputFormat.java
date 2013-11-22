@@ -24,15 +24,11 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -191,35 +187,6 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
             }
         }
-
-        private static int detectNumberOfInstances(Configuration conf) throws IOException {
-            int numReducers = conf.getInt("mapred.reduce.tasks", 1);
-            // no reducers
-            if (numReducers < 1) {
-                String dir = conf.get("mapreduce.job.dir");
-                Path path = JobSubmissionFiles.getJobSplitMetaFile(new Path(dir));
-
-                FSDataInputStream in = path.getFileSystem(conf).open(path);
-
-                try {
-                    // skip "META-SPL" in UTF-8
-                    byte[] header = new byte[8];
-                    in.readFully(header);
-                    // skip version
-                    WritableUtils.readVInt(in);
-                    // read number of splits
-                    return WritableUtils.readVInt(in);
-                } finally {
-                    try {
-                        in.close();
-                    } catch (Exception ex) {
-                        // ignore
-                    }
-                }
-            }
-            return numReducers;
-        }
-
 
         private int detectCurrentInstance(Configuration conf) {
             TaskAttemptID attempt = TaskAttemptID.forName(conf.get("mapred.task.id"));

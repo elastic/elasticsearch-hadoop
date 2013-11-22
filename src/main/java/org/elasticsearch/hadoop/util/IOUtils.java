@@ -15,9 +15,8 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -31,18 +30,18 @@ import org.elasticsearch.hadoop.serialization.SerializationException;
 public abstract class IOUtils {
 
     public static String serializeToBase64(Serializable object) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(object);
         oos.close();
-        return new String(Base64.encodeBase64(baos.toByteArray(), false, true));
+        return new String(Base64.encodeBase64(baos.bytes().bytes(), false, true));
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T deserializeFromBase64(String data) {
-        byte[] rawData = Base64.decodeBase64(data.getBytes());
+        byte[] rawData = Base64.decodeBase64(data.getBytes(StringUtils.UTF_8));
         try {
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(rawData));
+            ObjectInputStream ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
             Object o = ois.readObject();
             ois.close();
             return (T) o;
@@ -51,5 +50,40 @@ public abstract class IOUtils {
         } catch (IOException ex) {
             throw new SerializationException("cannot deserialize object", ex);
         }
+    }
+
+    public static BytesArray asBytes(InputStream in) throws IOException {
+        return asBytes(new BytesArray(in.available()), in);
+    }
+
+    public static BytesArray asBytes(BytesArray ba, InputStream in) throws IOException {
+        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(ba);
+        byte[] buffer = new byte[1024];
+        int read = 0;
+        try {
+            while ((read = in.read(buffer)) != -1) {
+                bos.write(buffer, 0, read);
+            }
+
+        } finally {
+            try {
+                in.close();
+            } catch (IOException ex) {
+                // ignore
+            }
+        }
+        return bos.bytes();
+    }
+
+    public static String asString(InputStream in) throws IOException {
+        return asBytes(in).toString();
+    }
+
+    public static InputStream open(String resource) throws IOException {
+        int prefix = resource.indexOf(":");
+        // check prefix - default classpath, fall-back to hadoop (check whether it supports all URLs)
+        // might need settings/Hadoop config
+
+        throw new UnsupportedOperationException();
     }
 }

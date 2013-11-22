@@ -15,57 +15,108 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
+
 
 /**
- * ElasticSearch Rest Resource (index or query).
+ * ElasticSearch Rest Resource - index and type.
  */
 public class Resource {
 
-    private final StringBuilder resource;
-    // cleaned up index and type with trailing "/"
-    private final String root;
+    private final String indexAndType;
     private final String type;
     private final String index;
 
-    public Resource(String resource) {
-        this.resource = new StringBuilder(resource);
-        int location = resource.lastIndexOf("_");
-        if (location <= 0) {
-            location = resource.length();
+    public Resource(Settings settings) {
+        String resource = settings.getTargetResource();
+
+        String errorMessage = "invalid resource given; expecting [index]/[type]";
+        Assert.hasText(resource, errorMessage);
+
+        // add compatibility for now
+        if (resource.contains("?") || resource.contains("&")) {
+            if (StringUtils.hasText(settings.getQuery())) {
+                throw new IllegalArgumentException(String.format(
+                        "Cannot specify a query in the target index and through %s", ConfigurationOptions.ES_QUERY));
+            }
+
+            LogFactory.getLog(Resource.class).warn(
+                    String.format(
+                            "queries should be specified through '%s' option and not the target index; this option will be _removed_ in the next release",
+                            ConfigurationOptions.ES_QUERY));
+
+            // extract query
+            int index = resource.indexOf("?");
+            if (index > 0) {
+                String query = resource.substring(index);
+
+                // clean resource
+                resource = resource.substring(0, index);
+                index = resource.lastIndexOf("/");
+                resource = resource.substring(0, index);
+
+                settings.cleanResource();
+                settings.setResource(resource);
+                settings.setQuery(query);
+                settings.save();
+            }
         }
-        String localRoot = resource.substring(0, location);
-        if (!localRoot.endsWith("/")) {
-            localRoot = localRoot + "/";
+
+        String res = resource.trim();
+
+        if (res.startsWith("/")) {
+            res = res.substring(1);
         }
-        root = localRoot;
-        location = localRoot.substring(0, root.length() - 1).lastIndexOf("/");
-        type = root.substring(location + 1, root.length() - 1);
-        index = root.substring(0, location);
+        if (res.endsWith("/")) {
+            res = res.substring(0, res.length() - 1);
+        }
+
+        int slash = res.indexOf("/");
+        Assert.isTrue(slash >= 0 && slash < res.length() - 1, errorMessage);
+        index = res.substring(0, slash);
+        type = res.substring(slash + 1);
+
+        Assert.hasText(index, "No index found; expecting [index]/[type]");
+        Assert.hasText(type, "No type found; expecting [index]/[type]");
+
+        indexAndType = index + "/" + type;
     }
 
-    String bulkIndexing() {
-        return root + "_bulk";
+    String bulk() {
+        return indexAndType + "/_bulk";
     }
 
     // https://github.com/elasticsearch/elasticsearch/issues/2726
     String targetShards() {
-        return root + "_search_shards";
+        return indexAndType + "/_search_shards";
     }
 
     String mapping() {
-        return root + "_mapping";
+        return indexAndType + "/_mapping";
     }
 
     String indexAndType() {
-        return root;
+        return indexAndType;
     }
 
-    public String type() {
+    String type() {
         return type;
     }
 
-    public String index() {
+    String index() {
         return index;
     }
-}
 
+    @Override
+    public String toString() {
+        return indexAndType;
+    }
+
+    public String refresh() {
+        return index + "/_refresh";
+    }
+}
