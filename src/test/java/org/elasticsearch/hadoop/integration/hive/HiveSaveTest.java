@@ -438,4 +438,8 @@ public class HiveSaveTest {
     private String loadData(String tableName) {
         return "LOAD DATA " + (isLocal ? "LOCAL" : "") + " INPATH '" + HiveSuite.hdfsResource + "' OVERWRITE INTO TABLE " + tableName;
     }
+
+    private static String tableProps(String resource, String... params) {
+        return HiveSuite.tableProps(resource, null, params);
+    }
 }

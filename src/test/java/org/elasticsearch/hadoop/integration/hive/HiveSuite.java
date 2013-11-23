@@ -111,10 +111,14 @@ public class HiveSuite {
     }
 
 
-    public static String tableProps(String resource, String... params) {
+    public static String tableProps(String resource, String query, String... params) {
         StringBuilder sb = new StringBuilder("STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler' ");
 
-        sb.append("TBLPROPERTIES('es.resource' = '" + resource + "' ");
+        sb.append("TBLPROPERTIES('es.resource'='" + resource + "'");
+
+        if (StringUtils.hasText(query)) {
+            sb.append(",'es.query'='" + query + "'");
+        }
 
         if (params != null && params.length > 0) {
             for (String string : params) {
