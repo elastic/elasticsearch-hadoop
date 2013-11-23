@@ -16,6 +16,8 @@
 package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -25,13 +27,29 @@ import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+@RunWith(Parameterized.class)
 public class MRNewApiSearchTest {
+
+    @Parameters
+    public static Collection<Object[]> queries() {
+        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
+                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+    }
+
+    private String query;
+
+    public MRNewApiSearchTest(String query) {
+        this.query = query;
+    }
 
     @Test
     public void testBasicSearch() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -39,7 +57,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -48,7 +66,7 @@ public class MRNewApiSearchTest {
     public void testSearchNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -56,7 +74,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -64,7 +82,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -73,7 +91,7 @@ public class MRNewApiSearchTest {
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -81,7 +99,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testParentChild() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
@@ -98,6 +116,7 @@ public class MRNewApiSearchTest {
         job.setOutputFormatClass(PrintStreamOutputFormat.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(LinkedMapWritable.class);
+        conf.set(ConfigurationOptions.ES_QUERY, query);
         job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
         return job.getConfiguration();

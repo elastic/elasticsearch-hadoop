@@ -15,6 +15,9 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -25,13 +28,28 @@ import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+@RunWith(Parameterized.class)
 public class MROldApiSearchTest {
+
+    @Parameters
+    public static Collection<Object[]> queries() {
+        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" }, { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+    }
+
+    private String query;
+
+    public MROldApiSearchTest(String query) {
+        this.query = query;
+    }
 
     @Test
     public void testBasicSearch() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
 
         JobClient.runJob(conf);
     }
@@ -39,7 +57,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
 
         JobClient.runJob(conf);
     }
@@ -48,7 +66,7 @@ public class MROldApiSearchTest {
     public void testSearchNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save");
 
         JobClient.runJob(conf);
     }
@@ -56,7 +74,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
 
         JobClient.runJob(conf);
     }
@@ -64,7 +82,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
         JobClient.runJob(conf);
     }
@@ -73,7 +91,7 @@ public class MROldApiSearchTest {
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
 
         JobClient.runJob(conf);
     }
@@ -81,7 +99,7 @@ public class MROldApiSearchTest {
     @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
@@ -92,7 +110,7 @@ public class MROldApiSearchTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested/_search?q=*");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         //conf.set(Stream.class.getName(), "OUT");
@@ -107,6 +125,7 @@ public class MROldApiSearchTest {
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(LinkedMapWritable.class);
         conf.setBoolean("mapred.used.genericoptionsparser", true);
+        conf.set(ConfigurationOptions.ES_QUERY, query);
         conf.setNumReduceTasks(0);
 
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));

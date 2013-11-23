@@ -34,6 +34,8 @@ public class QueryBuilder {
 
     private final Resource resource;
 
+    private static String MATCH_ALL = "{\"query\":{\"match_all\":{}}}";
+
     private Map<String, String> uriQuery = new LinkedHashMap<String, String>();
     private BytesArray bodyQuery;
 
@@ -45,7 +47,9 @@ public class QueryBuilder {
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings);
         String query = settings.getQuery();
-        Assert.hasText(query, "no/empty query was given");
+        if (!StringUtils.hasText(query)) {
+            query = MATCH_ALL;
+        }
         parseQuery(query.trim());
     }
 
