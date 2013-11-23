@@ -15,16 +15,34 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-/**
- */
+@RunWith(Parameterized.class)
 public class PigSearchTest {
 
     static PigWrapper pig;
+
+    @Parameters
+    public static Collection<Object[]> queries() {
+        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
+                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+    }
+
+    private String query;
+
+    public PigSearchTest(String query) {
+        this.query = query;
+    }
+
 
     @BeforeClass
     public static void startup() throws Exception {
@@ -41,8 +59,8 @@ public class PigSearchTest {
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();" +
-                "A = LOAD 'pig/tupleartists/_search?q=me*' USING ESStorage();";
+                "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');" +
+                "A = LOAD 'pig/tupleartists' USING ESStorage();";
                 //"DESCRIBE A;";
                 //"//DUMP A;";
         pig.executeScript(script);
@@ -52,8 +70,8 @@ public class PigSearchTest {
     public void testBag() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
-                      + "A = LOAD 'pig/bagartists/_search?q=me*' USING ESStorage();"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');"
+                      + "A = LOAD 'pig/bagartists' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
@@ -63,8 +81,8 @@ public class PigSearchTest {
     public void testTimestamp() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage();"
-                      + "A = LOAD 'pig/timestamp/_search?q=me*' USING ESStorage();"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');"
+                      + "A = LOAD 'pig/timestamp' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
@@ -74,8 +92,8 @@ public class PigSearchTest {
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture');"
-                      + "A = LOAD 'pig/fieldalias/_search?q=me*' USING ESStorage();"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture', 'es.query=" + query + "');"
+                      + "A = LOAD 'pig/fieldalias' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
@@ -85,8 +103,8 @@ public class PigSearchTest {
     public void testMissingIndex() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true');"
-                      + "A = LOAD 'foo/bar/_search?q=me*' USING ESStorage();"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
+                      + "A = LOAD 'foo/bar' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
@@ -96,8 +114,8 @@ public class PigSearchTest {
     public void testParentChild() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true');"
-                + "A = LOAD 'pig/child/_search?q=me*' USING ESStorage();"
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
+                      + "A = LOAD 'pig/child' USING ESStorage();"
                       + "DESCRIBE A;"
                       + "DUMP A;";
         pig.executeScript(script);
