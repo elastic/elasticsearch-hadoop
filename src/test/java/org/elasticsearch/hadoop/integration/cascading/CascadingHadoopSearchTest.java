@@ -15,14 +15,21 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.Stream;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import cascading.flow.FlowDef;
 import cascading.flow.FlowProcess;
@@ -40,7 +47,20 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@RunWith(Parameterized.class)
 public class CascadingHadoopSearchTest {
+
+    @Parameters
+    public static Collection<Object[]> queries() {
+        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
+                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+    }
+
+    private String query;
+
+    public CascadingHadoopSearchTest(String query) {
+        this.query = query;
+    }
 
     public static class FieldExtractor extends BaseOperation implements Function {
         public FieldExtractor(Fields fieldDeclaration) {
@@ -73,21 +93,21 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*");
+        Tap in = new ESTap("cascading-hadoop/artists");
         Pipe pipe = new Pipe("copy");
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         //Tap out = new Hfs(new TextDelimited(), "cascadingbug-1", SinkMode.REPLACE);
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
 
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(in, out, pipe).complete();
+        new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
 
 
     //@Test
     public void testCountFromES() throws Exception {
         Fields args = new Fields("doc_id", "description");
-        Tap in = new ESTap("cascading-hadoop/artists/_search?q=me*", args);
+        Tap in = new ESTap("cascading-hadoop/artists", args);
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new Fields("doc_id", "description"), new FieldExtractor(args), Fields.RESULTS);
         pipe = new GroupBy(pipe);
@@ -97,6 +117,12 @@ public class CascadingHadoopSearchTest {
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         //Tap out = new Hfs(new TextDelimited(), "cascadingbug-2", SinkMode.REPLACE);
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef).complete();
+        new HadoopFlowConnector(cfg()).connect(flowDef).complete();
+    }
+
+    private Properties cfg() {
+        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+        props.put(ConfigurationOptions.ES_QUERY, query);
+        return props;
     }
 }
