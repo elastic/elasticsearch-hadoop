@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.rest;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -44,12 +45,13 @@ public class RestQueryTest {
     private Settings settings;
 
     @Before
-    public void start() {
+    public void start() throws IOException {
         settings = new TestSettings("rest/savebulk");
         //testSettings.setPort(9200)
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         client = new BufferedRestClient(settings);
+        client.waitForYellow();
     }
 
     @After
