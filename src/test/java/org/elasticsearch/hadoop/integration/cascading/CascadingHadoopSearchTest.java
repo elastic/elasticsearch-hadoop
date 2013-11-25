@@ -15,7 +15,6 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
@@ -25,6 +24,7 @@ import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.integration.Stream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,8 +52,7 @@ public class CascadingHadoopSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.params();
     }
 
     private String query;
@@ -121,8 +120,9 @@ public class CascadingHadoopSearchTest {
     }
 
     private Properties cfg() {
-        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+        Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(CascadingHadoopSuite.configuration));
         props.put(ConfigurationOptions.ES_QUERY, query);
+
         return props;
     }
 }

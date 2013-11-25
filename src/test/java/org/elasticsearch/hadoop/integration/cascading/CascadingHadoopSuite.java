@@ -47,7 +47,6 @@ public class CascadingHadoopSuite {
         if (!HdpBootstrap.isJtLocal(configuration)) {
             configuration = Provisioner.cascading(configuration);
         }
-
         HdfsUtils.copyFromLocal("src/test/resources/artists.dat");
     }
 }

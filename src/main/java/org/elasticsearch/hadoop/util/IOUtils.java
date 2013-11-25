@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.URL;
 
 import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.hadoop.serialization.SerializationException;
@@ -79,11 +80,27 @@ public abstract class IOUtils {
         return asBytes(in).toString();
     }
 
-    public static InputStream open(String resource) throws IOException {
-        int prefix = resource.indexOf(":");
-        // check prefix - default classpath, fall-back to hadoop (check whether it supports all URLs)
-        // might need settings/Hadoop config
+    public static InputStream open(String resource, ClassLoader loader) {
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        }
 
-        throw new UnsupportedOperationException();
+        if (loader == null) {
+            loader = IOUtils.class.getClassLoader();
+        }
+
+        try {
+        // no prefix means classpath
+            if (!resource.contains(":")) {
+            return loader.getResourceAsStream(resource);
+        }
+        return new URL(resource).openStream();
+        } catch (IOException ex) {
+            throw new IllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
+        }
+    }
+
+    public static InputStream open(String location) {
+        return open(location, null);
     }
 }

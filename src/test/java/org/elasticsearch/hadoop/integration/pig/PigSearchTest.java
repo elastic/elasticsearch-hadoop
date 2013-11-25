@@ -15,10 +15,10 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.elasticsearch.hadoop.integration.Provisioner;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,8 +33,7 @@ public class PigSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.params();
     }
 
     private String query;

@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.integration.mr;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Collection;
 
 import org.apache.hadoop.fs.Path;
@@ -25,6 +25,7 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class MROldApiSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" }, { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.params();
     }
 
     private String query;
@@ -117,7 +118,7 @@ public class MROldApiSearchTest {
         JobClient.runJob(conf);
     }
 
-    private JobConf createJobConf() {
+    private JobConf createJobConf() throws IOException {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(ESInputFormat.class);
@@ -128,6 +129,7 @@ public class MROldApiSearchTest {
         conf.set(ConfigurationOptions.ES_QUERY, query);
         conf.setNumReduceTasks(0);
 
+        QueryTestParams.provisionQueries(conf);
         FileInputFormat.setInputPaths(conf, new Path("src/test/resources/artists.dat"));
         return conf;
     }

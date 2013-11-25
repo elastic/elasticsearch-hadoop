@@ -15,12 +15,12 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,8 +41,7 @@ public class CascadingLocalSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.localParams();
     }
 
     private String query;

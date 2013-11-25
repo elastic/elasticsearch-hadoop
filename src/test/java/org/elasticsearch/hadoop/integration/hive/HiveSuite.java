@@ -27,7 +27,6 @@ import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalES;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
@@ -65,7 +64,8 @@ public class HiveSuite {
     public static ExternalResource hive = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            Properties props = new TestSettings().getProperties();
+            //Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(HdpBootstrap.hadoopConfig()));
+            Properties props = HdpBootstrap.asProperties(HdpBootstrap.hadoopConfig());
             String hive = props.getProperty("hive", "local");
 
             isLocal = "local".equals(hive);

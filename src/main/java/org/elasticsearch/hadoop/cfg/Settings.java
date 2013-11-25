@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -190,6 +191,8 @@ public abstract class Settings implements InternalConfigurationOptions {
         cleanUri();
         return this;
     }
+
+    public abstract InputStream loadResource(String location);
 
     public abstract Settings copy();
 

@@ -15,9 +15,11 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.IOUtils;
 
 /**
  * Properties-based settings - used for testing or local environments (including Cascading-local).
@@ -44,5 +46,10 @@ public class PropertiesSettings extends Settings {
     @Override
     public Settings copy() {
         return new PropertiesSettings((Properties) props.clone());
+    }
+
+    @Override
+    public InputStream loadResource(String location) {
+        return IOUtils.open(location, PropertiesSettings.class.getClassLoader());
     }
 }

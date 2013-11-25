@@ -16,14 +16,16 @@
 package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
@@ -36,8 +38,7 @@ public class MRNewApiSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.params();
     }
 
     private String query;
@@ -117,6 +118,10 @@ public class MRNewApiSearchTest {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(LinkedMapWritable.class);
         conf.set(ConfigurationOptions.ES_QUERY, query);
+
+        DistributedCache.addFileToClassPath(new Path("src/test/resources/org/elasticsearch/hadoop/integration/query.dsl"), conf);
+        DistributedCache.addFileToClassPath(new Path("src/test/resources/org/elasticsearch/hadoop/integration/query.uri"), conf);
+
         job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
         return job.getConfiguration();

@@ -50,13 +50,7 @@ public class QueryBuilder {
         if (!StringUtils.hasText(query)) {
             query = MATCH_ALL;
         }
-        parseQuery(query.trim());
-    }
-
-    QueryBuilder(Resource resource, String query) {
-        this.resource = resource;
-        Assert.hasText(query, "no/empty query was given");
-        parseQuery(query.trim());
+        parseQuery(query.trim(), settings);
     }
 
     public static QueryBuilder query(Settings settings) {
@@ -66,7 +60,7 @@ public class QueryBuilder {
     }
 
 
-    private void parseQuery(String query) {
+    private void parseQuery(String query, Settings settings) {
         // uri query
         if (query.startsWith("?")) {
             uriQuery.putAll(initUriQuery(query));
@@ -78,10 +72,11 @@ public class QueryBuilder {
         else {
             try {
                 // must be a resource
-                InputStream in = IOUtils.open(query);
+                InputStream in = settings.loadResource(query);
                 // peek the stream
                 int first = in.read();
-                if ('q' == first) {
+                // ascii code for ?
+                if (Integer.valueOf('?').equals(first)) {
                     uriQuery.putAll(initUriQuery(IOUtils.asString(in)));
                 }
                 else {

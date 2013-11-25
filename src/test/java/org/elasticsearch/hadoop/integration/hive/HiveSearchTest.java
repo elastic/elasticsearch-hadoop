@@ -15,10 +15,10 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -38,8 +38,7 @@ public class HiveSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return Arrays.asList(new Object[][] { { "" }, { "?q=me*" },
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" } });
+        return QueryTestParams.params();
     }
 
     private String query;

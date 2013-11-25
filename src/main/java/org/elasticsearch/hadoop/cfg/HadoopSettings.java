@@ -15,7 +15,10 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import java.io.InputStream;
+
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.mr.HadoopIOUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
 public class HadoopSettings extends Settings {
@@ -42,5 +45,10 @@ public class HadoopSettings extends Settings {
         // force internal init
         cfg.size();
         return new HadoopSettings(new Configuration(cfg));
+    }
+
+    @Override
+    public InputStream loadResource(String location) {
+        return HadoopIOUtils.open(location, cfg);
     }
 }

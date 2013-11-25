@@ -25,8 +25,8 @@ import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.backend.executionengine.ExecJob;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TestSettings;
 
 /**
  * Wrapper around Pig.
@@ -46,7 +46,8 @@ public class PigWrapper {
 
     protected PigServer createPig() throws ExecException {
         HdpBootstrap.hackHadoopStagingOnWin();
-        Properties properties = new TestSettings().getProperties();
+
+        Properties properties = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(HdpBootstrap.hadoopConfig()));
         String pigHost = properties.getProperty("pig");
         // remote Pig instance
         if (StringUtils.hasText(pigHost) && !"local".equals(pig)) {
