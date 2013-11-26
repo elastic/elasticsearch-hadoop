@@ -17,6 +17,8 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.util.List;
 
+import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
@@ -30,6 +32,7 @@ import cascading.tuple.Tuple;
 public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> {
 
     private final ValueWriter<Object> jdkWriter;
+    private final ValueWriter<Writable> writableWriter;
 
     public CascadingValueWriter() {
         this(false);
@@ -37,6 +40,7 @@ public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> 
 
     public CascadingValueWriter(boolean writeUnknownTypes) {
         jdkWriter = new JdkValueWriter(writeUnknownTypes);
+        writableWriter = new WritableValueWriter(writeUnknownTypes);
     }
 
     @SuppressWarnings("unchecked")
@@ -49,8 +53,11 @@ public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> 
         for (int i = 0; i < tuple.size(); i++) {
             String name = (i < names.size() ? names.get(i) : "tuple" + i);
             generator.writeFieldName(name);
-            if (!jdkWriter.write(tuple.getObject(i), generator)) {
-                return false;
+            Object object = tuple.getObject(i);
+            if (!jdkWriter.write(object, generator)) {
+                if (!(object instanceof Writable) || !writableWriter.write((Writable) object, generator)) {
+                    return false;
+                }
             }
         }
         generator.writeEndObject();
