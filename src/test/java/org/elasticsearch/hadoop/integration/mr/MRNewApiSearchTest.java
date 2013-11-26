@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -111,7 +112,7 @@ public class MRNewApiSearchTest {
 
     private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        HadoopCfgUtils.setGenericOptions(conf);
         Job job = new Job(conf);
         job.setInputFormatClass(ESInputFormat.class);
         job.setOutputFormatClass(PrintStreamOutputFormat.class);

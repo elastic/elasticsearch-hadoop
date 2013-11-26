@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 
@@ -131,8 +132,8 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
-        conf.set("mapred.output.dir", set.getTargetResource());
-        conf.set("mapred.output.committer.class", ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
+        HadoopCfgUtils.setFileOutputFormatDir(conf, set.getTargetResource());
+        HadoopCfgUtils.setOutputCommitterClass(conf, ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
     }
 
     private void initTargetUri(JobConf conf) {

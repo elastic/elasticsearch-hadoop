@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.hive;
  */
 interface HiveConstants {
 
-    String OUTPUT_COMMITTER = "mapred.output.committer.class";
     String COLUMNS = "columns";
     String COLUMNS_TYPES = "columns.types";
     String UNNAMED_COLUMN_PREFIX="_col";

@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -125,7 +126,7 @@ public class MROldApiSearchTest {
         conf.setOutputFormat(PrintStreamOutputFormat.class);
         conf.setOutputKeyClass(Text.class);
         conf.setOutputValueClass(LinkedMapWritable.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        HadoopCfgUtils.setGenericOptions(conf);
         conf.set(ConfigurationOptions.ES_QUERY, query);
         conf.setNumReduceTasks(0);
 

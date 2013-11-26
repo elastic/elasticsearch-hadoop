@@ -189,7 +189,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         }
 
         private int detectCurrentInstance(Configuration conf) {
-            TaskAttemptID attempt = TaskAttemptID.forName(conf.get("mapred.task.id"));
+            TaskAttemptID attempt = TaskAttemptID.forName(HadoopCfgUtils.getTaskAttemptId(conf));
             Assert.notNull(attempt,
                     "Unable to determine task id - please report your distro/setting through the issue tracker");
 
@@ -257,13 +257,13 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings, client);
 
-        if (cfg.get("mapred.reduce.tasks") != null) {
-            if (cfg.getBoolean("mapred.reduce.tasks.speculative.execution", true)) {
+        if (HadoopCfgUtils.getReduceTasks(cfg) != null) {
+            if (HadoopCfgUtils.getSpeculativeReduce(cfg)) {
                 log.warn("Speculative execution enabled for reducer - consider disabling it to prevent data corruption");
             }
         }
         else {
-            if (cfg.getBoolean("mapred.map.tasks.speculative.execution", true)) {
+            if (HadoopCfgUtils.getSpeculativeMap(cfg)) {
                 log.warn("Speculative execution enabled for mapper - consider disabling it to prevent data corruption");
             }
         }

@@ -29,6 +29,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
@@ -88,7 +89,6 @@ public class MRNewApiSaveTest {
     @Test
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         Configuration conf = createConf();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
@@ -149,7 +149,7 @@ public class MRNewApiSaveTest {
 
     private Configuration createConf() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        HadoopCfgUtils.setGenericOptions(conf);
 
         Job job = new Job(conf);
         job.setInputFormatClass(TextInputFormat.class);

@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -78,7 +79,7 @@ public class HdpBootstrap {
         }
 
         JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        HadoopCfgUtils.setGenericOptions(conf);
 
         // provision if not local
         if (!isJtLocal(conf)) {
@@ -103,6 +104,6 @@ public class HdpBootstrap {
     }
 
     public static boolean isJtLocal(Configuration cfg) {
-        return "local".equals(cfg.get("mapred.job.tracker"));
+        return HadoopCfgUtils.isLocal(cfg);
     }
 }

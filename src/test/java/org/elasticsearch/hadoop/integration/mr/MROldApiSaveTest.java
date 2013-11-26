@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
@@ -172,7 +173,7 @@ public class MROldApiSaveTest {
         conf.setMapOutputValueClass(LinkedMapWritable.class);
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);
-        conf.setBoolean("mapred.used.genericoptionsparser", true);
+        HadoopCfgUtils.setGenericOptions(conf);
         conf.setNumMapTasks(2);
         conf.setInt("actual.splits", 2);
         conf.setNumReduceTasks(0);
