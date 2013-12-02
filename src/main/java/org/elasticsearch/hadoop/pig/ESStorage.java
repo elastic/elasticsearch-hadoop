@@ -18,6 +18,8 @@ package org.elasticsearch.hadoop.pig;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -25,6 +27,7 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -33,13 +36,18 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.pig.LoadFunc;
+import org.apache.pig.LoadPushDown;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceStatistics;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.StoreMetadata;
+import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
+import org.apache.pig.backend.hadoop.executionengine.physicalLayer.relationalOperators.POStore;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
+import org.apache.pig.impl.logicalLayer.FrontendException;
+import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -48,6 +56,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Pig storage for reading and writing data into an ElasticSearch index.
@@ -65,9 +74,10 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
  * or passed to the {@link #ESStorage(String)} constructor.
  */
-public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMetadata {
+public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterface, StoreMetadata {
 
     private static final Log log = LogFactory.getLog(ESStorage.class);
+    private static final String FIELDS = "es.internal.mr.target.fields";
     private final boolean trace = log.isTraceEnabled();
 
     private Properties properties;
@@ -107,9 +117,13 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         this.signature = signature;
     }
 
+    private Properties getUDFProperties() {
+        return UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
+    }
+
     @Override
     public void checkSchema(ResourceSchema s) throws IOException {
-        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
+        Properties props = getUDFProperties();
 
         // save schema to back-end for JSON translation
         if (props.getProperty(ResourceSchema.class.getName()) == null) {
@@ -145,7 +159,7 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     public void prepareToWrite(RecordWriter writer) throws IOException {
         this.writer = writer;
 
-        Properties props = UDFContext.getUDFContext().getUDFProperties(getClass(), new String[] { signature });
+        Properties props = getUDFProperties();
         String s = props.getProperty(ResourceSchema.class.getName());
         this.schema = IOUtils.deserializeFromBase64(s);
         this.pigTuple = new PigTuple(schema);
@@ -195,8 +209,67 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
     //
     // LoadFunc
     //
+    @SuppressWarnings("unchecked")
     public void setLocation(String location, Job job) throws IOException {
         init(location, job);
+
+        Configuration cfg = job.getConfiguration();
+
+        Settings settings = SettingsManager.loadFrom(cfg);
+
+        if (settings.getScrollFields() != null) {
+            return;
+        }
+
+        String fields = getUDFProperties().getProperty(FIELDS);
+        if (fields != null) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found field project [%s] in UDF properties", fields));
+            }
+
+            cfg.set(FIELDS, fields);
+            return;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("No field projection specified, looking for existing stores...");
+        }
+
+        String mapValues = cfg.get(JobControlCompiler.PIG_MAP_STORES);
+        String reduceValues = cfg.get(JobControlCompiler.PIG_REDUCE_STORES);
+
+        List<POStore> mapStore = Collections.emptyList();
+        List<POStore> reduceStore = Collections.emptyList();
+
+        if (StringUtils.hasText(mapValues)) {
+            mapStore = (List<POStore>) ObjectSerializer.deserialize(mapValues);
+        }
+        if (StringUtils.hasText(reduceValues)) {
+            reduceStore = (List<POStore>) ObjectSerializer.deserialize(reduceValues);
+        }
+        if (mapStore.size() + reduceStore.size() > 1) {
+            log.warn("Too many POstores - cannot properly determine Pig schema");
+        }
+        else if (mapStore.size() + reduceStore.size() == 0) {
+            log.warn("No POstores - cannot properly determine Pig schema");
+        }
+        else {
+            POStore store = (reduceStore.isEmpty() ? mapStore.get(0) : reduceStore.get(0));
+            // no schema specified - load all fields (or the default)
+            if (store.getSchema() == null) {
+                if (log.isTraceEnabled()) {
+                    log.trace(String.format("Store [%s] defines no schema; falling back to default projection", store));
+                }
+                return;
+            }
+            else {
+                fields = PigUtils.asProjection(store.getSchema(), properties);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found field projection [%s] in store %s", fields, store));
+            }
+            cfg.set(FIELDS, fields);
+        }
     }
 
 
@@ -244,5 +317,23 @@ public class ESStorage extends LoadFunc implements StoreFuncInterface, StoreMeta
         } catch (InterruptedException ex) {
             throw new IOException("interrupted", ex);
         }
+    }
+
+    //
+    // LoadPushDown
+    //
+    @Override
+    public List<OperatorSet> getFeatures() {
+        return Arrays.asList(LoadPushDown.OperatorSet.PROJECTION);
+    }
+
+    @Override
+    public RequiredFieldResponse pushProjection(RequiredFieldList requiredFieldList) throws FrontendException {
+        String fields = PigUtils.asProjection(requiredFieldList, properties);
+        getUDFProperties().setProperty(FIELDS, fields);
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Given push projection; saving field projection [%s]", fields));
+        }
+        return new RequiredFieldResponse(true);
     }
 }

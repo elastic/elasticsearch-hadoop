@@ -27,11 +27,11 @@ public class QueryTestParams {
 
     public static Collection<Object[]> params() {
         return Arrays.asList(new Object[][] {
-                { "" }, // empty
-                { "?q=me*" }, // uri
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" }, // query dsl
-                { "src/test/resources/org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
-                { "src/test/resources/org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
+ { "" } //, // empty
+        //                { "?q=me*" }, // uri
+        //                { "{ \"query\" : { \"query_string\" : { \"query\":\"me*\"} } }" }, // query dsl
+        //                { "src/test/resources/org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
+        //                { "src/test/resources/org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
                 });
     }
 

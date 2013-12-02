@@ -40,6 +40,12 @@ public class ScrollReader {
     private final Map<String, FieldType> esMapping;
     private final boolean trace = log.isTraceEnabled();
 
+    private static final String[] HITS = new String[] { "hits" };
+    private static final String[] ID = new String[] { "_id" };
+    private static final String[] FIELDS = new String[] { "fields" };
+    private static final String[] SOURCE = new String[] { "_source" };
+    private static final String[] TOTAL = new String[] { "hits", "total" };
+
     public ScrollReader(ValueReader reader, Field rootField) {
         this.reader = reader;
         esMapping = Field.toLookupMap(rootField);
@@ -68,7 +74,7 @@ public class ScrollReader {
         }
 
         // move to hits/hits
-        Token token = ParsingUtils.seek("hits", parser);
+        Token token = ParsingUtils.seek(parser, HITS);
 
         // move through the list and for each hit, extract the _id and _source
         Assert.isTrue(token == Token.START_ARRAY, "invalid response");
@@ -85,10 +91,10 @@ public class ScrollReader {
     private Object[] readHit() {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
-        Assert.notNull(ParsingUtils.seek("_id", parser), "no id found");
+        Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
         Object[] result = new Object[2];
         result[0] = parser.text();
-        Assert.notNull(ParsingUtils.seek("_source", parser), "no _source found");
+        Assert.notNull(ParsingUtils.seek(parser, SOURCE, FIELDS), "no '_source' or 'fields' found");
         result[1] = read(t, null);
 
         if (trace) {
@@ -99,7 +105,7 @@ public class ScrollReader {
     }
 
     private long hits() {
-        ParsingUtils.seek("hits/total", parser);
+        ParsingUtils.seek(parser, TOTAL);
         long hits = parser.longValue();
         return hits;
     }

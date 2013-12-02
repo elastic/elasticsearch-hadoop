@@ -43,7 +43,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
-        alias = FieldAlias.load(settings);
+        alias = PigUtils.load(settings);
     }
 
 
@@ -97,7 +97,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             break;
         // DateTime introduced in Pig 11
         case 30: //DataType.DATETIME
-            generator.writeString(DateConverter.convertToES(object));
+            generator.writeString(PigUtils.convertDateToES(object));
             break;
         // DateTime introduced in Pig 12
         case 65: //DataType.BIGINTEGER

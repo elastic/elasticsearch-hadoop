@@ -20,6 +20,6 @@ public class PigValueReader extends JdkValueReader {
 
 	@Override
 	protected Object date(String value) {
-		return DateConverter.convertFromES(value);
+		return PigUtils.convertDateFromES(value);
 	}
 }

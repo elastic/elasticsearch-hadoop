@@ -66,6 +66,11 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Long.valueOf(getProperty(ES_SCROLL_SIZE, ES_SCROLL_SIZE_DEFAULT));
     }
 
+    public String getScrollFields() {
+        String internalFields = getProperty(INTERNAL_ES_TARGET_FIELDS);
+        return (StringUtils.hasText(internalFields) ? internalFields : getProperty(ES_SCROLL_FIELDS));
+    }
+
     public String getSerializerValueWriterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_CLASS);
     }

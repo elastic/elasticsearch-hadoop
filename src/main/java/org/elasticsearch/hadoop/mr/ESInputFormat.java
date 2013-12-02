@@ -192,6 +192,12 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                     .shard(esSplit.shardId)
                     .onlyNode(esSplit.nodeId);
 
+            String fields = settings.getScrollFields();
+            if (StringUtils.hasText(fields)) {
+                queryBuilder.fields(fields);
+            }
+
+
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
             }

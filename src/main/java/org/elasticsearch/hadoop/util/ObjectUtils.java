@@ -55,7 +55,7 @@ public abstract class ObjectUtils {
         return (array == null || array.length == 0);
     }
 
-    public static boolean isEmpty(String[] array) {
+    public static boolean isEmpty(Object[] array) {
         return (array == null || array.length == 0);
     }
 }

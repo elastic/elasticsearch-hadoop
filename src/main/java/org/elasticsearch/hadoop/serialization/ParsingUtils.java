@@ -16,10 +16,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
-import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -40,19 +37,36 @@ public abstract class ParsingUtils {
         }
 
         List<String> tokens = StringUtils.tokenize(path, "/");
-        ListIterator<String> li = tokens.listIterator();
-        return doSeekToken(li.next(), li, parser);
+        return seek(parser, tokens.toArray(new String[tokens.size()]));
     }
 
-    private static Token doSeekToken(String targetNode, ListIterator<String> listIterator, Parser parser) {
+    public static Token seek(Parser parser, String[] path1) {
+        return seek(parser, path1, null);
+    }
+
+    public static Token seek(Parser parser, String[] path1, String[] path2) {
+        return doSeekToken(parser, path1, 0, path2, 0);
+    }
+
+    private static Token doSeekToken(Parser parser, String[] path1, int index1, String[] path2, int index2) {
         Token token = null;
 
+        String currentName;
         while ((token = parser.nextToken()) != null) {
             if (token == Token.FIELD_NAME) {
                 // found a node, go one level deep
-                if (targetNode.equals(parser.currentName())) {
-                    if (listIterator.hasNext()) {
-                        return doSeekToken(listIterator.next(), listIterator, parser);
+                currentName = parser.currentName();
+                if (path1 != null && currentName.equals(path1[index1])) {
+                    if (index1 + 1 < path1.length) {
+                        return doSeekToken(parser, path1, index1 + 1, null, 0);
+                    }
+                    else {
+                        return parser.nextToken();
+                    }
+                }
+                else if (path2 != null && currentName.equals(path2[index2])) {
+                    if (index2 + 1 < path2.length) {
+                        return doSeekToken(parser, null, 0, path2, index2 + 1);
                     }
                     else {
                         return parser.nextToken();
@@ -66,19 +80,5 @@ public abstract class ParsingUtils {
             }
         }
         return null;
-    }
-
-    static void add(Map<String, FieldType> fields, Field field, String parentName) {
-        if (FieldType.OBJECT == field.type()) {
-            if (parentName != null) {
-                parentName = parentName + "\\" + field.name();
-            }
-            for (Field nestedField : field.properties()) {
-                add(fields, nestedField, parentName);
-            }
-        }
-        else {
-            fields.put(field.name(), field.type());
-        }
     }
 }

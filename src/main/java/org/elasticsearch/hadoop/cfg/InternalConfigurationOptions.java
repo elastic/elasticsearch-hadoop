@@ -22,4 +22,5 @@ interface InternalConfigurationOptions extends ConfigurationOptions {
 
     static final String INTERNAL_ES_TARGET_RESOURCE = "es.internal.mr.target.resource";
     static final String INTERNAL_ES_TARGET_URI = "es.internal.mr.target.uri";
+    static final String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
 }

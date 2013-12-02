@@ -44,6 +44,8 @@ public class QueryBuilder {
     private String shard;
     private String node;
 
+    private String fields;
+
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings);
         String query = settings.getQuery();
@@ -75,7 +77,6 @@ public class QueryBuilder {
                 InputStream in = settings.loadResource(query);
                 // peek the stream
                 int first = in.read();
-                // ascii code for ?
                 if (Integer.valueOf('?').equals(first)) {
                     uriQuery.putAll(initUriQuery(IOUtils.asString(in)));
                 }
@@ -127,6 +128,11 @@ public class QueryBuilder {
         return this;
     }
 
+    public QueryBuilder fields(String fieldsCSV) {
+        this.fields = fieldsCSV;
+        return this;
+    }
+
     private String assemble() {
         StringBuilder sb = new StringBuilder(resource.indexAndType());
         sb.append("/_search?");
@@ -135,6 +141,14 @@ public class QueryBuilder {
         uriQuery.put("search_type", "scan");
         uriQuery.put("scroll", String.valueOf(time.minutes()));
         uriQuery.put("size", String.valueOf(size));
+
+        // override fields
+        if (fields == null) {
+            uriQuery.remove("fields");
+        }
+        else {
+            uriQuery.put("fields", fields);
+        }
 
         StringBuilder pref = new StringBuilder();
         if (StringUtils.hasText(shard)) {

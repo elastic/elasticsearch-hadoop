@@ -59,9 +59,22 @@ public class PigSearchTest {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');" +
-                "A = LOAD 'pig/tupleartists' USING ESStorage();";
+                "A = LOAD 'pig/tupleartists' USING ESStorage();" +
+                "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
-                //"//DUMP A;";
+                "DUMP X;";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testTupleWithSchema() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');" +
+                "A = LOAD 'pig/tupleartists' USING ESStorage() AS (name:chararray);" +
+                //"DESCRIBE A;" +
+                "X = LIMIT A 3;" +
+                "DUMP X;";
         pig.executeScript(script);
     }
 
@@ -71,8 +84,19 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');"
                       + "A = LOAD 'pig/bagartists' USING ESStorage();"
-                      + "DESCRIBE A;"
-                      + "DUMP A;";
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testBagWithSchema() throws Exception {
+        String script =
+                      "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                      "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "', 'es.mapping.names=data:name');"
+                      + "A = LOAD 'pig/bagartists' USING ESStorage() AS (data: chararray);"
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
         pig.executeScript(script);
     }
 
@@ -82,8 +106,8 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "');"
                       + "A = LOAD 'pig/timestamp' USING ESStorage();"
-                      + "DESCRIBE A;"
-                      + "DUMP A;";
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
         pig.executeScript(script);
     }
 
@@ -93,8 +117,8 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture', 'es.query=" + query + "');"
                       + "A = LOAD 'pig/fieldalias' USING ESStorage();"
-                      + "DESCRIBE A;"
-                      + "DUMP A;";
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
         pig.executeScript(script);
     }
 
@@ -104,8 +128,8 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
                       + "A = LOAD 'foo/bar' USING ESStorage();"
-                      + "DESCRIBE A;"
-                      + "DUMP A;";
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
         pig.executeScript(script);
     }
 
@@ -115,9 +139,8 @@ public class PigSearchTest {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
                       + "A = LOAD 'pig/child' USING ESStorage();"
-                      + "DESCRIBE A;"
-                      + "DUMP A;";
+                      + "X = LIMIT A 3;"
+                      + "DUMP X;";
         pig.executeScript(script);
     }
-
 }

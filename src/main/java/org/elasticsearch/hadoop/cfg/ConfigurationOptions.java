@@ -56,6 +56,9 @@ public interface ConfigurationOptions {
     String ES_SCROLL_SIZE = "es.scroll.size";
     String ES_SCROLL_SIZE_DEFAULT = "50";
 
+    /** Scroll fields */
+    String ES_SCROLL_FIELDS = "es.scroll.fields";
+
     /** Serialization settings */
 
     /** Value writer - setup automatically; can be overridden for custom types */
