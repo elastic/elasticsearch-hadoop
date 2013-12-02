@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnectionManager;
@@ -59,6 +60,7 @@ public class RestClient implements Closeable {
     private ObjectMapper mapper = new ObjectMapper();
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
+    private HttpRetryPolicy retryPolicy;
 
     public enum HEALTH {
         RED, YELLOW, GREEN
@@ -67,7 +69,7 @@ public class RestClient implements Closeable {
     public RestClient(Settings settings) {
         HttpClientParams params = new HttpClientParams();
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
-
+        params.setSoTimeout((int) settings.getHttpTimeout());
         client = new HttpClient(params);
 
         HostConfiguration hostConfig = new HostConfiguration();
@@ -199,8 +201,12 @@ public class RestClient implements Closeable {
 
     byte[] execute(HttpMethodBase method, boolean checkStatus) {
         try {
-            int status = client.executeMethod(method);
-            if (checkStatus && status >= HttpStatus.SC_MULTI_STATUS) {
+            Retry retry = retryPolicy.init();
+            int httpStatus = 0;
+            do {
+                httpStatus = client.executeMethod(method);
+            } while (retry.retry(httpStatus));
+            if (checkStatus && httpStatus >= HttpStatus.SC_MULTI_STATUS) {
                 String body;
                 try {
                     body = method.getResponseBodyAsString();
@@ -211,6 +217,9 @@ public class RestClient implements Closeable {
                         method.getName(), method.getURI(), client.getHostConfiguration().getHostURL(), body));
             }
             return method.getResponseBody();
+        } catch (ConnectTimeoutException io) {
+            // TODO: double check whether a different message should be thrown
+            throw new UnsupportedOperationException("Host round robin not implemented yet");
         } catch (IOException io) {
             String target;
             try {
