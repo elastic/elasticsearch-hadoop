@@ -44,13 +44,20 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";
     String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
 
+    /** Http bulk retries **/
+    String ES_BATCH_WRITE_RETRY_COUNT = "es.batch.write.retry.count";
+    String ES_BATCH_WRITE_RETRY_COUNT_DEFAULT = "3";
+
+    String ES_BATCH_WRITE_RETRY_WAIT = "es.batch.write.retry.wait";
+    String ES_BATCH_WRITE_RETRY_WAIT_DEFAULT = "1m";
+
     /** HTTP connection timeout */
     String ES_HTTP_TIMEOUT = "es.http.timeout";
     String ES_HTTP_TIMEOUT_DEFAULT = "1m";
 
     /** Scroll keep-alive */
     String ES_SCROLL_KEEPALIVE = "es.scroll.keepalive";
-    String ES_SCROLL_KEEPALIVE_DEFAULT = "10m";
+    String ES_SCROLL_KEEPALIVE_DEFAULT = "5m";
 
     /** Scroll size */
     String ES_SCROLL_SIZE = "es.scroll.size";

@@ -165,6 +165,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             }
 
             Map<Shard, Node> targetShards = client.getTargetPrimaryShards();
+            client.close();
             List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
             // make sure the order is strict
             Collections.sort(orderedShards);
@@ -177,7 +178,6 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Shard chosenShard = orderedShards.get(bucket);
             Node targetNode = targetShards.get(chosenShard);
 
-            client.close();
             // override the global settings to communicate directly with the target node
             settings.cleanUri().setHost(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
             client = new BufferedRestClient(settings);

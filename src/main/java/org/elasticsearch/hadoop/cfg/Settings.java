@@ -54,6 +54,14 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Integer.valueOf(getProperty(ES_BATCH_SIZE_ENTRIES, ES_BATCH_SIZE_ENTRIES_DEFAULT));
     }
 
+    public int getBatchWriteRetryCount() {
+        return Integer.parseInt(getProperty(ES_BATCH_WRITE_RETRY_COUNT, ES_BATCH_WRITE_RETRY_COUNT_DEFAULT));
+    }
+
+    public long getBatchWriteRetryWait() {
+        return TimeValue.parseTimeValue(getProperty(ES_BATCH_WRITE_RETRY_WAIT, ES_BATCH_WRITE_RETRY_WAIT_DEFAULT)).getMillis();
+    }
+
     public boolean getBatchRefreshAfterWrite() {
         return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_REFRESH, ES_BATCH_WRITE_REFRESH_DEFAULT));
     }

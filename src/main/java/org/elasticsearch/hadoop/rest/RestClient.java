@@ -87,6 +87,7 @@ public class RestClient implements Closeable {
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+        retryPolicy = new SimpleHttpRetryPolicy();
     }
 
     private <T> T get(String q, String string) throws IOException {
