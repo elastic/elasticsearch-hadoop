@@ -51,6 +51,11 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_RETRY_WAIT = "es.batch.write.retry.wait";
     String ES_BATCH_WRITE_RETRY_WAIT_DEFAULT = "1m";
 
+    String ES_BATCH_WRITE_RETRY_POLICY = "es.batch.write.retry.policy";
+    String ES_BATCH_WRITE_RETRY_POLICY_NONE = "none";
+    String ES_BATCH_WRITE_RETRY_POLICY_SIMPLE = "simple";
+    String ES_BATCH_WRITE_RETRY_POLICY_DEFAULT = ES_BATCH_WRITE_RETRY_POLICY_SIMPLE;
+
     /** HTTP connection timeout */
     String ES_HTTP_TIMEOUT = "es.http.timeout";
     String ES_HTTP_TIMEOUT_DEFAULT = "1m";

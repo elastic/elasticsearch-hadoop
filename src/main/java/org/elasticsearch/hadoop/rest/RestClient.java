@@ -43,9 +43,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -87,7 +89,16 @@ public class RestClient implements Closeable {
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
-        retryPolicy = new SimpleHttpRetryPolicy();
+        String retryPolicyName = settings.getBatchWriteRetryPolicy();
+
+        if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_SIMPLE.equals(retryPolicyName)) {
+            retryPolicyName = SimpleHttpRetryPolicy.class.getName();
+        }
+        else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
+            retryPolicyName = NoHttpRetryPolicy.class.getName();
+        }
+
+        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
     }
 
     private <T> T get(String q, String string) throws IOException {

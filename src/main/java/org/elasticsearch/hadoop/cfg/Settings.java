@@ -62,6 +62,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return TimeValue.parseTimeValue(getProperty(ES_BATCH_WRITE_RETRY_WAIT, ES_BATCH_WRITE_RETRY_WAIT_DEFAULT)).getMillis();
     }
 
+    public String getBatchWriteRetryPolicy() {
+        return getProperty(ES_BATCH_WRITE_RETRY_POLICY, ES_BATCH_WRITE_RETRY_POLICY_DEFAULT);
+    }
+
     public boolean getBatchRefreshAfterWrite() {
         return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_REFRESH, ES_BATCH_WRITE_REFRESH_DEFAULT));
     }
