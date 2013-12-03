@@ -102,6 +102,10 @@ public abstract class StringUtils {
         return (sb.length() == sequence.length() ? sequence.toString() : sb.toString());
     }
 
+    public static String asUTFString(byte[] content) {
+        return asUTFString(content, content.length);
+    }
+
     public static String asUTFString(byte[] content, int length) {
         return (content == null || length == 0 ? EMPTY : new String(content, 0, length, UTF_8));
     }

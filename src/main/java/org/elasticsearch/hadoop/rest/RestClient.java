@@ -23,31 +23,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.SimpleHttpConnectionManager;
-import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
-import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -58,51 +47,25 @@ public class RestClient implements Closeable {
 
     private static final Log log = LogFactory.getLog(RestClient.class);
 
-    private HttpClient client;
+    private NetworkClient network;
     private ObjectMapper mapper = new ObjectMapper();
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
-    private HttpRetryPolicy retryPolicy;
 
     public enum HEALTH {
         RED, YELLOW, GREEN
     }
 
     public RestClient(Settings settings) {
-        HttpClientParams params = new HttpClientParams();
-        params.setConnectionManagerTimeout(settings.getHttpTimeout());
-        params.setSoTimeout((int) settings.getHttpTimeout());
-        client = new HttpClient(params);
-
-        HostConfiguration hostConfig = new HostConfiguration();
-        String targetUri = settings.getTargetUri();
-        try {
-            hostConfig.setHost(new URI(targetUri, false));
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Invalid target URI " + targetUri, ex);
-        }
-        client.setHostConfiguration(hostConfig);
-
-        HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
-        // make sure to disable Nagle's protocol
-        connectionParams.setTcpNoDelay(true);
+        // TODO: extract nodes
+        network = new NetworkClient(settings, Collections.<String> emptyList());
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
-        String retryPolicyName = settings.getBatchWriteRetryPolicy();
-
-        if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_SIMPLE.equals(retryPolicyName)) {
-            retryPolicyName = SimpleHttpRetryPolicy.class.getName();
-        }
-        else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
-            retryPolicyName = NoHttpRetryPolicy.class.getName();
-        }
-
-        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
     }
 
     private <T> T get(String q, String string) throws IOException {
-        return parseContent(execute(new GetMethod(q)), string);
+        return parseContent(execute(GET, new GetMethod(q)), string);
     }
 
     @SuppressWarnings("unchecked")
@@ -194,55 +157,23 @@ public class RestClient implements Closeable {
 
     @Override
     public void close() {
-        HttpConnectionManager manager = client.getHttpConnectionManager();
-        if (manager instanceof SimpleHttpConnectionManager) {
-            try {
-                ((SimpleHttpConnectionManager) manager).closeIdleConnections(0);
-            } catch (NullPointerException npe) {
-                // ignore
-            } catch (Exception ex) {
-                // log - not much else to do
-                log.warn("Exception closing underlying HTTP manager", ex);
-            }
-        }
+        network.close();
     }
 
-    byte[] execute(HttpMethodBase method) {
-        return execute(method, true);
+    byte[] execute(Request request) throws IOException {
+        return execute(request, true);
     }
 
-    byte[] execute(HttpMethodBase method, boolean checkStatus) {
-        try {
-            Retry retry = retryPolicy.init();
-            int httpStatus = 0;
-            do {
-                httpStatus = client.executeMethod(method);
-            } while (retry.retry(httpStatus));
-            if (checkStatus && httpStatus >= HttpStatus.SC_MULTI_STATUS) {
-                String body;
-                try {
-                    body = method.getResponseBodyAsString();
-                } catch (IOException ex) {
-                    body = "";
-                }
-                throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s]",
-                        method.getName(), method.getURI(), client.getHostConfiguration().getHostURL(), body));
-            }
-            return method.getResponseBody();
-        } catch (ConnectTimeoutException io) {
-            // TODO: double check whether a different message should be thrown
-            throw new UnsupportedOperationException("Host round robin not implemented yet");
-        } catch (IOException io) {
-            String target;
-            try {
-                target = method.getURI().toString();
-            } catch (IOException ex) {
-                target = method.getPath();
-            }
-            throw new IllegalStateException(String.format("Cannot get response body for [%s][%s]", method.getName(), target));
-        } finally {
-            method.releaseConnection();
+    byte[] execute(Request request, boolean checkStatus) throws IOException {
+        Response response = network.execute(request);
+
+        if (checkStatus && response.status() >= HttpStatus.SC_MULTI_STATUS) {
+            String bodyAsString = StringUtils.asUTFString(response.body());
+            throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s]",
+                    request.method().name(), request.path(), response.uri(), bodyAsString));
         }
+
+        return response.body();
     }
 
     public String[] scan(String query, BytesArray body) throws IOException {

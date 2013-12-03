@@ -60,6 +60,9 @@ public interface ConfigurationOptions {
     String ES_HTTP_TIMEOUT = "es.http.timeout";
     String ES_HTTP_TIMEOUT_DEFAULT = "1m";
 
+    String ES_HTTP_RETRIES = "es.http.retries";
+    String ES_HTTP_RETRIES_DEFAULT = "3";
+
     /** Scroll keep-alive */
     String ES_SCROLL_KEEPALIVE = "es.scroll.keepalive";
     String ES_SCROLL_KEEPALIVE_DEFAULT = "5m";

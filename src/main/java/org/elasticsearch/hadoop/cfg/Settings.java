@@ -46,6 +46,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return TimeValue.parseTimeValue(getProperty(ES_HTTP_TIMEOUT, ES_HTTP_TIMEOUT_DEFAULT)).getMillis();
     }
 
+    public int getHttpRetries() {
+        return Integer.valueOf(getProperty(ES_HTTP_RETRIES, ES_HTTP_RETRIES_DEFAULT));
+    }
+
     public int getBatchSizeInBytes() {
         return ByteSizeValue.parseBytesSizeValue(getProperty(ES_BATCH_SIZE_BYTES, ES_BATCH_SIZE_BYTES_DEFAULT)).bytesAsInt();
     }

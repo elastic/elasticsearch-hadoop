@@ -1,0 +1,99 @@
+/*
+ * Copyright 2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.elasticsearch.hadoop.rest;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.mortbay.log.Log;
+
+public class NetworkClient {
+
+    private final Settings settings;
+    private final List<String> hostURIs;
+    private final HttpRetryPolicy retryPolicy;
+
+    private Transport currentTransport;
+    private String currentUri;
+    private int nextClient = 0;
+
+    NetworkClient(Settings settings, List<String> hostURIs) {
+        this.settings = settings.copy();
+        this.hostURIs = hostURIs;
+
+        String retryPolicyName = settings.getBatchWriteRetryPolicy();
+
+        if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_SIMPLE.equals(retryPolicyName)) {
+            retryPolicyName = SimpleHttpRetryPolicy.class.getName();
+        }
+        else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
+            retryPolicyName = NoHttpRetryPolicy.class.getName();
+        }
+
+        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
+        selectNextNode();
+    }
+
+    private boolean selectNextNode() {
+        if (nextClient < hostURIs.size()) {
+            return false;
+        }
+
+        currentUri = hostURIs.get(nextClient++);
+        close();
+
+        //TODO: split host/port
+        settings.cleanUri();
+        settings.setHost(currentUri);
+        currentTransport = new CommonsHttpTransport(settings);
+        return true;
+    }
+
+    public Response execute(Request request) throws IOException {
+        Retry retry = retryPolicy.init();
+        int httpStatus = 0;
+        Response response = null;
+
+        SimpleRequest routedRequest = new SimpleRequest(request.method(), currentUri, request.path(), request.params(), request.body());
+
+        do {
+            boolean newNode;
+            do {
+                newNode = false;
+                try {
+                    response = currentTransport.execute(routedRequest);
+                } catch (Exception e) {
+                    newNode = selectNextNode();
+                    if (Log.isDebugEnabled()) {
+                        Log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
+                                request.method().name(), request.path(), currentUri));
+                    }
+                }
+            } while (newNode);
+        } while (retry.retry(httpStatus));
+
+        return response;
+    }
+
+    public void close() {
+        if (currentTransport != null) {
+            currentTransport.close();
+        }
+    }
+}
