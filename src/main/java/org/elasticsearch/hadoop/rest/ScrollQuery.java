@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
  */
 public class ScrollQuery implements Iterator<Object>, Closeable {
 
-    private BufferedRestClient client;
+    private RestRepository client;
     private String scrollId;
     private List<Object[]> batch = Collections.emptyList();
     private boolean finished = false;
@@ -39,7 +39,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
 
     private final ScrollReader reader;
 
-    ScrollQuery(BufferedRestClient client, String scrollId, long size, ScrollReader reader) {
+    ScrollQuery(RestRepository client, String scrollId, long size, ScrollReader reader) {
         this.client = client;
         this.scrollId = scrollId;
         this.size = size;

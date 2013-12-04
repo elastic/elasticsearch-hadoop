@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -39,16 +41,20 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static void checkIndexExistence(Settings settings, BufferedRestClient client) {
+    public static void checkIndexExistence(Settings settings, RestRepository client) {
         // check index existence
         if (!settings.getIndexAutoCreate()) {
             if (client == null) {
-                client = new BufferedRestClient(settings);
+                client = new RestRepository(settings);
             }
+            try {
             if (!client.indexExists()) {
                 client.close();
                 throw new IllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
                         settings.getTargetResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
+            }
+            } catch (IOException ex) {
+                throw new IllegalStateException("Cannot check index existance", ex);
             }
         }
     }
@@ -64,17 +70,18 @@ public abstract class InitializationUtils {
         return false;
     }
 
-    public static <T> void saveSchemaIfNeeded(Object conf, ValueWriter<T> schemaWriter, T schema, Log log) {
+    public static <T> void saveSchemaIfNeeded(Object conf, ValueWriter<T> schemaWriter, T schema, Log log) throws IOException {
         Settings settings = SettingsManager.loadFrom(conf);
 
         if (settings.getIndexAutoCreate()) {
-            BufferedRestClient client = new BufferedRestClient(settings);
+            RestRepository client = new RestRepository(settings);
             if (!client.indexExists()) {
                 if (schemaWriter == null) {
                     log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getTargetResource()));
                 }
                 else {
-                    log.info(String.format("No mapping found [%s], creating one based on given schema", settings.getTargetResource()));
+                    log.info(String.format("No mapping found [%s], creating one based on given schema",
+                            settings.getTargetResource()));
                     ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
                     BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
                     builder.close();

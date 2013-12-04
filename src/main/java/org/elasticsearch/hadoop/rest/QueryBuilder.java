@@ -181,7 +181,7 @@ public class QueryBuilder {
         return sb.toString();
     }
 
-    public ScrollQuery build(BufferedRestClient client, ScrollReader reader) {
+    public ScrollQuery build(RestRepository client, ScrollReader reader) {
         String scrollUri = assemble();
         try {
             return client.scan(scrollUri, bodyQuery, reader);

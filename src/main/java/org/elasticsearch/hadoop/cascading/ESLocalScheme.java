@@ -25,7 +25,7 @@ import java.util.Properties;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
@@ -49,7 +49,7 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final String resource;
     private final String host;
     private final int port;
-    private transient BufferedRestClient client;
+    private transient RestRepository client;
 
     ESLocalScheme(String host, int port, String index, Fields fields) {
         this.resource = index;
@@ -141,7 +141,7 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             SerializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
             SerializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(ESTap.class));
             settings.save();
-            client = new BufferedRestClient(settings);
+            client = new RestRepository(settings);
         }
     }
 

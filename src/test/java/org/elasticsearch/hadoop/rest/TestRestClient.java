@@ -15,7 +15,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.httpclient.methods.GetMethod;
+import static org.elasticsearch.hadoop.rest.Request.Method.*;
 
 public class TestRestClient {
 
@@ -25,11 +25,11 @@ public class TestRestClient {
         this.restClient = restClient;
     }
 
-    public void waitForShards() {
-        restClient.execute(new GetMethod("_cluster/health?level=indices&wait_for_status=green"));
+    public void waitForShards() throws Exception {
+        restClient.execute(GET, "_cluster/health?level=indices&wait_for_status=green");
     }
 
-    public void waitForShards(String index) {
-        restClient.execute(new GetMethod("_cluster/health/" + index + "?level=indices&wait_for_status=yellow"));
+    public void waitForShards(String index) throws Exception {
+        restClient.execute(GET, "_cluster/health/" + index + "?level=indices&wait_for_status=yellow");
     }
 }

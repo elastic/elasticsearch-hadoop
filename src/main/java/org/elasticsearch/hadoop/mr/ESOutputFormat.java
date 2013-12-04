@@ -36,7 +36,7 @@ import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
@@ -127,7 +127,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         protected final Configuration cfg;
         protected boolean initialized = false;
 
-        protected BufferedRestClient client;
+        protected RestRepository client;
         private String uri, resource;
 
         public ESRecordWriter(Configuration cfg) {
@@ -154,7 +154,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Settings settings = SettingsManager.loadFrom(cfg);
             SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
-            client = new BufferedRestClient(settings);
+            client = new RestRepository(settings);
             resource = settings.getTargetResource();
 
             // create the index if needed
@@ -180,7 +180,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             // override the global settings to communicate directly with the target node
             settings.cleanUri().setHost(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
-            client = new BufferedRestClient(settings);
+            client = new RestRepository(settings);
             uri = settings.getTargetUri();
 
             if (log.isDebugEnabled()) {
@@ -252,7 +252,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init
-        BufferedRestClient client = null;
+        RestRepository client = null;
 
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings, client);

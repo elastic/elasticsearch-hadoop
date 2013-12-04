@@ -38,9 +38,9 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
  */
-public class BufferedRestClient implements Closeable {
+public class RestRepository implements Closeable {
 
-    private static Log log = LogFactory.getLog(BufferedRestClient.class);
+    private static Log log = LogFactory.getLog(RestRepository.class);
 
     // serialization artifacts
     private int bufferEntriesThreshold;
@@ -57,7 +57,7 @@ public class BufferedRestClient implements Closeable {
     private Command command;
     private final Settings settings;
 
-    public BufferedRestClient(Settings settings) {
+    public RestRepository(Settings settings) {
         this.settings = settings;
         this.client = new RestClient(settings);
         this.resource = new Resource(settings);
@@ -219,15 +219,15 @@ public class BufferedRestClient implements Closeable {
         return reader.read(client.scroll(scrollId));
     }
 
-    public boolean indexExists() {
+    public boolean indexExists() throws IOException {
         return client.exists(resource.indexAndType());
     }
 
-    public void putMapping(BytesArray mapping) {
+    public void putMapping(BytesArray mapping) throws IOException {
         client.putMapping(resource.index(), resource.mapping(), mapping.bytes());
     }
 
-    public boolean touch() {
+    public boolean touch() throws IOException {
         return client.touch(resource.index());
     }
 

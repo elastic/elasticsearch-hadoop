@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.mortbay.log.Log;
 

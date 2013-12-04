@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.commonshttp;
 
 import java.io.IOException;
 
@@ -25,6 +25,7 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -35,6 +36,11 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.Request;
+import org.elasticsearch.hadoop.rest.Response;
+import org.elasticsearch.hadoop.rest.SimpleResponse;
+import org.elasticsearch.hadoop.rest.Transport;
+import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -100,6 +106,13 @@ public class CommonsHttpTransport implements Transport {
         CharSequence params = request.params();
         if (StringUtils.hasText(params)) {
             http.setQueryString(params.toString());
+        }
+
+        BytesArray ba = request.body();
+        if (ba != null && ba.size() > 0) {
+            EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) request;
+            entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
+            entityMethod.setContentChunked(false);
         }
 
         try {

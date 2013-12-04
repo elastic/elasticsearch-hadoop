@@ -18,7 +18,22 @@ package org.elasticsearch.hadoop.rest;
 public interface Response {
 
     int status();
+
     byte[] body();
 
     CharSequence uri();
+
+    boolean isInformal();
+
+    boolean isSuccess();
+
+    boolean isRedirection();
+
+    boolean isClientError();
+
+    boolean isServerError();
+
+    boolean hasSucceeded();
+
+    boolean hasFailed();
 }

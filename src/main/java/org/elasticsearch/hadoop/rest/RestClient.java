@@ -23,26 +23,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
-import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.HeadMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-/**
- * REST client used for interacting with ElasticSearch. Performs basic operations; for buffer/batching operation consider using BufferedRestClient.
- */
+import static org.elasticsearch.hadoop.rest.Request.Method.*;
+
 public class RestClient implements Closeable {
 
     private static final Log log = LogFactory.getLog(RestClient.class);
@@ -65,7 +58,7 @@ public class RestClient implements Closeable {
     }
 
     private <T> T get(String q, String string) throws IOException {
-        return parseContent(execute(GET, new GetMethod(q)), string);
+        return parseContent(execute(GET, q), string);
     }
 
     @SuppressWarnings("unchecked")
@@ -83,15 +76,12 @@ public class RestClient implements Closeable {
             return;
         }
 
-        PostMethod post = new PostMethod(resource.bulk());
-        post.setRequestEntity(new BytesArrayRequestEntity(buffer));
-        post.setContentChunked(false);
-
         if (log.isTraceEnabled()) {
             log.trace("Sending bulk request " + buffer.toString());
         }
 
-        byte[] content = execute(post);
+        byte[] content = execute(PUT, resource.bulk(), buffer);
+
         // create parser manually to lower Jackson requirements
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
         Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
@@ -111,25 +101,24 @@ public class RestClient implements Closeable {
         }
     }
 
-    public void refresh(Resource resource) {
-        execute(new PostMethod(resource.refresh()));
+    public void refresh(Resource resource) throws IOException {
+        execute(POST, resource.refresh());
     }
 
-    public void deleteIndex(String index) {
-        execute(new DeleteMethod(index));
+    public void deleteIndex(String index) throws IOException {
+        execute(DELETE, index);
     }
 
     public List<List<Map<String, Object>>> targetShards(Resource resource) throws IOException {
         List<List<Map<String, Object>>> shardsJson = null;
 
         if (indexReadMissingAsEmpty) {
-            GetMethod get = new GetMethod(resource.targetShards());
-            byte[] content = execute(get, false);
-            if (get.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+            Response res = execute(GET, resource.targetShards(), false);
+            if (res.status() == HttpStatus.NOT_FOUND) {
                 shardsJson = Collections.emptyList();
             }
             else {
-                shardsJson = parseContent(content, "shards");
+                shardsJson = parseContent(res.body(), "shards");
             }
         }
         else {
@@ -161,29 +150,35 @@ public class RestClient implements Closeable {
     }
 
     byte[] execute(Request request) throws IOException {
-        return execute(request, true);
+        return execute(request, true).body();
     }
 
-    byte[] execute(Request request, boolean checkStatus) throws IOException {
+    byte[] execute(Method method, String path) throws IOException {
+        return execute(new SimpleRequest(method, null, path));
+    }
+
+    Response execute(Method method, String path, boolean checkStatus) throws IOException {
+        return execute(new SimpleRequest(method, null, path), false);
+    }
+
+    byte[] execute(Method method, String path, BytesArray buffer) throws IOException {
+        return execute(new SimpleRequest(method, null, path, null, buffer));
+    }
+
+    Response execute(Request request, boolean checkStatus) throws IOException {
         Response response = network.execute(request);
 
-        if (checkStatus && response.status() >= HttpStatus.SC_MULTI_STATUS) {
+        if (checkStatus && response.hasFailed()) {
             String bodyAsString = StringUtils.asUTFString(response.body());
             throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s]",
                     request.method().name(), request.path(), response.uri(), bodyAsString));
         }
 
-        return response.body();
+        return response;
     }
 
     public String[] scan(String query, BytesArray body) throws IOException {
-        PostMethod post = new PostMethod(query);
-        if (body != null && body.size() > 0) {
-            post.setContentChunked(false);
-            post.setRequestEntity(new BytesArrayRequestEntity(body));
-        }
-
-        Map<String, Object> scan = parseContent(execute(post), null);
+        Map<String, Object> scan = parseContent(execute(POST, query, body), null);
 
         String[] data = new String[2];
         data[0] = scan.get("_scroll_id").toString();
@@ -193,32 +188,22 @@ public class RestClient implements Closeable {
 
     public byte[] scroll(String scrollId) throws IOException {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
-        PostMethod post = new PostMethod("_search/scroll?scroll=" + scrollKeepAlive.toString());
-        post.setContentChunked(false);
-        post.setRequestEntity(new ByteArrayRequestEntity(scrollId.getBytes(StringUtils.UTF_8)));
-        return execute(post);
+        return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), new BytesArray(scrollId.getBytes(StringUtils.UTF_8)));
     }
 
-    public boolean exists(String indexOrType) {
-        HeadMethod headMethod = new HeadMethod(indexOrType);
-        execute(headMethod, false);
-        return (headMethod.getStatusCode() == HttpStatus.SC_OK);
+    public boolean exists(String indexOrType) throws IOException {
+        return (execute(HEAD, indexOrType, false).hasSucceeded());
     }
 
-    public boolean touch(String indexOrType) {
-        PutMethod method = new PutMethod(indexOrType);
-        execute(method, false);
-        return (method.getStatusCode() == HttpStatus.SC_OK);
+    public boolean touch(String indexOrType) throws IOException {
+        return (execute(PUT, indexOrType, false).hasSucceeded());
     }
 
-    public void putMapping(String index, String mapping, byte[] bytes) {
+    public void putMapping(String index, String mapping, byte[] bytes) throws IOException {
         // create index first (if needed) - it might return 403
         touch(index);
 
-        // create actual mapping
-        PutMethod put = new PutMethod(mapping);
-        put.setRequestEntity(new ByteArrayRequestEntity(bytes));
-        execute(put);
+        execute(PUT, mapping, new BytesArray(bytes));
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) throws IOException {

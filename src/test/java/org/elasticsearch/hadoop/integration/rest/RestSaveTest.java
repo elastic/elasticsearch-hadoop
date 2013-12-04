@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
@@ -35,7 +35,7 @@ public class RestSaveTest {
         TestSettings testSettings = new TestSettings("rest/savebulk");
         //testSettings.setPort(9200)
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
-        BufferedRestClient client = new BufferedRestClient(testSettings);
+        RestRepository client = new RestRepository(testSettings);
 
         Scanner in = new Scanner(getClass().getResourceAsStream("/artists.dat")).useDelimiter("\\n|\\t");
 
@@ -58,7 +58,7 @@ public class RestSaveTest {
     public void testEmptyBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
-        RestClient client = new BufferedRestClient(testSettings).getRestClient();
+        RestClient client = new RestRepository(testSettings).getRestClient();
         client.bulk(new Resource(testSettings), new BytesArray(0));
         client.close();
     }

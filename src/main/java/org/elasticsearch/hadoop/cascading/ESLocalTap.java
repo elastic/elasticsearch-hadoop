@@ -20,7 +20,7 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
@@ -42,7 +42,7 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
     private static final long serialVersionUID = 8644631529427137615L;
 
     private String target;
-    private BufferedRestClient client;
+    private RestRepository client;
 
     public ESLocalTap(String host, int port, String resource, Fields fields) {
         this.target = resource;
@@ -58,7 +58,7 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
         Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
         // will be closed by the tuple once its done
-        client = new BufferedRestClient(settings);
+        client = new RestRepository(settings);
 
         if (input == null) {
             input = QueryBuilder.query(settings).build(client, new ScrollReader(new JdkValueReader(), null));

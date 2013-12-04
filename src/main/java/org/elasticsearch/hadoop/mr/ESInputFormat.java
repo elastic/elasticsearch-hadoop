@@ -38,7 +38,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.BufferedRestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
@@ -133,7 +133,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private ShardInputSplit esSplit;
         private ScrollReader scrollReader;
 
-        private BufferedRestClient client;
+        private RestRepository client;
         private QueryBuilder queryBuilder;
         private ScrollQuery result;
 
@@ -186,7 +186,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             scrollReader = new ScrollReader(reader, mapping);
 
             // initialize REST client
-            client = new BufferedRestClient(settings);
+            client = new RestRepository(settings);
 
             queryBuilder = QueryBuilder.query(settings)
                     .shard(esSplit.shardId)
@@ -359,7 +359,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
         Settings settings = SettingsManager.loadFrom(job);
-        BufferedRestClient client = new BufferedRestClient(settings);
+        RestRepository client = new RestRepository(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
 
         String savedMapping = null;

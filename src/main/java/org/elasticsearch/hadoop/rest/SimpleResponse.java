@@ -21,7 +21,7 @@ public class SimpleResponse implements Response {
     private final byte[] body;
     private final CharSequence uri;
 
-    SimpleResponse(int status, byte[] body, CharSequence uri) {
+    public SimpleResponse(int status, byte[] body, CharSequence uri) {
         this.status = status;
         this.body = body;
         this.uri = uri;
@@ -40,5 +40,40 @@ public class SimpleResponse implements Response {
     @Override
     public CharSequence uri() {
         return uri;
+    }
+
+    @Override
+    public boolean isInformal() {
+        return HttpStatus.isInformal(status);
+    }
+
+    @Override
+    public boolean isSuccess() {
+        return HttpStatus.isSuccess(status);
+    }
+
+    @Override
+    public boolean isRedirection() {
+        return HttpStatus.isRedirection(status);
+    }
+
+    @Override
+    public boolean isClientError() {
+        return HttpStatus.isClientError(status);
+    }
+
+    @Override
+    public boolean isServerError() {
+        return HttpStatus.isServerError(status);
+    }
+
+    @Override
+    public boolean hasSucceeded() {
+        return isSuccess();
+    }
+
+    @Override
+    public boolean hasFailed() {
+        return !hasSucceeded();
     }
 }
