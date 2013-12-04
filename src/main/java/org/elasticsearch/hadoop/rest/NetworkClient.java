@@ -18,25 +18,29 @@ package org.elasticsearch.hadoop.rest;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.mortbay.log.Log;
 
 public class NetworkClient {
 
+    private static Log log = LogFactory.getLog(NetworkClient.class);
+
     private final Settings settings;
-    private final List<String> hostURIs;
+    private final List<String> nodes;
     private final HttpRetryPolicy retryPolicy;
 
     private Transport currentTransport;
     private String currentUri;
     private int nextClient = 0;
 
-    NetworkClient(Settings settings, List<String> hostURIs) {
+    public NetworkClient(Settings settings, List<String> hostURIs) {
         this.settings = settings.copy();
-        this.hostURIs = hostURIs;
+        this.nodes = hostURIs;
 
         String retryPolicyName = settings.getBatchWriteRetryPolicy();
 
@@ -49,20 +53,22 @@ public class NetworkClient {
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         selectNextNode();
+
+        Assert.notNull(currentTransport, "no node information provided");
     }
 
     private boolean selectNextNode() {
-        if (nextClient < hostURIs.size()) {
+        if (nextClient >= nodes.size()) {
             return false;
         }
 
-        currentUri = hostURIs.get(nextClient++);
+        currentUri = nodes.get(nextClient++);
         close();
 
         //TODO: split host/port
-        settings.cleanUri();
-        settings.setHost(currentUri);
-        currentTransport = new CommonsHttpTransport(settings);
+        settings.cleanHosts();
+        settings.setHosts(currentUri);
+        currentTransport = new CommonsHttpTransport(settings, currentUri);
         return true;
     }
 
@@ -79,10 +85,16 @@ public class NetworkClient {
                 newNode = false;
                 try {
                     response = currentTransport.execute(routedRequest);
-                } catch (Exception e) {
+                } catch (Exception ex) {
+                    if (log.isTraceEnabled()) {
+                        log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
+                    }
                     newNode = selectNextNode();
-                    if (Log.isDebugEnabled()) {
-                        Log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
+                    if (!newNode) {
+                        throw new IOException("Out of nodes and retries; caught exception", ex);
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
                                 request.method().name(), request.path(), currentUri));
                     }
                 }

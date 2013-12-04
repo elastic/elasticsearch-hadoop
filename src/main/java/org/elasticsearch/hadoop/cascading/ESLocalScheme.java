@@ -25,8 +25,8 @@ import java.util.Properties;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
@@ -136,7 +136,7 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     private void initClient(Properties props) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props).setHost(host).setPort(port).setResource(resource);
+            Settings settings = SettingsManager.loadFrom(props).setHosts(host).setPort(port).setResource(resource);
 
             SerializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
             SerializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(ESTap.class));

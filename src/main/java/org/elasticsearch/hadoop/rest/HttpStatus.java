@@ -15,30 +15,23 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class HttpStatus {
 
-    private static final String[][] CODE_TO_TEXT = new String[][] { new String[3], new String[10], new String[9],
-            new String[42], new String[18] };
+    private static final Map<Integer, String> CODE_TO_TEXT = new HashMap<Integer, String>();
 
     public static String getText(int code) {
-        if (code < 100) {
+        if (code < 100 || code / 100 > 5) {
             throw new IllegalArgumentException("Invalid http code");
         }
 
-        int group = code / 100;
-        int index = code % 100;
-
-        if (group > CODE_TO_TEXT.length - 1 || index < 0 || index > CODE_TO_TEXT[group].length - 1) {
-            throw new IllegalArgumentException("Invalid http code");
-        }
-
-        return CODE_TO_TEXT[group][index];
+        return CODE_TO_TEXT.get(Integer.valueOf(code));
     }
 
     private static void addCode(int code, String text) {
-        int group = code / 100;
-        int index = code % 100;
-        CODE_TO_TEXT[group][index] = text;
+        CODE_TO_TEXT.put(Integer.valueOf(code), text);
     }
 
     public static final int CONTINUE = 100;

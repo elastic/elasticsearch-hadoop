@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.NodeUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -50,11 +52,28 @@ public class RestClient implements Closeable {
     }
 
     public RestClient(Settings settings) {
-        // TODO: extract nodes
-        network = new NetworkClient(settings, Collections.<String> emptyList());
+        network = new NetworkClient(settings, NodeUtils.nodes(settings));
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+    }
+
+    public List<String> discoverNodes() throws IOException {
+        Map<String, Map> nodes = (Map<String, Map>) get("_cluster/nodes", "nodes");
+
+        List<String> hosts = new ArrayList<String>(nodes.size());
+
+        for (Map value : nodes.values()) {
+            String inet = (String) value.get("http_address");
+            if (StringUtils.hasText(inet)) {
+                int startIp = inet.indexOf("/") + 1;
+                int endIp = inet.indexOf("]");
+                inet = inet.substring(startIp, endIp);
+                hosts.add(inet);
+            }
+        }
+
+        return hosts;
     }
 
     private <T> T get(String q, String string) throws IOException {

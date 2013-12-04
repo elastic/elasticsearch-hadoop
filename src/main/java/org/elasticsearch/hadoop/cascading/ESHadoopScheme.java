@@ -138,7 +138,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     private void initTargetUri(JobConf conf) {
         // init
-        SettingsManager.loadFrom(conf).setHost(host).setPort(port).setResource(index).save();
+        SettingsManager.loadFrom(conf).setHosts(host).setPort(port).setResource(index).save();
     }
 
     @SuppressWarnings("unchecked")

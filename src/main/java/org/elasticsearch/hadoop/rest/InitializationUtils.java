@@ -16,10 +16,14 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.serialization.ContentBuilder;
@@ -28,6 +32,7 @@ import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.NodeUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class InitializationUtils {
@@ -39,6 +44,30 @@ public abstract class InitializationUtils {
             Assert.isTrue(StringUtils.hasText(settings.getMappingId()),
                     String.format("Operation [%s] requires an id but none (%s) was specified", operation, ConfigurationOptions.ES_MAPPING_ID));
         }
+    }
+
+    public static boolean discoverNodesIfNeeded(Settings settings, Log log) throws IOException {
+        if (settings.getNodesDiscovery()) {
+            RestClient bootstrap = new RestClient(settings);
+
+            List<String> discoveredNodes = bootstrap.discoverNodes();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
+            }
+
+            // clean-up and merge
+            Set<String> nodes = new LinkedHashSet<String>();
+            nodes.addAll(NodeUtils.nodes(settings));
+            nodes.addAll(discoveredNodes);
+
+            // save result
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
+            bootstrap.close();
+
+            return true;
+        }
+
+        return false;
     }
 
     public static void checkIndexExistence(Settings settings, RestRepository client) {

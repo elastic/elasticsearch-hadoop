@@ -34,15 +34,18 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.serialization.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.NodeUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -148,12 +151,20 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             int currentInstance = detectCurrentInstance(cfg);
 
             if (log.isTraceEnabled()) {
-                log.trace(String.format("ESRecordWriter instance [%s] initiating discovery of target shard", currentInstance));
+                log.trace(String.format("ESRecordWriter instance [%s] initiating discovery of target shard...", currentInstance));
             }
 
             Settings settings = SettingsManager.loadFrom(cfg);
+
             SerializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
+            InitializationUtils.discoverNodesIfNeeded(settings, log);
+            // pick the host based on id
+            List<String> nodes = NodeUtils.nodes(settings);
+            Collections.rotate(nodes, -currentInstance);
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
+
+
             client = new RestRepository(settings);
             resource = settings.getTargetResource();
 
@@ -166,6 +177,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             Map<Shard, Node> targetShards = client.getTargetPrimaryShards();
             client.close();
+
             List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
             // make sure the order is strict
             Collections.sort(orderedShards);
@@ -179,9 +191,9 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Node targetNode = targetShards.get(chosenShard);
 
             // override the global settings to communicate directly with the target node
-            settings.cleanUri().setHost(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
+            settings.cleanHosts().setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
             client = new RestRepository(settings);
-            uri = settings.getTargetUri();
+            uri = settings.getTargetHosts();
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
@@ -218,8 +230,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
-        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(),
-                null, context);
+        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(), null, context);
     }
 
     @Override
@@ -246,6 +257,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         init(cfg);
     }
 
+    // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
         Assert.hasText(settings.getTargetResource(),
@@ -268,6 +280,6 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             }
         }
 
-        log.info(String.format("Preparing to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
+        //log.info(String.format("Starting to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }
 }

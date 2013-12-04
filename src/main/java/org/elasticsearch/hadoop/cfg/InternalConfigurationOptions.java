@@ -18,9 +18,9 @@ package org.elasticsearch.hadoop.cfg;
 /**
  * Property names for internal framework use. They will show up inside the Hadoop configuration or Cascading properties (which act as a distributing support) but not in the API.
  */
-interface InternalConfigurationOptions extends ConfigurationOptions {
+public interface InternalConfigurationOptions extends ConfigurationOptions {
 
-    static final String INTERNAL_ES_TARGET_RESOURCE = "es.internal.mr.target.resource";
-    static final String INTERNAL_ES_TARGET_URI = "es.internal.mr.target.uri";
-    static final String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
+    String INTERNAL_ES_TARGET_RESOURCE = "es.internal.mr.target.resource";
+    String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
+    String INTERNAL_ES_HOSTS = "es.internal.hosts";
 }

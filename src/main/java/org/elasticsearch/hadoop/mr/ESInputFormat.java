@@ -38,8 +38,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.RestRepository;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
@@ -164,7 +165,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             Settings settings = SettingsManager.loadFrom(cfg);
 
             // override the global settings to communicate directly with the target node
-            settings.cleanUri().setHost(esSplit.nodeIp).setPort(esSplit.httpPort);
+            settings.cleanHosts().setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
 
             this.esSplit = esSplit;
 
@@ -359,6 +360,11 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
         Settings settings = SettingsManager.loadFrom(job);
+
+        InitializationUtils.discoverNodesIfNeeded(settings, log);
+        settings.save();
+
+
         RestRepository client = new RestRepository(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
 

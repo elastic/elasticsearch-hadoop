@@ -51,7 +51,7 @@ public class CommonsHttpTransport implements Transport {
     private static Log log = LogFactory.getLog(CommonsHttpTransport.class);
     private final HttpClient client;
 
-    public CommonsHttpTransport(Settings settings) {
+    public CommonsHttpTransport(Settings settings, String host) {
         HttpClientParams params = new HttpClientParams();
         params.setParameter(HttpMethodParams.RETRY_HANDLER,
                 new DefaultHttpMethodRetryHandler(settings.getHttpRetries(), false));
@@ -60,11 +60,11 @@ public class CommonsHttpTransport implements Transport {
         client = new HttpClient(params);
 
         HostConfiguration hostConfig = new HostConfiguration();
-        String targetUri = settings.getTargetUri();
+
         try {
-            hostConfig.setHost(new URI(targetUri, false));
+            hostConfig.setHost(new URI(prefixUri(host), false));
         } catch (IOException ex) {
-            throw new IllegalArgumentException("Invalid target URI " + targetUri, ex);
+            throw new IllegalArgumentException("Invalid target URI " + host, ex);
         }
         client.setHostConfiguration(hostConfig);
 
@@ -98,11 +98,13 @@ public class CommonsHttpTransport implements Transport {
             break;
         }
 
-        http.setPath(request.path().toString());
         CharSequence uri = request.uri();
         if (StringUtils.hasText(uri)) {
-            http.setURI(new URI(uri.toString(), false));
+            http.setURI(new URI(prefixUri(uri.toString()), false));
         }
+        // NB: initialize the path _after_ the URI otherwise the path gets reset to /
+        http.setPath(prefixPath(request.path().toString()));
+
         CharSequence params = request.params();
         if (StringUtils.hasText(params)) {
             http.setQueryString(params.toString());
@@ -110,7 +112,7 @@ public class CommonsHttpTransport implements Transport {
 
         BytesArray ba = request.body();
         if (ba != null && ba.size() > 0) {
-            EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) request;
+            EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) http;
             entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
             entityMethod.setContentChunked(false);
         }
@@ -136,5 +138,13 @@ public class CommonsHttpTransport implements Transport {
                 log.warn("Exception closing underlying HTTP manager", ex);
             }
         }
+    }
+
+    private static String prefixUri(String uri) {
+        return uri.contains("://") ? uri : "http://" + uri;
+    }
+
+    private static String prefixPath(String string) {
+        return string.startsWith("/") ? string : "/" + string;
     }
 }

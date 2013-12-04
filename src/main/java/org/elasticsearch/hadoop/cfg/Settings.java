@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Properties;
 
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -30,16 +31,27 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
  */
 public abstract class Settings implements InternalConfigurationOptions {
 
-    private String host;
     private int port;
+
+    private String targetHosts;
     private String targetResource;
 
-    public String getHost() {
-        return StringUtils.hasText(host) ? host : getProperty(ES_HOST, ES_HOST_DEFAULT);
+    public String getNodes() {
+        String host = getProperty(ES_HOST);
+        if (StringUtils.hasText(host)) {
+            LogFactory.getLog(Settings.class).warn(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
+            return host;
+        }
+
+        return getProperty(ES_NODES, ES_NODES_DEFAULT);
     }
 
     public int getPort() {
         return (port > 0) ? port : Integer.valueOf(getProperty(ES_PORT, ES_PORT_DEFAULT));
+    }
+
+    public boolean getNodesDiscovery() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY, ES_NODES_DISCOVERY_DEFAULT));
     }
 
     public long getHttpTimeout() {
@@ -163,13 +175,8 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_UPSERT_DOC, ES_UPSERT_DOC_DEFAULT));
     }
 
-    public String getTargetUri() {
-        String address = getProperty(INTERNAL_ES_TARGET_URI);
-        return (StringUtils.hasText(address) ? address: new StringBuilder("http://").append(getHost()).append(":").append(getPort()).append("/").toString());
-    }
-
-    public Settings setHost(String host) {
-        this.host = host;
+    public Settings setHosts(String hosts) {
+        this.targetHosts = hosts;
         return this;
     }
 
@@ -188,17 +195,23 @@ public abstract class Settings implements InternalConfigurationOptions {
         return this;
     }
 
+    // aggregate the resource - computed / set / properties
     public String getTargetResource() {
         String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
         return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
+    }
+
+    public String getTargetHosts() {
+        String hosts = getProperty(INTERNAL_ES_HOSTS);
+        return StringUtils.hasText(targetHosts) ? targetHosts : (StringUtils.hasText(hosts) ? hosts : getNodes());
     }
 
     public String getQuery() {
         return getProperty(ES_QUERY);
     }
 
-    public Settings cleanUri() {
-        setProperty(INTERNAL_ES_TARGET_URI, "");
+    public Settings cleanHosts() {
+        setProperty(INTERNAL_ES_HOSTS, "");
         return this;
     }
 
@@ -209,7 +222,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public Settings clean() {
         cleanResource();
-        cleanUri();
+        cleanHosts();
         return this;
     }
 
@@ -221,14 +234,12 @@ public abstract class Settings implements InternalConfigurationOptions {
      * Saves the settings state after validating them.
      */
     public void save() {
-        String targetUri = getTargetUri();
         String resource = getTargetResource();
+        String hosts = getTargetHosts();
 
-        Assert.hasText(targetUri, "No address specified");
         Assert.hasText(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
-
-        setProperty(INTERNAL_ES_TARGET_URI, targetUri);
         setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);
+        setProperty(INTERNAL_ES_HOSTS, hosts);
     }
 
     protected String getProperty(String name, String defaultValue) {

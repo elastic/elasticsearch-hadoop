@@ -17,6 +17,8 @@ package org.elasticsearch.hadoop.util;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -46,13 +48,17 @@ public abstract class StringUtils {
         return false;
     }
 
+    public static List<String> tokenize(String string) {
+        return tokenize(string, ",");
+    }
+
     public static List<String> tokenize(String string, String delimiters) {
         return tokenize(string, delimiters, true, true);
     }
 
     public static List<String> tokenize(String string, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
         if (string == null) {
-            return null;
+            return Collections.emptyList();
         }
         StringTokenizer st = new StringTokenizer(string, delimiters);
         List<String> tokens = new ArrayList<String>();
@@ -66,6 +72,24 @@ public abstract class StringUtils {
             }
         }
         return tokens;
+    }
+
+    public static String concatenate(Collection<?> list, String delimiter) {
+        if (list == null || list.isEmpty()) {
+            return EMPTY;
+        }
+        if (delimiter == null) {
+            delimiter = EMPTY;
+        }
+        StringBuilder sb = new StringBuilder();
+
+        for (Object object : list) {
+            sb.append(object.toString());
+            sb.append(delimiter);
+        }
+
+        sb.setLength(sb.length() - delimiter.length());
+        return sb.toString();
     }
 
     public static String concatenate(Object[] array, String delimiter) {

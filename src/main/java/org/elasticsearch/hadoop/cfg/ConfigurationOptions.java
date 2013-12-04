@@ -16,27 +16,33 @@
 package org.elasticsearch.hadoop.cfg;
 
 /**
- * Class providing the various Configuration parameters used by the ElasticSearch Hadoop integration.
+ * Class providing the various Configuration parameters used by the Elasticsearch Hadoop integration.
  */
 public interface ConfigurationOptions {
 
-    /** ElasticSearch host **/
+    /** Elasticsearch host **/
+    // deprecated
     String ES_HOST = "es.host";
     String ES_HOST_DEFAULT = "localhost";
+    String ES_NODES = "es.nodes";
+    String ES_NODES_DEFAULT = "localhost";
 
-    /** ElasticSearch port **/
+    String ES_NODES_DISCOVERY = "es.nodes.discovery";
+    String ES_NODES_DISCOVERY_DEFAULT = "true";
+
+    /** Elasticsearch port **/
     String ES_PORT = "es.port";
     String ES_PORT_DEFAULT = "9200";
 
-    /** ElasticSearch index */
+    /** Elasticsearch index */
     String ES_RESOURCE = "es.resource";
     String ES_QUERY = "es.query";
 
-    /** ElasticSearch batch size given in bytes */
+    /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "10mb";
 
-    /** ElasticSearch batch size given in entries */
+    /** Elasticsearch batch size given in entries */
     String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
     String ES_BATCH_SIZE_ENTRIES_DEFAULT = "0";
 
@@ -44,7 +50,7 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";
     String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
 
-    /** Http bulk retries **/
+    /** HTTP bulk retries **/
     String ES_BATCH_WRITE_RETRY_COUNT = "es.batch.write.retry.count";
     String ES_BATCH_WRITE_RETRY_COUNT_DEFAULT = "3";
 
