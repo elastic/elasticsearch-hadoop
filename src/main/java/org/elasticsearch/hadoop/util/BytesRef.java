@@ -64,5 +64,6 @@ public class BytesRef {
         if (list != null) {
             list.clear();
         }
+        size = 0;
     }
 }

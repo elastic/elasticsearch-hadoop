@@ -126,6 +126,7 @@ public class RestRepository implements Closeable {
         }
 
         payload.copyTo(data);
+        payload.reset();
 
         dataEntries++;
         if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
@@ -147,6 +148,9 @@ public class RestRepository implements Closeable {
     @Override
     public void close() {
         try {
+            if (log.isDebugEnabled()) {
+                log.debug("Closing repository and connection to Elasticsearch ...");
+            }
             if (data.size() > 0) {
                 flushBatch();
             }
