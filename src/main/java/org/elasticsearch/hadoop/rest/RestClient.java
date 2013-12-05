@@ -58,6 +58,7 @@ public class RestClient implements Closeable {
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
     }
 
+    @SuppressWarnings("rawtypes")
     public List<String> discoverNodes() throws IOException {
         Map<String, Map> nodes = (Map<String, Map>) get("_cluster/nodes", "nodes");
 
@@ -116,7 +117,7 @@ public class RestClient implements Closeable {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("Received bulk response " + new String(content));
+            log.trace("Received bulk response " + StringUtils.asUTFString(content));
         }
     }
 

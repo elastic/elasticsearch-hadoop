@@ -69,10 +69,6 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
         out.write(bytes, 0, size);
     }
 
-    public int hashCode() {
-        return super.hashCode();
-    }
-
     /**
      * Are the two byte sequences equal?
      */

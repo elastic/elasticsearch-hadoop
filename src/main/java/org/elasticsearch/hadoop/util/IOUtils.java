@@ -35,7 +35,7 @@ public abstract class IOUtils {
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(object);
         oos.close();
-        return new String(Base64.encodeBase64(baos.bytes().bytes(), false, true));
+        return StringUtils.asUTFString(Base64.encodeBase64(baos.bytes().bytes(), false, true));
     }
 
     @SuppressWarnings("unchecked")

@@ -123,7 +123,7 @@ public abstract class WritableUtils {
             return result;
         }
         // fall-back to bytearray
-        return new BytesWritable(object.toString().getBytes());
+        return new BytesWritable(object.toString().getBytes(StringUtils.UTF_8));
     }
 
     public static Object fromWritable(Writable writable) {
