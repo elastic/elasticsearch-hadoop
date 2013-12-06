@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -33,23 +34,28 @@ public abstract class IOUtils {
     public static String serializeToBase64(Serializable object) throws IOException {
         FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(object);
-        oos.close();
+        try {
+            oos.writeObject(object);
+        } finally {
+            close(oos);
+        }
         return StringUtils.asUTFString(Base64.encodeBase64(baos.bytes().bytes(), false, true));
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T deserializeFromBase64(String data) {
         byte[] rawData = Base64.decodeBase64(data.getBytes(StringUtils.UTF_8));
+        ObjectInputStream ois = null;
         try {
-            ObjectInputStream ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
+            ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
             Object o = ois.readObject();
-            ois.close();
             return (T) o;
         } catch (ClassNotFoundException ex) {
             throw new IllegalStateException("cannot deserialize object", ex);
         } catch (IOException ex) {
             throw new SerializationException("cannot deserialize object", ex);
+        } finally {
+            close(ois);
         }
     }
 
@@ -90,11 +96,11 @@ public abstract class IOUtils {
         }
 
         try {
-        // no prefix means classpath
+            // no prefix means classpath
             if (!resource.contains(":")) {
-            return loader.getResourceAsStream(resource);
-        }
-        return new URL(resource).openStream();
+                return loader.getResourceAsStream(resource);
+            }
+            return new URL(resource).openStream();
         } catch (IOException ex) {
             throw new IllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
         }
@@ -102,5 +108,15 @@ public abstract class IOUtils {
 
     public static InputStream open(String location) {
         return open(location, null);
+    }
+
+    public static void close(Closeable closable) {
+        if (closable != null) {
+            try {
+                closable.close();
+            } catch (IOException e) {
+                // silently ignore
+            }
+        }
     }
 }

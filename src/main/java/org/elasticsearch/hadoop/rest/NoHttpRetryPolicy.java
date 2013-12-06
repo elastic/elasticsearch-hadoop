@@ -17,13 +17,14 @@ package org.elasticsearch.hadoop.rest;
 
 public class NoHttpRetryPolicy implements HttpRetryPolicy {
 
+    private static class NoRetry implements Retry {
+        @Override
+        public boolean retry(int httpStatus) {
+            return false;
+        }
+    }
     @Override
     public Retry init() {
-        return new Retry() {
-            @Override
-            public boolean retry(int httpStatus) {
-                return false;
-            }
-        };
+        return new NoRetry();
     }
 }

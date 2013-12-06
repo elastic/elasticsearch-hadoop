@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.cfg;
 
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
@@ -116,7 +117,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public String getOperation() {
-        return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase();
+        return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase(Locale.ENGLISH);
     }
 
     public String getMappingId() {

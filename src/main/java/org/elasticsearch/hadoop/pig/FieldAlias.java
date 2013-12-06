@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.pig;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -38,7 +39,7 @@ class FieldAlias {
         String alias = pigToES.get(string);
         if (alias == null) {
             // ES fields are all lowercase
-            alias = string.toLowerCase();
+            alias = string.toLowerCase(Locale.ENGLISH);
             pigToES.put(string, alias);
         }
         return alias;

@@ -35,9 +35,9 @@ public class ESPigInputFormat extends ESInputFormat<String, Map> {
 
         @Override
         protected String setCurrentKey(String oldApiKey, String newApiKey, Object object) {
-            oldApiKey = object.toString();
+            //oldApiKey = object.toString();
             //newApiKey = oldApiKey;
-            return oldApiKey;
+            return object.toString();
         }
 
         @SuppressWarnings("unchecked")

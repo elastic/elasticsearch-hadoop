@@ -19,6 +19,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -161,5 +162,40 @@ public class LinkedMapWritable extends MapWritable {
             value.readFields(in);
             instance.put(key, value);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+
+        if (!(o instanceof Map))
+            return false;
+        Map<Writable, Writable> m = (Map<Writable, Writable>) o;
+        if (m.size() != size())
+            return false;
+
+        try {
+            Iterator<Entry<Writable, Writable>> i = entrySet().iterator();
+            while (i.hasNext()) {
+                Entry<Writable, Writable> e = i.next();
+                Writable key = e.getKey();
+                Writable value = e.getValue();
+                if (value == null) {
+                    if (!(m.get(key) == null && m.containsKey(key)))
+                        return false;
+                }
+                else {
+                    if (!value.equals(m.get(key)))
+                        return false;
+                }
+            }
+        } catch (ClassCastException unused) {
+            return false;
+        } catch (NullPointerException unused) {
+            return false;
+        }
+
+        return true;
     }
 }

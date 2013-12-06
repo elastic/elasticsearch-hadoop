@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -84,7 +85,7 @@ class PigUtils {
                     String key = string.substring(0, index);
                     // save the lower case version as well to speed, lookup
                     aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(key.toLowerCase(), string.substring(index + 1));
+                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
                 }
             }
         }
