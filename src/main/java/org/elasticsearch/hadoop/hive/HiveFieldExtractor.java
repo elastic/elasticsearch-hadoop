@@ -15,14 +15,17 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.io.NullWritable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class HiveFieldExtractor extends ConstantFieldExtractor {
 
@@ -41,7 +44,11 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
                         String.format("Field [%s] needs to be a primitive; found [%s]", fieldName, foi.getTypeName()));
 
                 // expecting a writeable - simply do a toString
-                return soi.getStructFieldData(type.getObject(), field).toString();
+                Object data = soi.getStructFieldData(type.getObject(), field);
+                if (data == null || data instanceof NullWritable) {
+                    return StringUtils.EMPTY;
+                }
+                return data.toString();
             }
         }
 
@@ -53,6 +60,6 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
         super.setSettings(settings);
         Map<String, String> columnNames = HiveUtils.columnMap(settings);
         // replace column name with _colX (which is what Hive uses during serialization)
-        fieldName = columnNames.get(getFieldName().toLowerCase());
+        fieldName = columnNames.get(getFieldName().toLowerCase(Locale.ENGLISH));
     }
 }
