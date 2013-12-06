@@ -15,11 +15,15 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
+
+    private static Log log = LogFactory.getLog(SimpleHttpRetryPolicy.class);
 
     private int retryLimit;
     private long retryTime;
@@ -30,21 +34,30 @@ public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
         @Override
         public boolean retry(int httpStatus) {
             // everything fine, no need to retry
-            if (httpStatus < HttpStatus.SC_MULTI_STATUS) {
+            if (HttpStatus.isSuccess(httpStatus)) {
                 return false;
             }
 
             switch (httpStatus) {
             // ES is busy, allow retries
-            case HttpStatus.SC_SERVICE_UNAVAILABLE:
+            case HttpStatus.SERVICE_UNAVAILABLE:
                 if (++retryCount < retryLimit) {
                     try {
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Elasticsearch service unavailable - retrying in %s seconds",
+                                    TimeValue.timeValueSeconds(retryTime)));
+                        }
                         Thread.sleep(retryTime);
                         return true;
                     } catch (InterruptedException e) {
-                        // ignore
+                        if (log.isDebugEnabled()) {
+                            log.debug(String.format("Thread interrupted - giving up on retrying..."));
+                        }
+
+                        return false;
                     }
                 }
+                return false;
             default:
                 return false;
             }

@@ -35,7 +35,7 @@ abstract class SerializationUtils {
 
         // if no tokens are defined, add one starting with 140
         if (tokens == null) {
-            cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, Util.join(",", Util.removeNulls(tokens, "140=" + lmw)));
+            cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, "140=" + lmw);
             LogFactory.getLog(ESTap.class).trace(String.format("Registered Cascading serialization token %s for %s", 140, lmw));
         }
         else {
@@ -46,13 +46,11 @@ abstract class SerializationUtils {
 
             // find token id
             Map<Integer, String> mapping = new LinkedHashMap<Integer, String>();
-            if (tokens != null) {
-                tokens = tokens.replaceAll("\\s", ""); // allow for whitespace in token set
+            tokens = tokens.replaceAll("\\s", ""); // allow for whitespace in token set
 
-                for (String pair : tokens.split(",")) {
-                    String[] elements = pair.split("=");
-                    mapping.put(Integer.parseInt(elements[0]), elements[1]);
-                }
+            for (String pair : tokens.split(",")) {
+                String[] elements = pair.split("=");
+                mapping.put(Integer.parseInt(elements[0]), elements[1]);
             }
 
             for (int id = 140; id < 255; id++) {

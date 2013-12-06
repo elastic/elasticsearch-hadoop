@@ -24,7 +24,6 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.hive.serde2.objectinspector.UnionObjectInspector;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
@@ -113,7 +112,7 @@ public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
             break;
 
         case UNION:
-            UnionObjectInspector uoi = (UnionObjectInspector) oi;
+            //UnionObjectInspector uoi = (UnionObjectInspector) oi;
             throw new UnsupportedOperationException("union not yet supported");//break;
 
 

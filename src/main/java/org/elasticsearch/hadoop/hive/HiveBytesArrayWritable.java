@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.hive;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.BinaryComparable;
 import org.apache.hadoop.io.BytesWritable;
@@ -86,7 +87,7 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
     }
 
 
-    public static class Comparator extends WritableComparator {
+    public static class Comparator extends WritableComparator implements Serializable {
         public Comparator() {
             super(HiveBytesArrayWritable.class);
         }

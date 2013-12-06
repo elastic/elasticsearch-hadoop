@@ -20,8 +20,8 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
@@ -42,7 +42,7 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
     private static final long serialVersionUID = 8644631529427137615L;
 
     private String target;
-    private RestRepository client;
+    private transient RestRepository client;
 
     public ESLocalTap(String host, int port, String resource, Fields fields) {
         this.target = resource;
