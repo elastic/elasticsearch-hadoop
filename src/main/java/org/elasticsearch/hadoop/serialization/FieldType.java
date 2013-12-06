@@ -2,6 +2,7 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public enum FieldType {
@@ -48,7 +49,7 @@ public enum FieldType {
     }
 
     public static FieldType parse(String name) {
-        String n = (name != null ? name.toUpperCase() : name);
+        String n = (name != null ? name.toUpperCase(Locale.ENGLISH) : name);
         return (KNOWN_TYPES.contains(n) ? FieldType.valueOf(n) : null);
     }
 

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -32,24 +33,14 @@ import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 abstract class HiveUtils {
 
     // Date type available since Hive 0.12
-    static final boolean DATE_WRITABLE_AVAILABLE;
-
-    static {
-        ClassLoader cl = (TimestampWritable.class.getClassLoader());
-        Class<?> clz = null;
-        try {
-            clz = cl.loadClass(HiveConstants.DATE_WRITABLE);
-        } catch (Exception ex) {
-            // ignore
-        }
-
-        DATE_WRITABLE_AVAILABLE = (clz != null);
-    }
+    static final boolean DATE_WRITABLE_AVAILABLE = ObjectUtils.isClassPresent(HiveConstants.DATE_WRITABLE,
+            TimestampWritable.class.getClassLoader());
 
     static StandardStructObjectInspector structObjectInspector(Properties tableProperties) {
         // extract column info - don't use Hive constants as they were renamed in 0.9 breaking compatibility
@@ -87,7 +78,7 @@ abstract class HiveUtils {
                     String key = string.substring(0, index);
                     // save the lower case version as well since Hive does that for top-level keys
                     aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(key.toLowerCase(), string.substring(index + 1));
+                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
                 }
             }
         }

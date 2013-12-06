@@ -51,6 +51,16 @@ public abstract class ObjectUtils {
         return obj;
     }
 
+    public static boolean isClassPresent(String className, ClassLoader cl) {
+        Class<?> clz = null;
+        try {
+            clz = Class.forName(className, false, cl);
+        } catch (Exception ex) {
+            // ignore
+        }
+        return (clz != null);
+    }
+
     public static boolean isEmpty(byte[] array) {
         return (array == null || array.length == 0);
     }

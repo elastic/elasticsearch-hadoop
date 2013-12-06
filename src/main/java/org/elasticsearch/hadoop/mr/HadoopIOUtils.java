@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 
@@ -71,7 +72,7 @@ public abstract class HadoopIOUtils {
             Path p = new Path(resource);
             FileSystem fs = p.getFileSystem(conf);
             return fs.open(p);
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             throw new IllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
         }
     }

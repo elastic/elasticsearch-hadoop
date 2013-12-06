@@ -79,6 +79,11 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
         return false;
     }
 
+    @Override
+    public int hashCode() {
+        return WritableComparator.hashBytes(ba.bytes(), ba.size());
+    }
+
     /**
      * Generate the stream of bytes as hex pairs separated by ' '.
      */

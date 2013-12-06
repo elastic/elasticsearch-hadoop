@@ -59,7 +59,7 @@ public class RestClient implements Closeable {
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public List<String> discoverNodes() throws IOException {
         Map<String, Map> nodes = (Map<String, Map>) get("_cluster/nodes", "nodes");
 

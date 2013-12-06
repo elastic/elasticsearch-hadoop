@@ -24,24 +24,18 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.SerializationException;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class JacksonJsonGenerator implements Generator {
 
-    private static final boolean JACKSON_16;
+    private static final boolean JACKSON_16 = ObjectUtils.isClassPresent("org.codehaus.jackson.Version",
+            JacksonJsonGenerator.class.getClassLoader());
     private static final JsonFactory JSON_FACTORY;
     private final JsonGenerator generator;
     private final OutputStream out;
 
     static {
-        Class<?> versionClass = null;
-        try {
-            versionClass = Class.forName("org.codehaus.jackson.Version", false, JacksonJsonGenerator.class.getClassLoader());
-        } catch (Exception ex) {
-            // ignore
-        }
-        JACKSON_16 = (versionClass != null);
-
         if (!JACKSON_16) {
             LogFactory.getLog(JacksonJsonGenerator.class).warn(
                     "Old Jackson version (pre-1.7) detected; consider upgrading to improve performance");

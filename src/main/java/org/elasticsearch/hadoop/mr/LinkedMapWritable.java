@@ -198,4 +198,13 @@ public class LinkedMapWritable extends MapWritable {
 
         return true;
     }
+
+    @Override
+    public int hashCode() {
+        int h = 0;
+        Iterator<Entry<Writable, Writable>> i = entrySet().iterator();
+        while (i.hasNext())
+            h += i.next().hashCode();
+        return h;
+    }
 }
