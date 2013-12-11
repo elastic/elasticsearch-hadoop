@@ -31,7 +31,7 @@ public class BytesRef {
             list = new ArrayList<Object>();
         }
         list.add(bytes);
-        size += bytes.size();
+        size += bytes.length();
     }
 
     public void add(byte[] bytes) {
@@ -42,7 +42,7 @@ public class BytesRef {
         size += bytes.length;
     }
 
-    public int size() {
+    public int length() {
         return size;
     }
 

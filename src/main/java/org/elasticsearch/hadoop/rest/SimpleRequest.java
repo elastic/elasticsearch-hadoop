@@ -15,7 +15,8 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ByteSequence;
+
 
 public class SimpleRequest implements Request {
 
@@ -23,7 +24,7 @@ public class SimpleRequest implements Request {
     private final CharSequence uri;
     private final CharSequence path;
     private final CharSequence params;
-    private final BytesArray body;
+    private final ByteSequence body;
 
     public SimpleRequest(Method method, CharSequence uri, CharSequence path) {
         this(method, uri, path, null, null);
@@ -33,11 +34,11 @@ public class SimpleRequest implements Request {
         this(method, uri, path, params, null);
     }
 
-    public SimpleRequest(Method method, CharSequence uri, CharSequence path, BytesArray body) {
+    public SimpleRequest(Method method, CharSequence uri, CharSequence path, ByteSequence body) {
         this(method, uri, path, null, body);
     }
 
-    public SimpleRequest(Method method, CharSequence uri, CharSequence path, CharSequence params, BytesArray body) {
+    public SimpleRequest(Method method, CharSequence uri, CharSequence path, CharSequence params, ByteSequence body) {
         this.method = method;
         this.uri = uri;
         this.path = path;
@@ -66,7 +67,7 @@ public class SimpleRequest implements Request {
     }
 
     @Override
-    public BytesArray body() {
+    public ByteSequence body() {
         return body;
     }
 }

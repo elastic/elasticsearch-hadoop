@@ -42,7 +42,7 @@ import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleResponse;
 import org.elasticsearch.hadoop.rest.Transport;
-import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -132,8 +132,8 @@ public class CommonsHttpTransport implements Transport {
             http.setQueryString(params.toString());
         }
 
-        BytesArray ba = request.body();
-        if (ba != null && ba.size() > 0) {
+        ByteSequence ba = request.body();
+        if (ba != null && ba.length() > 0) {
             EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) http;
             entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
             entityMethod.setContentChunked(false);

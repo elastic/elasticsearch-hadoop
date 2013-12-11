@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
@@ -45,7 +46,8 @@ public class RestRepository implements Closeable {
     // serialization artifacts
     private int bufferEntriesThreshold;
 
-    private final BytesArray data = new BytesArray(0);
+    private final BytesArray ba = new BytesArray(0);
+    private final TrackingBytesArray data = new TrackingBytesArray(ba);
     private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
@@ -68,7 +70,7 @@ public class RestRepository implements Closeable {
         if (!writeInitialized) {
             writeInitialized = true;
 
-            data.bytes(new byte[settings.getBatchSizeInBytes()], 0);
+            ba.bytes(new byte[settings.getBatchSizeInBytes()], 0);
             trivialBytesRef = new BytesRef();
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
@@ -111,7 +113,7 @@ public class RestRepository implements Closeable {
      */
     public void writeProcessedToIndex(BytesArray ba) throws IOException {
         Assert.notNull(ba, "no data given");
-        Assert.isTrue(ba.size() > 0, "no data given");
+        Assert.isTrue(ba.length() > 0, "no data given");
 
         lazyInitWriting();
         trivialBytesRef.reset();
@@ -121,11 +123,11 @@ public class RestRepository implements Closeable {
 
     private void doWriteToIndex(BytesRef payload) throws IOException {
         // check space first
-        if (payload.size() > data.available()) {
+        if (payload.length() > ba.available()) {
             sendBatch();
         }
 
-        payload.copyTo(data);
+        data.copyFrom(payload);
         payload.reset();
 
         dataEntries++;
@@ -136,7 +138,7 @@ public class RestRepository implements Closeable {
 
     private void sendBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.size(), dataEntries));
+            log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
         client.bulk(resource, data);
@@ -151,7 +153,7 @@ public class RestRepository implements Closeable {
             if (log.isDebugEnabled()) {
                 log.debug("Closing repository and connection to Elasticsearch ...");
             }
-            if (data.size() > 0) {
+            if (data.length() > 0) {
                 sendBatch();
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {

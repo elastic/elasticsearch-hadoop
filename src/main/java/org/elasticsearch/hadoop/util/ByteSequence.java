@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.util;
 
-import org.elasticsearch.hadoop.util.ByteSequence;
+import java.io.IOException;
+import java.io.OutputStream;
 
+public interface ByteSequence {
 
-public interface Request {
+    int length();
 
-    enum Method {
-        DELETE, GET, HEAD, POST, PUT
-    };
-
-    Method method();
-
-    CharSequence uri();
-
-    CharSequence path();
-
-    CharSequence params();
-
-    ByteSequence body();
+    void writeTo(OutputStream out) throws IOException;
 }

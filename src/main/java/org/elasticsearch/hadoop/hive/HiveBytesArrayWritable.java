@@ -40,7 +40,7 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
     }
 
     public int getLength() {
-        return (ba != null ? ba.size() : 0);
+        return (ba != null ? ba.length() : 0);
     }
 
     public byte[] getBytes() {
@@ -63,7 +63,7 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
     }
 
     public void write(DataOutput out) throws IOException {
-        int size = (ba != null ? ba.size() : 0);
+        int size = (ba != null ? ba.length() : 0);
         byte[] bytes = (ba != null ? ba.bytes() : BytesArray.EMPTY);
 
         out.writeInt(size);
@@ -81,14 +81,14 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
 
     @Override
     public int hashCode() {
-        return WritableComparator.hashBytes(ba.bytes(), ba.size());
+        return WritableComparator.hashBytes(ba.bytes(), ba.length());
     }
 
     /**
      * Generate the stream of bytes as hex pairs separated by ' '.
      */
     public String toString() {
-        return (ba != null ? StringUtils.asUTFString(ba.bytes(), ba.size()) : "");
+        return (ba != null ? StringUtils.asUTFString(ba.bytes(), ba.length()) : "");
     }
 
 

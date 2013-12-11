@@ -15,11 +15,14 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 /**
  * Wrapper class around a bytes array so that it can be passed as reference even if the underlying array is modified.
  * Allows only a part of the array to be used (slicing).
  */
-public class BytesArray {
+public class BytesArray implements ByteSequence {
 
     public static final byte[] EMPTY = new byte[0];
 
@@ -48,7 +51,7 @@ public class BytesArray {
         return bytes;
     }
 
-    public int size() {
+    public int length() {
         return size;
     }
 
@@ -115,5 +118,10 @@ public class BytesArray {
         if (newcount > bytes.length) {
             bytes = ArrayUtils.grow(bytes, newcount);
         }
+    }
+
+    public void writeTo(OutputStream out) throws IOException {
+        out.write(bytes, 0, size);
+        out.flush();
     }
 }

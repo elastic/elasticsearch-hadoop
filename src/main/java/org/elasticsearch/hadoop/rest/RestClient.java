@@ -26,13 +26,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.NodeUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -41,8 +40,6 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import static org.elasticsearch.hadoop.rest.Request.Method.*;
 
 public class RestClient implements Closeable {
-
-    private static final Log log = LogFactory.getLog(RestClient.class);
 
     private NetworkClient network;
     private ObjectMapper mapper = new ObjectMapper();
@@ -92,9 +89,9 @@ public class RestClient implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    public void bulk(Resource resource, BytesArray buffer) throws IOException {
+    public void bulk(Resource resource, ByteSequence buffer) throws IOException {
         //empty buffer, ignore
-        if (buffer.size() == 0) {
+        if (buffer.length() == 0) {
             return;
         }
 
@@ -176,7 +173,7 @@ public class RestClient implements Closeable {
         return execute(new SimpleRequest(method, null, path), false);
     }
 
-    InputStream execute(Method method, String path, BytesArray buffer) throws IOException {
+    InputStream execute(Method method, String path, ByteSequence buffer) throws IOException {
         return execute(new SimpleRequest(method, null, path, null, buffer));
     }
 
