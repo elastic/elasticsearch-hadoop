@@ -53,6 +53,10 @@ public class JacksonJsonParser implements Parser {
         }
     }
 
+    public JacksonJsonParser(JsonParser parser) {
+        this.parser = parser;
+    }
+
     @Override
     public Token currentToken() {
         return convertToken(parser.getCurrentToken());

@@ -110,4 +110,13 @@ public class TrackingBytesArray implements ByteSequence {
         entries.clear();
         data.reset();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(length());
+        for (Entry entry : entries) {
+            sb.append(new String(data.bytes, entry.offset, entry.length));
+        }
+        return sb.toString();
+    }
 }

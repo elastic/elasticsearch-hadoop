@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -28,13 +29,19 @@ import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.ObjectReader;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.NodeUtils;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.*;
@@ -45,6 +52,7 @@ public class RestClient implements Closeable {
     private ObjectMapper mapper = new ObjectMapper();
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
+    private final HttpRetryPolicy retryPolicy;
 
     public enum HEALTH {
         RED, YELLOW, GREEN
@@ -55,6 +63,17 @@ public class RestClient implements Closeable {
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+
+        String retryPolicyName = settings.getBatchWriteRetryPolicy();
+
+        if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_SIMPLE.equals(retryPolicyName)) {
+            retryPolicyName = SimpleHttpRetryPolicy.class.getName();
+        }
+        else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
+            retryPolicyName = NoHttpRetryPolicy.class.getName();
+        }
+
+        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -88,29 +107,42 @@ public class RestClient implements Closeable {
         return (T) (string != null ? map.get(string) : map);
     }
 
-    @SuppressWarnings("unchecked")
-    public void bulk(Resource resource, ByteSequence buffer) throws IOException {
-        //empty buffer, ignore
-        if (buffer.length() == 0) {
-            return;
-        }
+    public void bulk(Resource resource, TrackingBytesArray data) throws IOException {
+        Retry retry = retryPolicy.init();
+        int httpStatus = 0;
 
-        InputStream content = execute(PUT, resource.bulk(), buffer);
+        do {
+            Response response = execute(PUT, resource.bulk(), data);
+            httpStatus = (removeSuccesful(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
+        } while (data.length() > 0 && retry.retry(httpStatus));
+    }
 
-        // create parser manually to lower Jackson requirements
-        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
-        Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
-        List<Object> items = (List<Object>) map.get("items");
+    @SuppressWarnings("rawtypes")
+    private boolean removeSuccesful(InputStream content, TrackingBytesArray data) throws IOException {
+        ObjectReader r = mapper.reader(Map.class);
+        JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+        ParsingUtils.seek("items", new JacksonJsonParser(parser));
 
-        for (Object item : items) {
-            Map<String, String> messages = (Map<String, String>) ((Map) item).values().iterator().next();
-            String message = messages.get("error");
-            if (StringUtils.hasText(message)) {
-                throw new IllegalStateException(String.format(
-                        "Bulk request on index [%s] failed; at least one error reported [%s]",
-                        resource.indexAndType(), message));
+        int entryToDeletePosition = 0; // head of the list
+        for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
+            Map map = iterator.next();
+            String error = (String) ((Map) map.values().iterator().next()).get("error");
+
+            if (error != null) {
+                // can retry
+                if (error.contains("EsRejectedExecutionException")) {
+                    entryToDeletePosition++;
+                }
+                else {
+                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out", error));
+                }
+            }
+            else {
+                data.remove(entryToDeletePosition);
             }
         }
+
+        return entryToDeletePosition > 0;
     }
 
     public void refresh(Resource resource) throws IOException {
@@ -173,8 +205,8 @@ public class RestClient implements Closeable {
         return execute(new SimpleRequest(method, null, path), false);
     }
 
-    InputStream execute(Method method, String path, ByteSequence buffer) throws IOException {
-        return execute(new SimpleRequest(method, null, path, null, buffer));
+    Response execute(Method method, String path, ByteSequence buffer) throws IOException {
+        return execute(new SimpleRequest(method, null, path, null, buffer), false);
     }
 
     Response execute(Request request, boolean checkStatus) throws IOException {
@@ -190,7 +222,7 @@ public class RestClient implements Closeable {
     }
 
     public String[] scan(String query, BytesArray body) throws IOException {
-        Map<String, Object> scan = parseContent(execute(POST, query, body), null);
+        Map<String, Object> scan = parseContent(execute(POST, query, body).body(), null);
 
         String[] data = new String[2];
         data[0] = scan.get("_scroll_id").toString();
@@ -200,7 +232,8 @@ public class RestClient implements Closeable {
 
     public InputStream scroll(String scrollId) throws IOException {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
-        return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), new BytesArray(scrollId.getBytes(StringUtils.UTF_8)));
+        return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
+                new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
     }
 
     public boolean exists(String indexOrType) throws IOException {

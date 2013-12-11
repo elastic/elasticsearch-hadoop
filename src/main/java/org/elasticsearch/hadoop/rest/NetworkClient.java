@@ -20,11 +20,9 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 
 public class NetworkClient {
 
@@ -32,7 +30,6 @@ public class NetworkClient {
 
     private final Settings settings;
     private final List<String> nodes;
-    private final HttpRetryPolicy retryPolicy;
 
     private Transport currentTransport;
     private String currentUri;
@@ -42,16 +39,6 @@ public class NetworkClient {
         this.settings = settings.copy();
         this.nodes = hostURIs;
 
-        String retryPolicyName = settings.getBatchWriteRetryPolicy();
-
-        if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_SIMPLE.equals(retryPolicyName)) {
-            retryPolicyName = SimpleHttpRetryPolicy.class.getName();
-        }
-        else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
-            retryPolicyName = NoHttpRetryPolicy.class.getName();
-        }
-
-        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         selectNextNode();
 
         Assert.notNull(currentTransport, "no node information provided");
@@ -73,33 +60,29 @@ public class NetworkClient {
     }
 
     public Response execute(Request request) throws IOException {
-        Retry retry = retryPolicy.init();
-        int httpStatus = 0;
         Response response = null;
 
         SimpleRequest routedRequest = new SimpleRequest(request.method(), currentUri, request.path(), request.params(), request.body());
 
+        boolean newNode;
         do {
-            boolean newNode;
-            do {
-                newNode = false;
-                try {
-                    response = currentTransport.execute(routedRequest);
-                } catch (Exception ex) {
-                    if (log.isTraceEnabled()) {
-                        log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
-                    }
-                    newNode = selectNextNode();
-                    if (!newNode) {
-                        throw new IOException("Out of nodes and retries; caught exception", ex);
-                    }
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
-                                request.method().name(), request.path(), currentUri));
-                    }
+            newNode = false;
+            try {
+                response = currentTransport.execute(routedRequest);
+            } catch (Exception ex) {
+                if (log.isTraceEnabled()) {
+                    log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
                 }
-            } while (newNode);
-        } while (retry.retry(httpStatus));
+                newNode = selectNextNode();
+                if (!newNode) {
+                    throw new IOException("Out of nodes and retries; caught exception", ex);
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
+                            request.method().name(), request.path(), currentUri));
+                }
+            }
+        } while (newNode);
 
         return response;
     }

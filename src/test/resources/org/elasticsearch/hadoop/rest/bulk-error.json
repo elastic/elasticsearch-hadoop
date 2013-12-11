@@ -1,0 +1,40 @@
+{
+    "took" : 4,
+    "items" : [{
+            "create" : {
+                "_index" : "mroldapi",
+                "_type" : "createwithid",
+                "_id" : "1",
+                "error" : "DocumentAlreadyExistsException[[mroldapi][2] [createwithid][1]: document already exists]"
+            }
+        }, {
+            "create" : {
+                "_index" : "mroldapi",
+                "_type" : "createwithid",
+                "_id" : "2",
+                "error" : "DocumentAlreadyExistsException[[mroldapi][3] [createwithid][2]: document already exists]"
+            }
+        }, {
+            "create" : {
+                "_index" : "mroldapi",
+                "_type" : "createwithid",
+                "_id" : "3",
+                "error" : "DocumentAlreadyExistsException[[mroldapi][4] [createwithid][3]: document already exists]"
+            }
+        }, {
+            "create" : {
+                "_index" : "mroldapi",
+                "_type" : "createwithid",
+                "_id" : "4",
+                "error" : "DocumentAlreadyExistsException[[mroldapi][0] [createwithid][4]: document already exists]"
+            }
+        }, {
+            "create" : {
+                "_index" : "mroldapi",
+                "_type" : "createwithid",
+                "_id" : "5",
+                "error" : "DocumentAlreadyExistsException[[mroldapi][1] [createwithid][5]: document already exists]"
+            }
+        }
+    ]
+}

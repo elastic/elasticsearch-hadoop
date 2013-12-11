@@ -20,12 +20,13 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.serialization.JdkValueWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.junit.Test;
 
 public class RestSaveTest {
@@ -59,7 +60,7 @@ public class RestSaveTest {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         RestClient client = new RestRepository(testSettings).getRestClient();
-        client.bulk(new Resource(testSettings), new BytesArray(0));
+        client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray(0)));
         client.close();
     }
 }

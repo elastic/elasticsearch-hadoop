@@ -44,8 +44,8 @@ public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
                 if (++retryCount < retryLimit) {
                     try {
                         if (log.isDebugEnabled()) {
-                            log.debug(String.format("Elasticsearch service unavailable - retrying in %s seconds",
-                                    TimeValue.timeValueSeconds(retryTime)));
+                            log.debug(String.format("Elasticsearch service unavailable - retrying in %s",
+                                    TimeValue.timeValueMillis((retryTime))));
                         }
                         Thread.sleep(retryTime);
                         return true;
