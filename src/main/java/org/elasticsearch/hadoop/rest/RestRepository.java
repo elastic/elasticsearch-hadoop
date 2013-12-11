@@ -122,7 +122,7 @@ public class RestRepository implements Closeable {
     private void doWriteToIndex(BytesRef payload) throws IOException {
         // check space first
         if (payload.size() > data.available()) {
-            flushBatch();
+            sendBatch();
         }
 
         payload.copyTo(data);
@@ -130,13 +130,13 @@ public class RestRepository implements Closeable {
 
         dataEntries++;
         if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
-            flushBatch();
+            sendBatch();
         }
     }
 
-    private void flushBatch() throws IOException {
+    private void sendBatch() throws IOException {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Flushing batch of [%d] bytes/[%s] entries", data.size(), dataEntries));
+            log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.size(), dataEntries));
         }
 
         client.bulk(resource, data);
@@ -152,7 +152,7 @@ public class RestRepository implements Closeable {
                 log.debug("Closing repository and connection to Elasticsearch ...");
             }
             if (data.size() > 0) {
-                flushBatch();
+                sendBatch();
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {
                 // refresh batch

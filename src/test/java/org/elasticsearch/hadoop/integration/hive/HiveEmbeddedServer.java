@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -89,11 +90,13 @@ class HiveEmbeddedServer implements HiveInstance {
             //conf.set("hadoop.bin.path", getClass().getClassLoader().getResource("hadoop.cmd").getPath());
             System.setProperty("path.separator", ";");
         }
-        conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse");
-        conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db");
+        int random = new Random().nextInt();
+
+        conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse" + random);
+        conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db" + random);
         conf.set("hive.exec.scratchdir", "/tmp/hive");
         conf.set("hive.scratch.dir.permission", "650");
-        conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db;create=true");
+        conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db" + random + ";create=true");
         conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");
         conf.set("hive.added.jars.path", "");

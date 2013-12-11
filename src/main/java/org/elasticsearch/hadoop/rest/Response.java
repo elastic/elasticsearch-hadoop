@@ -15,11 +15,15 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.io.InputStream;
+
 public interface Response {
 
     int status();
 
-    byte[] body();
+    String statusDescription();
+
+    InputStream body();
 
     CharSequence uri();
 

@@ -15,13 +15,15 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.io.InputStream;
+
 public class SimpleResponse implements Response {
 
     private final int status;
-    private final byte[] body;
+    private final InputStream body;
     private final CharSequence uri;
 
-    public SimpleResponse(int status, byte[] body, CharSequence uri) {
+    public SimpleResponse(int status, InputStream body, CharSequence uri) {
         this.status = status;
         this.body = body;
         this.uri = uri;
@@ -32,8 +34,12 @@ public class SimpleResponse implements Response {
         return status;
     }
 
+    public String statusDescription() {
+        return HttpStatus.getText(status);
+    }
+
     @Override
-    public byte[] body() {
+    public InputStream body() {
         return body;
     }
 

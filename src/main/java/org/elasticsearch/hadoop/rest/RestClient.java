@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -83,7 +84,7 @@ public class RestClient implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T parseContent(byte[] content, String string) throws IOException {
+    private <T> T parseContent(InputStream content, String string) throws IOException {
         // create parser manually to lower Jackson requirements
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
         Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
@@ -97,11 +98,7 @@ public class RestClient implements Closeable {
             return;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Sending bulk request " + buffer.toString());
-        }
-
-        byte[] content = execute(PUT, resource.bulk(), buffer);
+        InputStream content = execute(PUT, resource.bulk(), buffer);
 
         // create parser manually to lower Jackson requirements
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
@@ -113,12 +110,9 @@ public class RestClient implements Closeable {
             String message = messages.get("error");
             if (StringUtils.hasText(message)) {
                 throw new IllegalStateException(String.format(
-                        "Bulk request on index [%s] failed; at least one error reported [%s]", resource.indexAndType(), message));
+                        "Bulk request on index [%s] failed; at least one error reported [%s]",
+                        resource.indexAndType(), message));
             }
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("Received bulk response " + StringUtils.asUTFString(content));
         }
     }
 
@@ -170,11 +164,11 @@ public class RestClient implements Closeable {
         network.close();
     }
 
-    byte[] execute(Request request) throws IOException {
+    InputStream execute(Request request) throws IOException {
         return execute(request, true).body();
     }
 
-    byte[] execute(Method method, String path) throws IOException {
+    InputStream execute(Method method, String path) throws IOException {
         return execute(new SimpleRequest(method, null, path));
     }
 
@@ -182,7 +176,7 @@ public class RestClient implements Closeable {
         return execute(new SimpleRequest(method, null, path), false);
     }
 
-    byte[] execute(Method method, String path, BytesArray buffer) throws IOException {
+    InputStream execute(Method method, String path, BytesArray buffer) throws IOException {
         return execute(new SimpleRequest(method, null, path, null, buffer));
     }
 
@@ -190,9 +184,9 @@ public class RestClient implements Closeable {
         Response response = network.execute(request);
 
         if (checkStatus && response.hasFailed()) {
-            String bodyAsString = StringUtils.asUTFString(response.body());
-            throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s]",
-                    request.method().name(), request.path(), response.uri(), bodyAsString));
+            throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]",
+                    request.method().name(), request.path(), response.uri(), response.status(),
+                    response.statusDescription()));
         }
 
         return response;
@@ -207,7 +201,7 @@ public class RestClient implements Closeable {
         return data;
     }
 
-    public byte[] scroll(String scrollId) throws IOException {
+    public InputStream scroll(String scrollId) throws IOException {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
         return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), new BytesArray(scrollId.getBytes(StringUtils.UTF_8)));
     }

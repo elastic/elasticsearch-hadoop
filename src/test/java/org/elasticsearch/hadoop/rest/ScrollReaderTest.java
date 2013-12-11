@@ -16,13 +16,12 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -32,8 +31,8 @@ public class ScrollReaderTest {
     @Test
     public void testScrollWithFields() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
-        String content = IOUtils.asString(getClass().getResourceAsStream("scroll-fields.json"));
-        List<Object[]> read = reader.read(content.getBytes(StringUtils.UTF_8));
+        InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
+        List<Object[]> read = reader.read(stream);
         assertEquals(2, read.size());
         Object[] objects = read.get(0);
         assertTrue(((Map) objects[1]).containsKey("fields"));
@@ -42,8 +41,8 @@ public class ScrollReaderTest {
     @Test
     public void testScrollWithSource() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
-        String content = IOUtils.asString(getClass().getResourceAsStream("scroll-source.json"));
-        List<Object[]> read = reader.read(content.getBytes(StringUtils.UTF_8));
+        InputStream stream = getClass().getResourceAsStream("scroll-source.json");
+        List<Object[]> read = reader.read(stream);
         assertEquals(2, read.size());
         Object[] objects = read.get(0);
         assertTrue(((Map) objects[1]).containsKey("source"));

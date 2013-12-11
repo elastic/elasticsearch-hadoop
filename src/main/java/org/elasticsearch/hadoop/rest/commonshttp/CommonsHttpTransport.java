@@ -22,6 +22,7 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.DeleteMethod;
@@ -36,6 +37,7 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.DelegatingInputStream;
 import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleResponse;
@@ -50,6 +52,26 @@ public class CommonsHttpTransport implements Transport {
 
     private static Log log = LogFactory.getLog(CommonsHttpTransport.class);
     private final HttpClient client;
+
+    private static class ResponseInputStream extends DelegatingInputStream {
+
+        private final HttpMethod method;
+
+        public ResponseInputStream(HttpMethod http) throws IOException {
+            super(http.getResponseBodyAsStream());
+            this.method = http;
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                super.close();
+            } catch (IOException e) {
+                // silently ignore
+            }
+            method.releaseConnection();
+        }
+    }
 
     public CommonsHttpTransport(Settings settings, String host) {
         HttpClientParams params = new HttpClientParams();
@@ -117,12 +139,18 @@ public class CommonsHttpTransport implements Transport {
             entityMethod.setContentChunked(false);
         }
 
-        try {
-            client.executeMethod(http);
-            return new SimpleResponse(http.getStatusCode(), http.getResponseBody(), request.uri());
-        } finally {
-            http.releaseConnection();
+        // when tracing, log everything
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Sending [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.params(), request.body()));
         }
+
+        client.executeMethod(http);
+
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Received [%s-%s] [%s]", http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+        }
+
+        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), request.uri());
     }
 
     @Override
