@@ -115,7 +115,7 @@ public class TrackingBytesArray implements ByteSequence {
     public String toString() {
         StringBuilder sb = new StringBuilder(length());
         for (Entry entry : entries) {
-            sb.append(new String(data.bytes, entry.offset, entry.length));
+            sb.append(new String(data.bytes, entry.offset, entry.length, StringUtils.UTF_8));
         }
         return sb.toString();
     }
