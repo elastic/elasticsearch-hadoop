@@ -141,16 +141,12 @@ public class RestRepository implements Closeable {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
-        bulk();
+        client.bulk(resource, data);
         data.reset();
         dataEntries = 0;
         executedBulkWrite = true;
     }
 
-    private void bulk() throws IOException {
-        client.bulk(resource, data);
-
-    }
     @Override
     public void close() {
         try {

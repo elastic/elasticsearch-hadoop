@@ -126,7 +126,8 @@ public class RestClient implements Closeable {
         int entryToDeletePosition = 0; // head of the list
         for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
             Map map = iterator.next();
-            String error = (String) ((Map) map.values().iterator().next()).get("error");
+            Map values = (Map) map.values().iterator().next();
+            String error = (String) values.get("error");
 
             if (error != null) {
                 // can retry
@@ -134,7 +135,7 @@ public class RestClient implements Closeable {
                     entryToDeletePosition++;
                 }
                 else {
-                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out", error));
+                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out..", error));
                 }
             }
             else {
