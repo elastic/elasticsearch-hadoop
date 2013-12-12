@@ -71,7 +71,7 @@ public class ESTap extends Tap<Object, Object, Object> {
     public void flowConfInit(Flow<Object> flow) {
         initInnerTapIfNotSet(flow, "cascading.flow.hadoop.HadoopFlow");
         if (runningInHadoop) {
-            SerializationUtils.addToken(flow.getConfig());
+            CascadingUtils.addSerializationToken(flow.getConfig());
         }
     }
 

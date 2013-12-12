@@ -49,6 +49,7 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
@@ -77,7 +78,6 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterface, StoreMetadata {
 
     private static final Log log = LogFactory.getLog(ESStorage.class);
-    private static final String FIELDS = "es.internal.mr.target.fields";
     private final boolean trace = log.isTraceEnabled();
 
     private Properties properties;
@@ -221,13 +221,13 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
             return;
         }
 
-        String fields = getUDFProperties().getProperty(FIELDS);
+        String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);
         if (fields != null) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found field project [%s] in UDF properties", fields));
             }
 
-            cfg.set(FIELDS, fields);
+            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
             return;
         }
 
@@ -268,7 +268,7 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found field projection [%s] in store %s", fields, store));
             }
-            cfg.set(FIELDS, fields);
+            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
         }
     }
 
@@ -330,7 +330,7 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
     @Override
     public RequiredFieldResponse pushProjection(RequiredFieldList requiredFieldList) throws FrontendException {
         String fields = PigUtils.asProjection(requiredFieldList, properties);
-        getUDFProperties().setProperty(FIELDS, fields);
+        getUDFProperties().setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
         if (log.isTraceEnabled()) {
             log.trace(String.format("Given push projection; saving field projection [%s]", fields));
         }

@@ -16,9 +16,11 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.mapred.JobConf;
@@ -38,7 +40,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
 /**
  * Cascading Scheme handling
@@ -68,10 +70,12 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Fields sourceFields = (sourceCallFields.isDefined() ? sourceCallFields : getSourceFields());
         List<String> tupleNames = resolveNames(sourceFields);
 
-        Object[] context = new Object[3];
-        context[0] = tupleNames;
-        context[1] = sourceCall.getInput().createKey();
-        context[2] = sourceCall.getInput().createValue();
+        Object[] context = new Object[4];
+        context[0] = sourceCall.getInput().createKey();
+        context[1] = sourceCall.getInput().createValue();
+        context[2] = tupleNames;
+        context[3] = CascadingUtils.getTypes(sourceFields);
+
         sourceCall.setContext(context);
     }
 
@@ -134,6 +138,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
         HadoopCfgUtils.setFileOutputFormatDir(conf, set.getTargetResource());
         HadoopCfgUtils.setOutputCommitterClass(conf, ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
+
     }
 
     private void initTargetUri(JobConf conf) {
@@ -146,13 +151,13 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public boolean source(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         Object[] context = sourceCall.getContext();
 
-        if (!sourceCall.getInput().next(context[1], context[2])) {
+        if (!sourceCall.getInput().next(context[0], context[1])) {
             return false;
         }
 
-        Tuple tuple = sourceCall.getIncomingEntry().getTuple();
-        tuple.clear();
-        tuple.addAll(context[1], context[2]);
+        TupleEntry entry = sourceCall.getIncomingEntry();
+
+        CascadingUtils.unwrapMap((Map) context[1], entry.getTuple(), entry.getFields(), (Type[]) context[3]);
         return true;
     }
 

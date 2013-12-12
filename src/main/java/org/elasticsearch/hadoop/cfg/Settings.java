@@ -32,6 +32,8 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
  */
 public abstract class Settings implements InternalConfigurationOptions {
 
+    private static boolean ES_HOST_WARNING = true;
+
     private int port;
 
     private String targetHosts;
@@ -40,7 +42,10 @@ public abstract class Settings implements InternalConfigurationOptions {
     public String getNodes() {
         String host = getProperty(ES_HOST);
         if (StringUtils.hasText(host)) {
-            LogFactory.getLog(Settings.class).warn(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
+            if (ES_HOST_WARNING) {
+                LogFactory.getLog(Settings.class).warn(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
+                ES_HOST_WARNING = false;
+            }
             return host;
         }
 

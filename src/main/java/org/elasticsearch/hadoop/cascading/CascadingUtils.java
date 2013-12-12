@@ -15,19 +15,40 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import java.lang.reflect.Type;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
+import cascading.cascade.Cascade;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 import cascading.tuple.hadoop.TupleSerializationProps;
+import cascading.tuple.type.CoercibleType;
 import cascading.util.Util;
 
-abstract class SerializationUtils {
+abstract class CascadingUtils {
 
-    public static void addToken(Object config) {
+    static boolean COERCION_AVAILABLE = ObjectUtils.isClassPresent("cascading.tuple.type.CoercibleType",
+            Cascade.class.getClassLoader());
+
+    static abstract class Coercer {
+
+        static Type[] types(Fields fields) {
+            return fields.getTypes();
+        }
+
+        static Object coerceIfPossible(Type type, Object value) {
+            return (type instanceof CoercibleType<?> ? ((CoercibleType<?>) type).canonical(value) : value);
+        }
+    }
+
+    public static void addSerializationToken(Object config) {
         Configuration cfg = (Configuration) config;
         String tokens = cfg.get(TupleSerializationProps.SERIALIZATION_TOKENS);
 
@@ -60,6 +81,31 @@ abstract class SerializationUtils {
                     return;
                 }
             }
+        }
+    }
+
+    public static Type[] getTypes(Fields fields) {
+        return (COERCION_AVAILABLE ? Coercer.types(fields) : null);
+    }
+
+    public static void unwrapMap(Map context, Tuple tuple, Fields fields, Type[] types) {
+        if (context == null) {
+            tuple.add(Tuple.NULL);
+            return;
+        }
+
+        if (fields == null || types == null) {
+            for (Object value: context.values()) {
+                tuple.add(value);
+            }
+            return;
+        }
+
+        Iterator<?> iterator = context.values().iterator();
+
+        for (int index = 0; index < fields.size(); index++) {
+            Object value = (iterator.hasNext() ? iterator.next() : null);
+            tuple.add((COERCION_AVAILABLE ? Coercer.coerceIfPossible(types[index], value) : value));
         }
     }
 }
