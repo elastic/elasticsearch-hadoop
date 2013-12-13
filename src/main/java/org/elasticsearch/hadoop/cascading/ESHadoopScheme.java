@@ -17,6 +17,7 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
@@ -149,7 +150,10 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             }
         }
         else {
-            Tuple.elements(entry.getTuple()).addAll(data.values());
+            // no definition means no coercion
+            List<Object> elements = Tuple.elements(entry.getTuple());
+            elements.clear();
+            elements.addAll(data.values());
         }
 
         return true;
