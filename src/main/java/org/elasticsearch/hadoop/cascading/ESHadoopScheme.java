@@ -16,16 +16,17 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESInputFormat;
@@ -33,6 +34,7 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -40,6 +42,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 /**
@@ -66,15 +69,9 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourcePrepare(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Fields sourceCallFields = sourceCall.getIncomingEntry().getFields();
-        Fields sourceFields = (sourceCallFields.isDefined() ? sourceCallFields : getSourceFields());
-        List<String> tupleNames = resolveNames(sourceFields);
-
-        Object[] context = new Object[4];
+        Object[] context = new Object[2];
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
-        context[2] = tupleNames;
-        context[3] = CascadingUtils.getTypes(sourceFields);
 
         sourceCall.setContext(context);
     }
@@ -122,6 +119,8 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setInputFormat(ESInputFormat.class);
+        conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
+                StringUtils.concatenate(resolveNames(getSourceFields()), ","));
     }
 
     @Override
@@ -157,7 +156,22 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         TupleEntry entry = sourceCall.getIncomingEntry();
 
-        CascadingUtils.unwrapMap((Map) context[1], entry.getTuple(), entry.getFields(), (Type[]) context[3]);
+        Map data = (Map) context[1];
+
+        if (entry.getFields().isDefined()) {
+            // lookup using writables
+            Text lookupKey = new Text();
+            // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
+            for (Comparable field : entry.getFields()) {
+                //NB: coercion should be applied automatically by the TupleEntry
+                lookupKey.set(field.toString());
+                entry.setObject(field, data.get(lookupKey));
+            }
+        }
+        else {
+            Tuple.elements(entry.getTuple()).addAll(data.values());
+        }
+
         return true;
     }
 
