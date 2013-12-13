@@ -141,7 +141,7 @@ public class CommonsHttpTransport implements Transport {
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Sending [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.params(), request.body()));
+            log.trace(String.format("Sending [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.path(), request.body()));
         }
 
         client.executeMethod(http);
