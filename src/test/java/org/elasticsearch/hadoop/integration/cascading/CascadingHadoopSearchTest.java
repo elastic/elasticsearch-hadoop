@@ -28,8 +28,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import cascading.flow.FlowDef;
 import cascading.flow.hadoop.HadoopFlowConnector;
+import cascading.operation.AssertionLevel;
+import cascading.operation.assertion.AssertNotNull;
+import cascading.operation.assertion.AssertSizeEquals;
+import cascading.operation.assertion.AssertSizeLessThan;
+import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -52,10 +56,13 @@ public class CascadingHadoopSearchTest {
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-hadoop/artists");
         Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         //Tap out = new Hfs(new TextDelimited(), "cascadingbug-1", SinkMode.REPLACE);
-        FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
+        //FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
 
         new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
@@ -65,10 +72,36 @@ public class CascadingHadoopSearchTest {
     public void testReadFromESWithFields() throws Exception {
         Tap in = new ESTap("cascading-hadoop/artists", new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
         // print out
-        Tap out = new HadoopPrintStreamTap(Stream.OUT);
-        //Tap out = new Hfs(new TextDelimited(), "cascadingbug-1", SinkMode.REPLACE);
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
         new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
+    }
+
+    @Test
+    public void testReadFromESAliasedField() throws Exception {
+        Tap in = new ESTap("cascading-hadoop/alias", new Fields("image"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+        new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
+    }
+
+    @Test
+    public void testReadFromESWithFieldAlias() throws Exception {
+        Tap in = new ESTap("cascading-hadoop/alias", new Fields("picture"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+        Properties cfg = cfg();
+        cfg.setProperty("es.mapping.names", "picture:image");
+        new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 
     private Properties cfg() {

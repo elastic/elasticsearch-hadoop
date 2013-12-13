@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import java.util.Properties;
+
 import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.junit.Test;
@@ -38,12 +40,24 @@ public class CascadingHadoopSaveTest {
         Tap out = new ESTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
-        // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-
-
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
 
         new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef).complete();
+    }
+
+    @Test
+    public void testWriteToESWithAlias() throws Exception {
+        // local file-system source
+        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap out = new ESTap("cascading-hadoop/alias", new Fields("name", "url", "picture"));
+        Pipe pipe = new Pipe("copy");
+
+        // rename "id" -> "garbage"
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+
+        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+        props.setProperty("es.mapping.names", "picture:image");
+        new HadoopFlowConnector(props).connect(in, out, pipe).complete();
+
     }
 }
