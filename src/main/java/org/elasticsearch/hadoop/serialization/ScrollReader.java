@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,9 @@ import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
+import org.elasticsearch.hadoop.util.IOUtils;
 
 /**
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
@@ -53,8 +57,16 @@ public class ScrollReader {
     }
 
 
-    public List<Object[]> read(InputStream content) {
+    public List<Object[]> read(InputStream content) throws IOException {
         Assert.notNull(content);
+
+        if (log.isTraceEnabled()) {
+            //copy content
+            BytesArray copy = IOUtils.asBytes(content);
+            content = new FastByteArrayInputStream(copy);
+            log.trace("About to parse scroll content " + copy);
+        }
+
         this.parser = new JacksonJsonParser(content);
 
         try {
@@ -78,7 +90,7 @@ public class ScrollReader {
 
         List<Object[]> results = new ArrayList<Object[]>();
 
-        for (parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
+        for (token = parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
             results.add(readHit());
         }
 
