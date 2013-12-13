@@ -32,7 +32,7 @@ import org.elasticsearch.hadoop.serialization.ValueWriter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
-import org.elasticsearch.hadoop.util.NodeUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class InitializationUtils {
@@ -57,7 +57,7 @@ public abstract class InitializationUtils {
 
             // clean-up and merge
             Set<String> nodes = new LinkedHashSet<String>();
-            nodes.addAll(NodeUtils.nodes(settings));
+            nodes.addAll(SettingsUtils.nodes(settings));
             nodes.addAll(discoveredNodes);
 
             // save result

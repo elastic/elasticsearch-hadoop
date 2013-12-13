@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.util.FieldAlias;
 
 /**
  * Main value writer for hive. However since Hive expects a Writable type to be passed to the record reader,

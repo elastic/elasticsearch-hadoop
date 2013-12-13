@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.hive;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
+import org.elasticsearch.hadoop.util.FieldAlias;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -33,7 +32,9 @@ import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 abstract class HiveUtils {
@@ -66,22 +67,7 @@ abstract class HiveUtils {
 
     static FieldAlias alias(Settings settings) {
         List<String> aliases = StringUtils.tokenize(settings.getProperty(HiveConstants.MAPPING_NAMES), ",");
-
-        Map<String, String> aliasMap = new LinkedHashMap<String, String>();
-
-        if (aliases != null) {
-            for (String string : aliases) {
-                // split alias
-                string = string.trim();
-                int index = string.indexOf(":");
-                if (index > 0) {
-                    String key = string.substring(0, index);
-                    // save the lower case version as well since Hive does that for top-level keys
-                    aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
-                }
-            }
-        }
+        Map<String, String> aliasMap = SettingsUtils.aliases(settings.getProperty(HiveConstants.MAPPING_NAMES));
 
         // add default aliases for serialization (_colX -> mapping name)
         Map<String, String> columnMap = columnMap(settings);

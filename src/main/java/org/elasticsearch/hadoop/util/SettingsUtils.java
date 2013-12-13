@@ -15,11 +15,14 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 
-public abstract class NodeUtils {
+public abstract class SettingsUtils {
 
     public static List<String> qualifyHosts(String hosts, int defaultPort) {
         List<String> list = StringUtils.tokenize(hosts);
@@ -36,5 +39,27 @@ public abstract class NodeUtils {
 
     public static List<String> nodes(Settings settings) {
         return qualifyHosts(settings.getNodes(), settings.getPort());
+    }
+
+    public static Map<String, String> aliases(String definition) {
+        List<String> aliases = StringUtils.tokenize(definition, ",");
+
+        Map<String, String> aliasMap = new LinkedHashMap<String, String>();
+
+        if (aliases != null) {
+            for (String string : aliases) {
+                // split alias
+                string = string.trim();
+                int index = string.indexOf(":");
+                if (index > 0) {
+                    String key = string.substring(0, index);
+                    // save the lower case version as well since Hive does that for top-level keys
+                    aliasMap.put(key, string.substring(index + 1));
+                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
+                }
+            }
+        }
+
+        return aliasMap;
     }
 }

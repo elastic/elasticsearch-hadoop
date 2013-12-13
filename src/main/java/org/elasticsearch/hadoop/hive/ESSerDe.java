@@ -47,6 +47,7 @@ import org.elasticsearch.hadoop.serialization.BulkCommands;
 import org.elasticsearch.hadoop.serialization.Command;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FieldAlias;
 
 @SuppressWarnings("deprecation")
 public class ESSerDe implements SerDe {

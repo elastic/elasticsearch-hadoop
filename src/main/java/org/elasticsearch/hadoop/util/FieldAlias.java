@@ -13,34 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.elasticsearch.hadoop.pig;
+package org.elasticsearch.hadoop.util;
 
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Basic class for field aliasing since Pig column names are restricted to: [0-9a-z_] and cannot start with numbers. Without any mapping, the alias will convert all Pig columns to lower case.
- * Note that Pig is case sensitive.
+ * Simple class for providing basic aliases for fields.
  */
-class FieldAlias {
+public class FieldAlias {
 
-    private final Map<String, String> pigToES;
+    private final Map<String, String> fieldToAlias;
 
     public FieldAlias() {
-        this.pigToES = new LinkedHashMap<String, String>();
+        this.fieldToAlias = new LinkedHashMap<String, String>();
     }
 
     public FieldAlias(Map<String, String> alias) {
-        this.pigToES = alias;
+        this.fieldToAlias = alias;
     }
 
-    String toES(String string) {
-        String alias = pigToES.get(string);
+    public String toES(String string) {
+        String alias = fieldToAlias.get(string);
         if (alias == null) {
             // ES fields are all lowercase
             alias = string.toLowerCase(Locale.ENGLISH);
-            pigToES.put(string, alias);
+            fieldToAlias.put(string, alias);
         }
         return alias;
     }

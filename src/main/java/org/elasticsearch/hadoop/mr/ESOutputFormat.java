@@ -44,7 +44,7 @@ import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.serialization.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.NodeUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -160,7 +160,7 @@ public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
             InitializationUtils.discoverNodesIfNeeded(settings, log);
             // pick the host based on id
-            List<String> nodes = NodeUtils.nodes(settings);
+            List<String> nodes = SettingsUtils.nodes(settings);
             Collections.rotate(nodes, -currentInstance);
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
 

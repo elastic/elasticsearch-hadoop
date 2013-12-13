@@ -16,9 +16,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
@@ -34,6 +32,7 @@ import org.elasticsearch.hadoop.mr.ESOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -69,9 +68,10 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourcePrepare(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Object[] context = new Object[2];
+        Object[] context = new Object[3];
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
+        context[2] = CascadingUtils.alias(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
 
         sourceCall.setContext(context);
     }
@@ -85,12 +85,8 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sinkPrepare(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
-        Fields sinkCallFields = sinkCall.getOutgoingEntry().getFields();
-        Fields sinkFields = (sinkCallFields.isDefined() ? sinkCallFields : getSinkFields());
-        List<String> tupleNames = resolveNames(sinkFields);
-
         Object[] context = new Object[1];
-        context[0] = tupleNames;
+        context[0] = CascadingUtils.aliasFields(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
         sinkCall.setContext(context);
     }
 
@@ -98,29 +94,13 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         sinkCall.setContext(null);
     }
 
-    private List<String> resolveNames(Fields fields) {
-
-        //TODO: add handling of undefined types (Fields.UNKNOWN/ALL/RESULTS...)
-        if (fields == null || !fields.isDefined()) {
-            // use auto-generated name
-            return Collections.emptyList();
-        }
-
-        int size = fields.size();
-        List<String> names = new ArrayList<String>(size);
-        for (int fieldIndex = 0; fieldIndex < size; fieldIndex++) {
-            names.add(fields.get(fieldIndex).toString());
-        }
-
-        return names;
-    }
-
     @Override
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setInputFormat(ESInputFormat.class);
-        conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
-                StringUtils.concatenate(resolveNames(getSourceFields()), ","));
+        Collection<String> fields = CascadingUtils.aliasFields(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
+        // load only the necessary fields
+        conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
     }
 
     @Override
@@ -155,8 +135,8 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         }
 
         TupleEntry entry = sourceCall.getIncomingEntry();
-
         Map data = (Map) context[1];
+        FieldAlias alias = (FieldAlias) context[2];
 
         if (entry.getFields().isDefined()) {
             // lookup using writables
@@ -164,7 +144,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable field : entry.getFields()) {
                 //NB: coercion should be applied automatically by the TupleEntry
-                lookupKey.set(field.toString());
+                lookupKey.set(alias.toES(field.toString()));
                 entry.setObject(field, data.get(lookupKey));
             }
         }

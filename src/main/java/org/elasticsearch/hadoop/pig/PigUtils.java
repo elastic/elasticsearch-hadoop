@@ -2,10 +2,7 @@ package org.elasticsearch.hadoop.pig;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
@@ -17,6 +14,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
@@ -71,31 +70,13 @@ class PigUtils {
         }
     }
 
-    static FieldAlias load(Settings settings) {
-        List<String> aliases = StringUtils.tokenize(settings.getProperty(MAPPING_NAMES), ",");
-
-        Map<String, String> aliasMap = new LinkedHashMap<String, String>();
-
-        if (aliases != null) {
-            for (String string : aliases) {
-                // split alias
-                string = string.trim();
-                int index = string.indexOf(":");
-                if (index > 0) {
-                    String key = string.substring(0, index);
-                    // save the lower case version as well to speed, lookup
-                    aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
-                }
-            }
-        }
-
-        return new FieldAlias(aliasMap);
+    static FieldAlias alias(Settings settings) {
+        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES)));
     }
 
     static String asProjection(Schema schema, Properties props) {
         List<String> fields = new ArrayList<String>();
-        addField(schema, fields, load(new PropertiesSettings(props)), "");
+        addField(schema, fields, alias(new PropertiesSettings(props)), "");
 
         return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");
     }
@@ -118,7 +99,7 @@ class PigUtils {
     static String asProjection(RequiredFieldList list, Properties props) {
         List<String> fields = new ArrayList<String>();
         for (RequiredField field : list.getFields()) {
-            addField(field, fields, load(new PropertiesSettings(props)), "");
+            addField(field, fields, alias(new PropertiesSettings(props)), "");
         }
 
         return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");

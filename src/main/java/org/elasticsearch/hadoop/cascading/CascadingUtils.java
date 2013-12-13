@@ -15,17 +15,27 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 
+import cascading.tuple.Fields;
 import cascading.tuple.hadoop.TupleSerializationProps;
 import cascading.util.Util;
 
 abstract class CascadingUtils {
+
+    private static final String MAPPING_NAMES = "es.mapping.names";
 
     public static void addSerializationToken(Object config) {
         Configuration cfg = (Configuration) config;
@@ -36,7 +46,8 @@ abstract class CascadingUtils {
         // if no tokens are defined, add one starting with 140
         if (tokens == null) {
             cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, "140=" + lmw);
-            LogFactory.getLog(ESTap.class).trace(String.format("Registered Cascading serialization token %s for %s", 140, lmw));
+            LogFactory.getLog(ESTap.class).trace(
+                    String.format("Registered Cascading serialization token %s for %s", 140, lmw));
         }
         else {
             // token already registered
@@ -55,11 +66,45 @@ abstract class CascadingUtils {
 
             for (int id = 140; id < 255; id++) {
                 if (!mapping.containsKey(Integer.valueOf(id))) {
-                    cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, Util.join(",", Util.removeNulls(tokens, id + "=" + lmw)));
-                    LogFactory.getLog(ESTap.class).trace(String.format("Registered Cascading serialization token %s for %s", id, lmw));
+                    cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS,
+                            Util.join(",", Util.removeNulls(tokens, id + "=" + lmw)));
+                    LogFactory.getLog(ESTap.class).trace(
+                            String.format("Registered Cascading serialization token %s for %s", id, lmw));
                     return;
                 }
             }
         }
+    }
+
+    static FieldAlias alias(Settings settings) {
+        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES)));
+    }
+
+    static List<String> asStrings(Fields fields) {
+        if (fields == null || !fields.isDefined()) {
+            // use auto-generated name
+            return Collections.emptyList();
+        }
+
+        int size = fields.size();
+        List<String> names = new ArrayList<String>(size);
+        for (int fieldIndex = 0; fieldIndex < size; fieldIndex++) {
+            names.add(fields.get(fieldIndex).toString());
+        }
+
+        return names;
+    }
+
+    public static Collection<String> aliasFields(Settings settings, Fields fields) {
+        FieldAlias fa = alias(settings);
+        List<String> names = asStrings(fields);
+        for (int i = 0; i < names.size(); i++) {
+            String original = names.get(i);
+            String alias = fa.toES(original);
+            if (alias != null) {
+                names.set(i, alias);
+            }
+        }
+        return names;
     }
 }

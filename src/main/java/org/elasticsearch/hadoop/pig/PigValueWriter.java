@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.SerializationException;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
@@ -43,7 +44,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
-        alias = PigUtils.load(settings);
+        alias = PigUtils.alias(settings);
     }
 
 
