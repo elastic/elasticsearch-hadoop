@@ -18,6 +18,7 @@ package org.elasticsearch.hadoop.serialization;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -103,8 +104,9 @@ public class ScrollReader {
         Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
         Object[] result = new Object[2];
         result[0] = parser.text();
-        Assert.notNull(ParsingUtils.seek(parser, SOURCE, FIELDS), "no '_source' or 'fields' found");
-        result[1] = read(t, null);
+        Token seek = ParsingUtils.seek(parser, SOURCE, FIELDS);
+        // no fields found
+        result[1] = (seek == null ? Collections.emptyMap() : read(t, null));
 
         if (trace) {
             log.trace(String.format("Read hit result [%s]=[%s]", result[0], result[1]));
