@@ -47,6 +47,7 @@ public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> 
     @Override
     public boolean write(SinkCall<Object[], ?> sinkCall, Generator generator) {
         Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
+        // consider names (in case of aliases these are already applied)
         List<String> names = (List<String>) sinkCall.getContext()[0];
 
         generator.writeBeginObject();

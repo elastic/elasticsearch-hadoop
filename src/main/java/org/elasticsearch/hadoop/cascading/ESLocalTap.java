@@ -16,15 +16,21 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
@@ -41,8 +47,8 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     private static final long serialVersionUID = 8644631529427137615L;
 
+    private static Log log = LogFactory.getLog(ESLocalTap.class);
     private String target;
-    private transient RestRepository client;
 
     public ESLocalTap(String host, int port, String resource, Fields fields) {
         this.target = resource;
@@ -56,12 +62,16 @@ class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
-        // will be closed by the tuple once its done
-        client = new RestRepository(settings);
-
         if (input == null) {
-            input = QueryBuilder.query(settings).build(client, new ScrollReader(new JdkValueReader(), null));
+            Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+            // will be closed by the query is finished
+            InitializationUtils.discoverNodesIfNeeded(settings, log);
+            settings.save();
+
+            RestRepository client = new RestRepository(settings);
+            Field mapping = client.getMapping();
+            Collection<String> fields = CascadingUtils.fieldToAlias(settings, getSourceFields());
+            input = QueryBuilder.query(settings).fields(StringUtils.concatenate(fields,  ",")).build(client, new ScrollReader(new JdkValueReader(), mapping));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }

@@ -15,12 +15,14 @@
  */
 package org.elasticsearch.hadoop.integration.cascading;
 
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cascading.ESTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
+import org.elasticsearch.hadoop.integration.Stream;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,13 +30,18 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import cascading.flow.local.LocalFlowConnector;
+import cascading.operation.AssertionLevel;
 import cascading.operation.aggregator.Count;
+import cascading.operation.assertion.AssertNotNull;
+import cascading.operation.assertion.AssertSizeEquals;
+import cascading.operation.assertion.AssertSizeLessThan;
+import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
-import cascading.tap.local.StdOutTap;
+import cascading.tuple.Fields;
 
 @RunWith(Parameterized.class)
 public class CascadingLocalSearchTest {
@@ -50,17 +57,65 @@ public class CascadingLocalSearchTest {
         this.query = query;
     }
 
-    @Test
+    private OutputStream OUT = Stream.NULL.stream();
+
+
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-local/artists");
         Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);
         pipe = new Every(pipe, new Count());
 
         // print out
-        StdOutTap out = new StdOutTap(new TextLine());
+        Tap out = new OutputStreamTap(new TextLine(), OUT);
         new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
+
+
+    public void testReadFromESWithFields() throws Exception {
+        Tap in = new ESTap("cascading-local/artists", new Fields("url", "name"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+        pipe = new GroupBy(pipe);
+        pipe = new Every(pipe, new Count());
+
+        // print out
+        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+    }
+
+
+    public void testReadFromESAliasedField() throws Exception {
+        Tap in = new ESTap("cascading-local/alias", new Fields("image"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+        pipe = new GroupBy(pipe);
+        pipe = new Every(pipe, new Count());
+
+        // print out
+        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+    }
+
+    @Test
+    public void testReadFromESWithFieldAlias() throws Exception {
+        Tap in = new ESTap("cascading-local/alias", new Fields("picture"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+        pipe = new GroupBy(pipe);
+        pipe = new Every(pipe, new Count());
+
+        // print out
+        // print out
+        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        Properties cfg = cfg();
+        cfg.setProperty("es.mapping.names", "picture:image");
+        new LocalFlowConnector(cfg).connect(in, out, pipe).complete();
+    }
+
 
     private Properties cfg() {
         Properties props = new TestSettings().getProperties();

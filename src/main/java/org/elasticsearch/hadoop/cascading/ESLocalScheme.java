@@ -16,8 +16,6 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -30,6 +28,7 @@ import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.util.FieldAlias;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -37,8 +36,8 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import cascading.tuple.Tuples;
 
 /**
  * Cascading Scheme handling
@@ -65,18 +64,15 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sourcePrepare(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Fields sourceCallFields = sourceCall.getIncomingEntry().getFields();
-        Fields sourceFields = (sourceCallFields.isDefined() ? sourceCallFields : getSourceFields());
-        List<String> tupleNames = resolveNames(sourceFields);
-
         Object[] context = new Object[1];
-        context[0] = tupleNames;
+        context[0] = CascadingUtils.alias(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
         sourceCall.setContext(context);
     }
 
     @Override
     public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         sourceCall.getInput().close();
+        sourceCall.setContext(null);
         cleanupClient();
     }
 
@@ -96,30 +92,9 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sinkPrepare(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
-        Fields sinkCallFields = sinkCall.getOutgoingEntry().getFields();
-        Fields sinkFields = (sinkCallFields.isDefined() ? sinkCallFields : getSinkFields());
-        List<String> tupleNames = resolveNames(sinkFields);
-
         Object[] context = new Object[1];
-        context[0] = tupleNames;
+        context[0] = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSinkFields());
         sinkCall.setContext(context);
-    }
-
-    private List<String> resolveNames(Fields fields) {
-
-        //TODO: add handling of undefined types (Fields.UNKNOWN/ALL/RESULTS...)
-        if (fields == null || !fields.isDefined()) {
-            // use auto-generated name
-            return Collections.emptyList();
-        }
-
-        int size = fields.size();
-        List<String> names = new ArrayList<String>(size);
-        for (int fieldIndex = 0; fieldIndex < size; fieldIndex++) {
-            names.add(fields.get(fieldIndex).toString());
-        }
-
-        return names;
     }
 
     @Override
@@ -130,7 +105,6 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     @Override
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf);
-
         InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf), client);
     }
 
@@ -145,22 +119,34 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean source(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         ScrollQuery query = sourceCall.getInput();
-        if (query.hasNext()) {
-            @SuppressWarnings("unchecked")
-            Map<String, ?> map = (Map<String, ?>) query.next()[1];
-            TupleEntry tuples = sourceCall.getIncomingEntry();
 
-            // TODO: verify ordering guarantees
-            //Set<String> keys = map.keySet();
-            //tuples.set(new TupleEntry(new Fields(keys.toArray(new String[keys.size()])),
-
-            tuples.setTuple(Tuples.create(new ArrayList<Object>(map.values())));
-            return true;
+        if (!query.hasNext()) {
+            return false;
         }
-        return false;
+
+        TupleEntry entry = sourceCall.getIncomingEntry();
+        Map<String, ?> data = (Map<String, ?>) query.next()[1];
+        FieldAlias alias = (FieldAlias) sourceCall.getContext()[0];
+
+        if (entry.getFields().isDefined()) {
+            // lookup using writables
+            // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
+            for (Comparable<?> field : entry.getFields()) {
+                //NB: coercion should be applied automatically by the TupleEntry
+                entry.setObject(field, data.get(alias.toES(field.toString())));
+            }
+        }
+        else {
+            // no definition means no coercion
+            List<Object> elements = Tuple.elements(entry.getTuple());
+            elements.clear();
+            elements.addAll(data.values());
+        }
+        return true;
     }
 
     @Override

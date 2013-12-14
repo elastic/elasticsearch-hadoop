@@ -66,10 +66,8 @@ abstract class CascadingUtils {
 
             for (int id = 140; id < 255; id++) {
                 if (!mapping.containsKey(Integer.valueOf(id))) {
-                    cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS,
-                            Util.join(",", Util.removeNulls(tokens, id + "=" + lmw)));
-                    LogFactory.getLog(ESTap.class).trace(
-                            String.format("Registered Cascading serialization token %s for %s", id, lmw));
+                    cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, Util.join(",", Util.removeNulls(tokens, id + "=" + lmw)));
+                    LogFactory.getLog(ESTap.class).trace(String.format("Registered Cascading serialization token %s for %s", id, lmw));
                     return;
                 }
             }
@@ -95,7 +93,7 @@ abstract class CascadingUtils {
         return names;
     }
 
-    public static Collection<String> aliasFields(Settings settings, Fields fields) {
+    public static Collection<String> fieldToAlias(Settings settings, Fields fields) {
         FieldAlias fa = alias(settings);
         List<String> names = asStrings(fields);
         for (int i = 0; i < names.size(); i++) {

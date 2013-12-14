@@ -48,7 +48,7 @@ import cascading.tuple.TupleEntry;
 /**
  * Cascading Scheme handling
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({ "rawtypes", "serial" })
 class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
     private final String index;
@@ -72,6 +72,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Object[] context = new Object[3];
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
+        // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
         context[2] = CascadingUtils.alias(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
 
         sourceCall.setContext(context);
@@ -87,7 +88,8 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         super.sinkPrepare(flowProcess, sinkCall);
 
         Object[] context = new Object[1];
-        context[0] = CascadingUtils.aliasFields(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
+        // the tuple wil be fixed, so we can just use a collection/index
+        context[0] = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSinkFields());
         sinkCall.setContext(context);
     }
 
@@ -99,7 +101,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setInputFormat(ESInputFormat.class);
-        Collection<String> fields = CascadingUtils.aliasFields(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
+        Collection<String> fields = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
         // load only the necessary fields
         conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
     }
@@ -143,7 +145,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             // lookup using writables
             Text lookupKey = new Text();
             // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
-            for (Comparable field : entry.getFields()) {
+            for (Comparable<?> field : entry.getFields()) {
                 //NB: coercion should be applied automatically by the TupleEntry
                 lookupKey.set(alias.toES(field.toString()));
                 entry.setObject(field, data.get(lookupKey));
