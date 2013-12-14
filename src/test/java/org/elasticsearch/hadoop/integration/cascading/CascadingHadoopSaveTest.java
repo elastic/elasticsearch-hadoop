@@ -56,7 +56,7 @@ public class CascadingHadoopSaveTest {
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
 
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
-        props.setProperty("es.mapping.names", "picture:image");
+        props.setProperty("es.mapping.names", "url:address");
         new HadoopFlowConnector(props).connect(in, out, pipe).complete();
 
     }

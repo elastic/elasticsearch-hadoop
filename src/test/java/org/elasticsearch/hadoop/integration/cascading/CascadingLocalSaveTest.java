@@ -54,7 +54,7 @@ public class CascadingLocalSaveTest {
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
 
         Properties props = new TestSettings().getProperties();
-        props.setProperty("es.mapping.names", "picture:image");
+        props.setProperty("es.mapping.names", "url:address");
         new LocalFlowConnector(props).connect(in, out, pipe).complete();
 
     }

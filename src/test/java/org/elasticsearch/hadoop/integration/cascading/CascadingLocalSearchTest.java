@@ -59,7 +59,7 @@ public class CascadingLocalSearchTest {
 
     private OutputStream OUT = Stream.NULL.stream();
 
-
+    @Test
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-local/artists");
         Pipe pipe = new Pipe("copy");
@@ -73,7 +73,7 @@ public class CascadingLocalSearchTest {
         new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
 
-
+    @Test
     public void testReadFromESWithFields() throws Exception {
         Tap in = new ESTap("cascading-local/artists", new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
@@ -87,9 +87,9 @@ public class CascadingLocalSearchTest {
         new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
 
-
+    @Test
     public void testReadFromESAliasedField() throws Exception {
-        Tap in = new ESTap("cascading-local/alias", new Fields("image"));
+        Tap in = new ESTap("cascading-local/alias", new Fields("address"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);
@@ -102,7 +102,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromESWithFieldAlias() throws Exception {
-        Tap in = new ESTap("cascading-local/alias", new Fields("picture"));
+        Tap in = new ESTap("cascading-local/alias", new Fields("url"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);
@@ -112,7 +112,7 @@ public class CascadingLocalSearchTest {
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
         Properties cfg = cfg();
-        cfg.setProperty("es.mapping.names", "picture:image");
+        cfg.setProperty("es.mapping.names", "url:address");
         new LocalFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 

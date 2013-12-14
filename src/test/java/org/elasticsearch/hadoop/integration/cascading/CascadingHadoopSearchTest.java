@@ -82,7 +82,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESAliasedField() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/alias", new Fields("image"));
+        Tap in = new ESTap("cascading-hadoop/alias", new Fields("address"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
@@ -93,14 +93,14 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithFieldAlias() throws Exception {
-        Tap in = new ESTap("cascading-hadoop/alias", new Fields("picture"));
+        Tap in = new ESTap("cascading-hadoop/alias", new Fields("url"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         Properties cfg = cfg();
-        cfg.setProperty("es.mapping.names", "picture:image");
+        cfg.setProperty("es.mapping.names", "url:address");
         new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 
