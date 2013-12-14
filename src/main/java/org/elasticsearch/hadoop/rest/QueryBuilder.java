@@ -143,11 +143,11 @@ public class QueryBuilder {
         uriQuery.put("size", String.valueOf(size));
 
         // override fields
-        if (fields == null) {
-            uriQuery.remove("fields");
+        if (StringUtils.hasText(fields)) {
+            uriQuery.put("fields", fields);
         }
         else {
-            uriQuery.put("fields", fields);
+            uriQuery.remove("fields");
         }
 
         StringBuilder pref = new StringBuilder();

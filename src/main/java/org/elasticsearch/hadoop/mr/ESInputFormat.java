@@ -193,11 +193,7 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                     .shard(esSplit.shardId)
                     .onlyNode(esSplit.nodeId);
 
-            String fields = settings.getScrollFields();
-            if (StringUtils.hasText(fields)) {
-                queryBuilder.fields(fields);
-            }
-
+            queryBuilder.fields(settings.getScrollFields());
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
@@ -360,10 +356,8 @@ public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
         Settings settings = SettingsManager.loadFrom(job);
-
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         settings.save();
-
 
         RestRepository client = new RestRepository(settings);
         Map<Shard, Node> targetShards = client.getTargetShards();
