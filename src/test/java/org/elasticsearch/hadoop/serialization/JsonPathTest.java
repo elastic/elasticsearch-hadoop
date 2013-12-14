@@ -38,7 +38,6 @@ public class JsonPathTest {
     @Test
     public void testNonExistingToken() throws Exception {
         assertNull(ParsingUtils.seek("nosuchtoken", parser));
-        assertNull(parser.currentToken());
         assertNull(parser.nextToken());
     }
 

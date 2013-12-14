@@ -52,7 +52,15 @@ public abstract class ParsingUtils {
         Token token = null;
 
         String currentName;
+        token = parser.currentToken();
+        if (token == null) {
+            token = parser.nextToken();
+        }
+
         while ((token = parser.nextToken()) != null) {
+            if (token == Token.START_OBJECT) {
+                token = parser.nextToken();
+            }
             if (token == Token.FIELD_NAME) {
                 // found a node, go one level deep
                 currentName = parser.currentName();
@@ -78,7 +86,11 @@ public abstract class ParsingUtils {
                     parser.skipChildren();
                 }
             }
+            else {
+                break;
+            }
         }
+
         return null;
     }
 }

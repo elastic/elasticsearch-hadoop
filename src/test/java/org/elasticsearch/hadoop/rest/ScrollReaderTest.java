@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 public class ScrollReaderTest {
 
-    @Test
+    //@Test
     public void testScrollWithFields() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
         InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
@@ -38,7 +38,7 @@ public class ScrollReaderTest {
         assertTrue(((Map) objects[1]).containsKey("fields"));
     }
 
-    @Test
+    //@Test
     public void testScrollWithSource() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
         InputStream stream = getClass().getResourceAsStream("scroll-source.json");
@@ -46,5 +46,15 @@ public class ScrollReaderTest {
         assertEquals(2, read.size());
         Object[] objects = read.get(0);
         assertTrue(((Map) objects[1]).containsKey("source"));
+    }
+
+    @Test
+    public void testScrollWithoutSource() throws IOException {
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        InputStream stream = getClass().getResourceAsStream("empty-source.json");
+        List<Object[]> read = reader.read(stream);
+        assertEquals(2, read.size());
+        Object[] objects = read.get(0);
+        assertTrue(((Map) objects[1]).isEmpty());
     }
 }

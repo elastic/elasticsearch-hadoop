@@ -38,8 +38,8 @@ import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -121,7 +121,9 @@ public class RestClient implements Closeable {
     private boolean removeSuccesful(InputStream content, TrackingBytesArray data) throws IOException {
         ObjectReader r = mapper.reader(Map.class);
         JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
-        ParsingUtils.seek("items", new JacksonJsonParser(parser));
+        if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
+            return false;
+        }
 
         int entryToDeletePosition = 0; // head of the list
         for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {

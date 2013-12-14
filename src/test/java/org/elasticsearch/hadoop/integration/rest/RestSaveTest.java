@@ -60,7 +60,7 @@ public class RestSaveTest {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
         RestClient client = new RestRepository(testSettings).getRestClient();
-        client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray(0)));
+        client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray("{}")));
         client.close();
     }
 }
