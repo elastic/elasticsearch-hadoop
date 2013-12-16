@@ -57,6 +57,7 @@ public class Resource {
                 // clean resource
                 resource = resource.substring(0, index);
                 index = resource.lastIndexOf("/");
+                Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage);
                 resource = resource.substring(0, index);
 
                 settings.cleanResource();
