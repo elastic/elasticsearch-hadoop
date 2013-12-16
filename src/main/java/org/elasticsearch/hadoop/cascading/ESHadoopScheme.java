@@ -48,8 +48,10 @@ import cascading.tuple.TupleEntry;
 /**
  * Cascading Scheme handling
  */
-@SuppressWarnings({ "rawtypes", "serial" })
+@SuppressWarnings("rawtypes")
 class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
+
+    private static final long serialVersionUID = 4304172465362298925L;
 
     private final String index;
     private final String host;

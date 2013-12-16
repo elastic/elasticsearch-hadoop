@@ -42,8 +42,9 @@ import cascading.tuple.TupleEntry;
 /**
  * Cascading Scheme handling
  */
-@SuppressWarnings("serial")
 class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
+
+    private static final long serialVersionUID = 979036202776892844L;
 
     private final String resource;
     private final String host;
