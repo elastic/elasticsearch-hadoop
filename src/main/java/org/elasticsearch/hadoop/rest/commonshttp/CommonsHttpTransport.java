@@ -63,6 +63,16 @@ public class CommonsHttpTransport implements Transport {
         }
 
         @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
+        }
+
+        @Override
         public void close() throws IOException {
             try {
                 super.close();
@@ -117,7 +127,7 @@ public class CommonsHttpTransport implements Transport {
             break;
 
         default:
-            break;
+            throw new IllegalArgumentException("Unknown method");
         }
 
         CharSequence uri = request.uri();
