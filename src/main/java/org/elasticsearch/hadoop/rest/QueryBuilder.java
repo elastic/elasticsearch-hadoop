@@ -86,7 +86,7 @@ public class QueryBuilder {
                     IOUtils.asBytes(bodyQuery, in);
                 }
             } catch (IOException ex) {
-                throw new IllegalStateException(ex);
+                throw new IllegalArgumentException(String.format("Cannot determine specified query - doesn't appear to be URI or JSON based and location [%s] cannot be opened", query));
             }
         }
     }
