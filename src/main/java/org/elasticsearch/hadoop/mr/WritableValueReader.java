@@ -82,37 +82,37 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
-    protected Object booleanValue(String value) {
+    protected Object parseBoolean(String value) {
         return new BooleanWritable(Boolean.parseBoolean(value));
     }
 
     @Override
-    protected Object doubleValue(String value) {
+    protected Object parseDouble(String value) {
         return new DoubleWritable(Double.parseDouble(value));
     }
 
     @Override
-    protected Object floatValue(String value) {
+    protected Object parseFloat(String value) {
         return new FloatWritable(Float.parseFloat(value));
     }
 
     @Override
-    protected Object longValue(String value) {
+    protected Object parseLong(String value) {
         return new LongWritable(Long.parseLong(value));
     }
 
     @Override
-    protected Object intValue(String value) {
+    protected Object parseInteger(String value) {
         return new IntWritable(Integer.parseInt(value));
     }
 
     @Override
-    protected Object textValue(String value) {
+    protected Object parseString(String value) {
         return new Text(value);
     }
 
     @Override
-    protected Object nullValue(String value) {
+    protected Object nullValue() {
         return NullWritable.get();
     }
 

@@ -31,7 +31,7 @@ public class JdkValueReader implements ValueReader {
 
         switch (esType) {
         case NULL:
-            return nullValue(value);
+            return nullValue();
         case STRING:
             return textValue(value);
         case INTEGER:
@@ -65,7 +65,7 @@ public class JdkValueReader implements ValueReader {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void addToMap(Object map, Object key, Object value) {
-        ((Map) map).put(key, value);
+        ((Map) map).put(key, (value != null ? value : nullValue()));
     }
 
     @Override
@@ -84,30 +84,54 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object booleanValue(String value) {
+        return (value != null ? parseBoolean(value) : nullValue());
+    }
+
+    protected Object parseBoolean(String value) {
         return Boolean.parseBoolean(value);
     }
 
     protected Object doubleValue(String value) {
+        return (value != null ? parseDouble(value) : nullValue());
+    }
+
+    protected Object parseDouble(String value) {
         return Double.parseDouble(value);
     }
 
     protected Object floatValue(String value) {
+        return (value != null ? parseFloat(value) : nullValue());
+    }
+
+    protected Object parseFloat(String value) {
         return Float.parseFloat(value);
     }
 
     protected Object longValue(String value) {
+        return (value != null ? parseLong(value) : nullValue());
+    }
+
+    protected Object parseLong(String value) {
         return Long.parseLong(value);
     }
 
     protected Object intValue(String value) {
+        return (value != null ? Integer.parseInt(value) : nullValue());
+    }
+
+    protected Object parseInteger(String value) {
         return Integer.parseInt(value);
     }
 
     protected Object textValue(String value) {
+        return (value != null ? parseString(value) : nullValue());
+    }
+
+    protected Object parseString(String value) {
         return value;
     }
 
-    protected Object nullValue(String value) {
+    protected Object nullValue() {
         return null;
     }
 
