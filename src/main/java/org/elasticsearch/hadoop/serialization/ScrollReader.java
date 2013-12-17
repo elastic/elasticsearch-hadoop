@@ -140,6 +140,11 @@ public class ScrollReader {
     }
 
     private Object parseValue(FieldType esType) {
+        // special case of handing null (as text() will return "null")
+        if (parser.currentToken() == Token.VALUE_NULL) {
+            return null;
+        }
+
         Object obj = reader.readValue(parser, parser.text(), esType);
         parser.nextToken();
         return obj;
