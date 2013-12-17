@@ -80,6 +80,9 @@ public class HiveSaveTest {
         // and then insert its content into the external one
         String localTable = "CREATE TABLE compoundsource ("
                 + "rid      INT, "
+                + "name     STRING, "
+                + "url      STRING, "
+                + "picture  STRING, "
                 + "mapids   ARRAY<INT>, "
                 + "rdata    MAP<INT, STRING>)"
                 + "ROW FORMAT DELIMITED "
@@ -429,7 +432,9 @@ public class HiveSaveTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "url      STRING, "
-                + "picture  STRING) "
+                + "picture  STRING, "
+                + "ignore1  STRING, "
+                + "ignore2  STRING) "
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/%s/' "
                 , tableName, tableName);

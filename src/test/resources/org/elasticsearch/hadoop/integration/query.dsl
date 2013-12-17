@@ -1,7 +1,7 @@
 {
     "query" : {
         "query_string" : {
-            "query" : "me*"
+            "query" : "m*"
         }
     }
 }

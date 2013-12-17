@@ -15,7 +15,9 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.elasticsearch.hadoop.integration.QueryTestParams;
@@ -60,7 +62,7 @@ public class HiveSearchTest {
     }
 
 
-    @Test
+    //@Test
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE artistsload" + testInstance + "("
@@ -71,13 +73,15 @@ public class HiveSearchTest {
 
         String select = "SELECT * FROM artistsload" + testInstance;
 
-        System.out.println(server.execute(create));
+        server.execute(create);
         List<String> result = server.execute(select);
-        System.out.println(result);
         assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/5872875.jpg");
     }
 
-    @Test
+    //@Test
     public void basicCountOperator() throws Exception {
         String create = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
                 + "id       BIGINT, "
@@ -87,30 +91,31 @@ public class HiveSearchTest {
 
         String select = "SELECT count(*) FROM artistscount" + testInstance;
 
-        System.out.println(server.execute(create));
+        server.execute(create);
         List<String> result = server.execute(select);
-        System.out.println(result);
         assertTrue("Hive returned null", containsNoNull(result));
+        assertEquals(1, result.size());
+        assertTrue(Integer.valueOf(result.get(0)) > 1);
     }
 
-    @Test
-    @Ignore
+    //@Test
     public void basicArrayMapping() throws Exception {
         String create = "CREATE EXTERNAL TABLE compoundarray" + testInstance + " ("
-                + "rid      INT, "
-                + "mapids   ARRAY<INT>, "
+                + "rid      BIGINT, "
+                + "mapids   ARRAY<BIGINT>, "
                 + "rdata    MAP<STRING, STRING>) "
                 + tableProps("hive/compound");
 
         String select = "SELECT * FROM compoundarray" + testInstance;
 
-        System.out.println(server.execute(create));
+        server.execute(create);
         List<String> result = server.execute(select);
+        assertTrue(result.size() > 1);
         System.out.println(result);
         assertTrue("Hive returned null", containsNoNull(result));
     }
 
-    @Test
+    //@Test
     public void basicTimestampLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE timestampload" + testInstance + " ("
                 + "id       BIGINT, "
@@ -122,14 +127,21 @@ public class HiveSearchTest {
         String select = "SELECT date FROM timestampload" + testInstance;
         String select2 = "SELECT unix_timestamp(), date FROM timestampload" + testInstance;
 
-        System.out.println(server.execute(create));
+        String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+
+        server.execute(create);
         List<String> result = server.execute(select);
-        System.out.println(result);
+        assertTrue(result.size() > 1);
         assertTrue("Hive returned null", containsNoNull(result));
-        System.out.println(server.execute(select2));
+        assertContains(result, date);
+
+        result = server.execute(select2);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(result.size() > 1);
+        assertContains(result, date);
     }
 
-    @Test
+    //@Test
     @Ignore // cast isn't fully supported for date as it throws CCE
     public void basicDateLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE dateload" + testInstance + " ("
@@ -157,12 +169,14 @@ public class HiveSearchTest {
                 + "links    STRUCT<url:STRING, picture:STRING>) "
                 + tableProps("hive/artists");
 
-        String select = "SELECT java_method(\"java.lang.System\", \"currentTimeMillis\") FROM methodInvocation"  + testInstance + " LIMIT 1";
+        long currentTimeMillis = System.currentTimeMillis();
 
-        System.out.println(server.execute(create));
+        String select = "SELECT java_method(\"java.lang.System\", \"currentTimeMillis\") FROM methodInvocation"  + testInstance + " LIMIT 5";
+
+        server.execute(create);
         List<String> result = server.execute(select);
         assertTrue("Hive returned null", containsNoNull(result));
-        assertTrue(containsNoNull(result));
+        assertContains(result, String.valueOf(currentTimeMillis).substring(0, 5));
     }
 
     @Test
@@ -175,10 +189,13 @@ public class HiveSearchTest {
 
         String select = "SELECT * FROM aliasload" + testInstance;
 
-        System.out.println(server.execute(create));
+        server.execute(create);
         List<String> result = server.execute(select);
         assertTrue("Hive returned null", containsNoNull(result));
-        assertTrue(containsNoNull(result));
+        assertTrue(result.size() > 1);
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/2181591.jpg");
     }
 
     @Test
@@ -191,10 +208,9 @@ public class HiveSearchTest {
 
         String select = "SELECT * FROM missing" + testInstance;
 
-        System.out.println(server.execute(create));
+        server.execute(create);
         List<String> result = server.execute(select);
-        assertTrue("Hive returned null", containsNoNull(result));
-        assertTrue(containsNoNull(result));
+        assertEquals(0, result.size());
     }
 
     @Test
@@ -210,8 +226,12 @@ public class HiveSearchTest {
 
         System.out.println(server.execute(create));
         List<String> result = server.execute(select);
-        System.out.println(result);
         assertTrue("Hive returned null", containsNoNull(result));
+        assertTrue(result.size() > 1);
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/2181591.jpg");
+
     }
 
     @Test
@@ -227,7 +247,10 @@ public class HiveSearchTest {
         System.out.println(server.execute(create));
         List<String> result = server.execute(select);
         assertTrue("Hive returned null", containsNoNull(result));
-        assertTrue(containsNoNull(result));
+        assertTrue(result.size() > 1);
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/2181591.jpg");
     }
 
     private static boolean containsNoNull(List<String> str) {
@@ -239,6 +262,16 @@ public class HiveSearchTest {
 
         return true;
     }
+
+    private static void assertContains(List<String> str, String content) {
+        for (String string : str) {
+            if (string.contains(content)) {
+                return;
+            }
+        }
+        fail(String.format("'%s' not found in %s", content, str));
+    }
+
 
     private String tableProps(String resource, String... params) {
         return HiveSuite.tableProps(resource, query, params);
