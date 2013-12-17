@@ -80,7 +80,6 @@ public class ESSerDe implements SerDe {
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
-
         return hiveFromWritable(structTypeInfo, blob, alias);
     }
 
@@ -91,7 +90,7 @@ public class ESSerDe implements SerDe {
 
     @Override
     public SerDeStats getSerDeStats() {
-        // TODO: stats not yet supported (seems quite the trend for SerDe)
+        // TODO: can compute serialize stats but not deserialized ones
         return null;
     }
 
