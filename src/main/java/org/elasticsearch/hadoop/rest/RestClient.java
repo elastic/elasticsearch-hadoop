@@ -216,9 +216,14 @@ public class RestClient implements Closeable {
         Response response = network.execute(request);
 
         if (checkStatus && response.hasFailed()) {
-            throw new IllegalStateException(String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]",
-                    request.method().name(), request.path(), response.uri(), response.status(),
-                    response.statusDescription()));
+            // check error first
+            String msg = parseContent(response.body(), "error");
+            if (!StringUtils.hasText(msg)) {
+                msg = String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]", request.method().name(),
+                        request.path(), response.uri(), response.status(), response.statusDescription());
+            }
+
+            throw new IllegalStateException(msg);
         }
 
         return response;
