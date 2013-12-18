@@ -93,7 +93,7 @@ abstract class CascadingUtils {
         return names;
     }
 
-    public static Collection<String> fieldToAlias(Settings settings, Fields fields) {
+    static Collection<String> fieldToAlias(Settings settings, Fields fields) {
         FieldAlias fa = alias(settings);
         List<String> names = asStrings(fields);
         for (int i = 0; i < names.size(); i++) {
