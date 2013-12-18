@@ -62,7 +62,7 @@ public class HiveSearchTest {
     }
 
 
-    //@Test
+    @Test
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE artistsload" + testInstance + "("
@@ -81,7 +81,7 @@ public class HiveSearchTest {
         assertContains(result, "last.fm/serve/252/5872875.jpg");
     }
 
-    //@Test
+    @Test
     public void basicCountOperator() throws Exception {
         String create = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
                 + "id       BIGINT, "
@@ -98,7 +98,7 @@ public class HiveSearchTest {
         assertTrue(Integer.valueOf(result.get(0)) > 1);
     }
 
-    //@Test
+    @Test
     public void basicArrayMapping() throws Exception {
         String create = "CREATE EXTERNAL TABLE compoundarray" + testInstance + " ("
                 + "rid      BIGINT, "
@@ -111,11 +111,12 @@ public class HiveSearchTest {
         server.execute(create);
         List<String> result = server.execute(select);
         assertTrue(result.size() > 1);
-        System.out.println(result);
         assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "400,401");
+        assertContains(result, "{\"6\":");
     }
 
-    //@Test
+    @Test
     public void basicTimestampLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE timestampload" + testInstance + " ("
                 + "id       BIGINT, "
@@ -141,7 +142,7 @@ public class HiveSearchTest {
         assertContains(result, date);
     }
 
-    //@Test
+    @Test
     @Ignore // cast isn't fully supported for date as it throws CCE
     public void basicDateLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE dateload" + testInstance + " ("
