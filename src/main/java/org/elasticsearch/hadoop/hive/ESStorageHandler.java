@@ -26,6 +26,7 @@ import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.ESOutputFormat;
@@ -33,6 +34,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 
@@ -91,6 +93,9 @@ public class ESStorageHandler extends DefaultStorageHandler {
         SerializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
 
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
+                StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
+        // save column names to apply projection
         settings.save();
 
         // replace the default committer when using the old API

@@ -16,6 +16,7 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,7 +46,6 @@ abstract class HiveUtils {
 
     static StandardStructObjectInspector structObjectInspector(Properties tableProperties) {
         // extract column info - don't use Hive constants as they were renamed in 0.9 breaking compatibility
-
         // the column names are saved as the given inspector to #serialize doesn't preserves them (maybe because it's an external table)
         // use the class since StructType requires it ...
         List<String> columnNames = StringUtils.tokenize(tableProperties.getProperty(HiveConstants.COLUMNS), ",");
@@ -65,8 +65,20 @@ abstract class HiveUtils {
         return (StructTypeInfo) TypeInfoUtils.getTypeInfoFromObjectInspector(inspector);
     }
 
+    static Collection<String> columnToAlias(Settings settings) {
+        FieldAlias fa = alias(settings);
+        List<String> columnNames = StringUtils.tokenize(settings.getProperty(HiveConstants.COLUMNS), ",");
+        for (int i = 0; i < columnNames.size(); i++) {
+            String original = columnNames.get(i);
+            String alias = fa.toES(original);
+            if (alias != null) {
+                columnNames.set(i, alias);
+            }
+        }
+        return columnNames;
+    }
+
     static FieldAlias alias(Settings settings) {
-        List<String> aliases = StringUtils.tokenize(settings.getProperty(HiveConstants.MAPPING_NAMES), ",");
         Map<String, String> aliasMap = SettingsUtils.aliases(settings.getProperty(HiveConstants.MAPPING_NAMES));
 
         // add default aliases for serialization (_colX -> mapping name)
@@ -76,7 +88,7 @@ abstract class HiveUtils {
             String columnName = entry.getKey();
             String columnIndex = entry.getValue();
 
-            if (aliases != null) {
+            if (!aliasMap.isEmpty()) {
                 String alias = aliasMap.get(columnName);
                 if (alias != null) {
                     columnName = alias;

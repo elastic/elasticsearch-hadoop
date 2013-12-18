@@ -15,6 +15,8 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
@@ -28,11 +30,35 @@ public class FieldAliasTest {
     @Test
     public void testFieldMap() throws Exception {
         Properties tableProperties = new Properties();
-        tableProperties.put("es.column.aliases", "timestamp:@timestamp , foo:123foo");
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
         FieldAlias alias = HiveUtils.alias(new PropertiesSettings(tableProperties));
         assertEquals("@timestamp", alias.toES("timestamp"));
         assertEquals("123foo", alias.toES("foo"));
         assertEquals("bar", alias.toES("BaR"));
+    }
 
+    @Test
+    public void testFieldMapWithColumns() throws Exception {
+        Properties tableProperties = new Properties();
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
+        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo");
+        FieldAlias alias = HiveUtils.alias(new PropertiesSettings(tableProperties));
+        assertEquals("@timestamp", alias.toES("timestamp"));
+        assertEquals("123foo", alias.toES("foo"));
+        assertEquals("bar", alias.toES("BaR"));
+    }
+
+    @Test
+    public void testColumnToAlias() throws Exception {
+        Properties tableProperties = new Properties();
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
+        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo");
+        Collection<String> columnToAlias = HiveUtils.columnToAlias(new PropertiesSettings(tableProperties));
+        assertEquals(4, columnToAlias.size());
+        Iterator<String> iterator = columnToAlias.iterator();
+        assertEquals("id", iterator.next());
+        assertEquals("name", iterator.next());
+        assertEquals("@timestamp", iterator.next());
+        assertEquals("123foo", iterator.next());
     }
 }
