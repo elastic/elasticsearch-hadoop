@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+7 * Copyright 2013 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.pig.Expression;
 import org.apache.pig.LoadFunc;
+import org.apache.pig.LoadMetadata;
 import org.apache.pig.LoadPushDown;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceStatistics;
@@ -75,7 +77,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
  * or passed to the {@link #ESStorage(String...)} constructor.
  */
-public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterface, StoreMetadata {
+public class ESStorage extends LoadFunc implements LoadMetadata, LoadPushDown, StoreFuncInterface, StoreMetadata {
 
     private static final Log log = LogFactory.getLog(ESStorage.class);
     private final boolean trace = log.isTraceEnabled();
@@ -88,6 +90,8 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
     private RecordReader<String, Map<?, ?>> reader;
     private RecordWriter<Object, Object> writer;
     private PigTuple pigTuple;
+
+    private List<String> aliasesTupleNames;
 
     public ESStorage() {
         this(new String[0]);
@@ -269,6 +273,7 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
                 log.debug(String.format("Found field projection [%s] in store %s", fields, store));
             }
             cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
+            getUDFProperties().setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
         }
     }
 
@@ -290,6 +295,8 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
     @Override
     public void prepareToRead(RecordReader reader, PigSplit split) throws IOException {
         this.reader = reader;
+        aliasesTupleNames = StringUtils.tokenize(getUDFProperties().getProperty(
+                InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -303,10 +310,17 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
             Map dataMap = reader.getCurrentValue();
             Tuple tuple = TupleFactory.getInstance().newTuple(dataMap.size());
 
-            int i = 0;
-            Set<Entry<?,?>> entrySet = dataMap.entrySet();
-            for (Map.Entry entry : entrySet) {
-                tuple.set(i++, entry.getValue());
+            if (!aliasesTupleNames.isEmpty()) {
+                for (int i = 0; i < aliasesTupleNames.size(); i++) {
+                    tuple.set(i, dataMap.get(aliasesTupleNames.get(i)));
+                }
+            }
+            else {
+                int i = 0;
+                Set<Entry<?, ?>> entrySet = dataMap.entrySet();
+                for (Map.Entry entry : entrySet) {
+                    tuple.set(i++, entry.getValue());
+                }
             }
 
             if (trace) {
@@ -335,5 +349,30 @@ public class ESStorage extends LoadFunc implements LoadPushDown, StoreFuncInterf
             log.trace(String.format("Given push projection; saving field projection [%s]", fields));
         }
         return new RequiredFieldResponse(true);
+    }
+
+    @Override
+    public ResourceSchema getSchema(String location, Job job) throws IOException {
+        return null;
+    }
+
+    @Override
+    public ResourceStatistics getStatistics(String location, Job job) throws IOException {
+        return null;
+    }
+
+    @Override
+    public String[] getPartitionKeys(String location, Job job) throws IOException {
+        return null;
+    }
+
+    @Override
+    public void setPartitionFilter(Expression partitionFilter) throws IOException {
+        //
+    }
+
+    @Override
+    public void setUDFContextSignature(String signature) {
+        this.signature = signature;
     }
 }

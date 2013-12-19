@@ -15,6 +15,7 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 
 public class RestUtils {
@@ -28,5 +29,13 @@ public class RestUtils {
 
     public static void putMapping(String index, String location) throws Exception {
         putMapping(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
+    }
+
+    public static void putData(String index, byte[] content) throws Exception {
+        RestClient rc = new RestClient(new TestSettings());
+        TrackingBytesArray tba = new TrackingBytesArray(new BytesArray(256));
+        tba.copyFrom(new BytesArray(content));
+        rc.bulk(new Resource(new TestSettings()), tba);
+        rc.close();
     }
 }

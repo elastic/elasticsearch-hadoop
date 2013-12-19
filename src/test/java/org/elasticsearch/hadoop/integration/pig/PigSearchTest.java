@@ -143,4 +143,18 @@ public class PigSearchTest {
                       + "DUMP X;";
         pig.executeScript(script);
     }
+
+    @Test
+    public void testNestedObject() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.query=" + query + "', 'es.mapping.names=links:links.url');"
+                + "A = LOAD 'pig/tupleartists' USING ESStorage() AS (name: chararray, links: chararray);"
+                + "B = FOREACH A GENERATE name, links;"
+                //+ "ILLUSTRATE B;"
+                + "DUMP B;";
+        pig.executeScript(script);
+
+        String tuple = "(Marilyn Manson,http://www.last.fm/music/Marilyn+Manson)";
+    }
 }

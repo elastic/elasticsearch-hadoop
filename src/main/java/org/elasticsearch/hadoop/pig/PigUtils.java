@@ -98,8 +98,9 @@ class PigUtils {
 
     static String asProjection(RequiredFieldList list, Properties props) {
         List<String> fields = new ArrayList<String>();
+        FieldAlias alias = alias(new PropertiesSettings(props));
         for (RequiredField field : list.getFields()) {
-            addField(field, fields, alias(new PropertiesSettings(props)), "");
+            addField(field, fields, alias, "");
         }
 
         return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");
