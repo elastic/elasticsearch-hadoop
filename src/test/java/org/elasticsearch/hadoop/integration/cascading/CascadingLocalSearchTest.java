@@ -35,6 +35,7 @@ import cascading.operation.aggregator.Count;
 import cascading.operation.assertion.AssertNotNull;
 import cascading.operation.assertion.AssertSizeEquals;
 import cascading.operation.assertion.AssertSizeLessThan;
+import cascading.operation.filter.FilterNotNull;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
@@ -63,8 +64,10 @@ public class CascadingLocalSearchTest {
     public void testReadFromES() throws Exception {
         Tap in = new ESTap("cascading-local/artists");
         Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
-        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+        // can't select when using unknown
+        //pipe = new Each(pipe, new Fields("name"), AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);
         pipe = new Every(pipe, new Count());
 
