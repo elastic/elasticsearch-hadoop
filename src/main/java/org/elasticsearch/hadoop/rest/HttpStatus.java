@@ -182,6 +182,10 @@ public abstract class HttpStatus {
         addCode(NETWORK_CONNECT_TIMEOUT_ERROR, "Network connect timeout error");
     }
 
+    public static boolean canRetry(int status) {
+        return SERVICE_UNAVAILABLE == status;
+    }
+
     public static boolean isServerError(int status) {
         return status / 100 == 5;
     }

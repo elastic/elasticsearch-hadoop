@@ -130,14 +130,15 @@ public class RestClient implements Closeable {
             Map map = iterator.next();
             Map values = (Map) map.values().iterator().next();
             String error = (String) values.get("error");
-
             if (error != null) {
-                // can retry
-                if (error.contains("EsRejectedExecutionException")) {
+                // status - introduced in 1.0.RC1
+                Integer status = (Integer) values.get("status");
+                if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
                     entryToDeletePosition++;
                 }
                 else {
-                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out..", error));
+                    String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status), status, error) : error);
+                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out..", message));
                 }
             }
             else {
