@@ -92,7 +92,8 @@ public class JdkValueReader implements ValueReader {
 	}
 
 	protected Object doubleValue(String value) {
-		return (value != null ? parseDouble(value) : nullValue());
+		return (validateNullOrEmptyString(value) ? parseDouble(value)
+				: nullValue());
 	}
 
 	protected Object parseDouble(String value) {
@@ -100,7 +101,8 @@ public class JdkValueReader implements ValueReader {
 	}
 
 	protected Object floatValue(String value) {
-		return (value != null ? parseFloat(value) : nullValue());
+		return (validateNullOrEmptyString(value) ? parseFloat(value)
+				: nullValue());
 	}
 
 	protected Object parseFloat(String value) {
@@ -108,7 +110,8 @@ public class JdkValueReader implements ValueReader {
 	}
 
 	protected Object longValue(String value) {
-		return (value != null ? parseLong(value) : nullValue());
+		return (validateNullOrEmptyString(value) ? parseLong(value)
+				: nullValue());
 	}
 
 	protected Object parseLong(String value) {
@@ -116,7 +119,7 @@ public class JdkValueReader implements ValueReader {
 	}
 
 	protected Object intValue(String value) {
-		return (value != null && value.length() != 0 ? parseInteger(value)
+		return (validateNullOrEmptyString(value) ? parseInteger(value)
 				: nullValue());
 	}
 
@@ -138,5 +141,9 @@ public class JdkValueReader implements ValueReader {
 
 	protected Object date(String value) {
 		throw new UnsupportedOperationException("wip");
+	}
+
+	private boolean validateNullOrEmptyString(String value) {
+		return value != null && value.length() > 0;
 	}
 }
