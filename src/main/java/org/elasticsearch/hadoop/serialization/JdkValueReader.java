@@ -20,8 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.io.IntWritable;
-
 /**
  * Basic value reader handling using the implied JSON type.
  */
@@ -123,7 +121,7 @@ public class JdkValueReader implements ValueReader {
 	}
 
 	protected Object parseInteger(String value) {
-		return new IntWritable(Integer.parseInt(value));
+		return Integer.parseInt(value);
 	}
 
 	protected Object textValue(String value) {
