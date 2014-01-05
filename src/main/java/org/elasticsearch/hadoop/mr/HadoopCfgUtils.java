@@ -27,6 +27,14 @@ public abstract class HadoopCfgUtils {
         return "local".equals(getJobTracker(cfg));
     }
 
+    public static String getFileSystem(Configuration cfg) {
+        return get(cfg, "fs.defaultFS", "fs.default.name");
+    }
+
+    public static void setFileSystem(Configuration cfg, String value) {
+        set(cfg, value, "fs.defaultFS", "fs.default.name");
+    }
+
     public static String getJobTracker(Configuration cfg) {
         return get(cfg, "mapreduce.framework.name", "mapred.job.tracker");
     }
