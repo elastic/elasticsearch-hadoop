@@ -12,27 +12,37 @@ buildscript {
     }
 }
 
+allprojects {
+	repositories {
+	  mavenCentral()
+	  maven { url "http://oss.sonatype.org/content/groups/public/" }
+	  maven { url "http://oss.sonatype.org/content/repositories/releases/" }
+	}
+}
+
 repositories {
-  mavenCentral()
-  maven { url "http://oss.sonatype.org/content/groups/public/" }
   // JDO ec2 missing from Maven Central
   maven { url "http://www.datanucleus.org/downloads/maven2" }
   maven { url "http://conjars.org/repo" }
 }
 
-apply plugin: "java"
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply from: "$rootDir/maven.gradle"
-apply plugin: 'propdeps'
-apply plugin: 'propdeps-idea'
-apply plugin: 'propdeps-eclipse'
-apply plugin: 'asciidoctor'
-// report plugins
-apply plugin: 'findbugs'
-apply plugin: 'pmd'
-apply plugin: 'jacoco'
+allprojects {
+	apply plugin: "java"
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+	apply from: "$rootDir/maven.gradle"
+	apply plugin: 'propdeps'
+	apply plugin: 'propdeps-idea'
+	apply plugin: 'propdeps-eclipse'
+	// report plugins
+	apply plugin: 'findbugs'
+	apply plugin: 'pmd'
+	apply plugin: 'jacoco'
+}
 
+apply plugin: 'asciidoctor'
+
+allprojects {
 def List hadoop = []
 def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 
@@ -40,20 +50,21 @@ def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro")
 def hadoopStableVersion = hadoop12Version
 def hadoopYarnVersion = hadoop2Version
 def hadoopVersion = hadoopStableVersion 
+def msg;
 
 switch (hadoopDistro) {
 
   // Hadoop YARN/2.0.x
   case "hadoopYarn":
     hadoopVersion = hadoopYarnVersion
-    println "Using Apache Hadoop YARN [$hadoopVersion]"
+    msg = "Using Apache Hadoop YARN [$hadoopVersion]"
     hadoop = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
 
     break;
   // Hadoop 1.2.x
   case "hadoop12":
     hadoopVersion = hadoop12Version
-    println "Using Apache Hadoop 1.2.x [$hadoopVersion]"
+    msg =  "Using Apache Hadoop 1.2.x [$hadoopVersion]"
     hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
@@ -62,7 +73,7 @@ switch (hadoopDistro) {
   // Hadoop 1.1.x
   case "hadoop11":
     hadoopVersion = hadoop11Version
-    println "Using Apache Hadoop 1.1.x [$hadoopVersion]"
+    msg = "Using Apache Hadoop 1.1.x [$hadoopVersion]"
     hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
@@ -71,24 +82,41 @@ switch (hadoopDistro) {
   // Hadoop 1.0.x
   case "hadoop10":
     hadoopVersion = hadoop10Version
-    println "Using Apache Hadoop 1.0.x [$hadoopVersion]"
+    msg = "Using Apache Hadoop 1.0.x [$hadoopVersion]"
     hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
     break;
 
   default:
-    println "Using Apache Hadoop Stable [$hadoopVersion]"
+    msg = "Using Apache Hadoop Stable [$hadoopVersion]"
     hadoopVersion = hadoopStableVersion
     hadoop = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"] 
 }
 
+if (rootProject == project)
+	println msg
+
+	dependencies {
+		provided(hadoop)
+
+		// Testing
+		testCompile "junit:junit:$junitVersion"
+		testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
+		testCompile "org.elasticsearch:elasticsearch:$esVersion"
+	    testRuntime("log4j:log4j:$log4jVersion")
+		
+		if (hadoopVersion.contains("1.0.")) {
+			// missing dependency in Hadoop 1.0.3/1.0.4
+			testCompile "commons-io:commons-io:2.1"
+		}
+	}
+}
+
 dependencies {
-	provided(hadoop)
 	
 	provided("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
-    testRuntime("log4j:log4j:$log4jVersion")
 
     // Pig
     optional("org.apache.pig:pig:$pigVersion")
@@ -101,19 +129,8 @@ dependencies {
 	optional("cascading:cascading-hadoop:$cascadingVersion")
 	optional("cascading:cascading-local:$cascadingVersion")
     
-    // needed by the Hive Server tests - removed since Hive 0.11
     // testRuntime "$hiveGroup:hive-builtins:$hiveVersion"
 
-    // Testing
-    testCompile "junit:junit:$junitVersion"
-	testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
-    testCompile "org.elasticsearch:elasticsearch:$esVersion"
-	
-	if (hadoopVersion.contains("1.0.")) {
-		// missing dependency in Hadoop 1.0.3/1.0.4
-		testCompile "commons-io:commons-io:2.1"
-	}
-	
 	// Required by Pig
 	testRuntime "com.google.guava:guava:11.0"
 	testRuntime "dk.brics.automaton:automaton:1.11-8"
@@ -132,13 +149,15 @@ configurations.all {
   }
 }
 
-compileJava {
-    sourceCompatibility = 1.6
-    targetCompatibility = 1.6 
+allprojects {
+	compileJava {
+		sourceCompatibility = 1.6
+		targetCompatibility = 1.6 
 
-    options.compilerArgs << "-Xlint:unchecked"
-    //options.compilerArgs << "-Xlint:deprecation"
-	options.compilerArgs << "-Xlint:options"
+		options.compilerArgs << "-Xlint:unchecked"
+		//options.compilerArgs << "-Xlint:deprecation"
+		options.compilerArgs << "-Xlint:options"
+	}
 }
 
 ext.skipCascading = true
@@ -330,7 +349,7 @@ jar {
     }
 
     manifest.attributes['Repository-Revision'] = rev
-	
+	def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 	if (hadoopDistro == "hadoopYarn") {
 		classifier = 'yarn'
 	}
