@@ -11,3 +11,4 @@ target
 *.log
 metastore_db
 .idea
+/hdfs/data
