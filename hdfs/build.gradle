@@ -1,4 +1,0 @@
-dependencies {
-	testRuntime "org.elasticsearch:elasticsearch:$esVersion:tests"
-	testRuntime "org.apache.lucene:lucene-test-framework:4.6.0"
-}

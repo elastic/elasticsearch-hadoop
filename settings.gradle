@@ -1,2 +1,4 @@
 rootProject.name = "elasticsearch-hadoop"
-include 'hdfs'
+
+include 'repository-hdfs'
+project(":repository-hdfs").name = "elasticsearch-hadoop-repository-hdfs"
