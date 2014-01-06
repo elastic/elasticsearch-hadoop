@@ -43,7 +43,7 @@ def customizePom(pom, gradleProject) {
         }
 		
 		groupId = "org.elasticsearch"
-		artifactId = "elasticsearch-hadoop"
+		artifactId = project.name
 	}
 }
 
@@ -73,8 +73,8 @@ uploadArchives {
 	}
 }
 
-evaluationDependsOn "elasticsearch-hadoop-repository-hdfs"
-install.dependsOn subprojects:assemble
+//evaluationDependsOn "elasticsearch-hadoop-repository-hdfs"
+//install.dependsOn subprojects:assemble
 
 install {
 	repositories.mavenInstaller {
