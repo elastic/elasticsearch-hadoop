@@ -73,8 +73,11 @@ uploadArchives {
 	}
 }
 
+evaluationDependsOn "elasticsearch-hadoop-repository-hdfs"
+install.dependsOn subprojects:assemble
+
 install {
-    repositories.mavenInstaller {
-        customizePom(pom, project)
-    }
+	repositories.mavenInstaller {
+		customizePom(pom, project)
+	}
 }

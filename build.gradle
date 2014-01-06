@@ -2,35 +2,28 @@ description = 'Elasticsearch Hadoop'
 
 buildscript {
     repositories {
-        maven { url 'http://repo.springsource.org/plugins-release' }
         maven { url 'http://dl.bintray.com/content/aalmiray/asciidoctor' }
         maven { url 'http://jcenter.bintray.com' }
+        maven { url 'http://repo.springsource.org/plugins-release' }
+
     }
     dependencies {
-        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.4')
 		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.5.0')
-    }
+        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.5')
+	}
 }
 
 allprojects {
 	repositories {
 	  mavenCentral()
 	  maven { url "http://oss.sonatype.org/content/groups/public/" }
-	  maven { url "http://oss.sonatype.org/content/repositories/releases/" }
 	}
-}
-
-repositories {
-  // JDO ec2 missing from Maven Central
-  maven { url "http://www.datanucleus.org/downloads/maven2" }
-  maven { url "http://conjars.org/repo" }
 }
 
 allprojects {
 	apply plugin: "java"
 	apply plugin: 'eclipse'
 	apply plugin: 'idea'
-	apply from: "$rootDir/maven.gradle"
 	apply plugin: 'propdeps'
 	apply plugin: 'propdeps-idea'
 	apply plugin: 'propdeps-eclipse'
@@ -40,6 +33,7 @@ allprojects {
 	apply plugin: 'jacoco'
 }
 
+apply from: "$rootDir/maven.gradle"
 apply plugin: 'asciidoctor'
 
 allprojects {
@@ -95,52 +89,58 @@ switch (hadoopDistro) {
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"] 
 }
 
-if (rootProject == project)
-	println msg
-
 	dependencies {
 		provided(hadoop)
-
-		// Testing
+		
 		testCompile "junit:junit:$junitVersion"
 		testCompile "org.hamcrest:hamcrest-all:$hamcrestVersion"
 		testCompile "org.elasticsearch:elasticsearch:$esVersion"
-	    testRuntime("log4j:log4j:$log4jVersion")
+	    testRuntime "log4j:log4j:$log4jVersion"
+	}
+
+if (rootProject == project) {
+	println msg
+
+	repositories {
+	  // JDO ec2 missing from Maven Central
+	  maven { url "http://www.datanucleus.org/downloads/maven2" }
+	  maven { url "http://conjars.org/repo" }
+	}
+
+	dependencies {
+		provided("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
+
+		// Pig
+		optional("org.apache.pig:pig:$pigVersion")
+
+		ext.hiveGroup = "org.apache.hive"
+		// Hive
+		optional("$hiveGroup:hive-service:$hiveVersion")
 		
+		// Cascading
+		optional("cascading:cascading-hadoop:$cascadingVersion")
+		optional("cascading:cascading-local:$cascadingVersion")
+	
+		// Testing
 		if (hadoopVersion.contains("1.0.")) {
 			// missing dependency in Hadoop 1.0.3/1.0.4
 			testCompile "commons-io:commons-io:2.1"
 		}
+		
+		// testRuntime "$hiveGroup:hive-builtins:$hiveVersion"
+
+		// Required by Pig
+		testRuntime "com.google.guava:guava:11.0"
+		testRuntime "dk.brics.automaton:automaton:1.11-8"
+		optional("joda-time:joda-time:$jodaVersion")
+		
+		// Required by Hive + Pig
+		// testRuntime "org.antlr:antlr-runtime:$antlrVersion"
+		
+		// Required by Hive
+		testRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
 	}
 }
-
-dependencies {
-	
-	provided("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
-
-    // Pig
-    optional("org.apache.pig:pig:$pigVersion")
-
-	ext.hiveGroup = "org.apache.hive"
-    // Hive
-    optional("$hiveGroup:hive-service:$hiveVersion")
-	
-	// Cascading
-	optional("cascading:cascading-hadoop:$cascadingVersion")
-	optional("cascading:cascading-local:$cascadingVersion")
-    
-    // testRuntime "$hiveGroup:hive-builtins:$hiveVersion"
-
-	// Required by Pig
-	testRuntime "com.google.guava:guava:11.0"
-	testRuntime "dk.brics.automaton:automaton:1.11-8"
-	optional("joda-time:joda-time:$jodaVersion")
-	
-	// Required by Hive + Pig
-	// testRuntime "org.antlr:antlr-runtime:$antlrVersion"
-	
-	// Required by Hive
-	testRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
 }
 
 configurations.all {
@@ -149,7 +149,8 @@ configurations.all {
   }
 }
 
-allprojects {
+configure(allprojects) { project ->
+	
 	compileJava {
 		sourceCompatibility = 1.6
 		targetCompatibility = 1.6 
@@ -157,6 +158,31 @@ allprojects {
 		options.compilerArgs << "-Xlint:unchecked"
 		//options.compilerArgs << "-Xlint:deprecation"
 		options.compilerArgs << "-Xlint:options"
+	}
+	
+	test {
+		jacoco {
+			def jacocoEnabled = project.hasProperty("jacocoCoverage")
+			enabled = jacocoEnabled
+		   
+			if (jacocoEnabled)
+				println "Enabling Jacoco Coverage"
+		}
+	}
+	
+	task sourcesJar(type: Jar, dependsOn:classes) {
+		classifier = 'sources'
+		from sourceSets.main.allJava
+	}
+
+	task javadocJar(type: Jar) {
+		classifier = 'javadoc'
+		from javadoc
+	}
+	
+	artifacts {
+		archives sourcesJar
+		archives javadocJar
 	}
 }
 
@@ -251,18 +277,10 @@ test {
         if (!msg.isEmpty())
             println "Skipping [$msg] Tests";
 	}
-	
-	jacoco {
-        def jacocoEnabled = project.hasProperty("jacocoCoverage")
-		enabled = jacocoEnabled
-       
-        if (jacocoEnabled)
-            println "Enabling Jacoco Coverage"
-    }
 }
 
 javadoc {
-	ext.srcDir = file("${projectDir}/docs/src/api")
+	ext.srcDir = file("${rootProject}/docs/src/api")
 	
 
 	configure(options) {
@@ -284,11 +302,11 @@ javadoc {
 		links = [
 			"http://download.oracle.com/javase/6/docs/api",
 			"http://commons.apache.org/proper/commons-logging/apidocs/",
-			"http://hadoop.apache.org/common/docs/r1.1.2/api/",
+			"http://hadoop.apache.org/common/docs/stable1/api",
 			//"http://hbase.apache.org/apidocs/",
 			"http://pig.apache.org/docs/r0.12.0/api/",
 			"http://hive.apache.org/docs/r0.12.0/api/",
-			"https://builds.apache.org/job/Thrift/javadoc/",
+			"http://builds.apache.org/job/Thrift/javadoc/",
 			"http://docs.cascading.org/cascading/2.1/javadoc/"
 		]
 
@@ -302,17 +320,6 @@ javadoc {
 	title = "${rootProject.description} ${version} API"
 }
 
-task sourcesJar(type: Jar, dependsOn:classes) {
-    classifier = 'sources'
-    from sourceSets.main.allJava
-}
-
-task javadocJar(type: Jar) {
-    classifier = 'javadoc'
-    from javadoc
-}
-
-
 // jar used for testing Hadoop remotely (es-hadoop + tests)
 task hadoopTestingJar(type: Jar) {
 	classifier = 'testing'
@@ -320,35 +327,40 @@ task hadoopTestingJar(type: Jar) {
 	from sourceSets.main.output
 }
 
-jar {
-    manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-    manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
-    manifest.attributes['Implementation-Version'] = project.version
-    manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-    manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-    manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-    
-    def build = System.env['ESHDP.BUILD']
-    if (build != null)
-        manifest.attributes['Build'] = build
-    
-    String rev = "unknown"
-    
-    // parse the git files to find out the revision
-    File gitHead = file('.git/HEAD')
-    if (gitHead.exists()) {
-        gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
-        if (gitHead.exists()) { rev = gitHead.text }
-    }
+configure(allprojects) { project ->
+	jar {
+		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+		manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
+		manifest.attributes['Implementation-Version'] = project.version
+		manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+		manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
+		manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
+		
+		def build = System.env['ESHDP.BUILD']
+		if (build != null)
+			manifest.attributes['Build'] = build
+		
+		String rev = "unknown"
+		
+		// parse the git files to find out the revision
+		File gitHead = file('.git/HEAD')
+		if (gitHead.exists()) {
+			gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
+			if (gitHead.exists()) { rev = gitHead.text }
+		}
 
-    from("$rootDir/docs/src/info") {
-        include "license.txt"
-        include "notice.txt"
-        into "META-INF"
-        expand(copyright: new Date().format('yyyy'), version: project.version)
-    }
+		from("$rootDir/docs/src/info") {
+			include "license.txt"
+			include "notice.txt"
+			into "META-INF"
+			expand(copyright: new Date().format('yyyy'), version: project.version)
+		}
 
-    manifest.attributes['Repository-Revision'] = rev
+		manifest.attributes['Repository-Revision'] = rev
+	}
+}
+
+configure(jar) {
 	def hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 	if (hadoopDistro == "hadoopYarn") {
 		classifier = 'yarn'
@@ -369,50 +381,51 @@ asciidoctor {
 			toc2: '',
 			sectanchors: '',
 			//stylesheet: 'github.css',
-			copycss: ''
+			copycss: '',
+			revnumber : project.version
 			//'linkcss!': ''
         ]
     ]
 }
 
 // reporting
-
-findbugsMain {
-  ignoreFailures = true
-  effort = "max"
-  reportLevel = "low"
-  
-  reports {
-    xml.enabled = true
-    html.enabled = false
-  }
-}
-
-pmdMain {
-  ignoreFailures = true
-  reports {
-    xml.enabled = true
-    html.enabled = true
-  }
-}
-
-jacoco {
-	toolVersion = "0.6.3.201306030806"
-}
-
-jacocoTestReport {
-	reports {
-		xml.enabled true
-		csv.enabled true
-		html.enabled true
+configure(allprojects) { project ->
+	findbugsMain {
+	  ignoreFailures = true
+	  effort = "max"
+	  reportLevel = "low"
+	  
+	  reports {
+		xml.enabled = true
+		html.enabled = false
+	  }
 	}
-}
 
-findbugsTest.enabled = false
-pmdTest.enabled = false   
+	pmdMain {
+	  ignoreFailures = true
+	  reports {
+		xml.enabled = true
+		html.enabled = true
+	  }
+	}
+
+	jacoco {
+		toolVersion = "0.6.3.201306030806"
+	}
+
+	jacocoTestReport {
+		reports {
+			xml.enabled true
+			csv.enabled true
+			html.enabled true
+		}
+	}
+
+	findbugsTest.enabled = false
+	pmdTest.enabled = false   
+}
 
 // packaging
-
 task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
     //classifier = "dist"
@@ -432,6 +445,18 @@ task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
         into "${baseDir}/docs"
     }
 
+	subprojects.each { subproject ->
+		into ("${baseDir}/build/libs") {
+			from subproject.jar
+			if (subproject.tasks.findByPath("sourcesJar")) {
+					from subproject.sourcesJar
+			}
+			if (subproject.tasks.findByPath("javadocJar")) {
+					from subproject.javadocJar
+			}
+		}
+	}
+
     into ("${baseDir}/dist") {
         from "build/libs"
 		exclude "*-testing.jar"
@@ -439,13 +464,16 @@ task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
 }
 
 artifacts {
-    archives sourcesJar
-    archives javadocJar
-
+	
 	// include YARN is available
 	ext.yarn = file("$libsDir/$name-$version-yarn.jar")
 	if (yarn.exists()) {
 		archives yarn
+	}
+	
+	//archives subprojects*.configurations*.archives.artifacts
+	files(subprojects.configurations.archives.artifacts.file).each { File file ->
+	   archives file
 	}
 }
 
@@ -455,5 +483,5 @@ task wrapper(type: Wrapper) {
 }
 
 // skip creation of javadoc jars 
-assemble.dependsOn = ['jar', 'hadoopTestingJar']
+assemble.dependsOn = ['jar', 'hadoopTestingJar', "elasticsearch-hadoop-repository-hdfs:assemble"]
 defaultTasks 'build'
