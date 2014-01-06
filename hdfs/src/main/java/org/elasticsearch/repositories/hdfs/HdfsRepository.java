@@ -19,6 +19,7 @@
 
 package org.elasticsearch.repositories.hdfs;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -95,16 +96,11 @@ public class HdfsRepository extends BlobStoreRepository implements Repository {
     }
 
     private FileSystem initFileSystem(RepositorySettings repositorySettings) throws IOException {
-        String uri = repositorySettings.settings().get("uri", componentSettings.get("uri"));
-        String confUri = repositorySettings.settings().get("conf_uri", componentSettings.get("conf_uri"));
-
         Configuration cfg = new Configuration(repositorySettings.settings().getAsBoolean("load_defaults", componentSettings.getAsBoolean("load_defaults", true)));
-        if (confUri != null) {
-            try {
-                cfg.addResource(new URL(uri));
-            } catch (MalformedURLException ex) {
-                throw new ElasticSearchIllegalArgumentException(String.format("invalid 'conf_uri' [%s] defined for hdfs snapshot/restore", uri), ex);
-            }
+
+        String confLocation = repositorySettings.settings().get("conf_location", componentSettings.get("conf_location"));
+        if (Strings.hasText(confLocation)) {
+            addConfigLocation(cfg, confLocation);
         }
 
         Map<String, String> map = componentSettings.getByPrefix("conf.").getAsMap();
@@ -112,14 +108,54 @@ public class HdfsRepository extends BlobStoreRepository implements Repository {
             cfg.set(entry.getKey(), entry.getValue());
         }
 
+        String uri = repositorySettings.settings().get("uri", componentSettings.get("uri"));
         URI actualUri = (uri != null ? URI.create(uri) : FileSystem.getDefaultUri(cfg));
         String user = repositorySettings.settings().get("user", componentSettings.get("user"));
 
         try {
             return (user != null ? FileSystem.get(actualUri, cfg, user) : FileSystem.get(actualUri, cfg));
         } catch (Exception ex) {
-            throw new ElasticSearchGenerationException(String.format("cannot create Hdfs file-system for uri [%s]", actualUri), ex);
+            throw new ElasticSearchGenerationException(String.format("Cannot create Hdfs file-system for uri [%s]", actualUri), ex);
         }
+    }
+
+    private void addConfigLocation(Configuration cfg, String confLocation) {
+        URL cfgURL = null;
+        // it's an URL
+        if (!confLocation.contains(":")) {
+            cfgURL = cfg.getClassLoader().getResource(confLocation);
+
+            // fall back to file
+            if (cfgURL == null) {
+                File file = new File(confLocation);
+                if (!file.canRead()) {
+                    throw new ElasticSearchIllegalArgumentException(
+                            String.format(
+                                    "Cannot find classpath resource or file 'conf_location' [%s] defined for hdfs snapshot/restore",
+                                    confLocation));
+                }
+                String fileLocation = file.toURI().toString();
+                logger.debug("Adding path [{}] as file [{}]", confLocation, fileLocation);
+                confLocation = fileLocation;
+            }
+            else {
+                logger.debug("Resolving path [{}] to classpath [{}]", confLocation, cfgURL);
+            }
+        }
+        else {
+            logger.debug("Adding path [{}] as URL", confLocation);
+        }
+
+        if (cfgURL == null) {
+            try {
+                cfgURL = new URL(confLocation);
+            } catch (MalformedURLException ex) {
+                throw new ElasticSearchIllegalArgumentException(String.format(
+                        "Invalid 'conf_location' URL [%s] defined for hdfs snapshot/restore", confLocation), ex);
+            }
+        }
+
+        cfg.addResource(cfgURL);
     }
 
     @Override
