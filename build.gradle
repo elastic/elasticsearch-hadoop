@@ -44,14 +44,14 @@ ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro")
 def hadoopStableVersion = hadoop12Version
 def hadoopYarnVersion = hadoop2Version
 def hadoopVersion = hadoopStableVersion 
-def msg;
+def hadoopMsg;
 
 switch (hadoopDistro) {
 
   // Hadoop YARN/2.0.x
   case "hadoopYarn":
     hadoopVersion = hadoopYarnVersion
-    msg = "Using Apache Hadoop YARN [$hadoopVersion]"
+    hadoopMsg = "Using Apache Hadoop YARN [$hadoopVersion]"
 	hadoopCore = ["org.apache.hadoop:hadoop-mapreduce-client-common:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
 
@@ -59,7 +59,7 @@ switch (hadoopDistro) {
   // Hadoop 1.2.x
   case "hadoop12":
     hadoopVersion = hadoop12Version
-    msg =  "Using Apache Hadoop 1.2.x [$hadoopVersion]"
+    hadoopMsg =  "Using Apache Hadoop 1.2.x [$hadoopVersion]"
 	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
@@ -69,7 +69,7 @@ switch (hadoopDistro) {
   // Hadoop 1.1.x
   case "hadoop11":
     hadoopVersion = hadoop11Version
-    msg = "Using Apache Hadoop 1.1.x [$hadoopVersion]"
+    hadoopMsg = "Using Apache Hadoop 1.1.x [$hadoopVersion]"
 	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
@@ -79,7 +79,7 @@ switch (hadoopDistro) {
   // Hadoop 1.0.x
   case "hadoop10":
     hadoopVersion = hadoop10Version
-    msg = "Using Apache Hadoop 1.0.x [$hadoopVersion]"
+    hadoopMsg = "Using Apache Hadoop 1.0.x [$hadoopVersion]"
 	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
@@ -87,7 +87,7 @@ switch (hadoopDistro) {
     break;
 
   default:
-    msg = "Using Apache Hadoop Stable [$hadoopVersion]"
+    hadoopMsg = "Using Apache Hadoop Stable [$hadoopVersion]"
     hadoopVersion = hadoopStableVersion
 	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
@@ -103,7 +103,7 @@ allprojects {
 	}
 
 if (rootProject == project) {
-	println msg
+	println hadoopMsg
 
 	repositories {
 	  // JDO ec2 missing from Maven Central
@@ -486,5 +486,5 @@ task wrapper(type: Wrapper) {
 }
 
 // skip creation of javadoc jars 
-assemble.dependsOn = ['jar', 'hadoopTestingJar', "elasticsearch-hadoop-repository-hdfs:assemble"]
+assemble.dependsOn = ['jar', 'hadoopTestingJar']
 defaultTasks 'build'
