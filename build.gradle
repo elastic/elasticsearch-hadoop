@@ -165,6 +165,12 @@ configure(allprojects) { project ->
 		options.compilerArgs << "-Xlint:options"
 	}
 	
+	
+	compileTestJava {
+			sourceCompatibility = 1.6
+			targetCompatibility = 1.6
+	}
+	
 	test {
 		jacoco {
 			def jacocoEnabled = project.hasProperty("jacocoCoverage")
