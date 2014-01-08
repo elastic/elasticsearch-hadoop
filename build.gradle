@@ -52,7 +52,7 @@ switch (hadoopDistro) {
   case "hadoopYarn":
     hadoopVersion = hadoopYarnVersion
     hadoopMsg = "Using Apache Hadoop YARN [$hadoopVersion]"
-	hadoopCore = ["org.apache.hadoop:hadoop-mapreduce-client-common:$hadoopVersion"]
+	hadoopCore = ["org.apache.hadoop:hadoop-common:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
 
     break;
