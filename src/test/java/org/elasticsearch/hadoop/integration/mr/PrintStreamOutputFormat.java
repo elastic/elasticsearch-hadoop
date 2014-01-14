@@ -32,7 +32,7 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.integration.Stream;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.util.WritableUtils;
 
 
@@ -79,7 +79,7 @@ public class PrintStreamOutputFormat extends org.apache.hadoop.mapreduce.OutputF
 
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
-        return new ESOutputFormat.ESOutputCommitter();
+        return new EsOutputFormat.ESOutputCommitter();
     }
 
     // Old API

@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
-import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.LocalEs;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -37,7 +37,7 @@ import cascading.util.Update;
 public class CascadingHadoopSuite {
 
     @ClassRule
-    public static ExternalResource resource = new LocalES();
+    public static ExternalResource resource = new LocalEs();
 
     public static JobConf configuration;
 

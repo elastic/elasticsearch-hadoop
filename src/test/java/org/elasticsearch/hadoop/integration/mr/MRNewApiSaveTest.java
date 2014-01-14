@@ -31,7 +31,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.RestUtils;
@@ -156,7 +156,7 @@ public class MRNewApiSaveTest {
 
         Job job = new Job(conf);
         job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(ESOutputFormat.class);
+        job.setOutputFormatClass(EsOutputFormat.class);
         job.setMapOutputValueClass(LinkedMapWritable.class);
         job.setMapperClass(JsonMapper.class);
         job.setNumReduceTasks(0);

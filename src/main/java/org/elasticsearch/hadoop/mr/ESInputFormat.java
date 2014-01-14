@@ -61,10 +61,10 @@ import org.elasticsearch.hadoop.util.StringUtils;
  *
  * <p/>This class implements both the "old" (<tt>org.apache.hadoop.mapred</tt>) and the "new" (<tt>org.apache.hadoop.mapreduce</tt>) API.
  */
-public class ESInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V>,
+public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V>,
         ConfigurationOptions {
 
-    private static Log log = LogFactory.getLog(ESInputFormat.class);
+    private static Log log = LogFactory.getLog(EsInputFormat.class);
 
     protected static class ShardInputSplit extends InputSplit implements org.apache.hadoop.mapred.InputSplit {
 

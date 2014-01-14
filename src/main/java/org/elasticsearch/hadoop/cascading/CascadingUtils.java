@@ -49,7 +49,7 @@ abstract class CascadingUtils {
         // if no tokens are defined, add one starting with 140
         if (tokens == null) {
             cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, "140=" + lmw);
-            LogFactory.getLog(ESTap.class).trace(
+            LogFactory.getLog(EsTap.class).trace(
                     String.format("Registered Cascading serialization token %s for %s", 140, lmw));
         }
         else {
@@ -70,7 +70,7 @@ abstract class CascadingUtils {
             for (int id = 140; id < 255; id++) {
                 if (!mapping.containsKey(Integer.valueOf(id))) {
                     cfg.set(TupleSerializationProps.SERIALIZATION_TOKENS, Util.join(",", Util.removeNulls(tokens, id + "=" + lmw)));
-                    LogFactory.getLog(ESTap.class).trace(String.format("Registered Cascading serialization token %s for %s", id, lmw));
+                    LogFactory.getLog(EsTap.class).trace(String.format("Registered Cascading serialization token %s for %s", id, lmw));
                     return;
                 }
             }

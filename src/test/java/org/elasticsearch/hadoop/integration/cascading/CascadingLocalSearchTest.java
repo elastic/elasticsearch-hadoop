@@ -22,7 +22,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Properties;
 
-import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.integration.Stream;
@@ -65,7 +65,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new ESTap("cascading-local/artists");
+        Tap in = new EsTap("cascading-local/artists");
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
@@ -81,7 +81,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromESWithFields() throws Exception {
-        Tap in = new ESTap("cascading-local/artists", new Fields("url", "name"));
+        Tap in = new EsTap("cascading-local/artists", new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -95,7 +95,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromESAliasedField() throws Exception {
-        Tap in = new ESTap("cascading-local/alias", new Fields("address"));
+        Tap in = new EsTap("cascading-local/alias", new Fields("address"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);
@@ -108,7 +108,7 @@ public class CascadingLocalSearchTest {
 
     @Test
     public void testReadFromESWithFieldAlias() throws Exception {
-        Tap in = new ESTap("cascading-local/alias", new Fields("url"));
+        Tap in = new EsTap("cascading-local/alias", new Fields("url"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
         pipe = new GroupBy(pipe);

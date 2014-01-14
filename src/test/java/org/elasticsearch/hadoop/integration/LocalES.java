@@ -25,10 +25,10 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.rules.ExternalResource;
 
-public class LocalES extends ExternalResource {
+public class LocalEs extends ExternalResource {
 
-    private static ESEmbeddedServer master;
-    private static ESEmbeddedServer slave;
+    private static EsEmbeddedServer master;
+    private static EsEmbeddedServer slave;
 
     public static final String CLUSTER_NAME = "ES-HADOOP-TEST";
     private static final String ES_DATA_PATH = "build/es.data";
@@ -53,13 +53,13 @@ public class LocalES extends ExternalResource {
 
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
-            master = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
+            master = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
             master.start();
         }
 
         if (USE_SLAVE && slave == null) {
             System.out.println("Starting Elasticsearch Slave...");
-            slave = new ESEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
+            slave = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS);
             slave.start();
         }
     }

@@ -53,9 +53,9 @@ import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FieldAlias;
 
 @SuppressWarnings("deprecation")
-public class ESSerDe implements SerDe {
+public class EsSerDe implements SerDe {
 
-    private static Log log = LogFactory.getLog(ESSerDe.class);
+    private static Log log = LogFactory.getLog(EsSerDe.class);
 
     private Properties tableProperties;
     private StructObjectInspector inspector;

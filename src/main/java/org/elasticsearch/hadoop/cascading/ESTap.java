@@ -37,11 +37,11 @@ import cascading.tuple.TupleEntryIterator;
  * existing mapping for the given index.
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
-public class ESTap extends Tap<Object, Object, Object> {
+public class EsTap extends Tap<Object, Object, Object> {
 
     private static final long serialVersionUID = 2062780701366901965L;
 
-    private static Log log = LogFactory.getLog(ESTap.class);
+    private static Log log = LogFactory.getLog(EsTap.class);
 
     private String resource;
     private boolean runningInHadoop = false;
@@ -51,19 +51,19 @@ public class ESTap extends Tap<Object, Object, Object> {
     private int port;
 
     // TODO: add defaults fall back
-    public ESTap(String resource) {
+    public EsTap(String resource) {
         this(resource, null);
     }
 
-    public ESTap(String host, int port, String resource) {
+    public EsTap(String host, int port, String resource) {
         this(host, port, resource, null);
     }
 
-    public ESTap(String resource, Fields fields) {
+    public EsTap(String resource, Fields fields) {
         this(null, -1, resource, fields);
     }
 
-    public ESTap(String host, int port, String resource, Fields fields) {
+    public EsTap(String host, int port, String resource, Fields fields) {
         this.resource = resource;
         this.host = host;
         this.port = port;
@@ -165,7 +165,7 @@ public class ESTap extends Tap<Object, Object, Object> {
         } catch (ClassNotFoundException e) {
             runningInHadoop = false;
         }
-        actualTap = (runningInHadoop ? new ESHadoopTap(host, port, resource, fields) : new ESLocalTap(host, port, resource, fields));
+        actualTap = (runningInHadoop ? new EsHadoopTap(host, port, resource, fields) : new EsLocalTap(host, port, resource, fields));
         setScheme(actualTap.getScheme());
         if (log.isDebugEnabled()) {
             log.debug(String.format("Detected %s environment; initializing [%s]", (runningInHadoop ? "Hadoop" : "local"), actualTap.getClass().getSimpleName()));

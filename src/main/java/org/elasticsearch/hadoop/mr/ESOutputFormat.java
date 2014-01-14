@@ -55,9 +55,9 @@ import org.elasticsearch.hadoop.util.StringUtils;
  */
 @SuppressWarnings("rawtypes")
 // since this class implements two generic interfaces, to avoid dealing with 4 types in every declaration, we force raw types...
-public class ESOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat, ConfigurationOptions {
+public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat, ConfigurationOptions {
 
-    private static Log log = LogFactory.getLog(ESOutputFormat.class);
+    private static Log log = LogFactory.getLog(EsOutputFormat.class);
 
     // don't use mapred.OutputCommitter as it performs mandatory casts to old API resulting in CCE
     public static class ESOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {

@@ -45,7 +45,7 @@ import cascading.tuple.TupleEntry;
 /**
  * Cascading Scheme handling
  */
-class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
+class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
 
     private static final long serialVersionUID = 979036202776892844L;
 
@@ -54,7 +54,7 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final int port;
     private transient RestRepository client;
 
-    ESLocalScheme(String host, int port, String index, Fields fields) {
+    EsLocalScheme(String host, int port, String index, Fields fields) {
         this.resource = index;
         this.host = host;
         this.port = port;
@@ -116,8 +116,8 @@ class ESLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         if (client == null) {
             Settings settings = SettingsManager.loadFrom(props).setHosts(host).setPort(port).setResource(resource);
 
-            SerializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
-            SerializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(ESTap.class));
+            SerializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
+            SerializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(EsTap.class));
             settings.save();
             client = new RestRepository(settings);
         }

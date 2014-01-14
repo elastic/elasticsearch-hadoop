@@ -25,11 +25,11 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
-public class ESEmbeddedServer {
+public class EsEmbeddedServer {
 
     private final Node node;
 
-    public ESEmbeddedServer(String clusterName, String dataPath, String httpRange, String transportRange) {
+    public EsEmbeddedServer(String clusterName, String dataPath, String httpRange, String transportRange) {
         Properties props = new Properties();
         props.setProperty("path.data", dataPath);
         props.setProperty("http.port", httpRange);

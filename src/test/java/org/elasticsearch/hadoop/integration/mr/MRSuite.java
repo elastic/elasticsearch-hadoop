@@ -19,7 +19,7 @@
 package org.elasticsearch.hadoop.integration.mr;
 
 import org.elasticsearch.hadoop.integration.HdfsUtils;
-import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.LocalEs;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
@@ -31,7 +31,7 @@ import org.junit.runners.Suite;
 //@Suite.SuiteClasses({ MRNewApiSaveTest.class, MRNewApiSearchTest.class })
 public class MRSuite {
     @ClassRule
-    public static ExternalResource resource = new LocalES();
+    public static ExternalResource resource = new LocalEs();
 
     @BeforeClass
     public static void setupHdfs() throws Exception {

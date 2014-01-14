@@ -29,15 +29,15 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 
 /**
  * Hive specific OutputFormat.
  */
 @SuppressWarnings("rawtypes")
-public class ESHiveOutputFormat extends ESOutputFormat implements HiveOutputFormat {
+public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputFormat {
 
-    static class ESHiveRecordWriter extends ESOutputFormat.ESRecordWriter implements RecordWriter {
+    static class ESHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
 
         public ESHiveRecordWriter(Configuration cfg) {
             super(cfg);

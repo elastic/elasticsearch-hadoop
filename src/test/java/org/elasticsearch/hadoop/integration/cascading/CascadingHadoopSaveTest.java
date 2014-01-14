@@ -20,7 +20,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
-import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.junit.Test;
 
@@ -40,7 +40,7 @@ public class CascadingHadoopSaveTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
@@ -52,7 +52,7 @@ public class CascadingHadoopSaveTest {
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
         Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("cascading-hadoop/alias", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop/alias", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"

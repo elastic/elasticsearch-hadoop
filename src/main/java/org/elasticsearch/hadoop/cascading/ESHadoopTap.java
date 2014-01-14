@@ -36,15 +36,15 @@ import cascading.tuple.TupleEntryIterator;
  * Hadoop-based Cascading Tap.
  */
 @SuppressWarnings("rawtypes")
-class ESHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
+class EsHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     private static final long serialVersionUID = 7910041489511719399L;
 
     private String target;
 
-    public ESHadoopTap(String host, int port, String index, Fields fields) {
+    public EsHadoopTap(String host, int port, String index, Fields fields) {
         this.target = index;
-        setScheme(new ESHadoopScheme(host, port, index, fields));
+        setScheme(new EsHadoopScheme(host, port, index, fields));
     }
 
 

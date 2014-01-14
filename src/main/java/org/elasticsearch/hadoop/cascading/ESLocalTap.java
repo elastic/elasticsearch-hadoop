@@ -46,16 +46,16 @@ import cascading.tuple.TupleEntrySchemeIterator;
 /**
  * Local Cascading Tap.
  */
-class ESLocalTap extends Tap<Properties, ScrollQuery, Object> {
+class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     private static final long serialVersionUID = 8644631529427137615L;
 
-    private static Log log = LogFactory.getLog(ESLocalTap.class);
+    private static Log log = LogFactory.getLog(EsLocalTap.class);
     private String target;
 
-    public ESLocalTap(String host, int port, String resource, Fields fields) {
+    public EsLocalTap(String host, int port, String resource, Fields fields) {
         this.target = resource;
-        setScheme(new ESLocalScheme(host, port, resource, fields));
+        setScheme(new EsLocalScheme(host, port, resource, fields));
     }
 
     @Override

@@ -19,7 +19,7 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import org.elasticsearch.hadoop.integration.HdfsUtils;
-import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.LocalEs;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -33,7 +33,7 @@ import org.junit.runners.Suite;
 public class PigSuite {
 
     @ClassRule
-    public static ExternalResource resource = new LocalES();
+    public static ExternalResource resource = new LocalEs();
 
     @BeforeClass
     public static void setup() {

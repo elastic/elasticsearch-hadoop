@@ -27,7 +27,7 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
-import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.LocalEs;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.BeforeClass;
@@ -91,7 +91,7 @@ public class HiveSuite {
     };
 
     @ClassRule
-    public static ExternalResource resource = new ChainedExternalResource(new LocalES(), hive);
+    public static ExternalResource resource = new ChainedExternalResource(new LocalEs(), hive);
 
     @BeforeClass
     public static void setup() throws Exception {

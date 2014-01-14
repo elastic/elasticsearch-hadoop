@@ -20,7 +20,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
-import org.elasticsearch.hadoop.cascading.ESTap;
+import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class CascadingLocalSaveTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("cascading-local/artists", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         new LocalFlowConnector(new TestSettings().getProperties()).connect(in, out, pipe).complete();
@@ -50,7 +50,7 @@ public class CascadingLocalSaveTest {
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("cascading-local/alias", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
@@ -69,7 +69,7 @@ public class CascadingLocalSaveTest {
 
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new ESTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 

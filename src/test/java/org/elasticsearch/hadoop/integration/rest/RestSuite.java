@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.rest;
 
-import org.elasticsearch.hadoop.integration.LocalES;
+import org.elasticsearch.hadoop.integration.LocalEs;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -29,5 +29,5 @@ import org.junit.runners.Suite;
 public class RestSuite {
 
     @ClassRule
-    public static ExternalResource resource = new LocalES();
+    public static ExternalResource resource = new LocalEs();
 }

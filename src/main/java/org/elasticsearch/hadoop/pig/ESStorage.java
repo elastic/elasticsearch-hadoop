@@ -54,7 +54,7 @@ import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -77,9 +77,9 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
  * or passed to the {@link #ESStorage(String...)} constructor.
  */
-public class ESStorage extends LoadFunc implements LoadMetadata, LoadPushDown, StoreFuncInterface, StoreMetadata {
+public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, StoreFuncInterface, StoreMetadata {
 
-    private static final Log log = LogFactory.getLog(ESStorage.class);
+    private static final Log log = LogFactory.getLog(EsStorage.class);
     private final boolean trace = log.isTraceEnabled();
 
     private Properties properties;
@@ -93,11 +93,11 @@ public class ESStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
     private List<String> aliasesTupleNames;
 
-    public ESStorage() {
+    public EsStorage() {
         this(new String[0]);
     }
 
-    public ESStorage(String... configuration) {
+    public EsStorage(String... configuration) {
         if (!ObjectUtils.isEmpty(configuration)) {
             try {
                 properties = new Properties();
@@ -155,7 +155,7 @@ public class ESStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @SuppressWarnings("unchecked")
     @Override
     public OutputFormat<Object, Map<Writable, Writable>> getOutputFormat() throws IOException {
-        return new ESOutputFormat();
+        return new EsOutputFormat();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -288,7 +288,7 @@ public class ESStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @SuppressWarnings("rawtypes")
     @Override
     public InputFormat getInputFormat() throws IOException {
-        return new ESPigInputFormat();
+        return new EsPigInputFormat();
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

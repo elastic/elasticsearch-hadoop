@@ -36,7 +36,7 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.RestUtils;
@@ -172,7 +172,7 @@ public class MROldApiSaveTest {
         JobConf conf = HdpBootstrap.hadoopConfig();
 
         conf.setInputFormat(SplittableTextInputFormat.class);
-        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setOutputFormat(EsOutputFormat.class);
         conf.setMapOutputValueClass(LinkedMapWritable.class);
         conf.setMapperClass(JsonMapper.class);
         conf.setReducerClass(IdentityReducer.class);

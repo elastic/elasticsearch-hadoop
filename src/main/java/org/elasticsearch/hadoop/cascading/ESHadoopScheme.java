@@ -31,8 +31,8 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.ESInputFormat;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
@@ -52,7 +52,7 @@ import cascading.tuple.TupleEntry;
  * Cascading Scheme handling
  */
 @SuppressWarnings("rawtypes")
-class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
+class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
     private static final long serialVersionUID = 4304172465362298925L;
 
@@ -60,7 +60,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private final String host;
     private final int port;
 
-    ESHadoopScheme(String host, int port, String index, Fields fields) {
+    EsHadoopScheme(String host, int port, String index, Fields fields) {
         this.index = index;
         this.host = host;
         this.port = port;
@@ -105,7 +105,7 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     @Override
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
-        conf.setInputFormat(ESInputFormat.class);
+        conf.setInputFormat(EsInputFormat.class);
         Collection<String> fields = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
         // load only the necessary fields
         conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
@@ -114,17 +114,17 @@ class ESHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     @Override
     public void sinkConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
-        conf.setOutputFormat(ESOutputFormat.class);
+        conf.setOutputFormat(EsOutputFormat.class);
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
         Settings set = SettingsManager.loadFrom(conf);
 
-        SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(ESTap.class));
-        SerializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(ESTap.class));
+        SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
+        SerializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
         HadoopCfgUtils.setFileOutputFormatDir(conf, set.getTargetResource());
-        HadoopCfgUtils.setOutputCommitterClass(conf, ESOutputFormat.ESOldAPIOutputCommitter.class.getName());
+        HadoopCfgUtils.setOutputCommitterClass(conf, EsOutputFormat.ESOldAPIOutputCommitter.class.getName());
 
     }
 

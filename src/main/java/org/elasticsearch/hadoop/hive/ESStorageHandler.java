@@ -32,7 +32,7 @@ import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.ESOutputFormat;
+import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.SerializationUtils;
@@ -48,23 +48,23 @@ import static org.elasticsearch.hadoop.hive.HiveConstants.*;
  * or passed to {@link #ESStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
  */
 @SuppressWarnings({ "deprecation", "rawtypes" })
-public class ESStorageHandler extends DefaultStorageHandler {
+public class EsStorageHandler extends DefaultStorageHandler {
 
-    private static Log log = LogFactory.getLog(ESStorageHandler.class);
+    private static Log log = LogFactory.getLog(EsStorageHandler.class);
 
     @Override
     public Class<? extends InputFormat> getInputFormatClass() {
-        return ESHiveInputFormat.class;
+        return EsHiveInputFormat.class;
     }
 
     @Override
     public Class<? extends OutputFormat> getOutputFormatClass() {
-        return ESHiveOutputFormat.class;
+        return EsHiveOutputFormat.class;
     }
 
     @Override
     public Class<? extends SerDe> getSerDeClass() {
-        return ESSerDe.class;
+        return EsSerDe.class;
     }
 
     @Override
@@ -102,7 +102,7 @@ public class ESStorageHandler extends DefaultStorageHandler {
         settings.save();
 
         // replace the default committer when using the old API
-        HadoopCfgUtils.setOutputCommitterClass(cfg, ESOutputFormat.ESOutputCommitter.class.getName());
+        HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
 
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
                 "no table location [%s] declared by Hive resulting in abnormal execution;", TABLE_LOCATION));

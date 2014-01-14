@@ -31,7 +31,7 @@ import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
-import org.elasticsearch.hadoop.mr.ESInputFormat;
+import org.elasticsearch.hadoop.mr.EsInputFormat;
 
 /**
  * Hive specific InputFormat. Since Hive code base makes a lot of assumptions about the tables being actual files in HDFS (using instanceof checks without proper else) this class tries to 'fix' this by
@@ -41,7 +41,7 @@ import org.elasticsearch.hadoop.mr.ESInputFormat;
 // A quick example would be {@link org.apache.hadoop.hive.ql.io.HiveInputFormat.HiveInputSplit#getPath()} which, in case the actual InputSplit is not a
 // {@link org.apache.hadoop.mapred.FileSplit}, returns an invalid Path.
 
-public class ESHiveInputFormat extends ESInputFormat<Text, Map<Writable, Writable>> {
+public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writable>> {
 
     static class ESHiveSplit extends FileSplit {
         InputSplit delegate;
