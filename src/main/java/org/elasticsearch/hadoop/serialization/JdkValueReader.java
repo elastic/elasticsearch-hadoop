@@ -23,14 +23,22 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.StringUtils;
+
 
 /**
  * Basic value reader handling using the implied JSON type.
  */
-public class JdkValueReader implements ValueReader {
+public class JdkValueReader implements SettingsAware, ValueReader {
+
+    private boolean emptyAsNull = true;
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
+        if (esType == null) {
+            return null;
+        }
 
         switch (esType) {
         case NULL:
@@ -87,7 +95,11 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object booleanValue(String value) {
-        return (value != null ? parseBoolean(value) : nullValue());
+        return (value != null ? (isEmpty(value) ? nullValue() : parseBoolean(value)) : nullValue());
+    }
+
+    private boolean isEmpty(String value) {
+        return value.length() == 0 && emptyAsNull;
     }
 
     protected Object parseBoolean(String value) {
@@ -95,7 +107,7 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object doubleValue(String value) {
-        return (value != null ? parseDouble(value) : nullValue());
+        return (value != null ? (isEmpty(value) ? nullValue() : parseDouble(value)) : nullValue());
     }
 
     protected Object parseDouble(String value) {
@@ -103,7 +115,7 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object floatValue(String value) {
-        return (value != null ? parseFloat(value) : nullValue());
+        return (value != null ? (isEmpty(value) ? nullValue() : parseFloat(value)) : nullValue());
     }
 
     protected Object parseFloat(String value) {
@@ -111,7 +123,7 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object longValue(String value) {
-        return (value != null ? parseLong(value) : nullValue());
+        return (value != null ? (isEmpty(value) ? nullValue() : parseLong(value)) : nullValue());
     }
 
     protected Object parseLong(String value) {
@@ -119,7 +131,7 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object intValue(String value) {
-        return (value != null ? Integer.parseInt(value) : nullValue());
+        return (value != null ? (isEmpty(value) ? nullValue() : parseInteger(value)) : nullValue());
     }
 
     protected Object parseInteger(String value) {
@@ -127,7 +139,7 @@ public class JdkValueReader implements ValueReader {
     }
 
     protected Object textValue(String value) {
-        return (value != null ? parseString(value) : nullValue());
+        return (value != null ? (!StringUtils.hasText(value) && emptyAsNull ? nullValue() : parseString(value)) : nullValue());
     }
 
     protected Object parseString(String value) {
@@ -140,5 +152,10 @@ public class JdkValueReader implements ValueReader {
 
     protected Object date(String value) {
         throw new UnsupportedOperationException("wip");
+    }
+
+    @Override
+    public void setSettings(Settings settings) {
+        emptyAsNull = settings.getFieldReadEmptyAsNull();
     }
 }

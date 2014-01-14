@@ -184,6 +184,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_UPSERT_DOC, ES_UPSERT_DOC_DEFAULT));
     }
 
+    public boolean getFieldReadEmptyAsNull() {
+        return Booleans.parseBoolean(getProperty(ES_FIELD_READ_EMPTY_AS_NULL, ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT));
+    }
+
     public Settings setHosts(String hosts) {
         this.targetHosts = hosts;
         return this;

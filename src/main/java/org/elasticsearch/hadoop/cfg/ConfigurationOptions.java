@@ -91,6 +91,10 @@ public interface ConfigurationOptions {
     /** Value reader - setup automatically; can be overridden for custom types */
     String ES_SERIALIZATION_READER_CLASS = "es.ser.reader.class";
 
+    /** Field options **/
+    String ES_FIELD_READ_EMPTY_AS_NULL = "es.field.read.empty.as.null";
+    String ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT = "true";
+
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";

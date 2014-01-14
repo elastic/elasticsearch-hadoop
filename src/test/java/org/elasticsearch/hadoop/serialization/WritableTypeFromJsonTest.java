@@ -41,6 +41,11 @@ public class WritableTypeFromJsonTest {
     }
 
     @Test
+    public void testEmptyString() {
+        writableTypeFromJson("");
+    }
+
+    @Test
     public void testString() {
         writableTypeFromJson("\"someText\"");
     }
@@ -91,8 +96,11 @@ public class WritableTypeFromJsonTest {
         Object readValue = vr.readValue(parser, parser.text(), fromJson(parser, parser.currentToken()));
         System.out.println(readValue);
     }
-    
+
     private static FieldType fromJson(Parser parser, Token currentToken) {
+        if (currentToken == null) {
+            return null;
+        }
         switch (currentToken) {
         case VALUE_NULL:
             return FieldType.NULL;

@@ -54,6 +54,11 @@ public class JdkTypeToJsonTest {
     }
 
     @Test
+    public void testEmptyString() {
+        jdkTypeToJson("  ");
+    }
+
+    @Test
     public void testNull() {
         jdkTypeToJson(null);
     }

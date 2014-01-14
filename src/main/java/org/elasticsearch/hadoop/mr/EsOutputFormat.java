@@ -36,7 +36,6 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -50,12 +49,14 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
  */
 @SuppressWarnings("rawtypes")
 // since this class implements two generic interfaces, to avoid dealing with 4 types in every declaration, we force raw types...
-public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat, ConfigurationOptions {
+public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat {
 
     private static Log log = LogFactory.getLog(EsOutputFormat.class);
 
