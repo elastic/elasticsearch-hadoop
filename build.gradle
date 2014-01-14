@@ -343,20 +343,17 @@ task hadoopTestingJar(type: Jar) {
 
 configure(allprojects) { project ->
 
-	license {
+	licenseMain {
 		header rootProject.file('src/test/resources/HEADER')
 		strictCheck false
 		ignoreFailures true
-		sourceSets {
-			main { java { exclude "**/package-info.java" } resources { exclude "**/*" } }
-			test { resources { exclude "**/*" } }
-		}
 	}
-	
+	licenseTest.enabled = false
 	// exclude properties file
-	//tasks.withType(nl.javadude.gradle.plugins.license.License).each { licenseTask ->
-	//	licenseTask.exclude '*.properties'
-	//}
+	tasks.withType(nl.javadude.gradle.plugins.license.License).each { licenseTask ->
+		licenseTask.exclude '**/*.properties'
+		licenseTask.exclude '**/package-info.java'
+	}
 	
 	jar {
 		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
