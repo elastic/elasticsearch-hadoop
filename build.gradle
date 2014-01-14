@@ -2,6 +2,7 @@ description = 'Elasticsearch Hadoop'
 
 buildscript {
     repositories {
+		mavenCentral()
         maven { url 'http://dl.bintray.com/content/aalmiray/asciidoctor' }
         maven { url 'http://jcenter.bintray.com' }
         maven { url 'http://repo.springsource.org/plugins-release' }
@@ -10,6 +11,7 @@ buildscript {
     dependencies {
 		classpath('org.asciidoctor:asciidoctor-gradle-plugin:0.5.0')
         classpath('org.springframework.build.gradle:propdeps-plugin:0.0.5')
+		classpath('nl.javadude.gradle.plugins:license-gradle-plugin:0.5.0')
 	}
 }
 
@@ -32,6 +34,7 @@ allprojects {
 	apply plugin: 'pmd'
 	apply plugin: 'jacoco'
 	apply from: "$rootDir/maven.gradle"
+	apply plugin: 'license'
 }
 
 apply plugin: 'asciidoctor'
@@ -339,6 +342,22 @@ task hadoopTestingJar(type: Jar) {
 }
 
 configure(allprojects) { project ->
+
+	license {
+		header rootProject.file('src/test/resources/HEADER')
+		strictCheck false
+		ignoreFailures true
+		sourceSets {
+			main { java { exclude "**/package-info.java" } resources { exclude "**/*" } }
+			test { resources { exclude "**/*" } }
+		}
+	}
+	
+	// exclude properties file
+	//tasks.withType(nl.javadude.gradle.plugins.license.License).each { licenseTask ->
+	//	licenseTask.exclude '*.properties'
+	//}
+	
 	jar {
 		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
 		manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
