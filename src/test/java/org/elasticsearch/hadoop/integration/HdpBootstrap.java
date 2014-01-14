@@ -43,7 +43,7 @@ public class HdpBootstrap {
     public static void hackHadoopStagingOnWin() {
         // do the assignment only on Windows systems
         if (TestUtils.isWindows()) {
-            // 0655 = -rwxr-xr-x
+            // 0655 = -rwxr-xr-x , 0655 = -rwxr-x---
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
 

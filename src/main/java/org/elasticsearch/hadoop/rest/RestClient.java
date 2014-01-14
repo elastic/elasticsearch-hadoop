@@ -116,12 +116,12 @@ public class RestClient implements Closeable {
 
         do {
             Response response = execute(PUT, resource.bulk(), data);
-            httpStatus = (removeSuccesful(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
+            httpStatus = (retryFailedEntries(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
         } while (data.length() > 0 && retry.retry(httpStatus));
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean removeSuccesful(InputStream content, TrackingBytesArray data) throws IOException {
+    private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) throws IOException {
         ObjectReader r = mapper.reader(Map.class);
         JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
         if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
