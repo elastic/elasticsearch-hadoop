@@ -67,8 +67,8 @@ public class PigSaveTest {
                 //"ILLUSTRATE A;" +
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 //"ILLUSTRATE B;" +
-                "STORE B INTO 'pig/tupleartists' USING org.elasticsearch.hadoop.pig.ESStorage();";
-        //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();" +
+                "STORE B INTO 'pig/tupleartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
+        //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         //"DUMP es_total;" +
         //"bartists = FILTER B BY name MATCHES 'me.*';" +
         //"allb = GROUP bartists ALL;"+
@@ -87,7 +87,7 @@ public class PigSaveTest {
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/bagartists' USING org.elasticsearch.hadoop.pig.ESStorage();";
+                "STORE B INTO 'pig/bagartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
     }
 
@@ -100,7 +100,7 @@ public class PigSaveTest {
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l), url;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/timestamp' USING org.elasticsearch.hadoop.pig.ESStorage();";
+                "STORE B INTO 'pig/timestamp' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -114,7 +114,7 @@ public class PigSaveTest {
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (Id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.ESStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
+                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
         pig.executeScript(script);
     }
@@ -126,7 +126,7 @@ public class PigSaveTest {
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "AL = LIMIT A 10;" +
                 "B = FOREACH AL GENERATE (), [], {};" +
-                "STORE B INTO 'pig/emptyconst' USING org.elasticsearch.hadoop.pig.ESStorage();";
+                "STORE B INTO 'pig/emptyconst' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -137,7 +137,7 @@ public class PigSaveTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/createwithid' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                "STORE B INTO 'pig/createwithid' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -154,7 +154,7 @@ public class PigSaveTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/updatewoid' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                "STORE B INTO 'pig/updatewoid' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update');";
         pig.executeScript(script);
     }
@@ -165,7 +165,7 @@ public class PigSaveTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                "STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -177,7 +177,7 @@ public class PigSaveTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                "STORE B INTO 'pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id','"
                                 + ConfigurationOptions.ES_UPSERT_DOC + "=false');";
@@ -192,7 +192,7 @@ public class PigSaveTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);" +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/child' USING org.elasticsearch.hadoop.pig.ESStorage('"
+                "STORE B INTO 'pig/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=id','"
                                 + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no');";
         pig.executeScript(script);
