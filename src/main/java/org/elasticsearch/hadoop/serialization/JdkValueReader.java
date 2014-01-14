@@ -23,122 +23,130 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Basic value reader handling using the implied JSON type.
  */
 public class JdkValueReader implements ValueReader {
 
-    @Override
-    public Object readValue(Parser parser, String value, FieldType esType) {
+	@Override
+	public Object readValue(Parser parser, String value, FieldType esType) {
 
-        switch (esType) {
-        case NULL:
-            return nullValue();
-        case STRING:
-            return textValue(value);
-        case INTEGER:
-            return intValue(value);
-        case LONG:
-            return longValue(value);
-        case FLOAT:
-            return floatValue(value);
-        case DOUBLE:
-            return doubleValue(value);
-        case BOOLEAN:
-            return booleanValue(value);
-        case BINARY:
-            return binaryValue(parser.binaryValue());
-        case DATE:
-            return date(value);
-        case IP:
-            throw new UnsupportedOperationException("not implemented yet");
-        case OBJECT:
-            throw new UnsupportedOperationException("not implemented yet");
-        }
-        return null;
-    }
+		switch (esType) {
+		case NULL:
+			return nullValue();
+		case STRING:
+			return textValue(value);
+		case INTEGER:
+			return intValue(value);
+		case LONG:
+			return longValue(value);
+		case FLOAT:
+			return floatValue(value);
+		case DOUBLE:
+			return doubleValue(value);
+		case BOOLEAN:
+			return booleanValue(value);
+		case BINARY:
+			return binaryValue(parser.binaryValue());
+		case DATE:
+			return date(value);
+		case IP:
+			throw new UnsupportedOperationException("not implemented yet");
+		case OBJECT:
+			throw new UnsupportedOperationException("not implemented yet");
+		}
+		return null;
+	}
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    public Map createMap() {
-        return new LinkedHashMap<Object, Object>();
-    }
+	@SuppressWarnings("rawtypes")
+	@Override
+	public Map createMap() {
+		return new LinkedHashMap<Object, Object>();
+	}
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    @Override
-    public void addToMap(Object map, Object key, Object value) {
-        ((Map) map).put(key, (value != null ? value : nullValue()));
-    }
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Override
+	public void addToMap(Object map, Object key, Object value) {
+		((Map) map).put(key, (value != null ? value : nullValue()));
+	}
 
-    @Override
-    public Object createArray(FieldType type) {
-        // no need to create a collection, we'll just reuse the one passed to #addToArray
-        return Collections.emptyList();
-    }
+	@Override
+	public Object createArray(FieldType type) {
+		// no need to create a collection, we'll just reuse the one passed to
+		// #addToArray
+		return Collections.emptyList();
+	}
 
-    @Override
-    public Object addToArray(Object array, List<Object> value) {
-        return value;
-    }
+	@Override
+	public Object addToArray(Object array, List<Object> value) {
+		return value;
+	}
 
-    protected Object binaryValue(byte[] value) {
-        return value;
-    }
+	protected Object binaryValue(byte[] value) {
+		return value;
+	}
 
-    protected Object booleanValue(String value) {
-        return (value != null ? parseBoolean(value) : nullValue());
-    }
+	protected Object booleanValue(String value) {
+		return (value != null ? parseBoolean(value) : nullValue());
+	}
 
-    protected Object parseBoolean(String value) {
-        return Boolean.parseBoolean(value);
-    }
+	protected Object parseBoolean(String value) {
+		return Boolean.parseBoolean(value);
+	}
 
-    protected Object doubleValue(String value) {
-        return (value != null ? parseDouble(value) : nullValue());
-    }
+	protected Object doubleValue(String value) {
+		return (validateNullOrEmptyString(value) ? parseDouble(value)
+				: nullValue());
+	}
 
-    protected Object parseDouble(String value) {
-        return Double.parseDouble(value);
-    }
+	protected Object parseDouble(String value) {
+		return Double.parseDouble(value);
+	}
 
-    protected Object floatValue(String value) {
-        return (value != null ? parseFloat(value) : nullValue());
-    }
+	protected Object floatValue(String value) {
+		return (validateNullOrEmptyString(value) ? parseFloat(value)
+				: nullValue());
+	}
 
-    protected Object parseFloat(String value) {
-        return Float.parseFloat(value);
-    }
+	protected Object parseFloat(String value) {
+		return Float.parseFloat(value);
+	}
 
-    protected Object longValue(String value) {
-        return (value != null ? parseLong(value) : nullValue());
-    }
+	protected Object longValue(String value) {
+		return (validateNullOrEmptyString(value) ? parseLong(value)
+				: nullValue());
+	}
 
-    protected Object parseLong(String value) {
-        return Long.parseLong(value);
-    }
+	protected Object parseLong(String value) {
+		return Long.parseLong(value);
+	}
 
-    protected Object intValue(String value) {
-        return (value != null ? Integer.parseInt(value) : nullValue());
-    }
+	protected Object intValue(String value) {
+		return (validateNullOrEmptyString(value) ? parseInteger(value)
+				: nullValue());
+	}
 
-    protected Object parseInteger(String value) {
-        return Integer.parseInt(value);
-    }
+	protected Object parseInteger(String value) {
+		return Integer.parseInt(value);
+	}
 
-    protected Object textValue(String value) {
-        return (value != null ? parseString(value) : nullValue());
-    }
+	protected Object textValue(String value) {
+		return (value != null ? parseString(value) : nullValue());
+	}
 
-    protected Object parseString(String value) {
-        return value;
-    }
+	protected Object parseString(String value) {
+		return value;
+	}
 
-    protected Object nullValue() {
-        return null;
-    }
+	protected Object nullValue() {
+		return null;
+	}
 
-    protected Object date(String value) {
-        throw new UnsupportedOperationException("wip");
-    }
+	protected Object date(String value) {
+		throw new UnsupportedOperationException("wip");
+	}
+
+	private boolean validateNullOrEmptyString(String value) {
+		return value != null && value.length() > 0;
+	}
 }
