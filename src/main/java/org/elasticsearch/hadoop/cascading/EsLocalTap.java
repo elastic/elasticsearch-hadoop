@@ -31,8 +31,8 @@ import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
-import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;

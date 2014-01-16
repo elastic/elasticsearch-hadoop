@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.serialization;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;

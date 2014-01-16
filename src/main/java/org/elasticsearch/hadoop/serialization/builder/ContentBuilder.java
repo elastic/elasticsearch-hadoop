@@ -16,10 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
 import java.io.OutputStream;
 
+import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.SerializationException;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;

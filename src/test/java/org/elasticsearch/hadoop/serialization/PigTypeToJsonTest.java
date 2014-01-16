@@ -31,6 +31,7 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.Utils;
 import org.elasticsearch.hadoop.pig.PigTuple;
 import org.elasticsearch.hadoop.pig.PigValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;

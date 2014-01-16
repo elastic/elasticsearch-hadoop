@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
-import java.util.List;
-
+import org.elasticsearch.hadoop.serialization.Generator;
 
 /**
- * Translates a JSON field to an actual object. Implementations should only handle the conversion and not influence the parser outside the conversion.
+ * Translates a value to its JSON-like structure.
  */
-public interface ValueReader {
+public interface ValueWriter<T> {
 
-    Object readValue(Parser parser, String value, FieldType esType);
-
-    Object createMap();
-
-    void addToMap(Object map, Object key, Object value);
-
-    Object createArray(FieldType type);
-
-    Object addToArray(Object array, List<Object> values);
+    /**
+     * Returns true if the value was written, false otherwise.
+     *
+     * @param object
+     * @param generator
+     * @return true if the value was written, false otherwise
+     */
+    boolean write(T object, Generator generator);
 }

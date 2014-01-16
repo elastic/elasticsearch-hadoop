@@ -23,8 +23,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.serialization.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

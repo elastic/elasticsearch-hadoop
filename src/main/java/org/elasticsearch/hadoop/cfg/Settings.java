@@ -124,6 +124,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_INDEX_READ_MISSING_AS_EMPTY, ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT));
     }
 
+    public boolean getInputAsJson() {
+        return Booleans.parseBoolean(getProperty(ES_INPUT_JSON, ES_INPUT_JSON_DEFAULT));
+    }
+
     public String getOperation() {
         return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase(Locale.ENGLISH);
     }
@@ -148,7 +152,7 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_MAPPING_TTL);
     }
 
-    public Object getMappingTimestamp() {
+    public String getMappingTimestamp() {
         return getProperty(ES_MAPPING_TIMESTAMP);
     }
 

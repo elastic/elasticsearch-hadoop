@@ -34,8 +34,8 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
-import org.elasticsearch.hadoop.serialization.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -118,8 +118,8 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
         Settings set = SettingsManager.loadFrom(conf);
 
-        SerializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
-        SerializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
+        InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
+        InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());

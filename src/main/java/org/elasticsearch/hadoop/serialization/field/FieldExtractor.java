@@ -16,19 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 
-public class CreateCommandFactory extends AbstractCommandFactory {
+/**
+ * Basic extractor (for serialization purposes) of a field. Typically used with {@link SettingsAware} for configuration/injection purposes.
+ *
+ */
+public interface FieldExtractor {
 
-    public CreateCommandFactory(Settings settings) {
-        super(settings);
-    }
-
-    @Override
-    protected String getOperation() {
-        return ConfigurationOptions.ES_OPERATION_CREATE;
-    }
+    String field(Object target);
 }

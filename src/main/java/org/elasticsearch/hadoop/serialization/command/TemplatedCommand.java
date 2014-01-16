@@ -16,10 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
 import java.util.Collection;
 
+import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -65,17 +68,26 @@ class TemplatedCommand implements Command {
     @Override
     public BytesRef write(Object object) {
         ref.reset();
-
-        // write before object
-        writeTemplate(beforeObject, object);
-        // write object
         scratchPad.reset();
-        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(scratchPad);
-        ContentBuilder.generate(bos, valueWriter).value(object).flush().close();
+
+        Object processed = preProcess(object, scratchPad);
+        // write before object
+        writeTemplate(beforeObject, processed);
+        // write object
+        doWriteObject(processed, scratchPad, valueWriter);
         ref.add(scratchPad);
         // writer after object
-        writeTemplate(afterObject, object);
+        writeTemplate(afterObject, processed);
         return ref;
+    }
+
+    protected Object preProcess(Object object, BytesArray storage) {
+        return object;
+    }
+
+    protected void doWriteObject(Object object, BytesArray storage, ValueWriter<?> writer) {
+        FastByteArrayOutputStream bos = new FastByteArrayOutputStream(storage);
+        ContentBuilder.generate(bos, writer).value(object).flush().close();
     }
 
     private void writeTemplate(Collection<Object> template, Object object) {

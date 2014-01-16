@@ -22,12 +22,10 @@ import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
 public class PigFieldExtractor extends ConstantFieldExtractor {
-
-    private String fieldName;
 
     @Override
     protected String extractField(Object target) {
@@ -37,14 +35,14 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
 
             for (int i = 0; i < fields.length; i++) {
                 ResourceFieldSchema field = fields[i];
-                if (fieldName.equals(field.getName())) {
+                if (getFieldName().equals(field.getName())) {
                     byte type = field.getType();
                     Assert.isTrue(DataType.isAtomic(type),
-                            String.format("Unsupported data type [%s] for field [%s]; use only 'primitives'", DataType.findTypeName(type), fieldName));
+                            String.format("Unsupported data type [%s] for field [%s]; use only 'primitives'", DataType.findTypeName(type), getFieldName()));
                     try {
                         return pt.getTuple().get(i).toString();
                     } catch (ExecException ex) {
-                        throw new IllegalStateException(String.format("Cannot retrieve field [%s]", fieldName), ex);
+                        throw new IllegalStateException(String.format("Cannot retrieve field [%s]", getFieldName()), ex);
                     }
                 }
             }
@@ -56,6 +54,5 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
     @Override
     public void setSettings(Settings settings) {
         super.setSettings(settings);
-        fieldName = getFieldName();
     }
 }

@@ -16,13 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
-/**
- * Basic extractor (for serialization purposes) of a field. Typically used with {@link SettingsAware} for configuration/injection purposes.
- *
- */
-public interface FieldExtractor {
 
-    String field(Object target);
+interface CommandFactory {
+
+    Command createCommand();
+
 }

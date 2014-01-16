@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
 import java.util.List;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
 class UpdateCommandFactory extends AbstractCommandFactory {

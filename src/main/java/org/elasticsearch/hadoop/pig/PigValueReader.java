@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.TupleFactory;
-import org.elasticsearch.hadoop.serialization.JdkValueReader;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 
 public class PigValueReader extends JdkValueReader {
 

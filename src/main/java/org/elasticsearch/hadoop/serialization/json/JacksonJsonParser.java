@@ -49,8 +49,12 @@ public class JacksonJsonParser implements Parser {
     }
 
     public JacksonJsonParser(byte[] content) {
+        this(content, 0, content.length);
+    }
+
+    public JacksonJsonParser(byte[] content, int offset, int length) {
         try {
-            this.parser = JSON_FACTORY.createJsonParser(content);
+            this.parser = JSON_FACTORY.createJsonParser(content, offset, length);
         } catch (IOException ex) {
             throw new SerializationException(ex);
         }

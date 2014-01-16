@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.mr;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.io.AbstractMapWritable;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
@@ -39,7 +40,7 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
 @SuppressWarnings("deprecation")
 public class WritableValueWriter implements ValueWriter<Writable> {
@@ -66,6 +67,9 @@ public class WritableValueWriter implements ValueWriter<Writable> {
         else if (writable instanceof UTF8) {
             UTF8 utf8 = (UTF8) writable;
             generator.writeUTF8String(utf8.getBytes(), 0, utf8.getLength());
+        }
+        else if (writable instanceof ShortWritable) {
+            generator.writeNumber(((ShortWritable) writable).get());
         }
         else if (writable instanceof IntWritable) {
             generator.writeNumber(((IntWritable) writable).get());

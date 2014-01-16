@@ -28,7 +28,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class, MRNewApiSaveTest.class, MRNewApiSearchTest.class })
-//@Suite.SuiteClasses({ MRNewApiSaveTest.class, MRNewApiSearchTest.class })
+//@Suite.SuiteClasses({ MRNewApiSaveTest.class })
 public class MRSuite {
     @ClassRule
     public static ExternalResource resource = new LocalEs();
@@ -36,5 +36,6 @@ public class MRSuite {
     @BeforeClass
     public static void setupHdfs() throws Exception {
         HdfsUtils.copyFromLocal("src/test/resources/artists.dat");
+        HdfsUtils.copyFromLocal("src/test/resources/artists.json");
     }
 }

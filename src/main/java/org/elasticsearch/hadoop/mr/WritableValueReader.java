@@ -32,7 +32,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.serialization.FieldType;
-import org.elasticsearch.hadoop.serialization.JdkValueReader;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 
 public class WritableValueReader extends JdkValueReader {
 

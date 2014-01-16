@@ -23,8 +23,8 @@ import java.util.List;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
 import cascading.scheme.SinkCall;
 import cascading.tuple.Tuple;

@@ -16,29 +16,41 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
-
-import java.util.Map;
+package org.elasticsearch.hadoop.serialization.field;
 
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 
-public class MapFieldExtractor extends ConstantFieldExtractor {
+public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
-    @SuppressWarnings("rawtypes")
+    public static final String PROPERTY = "org.elasticsearch.hadoop.serialization.ConstantFieldExtractor.property";
+    private String fieldName;
+    private String value;
+
     @Override
+    public final String field(Object target) {
+        return (value != null ? value : extractField(target));
+    }
+
     protected String extractField(Object target) {
-        if (target instanceof Map) {
-            Map map = (Map) target;
-            Object w = map.get(getFieldName());
-            // since keys are likely primitives, just do a toString
-            return (w != null ? w.toString() : null);
-        }
         return null;
     }
 
     @Override
     public void setSettings(Settings settings) {
-        super.setSettings(settings);
+        fieldName = property(settings);
+        if (fieldName.startsWith("<") && fieldName.endsWith(">")) {
+            this.value = fieldName.substring(1, fieldName.length() - 1);
+        }
+    }
+
+    protected String property(Settings settings) {
+        String property = settings.getProperty(PROPERTY).trim();
+        String value = settings.getProperty(property);
+        return (value == null ? "" : value.trim());
+    }
+
+    protected String getFieldName() {
+        return fieldName;
     }
 }

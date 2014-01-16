@@ -29,9 +29,12 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.serialization.ContentBuilder;
-import org.elasticsearch.hadoop.serialization.FieldExtractor;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
+import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ValueReader;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.NoOpFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -93,9 +96,20 @@ public abstract class InitializationUtils {
 
     public static boolean setFieldExtractorIfNotSet(Settings settings, Class<? extends FieldExtractor> clazz, Log log) {
         if (!StringUtils.hasText(settings.getMappingIdExtractorClassName())) {
-            settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
-            logger.debug(String.format("Using pre-defined field extractor [%s] as default", settings.getMappingIdExtractorClassName()));
+
+            String name = clazz.getName();
+            if (settings.getInputAsJson()) {
+                name = NoOpFieldExtractor.class.getName();
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Elasticsearch input marked as JSON; using dedicated field extractor [%s] instead of [%s]", name, clazz));
+                }
+            }
+
+            settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, name);
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Using pre-defined field extractor [%s] as default", settings.getMappingIdExtractorClassName()));
+            }
             return true;
         }
 
@@ -125,5 +139,40 @@ public abstract class InitializationUtils {
             }
             client.close();
         }
+    }
+
+    public static boolean setValueWriterIfNotSet(Settings settings, Class<? extends ValueWriter<?>> clazz, Log log) {
+        if (!StringUtils.hasText(settings.getSerializerValueWriterClassName())) {
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+
+            String name = clazz.getName();
+            if (settings.getInputAsJson()) {
+                name = NoOpValueWriter.class.getName();
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("Elasticsearch input marked as JSON; bypassing serialization through [%s] instead of [%s]", name, clazz));
+                }
+            }
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, name);
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Using pre-defined writer serializer [%s] as default", settings.getSerializerValueWriterClassName()));
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
+
+        if (!StringUtils.hasText(settings.getSerializerValueReaderClassName())) {
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Using pre-defined reader serializer [%s] as default", settings.getSerializerValueReaderClassName()));
+            }
+            return true;
+        }
+
+        return false;
     }
 }

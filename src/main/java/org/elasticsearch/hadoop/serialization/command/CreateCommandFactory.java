@@ -16,34 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 
-/**
- * Handles the instantiation of bulk commands.
- */
-public abstract class BulkCommands {
+public class CreateCommandFactory extends AbstractCommandFactory {
 
-    public static Command create(Settings settings) {
+    public CreateCommandFactory(Settings settings) {
+        super(settings);
+    }
 
-        String operation = settings.getOperation();
-        CommandFactory factory = null;
-
-        if (ConfigurationOptions.ES_OPERATION_CREATE.equals(operation)) {
-            factory = new CreateCommandFactory(settings);
-        }
-        else if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
-            factory = new IndexCommandFactory(settings);
-        }
-        else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
-            factory = new UpdateCommandFactory(settings);
-        }
-        else {
-            throw new IllegalArgumentException("Unknown operation " + operation);
-        }
-
-        return factory.createCommand();
+    @Override
+    protected String getOperation() {
+        return ConfigurationOptions.ES_OPERATION_CREATE;
     }
 }

@@ -35,7 +35,6 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -92,8 +91,8 @@ public class EsStorageHandler extends DefaultStorageHandler {
 
         InitializationUtils.checkIdForOperation(settings);
 
-        SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
-        SerializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
+        InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
+        InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
 
         settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,

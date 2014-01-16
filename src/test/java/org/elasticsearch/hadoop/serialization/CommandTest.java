@@ -26,6 +26,9 @@ import java.util.Map;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.command.BulkCommands;
+import org.elasticsearch.hadoop.serialization.command.Command;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
@@ -163,7 +166,7 @@ public class CommandTest {
 
     private Settings settings() {
         Settings set = new TestSettings();
-        SerializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
+        InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
         if (isUpdateOp()) {
             set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<2>");

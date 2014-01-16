@@ -20,12 +20,15 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -38,11 +41,15 @@ import org.elasticsearch.hadoop.util.RestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(Parameterized.class)
 public class MRNewApiSaveTest {
 
     public static class JsonMapper extends Mapper {
@@ -62,95 +69,8 @@ public class MRNewApiSaveTest {
         }
     }
 
-    @Test
-    public void testBasicSave() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testSaveWithId() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testCreateWithId() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
-
-        assertFalse("job should have failed", new Job(conf).waitForCompletion(true));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testUpdateWithoutId() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testUpdateWithId() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testUpdateWithoutUpsert() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
-        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
-
-        assertFalse("job should have failed", new Job(conf).waitForCompletion(true));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIndexAutoCreateDisabled() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/non-existing");
-        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    @Test
-    public void testParentChild() throws Exception {
-        Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
-        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
-        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
-
-        RestUtils.putMapping("mrnewapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
-
-        new Job(conf).waitForCompletion(true);
-    }
-
-    private Configuration createConf() throws IOException {
+    @Parameters
+    public static Collection<Object[]> configs() throws IOException {
         Configuration conf = HdpBootstrap.hadoopConfig();
         HadoopCfgUtils.setGenericOptions(conf);
 
@@ -161,11 +81,131 @@ public class MRNewApiSaveTest {
         job.setMapperClass(JsonMapper.class);
         job.setNumReduceTasks(0);
 
-        TextInputFormat.addInputPath(job, new Path("src/test/resources/artists.dat"));
+
+        Job standard = new Job(job.getConfiguration());
         File fl = new File("src/test/resources/artists.dat");
         long splitSize = fl.length() / 3;
-        TextInputFormat.setMaxInputSplitSize(job, splitSize);
-        TextInputFormat.setMinInputSplitSize(job, 50);
-        return job.getConfiguration();
+        TextInputFormat.setMaxInputSplitSize(standard, splitSize);
+        TextInputFormat.setMinInputSplitSize(standard, 50);
+
+        standard.setMapperClass(JsonMapper.class);
+        standard.setMapOutputValueClass(LinkedMapWritable.class);
+        TextInputFormat.addInputPath(standard, new Path("src/test/resources/artists.dat"));
+
+        Job json = new Job(job.getConfiguration());
+        json.setMapperClass(Mapper.class);
+        json.setMapOutputValueClass(Text.class);
+        json.getConfiguration().set(ConfigurationOptions.ES_INPUT_JSON, "true");
+        TextInputFormat.addInputPath(json, new Path("src/test/resources/artists.json"));
+
+        return Arrays.asList(new Object[][] {
+        { standard, "" },
+        { json, "json-" } });
+    }
+
+    private String indexPrefix = "";
+    private Configuration config;
+
+    public MRNewApiSaveTest(Job job, String indexPrefix) {
+        this.indexPrefix = indexPrefix;
+        this.config = job.getConfiguration();
+    }
+
+
+    @Test
+    public void testBasicSave() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testSaveWithId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testCreateWithId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+
+        assertFalse("job should have failed", runJob(conf));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateWithoutId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateWithId() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateWithoutUpsert() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
+
+        assertFalse("job should have failed", runJob(conf));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIndexAutoCreateDisabled() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/non-existing");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testParentChild() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
+        conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
+
+        RestUtils.putMapping(indexPrefix + "mrnewapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+
+        runJob(conf);
+    }
+
+    private Configuration createConf() throws IOException {
+        return new Configuration(config);
+    }
+
+    private boolean runJob(Configuration conf) throws Exception {
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + conf.get(ConfigurationOptions.ES_RESOURCE));
+        return new Job(conf).waitForCompletion(true);
     }
 }

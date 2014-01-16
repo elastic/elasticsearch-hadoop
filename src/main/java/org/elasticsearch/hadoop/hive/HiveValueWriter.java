@@ -31,7 +31,7 @@ import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
-import org.elasticsearch.hadoop.serialization.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.util.FieldAlias;
 
 /**

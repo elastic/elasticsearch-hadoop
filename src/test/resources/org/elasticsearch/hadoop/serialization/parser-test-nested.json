@@ -1,0 +1,35 @@
+{
+    "firstName": "John",
+    "lastName": "Smith",
+    "age": 25,
+	"trap": {
+		"bogus":true,
+		"state":"bogus",
+		"building": {
+			"hight":"bogus",
+			"floors": 0,
+			"flats": 0
+		}
+	},
+    "address": {
+        "streetAddress": "21 2nd Street",
+        "city": "New York",
+        "state": "NY",
+        "postalCode": 10021,
+		"building": {
+			"hight":"tall",
+			"floors": 10,
+			"flats": 40
+		}
+    },
+    "phoneNumbers": [
+        {
+            "type": "home",
+            "number": "212 555-1234"
+        },
+        {
+            "type": "fax",
+            "number": "646 555-4567"
+        }
+    ]
+}

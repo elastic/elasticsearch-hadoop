@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.TemplatedCommand.FieldWriter;
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.command.TemplatedCommand.FieldWriter;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -34,6 +38,9 @@ abstract class AbstractCommandFactory implements CommandFactory {
 
     private static Log log = LogFactory.getLog(AbstractCommandFactory.class);
 
+    private boolean jsonInput;
+    private JsonFieldExtractors jsonExtractors;
+
     private Settings settings;
     private ValueWriter<?> valueWriter;
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
@@ -41,59 +48,75 @@ abstract class AbstractCommandFactory implements CommandFactory {
 
     AbstractCommandFactory(Settings settings) {
         this.settings = settings;
-
         this.valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
+        initFieldExtractors(settings);
+    }
 
-        // init extractors (if needed)
-        if (settings.getMappingId() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ID);
-            idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings);
-        }
-        if (settings.getMappingParent() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_PARENT);
-            parentExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingParentExtractorClassName(),
-                    settings);
-        }
-        if (settings.getMappingRouting() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ROUTING);
-            routingExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingRoutingExtractorClassName(),
-                    settings);
-        }
-        if (settings.getMappingTtl() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TTL);
-            ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(),
-                    settings);
-        }
-        if (settings.getMappingVersion() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_VERSION);
-            versionExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingVersionExtractorClassName(),
-                    settings);
-        }
-        if (settings.getMappingTimestamp() != null) {
-            settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TIMESTAMP);
-            timestampExtractor = ObjectUtils.<FieldExtractor> instantiate(
-                    settings.getMappingTimestampExtractorClassName(), settings);
-        }
+    private void initFieldExtractors(Settings settings) {
+        jsonInput = settings.getInputAsJson();
 
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("Instantiated value writer [%s]", valueWriter));
-            if (idExtractor != null) {
-                log.trace(String.format("Instantiated id extractor [%s]", idExtractor));
+        if (jsonInput) {
+            if (log.isDebugEnabled()) {
+                log.debug("JSON input; using internal field extractor for efficient parsing...");
             }
-            if (parentExtractor != null) {
-                log.trace(String.format("Instantiated parent extractor [%s]", parentExtractor));
+
+            jsonExtractors = new JsonFieldExtractors(settings);
+            idExtractor = jsonExtractors.id();
+            parentExtractor = jsonExtractors.parent();
+            routingExtractor = jsonExtractors.routing();
+            versionExtractor = jsonExtractors.version();
+            ttlExtractor = jsonExtractors.ttl();
+            timestampExtractor = jsonExtractors.timestamp();
+        }
+        else {
+
+            // init extractors (if needed)
+            if (settings.getMappingId() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ID);
+                idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings);
             }
-            if (routingExtractor != null) {
-                log.trace(String.format("Instantiated routing extractor [%s]", routingExtractor));
+            if (settings.getMappingParent() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_PARENT);
+                parentExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingParentExtractorClassName(), settings);
             }
-            if (ttlExtractor != null) {
-                log.trace(String.format("Instantiated ttl extractor [%s]", ttlExtractor));
+            if (settings.getMappingRouting() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ROUTING);
+                routingExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingRoutingExtractorClassName(), settings);
             }
-            if (versionExtractor != null) {
-                log.trace(String.format("Instantiated version extractor [%s]", versionExtractor));
+            if (settings.getMappingTtl() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TTL);
+                ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(), settings);
             }
-            if (timestampExtractor != null) {
-                log.trace(String.format("Instantiated timestamp extractor [%s]", timestampExtractor));
+            if (settings.getMappingVersion() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_VERSION);
+                versionExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingVersionExtractorClassName(), settings);
+            }
+            if (settings.getMappingTimestamp() != null) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TIMESTAMP);
+                timestampExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                        settings.getMappingTimestampExtractorClassName(), settings);
+            }
+
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("Instantiated value writer [%s]", valueWriter));
+                if (idExtractor != null) {
+                    log.trace(String.format("Instantiated id extractor [%s]", idExtractor));
+                }
+                if (parentExtractor != null) {
+                    log.trace(String.format("Instantiated parent extractor [%s]", parentExtractor));
+                }
+                if (routingExtractor != null) {
+                    log.trace(String.format("Instantiated routing extractor [%s]", routingExtractor));
+                }
+                if (ttlExtractor != null) {
+                    log.trace(String.format("Instantiated ttl extractor [%s]", ttlExtractor));
+                }
+                if (versionExtractor != null) {
+                    log.trace(String.format("Instantiated version extractor [%s]", versionExtractor));
+                }
+                if (timestampExtractor != null) {
+                    log.trace(String.format("Instantiated timestamp extractor [%s]", timestampExtractor));
+                }
             }
         }
     }
@@ -130,8 +153,11 @@ abstract class AbstractCommandFactory implements CommandFactory {
         List<Object> after = new ArrayList<Object>();
         writeAfterObject(after);
 
+        before = compact(before);
+        after = compact(after);
+
         // compress pieces
-        return new TemplatedCommand(compact(before), compact(after), valueWriter);
+        return (jsonInput ? new JsonTemplatedCommand(before, after, jsonExtractors) : new TemplatedCommand(before, after, valueWriter));
     }
 
     protected void writeAfterObject(List<Object> after) {

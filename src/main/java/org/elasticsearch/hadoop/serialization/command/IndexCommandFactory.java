@@ -16,19 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.command;
 
-/**
- * Translates a value to its JSON-like structure.
- */
-public interface ValueWriter<T> {
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
 
-    /**
-     * Returns true if the value was written, false otherwise.
-     *
-     * @param object
-     * @param generator
-     * @return true if the value was written, false otherwise
-     */
-    boolean write(T object, Generator generator);
+class IndexCommandFactory extends AbstractCommandFactory {
+
+    public IndexCommandFactory(Settings settings) {
+        super(settings);
+    }
+
+    @Override
+    protected String getOperation() {
+        return ConfigurationOptions.ES_OPERATION_INDEX;
+    }
 }

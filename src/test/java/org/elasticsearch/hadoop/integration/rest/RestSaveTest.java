@@ -26,7 +26,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestRepository;
-import org.elasticsearch.hadoop.serialization.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;

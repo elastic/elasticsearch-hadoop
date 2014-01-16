@@ -46,9 +46,8 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.serialization.BulkCommands;
-import org.elasticsearch.hadoop.serialization.Command;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
+import org.elasticsearch.hadoop.serialization.command.BulkCommands;
+import org.elasticsearch.hadoop.serialization.command.Command;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FieldAlias;
 
@@ -123,7 +122,7 @@ public class EsSerDe implements SerDe {
         writeInitialized = true;
         Settings settings = SettingsManager.loadFrom(tableProperties);
 
-        SerializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
+        InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         this.command = BulkCommands.create(settings);
     }

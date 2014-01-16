@@ -39,6 +39,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.hive.HiveType;
 import org.elasticsearch.hadoop.hive.HiveValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.junit.After;
 import org.junit.AfterClass;

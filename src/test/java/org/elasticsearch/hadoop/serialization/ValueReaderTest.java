@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.io.InputStream;
 
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

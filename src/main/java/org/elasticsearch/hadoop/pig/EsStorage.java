@@ -59,7 +59,6 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.serialization.SerializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -149,8 +148,8 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         boolean changed = false;
         InitializationUtils.checkIdForOperation(settings);
 
-        changed |= SerializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
-        changed |= SerializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
+        changed |= InitializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
+        changed |= InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
         settings.save();
     }

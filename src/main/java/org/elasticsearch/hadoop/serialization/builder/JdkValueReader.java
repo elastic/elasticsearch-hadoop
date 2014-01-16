@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.Parser;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 

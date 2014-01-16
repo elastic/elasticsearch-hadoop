@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.xml.bind.DatatypeConverter;
+
+import org.elasticsearch.hadoop.serialization.Generator;
 
 /**
  * Value writer for JDK types.

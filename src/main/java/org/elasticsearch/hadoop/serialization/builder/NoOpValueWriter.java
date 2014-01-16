@@ -16,10 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
-interface CommandFactory {
+import org.elasticsearch.hadoop.serialization.Generator;
 
-    Command createCommand();
+/**
+ * A no-op value writer throwing exceptions if called.
+ * Used when the JSON is not generated (because it already exists).
+ */
+public class NoOpValueWriter implements ValueWriter<Object> {
 
+    @Override
+    public boolean write(Object object, Generator generator) {
+        throw new IllegalStateException("Incorrect configuration - NoOpValueWriter should not have been called");
+    }
 }

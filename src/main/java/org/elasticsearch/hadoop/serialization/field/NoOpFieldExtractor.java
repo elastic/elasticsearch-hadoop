@@ -16,32 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.field;
 
-import java.util.Map;
-
-import org.apache.hadoop.io.Text;
-import org.elasticsearch.hadoop.cfg.Settings;
-
-public class MapWritableFieldExtractor extends ConstantFieldExtractor {
-
-    private Text fieldName;
-
-    @SuppressWarnings("rawtypes")
-    @Override
-    protected String extractField(Object target) {
-        if (target instanceof Map) {
-            Map map = (Map) target;
-            Object w = map.get(fieldName);
-            // since keys are likely primitives, just do a toString
-            return (w != null ? w.toString() : null);
-        }
-        return null;
-    }
+public class NoOpFieldExtractor implements FieldExtractor {
 
     @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
-        fieldName = new Text(getFieldName());
+    public String field(Object target) {
+        throw new IllegalStateException("Should not be called - indicates a configuration issue or a bug");
     }
 }

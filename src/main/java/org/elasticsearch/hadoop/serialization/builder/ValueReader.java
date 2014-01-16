@@ -16,24 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.builder;
 
-import org.elasticsearch.hadoop.util.BytesRef;
+import java.util.List;
+
+import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.Parser;
 
 
 /**
- * Bulk command to execute.
+ * Translates a JSON field to an actual object. Implementations should only handle the conversion and not influence the parser outside the conversion.
  */
-public interface Command {
+public interface ValueReader {
 
-    /**
-     * Serialized the given object as a {@link BytesRef}.
-     * Note that the {@link BytesRef} is not guaranteed to be unique - in fact,
-     * expect the same instance to be reused by multiple calls.
-     * In other words, make a copy if you need to hang on to this object.
-     *
-     * @param object
-     * @return
-     */
-    BytesRef write(Object object);
+    Object readValue(Parser parser, String value, FieldType esType);
+
+    Object createMap();
+
+    void addToMap(Object map, Object key, Object value);
+
+    Object createArray(FieldType type);
+
+    Object addToArray(Object array, List<Object> values);
 }
