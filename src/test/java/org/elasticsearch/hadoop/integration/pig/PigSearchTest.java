@@ -39,7 +39,7 @@ public class PigSearchTest {
         return QueryTestParams.params();
     }
 
-    private String query;
+    private final String query;
 
     public PigSearchTest(String query) {
         this.query = query;

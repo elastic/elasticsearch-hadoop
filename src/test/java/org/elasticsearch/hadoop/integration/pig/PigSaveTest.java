@@ -46,7 +46,7 @@ public class PigSaveTest {
         // initialize Pig in local mode
         RestClient client = new RestClient(new TestSettings());
         try {
-            client.deleteIndex("radio");
+            client.deleteIndex("pig");
         } catch (Exception ex) {
             // ignore
         }
