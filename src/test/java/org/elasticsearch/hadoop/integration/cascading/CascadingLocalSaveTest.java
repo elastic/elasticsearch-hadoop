@@ -36,10 +36,12 @@ import cascading.tuple.Fields;
 
 public class CascadingLocalSaveTest {
 
+    private static final String INPUT = "src/test/resources/artists.dat";
+
     @Test
     public void testWriteToES() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
         Tap out = new EsTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
@@ -49,7 +51,7 @@ public class CascadingLocalSaveTest {
     @Test
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
         Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
@@ -68,7 +70,7 @@ public class CascadingLocalSaveTest {
         properties.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
 
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
         Tap out = new EsTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");

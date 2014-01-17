@@ -30,21 +30,35 @@ public class QueryTestParams {
 
     public static Collection<Object[]> params() {
         return Arrays.asList(new Object[][] {
-                { "" }, // empty
-                { "?q=m*" }, // uri
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
-                { "src/test/resources/org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
-                { "src/test/resources/org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
-                });
+                // standard
+                { "", "" }, // empty
+                { "", "?q=m*" }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
+                { "", "src/test/resources/org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
+                { "", "src/test/resources/org/elasticsearch/hadoop/integration/query.dsl" }, // nested dsl
+                // json
+                { "json-", "" }, // empty
+                { "json-", "?q=m*" }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
+                { "json-", "src/test/resources/org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
+                { "json-", "src/test/resources/org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
+
+        });
     }
 
     public static Collection<Object[]> localParams() {
         return Arrays.asList(new Object[][] {
-                { "" }, // empty
-                { "?q=m*" }, // uri
-                { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
-                { "org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
-                { "org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
+                { "", "" }, // empty
+                { "", "?q=m*" }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
+                { "", "org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
+                { "", "org/elasticsearch/hadoop/integration/query.dsl" }, // nested dsl
+
+                { "json-", "" }, // empty
+                { "json-", "?q=m*" }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
+                { "json-", "org/elasticsearch/hadoop/integration/query.uri" }, // nested uri
+                { "json-", "org/elasticsearch/hadoop/integration/query.dsl" } // nested dsl
                 });
     }
 

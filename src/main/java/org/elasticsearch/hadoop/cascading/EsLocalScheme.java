@@ -26,6 +26,7 @@ import java.util.Properties;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.mr.WritableBytesWriter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
@@ -117,6 +118,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
             InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
             InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(EsTap.class));
+            InitializationUtils.setBytesWriterIfNeeded(settings, WritableBytesWriter.class, LogFactory.getLog(EsTap.class));
             settings.save();
             client = new RestRepository(settings);
         }
