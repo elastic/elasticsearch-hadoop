@@ -22,14 +22,14 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.BytesWriter;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
 /**
  * Dedicated JSON command that skips the content generation phase (since the data is already JSON).
@@ -39,36 +39,21 @@ class JsonTemplatedCommand extends TemplatedCommand {
     private static Log log = LogFactory.getLog(JsonTemplatedCommand.class);
 
     private final JsonFieldExtractors jsonExtractors;
+    private final BytesWriter jsonWriter;
 
-    public JsonTemplatedCommand(Collection<Object> beforeObject, Collection<Object> afterObject, JsonFieldExtractors jsonExtractors) {
+    public JsonTemplatedCommand(Collection<Object> beforeObject, Collection<Object> afterObject,
+            JsonFieldExtractors jsonExtractors, Settings settings) {
         super(beforeObject, afterObject, new NoOpValueWriter());
         this.jsonExtractors = jsonExtractors;
+        this.jsonWriter = ObjectUtils.instantiate(settings.getSerializerBytesWriterClassName(), settings);
     }
 
     @Override
     protected Object preProcess(Object object, BytesArray storage) {
         // serialize the json early on and copy it to storage
         Assert.notNull(object, "Empty/null JSON document given...");
-        Assert.isTrue(object instanceof Writable,
-                String.format("Class [%s] not supported; only Hadoop Writables", object.getClass()));
 
-        // handle common cases
-        if (object instanceof Text) {
-            Text t = (Text) object;
-            storage.bytes(t.getBytes(), t.getLength());
-        }
-        else if (object instanceof BytesWritable) {
-            BytesWritable b = (BytesWritable) object;
-            storage.bytes(b.getBytes(), b.getLength());
-        }
-        else {
-        // fall-back to generic toString contract
-            if (log.isTraceEnabled()) {
-                log.trace(String.format("Unknown Writable type for object [%s], using default toString()", object));
-            }
-
-            storage.bytes(object.toString());
-        }
+        jsonWriter.write(object, storage);
 
         if (log.isTraceEnabled()) {
             log.trace(String.format("About to extract information from [%s]", storage));

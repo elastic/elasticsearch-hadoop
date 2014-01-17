@@ -51,8 +51,8 @@ public class RestQueryTest {
     public void start() throws IOException {
         settings = new TestSettings("rest/savebulk");
         //testSettings.setPort(9200)
-        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
-        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         client = new RestRepository(settings);
         client.waitForYellow();
     }

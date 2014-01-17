@@ -109,11 +109,15 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public String getSerializerValueWriterClassName() {
-        return getProperty(ES_SERIALIZATION_WRITER_CLASS);
+        return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
+    }
+
+    public String getSerializerBytesWriterClassName() {
+        return getProperty(ES_SERIALIZATION_WRITER_BYTES_CLASS);
     }
 
     public String getSerializerValueReaderClassName() {
-        return getProperty(ES_SERIALIZATION_READER_CLASS);
+        return getProperty(ES_SERIALIZATION_READER_VALUE_CLASS);
     }
 
     public boolean getIndexAutoCreate() {

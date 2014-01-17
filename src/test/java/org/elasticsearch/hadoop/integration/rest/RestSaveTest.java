@@ -38,7 +38,7 @@ public class RestSaveTest {
     public void testBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/savebulk");
         //testSettings.setPort(9200)
-        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         RestRepository client = new RestRepository(testSettings);
 
         Scanner in = new Scanner(getClass().getResourceAsStream("/artists.dat")).useDelimiter("\\n|\\t");
@@ -61,7 +61,7 @@ public class RestSaveTest {
     @Test
     public void testEmptyBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
-        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, JdkValueWriter.class.getName());
+        testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         RestClient client = new RestRepository(testSettings).getRestClient();
         client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray("{}")));
         client.close();

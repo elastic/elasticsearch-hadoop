@@ -86,10 +86,13 @@ public interface ConfigurationOptions {
     /** Serialization settings */
 
     /** Value writer - setup automatically; can be overridden for custom types */
-    String ES_SERIALIZATION_WRITER_CLASS = "es.ser.writer.class";
+    String ES_SERIALIZATION_WRITER_VALUE_CLASS = "es.ser.writer.value.class";
+
+    /** JSON/Bytes writer - setup automatically; can be overridden for custom types */
+    String ES_SERIALIZATION_WRITER_BYTES_CLASS = "es.ser.writer.bytes.class";
 
     /** Value reader - setup automatically; can be overridden for custom types */
-    String ES_SERIALIZATION_READER_CLASS = "es.ser.reader.class";
+    String ES_SERIALIZATION_READER_VALUE_CLASS = "es.ser.reader.value.class";
 
     /** Input options **/
     String ES_INPUT_JSON = "es.input.json";

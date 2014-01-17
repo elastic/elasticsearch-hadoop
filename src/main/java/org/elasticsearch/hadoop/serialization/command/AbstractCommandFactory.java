@@ -157,7 +157,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
         after = compact(after);
 
         // compress pieces
-        return (jsonInput ? new JsonTemplatedCommand(before, after, jsonExtractors) : new TemplatedCommand(before, after, valueWriter));
+        return (jsonInput ? new JsonTemplatedCommand(before, after, jsonExtractors, settings) : new TemplatedCommand(before, after, valueWriter));
     }
 
     protected void writeAfterObject(List<Object> after) {

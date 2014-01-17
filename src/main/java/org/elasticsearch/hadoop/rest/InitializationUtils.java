@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.serialization.BytesWriter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
@@ -152,9 +153,22 @@ public abstract class InitializationUtils {
                     logger.debug(String.format("Elasticsearch input marked as JSON; bypassing serialization through [%s] instead of [%s]", name, clazz));
                 }
             }
-            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_CLASS, name);
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, name);
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Using pre-defined writer serializer [%s] as default", settings.getSerializerValueWriterClassName()));
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean setBytesWriterIfNeeded(Settings settings, Class<? extends BytesWriter> clazz, Log log) {
+        if (settings.getInputAsJson() && !StringUtils.hasText(settings.getSerializerBytesWriterClassName())) {
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("JSON input specified; using pre-defined bytes/json serializer [%s] as default", settings.getSerializerBytesWriterClassName()));
             }
             return true;
         }
@@ -165,7 +179,7 @@ public abstract class InitializationUtils {
     public static boolean setValueReaderIfNotSet(Settings settings, Class<? extends ValueReader> clazz, Log log) {
 
         if (!StringUtils.hasText(settings.getSerializerValueReaderClassName())) {
-            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_CLASS, clazz.getName());
+            settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_READER_VALUE_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Using pre-defined reader serializer [%s] as default", settings.getSerializerValueReaderClassName()));
