@@ -42,7 +42,7 @@ public class MRNewApiSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.params();
+        return QueryTestParams.jsonParams();
     }
 
     private final String query;
