@@ -45,16 +45,18 @@ public class MROldApiSearchTest {
         return QueryTestParams.params();
     }
 
-    private String query;
+    private final String query;
+    private final String indexPrefix;
 
-    public MROldApiSearchTest(String query) {
+    public MROldApiSearchTest(String indexPrefix, String query) {
         this.query = query;
+        this.indexPrefix = indexPrefix;
     }
 
     @Test
     public void testBasicSearch() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/save");
 
         JobClient.runJob(conf);
     }
@@ -62,7 +64,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/savewithid");
 
         JobClient.runJob(conf);
     }
@@ -79,7 +81,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/createwithid");
 
         JobClient.runJob(conf);
     }
@@ -87,7 +89,7 @@ public class MROldApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/update");
 
         JobClient.runJob(conf);
     }
@@ -96,7 +98,7 @@ public class MROldApiSearchTest {
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/updatewoupsert");
 
         JobClient.runJob(conf);
     }
@@ -104,7 +106,7 @@ public class MROldApiSearchTest {
     @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
@@ -115,7 +117,7 @@ public class MROldApiSearchTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/nested");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         //conf.set(Stream.class.getName(), "OUT");

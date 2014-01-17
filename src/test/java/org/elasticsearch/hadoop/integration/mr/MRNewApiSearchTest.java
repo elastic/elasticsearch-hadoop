@@ -45,16 +45,18 @@ public class MRNewApiSearchTest {
         return QueryTestParams.params();
     }
 
-    private String query;
+    private final String query;
+    private final String indexPrefix;
 
-    public MRNewApiSearchTest(String query) {
+    public MRNewApiSearchTest(String indexPrefix, String query) {
+        this.indexPrefix = indexPrefix;
         this.query = query;
     }
 
     @Test
     public void testBasicSearch() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/save");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -62,7 +64,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/savewithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/savewithid");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -71,7 +73,7 @@ public class MRNewApiSearchTest {
     public void testSearchNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "foobar/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "foobar/save");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -79,7 +81,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/createwithid");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -87,7 +89,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/update");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -96,7 +98,7 @@ public class MRNewApiSearchTest {
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/updatewoupsert");
 
         new Job(conf).waitForCompletion(true);
     }
@@ -104,7 +106,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testParentChild() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 

@@ -107,8 +107,8 @@ public class MRNewApiSaveTest {
     private Configuration config;
 
     public MRNewApiSaveTest(Job job, String indexPrefix) {
-        this.indexPrefix = indexPrefix;
         this.config = job.getConfiguration();
+        this.indexPrefix = indexPrefix;
     }
 
 
