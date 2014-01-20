@@ -20,20 +20,13 @@ package org.elasticsearch.hadoop.serialization;
 
 import org.elasticsearch.hadoop.util.BytesArray;
 
-public class JdkBytesWriter implements BytesWriter {
+public interface BytesConverter {
 
-    @Override
-    public void write(Object from, BytesArray to) {
-        if (from instanceof byte[]) {
-            byte[] bytes = (byte[]) from;
-            to.bytes(bytes, bytes.length);
-            return;
-        }
-        if (from instanceof BytesArray) {
-            ((BytesArray) from).copyTo(to);
-            return;
-        }
-        // fall back toString()
-        to.bytes(from.toString());
-    }
+    /**
+     * Writes the given object to the given {@link BytesArray}.
+     *
+     * @param from object to write
+     * @param to storage
+     */
+    void convert(Object from, BytesArray to);
 }

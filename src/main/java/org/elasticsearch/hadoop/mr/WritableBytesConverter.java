@@ -20,13 +20,13 @@ package org.elasticsearch.hadoop.mr;
 
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
-import org.elasticsearch.hadoop.serialization.JdkBytesWriter;
+import org.elasticsearch.hadoop.serialization.JdkBytesConverter;
 import org.elasticsearch.hadoop.util.BytesArray;
 
-public class WritableBytesWriter extends JdkBytesWriter {
+public class WritableBytesConverter extends JdkBytesConverter {
 
     @Override
-    public void write(Object from, BytesArray to) {
+    public void convert(Object from, BytesArray to) {
         // handle common cases
         if (from instanceof Text) {
             Text t = (Text) from;
@@ -39,6 +39,6 @@ public class WritableBytesWriter extends JdkBytesWriter {
             return;
         }
 
-        super.write(from, to);
+        super.convert(from, to);
     }
 }

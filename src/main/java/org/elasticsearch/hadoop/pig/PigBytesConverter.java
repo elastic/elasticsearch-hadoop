@@ -22,14 +22,14 @@ import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
-import org.elasticsearch.hadoop.serialization.JdkBytesWriter;
+import org.elasticsearch.hadoop.serialization.JdkBytesConverter;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 
-public class PigBytesWritable extends JdkBytesWriter {
+public class PigBytesConverter extends JdkBytesConverter {
 
     @Override
-    public void write(Object from, BytesArray to) {
+    public void convert(Object from, BytesArray to) {
 
         // expect PigTuple holding a Tuple with only one field - chararray or bytearray
         Assert.isTrue(from instanceof PigTuple,
@@ -39,7 +39,6 @@ public class PigBytesWritable extends JdkBytesWriter {
         ResourceFieldSchema schema = pt.getSchema();
 
         // unwrap the tuple
-
         ResourceSchema tupleSchema = schema.getSchema();
 
         // empty tuple shortcut

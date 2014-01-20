@@ -112,7 +112,7 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
     }
 
-    public String getSerializerBytesWriterClassName() {
+    public String getSerializerBytesConverterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_BYTES_CLASS);
     }
 

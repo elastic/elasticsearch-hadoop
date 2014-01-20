@@ -150,7 +150,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         changed |= InitializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
         changed |= InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
-        changed |= InitializationUtils.setBytesWriterIfNeeded(settings, PigBytesWritable.class, log);
+        changed |= InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
         settings.save();
     }

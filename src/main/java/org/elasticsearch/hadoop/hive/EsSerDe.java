@@ -124,6 +124,7 @@ public class EsSerDe implements SerDe {
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
         this.command = BulkCommands.create(settings);
     }
 

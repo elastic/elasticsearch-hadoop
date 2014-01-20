@@ -23,7 +23,7 @@ import java.util.Collection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.BytesWriter;
+import org.elasticsearch.hadoop.serialization.BytesConverter;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
@@ -39,13 +39,13 @@ class JsonTemplatedCommand extends TemplatedCommand {
     private static Log log = LogFactory.getLog(JsonTemplatedCommand.class);
 
     private final JsonFieldExtractors jsonExtractors;
-    private final BytesWriter jsonWriter;
+    private final BytesConverter jsonWriter;
 
     public JsonTemplatedCommand(Collection<Object> beforeObject, Collection<Object> afterObject,
             JsonFieldExtractors jsonExtractors, Settings settings) {
         super(beforeObject, afterObject, new NoOpValueWriter());
         this.jsonExtractors = jsonExtractors;
-        this.jsonWriter = ObjectUtils.instantiate(settings.getSerializerBytesWriterClassName(), settings);
+        this.jsonWriter = ObjectUtils.instantiate(settings.getSerializerBytesConverterClassName(), settings);
     }
 
     @Override
@@ -53,7 +53,7 @@ class JsonTemplatedCommand extends TemplatedCommand {
         // serialize the json early on and copy it to storage
         Assert.notNull(object, "Empty/null JSON document given...");
 
-        jsonWriter.write(object, storage);
+        jsonWriter.convert(object, storage);
 
         if (log.isTraceEnabled()) {
             log.trace(String.format("About to extract information from [%s]", storage));

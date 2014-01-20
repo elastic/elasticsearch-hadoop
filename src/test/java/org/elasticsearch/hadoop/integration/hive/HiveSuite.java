@@ -19,7 +19,6 @@
 package org.elasticsearch.hadoop.integration.hive;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,8 +37,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
-//@Suite.SuiteClasses({ HiveLoad.class })
+//@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
+@Suite.SuiteClasses({ HiveSaveJsonTest.class, HiveSearchJsonTest.class })
 public class HiveSuite {
 
     static HiveInstance server;
@@ -50,7 +49,9 @@ public class HiveSuite {
     static String useDB = "USE test";
 
     static String originalResource;
+    static String originalJsonResource;
     static String hdfsResource;
+    static String hdfsJsonResource;
     static String hdfsEsLib;
     static Configuration hadoopConfig;
 
@@ -59,8 +60,12 @@ public class HiveSuite {
         try {
             originalResource = HiveSuite.class.getClassLoader().getResource("hive-compound.dat").toURI().toString();
             hdfsResource = originalResource;
-        } catch (URISyntaxException ex) {
-            throw new RuntimeException(ex);
+
+            originalJsonResource = HiveSuite.class.getClassLoader().getResource("hive-compound.json").toURI().toString();
+            hdfsJsonResource = originalJsonResource;
+
+        } catch (Exception ex) {
+            throw new RuntimeException("Cannot find resource", ex);
         }
     }
 
@@ -110,6 +115,10 @@ public class HiveSuite {
             hdfsResource = "/eshdp/hive/hive-compund.dat";
             HdfsUtils.copyFromLocal(originalResource, hdfsResource);
             hdfsResource = HdfsUtils.qualify(hdfsResource, hadoopConfig);
+
+            hdfsJsonResource = "/eshdp/hive/hive-compund.json";
+            HdfsUtils.copyFromLocal(originalResource, hdfsJsonResource);
+            hdfsJsonResource = HdfsUtils.qualify(hdfsJsonResource, hadoopConfig);
         }
     }
 
@@ -158,6 +167,9 @@ public class HiveSuite {
         if (!isLocal) {
             hdfsResource = "/eshdp/hive/hive-compund.dat";
             HdfsUtils.copyFromLocal(originalResource, hdfsResource);
+
+            hdfsJsonResource = "/eshdp/hive/hive-compund.json";
+            HdfsUtils.copyFromLocal(originalResource, hdfsJsonResource);
         }
 
         String jar = "ADD JAR " + HiveSuite.hdfsEsLib;

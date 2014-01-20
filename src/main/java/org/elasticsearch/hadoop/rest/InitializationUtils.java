@@ -29,7 +29,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.serialization.BytesWriter;
+import org.elasticsearch.hadoop.serialization.BytesConverter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
@@ -163,12 +163,12 @@ public abstract class InitializationUtils {
         return false;
     }
 
-    public static boolean setBytesWriterIfNeeded(Settings settings, Class<? extends BytesWriter> clazz, Log log) {
-        if (settings.getInputAsJson() && !StringUtils.hasText(settings.getSerializerBytesWriterClassName())) {
+    public static boolean setBytesConverterIfNeeded(Settings settings, Class<? extends BytesConverter> clazz, Log log) {
+        if (settings.getInputAsJson() && !StringUtils.hasText(settings.getSerializerBytesConverterClassName())) {
             settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("JSON input specified; using pre-defined bytes/json serializer [%s] as default", settings.getSerializerBytesWriterClassName()));
+                logger.debug(String.format("JSON input specified; using pre-defined bytes/json converter [%s] as default", settings.getSerializerBytesConverterClassName()));
             }
             return true;
         }

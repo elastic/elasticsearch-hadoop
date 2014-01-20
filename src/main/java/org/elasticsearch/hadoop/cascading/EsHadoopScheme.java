@@ -34,7 +34,7 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
-import org.elasticsearch.hadoop.mr.WritableBytesWriter;
+import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
@@ -121,7 +121,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
         InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
-        InitializationUtils.setBytesWriterIfNeeded(set, WritableBytesWriter.class, LogFactory.getLog(EsTap.class));
+        InitializationUtils.setBytesConverterIfNeeded(set, WritableBytesConverter.class, LogFactory.getLog(EsTap.class));
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());

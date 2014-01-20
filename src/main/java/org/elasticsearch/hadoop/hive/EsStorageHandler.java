@@ -93,6 +93,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
 
         settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,

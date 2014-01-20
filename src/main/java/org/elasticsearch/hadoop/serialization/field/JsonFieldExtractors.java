@@ -19,8 +19,11 @@
 package org.elasticsearch.hadoop.serialization.field;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
@@ -29,6 +32,7 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 
 public class JsonFieldExtractors {
 
+    private static Log log = LogFactory.getLog(JsonFieldExtractors.class);
 
     private final List<String> results = new ArrayList<String>(6);
     private int usedSlots = 0;
@@ -128,6 +132,10 @@ public class JsonFieldExtractors {
         }
 
         results.clear();
+
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("About to look for paths [%s] in doc [%s]", Arrays.toString(paths), storage));
+        }
         results.addAll(ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths));
     }
 }
