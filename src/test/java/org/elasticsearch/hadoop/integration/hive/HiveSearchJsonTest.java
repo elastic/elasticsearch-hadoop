@@ -65,14 +65,14 @@ public class HiveSearchJsonTest {
     @Test
     public void basicLoad() throws Exception {
 
-        String create = "CREATE EXTERNAL TABLE artistsload" + testInstance + "("
+        String create = "CREATE EXTERNAL TABLE jsonartistsload" + testInstance + "("
                 + "number 		STRING, "
                 + "name 	STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
                 + tableProps("json-hive/artists");
 
-        String select = "SELECT * FROM artistsload" + testInstance;
+        String select = "SELECT * FROM jsonartistsload" + testInstance;
 
         server.execute(create);
         List<String> result = server.execute(select);
@@ -84,14 +84,14 @@ public class HiveSearchJsonTest {
 
     @Test
     public void basicCountOperator() throws Exception {
-        String create = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
+        String create = "CREATE EXTERNAL TABLE jsonartistscount" + testInstance + " ("
                 + "number       STRING, "
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
                 + tableProps("json-hive/artists");
 
-        String select = "SELECT count(*) FROM artistscount" + testInstance;
+        String select = "SELECT count(*) FROM jsonartistscount" + testInstance;
 
         server.execute(create);
         List<String> result = server.execute(select);
@@ -102,13 +102,13 @@ public class HiveSearchJsonTest {
 
     @Test
     public void testMissingIndex() throws Exception {
-        String create = "CREATE EXTERNAL TABLE missing" + testInstance + " ("
+        String create = "CREATE EXTERNAL TABLE jsonmissing" + testInstance + " ("
                 + "daTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
                 + tableProps("foobar/missing", "'es.index.read.missing.as.empty' = 'true'");
 
-        String select = "SELECT * FROM missing" + testInstance;
+        String select = "SELECT * FROM jsonmissing" + testInstance;
 
         server.execute(create);
         List<String> result = server.execute(select);
@@ -118,14 +118,14 @@ public class HiveSearchJsonTest {
     @Test
     public void testVarcharLoad() throws Exception {
 
-        String create = "CREATE EXTERNAL TABLE varcharload" + testInstance + " ("
+        String create = "CREATE EXTERNAL TABLE jsonvarcharload" + testInstance + " ("
                 + "number       STRING, "
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
                 + tableProps("json-hive/varcharsave");
 
-        String select = "SELECT * FROM varcharload" + testInstance;
+        String select = "SELECT * FROM jsonvarcharload" + testInstance;
 
         System.out.println(server.execute(create));
         List<String> result = server.execute(select);
@@ -139,14 +139,14 @@ public class HiveSearchJsonTest {
 
     @Test
     public void testParentChild() throws Exception {
-        String create = "CREATE EXTERNAL TABLE childload" + testInstance + " ("
+        String create = "CREATE EXTERNAL TABLE jsonchildload" + testInstance + " ("
                 + "number       STRING, "
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
                 + tableProps("json-hive/child", "'es.index.read.missing.as.empty' = 'true'");
 
-        String select = "SELECT * FROM childload" + testInstance;
+        String select = "SELECT * FROM jsonchildload" + testInstance;
 
         System.out.println(server.execute(create));
         List<String> result = server.execute(select);

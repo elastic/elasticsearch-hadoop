@@ -52,19 +52,19 @@ public class HiveSaveJsonTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = createTable("source");
-        String load = loadData("source");
+        String localTable = createTable("jsonsource");
+        String load = loadData("jsonsource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE artistssave ("
+                "CREATE EXTERNAL TABLE jsonartistssave ("
                 + "json     STRING) "
                 + tableProps("json-hive/artists");
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE artistssave "
-                + "SELECT s.json FROM source s";
+                "INSERT OVERWRITE TABLE jsonartistssave "
+                + "SELECT s.json FROM jsonsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -75,23 +75,23 @@ public class HiveSaveJsonTest {
 
     @Test
     public void testExternalSerDe() throws Exception {
-        String localTable = "CREATE TABLE externalserde ("
+        String localTable = "CREATE TABLE jsonexternalserde ("
                 + "data       STRING) "
                 + "ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe' "
                 + "WITH SERDEPROPERTIES ('input.regex'='(.*)') "
-                + "LOCATION '/tmp/hive/warehouse/externalserde/' ";
+                + "LOCATION '/tmp/hive/warehouse/jsonexternalserde/' ";
 
-        String load = loadData("externalserde");
+        String load = loadData("jsonexternalserde");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE externalserdetest ("
+                "CREATE EXTERNAL TABLE jsonexternalserdetest ("
                 + "data     STRING) "
                 + tableProps("json-hive/externalserde");
 
         String insert =
-                "INSERT OVERWRITE TABLE externalserdetest "
-                + "SELECT s.data FROM externalserde s";
+                "INSERT OVERWRITE TABLE jsonexternalserdetest "
+                + "SELECT s.data FROM jsonexternalserde s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -102,19 +102,19 @@ public class HiveSaveJsonTest {
 
     @Test
     public void testVarcharSave() throws Exception {
-        String localTable = createTable("varcharsource");
-        String load = loadData("varcharsource");
+        String localTable = createTable("jsonvarcharsource");
+        String load = loadData("jsonvarcharsource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE varcharsave ("
+                "CREATE EXTERNAL TABLE jsonvarcharsave ("
                 + "json     VARCHAR(255))"
                 + tableProps("json-hive/varcharsave");
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE varcharsave "
-                + "SELECT s.json FROM varcharsource s";
+                "INSERT OVERWRITE TABLE jsonvarcharsave "
+                + "SELECT s.json FROM jsonvarcharsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -128,12 +128,12 @@ public class HiveSaveJsonTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = createTable("createsource");
-        String load = loadData("createsource");
+        String localTable = createTable("jsoncreatesource");
+        String load = loadData("jsoncreatesource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE createsave ("
+                "CREATE EXTERNAL TABLE jsoncreatesave ("
                 + "json     STRING) "
                 + tableProps("json-hive/createsave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
@@ -141,8 +141,8 @@ public class HiveSaveJsonTest {
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE createsave "
-                + "SELECT s.json FROM createsource s";
+                "INSERT OVERWRITE TABLE jsoncreatesave "
+                + "SELECT s.json FROM jsoncreatesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -156,23 +156,23 @@ public class HiveSaveJsonTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = createTable("createsourceduplicate");
-        String load = loadData("createsourceduplicate");
+        String localTable = createTable("jsoncreatesourceduplicate");
+        String load = loadData("jsoncreatesourceduplicate");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE createsaveduplicate ("
+                "CREATE EXTERNAL TABLE jsoncreatesaveduplicate ("
                 + "json     STRING) "
                 + tableProps("json-hive/createsave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                              "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
-        String selectTest = "SELECT s.json FROM createsourceduplicate s";
+        String selectTest = "SELECT s.json FROM jsoncreatesourceduplicate s";
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE createsaveduplicate "
-                + "SELECT s.json FROM createsourceduplicate s";
+                "INSERT OVERWRITE TABLE jsoncreatesaveduplicate "
+                + "SELECT s.json FROM jsoncreatesourceduplicate s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -187,23 +187,23 @@ public class HiveSaveJsonTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = createTable("updatesource");
-        String load = loadData("updatesource");
+        String localTable = createTable("jsonupdatesource");
+        String load = loadData("jsonupdatesource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE updatesave ("
+                "CREATE EXTERNAL TABLE jsonupdatesave ("
                 + "json     STRING) "
                 + tableProps("json-hive/updatesave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                              "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
-        String selectTest = "SELECT s.json FROM updatesource s";
+        String selectTest = "SELECT s.json FROM jsonupdatesource s";
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE updatesave "
-                + "SELECT s.json FROM updatesource s";
+                "INSERT OVERWRITE TABLE jsonupdatesave "
+                + "SELECT s.json FROM jsonupdatesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -219,24 +219,24 @@ public class HiveSaveJsonTest {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
-        String localTable = createTable("updatewoupsertsource");
-        String load = loadData("updatewoupsertsource");
+        String localTable = createTable("jsonupdatewoupsertsource");
+        String load = loadData("jsonupdatewoupsertsource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE updatewoupsertsave ("
+                "CREATE EXTERNAL TABLE jsonupdatewoupsertsave ("
                 + "json     STRING) "
                 + tableProps("json-hive/updatewoupsertsave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                              "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'",
                              "'" + ConfigurationOptions.ES_UPSERT_DOC + "'='false'");
 
-        String selectTest = "SELECT s.json FROM updatewoupsertsource s";
+        String selectTest = "SELECT s.json FROM jsonupdatewoupsertsource s";
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE updatewoupsertsave "
-                + "SELECT s.json FROM updatewoupsertsource s";
+                "INSERT OVERWRITE TABLE jsonupdatewoupsertsave "
+                + "SELECT s.json FROM jsonupdatewoupsertsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -250,23 +250,23 @@ public class HiveSaveJsonTest {
     public void testParentChild() throws Exception {
         RestUtils.putMapping("json-hive/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
-        String localTable = createTable("childsource");
-        String load = loadData("childsource");
+        String localTable = createTable("jsonchildsource");
+        String load = loadData("jsonchildsource");
 
         // create external table
         String ddl =
-                "CREATE EXTERNAL TABLE child ("
+                "CREATE EXTERNAL TABLE jsonchild ("
                 + "json     STRING) "
                 + tableProps("json-hive/child",
                              "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='number'",
                              "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
 
-        String selectTest = "SELECT s.json FROM childsource s";
+        String selectTest = "SELECT s.json FROM jsonchildsource s";
 
         // transfer data
         String insert =
-                "INSERT OVERWRITE TABLE child "
-                + "SELECT s.json FROM childsource s";
+                "INSERT OVERWRITE TABLE jsonchild "
+                + "SELECT s.json FROM jsonchildsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));

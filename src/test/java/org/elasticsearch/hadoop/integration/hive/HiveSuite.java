@@ -37,8 +37,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-//@Suite.SuiteClasses({ HiveSaveTest.class, HiveSearchTest.class })
-@Suite.SuiteClasses({ HiveSaveJsonTest.class, HiveSearchJsonTest.class })
+@Suite.SuiteClasses({ HiveSaveTest.class, HiveSaveJsonTest.class, HiveSearchTest.class, HiveSearchJsonTest.class })
+//@Suite.SuiteClasses({ HiveSaveJsonTest.class, HiveSearchJsonTest.class })
 public class HiveSuite {
 
     static HiveInstance server;
