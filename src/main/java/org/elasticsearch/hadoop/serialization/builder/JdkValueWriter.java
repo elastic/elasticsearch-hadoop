@@ -71,7 +71,10 @@ public class JdkValueWriter implements ValueWriter<Object> {
         }
         // Big Decimal/Integer
         else if (value instanceof Number) {
-            generator.writeString(value.toString());
+            // check double vs long
+            Number n = ((Number) value);
+            double d = n.doubleValue();
+            generator.writeNumber((Math.floor(d) == d ? n.longValue() : d));
         }
         else if (value instanceof Boolean) {
             generator.writeBoolean(((Boolean) value).booleanValue());
