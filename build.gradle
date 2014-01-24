@@ -39,7 +39,6 @@ allprojects {
 
 apply plugin: 'asciidoctor'
 
-ext.hadoopCore = []
 ext.hadoopClient = []
 ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 
@@ -55,7 +54,6 @@ switch (hadoopDistro) {
   case "hadoopYarn":
     hadoopVersion = hadoopYarnVersion
     hadoopMsg = "Using Apache Hadoop YARN [$hadoopVersion]"
-	hadoopCore = ["org.apache.hadoop:hadoop-common:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
 
     break;
@@ -63,7 +61,6 @@ switch (hadoopDistro) {
   case "hadoop12":
     hadoopVersion = hadoop12Version
     hadoopMsg =  "Using Apache Hadoop 1.2.x [$hadoopVersion]"
-	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
@@ -73,7 +70,6 @@ switch (hadoopDistro) {
   case "hadoop11":
     hadoopVersion = hadoop11Version
     hadoopMsg = "Using Apache Hadoop 1.1.x [$hadoopVersion]"
-	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
@@ -83,7 +79,6 @@ switch (hadoopDistro) {
   case "hadoop10":
     hadoopVersion = hadoop10Version
     hadoopMsg = "Using Apache Hadoop 1.0.x [$hadoopVersion]"
-	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
 
@@ -92,7 +87,6 @@ switch (hadoopDistro) {
   default:
     hadoopMsg = "Using Apache Hadoop Stable [$hadoopVersion]"
     hadoopVersion = hadoopStableVersion
-	hadoopCore = ["org.apache.hadoop:hadoop-core:$hadoopVersion"]
     hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
               "org.apache.hadoop:hadoop-tools:$hadoopVersion"] 
 }
@@ -168,7 +162,6 @@ configure(allprojects) { project ->
 		options.compilerArgs << "-Xlint:options"
 	}
 	
-	
 	compileTestJava {
 			sourceCompatibility = 1.6
 			targetCompatibility = 1.6
@@ -189,17 +182,22 @@ configure(allprojects) { project ->
 		from sourceSets.main.allJava
 	}
 
-	task javadocJar(type: Jar) {
-		classifier = 'javadoc'
-		from javadoc
-	}
-	
 	artifacts {
 		archives sourcesJar
-		archives javadocJar
 	}
 }
 
+// enable javadoc only for root project
+task javadocJar(type: Jar) {
+	classifier = 'javadoc'
+	from javadoc
+}
+	
+artifacts {
+	archives javadocJar
+}
+
+	
 ext.skipCascading = true
 ext.skipMR = true
 ext.skipHive = true
@@ -354,37 +352,37 @@ configure(allprojects) { project ->
 		licenseTask.exclude '**/*.properties'
 		licenseTask.exclude '**/package-info.java'
 	}
+}
+
+jar {
+	manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+	manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
+	manifest.attributes['Implementation-Version'] = project.version
+	manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+	manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
+	manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
 	
-	jar {
-		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-		manifest.attributes['Implementation-Title'] = 'elasticsearch-hadoop'
-		manifest.attributes['Implementation-Version'] = project.version
-		manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-		manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-		manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-		
-		def build = System.env['ESHDP.BUILD']
-		if (build != null)
-			manifest.attributes['Build'] = build
-		
-		String rev = "unknown"
-		
-		// parse the git files to find out the revision
-		File gitHead = file('.git/HEAD')
-		if (gitHead.exists()) {
-			gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
-			if (gitHead.exists()) { rev = gitHead.text }
-		}
-
-		from("$rootDir/docs/src/info") {
-			include "license.txt"
-			include "notice.txt"
-			into "META-INF"
-			expand(copyright: new Date().format('yyyy'), version: project.version)
-		}
-
-		manifest.attributes['Repository-Revision'] = rev
+	def build = System.env['ESHDP.BUILD']
+	if (build != null)
+		manifest.attributes['Build'] = build
+	
+	String rev = "unknown"
+	
+	// parse the git files to find out the revision
+	File gitHead = file('.git/HEAD')
+	if (gitHead.exists()) {
+		gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
+		if (gitHead.exists()) { rev = gitHead.text }
 	}
+
+	from("$rootDir/docs/src/info") {
+		include "license.txt"
+		include "notice.txt"
+		into "META-INF"
+		expand(copyright: new Date().format('yyyy'), version: project.version)
+	}
+
+	manifest.attributes['Repository-Revision'] = rev
 }
 
 configure(jar) {
@@ -454,25 +452,22 @@ configure(allprojects) { project ->
 // packaging
 task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
-    //classifier = "dist"
     description = "Builds -${classifier} archive, containing all jars and docs, suitable for download page."
-
-    ext.baseDir = "${project.name}-${project.version}";
 
     from(".") {
         include "README.md"
         include "LICENSE.txt"
         include "NOTICE.txt"
-        into "${baseDir}"
+        into archiveName
         //expand(yyyy: new Date().format("yyyy"), version: project.version)
     }
 
     from("build/asciidoc") {
-        into "${baseDir}/docs"
+        into "${archiveName}/docs"
     }
 
 	subprojects.each { subproject ->
-		into ("${baseDir}/build/libs") {
+		into ("${archiveName}/build/libs") {
 			from subproject.jar
 			if (subproject.tasks.findByPath("sourcesJar")) {
 					from subproject.sourcesJar
@@ -483,7 +478,7 @@ task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
 		}
 	}
 
-    into ("${baseDir}/dist") {
+    into ("${archiveName}/dist") {
         from "build/libs"
 		exclude "*-testing.jar"
     }
