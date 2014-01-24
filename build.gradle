@@ -318,7 +318,6 @@ javadoc {
 			//"http://hbase.apache.org/apidocs/",
 			"http://pig.apache.org/docs/r0.12.0/api/",
 			"http://hive.apache.org/docs/r0.12.0/api/",
-			"http://builds.apache.org/job/Thrift/javadoc/",
 			"http://docs.cascading.org/cascading/2.1/javadoc/"
 		]
 

@@ -77,7 +77,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * </pre>
  *
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
- * or passed to the {@link #ESStorage(String...)} constructor.
+ * or passed to the {@link #EsStorage(String...)} constructor.
  */
 public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, StoreFuncInterface, StoreMetadata {
 

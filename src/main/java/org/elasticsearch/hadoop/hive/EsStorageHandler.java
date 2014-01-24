@@ -44,7 +44,7 @@ import static org.elasticsearch.hadoop.hive.HiveConstants.*;
  * Hive storage for writing data into an ElasticSearch index.
  *
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
- * or passed to {@link #ESStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
+ * or passed to {@link #EsStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
  */
 @SuppressWarnings({ "deprecation", "rawtypes" })
 public class EsStorageHandler extends DefaultStorageHandler {
