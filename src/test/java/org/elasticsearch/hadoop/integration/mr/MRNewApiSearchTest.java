@@ -94,7 +94,7 @@ public class MRNewApiSearchTest {
         new Job(conf).waitForCompletion(true);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);

@@ -81,7 +81,8 @@ public class RestClient implements Closeable {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public List<String> discoverNodes() throws IOException {
-        Map<String, Map> nodes = (Map<String, Map>) get("_cluster/nodes", "nodes");
+        String endpoint = "_nodes/transport";
+        Map<String, Map> nodes = (Map<String, Map>) get(endpoint, "nodes");
 
         List<String> hosts = new ArrayList<String>(nodes.size());
 
@@ -180,7 +181,7 @@ public class RestClient implements Closeable {
     }
 
     public Map<String, Node> getNodes() throws IOException {
-        Map<String, Map<String, Object>> nodesData = get("_nodes", "nodes");
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
         Map<String, Node> nodes = new LinkedHashMap<String, Node>();
 
         for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
@@ -261,6 +262,11 @@ public class RestClient implements Closeable {
         touch(index);
 
         execute(PUT, mapping, new BytesArray(bytes));
+    }
+
+    public String esVersion() throws IOException {
+        Map<String, String> version = get("", "version");
+        return version.get("number");
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) throws IOException {

@@ -56,6 +56,7 @@ public class WritableValueReader extends JdkValueReader {
         case INTEGER:
             arrayType = IntWritable.class;
             break;
+        case TOKEN_COUNT:
         case LONG:
             arrayType = LongWritable.class;
             break;
@@ -85,8 +86,13 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
-    public Object addToArray(Object array, List<Object> values) {
-        ((ArrayWritable) array).set(values.toArray(new Writable[values.size()]));
+    public Object addToArray(Object array, List<Object> value) {
+        // unwrap lists with only one element (since 1.0.0.RC1 'fields' always return arrays)
+        if (value.size() == 1) {
+            return value.get(0);
+        }
+
+        ((ArrayWritable) array).set(value.toArray(new Writable[value.size()]));
         return array;
     }
 

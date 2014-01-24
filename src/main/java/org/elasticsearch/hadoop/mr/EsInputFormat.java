@@ -22,6 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +39,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
@@ -360,7 +362,28 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         settings.save();
 
         RestRepository client = new RestRepository(settings);
-        Map<Shard, Node> targetShards = client.getTargetShards();
+
+        boolean indexExists = client.indexExists();
+
+        Map<Shard, Node> targetShards = null;
+
+        if (!indexExists) {
+            if (settings.getIndexReadMissingAsEmpty()) {
+                log.info(String.format("Index [%s] missing - treating it as empty", settings.getTargetResource()));
+                targetShards = Collections.emptyMap();
+            }
+            else {
+                client.close();
+                throw new IllegalArgumentException(
+                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getTargetResource(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
+            }
+        }
+        else {
+            targetShards = client.getTargetShards();
+            if (log.isTraceEnabled()) {
+                log.trace("Creating splits for shards " + targetShards);
+            }
+        }
 
         String savedMapping = null;
         if (!targetShards.isEmpty()) {
@@ -371,14 +394,6 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
 
         client.close();
-
-        if (settings.getIndexReadMissingAsEmpty() && targetShards.isEmpty()) {
-            log.info(String.format("Index [%s] missing - treating it as empty", settings.getTargetResource()));
-        }
-
-        else if (log.isTraceEnabled()) {
-            log.trace("Creating splits for shards " + targetShards);
-        }
 
         ShardInputSplit[] splits = new ShardInputSplit[targetShards.size()];
 

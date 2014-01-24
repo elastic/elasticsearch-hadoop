@@ -94,7 +94,7 @@ public class MROldApiSearchTest {
         JobClient.runJob(conf);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);

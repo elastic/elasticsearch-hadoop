@@ -36,6 +36,7 @@ public enum FieldType {
     STRING,
     DATE,
     BINARY,
+    TOKEN_COUNT,
 
     // compound types
     OBJECT,
