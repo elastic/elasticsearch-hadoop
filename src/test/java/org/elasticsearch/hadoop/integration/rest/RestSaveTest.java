@@ -62,8 +62,11 @@ public class RestSaveTest {
     public void testEmptyBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
-        RestClient client = new RestRepository(testSettings).getRestClient();
+        RestRepository restRepo = new RestRepository(testSettings);
+        RestClient client = restRepo.getRestClient();
         client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray("{}")));
+        restRepo.waitForYellow();
+        restRepo.close();
         client.close();
     }
 }

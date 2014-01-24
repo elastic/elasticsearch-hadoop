@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,8 @@ public class Field implements Serializable {
     public String name() { return name; }
 
     public static Field parseField(Map<String, Object> content) {
-        return parseField(content.entrySet().iterator().next(), null);
+        Iterator<Entry<String, Object>> iterator = content.entrySet().iterator();
+        return (iterator.hasNext() ? parseField(iterator.next(), null) : null);
     }
 
     public static Map<String, FieldType> toLookupMap(Field field) {
