@@ -20,10 +20,12 @@ package org.elasticsearch.hadoop.integration.rest;
 
 import org.elasticsearch.hadoop.integration.LocalEs;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+@Ignore
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ RestSaveTest.class, RestQueryTest.class })
 public class RestSuite {
