@@ -96,11 +96,11 @@ public interface ConfigurationOptions {
 
     /** Input options **/
     String ES_INPUT_JSON = "es.input.json";
-    String ES_INPUT_JSON_DEFAULT = "false";
+    String ES_INPUT_JSON_DEFAULT = "no";
 
     /** Field options **/
     String ES_FIELD_READ_EMPTY_AS_NULL = "es.field.read.empty.as.null";
-    String ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT = "true";
+    String ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT = "yes";
 
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";

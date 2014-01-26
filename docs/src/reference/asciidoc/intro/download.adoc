@@ -8,17 +8,18 @@
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M1</version>
+  <version>1.3.0.M2</version>
 </dependency>
 ----
 
+[[yarn]]
 YARN/Hadoop 2.x/MRv2 binary compatible releases are published using the 'yarn' classifier:
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M1</version>
+  <version>1.3.0.M2</version>
   <classifier>yarn</classifier><1>
 </dependency>
 ----

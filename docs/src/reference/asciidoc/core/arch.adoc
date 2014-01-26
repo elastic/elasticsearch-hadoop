@@ -32,10 +32,9 @@ A common concern (read optimization) for improving performance is to increase th
 [float]
 === Writing to {es}
 
-Writing to {es} is driven by the number of input splits (or Hadoop tasks) available. In the current form, {eh} uses only one node on the {es} side to handle the writing which acts as a proxy within the {es} cluster: as data flows in, based on its identity and cluster setting, {es} will route it to the appropriate shard.
-The more splits are available, the more reducers can write data in parallel to {es}.
+Writing to {es} is driven by the number of input splits (or Hadoop tasks) available. {eh} detects the number of (primary) shards where the write will occur and distribute the writes between these. The more splits are available, the more mappers/reducers can write data in parallel to {es}.
 
-For the vast majority of cases, using only one node on the {es} side should pose no problem - if the network is not saturated, {es} can ingest the data just fine. However, for cases where this happens (again benchmark first instead of guessing), we are working on using multiple nodes based on the available index.
+For the vast majority of cases, the default settings should work just fine. If that is not the case, please see the <<performance>> chapter but only after doing tests and measurements and identifying (rather then guess) the culprit.
 
 [[arch-colocation]]
 [float]

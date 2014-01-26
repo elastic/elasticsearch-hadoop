@@ -58,11 +58,13 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private static final long serialVersionUID = 4304172465362298925L;
 
     private final String index;
+    private final String query;
     private final String host;
     private final int port;
 
-    EsHadoopScheme(String host, int port, String index, Fields fields) {
+    EsHadoopScheme(String host, int port, String index, String query, Fields fields) {
         this.index = index;
+        this.query = query;
         this.host = host;
         this.port = port;
         if (fields != null) {
@@ -132,7 +134,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     private void initTargetUri(JobConf conf) {
         // init
-        SettingsManager.loadFrom(conf).setHosts(host).setPort(port).setResource(index).save();
+        SettingsManager.loadFrom(conf).setHosts(host).setPort(port).setResource(index).setQuery(query).save();
     }
 
     @SuppressWarnings("unchecked")

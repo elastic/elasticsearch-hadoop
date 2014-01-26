@@ -50,12 +50,14 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private static final long serialVersionUID = 979036202776892844L;
 
     private final String resource;
+    private final String query;
     private final String host;
     private final int port;
     private transient RestRepository client;
 
-    EsLocalScheme(String host, int port, String index, Fields fields) {
+    EsLocalScheme(String host, int port, String index, String query, Fields fields) {
         this.resource = index;
+        this.query = query;
         this.host = host;
         this.port = port;
         if (fields != null) {
@@ -114,7 +116,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     private void initClient(Properties props) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props).setHosts(host).setPort(port).setResource(resource);
+            Settings settings = SettingsManager.loadFrom(props).setHosts(host).setPort(port).setResource(resource).setQuery(query);
 
             InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
             InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(EsTap.class));

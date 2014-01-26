@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cascading.EsTap;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.integration.Stream;
@@ -57,7 +56,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists");
+        Tap in = new EsTap("cascading-hadoop/artists", query);
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -73,7 +72,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithFields() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists", new Fields("url", "name"));
+        Tap in = new EsTap("cascading-hadoop/artists", query, new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -85,7 +84,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESAliasedField() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/alias", new Fields("address"));
+        Tap in = new EsTap("cascading-hadoop/alias", query, new Fields("address"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
@@ -96,7 +95,7 @@ public class CascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithFieldAlias() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/alias", new Fields("url"));
+        Tap in = new EsTap("cascading-hadoop/alias", query, new Fields("url"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
@@ -109,7 +108,7 @@ public class CascadingHadoopSearchTest {
 
     private Properties cfg() {
         Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(CascadingHadoopSuite.configuration));
-        props.put(ConfigurationOptions.ES_QUERY, query);
+        //props.put(ConfigurationOptions.ES_QUERY, query);
 
         return props;
     }

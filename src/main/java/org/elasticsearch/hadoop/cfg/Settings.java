@@ -212,7 +212,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public Settings setQuery(String query) {
-        setProperty(ES_QUERY, query);
+        setProperty(ES_QUERY, StringUtils.hasText(query) ? query : "");
         return this;
     }
 

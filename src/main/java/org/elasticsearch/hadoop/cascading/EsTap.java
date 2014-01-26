@@ -22,6 +22,9 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.Flow;
 import cascading.flow.FlowElement;
@@ -44,6 +47,7 @@ public class EsTap extends Tap<Object, Object, Object> {
     private static Log log = LogFactory.getLog(EsTap.class);
 
     private String resource;
+    private String query;
     private boolean runningInHadoop = false;
     private Tap actualTap;
     private Fields fields;
@@ -52,19 +56,32 @@ public class EsTap extends Tap<Object, Object, Object> {
 
     // TODO: add defaults fall back
     public EsTap(String resource) {
-        this(resource, null);
+        this(resource, null, null);
+    }
+
+    public EsTap(String resource, String query) {
+        this(resource, query, null);
     }
 
     public EsTap(String host, int port, String resource) {
-        this(host, port, resource, null);
+        this(host, port, resource, null, null);
+    }
+
+    public EsTap(String host, int port, String resource, String query) {
+        this(host, port, resource, query, null);
     }
 
     public EsTap(String resource, Fields fields) {
-        this(null, -1, resource, fields);
+        this(null, -1, resource, null, fields);
     }
 
-    public EsTap(String host, int port, String resource, Fields fields) {
+    public EsTap(String resource, String query, Fields fields) {
+        this(null, -1, resource, query, fields);
+    }
+
+    public EsTap(String host, int port, String resource, String query, Fields fields) {
         this.resource = resource;
+        this.query = query;
         this.host = host;
         this.port = port;
         this.fields = fields;
@@ -165,7 +182,7 @@ public class EsTap extends Tap<Object, Object, Object> {
         } catch (ClassNotFoundException e) {
             runningInHadoop = false;
         }
-        actualTap = (runningInHadoop ? new EsHadoopTap(host, port, resource, fields) : new EsLocalTap(host, port, resource, fields));
+        actualTap = (runningInHadoop ? new EsHadoopTap(host, port, resource, query, fields) : new EsLocalTap(host, port, resource, query, fields));
         setScheme(actualTap.getScheme());
         if (log.isDebugEnabled()) {
             log.debug(String.format("Detected %s environment; initializing [%s]", (runningInHadoop ? "Hadoop" : "local"), actualTap.getClass().getSimpleName()));

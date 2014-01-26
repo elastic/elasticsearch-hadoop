@@ -12,35 +12,118 @@ NOTE: All configuration properties start with the `es` prefix. The namespace `es
 [float]
 === Required settings
 
-.`es.resource`
-{es} resource location, relative to the {es} host/port (see below). Can be either an index/type (for writing) or a search query.
+`es.resource`::
+{es} resource location, relative to the {es} host/port (see below). It requiers the form `<index>/<type>`.
 
-.Examples
 [source,ini]
 ----
-es.resource = twitter/costinl                   # write to index 'twitter', type 'costinl'
-es.resource = twitter/costinl/_search?q=hadoop  # read entries matching 'hadoop' from 'twitter/costinl'
+es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 ----
 
 [float]
 === Optional settings
 
 [float]
+==== Querying
+`es.query` (default none)::
+Holds the query used for reading data from the specified `es.resource`. By default it is not set/empty, meaning the entire data under the specified index/type is returned.
+`es.query` can have three forms:
+
+uri query;;
+using the form `?uri_query`, one can specify a {ref}/search-uri-request.html[query string]. Notice the leading `?`.
+
+query dsl;;
+using the form `query_dsl` - note the query dsl needs to start with `{` and end with `}` as mentioned {ref}/search-request-body.html[here]
+
+external resource;;
+if none of the the two above do match, {eh} will try to interpret the parameter as a path within the HDFS file-system. If that is not the case, it will try to load the resource from the classpath or, if that fails, from the Hadoop `DistributedCache`. The resource should contain either a `uri query` or a `query dsl`.
+
+To wit, here is an example:
+[source,ini]
+----
+# uri (or parameter) query
+es.query = ?q=costinl	
+
+# query dsl
+es.query = { "query" : { "term" : { "user" : "costinl" } } }
+
+# external resource
+es.query = org/mypackage/myquery.json
+----
+
+In other words, `es.query` is flexible enough so that you can use whatever search api you prefer, either inline or by loading it from an external resource.
+
+TIP: We recommend using query dsl externalized in a file, included within the job jar (and thus available on its classpath). This makes it easy 
+to identify, debug and organize your queries.
+Through-out the documentation we use the uri query to save text and increase readability - real-life queries quickly become unwielding when used as uris.
+
+[float]
 ==== Network
-`es.host` (default localhost)::
-{es} cluster node. When using {es} remotely, _do_ set this option.
+`es.nodes` (default localhost)::
+List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
 
 `es.port` (default 9200)::
-HTTP/REST port used for connecting to {es}.
+Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
+
+`es.nodes.discovery` (default true)::
+Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
 
 `es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
+
+`es.http.retries` (default 3)::
+Number of retries for estabilishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
+available {es} node (based on the declaration of `es.nodes`, followed by the discovered nodes - if enabled).
 
 `es.scroll.keepalive` (default 10m)::
 The maximum duration of result scrolls between query requests.
 
 `es.scroll.size` (default 50)::
 Number of results/items returned by each individual scroll.
+
+[float]
+==== Operation
+
+`es.input.json` (default false)::
+Whether the input is already in JSON format or not (the default). Please see the appropriate section of each
+integration for more details about using JSON directly.
+
+`es.write.operation` (default index)::
+The write operation {eh} should peform - can be any of:
+`index` (default);; new data is added while existing data (based on its id) is updated.
+`create`;; adds new data - if the data already exists (based on its id), an exception is thrown.
+`update`;; updates existing data (based on its id). If no data is found, an exception is thrown.
+
+[float]
+==== Mapping
+
+`es.mapping.id` (default none)::
+The document field/property name containing the document id.
+
+`es.mapping.parent` (default none)::
+The document field/property name containing the document parent. To specify a constant, use the `<CONSTANT>` format.
+
+`es.mapping.version` (default none)::
+The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
+
+`es.mapping.routing` (default none)::
+The document field/property name containing the document routing. To specify a constant, use the `<CONSTANT>` format.
+
+`es.mapping.ttl` (default none)::
+The document field/property name containing the document time-to-live. To specify a constant, use the `<CONSTANT>` format.
+
+`es.mapping.timestamp` (default none)::
+The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
+
+For example:
+[source,ini]
+----
+# extracting the id from the field called 'uuid'
+es.mapping.id = uuid
+
+# specifying a parent with id '123'
+es.mapping.parent = \<123>
+----
 
 [[configuration-options-index]]
 [float]
@@ -51,6 +134,10 @@ Whether {eh} should create an index (if its missing) when writing data to {es} o
 
 `es.index.read.missing.as.empty` (default no)::
 Whether {eh} will allow reading of non existing indices (and return an empty data set) or not (and throw an exception)
+
+`es.field.read.empty.as.null` (default yes)::
+Whether {eh} will treat empty fields as `null`. This settings is typically not needed (as {eh} already handles the
+null case) but is enabled for making it easier to work with text fields that haven't been sanitized yet.
 
 [float]
 ==== Serialization
@@ -64,10 +151,16 @@ Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API. Co
 `es.batch.write.refresh` (default true)::
 Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
-`es.ser.reader.class` (default _depends on the library used_)::
+`es.batch.write.retry.count` (default 3)::
+Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performad, the Hadoop job is cancelled (and fails).
+
+`es.batch.write.retry.wait` (default 10s)::
+Time to wait between batch write retries.
+
+`es.ser.writer.value.class` (default _depends on the library used_)::
 Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-`es.ser.writer.class` (default _depends on the library used_)::
+`es.ser.reader.value.class` (default _depends on the library used_)::
 Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
 [[configuration-runtime]]

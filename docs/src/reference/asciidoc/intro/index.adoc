@@ -1,7 +1,7 @@
-[[about]]
-= About
+[[setup]]
+= Setup
 
-[[about-intro]]
+[[setup-intro]]
 [partintro]
 --
 {ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
@@ -11,6 +11,9 @@ Data flows 'bi-directionaly' so that applications can leverage transparently the
 While the official name of the project is {ehtm} throught out the documentation the term {eh} will be used instead to increase readability.
 
 include::typos.adoc[]
+
+TIP: If you are looking for {es} HDFS Snapshot/Restore plugin (a separate project), please refer to its https://github.com/elasticsearch/elasticsearch-hadoop/tree/master/repository-hdfs[home page].
+
 --
 
 include::features.adoc[]

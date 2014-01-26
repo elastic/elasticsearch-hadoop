@@ -9,7 +9,7 @@ ____
 Cascading abstracting the {mr} API and focusing on http://docs.cascading.org/cascading/2.1/userguide/htmlch03.html[data processing] 
 in terms of 'tuples' http://docs.cascading.org/cascading/2.1/userguide/htmlch03s08.html['flowing'] through http://docs.cascading.org/cascading/2.1/userguide/htmlch03s02.html[pipes] between http://docs.cascading.org/cascading/2.1/userguide/htmlch03s05.html['taps'], 
 from input (called `SourceTap`) to output (named `SinkTap`). As the data flows, various operations are applied to the tuple; the whole system being transformed to {mr} operations at runtime.
-With {eh}, {es} can be plugged into Cascading flows as a `SourceTap` or `SinkTap` through `ESTap`.
+With {eh}, {es} can be plugged into Cascading flows as a `SourceTap` or `SinkTap` through `EsTap`.
 
 ****
 .Local or Hadoop mode?
@@ -38,7 +38,7 @@ AppProps.setApplicationJarClass(props, Main.class);
 FlowConnector flow = new HadoopFlowConnector(props);
 ----
 
-{eh} options can be specified in the same way, these being picked up automatically by all `ESTap`s down the flow:
+{eh} options can be specified in the same way, these being picked up automatically by all `EsTap`s down the flow:
 
 [source,java]
 ----
@@ -64,14 +64,14 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 [float]
 === Writing data to {es}
 
-Simply hook, `ESTap` into the Cascading flow:
+Simply hook, `EsTap` into the Cascading flow:
 
 [source,java]
 ----
 Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
 				"src/test/resources/artists.dat");
-Tap out = new ESTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
-new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Eleasti")).complete();
+Tap out = new EsTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
+new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 ----
 
 <1> {eh} resource (index and type)
@@ -80,13 +80,15 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Eleasti")).complet
 [float]
 === Reading data from {es}
 
-Just the same, add `ESTap` on the other end of a pipe, to read (instead of writing) to it.
+Just the same, add `EsTap` on the other end of a pipe, to read (instead of writing) to it.
 
 [source,java]
 ----
-Tap in = new ESTap("radio/artists/_search?q=me*" <1>);
+Tap in = new EsTap("radio/artists/"<1>,"?q=me*"<2>);
 Tap out = new StdOut(new TextLine());
-new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
+Properties cfg = new Properties();
+new LocalFlowConnector().connect(in, out, new Pipe("read-from-Es")).complete();
 ----
 
 <1> {eh} resource (index and type)
+<2> {eh} query

@@ -27,6 +27,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 
+import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.io.AbstractMapWritable;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
@@ -68,6 +69,9 @@ public abstract class WritableUtils {
         }
         if (object instanceof Byte) {
             return new ByteWritable((Byte) object);
+        }
+        if (object instanceof Short) {
+            return new ShortWritable((Short) object);
         }
         if (object instanceof Double) {
             return new DoubleWritable((Double) object);
@@ -138,6 +142,9 @@ public abstract class WritableUtils {
         }
         if (writable instanceof Text) {
             return ((Text) writable).toString();
+        }
+        if (writable instanceof ShortWritable) {
+            return ((ShortWritable) writable).get();
         }
         if (writable instanceof IntWritable) {
             return ((IntWritable) writable).get();

@@ -1,0 +1,14 @@
+[[performance]]
+== Improving performance
+
+TODO
+- mention that hardware needs to be looked at and many times adding more hw is simply the answer. However below are some tips to get good performance - that is the most out of the existing infrastructure.
+
+- increase network buffer size
+- number of mappers/reducers
+- use mapper/streaming mainly
+- use a reducer to limit the number of writes
+- pay attention to network I/O
+- pay attention to memory usage
+- disable replicas (when loading a lot of data)
+- consider using snapshot/restore

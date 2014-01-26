@@ -9,9 +9,9 @@ REST based:: {eh} uses {es} REST interface for communication, allowing for flexi
 
 Self contained:: the library has been designed to be small and efficient. At around 150KB and _no_ extra dependencies outside Hadoop itself, distributing {eh} within your cluster is simple and fast.
 
-////
-Memory/IO Efficient:: {eh} is focused on performance. From pull-based parsing, to bulk updates and direct conversion to native types, {eh} keeps its memory and network IO usage.
-////
+Memory and I/O efficient:: {eh} is focused on performance. From pull-based parsing, to bulk updates and direct conversion to/of native types, {eh} keeps its memory and network I/O usage finely-tuned.
+
+Adaptive I/O:: {eh} detects transport errors and retries automatically. If the {es} node died, re-routes the request to the available nodes (which are discovered automatically). Additionally, if {es} is overloaded, {eh} detects the data rejected and resents it, until it is either processed or the user-defined policy applies.
 
 {mr} API support:: At its core, {eh} uses the low-level {mr} API to read and write data to {es} allowing for maximum integration flexibility and performance.
 

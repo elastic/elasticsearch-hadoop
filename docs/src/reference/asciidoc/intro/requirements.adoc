@@ -10,27 +10,27 @@ TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built o
 [[requirements-jdk]]
 === JDK
 
-JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the latest JDK 6.0 - currently update 45, or if possible, JDK 7.0 - currently update 25.
+JDK level 6.0 (or above) just like Hadoop. We strongly recommend using the latest stable JDK 6.0 (such as version 25) or if possible, JDK 7.0 - currently update u51.
 
 One can check the available JDK version from the command line:
 
 [source,bash]
 ----
 $ java -version
-java version "1.6.0_45"
+java version "1.6.0_25"
 ----
 
 [[requirements-es]]
 === {es}
 
-version *0.90* or higher (currently 0.90.3) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}.
+version *0.90* or higher (currently 0.90.10) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
 
 The {es} version is shown in its folder name:
 
 [source,bash]
 ----
 $ ls
-elasticsearch-0.90.3
+elasticsearch-0.90.10
 ----
 
 If {es} is running (locally or remotely), one can find out through REST its version:
@@ -43,9 +43,9 @@ $ curl -XGET http://localhost:9200
   "status" : 200,
   "name" : "Sergeant Fury",
   "version" : {
-    "number" : "0.90.3",
+    "number" : "0.90.10",
     "snapshot_build" : false,
-    "lucene_version" : "4.3.1"
+    "lucene_version" : "4.6.0"
   },
   "tagline" : "You Know, for Search"
 }
@@ -54,8 +54,33 @@ $ curl -XGET http://localhost:9200
 [[requirements-hadoop]]
 === Hadoop
 
-Hadoop 1.x (ideally the latest stable versions in the 1.x line, currently 1.1.2 or 1.2.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
-If that is not the case, please drop us a line to see what we can do to fix that.
+Hadoop 1.x (ideally the latest stable versions in the 1.x line, currently 1.2.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine. 
+
+As a guide, the table below lists the Hadoop-based distributions against with this version has been tested against at various points in time:
+
+|===
+| Distribution		| Release
+
+| Apache Hadoop		| 2.2.0
+| Apache Hadoop		| 1.2.0
+| Apache Hadoop		| 1.1.0
+
+| Amazon EMR		| 3.0.1
+| Amazon EMR		| 2.4.2
+| Cloudera CDH		| 4.4.0
+| Cloudera CDH		| 4.2.2
+| Hortonworks HDP   | 2.0
+| Hortonworks HDP   | 1.3
+| Greenplum GPHD   	| 1.2
+| Intel	Hadoop		| 2.5.1
+| Pivotal HD   		| 1.1
+| MapR				| 3.0.1
+| MapR				| 2.1
+|===
+
+IMPORTANT: Use the table above for guidance only; if your distro (or its version) is not there, it does not mean {eh} is not compatible with it; rather go ahead and try it out and let us know how it went.
+
+NOTE: Some distros required rely on Hadoop 2.0/Yarn - since Hadoop 2.0 is not binary compatible with Hadoop 1.x, please use the appropriate {eh} binary as indicated <<requirements-yarn, below>>.
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
@@ -66,47 +91,46 @@ Hadoop 1.2.1
 ----
 
 [[requirements-yarn]]
-=== YARN / Hadoop 2.x
+=== Apache YARN / Hadoop 2.x
 
-{eh} can run on Yarn / Hadoop 2.x but considering its *alpha* status, it is not recommended for production use.
-Since YARN breaks binary backwards compatibility with Hadoop 1.x, a dedicated {eh} needs to be used.
+{eh} can run on Yarn / Hadoop 2.x but do take time to go through its changes compared to Hadoop 1.x. Since YARN breaks binary backwards compatibility with Hadoop 1.x, a dedicated {eh} needs to be used.
 See the <<install>> section for more information.
 
 [[requirements-cascading]]
 === Cascading
 
-Version 2.1.x (currently 2.1.6) is required.
+Cascading version 2.1.x (2.1.6) or higher. We recommend using the latest release of Cascading (currently 2.5.1).
 
 Since Cascading is a library, the best way to find out the target version is to look at its file name:
 
 [source, bash]
 ----
 $ ls
-cascading-2.1.6.jar
+cascading-2.5.1.jar
 ----
 
 [[requirements-hive]]
-=== Hive
+=== Apache Hive
 
-Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.11.0).
+Apache Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.12.0).
 
 One can find out the Hive version from its folder name or command-line:
 
 [source, bash]
 ----
 $ bin/hive -version
-Hive version 0.11.0
+Hive version 0.12.0
 ----
 
 [[requirements-pig]]
-=== Pig
+=== Apache Pig
 
-Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.11.1).
+Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.12.0).
 
 In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
 
 [source, bash]
 ----
 $ bin/pig -i
-Apache Pig version 0.11.1
+Apache Pig version 0.12.0
 ----

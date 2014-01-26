@@ -6,7 +6,7 @@ For low-level or performance-sensitive environments, {eh} provides dedicated `In
 [float]
 === Installation
 
-In order to use {eh}, the jar needs to be available to the job class path. At ~`150kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the jar needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 IMPORTANT: All the options above affect _only_ the code running on the distributed nodes. If your code that launches the Hadoop job refers to {eh}, make sure to include the JAR in the `HADOOP_CLASSPATH`:
 `HADOOP_CLASSPATH="<colon-separated-paths-to-your-jars-including-elasticsearch-hadoop>"`
@@ -34,20 +34,24 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 
 | `null`            | `null`
 | `NullWritable`    | `null`
+| `BooleanWritable` | `boolean`
 | `Text`            | `string`
-| `UTF8`            | `string`
 | `ByteWritable`    | `byte`
+| `ShortWritable`   | `short`
 | `IntWritable`     | `int`
 | `VInt`            | `int`
 | `LongWritable`    | `long`
 | `VLongWritable`   | `long`
-| `ByteWritable`    | `binary`
+| `BytesWritable`   | `binary`
 | `DoubleWritable`  | `double`
 | `FloatWritable`   | `float`
-| `BooleanWritable` | `boolean`
 | `MD5Writable`     | `string`
 | `ArrayWritable`   | `array`
 | `AbstractMapWritable` | `map`
+
+2+h| Available only in Apache Hadoop 1.x
+
+| `UTF8`            | `string`
 
 |===
 
@@ -56,49 +60,56 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 
 With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#glossary-index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
 
-`ESOutputFormat` expects a `Map<Writable, Writable>` value that it will convert into a JSON document; the key is ignored.
+`EsOutputFormat` expects a `Map<Writable, Writable>` value that it will convert into a JSON document; the key is ignored.
 
 [float]
 ==== 'Old' (`org.apache.hadoop.mapred`) API
 
-To write data to ES, use `org.elasticsearch.hadoop.mr.ESOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
+To write data to ES, use `org.elasticsearch.hadoop.mr.EsOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
 
 [source,java]
 ----
 JobConf conf = new JobConf();
-conf.setSpeculativeExecution(false);            // disable speculative execution when writing to ES
-conf.set("es.resource", "radio/artists");       // index used for storing data
-conf.setOutputFormat(ESOutputFormat.class);     // use dedicated output format
+conf.setSpeculativeExecution(false);           <1>
+conf.set("es.resource", "radio/artists");      <2>
+conf.setOutputFormat(EsOutputFormat.class);    <3>
 ...
 JobClient.runJob(conf);
 ----
 
+<1> Disable speculative execution
+<2> Target index/type
+<3> Dedicated `OutputFormat`
+
+
 [float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
 
-Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.ESOutputFormat`) is used:
+Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.EsOutputFormat`) is used:
 
 [source,java]
 ----
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists");       // index used for storing data
-// disable speculative execution when writing to ES
-conf.setBoolean("mapred.map.tasks.speculative.execution", false);
-conf.setBoolean("mapred.reduce.tasks.speculative.execution", false);
+conf.setBoolean("mapred.map.tasks.speculative.execution", false);    <1>
+conf.setBoolean("mapred.reduce.tasks.speculative.execution", false); <2>
+conf.set("es.resource", "radio/artists");                            <3>
 Job job = new Job(conf);
-job.setOutputFormat(ESOutputFormat.class);      // use dedicated output format
+job.setOutputFormat(EsOutputFormat.class);
 ...
 job.waitForCompletion(true);
 ----
 
+<1> Disable mapper speculative execution
+<2> Disable reducer speculative execution
+<3> Target index/type
 
 [float]
 === Reading data from {es}
 
-In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.ESInputFormat` class.
+In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.EsInputFormat` class.
 While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
 
-`ESInputFormat` returns a `Map<Writable, Writable>` converted from the JSON documents returned by {es} and a null (to be ignored) key.
+`EsInputFormat` returns a `Map<Writable, Writable>` converted from the JSON documents returned by {es} and a null (to be ignored) key.
 
 [float]
 ==== 'Old' (`org.apache.hadoop.mapred`) API
@@ -108,11 +119,16 @@ Following our example above on radio artists, to get a hold of all the artists t
 [source,java]
 ----
 JobConf conf = new JobConf();
-conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
-conf.setInputFormat(ESInputFormat.class);               // use dedicated input format
+conf.set("es.resource", "radio/artists");  <1>
+conf.set("es.query", "?q=me*");            <2>
+conf.setInputFormat(EsInputFormat.class);  <3>
 ...
 JobClient.runJob(conf);
 ----
+
+<1> Target index/type
+<2> Query
+<3> Dedicated `OutputFormat`
 
 [float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
@@ -121,12 +137,16 @@ As expected, the `mapreduce` API version is quite similar:
 [source,java]
 ----
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
-Job job = new Job(conf);                                // use dedicated input format
-job.setInputFormat(ESInputFormat.class);
+conf.set("es.resource", "radio/artists/"); <1>
+conf.set("es.query", "?q=me*");            <2>      
+Job job = new Job(conf);                   
+job.setInputFormat(EsInputFormat.class);
 ...
 job.waitForCompletion(true);
 ----
+
+<1> Target index/type
+<2> Query
 
 ////
 

@@ -51,11 +51,11 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
     private static final long serialVersionUID = 8644631529427137615L;
 
     private static Log log = LogFactory.getLog(EsLocalTap.class);
-    private String target;
+    private final String target;
 
-    public EsLocalTap(String host, int port, String resource, Fields fields) {
+    public EsLocalTap(String host, int port, String resource, String query, Fields fields) {
         this.target = resource;
-        setScheme(new EsLocalScheme(host, port, resource, fields));
+        setScheme(new EsLocalScheme(host, port, resource, query, fields));
     }
 
     @Override

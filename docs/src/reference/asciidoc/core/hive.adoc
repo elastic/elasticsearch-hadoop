@@ -48,7 +48,7 @@ When using Hive, one can use `TBLPROPERTIES` to specify the <<configuration,conf
 [source,sql]
 ----
 CREATE EXTERNAL TABLE artists (...)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists/',
               'es.index.auto.create' = 'false') <1>;
 ----
@@ -67,7 +67,7 @@ To wit:
 [source,sql]
 ----
 CREATE EXTERNAL TABLE artists (...)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists/',
             <1>'es.mapping.names' = 'date:@timestamp <2>, url:url_123 <3>');
 ----
@@ -115,7 +115,7 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 
 2+h| Available in Hive 0.12 or higher
 
-| `date`         	| `date`
+| `date`            | `date`
 | `varchar`         | `string`
 
 |===
@@ -133,12 +133,13 @@ CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
 TBLPROPERTIES('es.resource' = 'radio/artists/'<2>);
 
 -- insert data to Elasticsearch from another table called 'source'
 INSERT OVERWRITE TABLE artists 
-    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
+    SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture)
+                    FROM source s;
 ----
 
 <1> {es} Hive `StorageHandler`
@@ -155,7 +156,7 @@ CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'<1>
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
 TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
 
 -- stream data from Elasticsearch

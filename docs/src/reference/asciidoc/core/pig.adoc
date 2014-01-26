@@ -41,29 +41,32 @@ script.pig
 [float]
 === Configuration
 
-With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop `Configuration` object) as a constructor parameter when declaring `ESStorage`:
+With Pig, one can specify the <<configuration,configuration>> properties (as an alternative to Hadoop `Configuration` object) as a constructor parameter when declaring `EsStorage`:
 
 [source,sql]
 ----
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.ESStorage
-	         ('es.http.timeout = 5m<2> ;<3>
-               es.index.auto.create = false' <4>);
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage
+	         ('es.http.timeout = 5m<2>',
+              'es.index.auto.create = false' <3>);
 ----
 
 <1> {eh} configuration (target resource)
 <2> {eh} option (http timeout)
-<3> `;` as configuration properties separator
-<4> another {eh} configuration (disable automatic index creation)
+<3> another {eh} configuration (disable automatic index creation)
 
-TIP: To avoid having to specify the fully qualified class name (`org.elasticsearch.hadoop.pig.ESStorage`), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[`DEFINE`] command:
+TIP: To avoid having to specify the fully qualified class name (`org.elasticsearch.hadoop.pig.EsStorage`), consider using a shortcut through http://pig.apache.org/docs/r0.11.1/basic.html#define[`DEFINE`] command:
 
 [source,sql]
 ----
-DEFINE ESStorage org.elasticsearch.hadoop.pig.ESStorage('es.resource=radio/artists/');
+DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage();
 ----
 
-Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication. In fact, for the reminder of this section, 
-the Pig alias will be implied and `ESStorage` will be used (instead of the fully qualified class name) for abbreviation.
+Do note that it is possible (and recommended) to specify the configuration parameters to reduce script duplication, such as `es.query` or `es.mapping.names`:
+[source,sql]
+----
+DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('my.cfg.param=value');
+----
+In fact, for the reminder of this section, the Pig alias will be implied and `EsStorage` will be used (instead of the fully qualified class name) for abbreviation.
 
 [[pig-alias]]
 [float]
@@ -76,7 +79,7 @@ For example:
 
 [source,sql]
 ----
-LOAD '...' USING ESStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
+STORE B INTO  '...' USING EsStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
 ----
 
 <1> name mapping for two fields
@@ -139,7 +142,7 @@ A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
 -- transform data
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 -- save the result to Elasticsearch
-STORE B INTO 'radio/artists'<1> USING ESStorage(<2>);
+STORE B INTO 'radio/artists'<1> USING EsStorage(<2>);
 ----
 
 <1> {es} resource (index and type) associated with the given storage
@@ -152,10 +155,10 @@ As you would expect, loading the data is straight forward:
 
 [source,sql]
 ----
--- load data from Elasticsearch into Pig
-A = LOAD 'radio/artists/_search?q=me*'<1> USING ESStorage(<2>);
+-- execute Elasticsearch query and load data into Pig
+A = LOAD 'radio/artists'<1> USING EsStorage('es.query=?me*'<2>);
 DUMP A;
 ----
 
-<1> {es} resource (in case of reading, a query) associated with the given storage
-<2> additional configuration parameters can be passed here - in this case the defaults are used
+<1> {es} resource
+<2> search query to execute
