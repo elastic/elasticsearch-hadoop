@@ -147,10 +147,10 @@ public class QueryBuilder {
 
         // override fields
         if (StringUtils.hasText(fields)) {
-            uriQuery.put("fields", fields);
+            uriQuery.put("_source", fields);
         }
         else {
-            uriQuery.remove("fields");
+            uriQuery.remove("_source");
         }
 
         StringBuilder pref = new StringBuilder();
@@ -180,7 +180,6 @@ public class QueryBuilder {
                 sb.append("&");
             }
         }
-
         return sb.toString();
     }
 
