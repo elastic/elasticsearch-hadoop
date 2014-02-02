@@ -33,8 +33,7 @@ or if the jars are on HDFS
 [source,bash]
 ----
 $ pig \
--Dpig.additional.jars=hdfs://<cluster-name>:<cluster-port>/<path>/elasticsearch-hadoop.jar:<other.jars> \
-script.pig
+-Dpig.additional.jars=hdfs://<cluster-name>:<cluster-port>/<path>/elasticsearch-hadoop.jar:<other.jars> script.pig
 ----
 
 [[pig-configuration]]
@@ -46,7 +45,7 @@ With Pig, one can specify the <<configuration,configuration>> properties (as an 
 [source,sql]
 ----
 STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage
-	         ('es.http.timeout = 5m<2>',
+             ('es.http.timeout = 5m<2>',
               'es.index.auto.create = false' <3>);
 ----
 
@@ -79,7 +78,8 @@ For example:
 
 [source,sql]
 ----
-STORE B INTO  '...' USING EsStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
+STORE B INTO  '...' USING 
+      EsStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
 ----
 
 <1> name mapping for two fields
@@ -114,16 +114,16 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 
 2+h| Available in Pig 0.10 or higher
 
-| `boolean` 	    | `boolean`
+| `boolean`         | `boolean`
 
 2+h| Available in Pig 0.11 or higher
 
-| `datetime` 	    | `date`
+| `datetime`        | `date`
 
 2+h| Available in Pig 0.12 or higher
 
-| `biginteger` 	    | `not supported`
-| `bigdecimal` 	    | `not supported`
+| `biginteger`      | `not supported`
+| `bigdecimal`      | `not supported`
 
 |===
 
@@ -147,6 +147,34 @@ STORE B INTO 'radio/artists'<1> USING EsStorage(<2>);
 
 <1> {es} resource (index and type) associated with the given storage
 <2> additional configuration parameters can be passed here - in this case the defaults are used
+
+[float]
+==== Writing JSON directly to {es}
+
+When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize common 'textual' types such as `chararray` or `bytearray` otherwise it just calls `toString` to get a hold of the JSON content.
+
+.Pig types to use for JSON representation
+
+[cols="^,^",options="header"]
+|===
+| `Pig type` | Comment 
+
+| `bytearray`       | use this when the JSON data is represented as a `byte[]` or similar
+| `chararray`       | use this if the JSON data is represented as a `String`
+| _anything else_   | make sure the `toString()` returns the desired JSON document
+
+|===
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content is considered the final form of the document sent to {es}.
+
+[source,sql]
+----
+A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray<1>);"
+STORE B INTO 'radio/artists' USING EsStorage('es.input.json=true'<2>...);
+----
+
+<1> Load the (JSON) data as a single field (`json`)
+<2> Indicate the input is of type JSON.
 
 [float]
 === Reading data from {es}

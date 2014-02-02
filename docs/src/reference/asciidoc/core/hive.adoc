@@ -146,6 +146,44 @@ INSERT OVERWRITE TABLE artists
 <2> {es} resource (index and type) associated with the given storage
 
 [float]
+[[writing-json-hive]]
+==== Writing JSON directly to {es}
+
+For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects the output table to contain only one field, who
+s content is used as the JSON document. That is, the library will recognize specific 'textual' types (such as `string` or `binary`) or simply call (`toString`).
+
+.Hive types to use for JSON representation
+
+[cols="^,^",options="header"]
+|===
+| `Hive type` | Comment 
+
+| `binary`          | use this when the JSON data is represented as a `byte[]` or similar
+| `string`          | use this if the JSON data is represented as a `String`
+| _anything else_   | make sure the `toString()` returns the desired JSON document
+
+2+h| Available in Hive 0.12 or higher
+
+| `varchar`         | use this as an alternative to Hive `string`
+
+|===
+
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content is considered the final form of the document sent to {es}.
+
+[source,java]
+----
+CREATE EXTERNAL TABLE json (data STRING<1>)
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = '...',
+              'es.json.input` = 'yes'<2>);
+...
+----
+
+<1> The table declaration only one field of type `STRING`
+<2> Indicate {eh} the table content is in JSON format
+
+[float]
 === Reading data from {es}
 
 Reading from {es} is strikingly similar:

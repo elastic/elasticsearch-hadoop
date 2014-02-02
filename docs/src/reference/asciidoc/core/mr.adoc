@@ -81,6 +81,38 @@ JobClient.runJob(conf);
 <2> Target index/type
 <3> Dedicated `OutputFormat`
 
+[float]
+[[writing-json-old-api]]
+==== Writing JSON directly to {es}
+
+For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects either a `Text` or `BytesWritable` (preffered as it requires no `String` conversion) object as output; if these types are not used, the library will simply fall back to the `toString` representation of the target object.
+
+.`Writable` to use for JSON representation
+
+[cols="^,^",options="header"]
+|===
+| `Writable` | Comment 
+
+| `BytesWritable`   | use this when the JSON data is represented as a `byte[]` or similar
+| `Text`            | use this if the JSON data is represented as a `String`
+| _anything else_   | make sure the `toString()` returns the desired JSON document
+
+|===
+
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The job output is considered the final form of the document sent to {es}.
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.input.json", "yes");                 <1>
+conf.setMapOutputValueClass(BytesWritable.class); <2>
+...
+JobClient.runJob(conf);
+----
+
+<1> Indicate the input for `EsOutputFormat` is of type JSON.
+<2> Set the output type
 
 [float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
@@ -102,6 +134,24 @@ job.waitForCompletion(true);
 <1> Disable mapper speculative execution
 <2> Disable reducer speculative execution
 <3> Target index/type
+
+[float]
+[[writing-json-new-api]]
+==== Writing JSON directly to {es}
+
+As before, when dealing with JSON directly, under the 'new' API the configuration looks as follows:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.input.json", "yes");                 <1>
+conf.setMapOutputValueClass(BytesWritable.class); <2>
+...
+JobClient.runJob(conf);
+----
+
+<1> Indicate the input for `EsOutputFormat` is of type JSON.
+<2> Set the output type
 
 [float]
 === Reading data from {es}

@@ -69,13 +69,36 @@ Simply hook, `EsTap` into the Cascading flow:
 [source,java]
 ----
 Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
-				"src/test/resources/artists.dat");
+             "/resources/artists.dat");
 Tap out = new EsTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 ----
 
 <1> {eh} resource (index and type)
 <2> Cascading tuple declaration
+
+[float]
+==== Writing JSON directly to {es}
+
+When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize `Text` or `BytesWritable` types otherwise it just
+calls `toString` to get a hold of the JSON content.
+
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The job output is considered the final form of the document sent to {es}.
+
+[source,java]
+----
+Properties props = new Properties();
+...
+props.setProperty("es.input.json", "true");                                   <1>
+Tap in = new Lfs(new TextLine(new Fields("line")),"/resources/artists.json"); <2>
+Tap out = new EsTap("json-cascading-local/artists");
+FlowConnector flow = new HadoopFlowConnector(props);
+flow.connect(in, out, new Pipe("import-json")).complete();
+----
+
+<1> Indicate the input is of type JSON.
+<2> Load the (JSON) data as a single field (`line`)
 
 [float]
 === Reading data from {es}
@@ -86,7 +109,6 @@ Just the same, add `EsTap` on the other end of a pipe, to read (instead of writi
 ----
 Tap in = new EsTap("radio/artists/"<1>,"?q=me*"<2>);
 Tap out = new StdOut(new TextLine());
-Properties cfg = new Properties();
 new LocalFlowConnector().connect(in, out, new Pipe("read-from-Es")).complete();
 ----
 
