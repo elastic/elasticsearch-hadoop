@@ -33,22 +33,24 @@ public class FieldAliasTest {
     @Test
     public void testFieldMap() throws Exception {
         Properties tableProperties = new Properties();
-        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo,default_variant_attributes:default_variant.attributes.attributes_1");
         FieldAlias alias = HiveUtils.alias(new PropertiesSettings(tableProperties));
         assertEquals("@timestamp", alias.toES("timestamp"));
         assertEquals("123foo", alias.toES("foo"));
         assertEquals("bar", alias.toES("BaR"));
+        assertEquals("default_variant.attributes.attributes_1", alias.toES("default_variant_attributes"));
     }
 
     @Test
     public void testFieldMapWithColumns() throws Exception {
         Properties tableProperties = new Properties();
-        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
-        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo");
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo, default_variant_attributes:default_variant.attributes.attributes_1");
+        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo,default_variant_attributes");
         FieldAlias alias = HiveUtils.alias(new PropertiesSettings(tableProperties));
         assertEquals("@timestamp", alias.toES("timestamp"));
         assertEquals("123foo", alias.toES("foo"));
         assertEquals("bar", alias.toES("BaR"));
+        assertEquals("default_variant.attributes.attributes_1", alias.toES("default_variant_attributes"));
     }
 
     @Test
