@@ -174,7 +174,13 @@ public class EsSerDe implements SerDe {
             MapWritable map = (MapWritable) data;
             Text reuse = new Text();
             for (int index = 0; index < names.size(); index++) {
-                reuse.set(alias.toES(names.get(index)));
+            	//if an alias uses dot notation to acces a nested structure, when using the source field
+            	//we need to extract only the first part before the dot.
+            	String item_name = alias.toES(names.get(index));
+            	if(item_name.indexOf(".") != -1){
+            		item_name = item_name.split("\\.")[0];
+            	}
+                reuse.set(item_name);
                 struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias));
             }
             return struct;
