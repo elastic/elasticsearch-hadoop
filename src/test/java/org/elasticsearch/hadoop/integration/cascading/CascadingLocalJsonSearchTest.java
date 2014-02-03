@@ -100,7 +100,6 @@ public class CascadingLocalJsonSearchTest {
         new LocalFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 
-
     private Properties cfg() {
         Properties props = new TestSettings().getProperties();
         props.put(ConfigurationOptions.ES_QUERY, query);

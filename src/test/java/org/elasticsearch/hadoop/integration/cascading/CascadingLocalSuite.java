@@ -25,8 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ CascadingLocalJsonSaveTest.class, CascadingLocalSaveTest.class,
-        CascadingLocalJsonSearchTest.class, CascadingLocalSearchTest.class })
+@Suite.SuiteClasses({ CascadingLocalJsonSaveTest.class, CascadingLocalSaveTest.class, CascadingLocalJsonSearchTest.class, CascadingLocalSearchTest.class })
 //@Suite.SuiteClasses({ CascadingLocalJsonSearchTest.class })
 public class CascadingLocalSuite {
 

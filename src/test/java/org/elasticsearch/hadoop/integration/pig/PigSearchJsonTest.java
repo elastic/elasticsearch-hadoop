@@ -90,7 +90,7 @@ public class PigSearchJsonTest {
 
 
 
-    //@Test
+    @Test
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -102,7 +102,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testTupleWithSchema() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -114,7 +114,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -125,7 +125,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testMissingIndex() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -136,7 +136,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testParentChild() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +

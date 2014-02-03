@@ -25,6 +25,8 @@ import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.integration.Stream;
+import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -35,6 +37,7 @@ import cascading.operation.AssertionLevel;
 import cascading.operation.assertion.AssertNotNull;
 import cascading.operation.assertion.AssertSizeEquals;
 import cascading.operation.assertion.AssertSizeLessThan;
+import cascading.operation.filter.FilterNotNull;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.tap.Tap;
@@ -103,6 +106,25 @@ public class CascadingHadoopSearchTest {
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "url:address");
+        new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
+    }
+
+    @Test
+    public void testNestedField() throws Exception {
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
+        RestUtils.putData("cascading-hadoop/nestedmap", StringUtils.toUTF(data));
+        RestUtils.refresh("cascading-hadoop");
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.mapping.names", "nested:data.map.key");
+
+        Tap in = new EsTap("cascading-hadoop/nestedmap", new Fields("nested"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, new FilterNotNull());
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
+
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
         new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 
