@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hadoop.hive.service.HiveServerException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -45,6 +46,12 @@ public class HiveSaveJsonTest {
     @After
     public void after() throws Exception {
         HiveSuite.after();
+    }
+
+    @Test
+    public void testNestedFields() throws Exception {
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
+        RestUtils.putData("jsonnestedmap", StringUtils.toUTF(data));
     }
 
     @Test

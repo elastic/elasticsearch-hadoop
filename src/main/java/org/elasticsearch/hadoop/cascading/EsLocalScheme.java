@@ -32,6 +32,8 @@ import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.SettingsUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -55,6 +57,8 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final int port;
     private transient RestRepository client;
 
+    private boolean IS_ES_10;
+
     EsLocalScheme(String host, int port, String index, String query, Fields fields) {
         this.resource = index;
         this.query = query;
@@ -71,8 +75,10 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sourcePrepare(flowProcess, sourceCall);
 
         Object[] context = new Object[1];
-        context[0] = CascadingUtils.alias(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        context[0] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
     }
 
     @Override
@@ -99,8 +105,10 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sinkPrepare(flowProcess, sinkCall);
 
         Object[] context = new Object[1];
-        context[0] = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSinkFields());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
     }
 
     @Override
@@ -143,8 +151,18 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             // lookup using writables
             // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable<?> field : entry.getFields()) {
-                //NB: coercion should be applied automatically by the TupleEntry
-                entry.setObject(field, data.get(alias.toES(field.toString())));
+                if (IS_ES_10) {
+                    Object result = data;
+                    // check for multi-level alias
+                    for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
+                        result = ((Map) result).get(level);
+                    }
+                    entry.setObject(field, result);
+                }
+                else {
+                    //NB: coercion should be applied automatically by the TupleEntry
+                    entry.setObject(field, data.get(alias.toES(field.toString())));
+                }
             }
         }
         else {

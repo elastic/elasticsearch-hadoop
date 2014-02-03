@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -46,11 +47,13 @@ public class QueryBuilder {
     private long size = 50;
     private String shard;
     private String node;
+    private final boolean IS_ES_10;
 
     private String fields;
 
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
         String query = settings.getQuery();
         if (!StringUtils.hasText(query)) {
             query = MATCH_ALL;
@@ -147,7 +150,13 @@ public class QueryBuilder {
 
         // override fields
         if (StringUtils.hasText(fields)) {
-            uriQuery.put("fields", fields);
+            if (IS_ES_10) {
+                uriQuery.put("_source", fields);
+                uriQuery.remove("fields");
+            }
+            else {
+                uriQuery.put("fields", fields);
+            }
         }
         else {
             uriQuery.remove("fields");

@@ -26,6 +26,8 @@ import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.integration.Stream;
+import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +45,7 @@ import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
 
 @RunWith(Parameterized.class)
 public class CascadingLocalJsonSearchTest {
@@ -76,6 +79,27 @@ public class CascadingLocalJsonSearchTest {
         Tap out = new OutputStreamTap(new TextLine(), OUT);
         new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
+
+    @Test
+    public void testNestedField() throws Exception {
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
+        RestUtils.putData(indexPrefix + "cascading-local/nestedmap", StringUtils.toUTF(data));
+
+        RestUtils.refresh(indexPrefix + "cascading-local");
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.mapping.names", "nested:data.map.key");
+
+        Tap in = new EsTap(indexPrefix + "cascading-local/nestedmap", new Fields("nested"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, new FilterNotNull());
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
+
+        // print out
+        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        new LocalFlowConnector(cfg).connect(in, out, pipe).complete();
+    }
+
 
     private Properties cfg() {
         Properties props = new TestSettings().getProperties();

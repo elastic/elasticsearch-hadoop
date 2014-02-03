@@ -136,4 +136,8 @@ public abstract class StringUtils {
     public static String asUTFString(byte[] content, int length) {
         return (content == null || length == 0 ? EMPTY : new String(content, 0, length, UTF_8));
     }
+
+    public static byte[] toUTF(String string) {
+        return string.getBytes(UTF_8);
+    }
 }

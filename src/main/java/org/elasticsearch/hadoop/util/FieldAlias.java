@@ -46,4 +46,9 @@ public class FieldAlias {
         }
         return alias;
     }
+
+    @Override
+    public String toString() {
+        return fieldToAlias.toString();
+    }
 }

@@ -26,4 +26,5 @@ public interface InternalConfigurationOptions extends ConfigurationOptions {
     String INTERNAL_ES_TARGET_RESOURCE = "es.internal.mr.target.resource";
     String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
     String INTERNAL_ES_HOSTS = "es.internal.hosts";
+    String INTERNAL_ES_VERSION = "es.internal.es.version";
 }

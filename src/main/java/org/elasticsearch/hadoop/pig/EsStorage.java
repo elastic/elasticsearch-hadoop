@@ -61,6 +61,7 @@ import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -94,6 +95,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     private PigTuple pigTuple;
 
     private List<String> aliasesTupleNames;
+    private boolean IS_ES_10;
 
     public EsStorage() {
         this(new String[0]);
@@ -152,6 +154,8 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         changed |= InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         changed |= InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
+
+        IS_ES_10 = SettingsUtils.isEs10(settings);
         settings.save();
     }
 
@@ -223,6 +227,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         Configuration cfg = job.getConfiguration();
 
         Settings settings = SettingsManager.loadFrom(cfg);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
 
         if (settings.getScrollFields() != null) {
             return;
@@ -315,7 +320,18 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
             if (!aliasesTupleNames.isEmpty()) {
                 for (int i = 0; i < aliasesTupleNames.size(); i++) {
-                    tuple.set(i, dataMap.get(aliasesTupleNames.get(i)));
+                    if (IS_ES_10) {
+                        Object result = dataMap;
+                        // check for multi-level alias
+                        for (String level : StringUtils.tokenize(aliasesTupleNames.get(i), ".")) {
+                            result = ((Map) result).get(level);
+                        }
+                        tuple.set(i, result);
+                    }
+                    // ES 0.90.x / fields
+                    else {
+                        tuple.set(i, dataMap.get(aliasesTupleNames.get(i)));
+                    }
                 }
             }
             else {

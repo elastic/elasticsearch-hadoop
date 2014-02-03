@@ -38,6 +38,7 @@ import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -61,6 +62,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private final String query;
     private final String host;
     private final int port;
+    private boolean IS_ES_10;
 
     EsHadoopScheme(String host, int port, String index, String query, Fields fields) {
         this.index = index;
@@ -81,9 +83,10 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
         // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
-        context[2] = CascadingUtils.alias(SettingsManager.loadFrom(flowProcess.getConfigCopy()));
-
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        context[2] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
     }
 
     @Override
@@ -97,8 +100,10 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         Object[] context = new Object[1];
         // the tuple wil be fixed, so we can just use a collection/index
-        context[0] = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSinkFields());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
     }
 
     public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
@@ -156,8 +161,19 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable<?> field : entry.getFields()) {
                 //NB: coercion should be applied automatically by the TupleEntry
-                lookupKey.set(alias.toES(field.toString()));
-                entry.setObject(field, data.get(lookupKey));
+                if (IS_ES_10) {
+                    // check for multi-level alias
+                    Object result = data;
+                    for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
+                        lookupKey.set(level);
+                        result = ((Map) result).get(lookupKey);
+                    }
+                    entry.setObject(field, result);
+                }
+                else {
+                    lookupKey.set(alias.toES(field.toString()));
+                    entry.setObject(field, data.get(lookupKey));
+                }
             }
         }
         else {

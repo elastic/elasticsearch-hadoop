@@ -55,8 +55,6 @@ public class HiveBytesConverter extends WritableBytesConverter {
 
         Object writable = ((PrimitiveObjectInspector) foi).getPrimitiveWritableObject(soi.getStructFieldData(ht.getObject(), structField));
 
-        System.out.println(String.format("Found writable [%s] %s ", writable.getClass(), writable));
-
         // HiveVarcharWritable - Hive 0.12+
         if (writable != null && HiveConstants.VARCHAR_WRITABLE.equals(writable.getClass().getName())) {
             // TODO: add dedicated optimization

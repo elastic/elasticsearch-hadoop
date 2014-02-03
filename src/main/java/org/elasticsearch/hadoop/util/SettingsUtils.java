@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 
 public abstract class SettingsUtils {
@@ -64,5 +65,21 @@ public abstract class SettingsUtils {
         }
 
         return aliasMap;
+    }
+
+    /**
+     * Whether the settings indicate a ES 1.0RC1 (which introduces breaking changes) or lower (1.0.0.Beta2)
+     *
+     * @param settings
+     * @return
+     */
+    public static boolean isEs10(Settings settings) {
+        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
+        // assume ES 1.0 by default
+        if (!StringUtils.hasText(version)) {
+            return true;
+        }
+
+        return ("1.0.0.RC".compareTo(version) <= 0 || "1.0.0".equals(version));
     }
 }

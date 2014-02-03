@@ -18,13 +18,39 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import org.elasticsearch.hadoop.rest.Resource;
+import java.io.IOException;
+
+import org.elasticsearch.hadoop.rest.Request;
+import org.elasticsearch.hadoop.rest.Request.Method;
+import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.rest.RestClient.HEALTH;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 public class RestUtils {
 
+    public static class ExtendedRestClient extends RestClient {
+
+        public ExtendedRestClient() {
+            super(new TestSettings());
+        }
+
+        @Override
+        public Response execute(Method method, String path, ByteSequence buffer) throws IOException {
+            return super.execute(method, path, buffer);
+        }
+
+        public String put(String index, byte[] buffer) throws IOException {
+            return IOUtils.asString(execute(Request.Method.POST, index, new BytesArray(buffer)).body());
+        }
+
+        public String refresh(String index) throws IOException {
+            return IOUtils.asString(execute(Request.Method.POST, index + "/_refresh", null).body());
+        }
+    }
+
     public static void putMapping(String index, byte[] content) throws Exception {
-        RestClient rc = new RestClient(new TestSettings());
+        RestClient rc = new ExtendedRestClient();
         BytesArray bs = new BytesArray(content);
         rc.putMapping(index, index + "/_mapping", bs.bytes);
         rc.close();
@@ -35,10 +61,20 @@ public class RestUtils {
     }
 
     public static void putData(String index, byte[] content) throws Exception {
-        RestClient rc = new RestClient(new TestSettings());
-        TrackingBytesArray tba = new TrackingBytesArray(new BytesArray(256));
-        tba.copyFrom(new BytesArray(content));
-        rc.bulk(new Resource(new TestSettings()), tba);
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.put(index, content);
+        rc.close();
+    }
+
+    public static void waitForYellow(String string) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.health(string, HEALTH.YELLOW, TimeValue.timeValueSeconds(5));
+        rc.close();
+    }
+
+    public static void refresh(String string) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.refresh(string);
         rc.close();
     }
 }

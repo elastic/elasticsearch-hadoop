@@ -58,11 +58,11 @@ public abstract class InitializationUtils {
             RestClient bootstrap = new RestClient(settings);
 
             // first get ES version
-            //            String esVersion = bootstrap.esVersion();
-            //            if (log.isDebugEnabled()) {
-            //                log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
-            //            }
-            //            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
+            String esVersion = bootstrap.esVersion();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
+            }
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
 
             List<String> discoveredNodes = bootstrap.discoverNodes();
             if (log.isDebugEnabled()) {

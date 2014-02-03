@@ -201,28 +201,34 @@ public class RestClient implements Closeable {
         network.close();
     }
 
-    InputStream execute(Request request) throws IOException {
+    protected InputStream execute(Request request) throws IOException {
         return execute(request, true).body();
     }
 
-    InputStream execute(Method method, String path) throws IOException {
+    protected InputStream execute(Method method, String path) throws IOException {
         return execute(new SimpleRequest(method, null, path));
     }
 
-    Response execute(Method method, String path, boolean checkStatus) throws IOException {
-        return execute(new SimpleRequest(method, null, path), false);
+    protected Response execute(Method method, String path, boolean checkStatus) throws IOException {
+        return execute(new SimpleRequest(method, null, path), checkStatus);
     }
 
-    Response execute(Method method, String path, ByteSequence buffer) throws IOException {
-        return execute(new SimpleRequest(method, null, path, null, buffer), false);
+    protected Response execute(Method method, String path, ByteSequence buffer) throws IOException {
+        return execute(new SimpleRequest(method, null, path, null, buffer), true);
     }
 
-    Response execute(Request request, boolean checkStatus) throws IOException {
+    protected Response execute(Request request, boolean checkStatus) throws IOException {
         Response response = network.execute(request);
 
         if (checkStatus && response.hasFailed()) {
             // check error first
-            String msg = parseContent(response.body(), "error");
+            String msg = null;
+            try {
+                // try to parse the answer
+                msg = parseContent(response.body(), "error");
+            } catch (Exception ex) {
+                // ignore
+            }
             if (!StringUtils.hasText(msg)) {
                 msg = String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]", request.method().name(),
                         request.path(), response.uri(), response.status(), response.statusDescription());

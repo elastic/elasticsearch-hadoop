@@ -50,6 +50,8 @@ import org.elasticsearch.hadoop.serialization.command.BulkCommands;
 import org.elasticsearch.hadoop.serialization.command.Command;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.SettingsUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("deprecation")
 public class EsSerDe implements SerDe {
@@ -68,12 +70,16 @@ public class EsSerDe implements SerDe {
     private Command command;
 
     private boolean writeInitialized = false;
+    private boolean IS_ES_10 = false;
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
-        alias = HiveUtils.alias(new PropertiesSettings(tbl));
+        Settings settings = new PropertiesSettings(tbl);
+        alias = HiveUtils.alias(settings);
+        IS_ES_10 = SettingsUtils.isEs10(settings);
+
         this.tableProperties = tbl;
     }
 
@@ -82,7 +88,7 @@ public class EsSerDe implements SerDe {
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
-        return hiveFromWritable(structTypeInfo, blob, alias);
+        return hiveFromWritable(structTypeInfo, blob, alias, IS_ES_10);
     }
 
     @Override
@@ -130,7 +136,7 @@ public class EsSerDe implements SerDe {
 
 
     @SuppressWarnings("unchecked")
-    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
+    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias, boolean IS_ES_10) {
         if (data == null || data instanceof NullWritable) {
             return null;
         }
@@ -144,7 +150,7 @@ public class EsSerDe implements SerDe {
 
             List<Object> list = new ArrayList<Object>();
             for (Writable writable : aw.get()) {
-                list.add(hiveFromWritable(listElementType, writable, alias));
+                list.add(hiveFromWritable(listElementType, writable, alias, IS_ES_10));
             }
 
             return list;
@@ -157,8 +163,8 @@ public class EsSerDe implements SerDe {
             Map<Object, Object> map = new LinkedHashMap<Object, Object>();
 
             for (Entry<Writable, Writable> entry : mw.entrySet()) {
-                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias),
-                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias));
+                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias, IS_ES_10),
+                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias, IS_ES_10));
             }
 
             return map;
@@ -174,8 +180,20 @@ public class EsSerDe implements SerDe {
             MapWritable map = (MapWritable) data;
             Text reuse = new Text();
             for (int index = 0; index < names.size(); index++) {
-                reuse.set(alias.toES(names.get(index)));
-                struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias));
+                String esAlias = alias.toES(names.get(index));
+                if (IS_ES_10) {
+                    // check for multi-level alias
+                    Writable result = map;
+                    for (String level : StringUtils.tokenize(esAlias, ".")) {
+                        reuse.set(level);
+                        result = ((MapWritable) result).get(reuse);
+                    }
+                    struct.add(hiveFromWritable(info.get(index), result, alias, IS_ES_10));
+                }
+                else {
+                    reuse.set(alias.toES(names.get(index)));
+                    struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias, IS_ES_10));
+                }
             }
             return struct;
         }

@@ -22,7 +22,10 @@ import java.util.Collection;
 import java.util.List;
 
 import org.elasticsearch.hadoop.integration.QueryTestParams;
+import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,6 +62,41 @@ public class HiveSearchJsonTest {
     public void after() throws Exception {
         testInstance++;
         HiveSuite.after();
+    }
+
+    @Test
+    public void loadNestedField() throws Exception {
+        Assume.assumeTrue(testInstance == 0);
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
+        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+
+        //RestUtils.waitForYellow("json-hive");
+        RestUtils.refresh("json-hive");
+
+        String createList = "CREATE EXTERNAL TABLE jsonnestedmaplistload" + testInstance + "("
+                + "nested   ARRAY<INT>) "
+                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.map.key'");
+
+        String selectList = "SELECT * FROM jsonnestedmaplistload" + testInstance;
+
+        String createMap = "CREATE EXTERNAL TABLE jsonnestedmapmapload" + testInstance + "("
+                + "nested   MAP<STRING,ARRAY<INT>>) "
+                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.map'");
+
+        String selectMap = "SELECT * FROM jsonnestedmapmapload" + testInstance;
+
+        server.execute(createList);
+        List<String> result = server.execute(selectList);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "10");
+        assertContains(result, "20");
+
+        server.execute(createMap);
+        result = server.execute(selectMap);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "key");
+        assertContains(result, "10");
+        assertContains(result, "20");
     }
 
 

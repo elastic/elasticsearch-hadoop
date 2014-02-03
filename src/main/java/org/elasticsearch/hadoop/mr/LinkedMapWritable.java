@@ -21,12 +21,14 @@ package org.elasticsearch.hadoop.mr;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
@@ -209,5 +211,31 @@ public class LinkedMapWritable extends MapWritable {
         while (i.hasNext())
             h += i.next().hashCode();
         return h;
+    }
+
+    @Override
+    public String toString() {
+        Iterator<Entry<Writable, Writable>> i = entrySet().iterator();
+        if (!i.hasNext())
+            return "{}";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        for (;;) {
+            Entry<Writable, Writable> e = i.next();
+            Writable key = e.getKey();
+            Writable value = e.getValue();
+            sb.append(key == this ? "(this Map)" : key);
+            sb.append('=');
+            if (value instanceof ArrayWritable) {
+                sb.append(Arrays.toString(((ArrayWritable) value).get()));
+            }
+            else {
+                sb.append(value == this ? "(this Map)" : value);
+            }
+            if (!i.hasNext())
+                return sb.append('}').toString();
+            sb.append(", ");
+        }
     }
 }

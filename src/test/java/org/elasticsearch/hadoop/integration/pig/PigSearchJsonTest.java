@@ -22,6 +22,8 @@ import java.util.Collection;
 
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
+import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,7 +59,38 @@ public class PigSearchJsonTest {
         pig.stop();
     }
 
+
     @Test
+    public void testNestedField() throws Exception {
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10 ] } } }";
+        RestUtils.putData("json-pig/nestedmap", StringUtils.toUTF(data));
+
+        //RestUtils.waitForYellow("json-hive");
+        RestUtils.refresh("json-pig");
+
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nested:data.map.key');" +
+                //"A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (nested:tuple(key:int));" +
+                "A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (nested:chararray);" +
+                "DESCRIBE A;" +
+                "X = LIMIT A 3;" +
+                "DUMP X;";
+        pig.executeScript(script);
+
+//        script =
+//                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+//                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.mapping.names=nested:data.map');" +
+//                "A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (key:chararray, value:);" +
+//                "DESCRIBE A;" +
+//                "X = LIMIT A 3;" +
+//                "DUMP X;";
+//        pig.executeScript(script);
+    }
+
+
+
+    //@Test
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -69,7 +102,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testTupleWithSchema() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -81,7 +114,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -92,7 +125,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testMissingIndex() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -103,7 +136,7 @@ public class PigSearchJsonTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testParentChild() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
