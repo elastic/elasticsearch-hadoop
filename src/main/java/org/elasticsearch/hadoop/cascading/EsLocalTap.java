@@ -70,6 +70,7 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             Settings settings = SettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProcess.getConfigCopy()));
             // will be closed by the query is finished
             InitializationUtils.discoverNodesIfNeeded(settings, log);
+            InitializationUtils.discoverEsVersion(settings, log);
             settings.save();
 
             RestRepository client = new RestRepository(settings);
