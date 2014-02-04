@@ -62,7 +62,7 @@ public class PigSearchJsonTest {
 
     @Test
     public void testNestedField() throws Exception {
-        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10 ] } } }";
+        String data = "{ \"data\" : { \"map\" : { \"key\" :  10  } } }";
         RestUtils.putData("json-pig/nestedmap", StringUtils.toUTF(data));
 
         //RestUtils.waitForYellow("json-hive");
