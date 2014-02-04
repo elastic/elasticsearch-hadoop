@@ -57,13 +57,6 @@ public abstract class InitializationUtils {
         if (settings.getNodesDiscovery()) {
             RestClient bootstrap = new RestClient(settings);
 
-            // first get ES version
-            String esVersion = bootstrap.esVersion();
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
-            }
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
-
             List<String> discoveredNodes = bootstrap.discoverNodes();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
@@ -82,6 +75,21 @@ public abstract class InitializationUtils {
         }
 
         return false;
+    }
+
+    public static String discoverEsVersion(Settings settings, Log log) throws IOException {
+        RestClient bootstrap = new RestClient(settings);
+        // first get ES version
+        try {
+            String esVersion = bootstrap.esVersion();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
+            }
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
+            return esVersion;
+        } finally {
+            bootstrap.close();
+        }
     }
 
     public static void checkIndexExistence(Settings settings, RestRepository client) {

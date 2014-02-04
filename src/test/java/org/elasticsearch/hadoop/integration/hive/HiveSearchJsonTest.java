@@ -65,12 +65,13 @@ public class HiveSearchJsonTest {
     }
 
     @Test
-    public void loadNestedField() throws Exception {
+    public void loadMultiNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
-        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
+        String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10 20 ] } } }";
+        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+        data = "{ \"data\" : { \"different\" : \"structure\" } } }";
         RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
 
-        //RestUtils.waitForYellow("json-hive");
         RestUtils.refresh("json-hive");
 
         String createList = "CREATE EXTERNAL TABLE jsonnestedmaplistload" + testInstance + "("
@@ -97,6 +98,38 @@ public class HiveSearchJsonTest {
         assertContains(result, "key");
         assertContains(result, "10");
         assertContains(result, "20");
+    }
+
+    @Test
+    public void loadSingleNestedField() throws Exception {
+        Assume.assumeTrue(testInstance == 0);
+        String data = "{ \"data\" : { \"single\" : { \"key\" : [ 10 ] } } }";
+        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+
+        RestUtils.refresh("json-hive");
+
+        String createList = "CREATE EXTERNAL TABLE jsonnestedsinglemaplistload" + testInstance + "("
+                + "nested   ARRAY<INT>) "
+                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.single.key'");
+
+        String selectList = "SELECT * FROM jsonnestedsinglemaplistload" + testInstance;
+
+        String createMap = "CREATE EXTERNAL TABLE jsonnestedsinglemapmapload" + testInstance + "("
+                + "nested   MAP<STRING,ARRAY<INT>>) "
+                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.single'");
+
+        String selectMap = "SELECT * FROM jsonnestedsinglemapmapload" + testInstance;
+
+        server.execute(createList);
+        List<String> result = server.execute(selectList);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "10");
+
+        server.execute(createMap);
+        result = server.execute(selectMap);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "key");
+        assertContains(result, "10");
     }
 
 

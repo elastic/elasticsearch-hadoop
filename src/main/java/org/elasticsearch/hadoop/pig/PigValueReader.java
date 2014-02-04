@@ -28,11 +28,6 @@ public class PigValueReader extends JdkValueReader {
 
     @Override
     public Object addToArray(Object array, List<Object> value) {
-        // unwrap lists with only one element (since 1.0.0.RC1 'fields' always return arrays)
-        if (value.size() == 1) {
-            return value.get(0);
-        }
-
         return TupleFactory.getInstance().newTupleNoCopy(value);
     }
 

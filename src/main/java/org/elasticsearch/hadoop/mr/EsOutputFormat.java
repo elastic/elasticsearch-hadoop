@@ -163,6 +163,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
             InitializationUtils.discoverNodesIfNeeded(settings, log);
+            InitializationUtils.discoverEsVersion(settings, log);
             // pick the host based on id
             List<String> nodes = SettingsUtils.nodes(settings);
             Collections.rotate(nodes, -currentInstance);

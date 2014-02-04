@@ -42,7 +42,6 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
@@ -59,6 +58,8 @@ public class EsSerDe implements SerDe {
     private static Log log = LogFactory.getLog(EsSerDe.class);
 
     private Properties tableProperties;
+    private Configuration cfg;
+    private Settings settings;
     private StructObjectInspector inspector;
 
     // serialization artifacts
@@ -70,21 +71,36 @@ public class EsSerDe implements SerDe {
     private Command command;
 
     private boolean writeInitialized = false;
-    private boolean IS_ES_10 = false;
+    private boolean readInitialized = false;
+    private boolean IS_ES_10 = true;
+
 
     @Override
     public void initialize(Configuration conf, Properties tbl) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
-        Settings settings = new PropertiesSettings(tbl);
+        cfg = conf;
+        settings = SettingsManager.loadFrom(cfg).merge(tbl);
         alias = HiveUtils.alias(settings);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
 
         this.tableProperties = tbl;
     }
 
     @Override
     public Object deserialize(Writable blob) throws SerDeException {
+        if (!readInitialized) {
+            readInitialized = true;
+            IS_ES_10 = SettingsUtils.isEs10(settings);
+
+            // discover ES version since EsSerDe is initialized before the InputFormat (which does discovery)
+            //            try {
+            //                InitializationUtils.discoverEsVersion(settings, log);
+            //                IS_ES_10 = SettingsUtils.isEs10(settings);
+            //            } catch (IOException ex) {
+            //                throw new SerDeException("Cannot detect Elasticsearch version", ex);
+            //            }
+        }
+
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
@@ -187,6 +203,9 @@ public class EsSerDe implements SerDe {
                     for (String level : StringUtils.tokenize(esAlias, ".")) {
                         reuse.set(level);
                         result = ((MapWritable) result).get(reuse);
+                        if (result == null) {
+                            break;
+                        }
                     }
                     struct.add(hiveFromWritable(info.get(index), result, alias, IS_ES_10));
                 }

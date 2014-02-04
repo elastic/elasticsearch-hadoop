@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -86,15 +87,20 @@ public class EsStorageHandler extends DefaultStorageHandler {
         Configuration cfg = getConf();
         Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).clean();
 
-        // NB: ESSerDe is already initialized at this stage
+        // NB: ESSerDe is already initialized at this stage but should still have a reference to the same cfg object
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
 
         InitializationUtils.checkIdForOperation(settings);
-
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
+        try {
+            InitializationUtils.discoverEsVersion(settings, log);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Cannot discover Elasticsearch version", ex);
+        }
+
 
         settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
                 StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));

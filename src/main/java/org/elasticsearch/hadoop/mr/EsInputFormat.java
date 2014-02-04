@@ -359,6 +359,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         Settings settings = SettingsManager.loadFrom(job);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.discoverEsVersion(settings, log);
         settings.save();
 
         RestRepository client = new RestRepository(settings);
