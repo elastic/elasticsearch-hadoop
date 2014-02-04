@@ -155,6 +155,9 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
                     // check for multi-level alias
                     for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
                         result = ((Map) result).get(level);
+                        if (result == null) {
+                            break;
+                        }
                     }
                     entry.setObject(field, result);
                 }

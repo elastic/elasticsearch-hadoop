@@ -167,6 +167,9 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
                     for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
                         lookupKey.set(level);
                         result = ((Map) result).get(lookupKey);
+                        if (result == null) {
+                            break;
+                        }
                     }
                     entry.setObject(field, result);
                 }

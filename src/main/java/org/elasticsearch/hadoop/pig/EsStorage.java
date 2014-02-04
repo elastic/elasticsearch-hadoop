@@ -325,6 +325,9 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                         // check for multi-level alias
                         for (String level : StringUtils.tokenize(aliasesTupleNames.get(i), ".")) {
                             result = ((Map) result).get(level);
+                            if (result == null) {
+                                break;
+                            }
                         }
                         tuple.set(i, result);
                     }
