@@ -14,4 +14,3 @@ include::pig.adoc[]
 
 include::mapping.adoc[]
 
-include::performance.adoc[]

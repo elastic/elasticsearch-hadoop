@@ -34,8 +34,6 @@ A common concern (read optimization) for improving performance is to increase th
 
 Writing to {es} is driven by the number of input splits (or Hadoop tasks) available. {eh} detects the number of (primary) shards where the write will occur and distribute the writes between these. The more splits are available, the more mappers/reducers can write data in parallel to {es}.
 
-For the vast majority of cases, the default settings should work just fine. If that is not the case, please see the <<performance>> chapter but only after doing tests and measurements and identifying (rather then guess) the culprit.
-
 [[arch-colocation]]
 [float]
 === Data co-location
