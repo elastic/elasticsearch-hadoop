@@ -18,12 +18,14 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -107,5 +109,16 @@ abstract class CascadingUtils {
             }
         }
         return names;
+    }
+
+    static Properties extractOriginalProperties(Properties copy) {
+        Field field;
+        try {
+            field = Properties.class.getDeclaredField("defaults");
+            field.setAccessible(true);
+            return (Properties) field.get(copy);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Cannot retrieve actual configuration", ex);
+        }
     }
 }

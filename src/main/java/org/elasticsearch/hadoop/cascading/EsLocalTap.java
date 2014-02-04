@@ -66,7 +66,8 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
     @Override
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
         if (input == null) {
-            Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+            // get original copy
+            Settings settings = SettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProcess.getConfigCopy()));
             // will be closed by the query is finished
             InitializationUtils.discoverNodesIfNeeded(settings, log);
             settings.save();

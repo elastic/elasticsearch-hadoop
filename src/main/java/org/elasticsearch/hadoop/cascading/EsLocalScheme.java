@@ -108,7 +108,6 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
     }
 
     @Override
