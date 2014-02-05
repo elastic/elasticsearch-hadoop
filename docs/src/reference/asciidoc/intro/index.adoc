@@ -21,3 +21,5 @@ include::features.adoc[]
 include::requirements.adoc[]
 
 include::download.adoc[]
+
+include::changes-13m2.adoc[]
