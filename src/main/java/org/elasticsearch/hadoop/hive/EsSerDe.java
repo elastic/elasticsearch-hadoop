@@ -80,7 +80,7 @@ public class EsSerDe implements SerDe {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         cfg = conf;
-        settings = SettingsManager.loadFrom(cfg).merge(tbl);
+        settings = (cfg != null ? SettingsManager.loadFrom(cfg).merge(tbl) : SettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
 
         this.tableProperties = tbl;
