@@ -64,6 +64,29 @@ public class FieldTest {
     }
 
     @Test
+    public void testMultiFieldWithoutDefaultFieldParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_field_no_default.json"), Map.class);
+        Field fl = Field.parseField(value);
+        assertEquals("tweet", fl.name());
+        assertEquals(1, fl.properties().length);
+        Field nested = fl.properties()[0];
+        assertEquals("name", nested.name());
+        assertEquals(FieldType.STRING, nested.type());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMultiFieldWithoutDefaultFieldAndMultiTypesParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(
+                getClass().getResourceAsStream("multi_field_no_default_multi_types.json"), Map.class);
+        Field fl = Field.parseField(value);
+        assertEquals("tweet", fl.name());
+        assertEquals(1, fl.properties().length);
+        Field nested = fl.properties()[0];
+        assertEquals("name", nested.name());
+        assertEquals(FieldType.STRING, nested.type());
+    }
+
+    @Test
     public void testCompletionParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("completion.json"), Map.class);
         Field fl = Field.parseField(value);

@@ -1,0 +1,13 @@
+{
+    "tweet" : {
+        "properties" : {
+            "name" : {
+                "type" : "multi_field",
+                "fields" : {
+                    "notname" : {"type" : "string", "index" : "analyzed"},
+                    "untouched" : {"type" : "long", "index" : "not_analyzed"}
+                }
+            }
+        }
+    }
+}

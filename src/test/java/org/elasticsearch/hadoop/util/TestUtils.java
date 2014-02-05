@@ -52,7 +52,9 @@ public class TestUtils {
             while ((length = in.read(buffer)) != -1)
                 out.write(buffer, 0, length);
         } finally {
-            in.close(); // call this in a finally block
+            if (in != null) {
+                in.close(); // call this in a finally block
+            }
         }
 
         return out.toByteArray();

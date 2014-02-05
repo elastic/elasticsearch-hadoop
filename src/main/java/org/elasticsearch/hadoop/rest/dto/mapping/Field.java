@@ -115,7 +115,34 @@ public class Field implements Serializable {
                     Map<String, Object> fields = (Map<String, Object>) content.get("fields");
                     // return default field
                     Map<String, Object> defaultField = (Map<String, Object>) fields.get(key);
-                    return new Field(key, FieldType.parse(defaultField.get("type").toString()));
+
+                    FieldType defaultType = null;
+
+                    // check if there's no default field - corner case but is possible on 0.90
+                    // if so, check the field types and if all are the same, use that
+                    if (defaultField == null) {
+                        String defaultFieldName = null;
+                        for (Entry<String, Object> subfield : fields.entrySet()) {
+                            Map<String, Object> subFieldDef = (Map<String, Object>) subfield.getValue();
+                            FieldType subFieldType = FieldType.parse(subFieldDef.get("type").toString());
+                            if (defaultType != null) {
+                                if (defaultType != subFieldType) {
+                                    throw new IllegalArgumentException(
+                                            String.format("Ambiguous mapping, multi_field [%s] provides no default field and subfields have different mapping types [%s=%s], [%s=%s]",
+                                                    key, defaultFieldName, defaultType, subfield.getKey(), subFieldType));
+                                }
+                            }
+                            else {
+                                defaultFieldName = subfield.getKey();
+                                defaultType = subFieldType;
+                            }
+                        }
+                    }
+                    else {
+                        defaultType = FieldType.parse(defaultField.get("type").toString());
+                    }
+
+                    return new Field(key, defaultType);
                 }
 
                 if (FieldType.isRelevant(fieldType)) {
