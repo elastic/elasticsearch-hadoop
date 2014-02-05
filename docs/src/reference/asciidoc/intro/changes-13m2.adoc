@@ -1,0 +1,40 @@
+[[changes-13m2]]
+== Upgrading to 1.3 M2 from 1.3 M1
+
+{eh} 1.3 M2 introduces a few breaking changes compared to 1.3 M1. These are:
+
+=== Renamed `ES*` classes to `Es*`
+
+In order to align {eh} with {es} 1.0, classes using `ES*` acronyms have been renamed `Es*` (notice the lowercase _s_) as described in the table below:
+
+|===
+|	Old name 			|	New name	
+
+2+^.^h| Map/Reduce
+
+| `o.e.h.mr.ESInputFormat`  | `o.e.h.mr.EsInputFormat`  
+| `o.e.h.mr.ESOutputFormat` | `o.e.h.mr.EsOutputFormat` 
+
+2+^h| Cascading
+
+| `o.e.h.cascading.ESTap`  | `o.e.h.cascading.EsTap`  
+
+2+^h| Apache Hive
+
+| `o.e.h.hive.ESStorageHandler`  | `o.e.h.hive.EsStorageHandler`  
+
+2+^h| Apache Pig
+
+| `o.e.h.pig.ESStorage`  | `o.e.h.pig.EsStorage`  
+
+|===
+
+TIP: We recommend to those that have checked out the repository (using `git`) to simply delete it and to check it out again; it's the easiest way since otherwise, between the git and local OS file-system settings, the renaming might not be properly tracked
+
+=== Deprecated configuration properties
+
+Queries should be specified through `es.query` and *not* `es.resource`::
+In 1.3 M1 the same property held both the `index/type` information and the query. While this worked for minor cases, when dealing with more complicated queries (for example query dsl), the property because unwielding.
+
+`es.host` has been replaced by `es.nodes`::
+In a similar vein, `es.host` has been deprecated in favour of `es.nodes` which allows multiple Elasticsearch definitions to be specified (rather than just one). Additionally the same host can be used (as multiple nodes can sit on the same physical machine/host).
