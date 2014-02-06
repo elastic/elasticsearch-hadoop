@@ -317,7 +317,7 @@ javadoc {
 			"http://hadoop.apache.org/common/docs/stable1/api",
 			//"http://hbase.apache.org/apidocs/",
 			"http://pig.apache.org/docs/r0.12.0/api/",
-			"http://hive.apache.org/docs/r0.12.0/api/",
+			"http://hive.apache.org/javadocs/r0.12.0/api/",
 			"http://docs.cascading.org/cascading/2.1/javadoc/"
 		]
 
@@ -452,32 +452,21 @@ configure(allprojects) { project ->
 task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
     group = "Distribution"
     description = "Builds -${classifier} archive, containing all jars and docs, suitable for download page."
-
+	ext.folderName = "${baseName}" + "-" + "${version}"
+	
     from(".") {
         include "README.md"
         include "LICENSE.txt"
         include "NOTICE.txt"
-        into archiveName
+        into folderName
         //expand(yyyy: new Date().format("yyyy"), version: project.version)
     }
 
     from("build/asciidoc") {
-        into "${archiveName}/docs"
+        into "${folderName}/docs"
     }
 
-	subprojects.each { subproject ->
-		into ("${archiveName}/build/libs") {
-			from subproject.jar
-			if (subproject.tasks.findByPath("sourcesJar")) {
-					from subproject.sourcesJar
-			}
-			if (subproject.tasks.findByPath("javadocJar")) {
-					from subproject.javadocJar
-			}
-		}
-	}
-
-    into ("${archiveName}/dist") {
+    into ("${folderName}/dist") {
         from "build/libs"
 		exclude "*-testing.jar"
     }
