@@ -55,7 +55,7 @@ We also publish a YARN-based binary (since YARN is not backwards compatible with
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.BUILD-SNAPSHOT</version>
+  <version>1.3.0.M2</version>
   <classifier>yarn</classifier>
 </dependency>
 ```
