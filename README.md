@@ -4,20 +4,20 @@ Elasticsearch real-time search and analytics natively integrated with Hadoop. Su
 See the official [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for more, in-depth information.
 
 # Requirements
-Elasticsearch (version __0.90__ or higher) cluster accessible through [REST][]. That's it!
+Elasticsearch (__0.9X__ series or __1.0.0.RC1__ or higher) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html).
 
 # Installation
 
-## Release 1.3.0 M1
+## Release 1.3.0 M2
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M1</version>
+  <version>1.3.0.M2</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](https://download.elasticsearch.org/hadoop/hadoop-latest.zip).
@@ -77,11 +77,12 @@ The full list is available [here](http://www.elasticsearch.org/guide/en/elastics
 
 ### Required
 ```
-es.resource=<ES resource location, relative to the host/port specified above. Can be an index or a query>
+es.resource=<ES resource location, relative to the host/port specified above>
 ```
 ### Optional
 ```
-es.host=<ES host address> 				       # defaults to localhost
+es.query=<uri or query dsl query>			   # defaults to {"query":{"match_all":{}}}
+es.nodes=<ES host address> 				       # defaults to localhost
 es.port=<ES REST port>    				       # defaults to 9200
 es.bulk.size.bytes=<bulk size in bytes>        # defaults to 10mb
 es.bulk.size.entries=<bulk size in entries>    # defaults to 0 (meaning it's not set)
@@ -90,27 +91,28 @@ es.http.timeout=<timeout for http connections> # defaults to 1m
 
 ## [MapReduce][]
 
-For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to ElasticSearch. To use them, add the `es-hadoop` jar to your job classpath
+For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to Elasticsearch. To use them, add the `es-hadoop` jar to your job classpath
 (either by bundling the library along - it's ~150kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
 
-Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `ESInputFormat` and `ESOutputFormat` classes.
+Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `EsInputFormat` and `EsOutputFormat` classes.
 
 ### 'Old' (`org.apache.hadoop.mapred`) API
 
 ### Reading
-To read data from ES, configure the `ESInputFormat` on your job configuration along with the relevant [properties](#configuration-properties):
+To read data from ES, configure the `EsInputFormat` on your job configuration along with the relevant [properties](#configuration-properties):
 ```java
 JobConf conf = new JobConf();
-conf.setInputFormat(ESInputFormat.class);
-conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
+conf.setInputFormat(EsInputFormat.class);
+conf.set("es.resource", "radio/artists"); 
+conf.set("es.query", "?q=me*");      		// replace this with the relevant query
 ...
 JobClient.runJob(conf);
 ```
 ### Writing
-Same configuration template can be used for writing but using `ESOuputFormat`:
+Same configuration template can be used for writing but using `EsOuputFormat`:
 ```java
 JobConf conf = new JobConf();
-conf.setOutputFormat(ESOutputFormat.class);
+conf.setOutputFormat(EsOutputFormat.class);
 conf.set("es.resource", "radio/artists"); // index or indices used for storing data
 ...
 JobClient.runJob(conf);
@@ -120,9 +122,10 @@ JobClient.runJob(conf);
 ### Reading
 ```java
 Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists/_search?q=me*"); // replace this with the relevant query
+conf.set("es.resource", "radio/artists"); 
+conf.set("es.query", "?q=me*");      		// replace this with the relevant query
 Job job = new Job(conf)
-job.setInputFormat(ESInputFormat.class);
+job.setInputFormat(EsInputFormat.class);
 ...
 job.waitForCompletion(true);
 ```
@@ -131,12 +134,12 @@ job.waitForCompletion(true);
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists"); // index or indices used for storing data
 Job job = new Job(conf)
-job.setOutputFormat(ESOutputFormat.class);
+job.setOutputFormat(EsOutputFormat.class);
 ...
 job.waitForCompletion(true);
 ```
 ## [Hive][]
-ES-Hadoop provides a Hive storage handler for ElasticSearch, meaning one can define an [external table][] on top of ES.
+ES-Hadoop provides a Hive storage handler for Elasticsearch, meaning one can define an [external table][] on top of ES.
 
 Add es-hadoop-<version>.jar to `hive.aux.jars.path` or register it manually in your Hive script (recommended):
 ```
@@ -149,12 +152,12 @@ CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*');
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = 'radio/artists', 'es.query' = '?q=me*');
 ```
-The fields defined in the table are mapped to the JSON when communicating with ElasticSearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table:
+The fields defined in the table are mapped to the JSON when communicating with Elasticsearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table:
 ```
-SELECT * FROM artists;
+SELECT FROM artists;
 ```
 
 ### Writing
@@ -164,20 +167,20 @@ CREATE EXTERNAL TABLE artists (
     id      BIGINT,
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
-STORED BY 'org.elasticsearch.hadoop.hive.ESStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists/');
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = 'radio/artists');
 ```
 
-Any data passed to the table is then passed down to ElasticSearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to ElasticSearch like this:
+Any data passed to the table is then passed down to Elasticsearch; for example considering a table `s`, mapped to a TSV/CSV file, one can index it to Elasticsearch like this:
 ```SQL
 INSERT OVERWRITE TABLE artists 
     SELECT NULL, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s;
 ```
 
-As one can note, currently the reading and writing are treated separately but we're working on unifying the two and automatically translating [HiveQL][] to ElasticSearch queries.
+As one can note, currently the reading and writing are treated separately but we're working on unifying the two and automatically translating [HiveQL][] to Elasticsearch queries.
 
 ## [Pig][]
-ES-Hadoop provides both read and write functions for Pig so you can access ElasticSearch from Pig scripts.
+ES-Hadoop provides both read and write functions for Pig so you can access Elasticsearch from Pig scripts.
 
 Register ES-Hadoop jar into your script or add it to your Pig classpath:
 ```
@@ -185,31 +188,31 @@ REGISTER /path_to_jar/es-hadoop-<version>.jar;
 ```
 Additionally one can define an alias to save some chars:
 ```
-%define ESSTORAGE org.elasticsearch.hadoop.pig.ESStorage()
+%define ESSTORAGE org.elasticsearch.hadoop.pig.EsStorage()
 ```
 and use `$ESSTORAGE` for storage definition.
 
 ### Reading
-To read data from ES, use `ESStorage` and specify the query through the `LOAD` function:
+To read data from ES, use `EsStorage` and specify the query through the `LOAD` function:
 ```
-A = LOAD 'radio/artists/_search?q=me*' USING org.elasticsearch.hadoop.pig.ESStorage();
+A = LOAD 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?q=me*');
 DUMP A;
 ```
 
 ### Writing
-Use the same `Storage` to write data to ElasticSearch:
+Use the same `Storage` to write data to Elasticsearch:
 ```
-A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);
+A = LOAD 'src/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
-STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.ESStorage();
+STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
 ```
 
 ## [Cascading][]
-ES-Hadoop offers a dedicate ElasticSearch [Tap][], `ESTap` that can be used both as a sink or a source. Note that `ESTap` can be used in both local (`LocalFlowConnector`) and Hadoop (`HadoopFlowConnector`) flows:
+ES-Hadoop offers a dedicate Elasticsearch [Tap][], `EsTap` that can be used both as a sink or a source. Note that `EsTap` can be used in both local (`LocalFlowConnector`) and Hadoop (`HadoopFlowConnector`) flows:
 
 ### Reading
 ```java
-Tap in = new ESTap("radio/artists/_search?q=me*");
+Tap in = new EsTap("radio/artists", "?q=me*");
 Tap out = new StdOut(new TextLine());
 new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
 ```
@@ -222,7 +225,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 
 # Building the source
 
-ElasticSearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default, it automatically runs unit tests. For integration testing, one can enable the various test suites through the `enableXXX` tasks (run `gradlew tasks enable` for hints). To enable all integration tests, use `gradlew enableIntegrationTests test build`
+Elasticsearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default, it automatically runs unit tests. For integration testing, one can enable the various test suites through the `enableXXX` tasks (run `gradlew tasks enable` for hints). To enable all integration tests, use `gradlew enableIntegrationTests test build`
 
 To create a distributable jar, run `gradlew -x test build` from the command line; once completed you will find the jar in `build/libs`.
 
@@ -230,21 +233,22 @@ To create a distributable jar, run `gradlew -x test build` from the command line
 This project is released under version 2.0 of the [Apache License][]
 
 ```
-This software is licensed under the Apache 2 license, quoted below.
+Licensed to Elasticsearch under one or more contributor
+license agreements. See the NOTICE file distributed with
+this work for additional information regarding copyright
+ownership. Elasticsearch licenses this file to you under
+the Apache License, Version 2.0 (the "License"); you may
+not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-Copyright 2009-2013 ElasticSearch <http://www.elasticsearch.org>
+http://www.apache.org/licenses/LICENSE-2.0
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not
-use this file except in compliance with the License. You may obtain a copy of
-the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-License for the specific language governing permissions and limitations under
-the License.
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
 ```
 
 
