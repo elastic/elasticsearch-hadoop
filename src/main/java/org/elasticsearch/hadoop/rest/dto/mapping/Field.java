@@ -103,12 +103,18 @@ public class Field implements Serializable {
         if (value instanceof Map) {
             Map<String, Object> content = (Map<String, Object>) value;
 
+            FieldType fieldType = null;
             // check type first
             Object type = content.get("type");
             if (type instanceof String) {
                 String typeString = type.toString();
-                FieldType fieldType = FieldType.parse(typeString);
+                fieldType = FieldType.parse(typeString);
+                if(fieldType == FieldType.NESTED){
+                    fieldType = null; //ignore nested type and just return the object
+                }
+            }
 
+            if (fieldType != null) {
                 // handle multi_field separately
                 if (FieldType.MULTI_FIELD == fieldType) {
                     // get fields
