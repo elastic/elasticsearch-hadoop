@@ -77,7 +77,7 @@ public enum FieldType {
             return false;
         }
 
-        if (IP == fieldType || NESTED == fieldType ||
+        if (IP == fieldType ||
                 GEO_POINT == fieldType || GEO_SHAPE == fieldType ||
                 POINT == fieldType || LINESTRING == fieldType || POLYGON == fieldType ||
                 MULTIPOINT == fieldType || MULTIPOLYGON == fieldType || ENVELOPE == fieldType) {
