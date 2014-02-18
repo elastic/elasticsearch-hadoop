@@ -222,7 +222,7 @@ public abstract class Settings implements InternalConfigurationOptions {
         return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
     }
 
-    public String getTargetHosts() {
+    String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
         return StringUtils.hasText(targetHosts) ? targetHosts : (StringUtils.hasText(hosts) ? hosts : getNodes());
     }

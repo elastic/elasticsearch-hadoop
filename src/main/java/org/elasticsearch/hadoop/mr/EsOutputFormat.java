@@ -198,7 +198,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             // override the global settings to communicate directly with the target node
             settings.cleanHosts().setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
             client = new RestRepository(settings);
-            uri = settings.getTargetHosts();
+            uri = SettingsUtils.nodes(settings).get(0);
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));

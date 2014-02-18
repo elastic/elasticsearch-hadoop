@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 
 public abstract class SettingsUtils {
 
-    public static List<String> qualifyHosts(String hosts, int defaultPort) {
+    private static List<String> qualifyHosts(String hosts, int defaultPort) {
         List<String> list = StringUtils.tokenize(hosts);
         for (int i = 0; i < list.size(); i++) {
             String host = list.get(i);
@@ -37,7 +37,7 @@ public abstract class SettingsUtils {
         return list;
     }
 
-    public static String qualifyHost(String host, int defaultPort) {
+    private static String qualifyHost(String host, int defaultPort) {
         return (host.contains(":") ? host : host + ":" + defaultPort);
     }
 

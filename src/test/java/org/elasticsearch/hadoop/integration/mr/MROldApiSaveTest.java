@@ -200,7 +200,6 @@ public class MROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
         RestUtils.putMapping(indexPrefix + "mroldapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
-
         runJob(conf);
     }
 
