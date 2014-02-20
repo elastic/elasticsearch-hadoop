@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.mr;
 
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
  * Class which handles the various Hadoop properties, aware of the changes between YARN (Hadoop 2) and 1.
@@ -80,6 +81,10 @@ public abstract class HadoopCfgUtils {
 
     public static void setGenericOptions(Configuration cfg) {
         set(cfg, "true", "mapreduce.client.genericoptionsparser.used", "mapred.used.genericoptionsparser");
+    }
+
+    public static TimeValue getTaskTimeout(Configuration cfg) {
+        return TimeValue.parseTimeValue(get(cfg, "mapreduce.task.timeout", "mapred.task.timeout"));
     }
 
     private static String get(Configuration cfg, String hadoop2, String hadoop1) {

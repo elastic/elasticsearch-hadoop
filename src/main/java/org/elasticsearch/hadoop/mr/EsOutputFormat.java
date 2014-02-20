@@ -136,8 +136,12 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         protected RestRepository client;
         private String uri, resource;
 
-        public ESRecordWriter(Configuration cfg) {
+        private HeartBeat beat;
+        private Progressable progressable;
+
+        public ESRecordWriter(Configuration cfg, Progressable progressable) {
             this.cfg = cfg;
+            this.progressable = progressable;
         }
 
         @Override
@@ -169,6 +173,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Collections.rotate(nodes, -currentInstance);
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
 
+            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+            beat.start();
 
             client = new RestRepository(settings);
             resource = settings.getTargetResource();
@@ -223,6 +229,11 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Closing RecordWriter [%s][%s]", uri, resource));
             }
+
+            if (beat != null) {
+                beat.stop();
+            }
+
             if (client != null) {
                 client.close();
             }
@@ -254,7 +265,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) {
-        return new ESRecordWriter(job);
+        return new ESRecordWriter(job, progress);
     }
 
     @Override

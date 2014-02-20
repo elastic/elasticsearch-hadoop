@@ -83,6 +83,9 @@ public interface ConfigurationOptions {
     /** Scroll fields */
     String ES_SCROLL_FIELDS = "es.scroll.fields";
 
+    String ES_HEART_BEAT_LEAD = "es.action.heart.beat.lead";
+    String ES_HEART_BEAT_LEAD_DEFAULT = "15s";
+
     /** Serialization settings */
 
     /** Value writer - setup automatically; can be overridden for custom types */

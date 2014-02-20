@@ -39,6 +39,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -146,6 +147,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         private long size = 0;
 
+        private HeartBeat beat;
+
         // default constructor used by the NEW api
         public ShardRecordReader() {
         }
@@ -153,17 +156,17 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         // constructor used by the old API
         public ShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             reporter.setStatus(split.toString());
-            init((ShardInputSplit) split, job);
+            init((ShardInputSplit) split, job, reporter);
         }
 
         // new API init call
         @Override
         public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
             context.setStatus(split.toString());
-            init((ShardInputSplit) split, context.getConfiguration());
+            init((ShardInputSplit) split, context.getConfiguration(), context);
         }
 
-        void init(ShardInputSplit esSplit, Configuration cfg) {
+        void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
             Settings settings = SettingsManager.loadFrom(cfg);
 
             // override the global settings to communicate directly with the target node
@@ -187,6 +190,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             }
 
             scrollReader = new ScrollReader(reader, mapping);
+
+            // heart-beat
+            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
 
             // initialize REST client
             client = new RestRepository(settings);
@@ -237,6 +243,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                 log.debug(String.format("Closing RecordReader for [%s]", esSplit));
             }
 
+            if (beat != null) {
+                beat.stop();
+            }
+
             if (result != null) {
                 result.close();
                 result = null;
@@ -247,6 +257,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean next(K key, V value) throws IOException {
             if (result == null) {
+                beat.start();
+
                 result = queryBuilder.build(client, scrollReader);
                 size = result.getSize();
 

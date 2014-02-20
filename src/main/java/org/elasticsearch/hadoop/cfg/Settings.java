@@ -196,6 +196,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_FIELD_READ_EMPTY_AS_NULL, ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT));
     }
 
+    public TimeValue getHeartBeatLead() {
+        return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
+    }
+
     public Settings setHosts(String hosts) {
         this.targetHosts = hosts;
         return this;

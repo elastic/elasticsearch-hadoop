@@ -39,8 +39,8 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
     static class ESHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
 
-        public ESHiveRecordWriter(Configuration cfg) {
-            super(cfg);
+        public ESHiveRecordWriter(Configuration cfg, Progressable progress) {
+            super(cfg, progress);
         }
 
         @Override
@@ -69,6 +69,6 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
     @Override
     public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
-        return new ESHiveRecordWriter(jc);
+        return new ESHiveRecordWriter(jc, progress);
     }
 }
