@@ -30,6 +30,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.command.BulkCommands;
 import org.elasticsearch.hadoop.serialization.command.Command;
@@ -42,7 +44,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
  */
-public class RestRepository implements Closeable {
+public class RestRepository implements Closeable, StatsAware {
 
     private static Log log = LogFactory.getLog(RestRepository.class);
 
@@ -61,6 +63,7 @@ public class RestRepository implements Closeable {
     private Resource resource;
     private Command command;
     private final Settings settings;
+    private final Stats stats = new Stats();
 
     public RestRepository(Settings settings) {
         this.settings = settings;
@@ -242,5 +245,10 @@ public class RestRepository implements Closeable {
 
     public boolean waitForYellow() throws IOException {
         return client.health(resource.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
+    }
+
+    @Override
+    public Stats stats() {
+        return stats.aggregate(client.stats());
     }
 }

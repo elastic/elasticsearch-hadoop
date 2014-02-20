@@ -25,9 +25,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ByteSequence;
 
-public class NetworkClient {
+
+public class NetworkClient implements StatsAware {
 
     private static Log log = LogFactory.getLog(NetworkClient.class);
 
@@ -37,6 +41,8 @@ public class NetworkClient {
     private Transport currentTransport;
     private String currentUri;
     private int nextClient = 0;
+
+    private final Stats stats = new Stats();
 
     public NetworkClient(Settings settings, List<String> hostURIs) {
         this.settings = settings.copy();
@@ -50,6 +56,10 @@ public class NetworkClient {
     private boolean selectNextNode() {
         if (nextClient >= nodes.size()) {
             return false;
+        }
+
+        if (currentTransport != null) {
+            stats.nodeRetries++;
         }
 
         currentUri = nodes.get(nextClient++);
@@ -72,6 +82,15 @@ public class NetworkClient {
             newNode = false;
             try {
                 response = currentTransport.execute(routedRequest);
+                ByteSequence body = routedRequest.body();
+                if (body != null) {
+                    stats.bytesWritten += body.length();
+                }
+
+                if (response.hasBody()) {
+                    stats.bytesRead += response.body().available();
+                }
+
             } catch (Exception ex) {
                 if (log.isTraceEnabled()) {
                     log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
@@ -90,9 +109,18 @@ public class NetworkClient {
         return response;
     }
 
-    public void close() {
+    void close() {
         if (currentTransport != null) {
+            if (currentTransport instanceof StatsAware) {
+                stats.aggregate(((StatsAware) currentTransport).stats());
+            }
+
             currentTransport.close();
         }
+    }
+
+    @Override
+    public Stats stats() {
+        return stats;
     }
 }

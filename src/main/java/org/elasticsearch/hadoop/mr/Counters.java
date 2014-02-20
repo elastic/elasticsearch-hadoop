@@ -16,33 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.mr;
 
-import java.io.InputStream;
+/**
+ * Enum used for representing the stats inside Hadoop.
+ */
+public enum Counters {
 
-public interface Response {
+    BYTES_WRITTEN,
+    DOCS_WRITTEN,
+    BULK_WRITES,
 
-    int status();
+    DOCS_RETRIED,
+    BYTES_RETRIED,
+    BULK_RETRIES,
 
-    String statusDescription();
+    BYTES_READ,
+    DOCS_READ,
 
-    InputStream body();
-
-    CharSequence uri();
-
-    boolean isInformal();
-
-    boolean isSuccess();
-
-    boolean isRedirection();
-
-    boolean isClientError();
-
-    boolean isServerError();
-
-    boolean hasSucceeded();
-
-    boolean hasFailed();
-
-    boolean hasBody();
+    NODE_RETRIES,
+    NET_RETRIES;
 }

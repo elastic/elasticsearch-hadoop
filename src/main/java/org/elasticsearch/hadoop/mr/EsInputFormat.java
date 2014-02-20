@@ -50,6 +50,7 @@ import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -148,6 +149,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private long size = 0;
 
         private HeartBeat beat;
+        private Progressable progressable;
 
         // default constructor used by the NEW api
         public ShardRecordReader() {
@@ -164,6 +166,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
             context.setStatus(split.toString());
             init((ShardInputSplit) split, context.getConfiguration(), context);
+
         }
 
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
@@ -203,6 +206,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
             queryBuilder.fields(settings.getScrollFields());
 
+            this.progressable = progressable;
+
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
             }
@@ -239,19 +244,29 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         @Override
         public void close() throws IOException {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Closing RecordReader for [%s]", esSplit));
-            }
+            try {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Closing RecordReader for [%s]", esSplit));
+                }
 
-            if (beat != null) {
-                beat.stop();
-            }
+                if (beat != null) {
+                    beat.stop();
+                }
 
-            if (result != null) {
-                result.close();
-                result = null;
+                if (result != null) {
+                    result.close();
+                }
+
+                client.close();
+
+            } finally {
+                Stats stats = new Stats();
+                stats.aggregate(client.stats());
+                if (result != null) {
+                    stats.aggregate(result.stats());
+                }
+                ReportingUtils.report(progressable, stats);
             }
-            client.close();
         }
 
         @Override

@@ -24,12 +24,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 
 /**
  * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
  */
-public class ScrollQuery implements Iterator<Object>, Closeable {
+public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
     private RestRepository client;
     private String scrollId;
@@ -41,6 +43,8 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
     private long size;
 
     private final ScrollReader reader;
+
+    private final Stats stats = new Stats();
 
     ScrollQuery(RestRepository client, String scrollId, long size, ScrollReader reader) {
         this.client = client;
@@ -73,6 +77,8 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
                 throw new IllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
             read += batch.size();
+            stats.docsRead += batch.size();
+
             if (batch.isEmpty()) {
                 finished = true;
                 return false;
@@ -100,6 +106,11 @@ public class ScrollQuery implements Iterator<Object>, Closeable {
     @Override
     public void remove() {
         throw new UnsupportedOperationException("read-only operator");
+    }
+
+    @Override
+    public Stats stats() {
+        return stats;
     }
 
     @Override

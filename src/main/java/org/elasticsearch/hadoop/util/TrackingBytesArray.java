@@ -86,6 +86,10 @@ public class TrackingBytesArray implements ByteSequence {
         return size;
     }
 
+    public int entries() {
+        return entries.size();
+    }
+
     private void addEntry(int length) {
         // implied offset - data.size
         entries.add(new Entry(data.size, length));
@@ -116,7 +120,7 @@ public class TrackingBytesArray implements ByteSequence {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(length());
+        StringBuilder sb = new StringBuilder((int) length());
         for (Entry entry : entries) {
             sb.append(new String(data.bytes, entry.offset, entry.length, StringUtils.UTF_8));
         }

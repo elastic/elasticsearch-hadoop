@@ -45,16 +45,19 @@ import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleResponse;
 import org.elasticsearch.hadoop.rest.Transport;
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Transport implemented on top of Commons Http. Provides transport retries.
  */
-public class CommonsHttpTransport implements Transport {
+public class CommonsHttpTransport implements Transport, StatsAware {
 
     private static Log log = LogFactory.getLog(CommonsHttpTransport.class);
     private final HttpClient client;
+    private final Stats stats = new Stats();
 
     private static class ResponseInputStream extends DelegatingInputStream {
 
@@ -77,10 +80,12 @@ public class CommonsHttpTransport implements Transport {
 
         @Override
         public void close() throws IOException {
-            try {
-                super.close();
-            } catch (IOException e) {
-                // silently ignore
+            if (!isNull()) {
+                try {
+                    super.close();
+                } catch (IOException e) {
+                    // silently ignore
+                }
             }
             method.releaseConnection();
         }
@@ -89,7 +94,18 @@ public class CommonsHttpTransport implements Transport {
     public CommonsHttpTransport(Settings settings, String host) {
         HttpClientParams params = new HttpClientParams();
         params.setParameter(HttpMethodParams.RETRY_HANDLER,
-                new DefaultHttpMethodRetryHandler(settings.getHttpRetries(), false));
+                new DefaultHttpMethodRetryHandler(settings.getHttpRetries(), false) {
+
+                    @Override
+                    public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
+                        if (retryMethod(method, exception, executionCount)) {
+                            stats.netRetries++;
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
         params.setSoTimeout((int) settings.getHttpTimeout());
         client = new HttpClient(params);
@@ -187,5 +203,10 @@ public class CommonsHttpTransport implements Transport {
 
     private static String prefixPath(String string) {
         return string.startsWith("/") ? string : "/" + string;
+    }
+
+    @Override
+    public Stats stats() {
+        return stats;
     }
 }

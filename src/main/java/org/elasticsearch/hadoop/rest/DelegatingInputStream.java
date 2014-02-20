@@ -76,4 +76,8 @@ public class DelegatingInputStream extends InputStream {
     public boolean markSupported() {
         return delegate.markSupported();
     }
+
+    public boolean isNull() {
+        return delegate == null;
+    }
 }

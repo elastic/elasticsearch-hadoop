@@ -221,11 +221,15 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
         @Override
         public void close(TaskAttemptContext context) throws IOException {
-            close((Reporter) null);
+            doClose(context);
         }
 
         @Override
         public void close(Reporter reporter) throws IOException {
+            doClose(reporter);
+        }
+
+        private void doClose(Progressable progressable) throws IOException {
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Closing RecordWriter [%s][%s]", uri, resource));
             }
@@ -237,6 +241,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             if (client != null) {
                 client.close();
             }
+
+            ReportingUtils.report(progressable, client.stats());
+
             initialized = false;
         }
     }

@@ -16,33 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.stats;
 
-import java.io.InputStream;
+public interface StatsAware {
 
-public interface Response {
-
-    int status();
-
-    String statusDescription();
-
-    InputStream body();
-
-    CharSequence uri();
-
-    boolean isInformal();
-
-    boolean isSuccess();
-
-    boolean isRedirection();
-
-    boolean isClientError();
-
-    boolean isServerError();
-
-    boolean hasSucceeded();
-
-    boolean hasFailed();
-
-    boolean hasBody();
+    Stats stats();
 }

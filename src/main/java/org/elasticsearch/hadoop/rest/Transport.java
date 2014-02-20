@@ -18,10 +18,10 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.io.Closeable;
 import java.io.IOException;
 
-
-public interface Transport {
+public interface Transport extends Closeable {
 
     Response execute(Request request) throws IOException;
 

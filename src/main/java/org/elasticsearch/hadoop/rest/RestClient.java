@@ -37,6 +37,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.dto.Node;
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.ByteSequence;
@@ -49,13 +51,15 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.*;
 
-public class RestClient implements Closeable {
+public class RestClient implements Closeable, StatsAware {
 
     private NetworkClient network;
     private ObjectMapper mapper = new ObjectMapper();
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
+
+    private final Stats stats = new Stats();
 
     public enum HEALTH {
         RED, YELLOW, GREEN
@@ -115,8 +119,23 @@ public class RestClient implements Closeable {
         Retry retry = retryPolicy.init();
         int httpStatus = 0;
 
+        boolean isRetry = false;
+
         do {
             Response response = execute(PUT, resource.bulk(), data);
+
+            stats.bulkWrites++;
+            stats.docsWritten += data.entries();
+            // bytes will be counted by the transport layer
+
+            if (isRetry) {
+                stats.docsRetried += data.entries();
+                stats.bytesRetried += data.length();
+                stats.bulkRetries++;
+            }
+
+            isRetry = true;
+
             httpStatus = (retryFailedEntries(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
         } while (data.length() > 0 && retry.retry(httpStatus));
     }
@@ -284,5 +303,10 @@ public class RestClient implements Closeable {
         sb.append(timeout.toString());
 
         return (Boolean.TRUE.equals(get(sb.toString(), "timed_out")));
+    }
+
+    @Override
+    public Stats stats() {
+        return stats.aggregate(network.stats());
     }
 }
