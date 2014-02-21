@@ -43,6 +43,4 @@ public interface Response {
     boolean hasSucceeded();
 
     boolean hasFailed();
-
-    boolean hasBody();
 }

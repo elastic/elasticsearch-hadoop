@@ -86,11 +86,6 @@ public class NetworkClient implements StatsAware {
                 if (body != null) {
                     stats.bytesWritten += body.length();
                 }
-
-                if (response.hasBody()) {
-                    stats.bytesRead += response.body().available();
-                }
-
             } catch (Exception ex) {
                 if (log.isTraceEnabled()) {
                     log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);

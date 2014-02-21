@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +229,14 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
-        return reader.read(client.scroll(scrollId));
+        InputStream scroll = client.scroll(scrollId);
+        try {
+            return reader.read(scroll);
+        } finally {
+            if (scroll instanceof StatsAware) {
+                stats.aggregate(((StatsAware) scroll).stats());
+            }
+        }
     }
 
     public boolean indexExists() throws IOException {

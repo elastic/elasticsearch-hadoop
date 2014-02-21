@@ -111,7 +111,13 @@ public class RestClient implements Closeable, StatsAware {
     private <T> T parseContent(InputStream content, String string) throws IOException {
         // create parser manually to lower Jackson requirements
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
-        Map<String, Object> map = mapper.readValue(jsonParser, Map.class);
+        Map<String, Object> map = null;
+        try {
+            map = mapper.readValue(jsonParser, Map.class);
+        } finally {
+            countStreamStats(content);
+        }
+
         return (T) (string != null ? map.get(string) : map);
     }
 
@@ -144,8 +150,12 @@ public class RestClient implements Closeable, StatsAware {
     private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) throws IOException {
         ObjectReader r = mapper.reader(Map.class);
         JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
-        if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
-            return false;
+        try {
+            if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
+                return false;
+            }
+        } finally {
+            countStreamStats(content);
         }
 
         int entryToDeletePosition = 0; // head of the list
@@ -248,6 +258,7 @@ public class RestClient implements Closeable, StatsAware {
             } catch (Exception ex) {
                 // ignore
             }
+
             if (!StringUtils.hasText(msg)) {
                 msg = String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]", request.method().name(),
                         request.path(), response.uri(), response.status(), response.statusDescription());
@@ -308,5 +319,11 @@ public class RestClient implements Closeable, StatsAware {
     @Override
     public Stats stats() {
         return stats.aggregate(network.stats());
+    }
+
+    private void countStreamStats(InputStream content) {
+        if (content instanceof StatsAware) {
+            stats.aggregate(((StatsAware) content).stats());
+        }
     }
 }

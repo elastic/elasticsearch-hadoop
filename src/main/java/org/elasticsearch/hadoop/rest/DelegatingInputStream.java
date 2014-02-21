@@ -21,9 +21,13 @@ package org.elasticsearch.hadoop.rest;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class DelegatingInputStream extends InputStream {
+import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
+
+public class DelegatingInputStream extends InputStream implements StatsAware {
 
     private final InputStream delegate;
+    private final Stats stats = new Stats();
 
     public DelegatingInputStream(InputStream delegate) {
         this.delegate = delegate;
@@ -38,7 +42,11 @@ public class DelegatingInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException {
-        return delegate.read(b);
+        int result = delegate.read(b);
+        if (result > 0) {
+            stats.bytesRead++;
+        }
+        return result;
     }
 
     public boolean equals(Object obj) {
@@ -46,7 +54,11 @@ public class DelegatingInputStream extends InputStream {
     }
 
     public int read(byte[] b, int off, int len) throws IOException {
-        return delegate.read(b, off, len);
+        int result = delegate.read(b, off, len);
+        if (result > 0) {
+            stats.bytesRead += result;
+        }
+        return result;
     }
 
     public long skip(long n) throws IOException {
@@ -79,5 +91,10 @@ public class DelegatingInputStream extends InputStream {
 
     public boolean isNull() {
         return delegate == null;
+    }
+
+    @Override
+    public Stats stats() {
+        return stats;
     }
 }

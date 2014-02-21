@@ -85,15 +85,4 @@ public class SimpleResponse implements Response {
     public boolean hasFailed() {
         return !hasSucceeded();
     }
-
-    @Override
-    public boolean hasBody() {
-        if (body != null) {
-            if (body instanceof DelegatingInputStream) {
-                return !((DelegatingInputStream) body).isNull();
-            }
-            return true;
-        }
-        return false;
-    }
 }

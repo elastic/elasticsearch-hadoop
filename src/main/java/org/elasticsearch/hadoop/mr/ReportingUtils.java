@@ -36,6 +36,7 @@ class ReportingUtils {
             Reporter reporter = (Reporter) progressable;
 
             reporter.getCounter(Counters.BYTES_WRITTEN).increment(stats.bytesWritten);
+            reporter.getCounter(Counters.BYTES_READ).increment(stats.bytesRead);
             reporter.getCounter(Counters.DOCS_WRITTEN).increment(stats.docsWritten);
             reporter.getCounter(Counters.BULK_WRITES).increment(stats.bulkWrites);
             reporter.getCounter(Counters.DOCS_RETRIED).increment(stats.docsRetried);
@@ -49,6 +50,7 @@ class ReportingUtils {
             TaskInputOutputContext tioc = (TaskInputOutputContext) progressable;
 
             tioc.getCounter(Counters.BYTES_WRITTEN).increment(stats.bytesWritten);
+            tioc.getCounter(Counters.BYTES_READ).increment(stats.bytesRead);
             tioc.getCounter(Counters.DOCS_WRITTEN).increment(stats.docsWritten);
             tioc.getCounter(Counters.BULK_WRITES).increment(stats.bulkWrites);
             tioc.getCounter(Counters.DOCS_RETRIED).increment(stats.docsRetried);
