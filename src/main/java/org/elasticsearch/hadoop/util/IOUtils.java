@@ -26,7 +26,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.URL;
 
-import org.apache.commons.codec.binary.Base64;
+import javax.xml.bind.DatatypeConverter;
+
 import org.elasticsearch.hadoop.serialization.SerializationException;
 
 /**
@@ -42,12 +43,12 @@ public abstract class IOUtils {
         } finally {
             close(oos);
         }
-        return StringUtils.asUTFString(Base64.encodeBase64(baos.bytes().bytes(), false, true));
+        return DatatypeConverter.printBase64Binary(baos.bytes().bytes());
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T deserializeFromBase64(String data) {
-        byte[] rawData = Base64.decodeBase64(data.getBytes(StringUtils.UTF_8));
+        byte[] rawData = DatatypeConverter.parseBase64Binary(data);
         ObjectInputStream ois = null;
         try {
             ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
