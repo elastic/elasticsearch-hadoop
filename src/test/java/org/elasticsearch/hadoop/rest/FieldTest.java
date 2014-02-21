@@ -96,11 +96,18 @@ public class FieldTest {
         assertEquals("name", props[0].name());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testGeolocationParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
         Field fl = Field.parseField(value);
-        assertEquals(0, fl.properties().length);
+        assertEquals(1, fl.properties().length);
+    }
+
+    @Test
+    public void testIpParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("ip.json"), Map.class);
+        Field fl = Field.parseField(value);
+        assertEquals(1, fl.properties().length);
     }
 
     @Test

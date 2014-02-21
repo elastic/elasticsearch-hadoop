@@ -63,12 +63,12 @@ public class JdkValueReader implements SettingsAware, ValueReader {
             return binaryValue(parser.binaryValue());
         case DATE:
             return date(value);
-        case IP:
-            throw new UnsupportedOperationException("not implemented yet");
         case OBJECT:
             throw new UnsupportedOperationException("not implemented yet");
+            // everything else (IP, GEO) gets translated to strings
+        default:
+            return textValue(value);
         }
-        return null;
     }
 
     @SuppressWarnings("rawtypes")

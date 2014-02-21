@@ -78,8 +78,9 @@ public class WritableValueReader extends JdkValueReader {
         case OBJECT:
             arrayType = LinkedMapWritable.class;
             break;
-        case IP:
-            throw new UnsupportedOperationException();
+        // everything else gets translated to String
+        default:
+            arrayType = Text.class;
         }
 
         return new ArrayWritable(arrayType);
