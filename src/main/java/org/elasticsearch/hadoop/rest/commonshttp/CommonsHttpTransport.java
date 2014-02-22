@@ -98,7 +98,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
                     @Override
                     public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
-                        if (retryMethod(method, exception, executionCount)) {
+                        if (super.retryMethod(method, exception, executionCount)) {
                             stats.netRetries++;
                             return true;
                         }
