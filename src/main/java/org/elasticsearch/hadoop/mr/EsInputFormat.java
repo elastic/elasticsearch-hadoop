@@ -106,7 +106,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             out.writeUTF(nodeId);
             out.writeUTF(nodeName);
             out.writeUTF(shardId);
-            out.writeUTF(mapping);
+            // avoid using writeUTF since the mapping can be longer than 65K
+            byte[] utf = StringUtils.toUTF(mapping);
+            out.writeInt(utf.length);
+            out.write(utf);
         }
 
         @Override
@@ -116,7 +119,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             nodeId = in.readUTF();
             nodeName = in.readUTF();
             shardId = in.readUTF();
-            mapping = in.readUTF();
+            int length = in.readInt();
+            byte[] utf = new byte[length];
+            in.readFully(utf);
+            mapping = StringUtils.asUTFString(utf);
         }
 
         @Override
