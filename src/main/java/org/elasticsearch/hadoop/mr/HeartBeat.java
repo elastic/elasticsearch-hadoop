@@ -50,14 +50,16 @@ class HeartBeat {
         this.log = log;
         TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(cfg));
 
+        String taskId;
         if (taskID == null) {
-            log.error(String.format("Cannot determine task id - current properties are %s", HadoopCfgUtils.asProperties(cfg)));
+            log.warn("Cannot determine task id...");
+            taskId = "<unknown>";
+        }
+        else {
+            taskId = "" + taskID.getId();
         }
 
-        Assert.notNull(taskID,
-                "Unable to determine task id - please report your distro/setting through the issue tracker");
-
-        this.id = taskID.toString();
+        id = taskId;
     }
 
 
