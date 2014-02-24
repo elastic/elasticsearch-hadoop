@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import org.apache.hadoop.mapred.Counters.Counter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.Progressable;
@@ -26,38 +27,53 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 class ReportingUtils {
 
     // handles Hadoop 'old' and 'new' API reporting classes, namely {@link Reporter} and {@link TaskInputOutputContext}
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes" })
     static void report(Progressable progressable, Stats stats) {
-        if (progressable == null) {
+        if (progressable == null || progressable == Reporter.NULL) {
             return;
         }
 
         if (progressable instanceof Reporter) {
             Reporter reporter = (Reporter) progressable;
 
-            reporter.getCounter(Counters.BYTES_WRITTEN).increment(stats.bytesWritten);
-            reporter.getCounter(Counters.BYTES_READ).increment(stats.bytesRead);
-            reporter.getCounter(Counters.DOCS_WRITTEN).increment(stats.docsWritten);
-            reporter.getCounter(Counters.BULK_WRITES).increment(stats.bulkWrites);
-            reporter.getCounter(Counters.DOCS_RETRIED).increment(stats.docsRetried);
-            reporter.getCounter(Counters.BULK_RETRIES).increment(stats.bulkRetries);
-            reporter.getCounter(Counters.DOCS_READ).increment(stats.docsRead);
-            reporter.getCounter(Counters.NODE_RETRIES).increment(stats.nodeRetries);
-            reporter.getCounter(Counters.NET_RETRIES).increment(stats.netRetries);
+            oldApiCounter(reporter, Counters.BYTES_WRITTEN, stats.bytesWritten);
+            oldApiCounter(reporter, Counters.BYTES_READ, stats.bytesRead);
+            oldApiCounter(reporter, Counters.DOCS_WRITTEN, stats.docsWritten);
+            oldApiCounter(reporter, Counters.BULK_WRITES, stats.bulkWrites);
+            oldApiCounter(reporter, Counters.DOCS_RETRIED, stats.docsRetried);
+            oldApiCounter(reporter, Counters.BULK_RETRIES, stats.bulkRetries);
+            oldApiCounter(reporter, Counters.DOCS_READ, stats.docsRead);
+            oldApiCounter(reporter, Counters.NODE_RETRIES, stats.nodeRetries);
+            oldApiCounter(reporter, Counters.NET_RETRIES, stats.netRetries);
         }
 
         if (progressable instanceof TaskInputOutputContext) {
             TaskInputOutputContext tioc = (TaskInputOutputContext) progressable;
 
-            tioc.getCounter(Counters.BYTES_WRITTEN).increment(stats.bytesWritten);
-            tioc.getCounter(Counters.BYTES_READ).increment(stats.bytesRead);
-            tioc.getCounter(Counters.DOCS_WRITTEN).increment(stats.docsWritten);
-            tioc.getCounter(Counters.BULK_WRITES).increment(stats.bulkWrites);
-            tioc.getCounter(Counters.DOCS_RETRIED).increment(stats.docsRetried);
-            tioc.getCounter(Counters.BULK_RETRIES).increment(stats.bulkRetries);
-            tioc.getCounter(Counters.DOCS_READ).increment(stats.docsRead);
-            tioc.getCounter(Counters.NODE_RETRIES).increment(stats.nodeRetries);
-            tioc.getCounter(Counters.NET_RETRIES).increment(stats.netRetries);
+            newApiCounter(tioc, Counters.BYTES_WRITTEN, stats.bytesWritten);
+            newApiCounter(tioc, Counters.BYTES_READ, stats.bytesRead);
+            newApiCounter(tioc, Counters.DOCS_WRITTEN, stats.docsWritten);
+            newApiCounter(tioc, Counters.BULK_WRITES, stats.bulkWrites);
+            newApiCounter(tioc, Counters.DOCS_RETRIED, stats.docsRetried);
+            newApiCounter(tioc, Counters.BULK_RETRIES, stats.bulkRetries);
+            newApiCounter(tioc, Counters.DOCS_READ, stats.docsRead);
+            newApiCounter(tioc, Counters.NODE_RETRIES, stats.nodeRetries);
+            newApiCounter(tioc, Counters.NET_RETRIES, stats.netRetries);
+        }
+    }
+
+    private static void oldApiCounter(Reporter reporter, Enum<?> counter, long value) {
+        Counter c = reporter.getCounter(counter);
+        if (c != null) {
+            c.increment(value);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void newApiCounter(TaskInputOutputContext tioc, Enum<?> counter, long value) {
+        org.apache.hadoop.mapreduce.Counter c = tioc.getCounter(counter);
+        if (c != null) {
+            c.increment(value);
         }
     }
 }
