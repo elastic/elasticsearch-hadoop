@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.TaskAttemptID;
+import org.apache.hadoop.mapred.TaskID;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -48,7 +48,16 @@ class HeartBeat {
         this.progressable = progressable;
         this.rate = new TimeValue(tv.getMillis() - delay.getMillis(), TimeUnit.MILLISECONDS);
         this.log = log;
-        this.id = TaskAttemptID.forName(HadoopCfgUtils.getTaskAttemptId(cfg)).getTaskID().toString();
+        TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(cfg));
+
+        if (taskID == null) {
+            log.error(String.format("Cannot determine task id - current properties are %s", HadoopCfgUtils.asProperties(cfg)));
+        }
+
+        Assert.notNull(taskID,
+                "Unable to determine task id - please report your distro/setting through the issue tracker");
+
+        this.id = taskID.toString();
     }
 
 

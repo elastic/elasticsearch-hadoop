@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TaskAttemptID;
+import org.apache.hadoop.mapred.TaskID;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -212,11 +212,16 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         }
 
         private int detectCurrentInstance(Configuration conf) {
-            TaskAttemptID attempt = TaskAttemptID.forName(HadoopCfgUtils.getTaskAttemptId(conf));
-            Assert.notNull(attempt,
+            TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(conf));
+
+            if (taskID == null) {
+                log.error(String.format("Cannot determine task id - current properties are %s", HadoopCfgUtils.asProperties(conf)));
+            }
+
+            Assert.notNull(taskID,
                     "Unable to determine task id - please report your distro/setting through the issue tracker");
 
-            return attempt.getTaskID().getId();
+            return taskID.getId();
         }
 
         @Override

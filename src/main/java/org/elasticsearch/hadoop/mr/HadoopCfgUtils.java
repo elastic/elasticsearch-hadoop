@@ -18,6 +18,9 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -67,6 +70,10 @@ public abstract class HadoopCfgUtils {
         return get(cfg, "mapreduce.task.attempt.id", "mapred.task.id");
     }
 
+    public static String getTaskId(Configuration cfg) {
+        return get(cfg, "mapreduce.task.id", "mapred.tip.id");
+    }
+
     public static String getReduceTasks(Configuration cfg) {
         return get(cfg, "mapreduce.job.reduces", "mapred.reduce.tasks");
     }
@@ -85,6 +92,18 @@ public abstract class HadoopCfgUtils {
 
     public static TimeValue getTaskTimeout(Configuration cfg) {
         return TimeValue.parseTimeValue(get(cfg, "mapreduce.task.timeout", "mapred.task.timeout"));
+    }
+
+    public static Properties asProperties(Configuration cfg) {
+        Properties props = new Properties();
+
+        if (cfg != null) {
+            for (Map.Entry<String, String> entry : cfg) {
+                props.setProperty(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return props;
     }
 
     private static String get(Configuration cfg, String hadoop2, String hadoop1) {
