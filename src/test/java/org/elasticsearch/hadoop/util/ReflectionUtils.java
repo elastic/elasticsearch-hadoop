@@ -19,7 +19,9 @@
 package org.elasticsearch.hadoop.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 
 public class ReflectionUtils {
 
@@ -56,5 +58,20 @@ public class ReflectionUtils {
                 && !field.isAccessible()) {
             field.setAccessible(true);
         }
+    }
+
+    public static Method findMethod(Object target, String name, Class<?>... paramTypes) {
+        Class<?> targetClass = target.getClass();
+        while (targetClass != null) {
+            Method[] methods = (targetClass.isInterface() ? targetClass.getMethods() : targetClass.getDeclaredMethods());
+            for (Method method : methods) {
+                if (name.equals(method.getName())
+                        && (paramTypes == null || Arrays.equals(paramTypes, method.getParameterTypes()))) {
+                    return method;
+                }
+            }
+            targetClass = targetClass.getSuperclass();
+        }
+        return null;
     }
 }

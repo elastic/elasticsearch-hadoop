@@ -20,8 +20,9 @@ package org.elasticsearch.hadoop.mr;
 
 import org.apache.hadoop.mapred.Counters.Counter;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.Progressable;
+import org.elasticsearch.hadoop.mr.compat.CompatibleHandler;
+import org.elasticsearch.hadoop.mr.compat.TaskInputOutputContext;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 
 class ReportingUtils {
@@ -29,6 +30,8 @@ class ReportingUtils {
     // handles Hadoop 'old' and 'new' API reporting classes, namely {@link Reporter} and {@link TaskInputOutputContext}
     @SuppressWarnings({ "rawtypes" })
     static void report(Progressable progressable, Stats stats) {
+        progressable = (Progressable) CompatibleHandler.unwrap(progressable);
+
         if (progressable == null || progressable == Reporter.NULL) {
             return;
         }
@@ -47,18 +50,18 @@ class ReportingUtils {
             oldApiCounter(reporter, Counters.NET_RETRIES, stats.netRetries);
         }
 
-        if (progressable instanceof TaskInputOutputContext) {
-            TaskInputOutputContext tioc = (TaskInputOutputContext) progressable;
+        if (progressable instanceof org.apache.hadoop.mapreduce.TaskInputOutputContext) {
+            TaskInputOutputContext compatTioc = CompatibleHandler.taskInputOutputContext((org.apache.hadoop.mapreduce.TaskInputOutputContext) progressable);
 
-            newApiCounter(tioc, Counters.BYTES_WRITTEN, stats.bytesWritten);
-            newApiCounter(tioc, Counters.BYTES_READ, stats.bytesRead);
-            newApiCounter(tioc, Counters.DOCS_WRITTEN, stats.docsWritten);
-            newApiCounter(tioc, Counters.BULK_WRITES, stats.bulkWrites);
-            newApiCounter(tioc, Counters.DOCS_RETRIED, stats.docsRetried);
-            newApiCounter(tioc, Counters.BULK_RETRIES, stats.bulkRetries);
-            newApiCounter(tioc, Counters.DOCS_READ, stats.docsRead);
-            newApiCounter(tioc, Counters.NODE_RETRIES, stats.nodeRetries);
-            newApiCounter(tioc, Counters.NET_RETRIES, stats.netRetries);
+            newApiCounter(compatTioc, Counters.BYTES_WRITTEN, stats.bytesWritten);
+            newApiCounter(compatTioc, Counters.BYTES_READ, stats.bytesRead);
+            newApiCounter(compatTioc, Counters.DOCS_WRITTEN, stats.docsWritten);
+            newApiCounter(compatTioc, Counters.BULK_WRITES, stats.bulkWrites);
+            newApiCounter(compatTioc, Counters.DOCS_RETRIED, stats.docsRetried);
+            newApiCounter(compatTioc, Counters.BULK_RETRIES, stats.bulkRetries);
+            newApiCounter(compatTioc, Counters.DOCS_READ, stats.docsRead);
+            newApiCounter(compatTioc, Counters.NODE_RETRIES, stats.nodeRetries);
+            newApiCounter(compatTioc, Counters.NET_RETRIES, stats.netRetries);
         }
     }
 
@@ -69,11 +72,10 @@ class ReportingUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static void newApiCounter(TaskInputOutputContext tioc, Enum<?> counter, long value) {
         org.apache.hadoop.mapreduce.Counter c = tioc.getCounter(counter);
         if (c != null) {
-            c.increment(value);
+            CompatibleHandler.counter(c).increment(value);
         }
     }
 }

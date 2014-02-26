@@ -22,9 +22,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.Flow;
 import cascading.flow.FlowElement;
