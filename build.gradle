@@ -384,12 +384,6 @@ jar {
 	manifest.attributes['Repository-Revision'] = rev
 }
 
-configure(jar) {
-	if (hadoopDistro == "hadoopYarn") {
-		classifier = 'yarn'
-	}
-}
-
 // this is in just as a convenience - the official docs are generated through an external process
 asciidoctor {
 	//logDocuments = true
@@ -470,19 +464,6 @@ task distZip(type: Zip, dependsOn: [jar, sourcesJar, javadocJar]) {
         from "build/libs"
 		exclude "*-testing.jar"
     }
-}
-
-artifacts {
-	
-	// include YARN is available
-	ext.yarn = file("$libsDir/$name-$version-yarn.jar")
-	if (yarn.exists()) {
-		archives yarn
-	}
-	
-	//files(subprojects.configurations.archives.artifacts.file).each { File file ->
-	//   archives file
-	//}
 }
 
 task wrapper(type: Wrapper) {
