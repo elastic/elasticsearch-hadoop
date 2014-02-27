@@ -245,9 +245,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             if (client != null) {
                 client.close();
+                ReportingUtils.report(progressable, client.stats());
             }
-
-            ReportingUtils.report(progressable, client.stats());
 
             initialized = false;
         }
