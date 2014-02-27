@@ -23,7 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
-public class ReflectionUtils {
+public abstract class ReflectionUtils {
 
     public static Field findField(Class<?> clazz, String name) {
         return findField(clazz, name, null);

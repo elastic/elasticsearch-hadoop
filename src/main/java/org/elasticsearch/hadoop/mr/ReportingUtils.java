@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.mr;
 import org.apache.hadoop.mapred.Counters.Counter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.mr.compat.CompatibleHandler;
+import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.mr.compat.TaskInputOutputContext;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 
@@ -30,7 +30,7 @@ class ReportingUtils {
     // handles Hadoop 'old' and 'new' API reporting classes, namely {@link Reporter} and {@link TaskInputOutputContext}
     @SuppressWarnings({ "rawtypes" })
     static void report(Progressable progressable, Stats stats) {
-        progressable = (Progressable) CompatibleHandler.unwrap(progressable);
+        progressable = (Progressable) CompatHandler.unwrap(progressable);
 
         if (progressable == null || progressable == Reporter.NULL) {
             return;
@@ -51,7 +51,7 @@ class ReportingUtils {
         }
 
         if (progressable instanceof org.apache.hadoop.mapreduce.TaskInputOutputContext) {
-            TaskInputOutputContext compatTioc = CompatibleHandler.taskInputOutputContext((org.apache.hadoop.mapreduce.TaskInputOutputContext) progressable);
+            TaskInputOutputContext compatTioc = CompatHandler.taskInputOutputContext((org.apache.hadoop.mapreduce.TaskInputOutputContext) progressable);
 
             newApiCounter(compatTioc, Counters.BYTES_WRITTEN, stats.bytesWritten);
             newApiCounter(compatTioc, Counters.BYTES_READ, stats.bytesRead);
@@ -75,7 +75,7 @@ class ReportingUtils {
     private static void newApiCounter(TaskInputOutputContext tioc, Enum<?> counter, long value) {
         org.apache.hadoop.mapreduce.Counter c = tioc.getCounter(counter);
         if (c != null) {
-            CompatibleHandler.counter(c).increment(value);
+            CompatHandler.counter(c).increment(value);
         }
     }
 }

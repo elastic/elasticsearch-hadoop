@@ -43,7 +43,7 @@ import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.compat.CompatibleHandler;
+import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -171,7 +171,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         // new API init call
         @Override
         public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
-            org.elasticsearch.hadoop.mr.compat.TaskAttemptContext compatContext = CompatibleHandler.taskAttemptContext(context);
+            org.elasticsearch.hadoop.mr.compat.TaskAttemptContext compatContext = CompatHandler.taskAttemptContext(context);
             compatContext.setStatus(split.toString());
             init((ShardInputSplit) split, compatContext.getConfiguration(), compatContext);
 
@@ -372,7 +372,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     //
     @Override
     public List<InputSplit> getSplits(JobContext context) throws IOException {
-        org.elasticsearch.hadoop.mr.compat.JobContext compatJobContext = CompatibleHandler.jobContext(context);
+        org.elasticsearch.hadoop.mr.compat.JobContext compatJobContext = CompatHandler.jobContext(context);
         JobConf conf = (JobConf) compatJobContext.getConfiguration();
         // NOTE: this method expects a ShardInputSplit to be returned (which implements both the old and the new API).
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));

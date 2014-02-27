@@ -23,7 +23,7 @@ import java.lang.reflect.Proxy;
 /**
  * Handler for the binary breakage between Hadoop 1 and Hadoop 2.
  */
-public class CompatibleHandler {
+public class CompatHandler {
 
     public static Counter counter(org.apache.hadoop.mapreduce.Counter target) {
         return proxy(target, Counter.class);

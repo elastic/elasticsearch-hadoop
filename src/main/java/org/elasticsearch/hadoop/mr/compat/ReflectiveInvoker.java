@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
-class ReflectiveInvoker implements InvocationHandler {
+public class ReflectiveInvoker implements InvocationHandler {
 
     private final Object target;
 
