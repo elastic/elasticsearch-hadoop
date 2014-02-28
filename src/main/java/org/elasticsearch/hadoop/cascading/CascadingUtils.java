@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.tuple.Fields;
 import cascading.tuple.hadoop.TupleSerializationProps;
@@ -119,6 +120,24 @@ abstract class CascadingUtils {
             return (Properties) field.get(copy);
         } catch (Exception ex) {
             throw new IllegalArgumentException("Cannot retrieve actual configuration", ex);
+        }
+    }
+
+    static void init(Settings settings, String nodes, int port, String resource, String query) {
+        if (StringUtils.hasText(nodes)) {
+            settings.setHosts(nodes);
+        }
+
+        if (port > 0) {
+            settings.setPort(port);
+        }
+
+        if (StringUtils.hasText(query)) {
+            settings.setQuery(query);
+        }
+
+        if (StringUtils.hasText(resource)) {
+            settings.setResource(resource);
         }
     }
 }

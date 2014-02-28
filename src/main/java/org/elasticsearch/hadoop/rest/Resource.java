@@ -35,7 +35,7 @@ public class Resource {
     private final String index;
 
     public Resource(Settings settings) {
-        String resource = settings.getTargetResource();
+        String resource = settings.getResource();
 
         String errorMessage = "invalid resource given; expecting [index]/[type]";
         Assert.hasText(resource, errorMessage);
@@ -63,10 +63,8 @@ public class Resource {
                 Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage);
                 resource = resource.substring(0, index);
 
-                settings.cleanResource();
                 settings.setResource(resource);
                 settings.setQuery(query);
-                settings.save();
             }
         }
 

@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
@@ -201,17 +200,17 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public Settings setHosts(String hosts) {
-        this.targetHosts = hosts;
+        setProperty(ES_NODES, hosts);
         return this;
     }
 
     public Settings setPort(int port) {
-        this.port = port;
+        setProperty(ES_PORT, "" + port);
         return this;
     }
 
     public Settings setResource(String index) {
-        this.targetResource = index;
+        setProperty(ES_RESOURCE, index);
         return this;
     }
 
@@ -221,10 +220,15 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     // aggregate the resource - computed / set / properties
-    public String getTargetResource() {
-        String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
-        return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
+    //    public String getTargetResource() {
+    //        String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
+    //        return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
+    //    }
+
+    public String getResource() {
+        return getProperty(ES_RESOURCE);
     }
+
 
     String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
@@ -235,21 +239,21 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_QUERY);
     }
 
-    public Settings cleanHosts() {
-        setProperty(INTERNAL_ES_HOSTS, "");
-        return this;
-    }
-
-    public Settings cleanResource() {
-        setProperty(INTERNAL_ES_TARGET_RESOURCE, "");
-        return this;
-    }
-
-    public Settings clean() {
-        cleanResource();
-        cleanHosts();
-        return this;
-    }
+    //    public Settings cleanHosts() {
+    //        setProperty(INTERNAL_ES_HOSTS, "");
+    //        return this;
+    //    }
+    //
+    //    public Settings cleanResource() {
+    //        setProperty(INTERNAL_ES_TARGET_RESOURCE, "");
+    //        return this;
+    //    }
+    //
+    //    public Settings clean() {
+    //        cleanResource();
+    //        cleanHosts();
+    //        return this;
+    //    }
 
     public abstract InputStream loadResource(String location);
 
@@ -258,14 +262,14 @@ public abstract class Settings implements InternalConfigurationOptions {
     /**
      * Saves the settings state after validating them.
      */
-    public void save() {
-        String resource = getTargetResource();
-        String hosts = getTargetHosts();
-
-        Assert.hasText(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
-        setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);
-        setProperty(INTERNAL_ES_HOSTS, hosts);
-    }
+    //    public void save() {
+    //        String resource = getTargetResource();
+    //        //String hosts = getTargetHosts();
+    //
+    //        Assert.hasText(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
+    //        setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);
+    //        //setProperty(INTERNAL_ES_HOSTS, hosts);
+    //    }
 
     protected String getProperty(String name, String defaultValue) {
         String value = getProperty(name);

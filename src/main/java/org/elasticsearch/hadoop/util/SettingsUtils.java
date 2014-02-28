@@ -42,7 +42,11 @@ public abstract class SettingsUtils {
     }
 
     public static List<String> nodes(Settings settings) {
-        return qualifyHosts(settings.getNodes(), settings.getPort());
+        String h = null;
+        // are there discovered hosts?
+        String discoveredHosts = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS);
+        h = (StringUtils.hasText(discoveredHosts) ? discoveredHosts : settings.getNodes());
+        return qualifyHosts(h, settings.getPort());
     }
 
     public static Map<String, String> aliases(String definition) {

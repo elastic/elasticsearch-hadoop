@@ -71,7 +71,6 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             // will be closed by the query is finished
             InitializationUtils.discoverNodesIfNeeded(settings, log);
             InitializationUtils.discoverEsVersion(settings, log);
-            settings.save();
 
             RestRepository client = new RestRepository(settings);
             Field mapping = client.getMapping();

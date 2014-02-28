@@ -52,7 +52,7 @@ public class CascadingHadoopSaveTest {
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
         Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-        Tap out = new EsTap("cascading-hadoop/alias", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop/alias", "", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"

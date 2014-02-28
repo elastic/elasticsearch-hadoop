@@ -156,7 +156,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
 
         IS_ES_10 = SettingsUtils.isEs10(settings);
-        settings.save();
     }
 
     @SuppressWarnings("unchecked")

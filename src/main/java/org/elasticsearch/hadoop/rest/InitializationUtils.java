@@ -102,7 +102,7 @@ public abstract class InitializationUtils {
             if (!client.indexExists()) {
                 client.close();
                 throw new IllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
-                        settings.getTargetResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
+                        settings.getResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
             }
             } catch (IOException ex) {
                 throw new IllegalStateException("Cannot check index existance", ex);
@@ -139,11 +139,11 @@ public abstract class InitializationUtils {
             RestRepository client = new RestRepository(settings);
             if (!client.indexExists()) {
                 if (schemaWriter == null) {
-                    log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getTargetResource()));
+                    log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getResource()));
                 }
                 else {
                     log.info(String.format("No mapping found [%s], creating one based on given schema",
-                            settings.getTargetResource()));
+                            settings.getResource()));
                     ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
                     BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
                     builder.close();

@@ -123,12 +123,12 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     private void initClient(Properties props) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props).setHosts(host).setPort(port).setResource(resource).setQuery(query);
+            Settings settings = SettingsManager.loadFrom(props);
+            CascadingUtils.init(settings, host, port, resource, query);
 
             InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
             InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(EsTap.class));
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LogFactory.getLog(EsTap.class));
-            settings.save();
             client = new RestRepository(settings);
         }
     }

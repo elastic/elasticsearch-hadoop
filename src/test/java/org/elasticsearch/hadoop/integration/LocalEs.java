@@ -21,8 +21,10 @@ package org.elasticsearch.hadoop.integration;
 import java.io.File;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
+import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.junit.rules.ExternalResource;
 
 public class LocalEs extends ExternalResource {
@@ -43,11 +45,19 @@ public class LocalEs extends ExternalResource {
     @Override
     protected void before() throws Throwable {
 
-        String host = HdpBootstrap.hadoopConfig().get("es.host");
-        String port = HdpBootstrap.hadoopConfig().get("es.port");
+        if (Booleans.parseBoolean(HdpBootstrap.hadoopConfig().get("test.disable.local.es"))) {
+            disabled = true;
+            LogFactory.getLog(getClass()).warn(
+                    "local ES disable; assuming an external instance and bailing out...");
+            return;
+        }
+
+        String host = HdpBootstrap.hadoopConfig().get(ConfigurationOptions.ES_NODES);
+        String port = HdpBootstrap.hadoopConfig().get(ConfigurationOptions.ES_PORT);
+
         if (StringUtils.hasText(host)) {
             disabled = true;
-            LogFactory.getLog(getClass()).warn("es.host specified; assuming an external instance and bailing out...");
+            LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance and bailing out...");
             return;
         }
 

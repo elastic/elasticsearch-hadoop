@@ -64,6 +64,10 @@ public class EsTap extends Tap<Object, Object, Object> {
         this(host, port, resource, null, null);
     }
 
+    public EsTap(String host, int port, String resource, Fields fields) {
+        this(host, port, resource, null, fields);
+    }
+
     public EsTap(String host, int port, String resource, String query) {
         this(host, port, resource, query, null);
     }

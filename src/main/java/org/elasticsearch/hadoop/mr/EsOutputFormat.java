@@ -161,7 +161,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.trace(String.format("ESRecordWriter instance [%s] initiating discovery of target shard...", currentInstance));
             }
 
-            Settings settings = SettingsManager.loadFrom(cfg);
+            Settings settings = SettingsManager.loadFrom(cfg).copy();
 
             InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
@@ -177,7 +177,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             beat.start();
 
             client = new RestRepository(settings);
-            resource = settings.getTargetResource();
+            resource = settings.getResource();
 
             // create the index if needed
             if (client.touch()) {
@@ -202,7 +202,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Node targetNode = targetShards.get(chosenShard);
 
             // override the global settings to communicate directly with the target node
-            settings.cleanHosts().setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
+            settings.setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
             client = new RestRepository(settings);
             uri = SettingsUtils.nodes(settings).get(0);
 
@@ -287,7 +287,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        Assert.hasText(settings.getTargetResource(),
+        Assert.hasText(settings.getResource(),
                 String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init

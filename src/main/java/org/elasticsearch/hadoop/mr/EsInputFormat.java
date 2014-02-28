@@ -178,10 +178,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
 
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
-            Settings settings = SettingsManager.loadFrom(cfg);
+            // get a copy to override the host/port
+            Settings settings = SettingsManager.loadFrom(cfg).copy();
 
             // override the global settings to communicate directly with the target node
-            settings.cleanHosts().setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
+            settings.setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
 
             this.esSplit = esSplit;
 
@@ -396,7 +397,6 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         Settings settings = SettingsManager.loadFrom(job);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
-        settings.save();
 
         RestRepository client = new RestRepository(settings);
 
@@ -406,13 +406,13 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         if (!indexExists) {
             if (settings.getIndexReadMissingAsEmpty()) {
-                log.info(String.format("Index [%s] missing - treating it as empty", settings.getTargetResource()));
+                log.info(String.format("Index [%s] missing - treating it as empty", settings.getResource()));
                 targetShards = Collections.emptyMap();
             }
             else {
                 client.close();
                 throw new IllegalArgumentException(
-                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getTargetResource(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
+                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResource(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
             }
         }
         else {
@@ -427,7 +427,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             Field mapping = client.getMapping();
             //TODO: implement this more efficiently
             savedMapping = IOUtils.serializeToBase64(mapping);
-            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getTargetResource()));
+            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResource()));
         }
 
         client.close();

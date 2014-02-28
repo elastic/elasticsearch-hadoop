@@ -23,6 +23,7 @@ import org.elasticsearch.hadoop.integration.HdfsUtils;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.LocalEs;
 import org.elasticsearch.hadoop.integration.Provisioner;
+import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
@@ -51,5 +52,9 @@ public class CascadingHadoopSuite {
             configuration = Provisioner.cascading(configuration);
         }
         HdfsUtils.copyFromLocal("src/test/resources/artists.dat");
+        HdfsUtils.copyFromLocal("src/test/resources/org/elasticsearch/hadoop/integration/query.dsl");
+        HdfsUtils.copyFromLocal("src/test/resources/org/elasticsearch/hadoop/integration/query.uri");
+
+        QueryTestParams.provisionQueries(configuration);
     }
 }

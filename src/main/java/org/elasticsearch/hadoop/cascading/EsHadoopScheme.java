@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
@@ -60,14 +61,16 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     private final String index;
     private final String query;
-    private final String host;
+    private final String nodes;
     private final int port;
     private boolean IS_ES_10;
 
-    EsHadoopScheme(String host, int port, String index, String query, Fields fields) {
+    private static Log log = LogFactory.getLog(EsHadoopScheme.class);
+
+    EsHadoopScheme(String nodes, int port, String index, String query, Fields fields) {
         this.index = index;
         this.query = query;
-        this.host = host;
+        this.nodes = nodes;
         this.port = port;
         if (fields != null) {
             setSinkFields(fields);
@@ -132,14 +135,15 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
-        HadoopCfgUtils.setFileOutputFormatDir(conf, set.getTargetResource());
+        HadoopCfgUtils.setFileOutputFormatDir(conf, set.getResource());
         HadoopCfgUtils.setOutputCommitterClass(conf, EsOutputFormat.ESOldAPIOutputCommitter.class.getName());
-
     }
 
     private void initTargetUri(JobConf conf) {
-        // init
-        SettingsManager.loadFrom(conf).setHosts(host).setPort(port).setResource(index).setQuery(query).save();
+        CascadingUtils.init(SettingsManager.loadFrom(conf), nodes, port, index, query);
+        if (log.isTraceEnabled()) {
+            log.trace("Initialized configuration " + HadoopCfgUtils.asProperties(conf));
+        }
     }
 
     @SuppressWarnings("unchecked")

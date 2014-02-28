@@ -65,8 +65,6 @@ public class NetworkClient implements StatsAware {
         currentUri = nodes.get(nextClient++);
         close();
 
-        //TODO: split host/port
-        settings.cleanHosts();
         settings.setHosts(currentUri);
         currentTransport = new CommonsHttpTransport(settings, currentUri);
         return true;
@@ -90,13 +88,14 @@ public class NetworkClient implements StatsAware {
                 if (log.isTraceEnabled()) {
                     log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
                 }
+
+                String failed = currentUri;
                 newNode = selectNextNode();
+
+                log.error(String.format("Node [%s] failed; " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), failed));
+
                 if (!newNode) {
                     throw new IOException("Out of nodes and retries; caught exception", ex);
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("[%s] [%s] failed on node [%s]; selecting next node...",
-                            request.method().name(), request.path(), currentUri));
                 }
             }
         } while (newNode);

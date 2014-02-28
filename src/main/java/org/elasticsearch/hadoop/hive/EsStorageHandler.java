@@ -85,7 +85,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
 
     private void init(TableDesc tableDesc) {
         Configuration cfg = getConf();
-        Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties()).clean();
+        Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties());
 
         // NB: ESSerDe is already initialized at this stage but should still have a reference to the same cfg object
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
@@ -104,8 +104,6 @@ public class EsStorageHandler extends DefaultStorageHandler {
 
         settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
                 StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
-        // save column names to apply projection
-        settings.save();
 
         // replace the default committer when using the old API
         HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
