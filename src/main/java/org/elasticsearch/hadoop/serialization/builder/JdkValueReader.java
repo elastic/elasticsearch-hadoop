@@ -64,7 +64,6 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case DATE:
             return date(value);
         case OBJECT:
-            throw new UnsupportedOperationException("not implemented yet");
             // everything else (IP, GEO) gets translated to strings
         default:
             return textValue(value);
