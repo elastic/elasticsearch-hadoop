@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
@@ -53,6 +54,12 @@ public class WritableValueReader extends JdkValueReader {
         case STRING:
             arrayType = Text.class;
             break;
+        case BYTE:
+            arrayType = byteType();
+            break;
+        case SHORT:
+            arrayType = shortType();
+            break;
         case INTEGER:
             arrayType = IntWritable.class;
             break;
@@ -64,7 +71,7 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = FloatWritable.class;
             break;
         case DOUBLE:
-            arrayType = DoubleWritable.class;
+            arrayType = doubleType();
             break;
         case BOOLEAN:
             arrayType = BooleanWritable.class;
@@ -94,6 +101,18 @@ public class WritableValueReader extends JdkValueReader {
 
     protected Class<? extends Writable> dateType() {
         return Text.class;
+    }
+
+    protected Class<? extends Writable> doubleType() {
+        return DoubleWritable.class;
+    }
+
+    protected Class<? extends Writable> byteType() {
+        return ByteWritable.class;
+    }
+
+    protected Class<? extends Writable> shortType() {
+        return WritableCompatUtil.availableShortType();
     }
 
     @Override
@@ -127,6 +146,16 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
+    protected Object parseByte(String value) {
+        return new ByteWritable(Byte.parseByte(value));
+    }
+
+    @Override
+    protected Object parseShort(String value) {
+        return WritableCompatUtil.availableShort(Short.parseShort(value));
+    }
+
+    @Override
     protected Object parseString(String value) {
         return new Text(value);
     }
@@ -134,10 +163,5 @@ public class WritableValueReader extends JdkValueReader {
     @Override
     protected Object nullValue() {
         return NullWritable.get();
-    }
-
-    @Override
-    protected Object date(String value) {
-        return new Text(value);
     }
 }

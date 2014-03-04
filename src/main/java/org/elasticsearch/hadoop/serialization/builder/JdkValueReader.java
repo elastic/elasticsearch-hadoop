@@ -48,6 +48,10 @@ public class JdkValueReader implements SettingsAware, ValueReader {
             return nullValue();
         case STRING:
             return textValue(value);
+        case BYTE:
+            return byteValue(value);
+        case SHORT:
+            return shortValue(value);
         case INTEGER:
             return intValue(value);
         case TOKEN_COUNT:
@@ -141,6 +145,22 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         return Integer.parseInt(value);
     }
 
+    protected Object byteValue(String value) {
+        return (value != null ? (isEmpty(value) ? nullValue() : parseByte(value)) : nullValue());
+    }
+
+    protected Object parseByte(String value) {
+        return Byte.parseByte(value);
+    }
+
+    protected Object shortValue(String value) {
+        return (value != null ? (isEmpty(value) ? nullValue() : parseShort(value)) : nullValue());
+    }
+
+    protected Object parseShort(String value) {
+        return Short.parseShort(value);
+    }
+
     protected Object textValue(String value) {
         return (value != null ? (!StringUtils.hasText(value) && emptyAsNull ? nullValue() : parseString(value)) : nullValue());
     }
@@ -154,7 +174,11 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     }
 
     protected Object date(String value) {
-        throw new UnsupportedOperationException("wip");
+        return (value != null ? (isEmpty(value) ? nullValue() : parseDate(value)) : nullValue());
+    }
+
+    protected Object parseDate(String value) {
+        return parseString(value);
     }
 
     @Override

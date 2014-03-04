@@ -22,6 +22,9 @@ import java.sql.Timestamp;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.hadoop.hive.serde2.io.ByteWritable;
+import org.apache.hadoop.hive.serde2.io.DoubleWritable;
+import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.mr.WritableValueReader;
@@ -29,12 +32,42 @@ import org.elasticsearch.hadoop.mr.WritableValueReader;
 public class HiveValueReader extends WritableValueReader {
 
     @Override
-    protected Object date(String value) {
+    protected Class<? extends Writable> dateType() {
+        return TimestampWritable.class;
+    }
+
+    @Override
+    protected Class<? extends Writable> doubleType() {
+        return DoubleWritable.class;
+    }
+
+    @Override
+    protected Class<? extends Writable> byteType() {
+        return ByteWritable.class;
+    }
+
+    @Override
+    protected Class<? extends Writable> shortType() {
+        return ShortWritable.class;
+    }
+
+    @Override
+    protected Object parseDate(String value) {
         return new TimestampWritable(new Timestamp(DatatypeConverter.parseDateTime(value).getTimeInMillis()));
     }
 
     @Override
-    protected Class<? extends Writable> dateType() {
-        return TimestampWritable.class;
+    protected Object parseDouble(String value) {
+        return new DoubleWritable(Double.parseDouble(value));
+    }
+
+    @Override
+    protected Object parseByte(String value) {
+        return new ByteWritable(Byte.parseByte(value));
+    }
+
+    @Override
+    protected Object parseShort(String value) {
+        return new ShortWritable(Short.parseShort(value));
     }
 }
