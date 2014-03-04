@@ -81,10 +81,10 @@ public class CascadingLocalSaveTest {
     }
 
     @Test
-    public void testCSV() throws Exception {
+    public void testFieldMapping() throws Exception {
         // local file-system source
         Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
-        Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local/fieldmapping", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"

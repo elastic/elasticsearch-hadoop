@@ -30,11 +30,9 @@ public class CascadingLocalFieldExtractor extends ConstantFieldExtractor {
     protected String extractField(Object target) {
         if (target instanceof SinkCall) {
             Object object = ((SinkCall) target).getOutgoingEntry().getObject(getFieldName());
-
             if (object != null) {
                 return object.toString();
             }
-
         }
         return null;
     }
