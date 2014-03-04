@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -126,9 +127,11 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             Settings settings = SettingsManager.loadFrom(props);
             CascadingUtils.init(settings, host, port, resource, query);
 
-            InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
-            InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, LogFactory.getLog(EsTap.class));
-            InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LogFactory.getLog(EsTap.class));
+            Log log = LogFactory.getLog(EsTap.class);
+            InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);
+            InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
+            InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
+            InitializationUtils.setFieldExtractorIfNotSet(settings, CascadingLocalFieldExtractor.class, log);
             client = new RestRepository(settings);
         }
     }

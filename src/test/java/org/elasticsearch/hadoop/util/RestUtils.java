@@ -60,6 +60,11 @@ public class RestUtils {
         putMapping(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
     }
 
+
+    public static void putData(String index, String location) throws Exception {
+        putData(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
+    }
+
     public static void putData(String index, byte[] content) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
         rc.put(index, content);

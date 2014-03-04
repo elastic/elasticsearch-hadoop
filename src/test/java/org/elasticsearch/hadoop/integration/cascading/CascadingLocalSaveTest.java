@@ -79,4 +79,19 @@ public class CascadingLocalSaveTest {
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
         new LocalFlowConnector(properties).connect(in, out, pipe).complete();
     }
+
+    @Test
+    public void testCSV() throws Exception {
+        // local file-system source
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
+        Pipe pipe = new Pipe("copy");
+
+        // rename "id" -> "garbage"
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+
+        Properties props = new TestSettings().getProperties();
+        props.setProperty("es.mapping.ttl", "<1>");
+        new LocalFlowConnector(props).connect(in, out, pipe).complete();
+    }
 }

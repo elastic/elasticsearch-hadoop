@@ -16,19 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop.cascading;
 
-import org.elasticsearch.hadoop.integration.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ CascadingLocalJsonSaveTest.class, CascadingLocalSaveTest.class, CascadingLocalJsonSearchTest.class, CascadingLocalSearchTest.class })
-//@Suite.SuiteClasses({ CascadingLocalSaveTest.class })
-public class CascadingLocalSuite {
+import cascading.scheme.SinkCall;
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+public class CascadingLocalFieldExtractor extends ConstantFieldExtractor {
+
+    @SuppressWarnings({ "rawtypes" })
+    @Override
+    protected String extractField(Object target) {
+        if (target instanceof SinkCall) {
+            Object object = ((SinkCall) target).getOutgoingEntry().getObject(getFieldName());
+
+            if (object != null) {
+                return object.toString();
+            }
+
+        }
+        return null;
+    }
+
+    @Override
+    public void setSettings(Settings settings) {
+        super.setSettings(settings);
+    }
 }
