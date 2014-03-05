@@ -54,9 +54,12 @@ class HeartBeat {
         if (taskID == null) {
             log.warn("Cannot determine task id...");
             taskId = "<unknown>";
+            if (log.isTraceEnabled()) {
+                log.trace("Current configuration is " + HadoopCfgUtils.asProperties(cfg));
+            }
         }
         else {
-            taskId = "" + taskID.getId();
+            taskId = "" + taskID;
         }
 
         id = taskId;

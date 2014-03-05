@@ -43,7 +43,7 @@ class PigUtils {
 
     private static final String MAPPING_NAMES = "es.mapping.names";
 
-    private static boolean pig11Available;
+    private final static boolean pig11Available;
 
     static {
         // initialize
