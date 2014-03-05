@@ -160,4 +160,18 @@ public class PigSearchTest {
 
         String tuple = "(Marilyn Manson,http://www.last.fm/music/Marilyn+Manson)";
     }
+
+    @Test
+    public void testNestedTuple() throws Exception {
+        String script = "REGISTER " + Provisioner.ESHADOOP_TESTING_JAR + ";"
+                + "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('');"
+                //+ "A = LOAD 'pig/nestedtuple' USING EsStorage() AS (my_array:tuple(x:chararray));"
+                + "A = LOAD 'pig/nestedtuple' USING EsStorage() AS (my_array:tuple());"
+                //+ "B = FOREACH A GENERATE COUNT(my_array) AS count;"
+                //+ "ILLUSTRATE B;"
+                + "DUMP A;"
+                //+ "DUMP B;"
+                ;
+        pig.executeScript(script);
+    }
 }

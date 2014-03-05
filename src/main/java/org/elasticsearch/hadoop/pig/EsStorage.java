@@ -317,6 +317,10 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             Map dataMap = reader.getCurrentValue();
             Tuple tuple = TupleFactory.getInstance().newTuple(dataMap.size());
 
+            if (dataMap.isEmpty()) {
+                return tuple;
+            }
+
             if (!aliasesTupleNames.isEmpty()) {
                 for (int i = 0; i < aliasesTupleNames.size(); i++) {
                     if (IS_ES_10) {

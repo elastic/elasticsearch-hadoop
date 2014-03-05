@@ -24,6 +24,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -196,5 +197,12 @@ public class PigSaveTest {
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=id','"
                                 + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no');";
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testNestedTuple() throws Exception {
+        RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.waitForYellow("pig");
     }
 }
