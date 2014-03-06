@@ -55,4 +55,9 @@ public class PropertiesSettings extends Settings {
     public InputStream loadResource(String location) {
         return IOUtils.open(location, PropertiesSettings.class.getClassLoader());
     }
+
+    @Override
+    protected Properties asProperties() {
+        return props;
+    }
 }

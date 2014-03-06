@@ -18,7 +18,11 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
@@ -32,14 +36,9 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
-public abstract class Settings implements InternalConfigurationOptions {
+public abstract class Settings implements Serializable, InternalConfigurationOptions {
 
     private static boolean ES_HOST_WARNING = true;
-
-    private int port;
-
-    private String targetHosts;
-    private String targetResource;
 
     public String getNodes() {
         String host = getProperty(ES_HOST);
@@ -55,7 +54,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public int getPort() {
-        return (port > 0) ? port : Integer.valueOf(getProperty(ES_PORT, ES_PORT_DEFAULT));
+        return Integer.valueOf(getProperty(ES_PORT, ES_PORT_DEFAULT));
     }
 
     public boolean getNodesDiscovery() {
@@ -232,7 +231,7 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
-        return StringUtils.hasText(targetHosts) ? targetHosts : (StringUtils.hasText(hosts) ? hosts : getNodes());
+        return (StringUtils.hasText(hosts) ? hosts : getNodes());
     }
 
     public String getQuery() {
@@ -301,4 +300,28 @@ public abstract class Settings implements InternalConfigurationOptions {
 
         return this;
     }
+
+    public Settings load(String source) {
+        Properties copy = new Properties();
+        try {
+            copy.load(new StringReader(source));
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+        merge(copy);
+        return this;
+    }
+
+    public String save() {
+        Properties copy = asProperties();
+        StringWriter sw = new StringWriter();
+        try {
+            copy.store(sw, "");
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
+        return sw.toString();
+    }
+
+    protected abstract Properties asProperties();
 }

@@ -19,14 +19,16 @@
 package org.elasticsearch.hadoop.cfg;
 
 import java.io.InputStream;
+import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.HadoopIOUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
 public class HadoopSettings extends Settings {
 
-    private final Configuration cfg;
+    private Configuration cfg;
 
     public HadoopSettings(Configuration cfg) {
         Assert.notNull(cfg, "Non-null properties expected");
@@ -53,5 +55,10 @@ public class HadoopSettings extends Settings {
     @Override
     public InputStream loadResource(String location) {
         return HadoopIOUtils.open(location, cfg);
+    }
+
+    @Override
+    protected Properties asProperties() {
+        return HadoopCfgUtils.asProperties(cfg);
     }
 }

@@ -76,16 +76,19 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private String nodeName;
         private String shardId;
         private String mapping;
+        private String settings;
 
         public ShardInputSplit() {}
 
-        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard, String mapping) {
+        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard,
+                String mapping, String settings) {
             this.nodeIp = nodeIp;
             this.httpPort = httpPort;
             this.nodeId = nodeId;
             this.nodeName = nodeName;
             this.shardId = shard.toString();
             this.mapping = mapping;
+            this.settings = settings;
         }
 
         @Override
@@ -111,6 +114,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             byte[] utf = StringUtils.toUTF(mapping);
             out.writeInt(utf.length);
             out.write(utf);
+
+            utf = StringUtils.toUTF(settings);
+            out.writeInt(utf.length);
+            out.write(utf);
         }
 
         @Override
@@ -124,6 +131,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             byte[] utf = new byte[length];
             in.readFully(utf);
             mapping = StringUtils.asUTFString(utf);
+
+            length = in.readInt();
+            utf = new byte[length];
+            in.readFully(utf);
+            settings = StringUtils.asUTFString(utf);
         }
 
         @Override
@@ -179,7 +191,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
             // get a copy to override the host/port
-            Settings settings = SettingsManager.loadFrom(cfg).copy();
+            Settings settings = SettingsManager.loadFrom(cfg).copy().load(esSplit.settings);
 
             // override the global settings to communicate directly with the target node
             settings.setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
@@ -398,10 +410,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
+        String savedSettings = settings.save();
+
         RestRepository client = new RestRepository(settings);
-
         boolean indexExists = client.indexExists();
-
         Map<Shard, Node> targetShards = null;
 
         if (!indexExists) {
@@ -439,7 +451,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             Shard shard = entry.getKey();
             Node node = entry.getValue();
             splits[index++] =
-                        new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName(), savedMapping);
+                        new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName(), savedMapping, savedSettings);
         }
 
         log.info(String.format("Created [%d] shard-splits", splits.length));
