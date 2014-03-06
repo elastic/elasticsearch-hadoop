@@ -49,7 +49,7 @@ public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> 
     @SuppressWarnings("unchecked")
     @Override
     public boolean write(SinkCall<Object[], ?> sinkCall, Generator generator) {
-        Tuple tuple = sinkCall.getOutgoingEntry().getTuple();
+        Tuple tuple = CascadingUtils.coerceToString(sinkCall);
         // consider names (in case of aliases these are already applied)
         List<String> names = (List<String>) sinkCall.getContext()[0];
 

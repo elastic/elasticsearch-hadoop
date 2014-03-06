@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,6 +59,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat {
 
     private static Log log = LogFactory.getLog(EsOutputFormat.class);
+    private static final int NO_TASK_ID = -1;
 
     // don't use mapred.OutputCommitter as it performs mandatory casts to old API resulting in CCE
     public static class ESOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {
@@ -196,7 +198,10 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.trace(String.format("ESRecordWriter instance [%s] discovered %s primary shards %s", currentInstance, orderedShards.size(), orderedShards));
             }
 
-            //int min = Math.min(instances, targetShards.size());
+            // if there's no task info, just pick a random bucket
+            if (currentInstance <= 0) {
+                currentInstance = new Random().nextInt(targetShards.size()) + 1;
+            }
             int bucket = currentInstance % targetShards.size();
             Shard chosenShard = orderedShards.get(bucket);
             Node targetNode = targetShards.get(chosenShard);
@@ -215,11 +220,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(conf));
 
             if (taskID == null) {
-                log.error(String.format("Cannot determine task id - current properties are %s", HadoopCfgUtils.asProperties(conf)));
+                log.warn(String.format("Cannot determine task id - redirecting writes in a random fashion"));
+                return NO_TASK_ID;
             }
-
-            Assert.notNull(taskID,
-                    "Unable to determine task id - please report your distro/setting through the issue tracker");
 
             return taskID.getId();
         }

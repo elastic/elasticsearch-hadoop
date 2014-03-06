@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 
+import cascading.flow.Flow;
 import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeCollector;
@@ -50,6 +51,11 @@ class EsHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
     @Override
     public String getIdentifier() {
         return target;
+    }
+
+    @Override
+    public void flowConfInit(Flow<JobConf> flow) {
+        CascadingUtils.addSerializationToken(flow.getConfig());
     }
 
     @Override

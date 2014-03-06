@@ -164,7 +164,6 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             Text lookupKey = new Text();
             // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable<?> field : entry.getFields()) {
-                //NB: coercion should be applied automatically by the TupleEntry
                 if (IS_ES_10) {
                     // check for multi-level alias
                     Object result = data;
@@ -175,11 +174,11 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
                             break;
                         }
                     }
-                    entry.setObject(field, result);
+                    CascadingUtils.setObject(entry, field, result);
                 }
                 else {
                     lookupKey.set(alias.toES(field.toString()));
-                    entry.setObject(field, data.get(lookupKey));
+                    CascadingUtils.setObject(entry, field, data.get(lookupKey));
                 }
             }
         }

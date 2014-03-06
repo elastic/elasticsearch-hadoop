@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,18 +33,25 @@ import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
+import cascading.scheme.SinkCall;
+import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 import cascading.tuple.hadoop.TupleSerializationProps;
+import cascading.tuple.type.CoercibleType;
 import cascading.util.Util;
 
-abstract class CascadingUtils {
+public abstract class CascadingUtils {
 
     private static final String MAPPING_NAMES = "es.mapping.names";
+    private static final boolean CASCADING_22_AVAILABLE = ObjectUtils.isClassPresent("cascading.tuple.type.CoercibleType", Tap.class.getClassLoader());
 
-    public static void addSerializationToken(Object config) {
+    static void addSerializationToken(Object config) {
         Configuration cfg = (Configuration) config;
         String tokens = cfg.get(TupleSerializationProps.SERIALIZATION_TOKENS);
 
@@ -139,5 +147,65 @@ abstract class CascadingUtils {
         if (StringUtils.hasText(resource)) {
             settings.setResource(resource);
         }
+    }
+
+    private static abstract class CoercibleOps {
+        static void setObject(TupleEntry entry, Comparable<?> field, Object object) {
+            if (object != null && entry.getFields() instanceof CoercibleType) {
+                entry.setObject(field, object.toString());
+            }
+            else {
+                entry.setObject(field, object);
+            }
+        }
+
+        static Tuple coerceToString(SinkCall<?, ?> sinkCall) {
+            TupleEntry entry = sinkCall.getOutgoingEntry();
+            Fields fields = entry.getFields();
+            Tuple tuple = entry.getTuple();
+
+            if (fields.hasTypes()) {
+                Type types[] = new Type[fields.size()];
+                for (int index = 0; index < fields.size(); index++) {
+                    Type type = fields.getType(index);
+                    if (type instanceof CoercibleType<?>) {
+                        types[index] = String.class;
+                    }
+                    else {
+                        types[index] = type;
+                    }
+                }
+
+                tuple = entry.getCoercedTuple(types);
+            }
+            return tuple;
+        }
+    }
+
+    private static abstract class LegacyOps {
+        static void setObject(TupleEntry entry, Comparable<?> field, Object object) {
+            entry.setObject(field, object);
+        }
+
+        static Tuple coerceToString(SinkCall<?, ?> sinkCall) {
+            return sinkCall.getOutgoingEntry().getTuple();
+        }
+    }
+
+    static void setObject(TupleEntry entry, Comparable<?> field, Object object) {
+        if (CASCADING_22_AVAILABLE) {
+            CoercibleOps.setObject(entry, field, object);
+        }
+        else {
+            LegacyOps.setObject(entry, field, object);
+        }
+    }
+
+    static Tuple coerceToString(SinkCall<?, ?> sinkCall) {
+        return (CASCADING_22_AVAILABLE ? CoercibleOps.coerceToString(sinkCall) : LegacyOps.coerceToString(sinkCall));
+    }
+
+    public static Tap hadoopTap(String host, int port, String path, String query, Fields fields) {
+        return new EsHadoopTap(host, port, path, query, fields);
     }
 }
