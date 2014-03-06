@@ -151,7 +151,7 @@ public abstract class CascadingUtils {
 
     private static abstract class CoercibleOps {
         static void setObject(TupleEntry entry, Comparable<?> field, Object object) {
-            if (object != null && entry.getFields() instanceof CoercibleType) {
+            if (object != null && entry.getFields().getType(field) instanceof CoercibleType) {
                 entry.setObject(field, object.toString());
             }
             else {
