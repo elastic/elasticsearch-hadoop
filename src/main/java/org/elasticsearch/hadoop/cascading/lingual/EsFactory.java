@@ -73,7 +73,7 @@ public class EsFactory {
         int port = (StringUtils.hasText(portString) ? Integer.parseInt(portString) : -1);
         String query = properties.getProperty("query");
 
-        return CascadingUtils.hadoopTap(host, port, path, query, ((EsScheme) scheme).fields);
+        return CascadingUtils.hadoopTap(host, port, path, query, ((EsScheme) scheme).fields, properties);
     }
 
     public Scheme createScheme(Fields fields, Properties properties) {

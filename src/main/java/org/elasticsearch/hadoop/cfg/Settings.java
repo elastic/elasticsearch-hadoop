@@ -284,7 +284,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     public abstract void setProperty(String name, String value);
 
     public Settings merge(Properties properties) {
-        if (properties == null) {
+        if (properties == null || properties.isEmpty()) {
             return this;
         }
 

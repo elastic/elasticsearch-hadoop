@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +51,7 @@ public class EsTap extends Tap<Object, Object, Object> {
     private Fields fields;
     private String host;
     private int port;
+    private Properties props;
 
     // TODO: add defaults fall back
     public EsTap(String resource) {
@@ -81,11 +83,16 @@ public class EsTap extends Tap<Object, Object, Object> {
     }
 
     public EsTap(String host, int port, String resource, String query, Fields fields) {
+        this(host, port, resource, query, fields, null);
+    }
+
+    public EsTap(String host, int port, String resource, String query, Fields fields, Properties tapSettings) {
         this.resource = resource;
         this.query = query;
         this.host = host;
         this.port = port;
         this.fields = fields;
+        this.props = tapSettings;
     }
 
     @Override
@@ -181,7 +188,7 @@ public class EsTap extends Tap<Object, Object, Object> {
         } catch (ClassNotFoundException e) {
             runningInHadoop = false;
         }
-        actualTap = (runningInHadoop ? new EsHadoopTap(host, port, resource, query, fields) : new EsLocalTap(host, port, resource, query, fields));
+        actualTap = (runningInHadoop ? new EsHadoopTap(host, port, resource, query, fields, props) : new EsLocalTap(host, port, resource, query, fields, props));
         setScheme(actualTap.getScheme());
         if (log.isDebugEnabled()) {
             log.debug(String.format("Detected %s environment; initializing [%s]", (runningInHadoop ? "Hadoop" : "local"), actualTap.getClass().getSimpleName()));

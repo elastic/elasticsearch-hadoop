@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,11 +64,12 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private final String query;
     private final String nodes;
     private final int port;
+    private final Properties props;
     private boolean IS_ES_10;
 
     private static Log log = LogFactory.getLog(EsHadoopScheme.class);
 
-    EsHadoopScheme(String nodes, int port, String index, String query, Fields fields) {
+    EsHadoopScheme(String nodes, int port, String index, String query, Fields fields, Properties props) {
         this.index = index;
         this.query = query;
         this.nodes = nodes;
@@ -76,6 +78,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             setSinkFields(fields);
             setSourceFields(fields);
         }
+        this.props = props;
     }
 
     @Override
@@ -86,7 +89,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
         // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[2] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -103,7 +106,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         Object[] context = new Object[1];
         // the tuple wil be fixed, so we can just use a collection/index
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -117,7 +120,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         initTargetUri(conf);
         conf.setInputFormat(EsInputFormat.class);
-        Collection<String> fields = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()), getSourceFields());
+        Collection<String> fields = CascadingUtils.fieldToAlias(SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props), getSourceFields());
         // load only the necessary fields
         conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
     }
@@ -127,7 +130,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         initTargetUri(conf);
         conf.setOutputFormat(EsOutputFormat.class);
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
-        Settings set = SettingsManager.loadFrom(conf);
+        Settings set = SettingsManager.loadFrom(conf).merge(props);
 
         InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
         InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
@@ -140,7 +143,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     }
 
     private void initTargetUri(JobConf conf) {
-        CascadingUtils.init(SettingsManager.loadFrom(conf), nodes, port, index, query);
+        CascadingUtils.init(SettingsManager.loadFrom(conf).merge(props), nodes, port, index, query);
         if (log.isTraceEnabled()) {
             log.trace("Initialized configuration " + HadoopCfgUtils.asProperties(conf));
         }

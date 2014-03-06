@@ -53,9 +53,9 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
     private static Log log = LogFactory.getLog(EsLocalTap.class);
     private final String target;
 
-    public EsLocalTap(String host, int port, String resource, String query, Fields fields) {
+    public EsLocalTap(String host, int port, String resource, String query, Fields fields, Properties props) {
         this.target = resource;
-        setScheme(new EsLocalScheme(host, port, resource, query, fields));
+        setScheme(new EsLocalScheme(host, port, resource, query, fields, props));
     }
 
     @Override

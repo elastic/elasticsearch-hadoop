@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
@@ -43,9 +44,9 @@ class EsHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
 
     private final String target;
 
-    public EsHadoopTap(String host, int port, String index, String query, Fields fields) {
+    public EsHadoopTap(String host, int port, String index, String query, Fields fields, Properties props) {
         this.target = index;
-        setScheme(new EsHadoopScheme(host, port, index, query, fields));
+        setScheme(new EsHadoopScheme(host, port, index, query, fields, props));
     }
 
     @Override

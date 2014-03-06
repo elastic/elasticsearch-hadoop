@@ -205,7 +205,7 @@ public abstract class CascadingUtils {
         return (CASCADING_22_AVAILABLE ? CoercibleOps.coerceToString(sinkCall) : LegacyOps.coerceToString(sinkCall));
     }
 
-    public static Tap hadoopTap(String host, int port, String path, String query, Fields fields) {
-        return new EsHadoopTap(host, port, path, query, fields);
+    public static Tap hadoopTap(String host, int port, String path, String query, Fields fields, Properties props) {
+        return new EsHadoopTap(host, port, path, query, fields, props);
     }
 }

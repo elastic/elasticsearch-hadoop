@@ -56,11 +56,12 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final String query;
     private final String host;
     private final int port;
+    private final Properties props;
     private transient RestRepository client;
 
     private boolean IS_ES_10;
 
-    EsLocalScheme(String host, int port, String index, String query, Fields fields) {
+    EsLocalScheme(String host, int port, String index, String query, Fields fields, Properties props) {
         this.resource = index;
         this.query = query;
         this.host = host;
@@ -69,6 +70,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             setSinkFields(fields);
             setSourceFields(fields);
         }
+        this.props = props;
     }
 
     @Override
@@ -76,7 +78,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sourcePrepare(flowProcess, sourceCall);
 
         Object[] context = new Object[1];
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -106,7 +108,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sinkPrepare(flowProcess, sinkCall);
 
         Object[] context = new Object[1];
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy());
+        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
     }
@@ -119,12 +121,12 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     @Override
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf);
-        InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf), client);
+        InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf).merge(props), client);
     }
 
     private void initClient(Properties props) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props);
+            Settings settings = SettingsManager.loadFrom(props).merge(this.props);
             CascadingUtils.init(settings, host, port, resource, query);
 
             Log log = LogFactory.getLog(EsTap.class);
