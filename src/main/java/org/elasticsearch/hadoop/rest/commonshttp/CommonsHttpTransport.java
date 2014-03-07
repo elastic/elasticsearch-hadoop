@@ -19,10 +19,13 @@
 package org.elasticsearch.hadoop.rest.commonshttp;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.Socket;
 
 import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpStatus;
@@ -48,6 +51,7 @@ import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.ByteSequence;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -56,8 +60,18 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class CommonsHttpTransport implements Transport, StatsAware {
 
     private static Log log = LogFactory.getLog(CommonsHttpTransport.class);
+    private static final Method GET_SOCKET;
+
+    static {
+        GET_SOCKET = ReflectionUtils.findMethod(HttpConnection.class, "getSocket", (Class[]) null);
+        ReflectionUtils.makeAccessible(GET_SOCKET);
+    }
+
+
     private final HttpClient client;
     private final Stats stats = new Stats();
+    private HttpConnection conn;
+
 
     private static class ResponseInputStream extends DelegatingInputStream {
 
@@ -91,24 +105,33 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
+    private class SocketTrackingConnectionManager extends SimpleHttpConnectionManager {
+
+        @Override
+        public HttpConnection getConnectionWithTimeout(HostConfiguration hostConfiguration, long timeout) {
+            conn = super.getConnectionWithTimeout(hostConfiguration, timeout);
+            return conn;
+        }
+    }
+
     public CommonsHttpTransport(Settings settings, String host) {
         HttpClientParams params = new HttpClientParams();
-        params.setParameter(HttpMethodParams.RETRY_HANDLER,
-                new DefaultHttpMethodRetryHandler(settings.getHttpRetries(), false) {
+        params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(
+                settings.getHttpRetries(), false) {
 
-                    @Override
-                    public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
-                        if (super.retryMethod(method, exception, executionCount)) {
-                            stats.netRetries++;
-                            return true;
-                        }
-                        return false;
-                    }
-                });
+            @Override
+            public boolean retryMethod(HttpMethod method, IOException exception, int executionCount) {
+                if (super.retryMethod(method, exception, executionCount)) {
+                    stats.netRetries++;
+                    return true;
+                }
+                return false;
+            }
+        });
 
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
         params.setSoTimeout((int) settings.getHttpTimeout());
-        client = new HttpClient(params);
+        client = new HttpClient(params, new SocketTrackingConnectionManager());
 
         HostConfiguration hostConfig = new HostConfiguration();
 
@@ -170,13 +193,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Sending [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.path(), request.body()));
+            log.trace(String.format("Tx [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.path(), request.body()));
         }
 
         client.executeMethod(http);
 
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Received [%s-%s] [%s]", http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+            Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
+            String addr = sk.getLocalAddress().getHostAddress();
+            log.trace(String.format("Rx @[%s] [%s-%s] [%s]", addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
         }
 
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), request.uri());
