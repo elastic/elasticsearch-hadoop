@@ -165,6 +165,10 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             Settings settings = SettingsManager.loadFrom(cfg).copy();
 
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("Init shard writer from cfg %s", HadoopCfgUtils.asProperties(cfg)));
+            }
+
             InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);

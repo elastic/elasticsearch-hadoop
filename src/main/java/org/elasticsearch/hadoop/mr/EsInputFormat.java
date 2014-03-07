@@ -151,8 +151,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     }
 
 
-    protected static abstract class ShardRecordReader<K,V> extends RecordReader<K, V> implements
-            org.apache.hadoop.mapred.RecordReader<K, V> {
+    protected static abstract class ShardRecordReader<K,V> extends RecordReader<K, V> implements org.apache.hadoop.mapred.RecordReader<K, V> {
 
         private int read = 0;
         private ShardInputSplit esSplit;
@@ -192,6 +191,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
             // get a copy to override the host/port
             Settings settings = SettingsManager.loadFrom(cfg).copy().load(esSplit.settings);
+
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("Init shard reader from cfg %s", HadoopCfgUtils.asProperties(cfg)));
+                log.trace(String.format("Init shard reader w/ settings %s", esSplit.settings));
+            }
 
             // override the global settings to communicate directly with the target node
             settings.setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
