@@ -44,6 +44,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.DelegatingInputStream;
+import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
 import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleResponse;
@@ -138,7 +139,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         try {
             hostConfig.setHost(new URI(prefixUri(host), false));
         } catch (IOException ex) {
-            throw new IllegalArgumentException("Invalid target URI " + host, ex);
+            throw new EsHadoopTransportException("Invalid target URI " + host, ex);
         }
         client.setHostConfiguration(hostConfig);
 
@@ -169,7 +170,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             break;
 
         default:
-            throw new IllegalArgumentException("Unknown method");
+            throw new EsHadoopTransportException("Unknown request method " + request.method());
         }
 
         CharSequence uri = request.uri();

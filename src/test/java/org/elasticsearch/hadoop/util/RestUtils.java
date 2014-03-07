@@ -36,7 +36,7 @@ public class RestUtils {
         }
 
         @Override
-        public Response execute(Method method, String path, ByteSequence buffer) throws IOException {
+        public Response execute(Method method, String path, ByteSequence buffer) {
             return super.execute(method, path, buffer);
         }
 

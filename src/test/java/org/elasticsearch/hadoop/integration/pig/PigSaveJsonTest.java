@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.Provisioner;
 import org.elasticsearch.hadoop.rest.RestClient;
@@ -88,7 +89,7 @@ public class PigSaveJsonTest {
         pig.executeScript(script);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = EsHadoopIllegalStateException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         testCreateWithId();
     }
@@ -116,7 +117,7 @@ public class PigSaveJsonTest {
         pig.executeScript(script);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = EsHadoopIllegalStateException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +

@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
@@ -92,7 +94,7 @@ public class QueryBuilder {
                     IOUtils.asBytes(bodyQuery, in);
                 }
             } catch (IOException ex) {
-                throw new IllegalArgumentException(String.format("Cannot determine specified query - doesn't appear to be URI or JSON based and location [%s] cannot be opened", query));
+                throw new EsHadoopIllegalArgumentException(String.format("Cannot determine specified query - doesn't appear to be URI or JSON based and location [%s] cannot be opened", query));
             }
         }
     }
@@ -198,7 +200,7 @@ public class QueryBuilder {
         try {
             return client.scan(scrollUri, bodyQuery, reader);
         } catch (IOException ex) {
-            throw new IllegalStateException("Cannot build scroll [" + scrollUri + "]", ex);
+            throw new EsHadoopIllegalStateException("Cannot build scroll [" + scrollUri + "]", ex);
         }
     }
 

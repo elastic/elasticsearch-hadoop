@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.cascading.lingual;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cascading.CascadingUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -35,6 +36,7 @@ import cascading.tuple.Fields;
 @SuppressWarnings("rawtypes")
 public class EsFactory {
 
+    @SuppressWarnings("serial")
     public static class EsScheme extends Scheme {
         Fields fields;
 
@@ -65,7 +67,7 @@ public class EsFactory {
 
     public Tap createTap(Scheme scheme, String path, SinkMode sinkMode, Properties properties) {
         if (!(scheme instanceof EsScheme)) {
-            throw new IllegalArgumentException("Unknown scheme; expected " + EsScheme.class.getName());
+            throw new EsHadoopIllegalArgumentException("Unknown scheme; expected " + EsScheme.class.getName());
         }
 
         String host = properties.getProperty("host");

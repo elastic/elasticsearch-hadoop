@@ -16,24 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.rest;
 
-import java.io.IOException;
+import org.elasticsearch.hadoop.EsHadoopException;
 
-/**
- *
- */
-public class SerializationException extends RuntimeException {
+public class EsHadoopParsingException extends EsHadoopException {
 
-    public SerializationException(String message) {
+    public EsHadoopParsingException() {}
+
+    public EsHadoopParsingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public EsHadoopParsingException(String message) {
         super(message);
     }
 
-    public SerializationException(IOException cause) {
-        this("Cannot serialize/deserialize", cause);
-    }
-
-    public SerializationException(String message, IOException cause) {
-        super(message, cause);
+    public EsHadoopParsingException(Throwable cause) {
+        super(cause);
     }
 }

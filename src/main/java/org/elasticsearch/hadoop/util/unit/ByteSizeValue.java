@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.util.unit;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 
 public class ByteSizeValue {
 
@@ -34,10 +36,10 @@ public class ByteSizeValue {
         this.sizeUnit = sizeUnit;
     }
 
-    public int bytesAsInt() throws IllegalArgumentException {
+    public int bytesAsInt() throws EsHadoopIllegalArgumentException {
         long bytes = bytes();
         if (bytes > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("size [" + toString() + "] is bigger than max int");
+            throw new EsHadoopIllegalArgumentException("size [" + toString() + "] is bigger than max int");
         }
         return (int) bytes;
     }
@@ -118,7 +120,7 @@ public class ByteSizeValue {
         return Strings.format1Decimals(value, suffix);
     }
 
-    public static ByteSizeValue parseBytesSizeValue(String sValue) throws IllegalArgumentException {
+    public static ByteSizeValue parseBytesSizeValue(String sValue) throws EsHadoopIllegalArgumentException {
         long bytes;
         sValue = org.elasticsearch.hadoop.util.StringUtils.deleteWhitespace(sValue);
 
@@ -148,7 +150,7 @@ public class ByteSizeValue {
                 bytes = Long.parseLong(sValue);
             }
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to parse [" + sValue + "]", e);
+            throw new EsHadoopIllegalArgumentException("Failed to parse [" + sValue + "]", e);
         }
         return new ByteSizeValue(bytes, ByteSizeUnit.BYTES);
     }

@@ -20,6 +20,8 @@ package org.elasticsearch.hadoop.util.unit;
 
 import java.util.concurrent.TimeUnit;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 public class TimeValue {
     public static TimeValue timeValueNanos(long nanos) {
         return new TimeValue(nanos, TimeUnit.NANOSECONDS);
@@ -226,7 +228,7 @@ public class TimeValue {
             }
             return new TimeValue(millis, TimeUnit.MILLISECONDS);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Failed to parse [" + sValue + "]", e);
+            throw new EsHadoopIllegalArgumentException("Failed to parse [" + sValue + "]", e);
         }
     }
 

@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 // taken from org.apache.lucene.util
 abstract class ArrayUtils {
 
@@ -36,7 +38,7 @@ abstract class ArrayUtils {
 
         if (minTargetSize < 0) {
             // catch usage that accidentally overflows int
-            throw new IllegalArgumentException("invalid array size " + minTargetSize);
+            throw new EsHadoopIllegalArgumentException("invalid array size " + minTargetSize);
         }
 
         if (minTargetSize == 0) {

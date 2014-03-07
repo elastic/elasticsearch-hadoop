@@ -27,6 +27,7 @@ import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.backend.executionengine.ExecJob;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.integration.HdpBootstrap;
 import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -42,7 +43,7 @@ public class PigWrapper {
         try {
             pig = createPig();
         } catch (ExecException ex) {
-            throw new IllegalStateException("Cannot create pig server", ex);
+            throw new EsHadoopIllegalStateException("Cannot create pig server", ex);
         }
         pig.setBatchOn();
     }
@@ -77,7 +78,7 @@ public class PigWrapper {
         List<ExecJob> executeBatch = pig.executeBatch();
         for (ExecJob execJob : executeBatch) {
             if (execJob.getStatus() == ExecJob.JOB_STATUS.FAILED) {
-                throw new IllegalStateException("Pig execution failed");
+                throw new EsHadoopIllegalStateException("Pig execution failed");
             }
         }
         pig.discardBatch();

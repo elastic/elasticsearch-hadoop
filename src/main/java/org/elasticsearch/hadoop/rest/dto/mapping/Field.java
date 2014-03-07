@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 
 @SuppressWarnings("serial")
@@ -127,7 +128,7 @@ public class Field implements Serializable {
                             FieldType subFieldType = FieldType.parse(subFieldDef.get("type").toString());
                             if (defaultType != null) {
                                 if (defaultType != subFieldType) {
-                                    throw new IllegalArgumentException(
+                                    throw new EsHadoopIllegalArgumentException(
                                             String.format("Ambiguous mapping, multi_field [%s] provides no default field and subfields have different mapping types [%s=%s], [%s=%s]",
                                                     key, defaultFieldName, defaultType, subfield.getKey(), subFieldType));
                                 }
@@ -170,7 +171,7 @@ public class Field implements Serializable {
         }
 
 
-        throw new IllegalArgumentException("invalid map received " + entry);
+        throw new EsHadoopIllegalArgumentException("invalid map received " + entry);
     }
 
     public String toString() {

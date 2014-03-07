@@ -24,6 +24,7 @@ import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 
 /**
  * Wrapper class around a Pig tuple - the value and its associated schema.
@@ -55,7 +56,7 @@ public class PigTuple {
         try {
             schemaField.setSchema(schema);
         } catch (IOException ex) {
-            throw new IllegalStateException(String.format("Cannot use schema [%s]", schema), ex);
+            throw new EsHadoopIllegalStateException(String.format("Cannot use schema [%s]", schema), ex);
         }
     }
 }

@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -189,7 +190,7 @@ public abstract class ParsingUtils {
                                     value = parser.text();
                                     break;
                                 default:
-                                    throw new IllegalArgumentException(String.format(
+                                    throw new EsHadoopIllegalArgumentException(String.format(
                                             "Incorrect parsing; expected value but found [%s]", parser.currentToken()));
                                 }
                             }

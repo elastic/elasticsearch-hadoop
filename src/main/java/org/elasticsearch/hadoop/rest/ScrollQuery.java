@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
@@ -74,7 +75,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             try {
                 batch = client.scroll(scrollId, reader);
             } catch (IOException ex) {
-                throw new IllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
+                throw new EsHadoopIllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
             read += batch.size();
             stats.docsRead += batch.size();

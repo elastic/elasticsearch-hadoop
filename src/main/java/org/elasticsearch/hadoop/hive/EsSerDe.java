@@ -91,14 +91,6 @@ public class EsSerDe implements SerDe {
         if (!readInitialized) {
             readInitialized = true;
             IS_ES_10 = SettingsUtils.isEs10(settings);
-
-            // discover ES version since EsSerDe is initialized before the InputFormat (which does discovery)
-            //            try {
-            //                InitializationUtils.discoverEsVersion(settings, log);
-            //                IS_ES_10 = SettingsUtils.isEs10(settings);
-            //            } catch (IOException ex) {
-            //                throw new SerDeException("Cannot detect Elasticsearch version", ex);
-            //            }
         }
 
         if (blob == null || blob instanceof NullWritable) {

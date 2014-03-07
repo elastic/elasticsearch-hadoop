@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -101,11 +103,11 @@ public abstract class InitializationUtils {
             try {
             if (!client.indexExists()) {
                 client.close();
-                throw new IllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
+                throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
                         settings.getResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
             }
             } catch (IOException ex) {
-                throw new IllegalStateException("Cannot check index existance", ex);
+                throw new EsHadoopIllegalStateException("Cannot check index existance", ex);
             }
         }
     }

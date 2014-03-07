@@ -28,7 +28,9 @@ import java.net.URL;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.elasticsearch.hadoop.serialization.SerializationException;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 
 /**
  * Utility class used internally for the Pig support.
@@ -55,9 +57,9 @@ public abstract class IOUtils {
             Object o = ois.readObject();
             return (T) o;
         } catch (ClassNotFoundException ex) {
-            throw new IllegalStateException("cannot deserialize object", ex);
+            throw new EsHadoopIllegalStateException("cannot deserialize object", ex);
         } catch (IOException ex) {
-            throw new SerializationException("cannot deserialize object", ex);
+            throw new EsHadoopSerializationException("cannot deserialize object", ex);
         } finally {
             close(ois);
         }
@@ -106,7 +108,7 @@ public abstract class IOUtils {
             }
             return new URL(resource).openStream();
         } catch (IOException ex) {
-            throw new IllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot open stream for resource %s", resource));
         }
     }
 

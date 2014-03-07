@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 
@@ -31,12 +32,12 @@ public abstract class ObjectUtils {
         try {
             clz = cl.loadClass(className);
         } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(String.format("Cannot load class [%s]", className), e);
+            throw new EsHadoopIllegalStateException(String.format("Cannot load class [%s]", className), e);
         }
         try {
             return (T) clz.newInstance();
         } catch (Exception e) {
-            throw new IllegalStateException(String.format("Cannot instantiate class [%s]", className), e);
+            throw new EsHadoopIllegalStateException(String.format("Cannot instantiate class [%s]", className), e);
         }
     }
 

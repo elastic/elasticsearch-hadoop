@@ -54,6 +54,7 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -110,7 +111,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                     properties.load(new StringReader(string));
                 }
             } catch (IOException ex) {
-                throw new IllegalArgumentException("Cannot parse options " + Arrays.toString(configuration), ex);
+                throw new EsHadoopIllegalArgumentException("Cannot parse options " + Arrays.toString(configuration), ex);
             }
         }
     }
@@ -186,7 +187,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         try {
             writer.write(null, pigTuple);
         } catch (InterruptedException ex) {
-            throw new IOException("interrupted", ex);
+            throw new EsHadoopIllegalArgumentException("interrupted", ex);
         }
     }
 

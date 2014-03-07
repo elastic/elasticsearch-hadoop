@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
@@ -151,7 +152,7 @@ public class CommandTest {
         assertEquals(result, ba.toString());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testIdMandatory() throws Exception {
         assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
         Settings set = settings();

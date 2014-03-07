@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.command;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 
@@ -41,7 +42,7 @@ public abstract class BulkCommands {
             factory = new UpdateCommandFactory(settings);
         }
         else {
-            throw new IllegalArgumentException("Unknown operation " + operation);
+            throw new EsHadoopIllegalArgumentException("Unknown operation " + operation);
         }
 
         return factory.createCommand();

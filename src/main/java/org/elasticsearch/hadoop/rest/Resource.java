@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
@@ -43,7 +44,7 @@ public class Resource {
         // add compatibility for now
         if (resource.contains("?") || resource.contains("&")) {
             if (StringUtils.hasText(settings.getQuery())) {
-                throw new IllegalArgumentException(String.format(
+                throw new EsHadoopIllegalArgumentException(String.format(
                         "Cannot specify a query in the target index and through %s", ConfigurationOptions.ES_QUERY));
             }
 

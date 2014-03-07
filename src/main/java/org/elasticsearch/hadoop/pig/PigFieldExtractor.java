@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.pig;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
@@ -42,7 +43,7 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
                     try {
                         return pt.getTuple().get(i).toString();
                     } catch (ExecException ex) {
-                        throw new IllegalStateException(String.format("Cannot retrieve field [%s]", getFieldName()), ex);
+                        throw new EsHadoopIllegalStateException(String.format("Cannot retrieve field [%s]", getFieldName()), ex);
                     }
                 }
             }

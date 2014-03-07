@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.cfg;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Enumeration;
@@ -28,6 +27,7 @@ import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
@@ -36,7 +36,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
-public abstract class Settings implements Serializable, InternalConfigurationOptions {
+public abstract class Settings implements InternalConfigurationOptions {
 
     private static boolean ES_HOST_WARNING = true;
 
@@ -217,13 +217,6 @@ public abstract class Settings implements Serializable, InternalConfigurationOpt
         setProperty(ES_QUERY, StringUtils.hasText(query) ? query : "");
         return this;
     }
-
-    // aggregate the resource - computed / set / properties
-    //    public String getTargetResource() {
-    //        String resource = getProperty(INTERNAL_ES_TARGET_RESOURCE);
-    //        return (StringUtils.hasText(targetResource) ? targetResource : StringUtils.hasText(resource) ? resource : getProperty(ES_RESOURCE));
-    //    }
-
     public String getResource() {
         return getProperty(ES_RESOURCE);
     }
@@ -237,22 +230,6 @@ public abstract class Settings implements Serializable, InternalConfigurationOpt
     public String getQuery() {
         return getProperty(ES_QUERY);
     }
-
-    //    public Settings cleanHosts() {
-    //        setProperty(INTERNAL_ES_HOSTS, "");
-    //        return this;
-    //    }
-    //
-    //    public Settings cleanResource() {
-    //        setProperty(INTERNAL_ES_TARGET_RESOURCE, "");
-    //        return this;
-    //    }
-    //
-    //    public Settings clean() {
-    //        cleanResource();
-    //        cleanHosts();
-    //        return this;
-    //    }
 
     public abstract InputStream loadResource(String location);
 
@@ -306,7 +283,7 @@ public abstract class Settings implements Serializable, InternalConfigurationOpt
         try {
             copy.load(new StringReader(source));
         } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            throw new EsHadoopIllegalArgumentException(ex);
         }
         merge(copy);
         return this;
@@ -318,7 +295,7 @@ public abstract class Settings implements Serializable, InternalConfigurationOpt
         try {
             copy.store(sw, "");
         } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            throw new EsHadoopIllegalArgumentException(ex);
         }
         return sw.toString();
     }

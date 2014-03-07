@@ -23,6 +23,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+
 public abstract class ReflectionUtils {
 
     public static Field findField(Class<?> clazz, String name) {
@@ -45,11 +48,12 @@ public abstract class ReflectionUtils {
         return null;
     }
 
-    public static Object getField(Field field, Object target) {
+    @SuppressWarnings("unchecked")
+    public static <T> T getField(Field field, Object target) {
         try {
-            return field.get(target);
+            return (T) field.get(target);
         } catch (IllegalAccessException ex) {
-            throw new IllegalStateException("Unexpected reflection exception - " + ex.getClass().getName() + ": "+ ex.getMessage());
+            throw new EsHadoopIllegalStateException("Unexpected reflection exception - " + ex.getClass().getName() + ": "+ ex.getMessage());
         }
     }
 
@@ -78,7 +82,7 @@ public abstract class ReflectionUtils {
         try {
             return (T) method.invoke(target, args);
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Cannot invoke method " + method, ex);
+            throw new EsHadoopIllegalArgumentException("Cannot invoke method " + method, ex);
         }
     }
 }

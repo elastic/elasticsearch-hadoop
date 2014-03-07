@@ -84,7 +84,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public List<String> discoverNodes() throws IOException {
+    public List<String> discoverNodes() {
         String endpoint = "_nodes/transport";
         Map<String, Map> nodes = (Map<String, Map>) get(endpoint, "nodes");
 
@@ -103,25 +103,30 @@ public class RestClient implements Closeable, StatsAware {
         return hosts;
     }
 
-    private <T> T get(String q, String string) throws IOException {
+    private <T> T get(String q, String string) {
         return parseContent(execute(GET, q), string);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T parseContent(InputStream content, String string) throws IOException {
-        // create parser manually to lower Jackson requirements
-        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
-        Map<String, Object> map = null;
+    private <T> T parseContent(InputStream content, String string) {
+        Map<String, Object> map = Collections.emptyMap();
+
         try {
-            map = mapper.readValue(jsonParser, Map.class);
-        } finally {
-            countStreamStats(content);
+            // create parser manually to lower Jackson requirements
+            JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(content);
+            try {
+                map = mapper.readValue(jsonParser, Map.class);
+            } finally {
+                countStreamStats(content);
+            }
+        } catch (IOException ex) {
+            throw new EsHadoopParsingException(ex);
         }
 
         return (T) (string != null ? map.get(string) : map);
     }
 
-    public void bulk(Resource resource, TrackingBytesArray data) throws IOException {
+    public void bulk(Resource resource, TrackingBytesArray data) {
         Retry retry = retryPolicy.init();
         int httpStatus = 0;
 
@@ -147,50 +152,55 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) throws IOException {
-        ObjectReader r = mapper.reader(Map.class);
-        JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+    private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) {
         try {
-            if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
-                return false;
+            ObjectReader r = mapper.reader(Map.class);
+            JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+            try {
+                if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
+                    return false;
+                }
+            } finally {
+                countStreamStats(content);
             }
-        } finally {
-            countStreamStats(content);
-        }
 
-        int entryToDeletePosition = 0; // head of the list
-        for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
-            Map map = iterator.next();
-            Map values = (Map) map.values().iterator().next();
-            String error = (String) values.get("error");
-            if (error != null) {
-                // status - introduced in 1.0.RC1
-                Integer status = (Integer) values.get("status");
-                if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
-                    entryToDeletePosition++;
+            int entryToDeletePosition = 0; // head of the list
+            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
+                Map map = iterator.next();
+                Map values = (Map) map.values().iterator().next();
+                String error = (String) values.get("error");
+                if (error != null) {
+                    // status - introduced in 1.0.RC1
+                    Integer status = (Integer) values.get("status");
+                    if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
+                        entryToDeletePosition++;
+                    }
+                    else {
+                        String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status), status, error) : error);
+                        throw new EsHadoopProtocolException(String.format("Found unrecoverable error [%s]; Bailing out..",
+                                message));
+                    }
                 }
                 else {
-                    String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status), status, error) : error);
-                    throw new IllegalStateException(String.format("Found unrecoverable error [%s]; Bailing out..", message));
+                    data.remove(entryToDeletePosition);
                 }
             }
-            else {
-                data.remove(entryToDeletePosition);
-            }
-        }
 
-        return entryToDeletePosition > 0;
+            return entryToDeletePosition > 0;
+        } catch (IOException ex) {
+            throw new EsHadoopParsingException(ex);
+        }
     }
 
-    public void refresh(Resource resource) throws IOException {
+    public void refresh(Resource resource) {
         execute(POST, resource.refresh());
     }
 
-    public void deleteIndex(String index) throws IOException {
+    public void deleteIndex(String index) {
         execute(DELETE, index);
     }
 
-    public List<List<Map<String, Object>>> targetShards(Resource resource) throws IOException {
+    public List<List<Map<String, Object>>> targetShards(Resource resource) {
         List<List<Map<String, Object>>> shardsJson = null;
 
         if (indexReadMissingAsEmpty) {
@@ -209,7 +219,7 @@ public class RestClient implements Closeable, StatsAware {
         return shardsJson;
     }
 
-    public Map<String, Node> getNodes() throws IOException {
+    public Map<String, Node> getNodes() {
         Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
         Map<String, Node> nodes = new LinkedHashMap<String, Node>();
 
@@ -221,7 +231,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getMapping(String query) throws IOException {
+    public Map<String, Object> getMapping(String query) {
         return (Map<String, Object>) get(query, null);
     }
 
@@ -230,23 +240,23 @@ public class RestClient implements Closeable, StatsAware {
         network.close();
     }
 
-    protected InputStream execute(Request request) throws IOException {
+    protected InputStream execute(Request request) {
         return execute(request, true).body();
     }
 
-    protected InputStream execute(Method method, String path) throws IOException {
+    protected InputStream execute(Method method, String path) {
         return execute(new SimpleRequest(method, null, path));
     }
 
-    protected Response execute(Method method, String path, boolean checkStatus) throws IOException {
+    protected Response execute(Method method, String path, boolean checkStatus) {
         return execute(new SimpleRequest(method, null, path), checkStatus);
     }
 
-    protected Response execute(Method method, String path, ByteSequence buffer) throws IOException {
+    protected Response execute(Method method, String path, ByteSequence buffer) {
         return execute(new SimpleRequest(method, null, path, null, buffer), true);
     }
 
-    protected Response execute(Request request, boolean checkStatus) throws IOException {
+    protected Response execute(Request request, boolean checkStatus) {
         Response response = network.execute(request);
 
         if (checkStatus && response.hasFailed()) {
@@ -264,13 +274,13 @@ public class RestClient implements Closeable, StatsAware {
                         request.path(), response.uri(), response.status(), response.statusDescription());
             }
 
-            throw new IllegalStateException(msg);
+            throw new EsHadoopProtocolException(msg);
         }
 
         return response;
     }
 
-    public String[] scan(String query, BytesArray body) throws IOException {
+    public String[] scan(String query, BytesArray body) {
         Map<String, Object> scan = parseContent(execute(POST, query, body).body(), null);
 
         String[] data = new String[2];
@@ -279,33 +289,33 @@ public class RestClient implements Closeable, StatsAware {
         return data;
     }
 
-    public InputStream scroll(String scrollId) throws IOException {
+    public InputStream scroll(String scrollId) {
         // use post instead of get to avoid some weird encoding issues (caused by the long URL)
         return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
                 new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
     }
 
-    public boolean exists(String indexOrType) throws IOException {
+    public boolean exists(String indexOrType) {
         return (execute(HEAD, indexOrType, false).hasSucceeded());
     }
 
-    public boolean touch(String indexOrType) throws IOException {
+    public boolean touch(String indexOrType) {
         return (execute(PUT, indexOrType, false).hasSucceeded());
     }
 
-    public void putMapping(String index, String mapping, byte[] bytes) throws IOException {
+    public void putMapping(String index, String mapping, byte[] bytes) {
         // create index first (if needed) - it might return 403
         touch(index);
 
         execute(PUT, mapping, new BytesArray(bytes));
     }
 
-    public String esVersion() throws IOException {
+    public String esVersion() {
         Map<String, String> version = get("", "version");
         return version.get("number");
     }
 
-    public boolean health(String index, HEALTH health, TimeValue timeout) throws IOException {
+    public boolean health(String index, HEALTH health, TimeValue timeout) {
         StringBuilder sb = new StringBuilder("/_cluster/health/");
         sb.append(index);
         sb.append("?wait_for_status=");

@@ -20,8 +20,8 @@ package org.elasticsearch.hadoop.serialization.builder;
 
 import java.io.OutputStream;
 
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.SerializationException;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -256,7 +256,7 @@ public class ContentBuilder {
     @SuppressWarnings("unchecked")
     public ContentBuilder value(Object value) {
         if (!writer.write(value, generator)) {
-            throw new SerializationException(String.format("Cannot handle type [%s], instance [%s] using writer [%s]", value.getClass(), value, writer));
+            throw new EsHadoopSerializationException(String.format("Cannot handle type [%s], instance [%s] using writer [%s]", value.getClass(), value, writer));
         }
         return this;
     }

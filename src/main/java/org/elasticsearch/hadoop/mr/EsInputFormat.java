@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -422,7 +423,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             }
             else {
                 client.close();
-                throw new IllegalArgumentException(
+                throw new EsHadoopIllegalArgumentException(
                         String.format("Index [%s] missing and settings [%s] is set to false", settings.getResource(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
             }
         }

@@ -18,10 +18,12 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+
 public class NoOpFieldExtractor implements FieldExtractor {
 
     @Override
     public String field(Object target) {
-        throw new IllegalStateException("Should not be called - indicates a configuration issue or a bug");
+        throw new EsHadoopIllegalStateException("Should not be called - indicates a configuration issue or a bug");
     }
 }

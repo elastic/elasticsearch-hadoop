@@ -30,6 +30,7 @@ import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
@@ -98,7 +99,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
         try {
             InitializationUtils.discoverEsVersion(settings, log);
         } catch (IOException ex) {
-            throw new IllegalStateException("Cannot discover Elasticsearch version", ex);
+            throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch version", ex);
         }
 
 

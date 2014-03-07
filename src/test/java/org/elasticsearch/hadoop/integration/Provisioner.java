@@ -30,6 +30,8 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.util.Assert;
 
 /**
@@ -121,7 +123,7 @@ public abstract class Provisioner {
 
             new GenericOptionsParser(cfg, list.toArray(new String[list.size()]));
         } catch (Exception ex) {
-            throw new IllegalStateException(ex);
+            throw new EsHadoopIllegalStateException(ex);
         }
     }
 
@@ -137,8 +139,8 @@ public abstract class Provisioner {
                 }
             }
         } catch (IOException ex) {
-            throw new IllegalArgumentException("Cannot find jar for class " + binaryName, ex);
+            throw new EsHadoopIllegalArgumentException("Cannot find jar for class " + binaryName, ex);
         }
-        throw new IllegalArgumentException("Cannot find class " + binaryName);
+        throw new EsHadoopIllegalArgumentException("Cannot find class " + binaryName);
     }
 }

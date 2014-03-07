@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -70,7 +69,7 @@ public class NetworkClient implements StatsAware {
         return true;
     }
 
-    public Response execute(Request request) throws IOException {
+    public Response execute(Request request) throws EsHadoopProtocolException {
         Response response = null;
 
         SimpleRequest routedRequest = new SimpleRequest(request.method(), currentUri, request.path(), request.params(), request.body());
@@ -95,7 +94,7 @@ public class NetworkClient implements StatsAware {
                 log.error(String.format("Node [%s] failed; " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), failed));
 
                 if (!newNode) {
-                    throw new IOException("Out of nodes and retries; caught exception", ex);
+                    throw new EsHadoopProtocolException("Out of nodes and retries; caught exception", ex);
                 }
             }
         } while (newNode);

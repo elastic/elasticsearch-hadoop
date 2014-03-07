@@ -16,19 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.builder;
-
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.serialization.Generator;
+package org.elasticsearch.hadoop;
 
 /**
- * A no-op value writer throwing exceptions if called.
- * Used when the JSON is not generated (because it already exists).
+ * Base class for Elasticsearch Hadoop exceptions.
  */
-public class NoOpValueWriter implements ValueWriter<Object> {
+public class EsHadoopException extends RuntimeException {
 
-    @Override
-    public boolean write(Object object, Generator generator) {
-        throw new EsHadoopIllegalStateException("Incorrect configuration - NoOpValueWriter should not have been called");
+    public EsHadoopException() {
+        super();
+    }
+
+    public EsHadoopException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public EsHadoopException(String message) {
+        super(message);
+    }
+
+    public EsHadoopException(Throwable cause) {
+        super(cause);
     }
 }

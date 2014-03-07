@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.cfg;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 
 /**
  * Factory for loading settings based on various configuration objects, such as Properties or Hadoop configuration.
@@ -53,6 +54,6 @@ public abstract class SettingsManager {
         if (HADOOP_CONFIGURATION != null && HADOOP_CONFIGURATION.isInstance(configuration)) {
             return FromHadoopConfiguration.create(configuration);
         }
-        throw new IllegalArgumentException("Don't know how to create Settings from configuration " + configuration);
+        throw new EsHadoopIllegalArgumentException("Don't know how to create Settings from configuration " + configuration);
     }
 }

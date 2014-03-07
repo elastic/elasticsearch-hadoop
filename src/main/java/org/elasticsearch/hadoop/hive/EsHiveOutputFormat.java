@@ -29,6 +29,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 
 /**
@@ -56,7 +57,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
             }
             else {
                 // we could allow custom BAs
-                throw new IllegalArgumentException(String.format("Unexpected type; expected [%s], received [%s]", HiveBytesArrayWritable.class, w));
+                throw new EsHadoopIllegalArgumentException(String.format("Unexpected type; expected [%s], received [%s]", HiveBytesArrayWritable.class, w));
             }
         }
 

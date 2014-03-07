@@ -30,6 +30,7 @@ import org.apache.pig.LoadPushDown.RequiredFieldList;
 import org.apache.pig.data.DataType;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.FieldAlias;
@@ -68,7 +69,7 @@ class PigUtils {
             if (pigDate instanceof String) {
                 return ((String) pigDate);
             }
-            throw new IllegalArgumentException(String.format("Cannot convert [%s] to date", pigDate));
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot convert [%s] to date", pigDate));
         }
 
         static Object convertFromES(String esDate) {

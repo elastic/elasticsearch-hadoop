@@ -34,6 +34,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -121,14 +122,9 @@ public abstract class CascadingUtils {
     }
 
     static Properties extractOriginalProperties(Properties copy) {
-        Field field;
-        try {
-            field = Properties.class.getDeclaredField("defaults");
-            field.setAccessible(true);
-            return (Properties) field.get(copy);
-        } catch (Exception ex) {
-            throw new IllegalArgumentException("Cannot retrieve actual configuration", ex);
-        }
+        Field field = ReflectionUtils.findField(Properties.class, "defaults", Properties.class);
+        ReflectionUtils.makeAccessible(field);
+        return ReflectionUtils.getField(field, copy);
     }
 
     static Settings init(Settings settings, String nodes, int port, String resource, String query) {
@@ -207,6 +203,7 @@ public abstract class CascadingUtils {
         return (CASCADING_22_AVAILABLE ? CoercibleOps.coerceToString(sinkCall) : LegacyOps.coerceToString(sinkCall));
     }
 
+    @SuppressWarnings("rawtypes")
     public static Tap hadoopTap(String host, int port, String path, String query, Fields fields, Properties props) {
         return new EsHadoopTap(host, port, path, query, fields, props);
     }

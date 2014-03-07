@@ -21,13 +21,15 @@ package org.elasticsearch.hadoop.rest;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 public abstract class HttpStatus {
 
     private static final Map<Integer, String> CODE_TO_TEXT = new HashMap<Integer, String>();
 
     public static String getText(int code) {
         if (code < 100 || code / 100 > 5) {
-            throw new IllegalArgumentException("Invalid http code");
+            throw new EsHadoopIllegalArgumentException("Invalid http code");
         }
 
         return CODE_TO_TEXT.get(Integer.valueOf(code));

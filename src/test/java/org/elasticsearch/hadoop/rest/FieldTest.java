@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.rest;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class FieldTest {
         assertEquals(FieldType.STRING, nested.type());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testMultiFieldWithoutDefaultFieldAndMultiTypesParsing() throws Exception {
         Map value = new ObjectMapper().readValue(
                 getClass().getResourceAsStream("multi_field_no_default_multi_types.json"), Map.class);

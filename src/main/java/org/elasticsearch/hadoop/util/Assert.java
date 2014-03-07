@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 /**
  * Assertion utility used for validating arguments.
  */
@@ -25,7 +27,7 @@ public abstract class Assert {
 
     public static void hasText(CharSequence sequence, String message) {
         if (!StringUtils.hasText(sequence)) {
-            throw new IllegalArgumentException(message);
+            throw new EsHadoopIllegalArgumentException(message);
         }
     }
 
@@ -35,7 +37,7 @@ public abstract class Assert {
 
     public static void notNull(Object object, String message) {
         if (object == null) {
-            throw new IllegalArgumentException(message);
+            throw new EsHadoopIllegalArgumentException(message);
         }
     }
 
@@ -45,7 +47,7 @@ public abstract class Assert {
 
     public static void isTrue(Boolean object, String message) {
         if (!Boolean.TRUE.equals(object)) {
-            throw new IllegalArgumentException(message);
+            throw new EsHadoopIllegalArgumentException(message);
         }
     }
 
