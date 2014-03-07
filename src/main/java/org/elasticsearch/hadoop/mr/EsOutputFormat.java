@@ -241,7 +241,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             doClose(reporter);
         }
 
-        private void doClose(Progressable progressable) throws IOException {
+        protected void doClose(Progressable progressable) {
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Closing RecordWriter [%s][%s]", uri, resource));
             }

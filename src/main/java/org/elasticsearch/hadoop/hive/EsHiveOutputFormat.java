@@ -27,7 +27,6 @@ import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
@@ -40,8 +39,11 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
     static class ESHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
 
+        private final Progressable progress;
+
         public ESHiveRecordWriter(Configuration cfg, Progressable progress) {
             super(cfg, progress);
+            this.progress = progress;
         }
 
         @Override
@@ -64,7 +66,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
         @Override
         public void close(boolean abort) throws IOException {
             // TODO: check whether a proper Reporter can be passed in
-            super.close((Reporter) null);
+            super.doClose(progress);
         }
     }
 
