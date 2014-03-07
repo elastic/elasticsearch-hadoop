@@ -34,7 +34,7 @@ public class ReflectiveInvoker implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Method m = ReflectionUtils.findMethod(target, method.getName(), method.getParameterTypes());
+        Method m = ReflectionUtils.findMethod(target.getClass(), method.getName(), method.getParameterTypes());
         Assert.notNull(m, String.format("Cannot find method %s on target %s", method, target));
         return m.invoke(target, args);
     }

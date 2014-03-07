@@ -18,9 +18,9 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 public abstract class ReflectionUtils {
@@ -53,15 +53,13 @@ public abstract class ReflectionUtils {
         }
     }
 
-    public static void makeAccessible(Field field) {
-        if ((!Modifier.isPublic(field.getModifiers()) || !Modifier.isPublic(field.getDeclaringClass().getModifiers()))
-                && !field.isAccessible()) {
-            field.setAccessible(true);
+    public static void makeAccessible(AccessibleObject accessible) {
+        if (!accessible.isAccessible()) {
+            accessible.setAccessible(true);
         }
     }
 
-    public static Method findMethod(Object target, String name, Class<?>... paramTypes) {
-        Class<?> targetClass = target.getClass();
+    public static Method findMethod(Class<?> targetClass, String name, Class<?>... paramTypes) {
         while (targetClass != null) {
             Method[] methods = (targetClass.isInterface() ? targetClass.getMethods() : targetClass.getDeclaredMethods());
             for (Method method : methods) {
@@ -73,5 +71,14 @@ public abstract class ReflectionUtils {
             targetClass = targetClass.getSuperclass();
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T invoke(Method method, Object target, Object...args) {
+        try {
+            return (T) method.invoke(target, args);
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Cannot invoke method " + method, ex);
+        }
     }
 }

@@ -131,7 +131,7 @@ public abstract class CascadingUtils {
         }
     }
 
-    static void init(Settings settings, String nodes, int port, String resource, String query) {
+    static Settings init(Settings settings, String nodes, int port, String resource, String query) {
         if (StringUtils.hasText(nodes)) {
             settings.setHosts(nodes);
         }
@@ -147,6 +147,8 @@ public abstract class CascadingUtils {
         if (StringUtils.hasText(resource)) {
             settings.setResource(resource);
         }
+
+        return settings;
     }
 
     private static abstract class CoercibleOps {

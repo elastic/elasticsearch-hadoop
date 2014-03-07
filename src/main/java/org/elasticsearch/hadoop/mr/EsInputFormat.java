@@ -186,7 +186,6 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             org.elasticsearch.hadoop.mr.compat.TaskAttemptContext compatContext = CompatHandler.taskAttemptContext(context);
             compatContext.setStatus(split.toString());
             init((ShardInputSplit) split, compatContext.getConfiguration(), compatContext);
-
         }
 
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
