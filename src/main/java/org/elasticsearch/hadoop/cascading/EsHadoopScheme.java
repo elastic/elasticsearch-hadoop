@@ -97,6 +97,8 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public void sourceCleanup(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
+        super.sourceCleanup(flowProcess, sourceCall);
+
         sourceCall.setContext(null);
     }
 
@@ -113,11 +115,14 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     }
 
     public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
+        super.sinkCleanup(flowProcess, sinkCall);
+
         sinkCall.setContext(null);
     }
 
     @Override
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
+
         initTargetUri(conf);
         conf.setInputFormat(EsInputFormat.class);
         Settings set = loadSettings(conf);
