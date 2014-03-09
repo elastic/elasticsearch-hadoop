@@ -141,7 +141,7 @@ public abstract class InitializationUtils {
             RestRepository client = new RestRepository(settings);
             if (!client.indexExists()) {
                 if (schemaWriter == null) {
-                    log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getResource()));
+                    log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getResourceWrite()));
                 }
                 else {
                     log.info(String.format("No mapping found [%s], creating one based on given schema",

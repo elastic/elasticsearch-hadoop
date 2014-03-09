@@ -213,14 +213,32 @@ public abstract class Settings implements InternalConfigurationOptions {
         return this;
     }
 
+    public Settings setResourceRead(String index) {
+        setProperty(ES_RESOURCE_READ, index);
+        return this;
+    }
+
+    public Settings setResourceWrite(String index) {
+        setProperty(ES_RESOURCE_WRITE, index);
+        return this;
+    }
+
     public Settings setQuery(String query) {
         setProperty(ES_QUERY, StringUtils.hasText(query) ? query : "");
         return this;
     }
-    public String getResource() {
+
+    protected String getResource() {
         return getProperty(ES_RESOURCE);
     }
 
+    public String getResourceRead() {
+        return getProperty(ES_RESOURCE_READ, getResource());
+    }
+
+    public String getResourceWrite() {
+        return getProperty(ES_RESOURCE_WRITE, getResource());
+    }
 
     String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
@@ -234,18 +252,6 @@ public abstract class Settings implements InternalConfigurationOptions {
     public abstract InputStream loadResource(String location);
 
     public abstract Settings copy();
-
-    /**
-     * Saves the settings state after validating them.
-     */
-    //    public void save() {
-    //        String resource = getTargetResource();
-    //        //String hosts = getTargetHosts();
-    //
-    //        Assert.hasText(resource, String.format("No resource (index/query/location) ['%s'] specified", ES_RESOURCE));
-    //        setProperty(INTERNAL_ES_TARGET_RESOURCE, resource);
-    //        //setProperty(INTERNAL_ES_HOSTS, hosts);
-    //    }
 
     protected String getProperty(String name, String defaultValue) {
         String value = getProperty(name);

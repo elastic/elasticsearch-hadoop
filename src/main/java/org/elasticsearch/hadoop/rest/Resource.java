@@ -35,8 +35,8 @@ public class Resource {
     private final String type;
     private final String index;
 
-    public Resource(Settings settings) {
-        String resource = settings.getResource();
+    public Resource(Settings settings, boolean read) {
+        String resource = (read ? settings.getResourceRead() : settings.getResourceWrite());
 
         String errorMessage = "invalid resource given; expecting [index]/[type]";
         Assert.hasText(resource, errorMessage);

@@ -39,6 +39,9 @@ public interface ConfigurationOptions {
 
     /** Elasticsearch index */
     String ES_RESOURCE = "es.resource";
+    String ES_RESOURCE_READ = "es.resource.read";
+    String ES_RESOURCE_WRITE = "es.resource.write";
+
     String ES_QUERY = "es.query";
 
     /** Elasticsearch batch size given in bytes */

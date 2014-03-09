@@ -183,7 +183,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             beat.start();
 
             client = new RestRepository(settings);
-            resource = settings.getResource();
+            resource = settings.getResourceWrite();
 
             // create the index if needed
             if (client.touch()) {
@@ -294,7 +294,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        Assert.hasText(settings.getResource(),
+        Assert.hasText(settings.getResourceWrite(),
                 String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init
