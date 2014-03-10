@@ -64,7 +64,7 @@ public class Resource {
                 Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage);
                 resource = resource.substring(0, index);
 
-                settings.setResource(resource);
+                settings.setProperty(ConfigurationOptions.ES_RESOURCE, resource);
                 settings.setQuery(query);
             }
         }

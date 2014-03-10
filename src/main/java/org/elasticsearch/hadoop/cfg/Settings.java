@@ -208,11 +208,6 @@ public abstract class Settings implements InternalConfigurationOptions {
         return this;
     }
 
-    public Settings setResource(String index) {
-        setProperty(ES_RESOURCE, index);
-        return this;
-    }
-
     public Settings setResourceRead(String index) {
         setProperty(ES_RESOURCE_READ, index);
         return this;

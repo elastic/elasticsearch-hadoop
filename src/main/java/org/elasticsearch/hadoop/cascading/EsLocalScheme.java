@@ -115,19 +115,19 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     @Override
     public void sourceConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
-        initClient(conf);
+        initClient(conf, true);
     }
 
     @Override
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
-        initClient(conf);
+        initClient(conf, false);
         InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf).merge(props), client);
     }
 
-    private void initClient(Properties props) {
+    private void initClient(Properties props, boolean read) {
         if (client == null) {
             Settings settings = SettingsManager.loadFrom(props).merge(this.props);
-            CascadingUtils.init(settings, host, port, resource, query);
+            CascadingUtils.init(settings, host, port, resource, query, read);
 
             Log log = LogFactory.getLog(EsTap.class);
             InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);

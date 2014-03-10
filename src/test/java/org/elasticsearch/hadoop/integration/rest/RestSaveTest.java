@@ -64,7 +64,7 @@ public class RestSaveTest {
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         RestRepository restRepo = new RestRepository(testSettings);
         RestClient client = restRepo.getRestClient();
-        client.bulk(new Resource(testSettings), new TrackingBytesArray(new BytesArray("{}")));
+        client.bulk(new Resource(testSettings, false), new TrackingBytesArray(new BytesArray("{}")));
         restRepo.waitForYellow();
         restRepo.close();
         client.close();

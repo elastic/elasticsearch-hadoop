@@ -54,7 +54,7 @@ public class QueryBuilder {
     private String fields;
 
     QueryBuilder(Settings settings) {
-        this.resource = new Resource(settings);
+        this.resource = new Resource(settings, true);
         IS_ES_10 = SettingsUtils.isEs10(settings);
         String query = settings.getQuery();
         if (!StringUtils.hasText(query)) {

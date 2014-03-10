@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
@@ -52,8 +53,8 @@ public class ResourceTest {
 
     private Resource createResource(String target) {
         Settings s = new TestSettings();
-        s.setResource(target);
-        return new Resource(s);
+        s.setProperty(ConfigurationOptions.ES_RESOURCE, target);
+        return new Resource(s, true);
     }
 
 }

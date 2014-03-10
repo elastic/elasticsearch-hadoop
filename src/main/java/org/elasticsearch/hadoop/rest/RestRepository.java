@@ -39,6 +39,7 @@ import org.elasticsearch.hadoop.serialization.command.Command;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
@@ -61,15 +62,26 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean writeInitialized = false;
 
     private RestClient client;
-    private Resource resource;
+    private Resource resourceR;
+    private Resource resourceW;
     private Command command;
     private final Settings settings;
     private final Stats stats = new Stats();
 
     public RestRepository(Settings settings) {
         this.settings = settings;
+
+        if (StringUtils.hasText(settings.getResourceRead())) {
+            this.resourceR = new Resource(settings, true);
+        }
+
+        if (StringUtils.hasText(settings.getResourceWrite())) {
+            this.resourceW = new Resource(settings, false);
+        }
+
+        Assert.isTrue(resourceR != null || resourceW != null, "Invalid configuration - No read or write resource specified");
+
         this.client = new RestClient(settings);
-        this.resource = new Resource(settings);
     }
 
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
@@ -148,7 +160,7 @@ public class RestRepository implements Closeable, StatsAware {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
-        client.bulk(resource, data);
+        client.bulk(resourceW, data);
         data.reset();
         dataEntries = 0;
         executedBulkWrite = true;
@@ -165,10 +177,10 @@ public class RestRepository implements Closeable, StatsAware {
             }
             if (requiresRefreshAfterBulk && executedBulkWrite) {
                 // refresh batch
-                client.refresh(resource);
+                client.refresh(resourceW);
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resource));
+                    log.debug(String.format("Refreshing index [%s]", resourceW));
                 }
             }
         } catch (IOException ex) {
@@ -182,10 +194,10 @@ public class RestRepository implements Closeable, StatsAware {
         return client;
     }
 
-    public Map<Shard, Node> getTargetShards() throws IOException {
+    public Map<Shard, Node> getReadTargetShards() throws IOException {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resource);
+        List<List<Map<String, Object>>> info = client.targetShards(resourceR);
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
 
         for (List<Map<String, Object>> shardGroup : info) {
@@ -203,10 +215,10 @@ public class RestRepository implements Closeable, StatsAware {
         return shards;
     }
 
-    public Map<Shard, Node> getTargetPrimaryShards() throws IOException {
+    public Map<Shard, Node> getWriteTargetPrimaryShards() throws IOException {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resource);
+        List<List<Map<String, Object>>> info = client.targetShards(resourceW);
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
 
         for (List<Map<String, Object>> shardGroup : info) {
@@ -225,7 +237,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public Field getMapping() throws IOException {
-        return Field.parseField((Map<String, Object>) client.getMapping(resource.mapping()));
+        return Field.parseField((Map<String, Object>) client.getMapping(resourceR.mapping()));
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
@@ -239,20 +251,21 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    public boolean indexExists() throws IOException {
-        return client.exists(resource.indexAndType());
+    public boolean indexExists(boolean read) throws IOException {
+        Resource res = (read ? resourceR : resourceW);
+        return client.exists(res.indexAndType());
     }
 
     public void putMapping(BytesArray mapping) throws IOException {
-        client.putMapping(resource.index(), resource.mapping(), mapping.bytes());
+        client.putMapping(resourceW.index(), resourceW.mapping(), mapping.bytes());
     }
 
     public boolean touch() throws IOException {
-        return client.touch(resource.index());
+        return client.touch(resourceW.index());
     }
 
     public boolean waitForYellow() throws IOException {
-        return client.health(resource.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
+        return client.health(resourceW.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
     }
 
     @Override

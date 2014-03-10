@@ -76,15 +76,15 @@ public class EsStorageHandler extends DefaultStorageHandler {
 
     @Override
     public void configureInputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
-        init(tableDesc);
+        init(tableDesc, true);
     }
 
     @Override
     public void configureOutputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
-        init(tableDesc);
+        init(tableDesc, false);
     }
 
-    private void init(TableDesc tableDesc) {
+    private void init(TableDesc tableDesc, boolean read) {
         Configuration cfg = getConf();
         Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties());
 
@@ -92,9 +92,21 @@ public class EsStorageHandler extends DefaultStorageHandler {
         // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
 
         InitializationUtils.checkIdForOperation(settings);
-        InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
-        InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
-        InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
+        if (read) {
+            InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
+            // set read resource
+            settings.setResourceRead(settings.getResourceRead());
+        }
+        else {
+            InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
+            InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
+            // replace the default committer when using the old API
+            HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
+            // set write resource
+            settings.setResourceWrite(settings.getResourceWrite());
+        }
+
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         try {
             InitializationUtils.discoverEsVersion(settings, log);
@@ -102,12 +114,6 @@ public class EsStorageHandler extends DefaultStorageHandler {
             throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch version", ex);
         }
 
-
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS,
-                StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
-
-        // replace the default committer when using the old API
-        HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
 
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
                 "no table location [%s] declared by Hive resulting in abnormal execution;", TABLE_LOCATION));

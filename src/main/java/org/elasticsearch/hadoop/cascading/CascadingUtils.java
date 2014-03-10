@@ -127,7 +127,7 @@ public abstract class CascadingUtils {
         return ReflectionUtils.getField(field, copy);
     }
 
-    static Settings init(Settings settings, String nodes, int port, String resource, String query) {
+    static Settings init(Settings settings, String nodes, int port, String resource, String query, boolean read) {
         if (StringUtils.hasText(nodes)) {
             settings.setHosts(nodes);
         }
@@ -141,7 +141,12 @@ public abstract class CascadingUtils {
         }
 
         if (StringUtils.hasText(resource)) {
-            settings.setResource(resource);
+            if (read) {
+                settings.setResourceRead(resource);
+            }
+            else {
+                settings.setResourceWrite(resource);
+            }
         }
 
         return settings;

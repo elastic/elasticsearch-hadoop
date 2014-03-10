@@ -64,7 +64,7 @@ public class RestQueryTest {
 
     @Test
     public void testShardInfo() throws Exception {
-        Map<Shard, Node> shards = client.getTargetShards();
+        Map<Shard, Node> shards = client.getReadTargetShards();
         System.out.println(shards);
         assertNotNull(shards);
     }
@@ -89,7 +89,7 @@ public class RestQueryTest {
 
     @Test
     public void testQueryShards() throws Exception {
-        Map<Shard, Node> targetShards = client.getTargetShards();
+        Map<Shard, Node> targetShards = client.getReadTargetShards();
 
         Field mapping = client.getMapping();
         ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping);

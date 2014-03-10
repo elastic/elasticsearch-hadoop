@@ -89,7 +89,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
         // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
-        Settings settings = loadSettings(flowProcess.getConfigCopy());
+        Settings settings = loadSettings(flowProcess.getConfigCopy(), true);
         context[2] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -108,7 +108,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         Object[] context = new Object[1];
         // the tuple wil be fixed, so we can just use a collection/index
-        Settings settings = loadSettings(flowProcess.getConfigCopy());
+        Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -122,10 +122,9 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
-
-        initTargetUri(conf);
         conf.setInputFormat(EsInputFormat.class);
-        Settings set = loadSettings(conf);
+        Settings set = loadSettings(conf, true);
+
         Collection<String> fields = CascadingUtils.fieldToAlias(set, getSourceFields());
         // load only the necessary fields
         conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
@@ -137,10 +136,10 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public void sinkConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
-        initTargetUri(conf);
+
         conf.setOutputFormat(EsOutputFormat.class);
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
-        Settings set = loadSettings(conf);
+        Settings set = loadSettings(conf, false);
 
         InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
         InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
@@ -148,7 +147,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
-        HadoopCfgUtils.setFileOutputFormatDir(conf, set.getResource());
+        HadoopCfgUtils.setFileOutputFormatDir(conf, set.getResourceWrite());
         HadoopCfgUtils.setOutputCommitterClass(conf, EsOutputFormat.ESOldAPIOutputCommitter.class.getName());
 
         if (log.isTraceEnabled()) {
@@ -156,12 +155,8 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         }
     }
 
-    private void initTargetUri(JobConf conf) {
-        CascadingUtils.init(SettingsManager.loadFrom(conf).merge(props), nodes, port, index, query);
-    }
-
-    private Settings loadSettings(Object source) {
-        return CascadingUtils.init(SettingsManager.loadFrom(source).merge(props), nodes, port, index, query);
+    private Settings loadSettings(Object source, boolean read) {
+        return CascadingUtils.init(SettingsManager.loadFrom(source).merge(props), nodes, port, index, query, read);
     }
 
     @SuppressWarnings("unchecked")

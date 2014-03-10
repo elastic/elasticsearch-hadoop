@@ -143,11 +143,14 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
-        init(location, job);
+        init(location, job, false);
     }
 
-    private void init(String location, Job job) {
-        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).merge(properties).setResource(location);
+    private void init(String location, Job job, boolean read) {
+        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).merge(properties);
+
+        settings = (read ? settings.setResourceRead(location) : settings.setResourceWrite(location));
+
         boolean changed = false;
         InitializationUtils.checkIdForOperation(settings);
 
@@ -222,7 +225,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     //
     @SuppressWarnings("unchecked")
     public void setLocation(String location, Job job) throws IOException {
-        init(location, job);
+        init(location, job, true);
 
         Configuration cfg = job.getConfiguration();
 

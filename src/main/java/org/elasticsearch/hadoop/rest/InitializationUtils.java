@@ -80,6 +80,15 @@ public abstract class InitializationUtils {
     }
 
     public static String discoverEsVersion(Settings settings, Log log) throws IOException {
+        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
+        if (StringUtils.hasText(version)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Elasticsearch version [%s] already present in configuration; skipping discovery", version));
+            }
+
+            return version;
+        }
+
         RestClient bootstrap = new RestClient(settings);
         // first get ES version
         try {
@@ -101,10 +110,10 @@ public abstract class InitializationUtils {
                 client = new RestRepository(settings);
             }
             try {
-            if (!client.indexExists()) {
+            if (!client.indexExists(false)) {
                 client.close();
                 throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
-                        settings.getResource(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
+                        settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
             }
             } catch (IOException ex) {
                 throw new EsHadoopIllegalStateException("Cannot check index existance", ex);
@@ -139,13 +148,12 @@ public abstract class InitializationUtils {
 
         if (settings.getIndexAutoCreate()) {
             RestRepository client = new RestRepository(settings);
-            if (!client.indexExists()) {
+            if (!client.indexExists(false)) {
                 if (schemaWriter == null) {
                     log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getResourceWrite()));
                 }
                 else {
-                    log.info(String.format("No mapping found [%s], creating one based on given schema",
-                            settings.getResource()));
+                    log.info(String.format("No mapping found [%s], creating one based on given schema", settings.getResourceWrite()));
                     ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
                     BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
                     builder.close();

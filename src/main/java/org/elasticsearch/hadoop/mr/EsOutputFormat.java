@@ -192,7 +192,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 }
             }
 
-            Map<Shard, Node> targetShards = client.getTargetPrimaryShards();
+            Map<Shard, Node> targetShards = client.getWriteTargetPrimaryShards();
             client.close();
 
             List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());

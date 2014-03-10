@@ -417,22 +417,22 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         String savedSettings = settings.save();
 
         RestRepository client = new RestRepository(settings);
-        boolean indexExists = client.indexExists();
+        boolean indexExists = client.indexExists(true);
         Map<Shard, Node> targetShards = null;
 
         if (!indexExists) {
             if (settings.getIndexReadMissingAsEmpty()) {
-                log.info(String.format("Index [%s] missing - treating it as empty", settings.getResource()));
+                log.info(String.format("Index [%s] missing - treating it as empty", settings.getResourceRead()));
                 targetShards = Collections.emptyMap();
             }
             else {
                 client.close();
                 throw new EsHadoopIllegalArgumentException(
-                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResource(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
+                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
             }
         }
         else {
-            targetShards = client.getTargetShards();
+            targetShards = client.getReadTargetShards();
             if (log.isTraceEnabled()) {
                 log.trace("Creating splits for shards " + targetShards);
             }
@@ -443,7 +443,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             Field mapping = client.getMapping();
             //TODO: implement this more efficiently
             savedMapping = IOUtils.serializeToBase64(mapping);
-            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResource()));
+            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
         }
 
         client.close();
