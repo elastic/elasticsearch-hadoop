@@ -60,4 +60,12 @@ class WritableCompatUtil {
         }
         return new IntWritable(value);
     }
+
+    static short unwrap(Writable writable) {
+        return Short.parseShort(writable.toString());
+    }
+
+    static boolean isShortWritable(Writable writable) {
+        return (SHORT_WRITABLE != null && writable != null && SHORT_WRITABLE.isInstance(writable));
+    }
 }
