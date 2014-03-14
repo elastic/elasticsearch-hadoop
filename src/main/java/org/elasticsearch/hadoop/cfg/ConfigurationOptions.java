@@ -149,4 +149,11 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_HTTP_PASS = "es.net.proxy.http.pass";
     String ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS = "es.net.proxy.http.use.system.props";
     String ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT = "yes";
+
+    String ES_NET_PROXY_SOCKS_HOST = "es.net.proxy.socks.host";
+    String ES_NET_PROXY_SOCKS_PORT = "es.net.proxy.socks.port";
+    String ES_NET_PROXY_SOCKS_USER = "es.net.proxy.socks.user";
+    String ES_NET_PROXY_SOCKS_PASS = "es.net.proxy.socks.pass";
+    String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS = "es.net.proxy.socks.use.system.props";
+    String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 }

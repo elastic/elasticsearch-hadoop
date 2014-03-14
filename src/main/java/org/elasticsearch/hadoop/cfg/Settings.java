@@ -214,8 +214,28 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_NET_PROXY_HTTP_PASS);
     }
 
-    public boolean getNetworkUseSystemProperties() {
+    public boolean getNetworkHttpUseSystemProperties() {
         return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT));
+    }
+
+    public String getNetworkProxySocksHost() {
+        return getProperty(ES_NET_PROXY_SOCKS_HOST);
+    }
+
+    public int getNetworkProxySocksPort() {
+        return Integer.valueOf(getProperty(ES_NET_PROXY_SOCKS_PORT, "-1"));
+    }
+
+    public String getNetworkProxySocksUser() {
+        return getProperty(ES_NET_PROXY_SOCKS_USER);
+    }
+
+    public String getNetworkProxySocksPass() {
+        return getProperty(ES_NET_PROXY_SOCKS_PASS);
+    }
+
+    public boolean getNetworkSocksUseSystemProperties() {
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS, ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT));
     }
 
     public Settings setHosts(String hosts) {

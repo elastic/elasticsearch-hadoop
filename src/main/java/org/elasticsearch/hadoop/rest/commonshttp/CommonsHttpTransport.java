@@ -43,6 +43,8 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -135,12 +137,29 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
         params.setSoTimeout((int) settings.getHttpTimeout());
-        client = new HttpClient(params, new SocketTrackingConnectionManager());
         HostConfiguration hostConfig = new HostConfiguration();
+
+        hostConfig = setupHttpProxy(settings, hostConfig);
+        hostConfig = setupSocksProxy(settings, hostConfig);
+
+        try {
+            hostConfig.setHost(new URI(prefixUri(host), false));
+        } catch (IOException ex) {
+            throw new EsHadoopTransportException("Invalid target URI " + host, ex);
+        }
+        client = new HttpClient(params, new SocketTrackingConnectionManager());
+        client.setHostConfiguration(hostConfig);
+
+        HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
+        // make sure to disable Nagle's protocol
+        connectionParams.setTcpNoDelay(true);
+    }
+
+    private HostConfiguration setupHttpProxy(Settings settings, HostConfiguration hostConfig) {
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
-        if (settings.getNetworkUseSystemProperties()) {
+        if (settings.getNetworkHttpUseSystemProperties()) {
             proxyHost = System.getProperty("http.proxyHost");
             proxyPort = Integer.getInteger("http.proxyPort", -1);
         }
@@ -154,6 +173,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (StringUtils.hasText(proxyHost)) {
             hostConfig.setProxy(proxyHost, proxyPort);
 
+            log.info(String.format("Using HTTP proxy [%s:%s]", proxyHost, proxyPort));
+
             if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
@@ -161,17 +182,39 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             }
         }
 
-        try {
-            hostConfig.setHost(new URI(prefixUri(host), false));
-        } catch (IOException ex) {
-            throw new EsHadoopTransportException("Invalid target URI " + host, ex);
-        }
-        client.setHostConfiguration(hostConfig);
-
-        HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
-        // make sure to disable Nagle's protocol
-        connectionParams.setTcpNoDelay(true);
+        return hostConfig;
     }
+
+    private HostConfiguration setupSocksProxy(Settings settings, HostConfiguration hostConfig) {
+        // set proxy settings
+        String proxyHost = null;
+        int proxyPort = -1;
+        if (settings.getNetworkHttpUseSystemProperties()) {
+            proxyHost = System.getProperty("socksProxyHost");
+            proxyPort = Integer.getInteger("socksProxyPort", -1);
+        }
+        if (StringUtils.hasText(settings.getNetworkProxySocksHost())) {
+            proxyHost = settings.getNetworkProxySocksHost();
+        }
+        if (settings.getNetworkProxySocksPort() > 0) {
+            proxyPort = settings.getNetworkProxySocksPort();
+        }
+
+        // we actually have a socks proxy, let's start the setup
+        if (StringUtils.hasText(proxyHost)) {
+            log.info(String.format("Using SOCKS proxy [%s:%s]", proxyHost, proxyPort));
+
+            hostConfig = new ProtocolAwareHostConfiguration(hostConfig);
+
+            ProtocolSocketFactory socksSocksFactory = new SocksSocketFactory(proxyHost, proxyPort);
+            Protocol protocol = new Protocol("http", socksSocksFactory, 80);
+            Protocol.registerProtocol("http", new Protocol("http", socksSocksFactory, 80));
+            hostConfig.setHost(proxyHost, proxyPort, protocol);
+        }
+
+        return hostConfig;
+    }
+
 
     @Override
     public Response execute(Request request) throws IOException {
@@ -217,12 +260,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             entityMethod.setContentChunked(false);
         }
 
+        client.executeMethod(http);
+
         // when tracing, log everything
         if (log.isTraceEnabled()) {
             log.trace(String.format("Tx [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.path(), request.body()));
         }
-
-        client.executeMethod(http);
 
         if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
