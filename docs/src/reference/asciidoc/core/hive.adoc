@@ -176,7 +176,7 @@ IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content
 CREATE EXTERNAL TABLE json (data STRING<1>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = '...',
-              'es.json.input` = 'yes'<2>);
+              'es.input.json` = 'yes'<2>);
 ...
 ----
 
