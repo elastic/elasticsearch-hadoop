@@ -28,9 +28,12 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpConnection;
 import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -133,8 +136,30 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
         params.setSoTimeout((int) settings.getHttpTimeout());
         client = new HttpClient(params, new SocketTrackingConnectionManager());
-
         HostConfiguration hostConfig = new HostConfiguration();
+        // set proxy settings
+        String proxyHost = null;
+        int proxyPort = -1;
+        if (settings.getNetworkUseSystemProperties()) {
+            proxyHost = System.getProperty("http.proxyHost");
+            proxyPort = Integer.getInteger("http.proxyPort", -1);
+        }
+        if (StringUtils.hasText(settings.getNetworkProxyHttpHost())) {
+            proxyHost = settings.getNetworkProxyHttpHost();
+        }
+        if (settings.getNetworkProxyHttpPort() > 0) {
+            proxyPort = settings.getNetworkProxyHttpPort();
+        }
+
+        if (StringUtils.hasText(proxyHost)) {
+            hostConfig.setProxy(proxyHost, proxyPort);
+
+            if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
+                HttpState state = new HttpState();
+                state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
+                client.setState(state);
+            }
+        }
 
         try {
             hostConfig.setHost(new URI(prefixUri(host), false));

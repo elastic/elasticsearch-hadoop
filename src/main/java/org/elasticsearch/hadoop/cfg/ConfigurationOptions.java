@@ -141,4 +141,12 @@ public interface ConfigurationOptions {
 
     String ES_UPSERT_DOC = "es.upsert.doc";
     String ES_UPSERT_DOC_DEFAULT = "true";
+
+    /** Network options */
+    String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";
+    String ES_NET_PROXY_HTTP_PORT = "es.net.proxy.http.port";
+    String ES_NET_PROXY_HTTP_USER = "es.net.proxy.http.user";
+    String ES_NET_PROXY_HTTP_PASS = "es.net.proxy.http.pass";
+    String ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS = "es.net.proxy.http.use.system.props";
+    String ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT = "yes";
 }

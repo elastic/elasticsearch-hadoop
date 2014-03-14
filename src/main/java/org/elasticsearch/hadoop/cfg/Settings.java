@@ -198,6 +198,26 @@ public abstract class Settings implements InternalConfigurationOptions {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
 
+    public String getNetworkProxyHttpHost() {
+        return getProperty(ES_NET_PROXY_HTTP_HOST);
+    }
+
+    public int getNetworkProxyHttpPort() {
+        return Integer.valueOf(getProperty(ES_NET_PROXY_HTTP_PORT, "-1"));
+    }
+
+    public String getNetworkProxyHttpUser() {
+        return getProperty(ES_NET_PROXY_HTTP_USER);
+    }
+
+    public String getNetworkProxyHttpPass() {
+        return getProperty(ES_NET_PROXY_HTTP_PASS);
+    }
+
+    public boolean getNetworkUseSystemProperties() {
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT));
+    }
+
     public Settings setHosts(String hosts) {
         setProperty(ES_NODES, hosts);
         return this;
@@ -234,7 +254,6 @@ public abstract class Settings implements InternalConfigurationOptions {
     public String getResourceWrite() {
         return getProperty(ES_RESOURCE_WRITE, getResource());
     }
-
     String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
         return (StringUtils.hasText(hosts) ? hosts : getNodes());
