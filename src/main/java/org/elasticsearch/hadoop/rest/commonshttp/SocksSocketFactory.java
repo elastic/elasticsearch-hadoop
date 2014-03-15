@@ -19,8 +19,10 @@
 package org.elasticsearch.hadoop.rest.commonshttp;
 
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -29,6 +31,7 @@ import java.net.UnknownHostException;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.DefaultProtocolSocketFactory;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 class SocksSocketFactory extends DefaultProtocolSocketFactory {
 
@@ -36,8 +39,23 @@ class SocksSocketFactory extends DefaultProtocolSocketFactory {
     private final int socksPort;
 
     SocksSocketFactory(String socksHost, int socksPort) {
+        this(socksHost, socksPort, null, null);
+    }
+
+    SocksSocketFactory(String socksHost, int socksPort, final String user, final String pass) {
         this.socksHost = socksHost;
         this.socksPort = socksPort;
+
+        if (StringUtils.hasText(user)) {
+            final PasswordAuthentication auth = new PasswordAuthentication(user, pass.toCharArray());
+
+            Authenticator.setDefault(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    return auth;
+                }
+            });
+        }
     }
 
     public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params)

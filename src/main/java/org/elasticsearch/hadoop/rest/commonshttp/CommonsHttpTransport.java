@@ -44,7 +44,6 @@ import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -77,7 +76,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final HttpClient client;
     private final Stats stats = new Stats();
     private HttpConnection conn;
-
+    private String proxyInfo = "";
 
     private static class ResponseInputStream extends DelegatingInputStream {
 
@@ -139,8 +138,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         params.setSoTimeout((int) settings.getHttpTimeout());
         HostConfiguration hostConfig = new HostConfiguration();
 
-        hostConfig = setupHttpProxy(settings, hostConfig);
         hostConfig = setupSocksProxy(settings, hostConfig);
+        hostConfig = setupHttpProxy(settings, hostConfig);
 
         try {
             hostConfig.setHost(new URI(prefixUri(host), false));
@@ -172,13 +171,21 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         if (StringUtils.hasText(proxyHost)) {
             hostConfig.setProxy(proxyHost, proxyPort);
-
-            log.info(String.format("Using HTTP proxy [%s:%s]", proxyHost, proxyPort));
+            proxyInfo = proxyInfo.concat(String.format("[HTTP proxy %s:%s]", proxyHost, proxyPort));
 
             if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
                 client.setState(state);
+            }
+
+            if (log.isDebugEnabled()) {
+                if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
+                    log.debug(String.format("Using authenticated HTTP proxy [%s:%s]", proxyHost, proxyPort));
+                }
+                else {
+                    log.debug(String.format("Using HTTP proxy [%s:%s]", proxyHost, proxyPort));
+                }
             }
         }
 
@@ -189,9 +196,14 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
+        String proxyUser = null;
+        String proxyPass = null;
+
         if (settings.getNetworkHttpUseSystemProperties()) {
             proxyHost = System.getProperty("socksProxyHost");
             proxyPort = Integer.getInteger("socksProxyPort", -1);
+            proxyUser = System.getProperty("java.net.socks.username");
+            proxyPass = System.getProperty("java.net.socks.password");
         }
         if (StringUtils.hasText(settings.getNetworkProxySocksHost())) {
             proxyHost = settings.getNetworkProxySocksHost();
@@ -199,17 +211,36 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (settings.getNetworkProxySocksPort() > 0) {
             proxyPort = settings.getNetworkProxySocksPort();
         }
+        if (StringUtils.hasText(settings.getNetworkProxySocksUser())) {
+            proxyUser = settings.getNetworkProxySocksUser();
+        }
+        if (StringUtils.hasText(settings.getNetworkProxySocksPass())) {
+            proxyPass = settings.getNetworkProxySocksPass();
+        }
 
         // we actually have a socks proxy, let's start the setup
         if (StringUtils.hasText(proxyHost)) {
-            log.info(String.format("Using SOCKS proxy [%s:%s]", proxyHost, proxyPort));
+            proxyInfo = proxyInfo.concat(String.format("[SOCKS proxy %s:%s]", proxyHost, proxyPort));
 
+            if (log.isDebugEnabled()) {
+                if (StringUtils.hasText(proxyUser)) {
+                    log.debug(String.format("Using authenticated SOCKS proxy [%s:%s]", proxyHost, proxyPort));
+                }
+                else {
+                    log.debug(String.format("Using SOCKS proxy [%s:%s]", proxyHost, proxyPort));
+                }
+            }
+
+            // NB: not really needed (see below that the protocol is reseted) but in place just in case
             hostConfig = new ProtocolAwareHostConfiguration(hostConfig);
-
-            ProtocolSocketFactory socksSocksFactory = new SocksSocketFactory(proxyHost, proxyPort);
-            Protocol protocol = new Protocol("http", socksSocksFactory, 80);
-            Protocol.registerProtocol("http", new Protocol("http", socksSocksFactory, 80));
-            hostConfig.setHost(proxyHost, proxyPort, protocol);
+            SocksSocketFactory socksSocksFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
+            Protocol directHttp = Protocol.getProtocol("http");
+            Protocol proxiedHttp = new SocksProtocol(socksSocksFactory, directHttp);
+            hostConfig.setHost(proxyHost, proxyPort, proxiedHttp);
+            // NB: register the new protocol since when using absolute URIs, HttpClient#executeMethod will override the configuration (#387)
+            // NB: hence why the original/direct http protocol is saved - as otherwise the connection is not closed since it is considered different
+            // NB: (as the protocol identities don't match)
+            Protocol.registerProtocol("http", proxiedHttp);
         }
 
         return hostConfig;
@@ -260,17 +291,17 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             entityMethod.setContentChunked(false);
         }
 
-        client.executeMethod(http);
-
         // when tracing, log everything
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Tx [%s]@[%s][%s] w/ payload [%s]", request.method().name(), request.uri(), request.path(), request.body()));
+            log.trace(String.format("Tx %s[%s]@[%s][%s] w/ payload [%s]", proxyInfo, request.method().name(), request.uri(), request.path(), request.body()));
         }
+
+        client.executeMethod(http);
 
         if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
             String addr = sk.getLocalAddress().getHostAddress();
-            log.trace(String.format("Rx @[%s] [%s-%s] [%s]", addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+            log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
         }
 
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), request.uri());

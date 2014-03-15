@@ -94,7 +94,7 @@ public class NetworkClient implements StatsAware {
                 log.error(String.format("Node [%s] failed; " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), failed));
 
                 if (!newNode) {
-                    throw new EsHadoopProtocolException("Out of nodes and retries; caught exception", ex);
+                    throw new EsHadoopProtocolException("Connection error (check network and/or proxy settings) - out of nodes and retries", ex);
                 }
             }
         } while (newNode);
