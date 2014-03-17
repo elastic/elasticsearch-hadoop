@@ -32,6 +32,9 @@ public class Stats {
     public long docsRetried;
     public long bytesRetried;
     public long bulkRetries;
+    /** ack */
+    public long bytesRecorded;
+    public long docsRecorded;
 
     /** reads */
     public long bytesRead;
@@ -51,6 +54,8 @@ public class Stats {
         docsRetried += other.docsRetried;
         bytesRetried += other.bytesRetried;
         bulkRetries += other.bulkRetries;
+        bytesRecorded += other.bytesRecorded;
+        docsRecorded += other.docsRecorded;
 
         bytesRead += other.bytesRead;
         docsRead += other.docsRead;

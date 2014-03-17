@@ -27,6 +27,9 @@ public enum Counters {
     DOCS_WRITTEN,
     BULK_WRITES,
 
+    BYTES_RECORDED,
+    DOCS_RECORDED,
+
     DOCS_RETRIED,
     BYTES_RETRIED,
     BULK_RETRIES,

@@ -41,11 +41,16 @@ class ReportingUtils {
 
             oldApiCounter(reporter, Counters.BYTES_WRITTEN, stats.bytesWritten);
             oldApiCounter(reporter, Counters.BYTES_READ, stats.bytesRead);
+            oldApiCounter(reporter, Counters.BYTES_RETRIED, stats.bytesRetried);
+            oldApiCounter(reporter, Counters.BYTES_RECORDED, stats.bytesRecorded);
+
             oldApiCounter(reporter, Counters.DOCS_WRITTEN, stats.docsWritten);
-            oldApiCounter(reporter, Counters.BULK_WRITES, stats.bulkWrites);
-            oldApiCounter(reporter, Counters.DOCS_RETRIED, stats.docsRetried);
-            oldApiCounter(reporter, Counters.BULK_RETRIES, stats.bulkRetries);
             oldApiCounter(reporter, Counters.DOCS_READ, stats.docsRead);
+            oldApiCounter(reporter, Counters.DOCS_RETRIED, stats.docsRetried);
+            oldApiCounter(reporter, Counters.DOCS_RECORDED, stats.docsRecorded);
+
+            oldApiCounter(reporter, Counters.BULK_WRITES, stats.bulkWrites);
+            oldApiCounter(reporter, Counters.BULK_RETRIES, stats.bulkRetries);
             oldApiCounter(reporter, Counters.NODE_RETRIES, stats.nodeRetries);
             oldApiCounter(reporter, Counters.NET_RETRIES, stats.netRetries);
         }
@@ -55,11 +60,16 @@ class ReportingUtils {
 
             newApiCounter(compatTioc, Counters.BYTES_WRITTEN, stats.bytesWritten);
             newApiCounter(compatTioc, Counters.BYTES_READ, stats.bytesRead);
+            newApiCounter(compatTioc, Counters.BYTES_RETRIED, stats.bytesRetried);
+            newApiCounter(compatTioc, Counters.BYTES_RECORDED, stats.bytesRecorded);
+
             newApiCounter(compatTioc, Counters.DOCS_WRITTEN, stats.docsWritten);
-            newApiCounter(compatTioc, Counters.BULK_WRITES, stats.bulkWrites);
-            newApiCounter(compatTioc, Counters.DOCS_RETRIED, stats.docsRetried);
-            newApiCounter(compatTioc, Counters.BULK_RETRIES, stats.bulkRetries);
             newApiCounter(compatTioc, Counters.DOCS_READ, stats.docsRead);
+            newApiCounter(compatTioc, Counters.DOCS_RETRIED, stats.docsRetried);
+            newApiCounter(compatTioc, Counters.DOCS_RECORDED, stats.docsRecorded);
+
+            newApiCounter(compatTioc, Counters.BULK_RETRIES, stats.bulkRetries);
+            newApiCounter(compatTioc, Counters.BULK_WRITES, stats.bulkWrites);
             newApiCounter(compatTioc, Counters.NODE_RETRIES, stats.nodeRetries);
             newApiCounter(compatTioc, Counters.NET_RETRIES, stats.netRetries);
         }

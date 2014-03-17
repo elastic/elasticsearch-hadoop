@@ -101,6 +101,10 @@ public class TrackingBytesArray implements ByteSequence {
         size -= entry.length;
     }
 
+    public int length(int index) {
+        return entries.get(index).length;
+    }
+
     public void writeTo(OutputStream out) throws IOException {
         if (size == 0) {
             return;

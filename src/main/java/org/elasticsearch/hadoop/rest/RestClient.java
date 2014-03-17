@@ -158,6 +158,9 @@ public class RestClient implements Closeable, StatsAware {
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
             try {
                 if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
+                    // recorded bytes are ack here
+                    stats.bytesRecorded += data.length();
+                    stats.docsRecorded += data.entries();
                     return false;
                 }
             } finally {
@@ -182,6 +185,8 @@ public class RestClient implements Closeable, StatsAware {
                     }
                 }
                 else {
+                    stats.bytesRecorded += data.length(entryToDeletePosition);
+                    stats.docsRecorded += 1;
                     data.remove(entryToDeletePosition);
                 }
             }
