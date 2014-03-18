@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.AssertionLevel;
 import cascading.operation.aggregator.Count;
 import cascading.operation.assertion.AssertSizeLessThan;
@@ -77,7 +76,7 @@ public class CascadingLocalJsonSearchTest {
 
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
-        new LocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+        new ExtendedLocalFlowConnector(cfg()).connect(in, out, pipe).complete();
     }
 
     @Test
@@ -97,7 +96,7 @@ public class CascadingLocalJsonSearchTest {
 
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
-        new LocalFlowConnector(cfg).connect(in, out, pipe).complete();
+        new ExtendedLocalFlowConnector(cfg).connect(in, out, pipe).complete();
     }
 
     private Properties cfg() {

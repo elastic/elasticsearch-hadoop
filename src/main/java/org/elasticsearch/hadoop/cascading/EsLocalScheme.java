@@ -27,10 +27,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.mr.Counters;
 import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
+import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -86,21 +88,42 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     @Override
     public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
+        report(sourceCall.getInput().stats(), flowProcess);
+        report(sourceCall.getInput().repository().stats(), flowProcess);
         sourceCall.getInput().close();
         sourceCall.setContext(null);
-        cleanupClient();
+        cleanupClient(flowProcess);
     }
 
     @Override
     public void sinkCleanup(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
-        cleanupClient();
+        cleanupClient(flowProcess);
     }
 
-    private void cleanupClient() throws IOException {
+    private void cleanupClient(FlowProcess<Properties> flowProcess) throws IOException {
         if (client != null) {
+            report(client.stats(), flowProcess);
             client.close();
             client = null;
         }
+    }
+
+    private void report(Stats stats, FlowProcess<Properties> flowProcess) {
+        // report current stats
+        flowProcess.increment(Counters.BYTES_WRITTEN, stats.bytesWritten);
+        flowProcess.increment(Counters.BYTES_READ, stats.bytesRead);
+        flowProcess.increment(Counters.BYTES_RETRIED, stats.bytesRetried);
+        flowProcess.increment(Counters.BYTES_RECORDED, stats.bytesRecorded);
+
+        flowProcess.increment(Counters.DOCS_WRITTEN, stats.docsWritten);
+        flowProcess.increment(Counters.DOCS_READ, stats.docsRead);
+        flowProcess.increment(Counters.DOCS_RETRIED, stats.docsRetried);
+        flowProcess.increment(Counters.DOCS_RECORDED, stats.docsRecorded);
+
+        flowProcess.increment(Counters.BULK_WRITES, stats.bulkWrites);
+        flowProcess.increment(Counters.BULK_RETRIES, stats.bulkRetries);
+        flowProcess.increment(Counters.NODE_RETRIES, stats.nodeRetries);
+        flowProcess.increment(Counters.NET_RETRIES, stats.netRetries);
     }
 
     @Override

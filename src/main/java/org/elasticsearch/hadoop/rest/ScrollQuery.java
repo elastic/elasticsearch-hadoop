@@ -114,6 +114,10 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
         return stats;
     }
 
+    public RestRepository repository() {
+        return client;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

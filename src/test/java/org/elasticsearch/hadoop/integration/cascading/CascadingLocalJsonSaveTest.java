@@ -25,7 +25,6 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
-import cascading.flow.local.LocalFlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
@@ -45,7 +44,8 @@ public class CascadingLocalJsonSaveTest {
         Pipe pipe = new Pipe("copy");
         Properties props = new TestSettings().getProperties();
         props.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, "true");
-        new LocalFlowConnector(props).connect(in, out, pipe).complete();
+
+        new ExtendedLocalFlowConnector(props).connect(in, out, pipe).complete();
     }
 
     @Test(expected = Exception.class)
@@ -58,6 +58,6 @@ public class CascadingLocalJsonSaveTest {
         Tap in = new FileTap(new TextLine(new Fields("line")), INPUT);
         Tap out = new EsTap("json-cascading-local/non-existing", new Fields("line"));
         Pipe pipe = new Pipe("copy");
-        new LocalFlowConnector(properties).connect(in, out, pipe).complete();
+        new ExtendedLocalFlowConnector(properties).connect(in, out, pipe).complete();
     }
 }
