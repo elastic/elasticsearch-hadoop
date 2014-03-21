@@ -70,20 +70,24 @@ public abstract class IOUtils {
 
     public static String propsToString(Properties props) {
         StringWriter sw = new StringWriter();
-        try {
-            props.store(sw, "");
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(ex);
+        if (props != null) {
+            try {
+                props.store(sw, "");
+            } catch (IOException ex) {
+                throw new EsHadoopIllegalArgumentException(ex);
+            }
         }
         return sw.toString();
     }
 
     public static Properties propsFromString(String source) {
         Properties copy = new Properties();
-        try {
-            copy.load(new StringReader(source));
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(ex);
+        if (source != null) {
+            try {
+                copy.load(new StringReader(source));
+            } catch (IOException ex) {
+                throw new EsHadoopIllegalArgumentException(ex);
+            }
         }
         return copy;
     }

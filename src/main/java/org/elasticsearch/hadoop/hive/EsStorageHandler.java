@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +35,6 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.IOUtils;
 
 import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 
@@ -73,12 +73,15 @@ public class EsStorageHandler extends DefaultStorageHandler {
     @Override
     public void configureInputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
         init(tableDesc, true);
+        copyToJobProperties(jobProperties, tableDesc.getProperties());
     }
 
     @Override
     public void configureOutputJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
         init(tableDesc, false);
+        copyToJobProperties(jobProperties, tableDesc.getProperties());
     }
+
 
     // NB: save the table properties in a special place but nothing else; otherwise the settings might trip on each other
     private void init(TableDesc tableDesc, boolean read) {
@@ -86,7 +89,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
         // NB: we can't just merge the table properties in, we need to save them per input/output otherwise clashes occur which confuse Hive
 
         Settings settings = SettingsManager.loadFrom(cfg);
-        settings.setProperty((read ? HiveConstants.INPUT_TBL_PROPERTIES : HiveConstants.OUTPUT_TBL_PROPERTIES), IOUtils.propsToString(tableDesc.getProperties()));
+        //settings.setProperty((read ? HiveConstants.INPUT_TBL_PROPERTIES : HiveConstants.OUTPUT_TBL_PROPERTIES), IOUtils.propsToString(tableDesc.getProperties()));
         if (read) {
             // no generic setting
         }
@@ -98,6 +101,13 @@ public class EsStorageHandler extends DefaultStorageHandler {
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
                 "no table location [%s] declared by Hive resulting in abnormal execution;", TABLE_LOCATION));
     }
+
+    private void copyToJobProperties(Map<String, String> jobProperties, Properties properties) {
+        for (String key : properties.stringPropertyNames()) {
+            jobProperties.put(key, properties.getProperty(key));
+        }
+    }
+
 
     @Override
     @Deprecated
