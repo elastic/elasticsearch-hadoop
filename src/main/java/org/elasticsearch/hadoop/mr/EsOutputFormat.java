@@ -45,8 +45,11 @@ import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -291,14 +294,14 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        //        Assert.hasText(settings.getResourceWrite(),
-        //                String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
-        //
-        //        // lazy-init
-        //        RestRepository client = null;
-        //
-        //        InitializationUtils.checkIdForOperation(settings);
-        //        InitializationUtils.checkIndexExistence(settings, client);
+        Assert.hasText(settings.getResourceWrite(),
+                String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
+
+        // lazy-init
+        RestRepository client = null;
+
+        InitializationUtils.checkIdForOperation(settings);
+        InitializationUtils.checkIndexExistence(settings, client);
 
         if (HadoopCfgUtils.getReduceTasks(cfg) != null) {
             if (HadoopCfgUtils.getSpeculativeReduce(cfg)) {
