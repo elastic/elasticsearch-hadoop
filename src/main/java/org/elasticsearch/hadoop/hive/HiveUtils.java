@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -35,7 +37,9 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -121,5 +125,15 @@ abstract class HiveUtils {
             columns.put(columnNames.get(i), HiveConstants.UNNAMED_COLUMN_PREFIX + i);
         }
         return columns;
+    }
+
+    static void init(Settings settings, Log log) {
+        InitializationUtils.checkIdForOperation(settings);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
+        try {
+            InitializationUtils.discoverEsVersion(settings, log);
+        } catch (IOException ex) {
+            throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch version", ex);
+        }
     }
 }

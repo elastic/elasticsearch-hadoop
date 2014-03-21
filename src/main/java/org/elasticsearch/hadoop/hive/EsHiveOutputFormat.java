@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.hive;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
@@ -29,7 +31,10 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 
 /**
  * Hive specific OutputFormat.
@@ -72,6 +77,22 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
     @Override
     public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
+        // force the table properties to be merged into the configuration
+        // NB: the properties are also available in HiveConstants#OUTPUT_TBL_PROPERTIES
+        Settings settings = SettingsManager.loadFrom(jc).merge(tableProperties);
+
+        Log log = LogFactory.getLog(getClass());
+
+        // NB: ESSerDe is already initialized at this stage but should still have a reference to the same cfg object
+        // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
+
+        InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
+        // set write resource
+        settings.setResourceWrite(settings.getResourceWrite());
+
+        HiveUtils.init(settings, log);
+
         return new ESHiveRecordWriter(jc, progress);
     }
 }

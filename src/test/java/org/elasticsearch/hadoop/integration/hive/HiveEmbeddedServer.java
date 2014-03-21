@@ -81,8 +81,8 @@ class HiveEmbeddedServer implements HiveInstance {
     private HiveConf configure() throws Exception {
         TestUtils.delete(new File("/tmp/hive"));
 
+        //HiveConf conf = new HiveConf(DriverContext.class);
         HiveConf conf = new HiveConf();
-
         refreshConfig(conf);
 
         HdpBootstrap.hackHadoopStagingOnWin();
@@ -112,6 +112,7 @@ class HiveEmbeddedServer implements HiveInstance {
         field.setAccessible(true);
         Properties props = (Properties) field.get(conf);
         props.remove("mapred.job.tracker");
+        props.remove("mapreduce.framework.name");
         props.setProperty("fs.default.name", "file:///");
 
         // intercept SessionState to clean the threadlocal

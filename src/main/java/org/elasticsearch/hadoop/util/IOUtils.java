@@ -24,7 +24,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URL;
+import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -63,6 +66,26 @@ public abstract class IOUtils {
         } finally {
             close(ois);
         }
+    }
+
+    public static String propsToString(Properties props) {
+        StringWriter sw = new StringWriter();
+        try {
+            props.store(sw, "");
+        } catch (IOException ex) {
+            throw new EsHadoopIllegalArgumentException(ex);
+        }
+        return sw.toString();
+    }
+
+    public static Properties propsFromString(String source) {
+        Properties copy = new Properties();
+        try {
+            copy.load(new StringReader(source));
+        } catch (IOException ex) {
+            throw new EsHadoopIllegalArgumentException(ex);
+        }
+        return copy;
     }
 
     public static BytesArray asBytes(InputStream in) throws IOException {

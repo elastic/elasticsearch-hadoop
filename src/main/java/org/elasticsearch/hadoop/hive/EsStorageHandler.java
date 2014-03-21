@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import java.io.IOException;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -30,15 +29,12 @@ import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
-import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.IOUtils;
 
 import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 
@@ -84,36 +80,20 @@ public class EsStorageHandler extends DefaultStorageHandler {
         init(tableDesc, false);
     }
 
+    // NB: save the table properties in a special place but nothing else; otherwise the settings might trip on each other
     private void init(TableDesc tableDesc, boolean read) {
         Configuration cfg = getConf();
-        Settings settings = SettingsManager.loadFrom(cfg).merge(tableDesc.getProperties());
+        // NB: we can't just merge the table properties in, we need to save them per input/output otherwise clashes occur which confuse Hive
 
-        // NB: ESSerDe is already initialized at this stage but should still have a reference to the same cfg object
-        // NB: the value writer is not needed by Hive but it's set for consistency and debugging purposes
-
-        InitializationUtils.checkIdForOperation(settings);
+        Settings settings = SettingsManager.loadFrom(cfg);
+        settings.setProperty((read ? HiveConstants.INPUT_TBL_PROPERTIES : HiveConstants.OUTPUT_TBL_PROPERTIES), IOUtils.propsToString(tableDesc.getProperties()));
         if (read) {
-            InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
-            // set read resource
-            settings.setResourceRead(settings.getResourceRead());
+            // no generic setting
         }
         else {
-            InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
-            InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
             // replace the default committer when using the old API
             HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
-            // set write resource
-            settings.setResourceWrite(settings.getResourceWrite());
         }
-
-        InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
-        try {
-            InitializationUtils.discoverEsVersion(settings, log);
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch version", ex);
-        }
-
 
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(
                 "no table location [%s] declared by Hive resulting in abnormal execution;", TABLE_LOCATION));

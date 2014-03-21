@@ -23,6 +23,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -31,7 +33,13 @@ import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Hive specific InputFormat. Since Hive code base makes a lot of assumptions about the tables being actual files in HDFS (using instanceof checks without proper else) this class tries to 'fix' this by
@@ -89,6 +97,18 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writabl
 
     @Override
     public FileSplit[] getSplits(JobConf job, int numSplits) throws IOException {
+        // first, merge input table properties (since there's no access to them ...)
+        Settings settings = SettingsManager.loadFrom(job);
+        settings.merge(IOUtils.propsFromString(settings.getProperty(HiveConstants.INPUT_TBL_PROPERTIES)));
+
+        Log log = LogFactory.getLog(getClass());
+        // move on to initialization
+        InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
+        // set read resource
+        settings.setResourceRead(settings.getResourceRead());
+        HiveUtils.init(settings, log);
+
         // decorate original splits as FileSplit
         InputSplit[] shardSplits = super.getSplits(job, numSplits);
         FileSplit[] wrappers = new FileSplit[shardSplits.length];

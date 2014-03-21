@@ -18,16 +18,13 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
@@ -319,25 +316,14 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     public Settings load(String source) {
-        Properties copy = new Properties();
-        try {
-            copy.load(new StringReader(source));
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(ex);
-        }
+        Properties copy = IOUtils.propsFromString(source);
         merge(copy);
         return this;
     }
 
     public String save() {
         Properties copy = asProperties();
-        StringWriter sw = new StringWriter();
-        try {
-            copy.store(sw, "");
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(ex);
-        }
-        return sw.toString();
+        return IOUtils.propsToString(copy);
     }
 
     protected abstract Properties asProperties();

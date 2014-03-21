@@ -291,6 +291,36 @@ public class HiveSearchTest {
         assertContains(result, "last.fm/serve/252/2181591.jpg");
     }
 
+    //@Test
+    public void basicJoin() throws Exception {
+
+        String left = "CREATE EXTERNAL TABLE left" + testInstance + "("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/artists");
+
+        String right = "CREATE EXTERNAL TABLE right" + testInstance + "("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/artists");
+
+        String select = "SELECT * FROM left" + testInstance + " l JOIN right" + testInstance + " r ON l.id = r.id";
+        //String select = "SELECT * FROM left" + testInstance + " l JOIN source r ON l.id = r.id";
+
+        server.execute(left);
+        server.execute(right);
+        System.out.println(server.execute("SHOW CREATE TABLE left" + testInstance));
+        System.out.println(server.execute("SHOW CREATE TABLE right" + testInstance));
+
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/5872875.jpg");
+    }
+
     private static boolean containsNoNull(List<String> str) {
         for (String string : str) {
             if (string.contains("NULL")) {

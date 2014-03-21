@@ -32,4 +32,7 @@ interface HiveConstants {
     String VARCHAR_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveVarcharWritable";
     String TABLE_LOCATION = "location";
     String MAPPING_NAMES = "es.mapping.names";
+
+    String INPUT_TBL_PROPERTIES = "es.internal.hive.input.tbl.properties";
+    String OUTPUT_TBL_PROPERTIES = "es.internal.hive.output.tbl.properties";
 }
