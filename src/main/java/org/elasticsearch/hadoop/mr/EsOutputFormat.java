@@ -62,7 +62,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     private static final int NO_TASK_ID = -1;
 
     // don't use mapred.OutputCommitter as it performs mandatory casts to old API resulting in CCE
-    public static class ESOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {
+    public static class EsOutputCommitter extends org.apache.hadoop.mapreduce.OutputCommitter {
 
         @Override
         public void setupJob(JobContext jobContext) throws IOException {}
@@ -94,7 +94,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     }
 
-    public static class ESOldAPIOutputCommitter extends org.apache.hadoop.mapred.OutputCommitter {
+    public static class EsOldAPIOutputCommitter extends org.apache.hadoop.mapred.OutputCommitter {
 
         @Override
         public void setupJob(org.apache.hadoop.mapred.JobContext jobContext) throws IOException {
@@ -130,7 +130,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         }
     }
 
-    protected static class ESRecordWriter extends RecordWriter implements org.apache.hadoop.mapred.RecordWriter {
+    protected static class EsRecordWriter extends RecordWriter implements org.apache.hadoop.mapred.RecordWriter {
 
         protected final Configuration cfg;
         protected boolean initialized = false;
@@ -141,7 +141,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         private HeartBeat beat;
         private Progressable progressable;
 
-        public ESRecordWriter(Configuration cfg, Progressable progressable) {
+        public EsRecordWriter(Configuration cfg, Progressable progressable) {
             this.cfg = cfg;
             this.progressable = progressable;
         }
@@ -275,7 +275,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     @Override
     public org.apache.hadoop.mapreduce.OutputCommitter getOutputCommitter(TaskAttemptContext context) {
-        return new ESOutputCommitter();
+        return new EsOutputCommitter();
     }
 
     //
@@ -283,7 +283,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress) {
-        return new ESRecordWriter(job, progress);
+        return new EsRecordWriter(job, progress);
     }
 
     @Override

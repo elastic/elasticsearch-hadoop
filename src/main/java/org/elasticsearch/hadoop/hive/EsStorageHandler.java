@@ -95,7 +95,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
         }
         else {
             // replace the default committer when using the old API
-            HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.ESOutputCommitter.class.getName());
+            HadoopCfgUtils.setOutputCommitterClass(cfg, EsOutputFormat.EsOutputCommitter.class.getName());
         }
 
         Assert.hasText(tableDesc.getProperties().getProperty(TABLE_LOCATION), String.format(

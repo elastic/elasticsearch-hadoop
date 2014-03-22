@@ -148,7 +148,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());
         HadoopCfgUtils.setFileOutputFormatDir(conf, set.getResourceWrite());
-        HadoopCfgUtils.setOutputCommitterClass(conf, EsOutputFormat.ESOldAPIOutputCommitter.class.getName());
+        HadoopCfgUtils.setOutputCommitterClass(conf, EsOutputFormat.EsOldAPIOutputCommitter.class.getName());
 
         if (log.isTraceEnabled()) {
             log.trace("Initialized (sink) configuration " + HadoopCfgUtils.asProperties(conf));

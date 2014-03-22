@@ -42,7 +42,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 @SuppressWarnings("rawtypes")
 public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputFormat {
 
-    static class EsHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
+    static class EsHiveRecordWriter extends EsOutputFormat.EsRecordWriter implements RecordWriter {
 
         private final Progressable progress;
 

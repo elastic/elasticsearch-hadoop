@@ -79,7 +79,7 @@ public class PrintStreamOutputFormat extends org.apache.hadoop.mapreduce.OutputF
 
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
-        return new EsOutputFormat.ESOutputCommitter();
+        return new EsOutputFormat.EsOutputCommitter();
     }
 
     // Old API
