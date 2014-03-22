@@ -50,15 +50,15 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writable>> {
 
-    static class ESHiveSplit extends FileSplit {
+    static class EsHiveSplit extends FileSplit {
         InputSplit delegate;
         private Path path;
 
-        ESHiveSplit() {
+        EsHiveSplit() {
             this(new ShardInputSplit(), null);
         }
 
-        ESHiveSplit(InputSplit delegate, Path path) {
+        EsHiveSplit(InputSplit delegate, Path path) {
             super(path, 0, 0, (String[]) null);
             this.delegate = delegate;
             this.path = path;
@@ -113,13 +113,13 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writabl
         FileSplit[] wrappers = new FileSplit[shardSplits.length];
         Path path = new Path(job.get(HiveConstants.TABLE_LOCATION));
         for (int i = 0; i < wrappers.length; i++) {
-            wrappers[i] = new ESHiveSplit(shardSplits[i], path);
+            wrappers[i] = new EsHiveSplit(shardSplits[i], path);
         }
         return wrappers;
     }
 
     @Override
     public WritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
-        return new WritableShardRecordReader(((ESHiveSplit) split).delegate, job, reporter);
+        return new WritableShardRecordReader(((EsHiveSplit) split).delegate, job, reporter);
     }
 }

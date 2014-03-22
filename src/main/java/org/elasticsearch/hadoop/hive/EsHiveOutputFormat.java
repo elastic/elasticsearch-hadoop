@@ -42,11 +42,11 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 @SuppressWarnings("rawtypes")
 public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputFormat {
 
-    static class ESHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
+    static class EsHiveRecordWriter extends EsOutputFormat.ESRecordWriter implements RecordWriter {
 
         private final Progressable progress;
 
-        public ESHiveRecordWriter(Configuration cfg, Progressable progress) {
+        public EsHiveRecordWriter(Configuration cfg, Progressable progress) {
             super(cfg, progress);
             this.progress = progress;
         }
@@ -93,6 +93,6 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
         HiveUtils.init(settings, log);
 
-        return new ESHiveRecordWriter(jc, progress);
+        return new EsHiveRecordWriter(jc, progress);
     }
 }
