@@ -25,22 +25,27 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.AbstractIndexFormat;
+import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 
+/**
+ * Dedicated extractor for field parsing. Optimized to extract all the fields in only one parsing of the document.
+ */
 public class JsonFieldExtractors {
 
     private static Log log = LogFactory.getLog(JsonFieldExtractors.class);
 
     private final List<String> results = new ArrayList<String>(6);
-    private int usedSlots = 0;
     private String[] paths;
 
     private FieldExtractor id, parent, routing, ttl, version, timestamp;
+    private IndexFormat indexFormat;
 
-    private class PrecomputedFieldExtractor implements FieldExtractor {
+    class PrecomputedFieldExtractor implements FieldExtractor {
 
         private final int slot;
 
@@ -68,7 +73,7 @@ public class JsonFieldExtractors {
     }
 
     public JsonFieldExtractors(Settings settings) {
-        List<String> jsonPaths = new ArrayList<String>(6);
+        final List<String> jsonPaths = new ArrayList<String>();
 
         id = init(settings.getMappingId(), jsonPaths);
         parent = init(settings.getMappingParent(), jsonPaths);
@@ -77,21 +82,37 @@ public class JsonFieldExtractors {
         version = init(settings.getMappingVersion(), jsonPaths);
         timestamp = init(settings.getMappingTimestamp(), jsonPaths);
 
+        // create index format
+        indexFormat = new AbstractIndexFormat() {
+            @Override
+            protected Object createFieldExtractor(String fieldName) {
+                return createJsonFieldExtractor(fieldName, jsonPaths);
+            }
+        };
+        indexFormat.compile(settings.getResourceWrite());
+
+        // if there's no pattern, simply remove it
+        indexFormat = (indexFormat.hasPattern() ? indexFormat : null);
+
         paths = jsonPaths.toArray(new String[jsonPaths.size()]);
     }
 
-    private FieldExtractor init(String setting, List<String> pathList) {
-        if (setting != null) {
-            String constant = initConstant(setting);
+    private FieldExtractor init(String fieldName, List<String> pathList) {
+        if (fieldName != null) {
+            String constant = initConstant(fieldName);
             if (constant != null) {
                 return new FixedFieldExtractor(constant);
             }
             else {
-                pathList.add(setting);
-                return new PrecomputedFieldExtractor(usedSlots++);
+                return createJsonFieldExtractor(fieldName, pathList);
             }
         }
         return null;
+    }
+
+    private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList) {
+        pathList.add(fieldName);
+        return new PrecomputedFieldExtractor(pathList.size() - 1);
     }
 
     private String initConstant(String field) {
@@ -99,6 +120,10 @@ public class JsonFieldExtractors {
             return field.substring(1, field.length() - 1);
         }
         return null;
+    }
+
+    public IndexFormat indexAndType() {
+        return indexFormat;
     }
 
     public FieldExtractor id() {

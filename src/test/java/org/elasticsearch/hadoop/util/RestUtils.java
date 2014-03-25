@@ -82,4 +82,12 @@ public class RestUtils {
         rc.refresh(string);
         rc.close();
     }
+
+    public static boolean exists(String string) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        boolean result = rc.exists(string);
+        rc.close();
+        return result;
+    }
+
 }

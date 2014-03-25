@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -33,6 +34,8 @@ import org.elasticsearch.hadoop.integration.QueryTestParams;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.util.RestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -113,6 +116,13 @@ public class MRNewApiSearchTest {
 
         //conf.set(Stream.class.getName(), "OUT");
         new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-" + new Random().nextInt(950)));
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-990"));
     }
 
 

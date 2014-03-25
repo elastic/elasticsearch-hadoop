@@ -169,6 +169,7 @@ public class CommandTest {
         Settings set = new TestSettings();
         InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
+        set.setResourceWrite("foo/bar");
         if (isUpdateOp()) {
             set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<2>");
         }

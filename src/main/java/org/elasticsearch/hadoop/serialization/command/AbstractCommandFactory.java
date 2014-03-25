@@ -23,8 +23,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.command.TemplatedCommand.FieldWriter;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
@@ -43,6 +43,8 @@ abstract class AbstractCommandFactory implements CommandFactory {
 
     private Settings settings;
     private ValueWriter<?> valueWriter;
+    // used when specifying an index pattern
+    private IndexFormat indexFormat;
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
             timestampExtractor;
 
@@ -61,6 +63,8 @@ abstract class AbstractCommandFactory implements CommandFactory {
             }
 
             jsonExtractors = new JsonFieldExtractors(settings);
+            indexFormat = jsonExtractors.indexAndType();
+
             idExtractor = jsonExtractors.id();
             parentExtractor = jsonExtractors.parent();
             routingExtractor = jsonExtractors.routing();
@@ -69,33 +73,41 @@ abstract class AbstractCommandFactory implements CommandFactory {
             timestampExtractor = jsonExtractors.timestamp();
         }
         else {
-
             // init extractors (if needed)
             if (settings.getMappingId() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ID);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingId());
                 idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings);
             }
             if (settings.getMappingParent() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_PARENT);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingParent());
                 parentExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingParentExtractorClassName(), settings);
             }
             if (settings.getMappingRouting() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_ROUTING);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingRouting());
                 routingExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingRoutingExtractorClassName(), settings);
             }
             if (settings.getMappingTtl() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TTL);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTtl());
                 ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(), settings);
             }
             if (settings.getMappingVersion() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_VERSION);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingVersion());
                 versionExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingVersionExtractorClassName(), settings);
             }
             if (settings.getMappingTimestamp() != null) {
-                settings.setProperty(ConstantFieldExtractor.PROPERTY, ConfigurationOptions.ES_MAPPING_TIMESTAMP);
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTimestamp());
                 timestampExtractor = ObjectUtils.<FieldExtractor> instantiate(
                         settings.getMappingTimestampExtractorClassName(), settings);
             }
+
+            // create adapter
+            IndexFormat iformat = ObjectUtils.<IndexFormat> instantiate(settings.getMappingIndexFormatClassName(), settings);
+            iformat.compile(settings.getResourceWrite());
+
+            if (iformat.hasPattern()) {
+                indexFormat = iformat;
+            }
+
 
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Instantiated value writer [%s]", valueWriter));
@@ -119,6 +131,10 @@ abstract class AbstractCommandFactory implements CommandFactory {
                 }
             }
         }
+    }
+
+    protected IndexFormat index() {
+        return indexFormat;
     }
 
     protected FieldExtractor id() {
@@ -200,6 +216,8 @@ abstract class AbstractCommandFactory implements CommandFactory {
     protected void writeBeforeObject(List<Object> pieces) {
         startHeader(pieces);
 
+        index(pieces);
+
         id(pieces);
         parent(pieces);
         routing(pieces);
@@ -216,6 +234,14 @@ abstract class AbstractCommandFactory implements CommandFactory {
 
     private void endHeader(List<Object> pieces) {
         pieces.add("}}\n");
+    }
+
+    protected boolean index(List<Object> pieces) {
+        if (index() != null) {
+            pieces.add(index());
+            return true;
+        }
+        return false;
     }
 
     protected boolean id(List<Object> pieces) {

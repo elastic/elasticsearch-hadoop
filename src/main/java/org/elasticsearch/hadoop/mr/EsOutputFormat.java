@@ -44,8 +44,10 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
+import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -160,7 +162,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             int currentInstance = detectCurrentInstance(cfg);
 
             if (log.isTraceEnabled()) {
-                log.trace(String.format("ESRecordWriter instance [%s] initiating discovery of target shard...", currentInstance));
+                log.trace(String.format("EsRecordWriter instance [%s] initiating discovery of target shard...",
+                        currentInstance));
             }
 
             Settings settings = SettingsManager.loadFrom(cfg).copy();
@@ -182,9 +185,25 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
             beat.start();
 
-            client = new RestRepository(settings);
             resource = settings.getResourceWrite();
 
+            // single index vs multi indices
+            IndexFormat iformat = ObjectUtils.instantiate(settings.getMappingIndexFormatClassName(), settings);
+            iformat.compile(resource);
+            if (iformat.hasPattern()) {
+                initMultiIndices(settings, currentInstance);
+            }
+            else {
+                initSingleIndex(settings, currentInstance);
+            }
+        }
+
+        private void initSingleIndex(Settings settings, int currentInstance) throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Resource [%s] resolves as a single index", resource));
+            }
+
+            client = new RestRepository(settings);
             // create the index if needed
             if (client.touch()) {
                 if (client.waitForYellow()) {
@@ -216,8 +235,25 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             uri = SettingsUtils.nodes(settings).get(0);
 
             if (log.isDebugEnabled()) {
-                log.debug(String.format("ESRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
+                log.debug(String.format("EsRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
             }
+        }
+
+        private void initMultiIndices(Settings settings, int currentInstance) throws IOException {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
+            }
+
+            // use target node for indexing
+            uri = SettingsUtils.nodes(settings).get(0);
+            // override the global settings to communicate directly with the target node
+            settings.setHosts(uri);
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", uri));
+            }
+
+            client = new RestRepository(settings);
         }
 
         private int detectCurrentInstance(Configuration conf) {
@@ -294,8 +330,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
         Settings settings = SettingsManager.loadFrom(cfg);
-        Assert.hasText(settings.getResourceWrite(),
-                String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
+        Assert.hasText(settings.getResourceWrite(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init
         RestRepository client = null;

@@ -201,6 +201,15 @@ public class MRNewApiSaveTest {
         runJob(conf);
     }
 
+    @Test
+    public void testIndexPattern() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/pattern-{number}");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        runJob(conf);
+    }
+
     private Configuration createConf() throws IOException {
         return new Configuration(config);
     }

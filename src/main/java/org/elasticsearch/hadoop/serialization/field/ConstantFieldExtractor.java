@@ -45,8 +45,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected String property(Settings settings) {
-        String property = settings.getProperty(PROPERTY).trim();
-        String value = settings.getProperty(property);
+        String value = settings.getProperty(PROPERTY);
         return (value == null ? "" : value.trim());
     }
 

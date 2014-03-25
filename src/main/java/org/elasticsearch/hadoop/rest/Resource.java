@@ -34,6 +34,7 @@ public class Resource {
     private final String indexAndType;
     private final String type;
     private final String index;
+    private final String bulk;
 
     public Resource(Settings settings, boolean read) {
         String resource = (read ? settings.getResourceRead() : settings.getResourceWrite());
@@ -87,10 +88,13 @@ public class Resource {
         Assert.hasText(type, "No type found; expecting [index]/[type]");
 
         indexAndType = index + "/" + type;
+
+        // check bulk
+        bulk = (indexAndType.contains("{") ? "/_bulk" : indexAndType + "/_bulk");
     }
 
     String bulk() {
-        return indexAndType + "/_bulk";
+        return bulk;
     }
 
     // https://github.com/elasticsearch/elasticsearch/issues/2726

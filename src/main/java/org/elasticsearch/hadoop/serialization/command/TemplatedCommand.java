@@ -20,10 +20,10 @@ package org.elasticsearch.hadoop.serialization.command;
 
 import java.util.Collection;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
-import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -45,7 +45,9 @@ class TemplatedCommand implements Command {
 
         BytesArray write(Object object) {
             String value = extractor.field(object);
-            Assert.notNull(value, String.format("[%s] cannot extract value from object [%s]", extractor, object));
+            if (value == null) {
+                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, object));
+            }
             pad.bytes(value);
             return pad;
         }

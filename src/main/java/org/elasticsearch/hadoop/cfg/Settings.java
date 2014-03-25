@@ -183,6 +183,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_MAPPING_TIMESTAMP_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
     }
 
+    public String getMappingIndexFormatClassName() {
+        return getProperty(ES_MAPPING_INDEX_FORMAT_CLASS, ES_MAPPING_DEFAULT_INDEX_FORMAT_CLASS);
+    }
+
     public boolean getUpsertDoc() {
         return Booleans.parseBoolean(getProperty(ES_UPSERT_DOC, ES_UPSERT_DOC_DEFAULT));
     }
@@ -271,6 +275,7 @@ public abstract class Settings implements InternalConfigurationOptions {
     public String getResourceWrite() {
         return getProperty(ES_RESOURCE_WRITE, getResource());
     }
+
     String getTargetHosts() {
         String hosts = getProperty(INTERNAL_ES_HOSTS);
         return (StringUtils.hasText(hosts) ? hosts : getNodes());
