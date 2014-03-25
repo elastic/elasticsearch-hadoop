@@ -121,7 +121,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-" + new Random().nextInt(950)));
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-" + (new Random().nextInt(950) + 10)));
         Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-990"));
     }
 
