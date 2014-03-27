@@ -1,0 +1,9 @@
+{
+    "nested" : {
+        "properties" : {
+            "url" : {
+                "type" : "nested"
+             }
+        }
+    }
+}

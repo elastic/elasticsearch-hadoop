@@ -66,6 +66,12 @@ public class Field implements Serializable {
         return (iterator.hasNext() ? parseField(iterator.next(), null) : null);
     }
 
+    /**
+     * Returns the associated fields with the given mapping. Handles removal of mappings/<type>
+     *
+     * @param field
+     * @return
+     */
     public static Map<String, FieldType> toLookupMap(Field field) {
         if (field == null) {
             return Collections.<String, FieldType> emptyMap();
@@ -73,7 +79,15 @@ public class Field implements Serializable {
 
         Map<String, FieldType> map = new LinkedHashMap<String, FieldType>();
 
-        for (Field nestedField : field.properties()) {
+        Field[] props = field.properties();
+
+        // handle the common case of mapping by removing the first field (mapping.)
+        if (props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
+            // followed by <type> (index/type) removal
+            props = props[0].properties()[0].properties();
+        }
+
+        for (Field nestedField : props) {
             add(map, nestedField, null);
         }
 
@@ -81,16 +95,15 @@ public class Field implements Serializable {
     }
 
     static void add(Map<String, FieldType> fields, Field field, String parentName) {
+        String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
+
         if (FieldType.OBJECT == field.type()) {
-            if (parentName != null) {
-                parentName = parentName + "." + field.name();
-            }
             for (Field nestedField : field.properties()) {
-                add(fields, nestedField, parentName);
+                add(fields, nestedField, fieldName);
             }
         }
         else {
-            fields.put(field.name(), field.type());
+            fields.put(fieldName, field.type());
         }
     }
 

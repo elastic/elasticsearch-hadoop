@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestClient.HEALTH;
+import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 public class RestUtils {
@@ -54,6 +55,13 @@ public class RestUtils {
         BytesArray bs = new BytesArray(content);
         rc.putMapping(index, index + "/_mapping", bs.bytes);
         rc.close();
+    }
+
+    public static Field getMapping(String index) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        Field parseField = Field.parseField(rc.getMapping(index));
+        rc.close();
+        return parseField;
     }
 
     public static void putMapping(String index, String location) throws Exception {

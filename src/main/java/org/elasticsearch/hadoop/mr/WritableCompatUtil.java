@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 /**
  * Utility handling the difference in built-in Writable between Hadoop 1 and 2.
  */
+@SuppressWarnings("unchecked")
 class WritableCompatUtil {
 
     private final static Class<Writable> SHORT_WRITABLE;

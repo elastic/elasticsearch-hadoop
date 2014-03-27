@@ -43,7 +43,7 @@ public abstract class ParsingUtils {
             return null;
         }
 
-        List<String> tokens = StringUtils.tokenize(path, "/");
+        List<String> tokens = StringUtils.tokenize(path, ".");
         return seek(parser, tokens.toArray(new String[tokens.size()]));
     }
 

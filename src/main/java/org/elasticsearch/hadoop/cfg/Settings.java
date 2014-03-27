@@ -195,6 +195,10 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_FIELD_READ_EMPTY_AS_NULL, ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT));
     }
 
+    public FieldPresenceValidation getFieldExistanceValidation() {
+        return FieldPresenceValidation.valueOf(getProperty(ES_FIELD_READ_VALIDATE_PRESENCE, ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT).toUpperCase());
+    }
+
     public TimeValue getHeartBeatLead() {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }

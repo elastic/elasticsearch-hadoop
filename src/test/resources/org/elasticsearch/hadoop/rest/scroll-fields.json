@@ -24,7 +24,15 @@
                 "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
                 "_score" : 0.0,
                 "_source" : {
-                    "source" : "source"
+                    "links":{"url":"http://www.last.fm/music/DIR+EN+GREY"}
+                }
+            }, {
+                "_index" : "pig",
+                "_type" : "tupleartists",
+                "_id" : "H2opSUi0RAm_WrHUkSSjIA",
+                "_score" : 0.0,
+                "_source" : {
+                    "links":{"url":"http://www.last.fm/music/Limbonic+Art"}
                 }
             }
         ]

@@ -68,7 +68,7 @@ public class JsonPathTest {
 
     @Test
     public void testOneLevelNestedField() throws Exception {
-        assertNotNull(ParsingUtils.seek("address/state", parser));
+        assertNotNull(ParsingUtils.seek("address.state", parser));
         assertEquals(Token.VALUE_STRING, parser.currentToken());
         assertEquals("state", parser.currentName());
     }

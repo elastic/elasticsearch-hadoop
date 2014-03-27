@@ -42,6 +42,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
@@ -52,6 +53,7 @@ import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
 import org.elasticsearch.hadoop.rest.dto.mapping.Field;
+import org.elasticsearch.hadoop.rest.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
@@ -441,9 +443,16 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         String savedMapping = null;
         if (!targetShards.isEmpty()) {
             Field mapping = client.getMapping();
+            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+            // validate if possible
+            FieldPresenceValidation validation = settings.getFieldExistanceValidation();
+            if (validation.isRequired()) {
+                MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
+            }
+
             //TODO: implement this more efficiently
             savedMapping = IOUtils.serializeToBase64(mapping);
-            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+
         }
 
         client.close();

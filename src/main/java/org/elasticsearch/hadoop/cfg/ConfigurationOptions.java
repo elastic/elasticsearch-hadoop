@@ -110,6 +110,9 @@ public interface ConfigurationOptions {
     String ES_FIELD_READ_EMPTY_AS_NULL = "es.field.read.empty.as.null";
     String ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT = "yes";
 
+    String ES_FIELD_READ_VALIDATE_PRESENCE = "es.field.read.validate.presence";
+    String ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT = "strict";
+
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";

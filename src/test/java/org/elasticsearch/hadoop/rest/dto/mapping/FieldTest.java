@@ -16,17 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.dto.mapping;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
+
 
 public class FieldTest {
 
@@ -117,5 +121,21 @@ public class FieldTest {
         Field fl = Field.parseField(value);
         assertEquals("person", fl.name());
         assertEquals(0, fl.properties().length);
+    }
+
+    @Test
+    public void testFieldValidation() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
+        Field fl = Field.parseField(value);
+
+        List<String>[] findFixes = MappingUtils.findFixes(Collections.singletonList("nam"), fl);
+        assertThat(findFixes[1], contains("name"));
+
+        findFixes = MappingUtils.findFixes(Collections.singletonList("link.url"), fl);
+        assertThat(findFixes[1], contains("links.url"));
+
+        findFixes = MappingUtils.findFixes(Collections.singletonList("ulr"), fl);
+        assertThat(findFixes[1], contains("links.url"));
+
     }
 }
