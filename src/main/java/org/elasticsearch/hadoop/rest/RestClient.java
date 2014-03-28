@@ -133,16 +133,21 @@ public class RestClient implements Closeable, StatsAware {
         boolean isRetry = false;
 
         do {
+            // NB: dynamically get the stats since the transport can change
+            long start = network.transportStats().netTotalTime;
             Response response = execute(PUT, resource.bulk(), data);
+            long spent = network.transportStats().netTotalTime - start;
 
             stats.bulkWrites++;
             stats.docsWritten += data.entries();
+            stats.bulkTotalTime += spent;
             // bytes will be counted by the transport layer
 
             if (isRetry) {
                 stats.docsRetried += data.entries();
                 stats.bytesRetried += data.length();
                 stats.bulkRetries++;
+                stats.bulkRetriesTotalTime += spent;
             }
 
             isRetry = true;
@@ -159,8 +164,8 @@ public class RestClient implements Closeable, StatsAware {
             try {
                 if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {
                     // recorded bytes are ack here
-                    stats.bytesRecorded += data.length();
-                    stats.docsRecorded += data.entries();
+                    stats.bytesAccepted += data.length();
+                    stats.docsAccepted += data.entries();
                     return false;
                 }
             } finally {
@@ -179,14 +184,15 @@ public class RestClient implements Closeable, StatsAware {
                         entryToDeletePosition++;
                     }
                     else {
-                        String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status), status, error) : error);
-                        throw new EsHadoopProtocolException(String.format("Found unrecoverable error [%s]; Bailing out..",
-                                message));
+                        String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status),
+                                status, error) : error);
+                        throw new EsHadoopProtocolException(String.format(
+                                "Found unrecoverable error [%s]; Bailing out..", message));
                     }
                 }
                 else {
-                    stats.bytesRecorded += data.length(entryToDeletePosition);
-                    stats.docsRecorded += 1;
+                    stats.bytesAccepted += data.length(entryToDeletePosition);
+                    stats.docsAccepted += 1;
                     data.remove(entryToDeletePosition);
                 }
             }
@@ -242,7 +248,11 @@ public class RestClient implements Closeable, StatsAware {
 
     @Override
     public void close() {
-        network.close();
+        if (network != null) {
+            network.close();
+            stats.aggregate(network.stats());
+            network = null;
+        }
     }
 
     protected InputStream execute(Request request) {
@@ -295,9 +305,17 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public InputStream scroll(String scrollId) {
-        // use post instead of get to avoid some weird encoding issues (caused by the long URL)
-        return execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
-                new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
+        // NB: dynamically get the stats since the transport can change
+        long start = network.transportStats().netTotalTime;
+        try {
+            // use post instead of get to avoid some weird encoding issues (caused by the long URL)
+            InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
+                    new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
+            stats.scrollReads++;
+            return is;
+        } finally {
+            stats.scrollTotalTime += network.transportStats().netTotalTime - start;
+        }
     }
 
     public boolean exists(String indexOrType) {
@@ -333,7 +351,11 @@ public class RestClient implements Closeable, StatsAware {
 
     @Override
     public Stats stats() {
-        return stats.aggregate(network.stats());
+        Stats copy = new Stats(stats);
+        if (network != null) {
+            copy.aggregate(network.stats());
+        }
+        return copy;
     }
 
     private void countStreamStats(InputStream content) {

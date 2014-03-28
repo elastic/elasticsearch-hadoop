@@ -18,7 +18,15 @@
  */
 package org.elasticsearch.hadoop.rest.stats;
 
+/**
+ * Interface exposing stats.
+ */
 public interface StatsAware {
 
+    /**
+     * Returns the stats of the given component. Potentially expensive call (since it implies doing internal aggregations) so call it only when necessary.
+     *
+     * @return component stats.
+     */
     Stats stats();
 }

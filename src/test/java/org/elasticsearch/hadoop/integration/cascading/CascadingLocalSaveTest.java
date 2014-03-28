@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
+import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
@@ -44,7 +45,7 @@ public class CascadingLocalSaveTest {
         Tap out = new EsTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
-        new ExtendedLocalFlowConnector(new TestSettings().getProperties()).connect(in, out, pipe).complete();
+        build(new TestSettings().getProperties(), in, out, pipe);
     }
 
     @Test
@@ -59,8 +60,7 @@ public class CascadingLocalSaveTest {
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.names", "url:address");
-        new ExtendedLocalFlowConnector(props).connect(in, out, pipe).complete();
-
+        build(props, in, out, pipe);
     }
 
     @Test(expected = Exception.class)
@@ -76,7 +76,7 @@ public class CascadingLocalSaveTest {
 
         // rename "id" -> "garbage"
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
-        new ExtendedLocalFlowConnector(properties).connect(in, out, pipe).complete();
+        build(properties, in, out, pipe);
     }
 
     @Test
@@ -91,6 +91,10 @@ public class CascadingLocalSaveTest {
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.ttl", "<1>");
-        new ExtendedLocalFlowConnector(props).connect(in, out, pipe).complete();
+        build(props, in, out, pipe);
+    }
+
+    private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
+        StatsUtils.proxy(new LocalFlowConnector(cfg).connect(in, out, pipe)).complete();
     }
 }

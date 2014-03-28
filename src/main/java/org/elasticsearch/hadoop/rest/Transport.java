@@ -21,7 +21,9 @@ package org.elasticsearch.hadoop.rest;
 import java.io.Closeable;
 import java.io.IOException;
 
-public interface Transport extends Closeable {
+import org.elasticsearch.hadoop.rest.stats.StatsAware;
+
+public interface Transport extends Closeable, StatsAware {
 
     Response execute(Request request) throws IOException;
 

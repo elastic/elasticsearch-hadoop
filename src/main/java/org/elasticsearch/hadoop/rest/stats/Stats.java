@@ -33,15 +33,53 @@ public class Stats {
     public long bytesRetried;
     public long bulkRetries;
     /** ack */
-    public long bytesRecorded;
-    public long docsRecorded;
-
+    public long bytesAccepted;
+    public long docsAccepted;
     /** reads */
     public long bytesRead;
     public long docsRead;
-
+    /** fall overs */
     public int nodeRetries;
     public int netRetries;
+    /** time measured (in millis)*/
+    public long netTotalTime;
+    public long bulkTotalTime;
+    public long bulkRetriesTotalTime;
+    /** scroll */
+    public long scrollTotalTime;
+    public long scrollReads;
+
+    public Stats() {};
+
+    public Stats(Stats stats) {
+        if (stats == null) {
+            return;
+        }
+
+        this.bytesWritten = stats.bytesWritten;
+        this.docsWritten = stats.docsWritten;
+        this.bulkWrites = stats.bulkWrites;
+
+        this.docsRetried = stats.docsRetried;
+        this.bytesRetried = stats.bytesRetried;
+        this.bulkRetries = stats.bulkRetries;
+
+        this.bytesAccepted = stats.bytesAccepted;
+        this.docsAccepted = stats.docsAccepted;
+
+        this.bytesRead = stats.bytesRead;
+        this.docsRead = stats.docsRead;
+
+        this.nodeRetries = stats.nodeRetries;
+        this.netRetries = stats.netRetries;
+
+        this.netTotalTime = stats.netTotalTime;
+        this.bulkTotalTime = stats.bulkTotalTime;
+        this.bulkRetriesTotalTime = stats.bulkRetriesTotalTime;
+
+        this.scrollReads = stats.scrollReads;
+        this.scrollTotalTime = stats.scrollTotalTime;
+    }
 
     public Stats aggregate(Stats other) {
         if (other == null) {
@@ -54,14 +92,21 @@ public class Stats {
         docsRetried += other.docsRetried;
         bytesRetried += other.bytesRetried;
         bulkRetries += other.bulkRetries;
-        bytesRecorded += other.bytesRecorded;
-        docsRecorded += other.docsRecorded;
+        bytesAccepted += other.bytesAccepted;
+        docsAccepted += other.docsAccepted;
 
         bytesRead += other.bytesRead;
         docsRead += other.docsRead;
 
         nodeRetries += other.nodeRetries;
         netRetries += other.netRetries;
+
+        netTotalTime += other.netTotalTime;
+        bulkTotalTime += other.bulkTotalTime;
+        bulkRetriesTotalTime += other.bulkRetriesTotalTime;
+
+        scrollReads += other.scrollReads;
+        scrollTotalTime += other.scrollTotalTime;
 
         return this;
     }

@@ -161,7 +161,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         private RestRepository client;
         private QueryBuilder queryBuilder;
-        private ScrollQuery result;
+        private ScrollQuery scrollQuery;
 
         // reuse objects
         private K currentKey;
@@ -280,17 +280,23 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                     beat.stop();
                 }
 
-                if (result != null) {
-                    result.close();
+                if (scrollQuery != null) {
+                    scrollQuery.close();
                 }
 
-                client.close();
+                if (client != null) {
+                    client.close();
+                }
 
             } finally {
                 Stats stats = new Stats();
-                stats.aggregate(client.stats());
-                if (result != null) {
-                    stats.aggregate(result.stats());
+                if (client != null) {
+                    stats.aggregate(client.stats());
+                    client = null;
+                }
+                if (scrollQuery != null) {
+                    stats.aggregate(scrollQuery.stats());
+                    scrollQuery = null;
                 }
                 ReportingUtils.report(progressable, stats);
             }
@@ -298,24 +304,24 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         @Override
         public boolean next(K key, V value) throws IOException {
-            if (result == null) {
+            if (scrollQuery == null) {
                 beat.start();
 
-                result = queryBuilder.build(client, scrollReader);
-                size = result.getSize();
+                scrollQuery = queryBuilder.build(client, scrollReader);
+                size = scrollQuery.getSize();
 
                 if (log.isTraceEnabled()) {
-                    log.trace(String.format("Received scroll [%s],  size [%d] for query [%s]", result, size, queryBuilder));
+                    log.trace(String.format("Received scroll [%s],  size [%d] for query [%s]", scrollQuery, size, queryBuilder));
                 }
             }
 
-            boolean hasNext = result.hasNext();
+            boolean hasNext = scrollQuery.hasNext();
 
             if (!hasNext) {
                 return false;
             }
 
-            Object[] next = result.next();
+            Object[] next = scrollQuery.next();
             currentKey = setCurrentKey(currentKey, key, next[0]);
             currentValue = setCurrentValue(currentValue, value, next[1]);
 

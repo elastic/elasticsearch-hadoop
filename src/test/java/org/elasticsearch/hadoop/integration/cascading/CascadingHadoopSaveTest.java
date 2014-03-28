@@ -44,8 +44,7 @@ public class CascadingHadoopSaveTest {
         Pipe pipe = new Pipe("copy");
 
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
-
-        new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef).complete();
+        StatsUtils.proxy(new HadoopFlowConnector(HdpBootstrap.asProperties(CascadingHadoopSuite.configuration)).connect(flowDef)).complete();
     }
 
     @Test
@@ -60,7 +59,6 @@ public class CascadingHadoopSaveTest {
 
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
         props.setProperty("es.mapping.names", "url:address");
-        new HadoopFlowConnector(props).connect(in, out, pipe).complete();
-
+        StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }
 }

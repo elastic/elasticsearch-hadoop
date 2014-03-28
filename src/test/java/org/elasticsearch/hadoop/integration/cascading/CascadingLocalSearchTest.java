@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.AssertionLevel;
 import cascading.operation.aggregator.Count;
 import cascading.operation.assertion.AssertNotNull;
@@ -74,7 +75,7 @@ public class CascadingLocalSearchTest {
 
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
-        new ExtendedLocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
     @Test
@@ -88,7 +89,7 @@ public class CascadingLocalSearchTest {
 
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
-        new ExtendedLocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
     @Test
@@ -101,7 +102,7 @@ public class CascadingLocalSearchTest {
 
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
-        new ExtendedLocalFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
     @Test
@@ -117,7 +118,7 @@ public class CascadingLocalSearchTest {
         Tap out = new OutputStreamTap(new TextLine(), OUT);
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "url:address");
-        new ExtendedLocalFlowConnector(cfg).connect(in, out, pipe).complete();
+        build(cfg, in, out, pipe);
     }
 
 
@@ -125,5 +126,9 @@ public class CascadingLocalSearchTest {
         Properties props = new TestSettings().getProperties();
         //props.put(ConfigurationOptions.ES_QUERY, query);
         return props;
+    }
+
+    private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
+        StatsUtils.proxy(new LocalFlowConnector(cfg).connect(in, out, pipe)).complete();
     }
 }

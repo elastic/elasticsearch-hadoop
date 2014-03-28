@@ -69,7 +69,7 @@ public class CascadingHadoopSearchTest {
         //Tap out = new Hfs(new TextDelimited(), "cascadingbug-1", SinkMode.REPLACE);
         //FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
 
-        new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
 
@@ -82,7 +82,7 @@ public class CascadingHadoopSearchTest {
 
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
-        new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class CascadingHadoopSearchTest {
 
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
-        new HadoopFlowConnector(cfg()).connect(in, out, pipe).complete();
+        build(cfg(), in, out, pipe);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class CascadingHadoopSearchTest {
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "url:address");
-        new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
+        build(cfg, in, out, pipe);
     }
 
     @Test
@@ -125,7 +125,7 @@ public class CascadingHadoopSearchTest {
 
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
-        new HadoopFlowConnector(cfg).connect(in, out, pipe).complete();
+        build(cfg, in, out, pipe);
     }
 
     private Properties cfg() {
@@ -133,5 +133,9 @@ public class CascadingHadoopSearchTest {
         //props.put(ConfigurationOptions.ES_QUERY, query);
 
         return props;
+    }
+
+    private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
+        StatsUtils.proxy(new HadoopFlowConnector(cfg).connect(in, out, pipe)).complete();
     }
 }

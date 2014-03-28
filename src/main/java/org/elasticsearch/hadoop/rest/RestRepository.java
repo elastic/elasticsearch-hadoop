@@ -187,7 +187,11 @@ public class RestRepository implements Closeable, StatsAware {
             log.warn("Cannot flush data batch", ex);
         }
 
-        client.close();
+        if (client != null) {
+            client.close();
+            stats.aggregate(client.stats());
+            client = null;
+        }
     }
 
     public RestClient getRestClient() {
@@ -270,6 +274,10 @@ public class RestRepository implements Closeable, StatsAware {
 
     @Override
     public Stats stats() {
-        return stats.aggregate(client.stats());
+        Stats copy = new Stats(stats);
+        if (client != null) {
+            copy.aggregate(client.stats());
+        }
+        return copy;
     }
 }

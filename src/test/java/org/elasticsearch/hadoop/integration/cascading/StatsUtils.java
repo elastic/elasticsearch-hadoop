@@ -21,30 +21,17 @@ package org.elasticsearch.hadoop.integration.cascading;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Map;
 
 import org.elasticsearch.hadoop.mr.Counter;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import cascading.flow.Flow;
-import cascading.flow.FlowDef;
-import cascading.flow.local.LocalFlowConnector;
 import cascading.stats.CascadingStats;
 
-public class ExtendedLocalFlowConnector extends LocalFlowConnector {
-
-    public ExtendedLocalFlowConnector() {
-        super();
-    }
-
-    public ExtendedLocalFlowConnector(Map<Object, Object> properties) {
-        super(properties);
-    }
+public abstract class StatsUtils {
 
     @SuppressWarnings("rawtypes")
-    @Override
-    public Flow connect(FlowDef flowDef) {
-        final Flow flow = super.connect(flowDef);
+    public static Flow proxy(final Flow flow) {
         Flow proxy = (Flow) Proxy.newProxyInstance(Flow.class.getClassLoader(), new Class[] { Flow.class }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -59,7 +46,7 @@ public class ExtendedLocalFlowConnector extends LocalFlowConnector {
         return proxy;
     }
 
-    private void printStats(Flow flow) {
+    private static void printStats(Flow flow) {
         CascadingStats stats = flow.getStats();
         System.out.println("Cascading stats for " + Counter.class.getName());
         for (String counter : stats.getCountersFor(Counter.class)) {

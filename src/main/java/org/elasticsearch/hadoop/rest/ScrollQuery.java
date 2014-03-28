@@ -34,7 +34,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
  */
 public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
-    private RestRepository client;
+    private RestRepository repository;
     private String scrollId;
     private List<Object[]> batch = Collections.emptyList();
     private boolean finished = false;
@@ -48,7 +48,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     private final Stats stats = new Stats();
 
     ScrollQuery(RestRepository client, String scrollId, long size, ScrollReader reader) {
-        this.client = client;
+        this.repository = client;
         this.scrollId = scrollId;
         this.size = size;
         this.reader = reader;
@@ -58,7 +58,6 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     public void close() throws IOException {
         finished = true;
         batch = Collections.emptyList();
-        client.close();
     }
 
     @Override
@@ -73,7 +72,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             }
 
             try {
-                batch = client.scroll(scrollId, reader);
+                batch = repository.scroll(scrollId, reader);
             } catch (IOException ex) {
                 throw new EsHadoopIllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
@@ -111,11 +110,12 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
     @Override
     public Stats stats() {
-        return stats;
+        // there's no need to do aggregation
+        return new Stats(stats);
     }
 
     public RestRepository repository() {
-        return client;
+        return repository;
     }
 
     @Override

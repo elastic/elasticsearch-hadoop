@@ -48,11 +48,11 @@ public interface ConfigurationOptions {
 
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
-    String ES_BATCH_SIZE_BYTES_DEFAULT = "10mb";
+    String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";
 
     /** Elasticsearch batch size given in entries */
     String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
-    String ES_BATCH_SIZE_ENTRIES_DEFAULT = "0";
+    String ES_BATCH_SIZE_ENTRIES_DEFAULT = "1000";
 
     /** Whether to trigger an index refresh after doing batch writing */
     String ES_BATCH_WRITE_REFRESH = "es.batch.write.refresh";

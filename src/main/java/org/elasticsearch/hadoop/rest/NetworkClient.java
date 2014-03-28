@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.io.Closeable;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -30,8 +31,7 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 
 
-public class NetworkClient implements StatsAware {
-
+public class NetworkClient implements StatsAware, Closeable {
     private static Log log = LogFactory.getLog(NetworkClient.class);
 
     private final Settings settings;
@@ -61,9 +61,8 @@ public class NetworkClient implements StatsAware {
             stats.nodeRetries++;
         }
 
+        closeTransport();
         currentUri = nodes.get(nextClient++);
-        close();
-
         settings.setHosts(currentUri);
         currentTransport = new CommonsHttpTransport(settings, currentUri);
         return true;
@@ -102,18 +101,28 @@ public class NetworkClient implements StatsAware {
         return response;
     }
 
-    void close() {
-        if (currentTransport != null) {
-            if (currentTransport instanceof StatsAware) {
-                stats.aggregate(((StatsAware) currentTransport).stats());
-            }
+    public void close() {
+        closeTransport();
+    }
 
+    private void closeTransport() {
+        if (currentTransport != null) {
             currentTransport.close();
+            stats.aggregate(currentTransport.stats());
+            currentTransport = null;
         }
     }
 
     @Override
     public Stats stats() {
-        return stats;
+        Stats copy = new Stats(stats);
+        if (currentTransport != null) {
+            copy.aggregate(currentTransport.stats());
+        }
+        return copy;
+    }
+
+    Stats transportStats() {
+        return currentTransport.stats();
     }
 }

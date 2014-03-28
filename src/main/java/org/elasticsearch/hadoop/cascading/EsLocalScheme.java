@@ -27,7 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.mr.Counters;
+import org.elasticsearch.hadoop.mr.Counter;
 import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -88,10 +88,12 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     @Override
     public void sourceCleanup(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
+        // in case of a source there's no local client so do all reporting here
         report(sourceCall.getInput().stats(), flowProcess);
         report(sourceCall.getInput().repository().stats(), flowProcess);
         sourceCall.getInput().close();
         sourceCall.setContext(null);
+        // used for consistency
         cleanupClient(flowProcess);
     }
 
@@ -102,28 +104,17 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
     private void cleanupClient(FlowProcess<Properties> flowProcess) throws IOException {
         if (client != null) {
-            report(client.stats(), flowProcess);
             client.close();
+            report(client.stats(), flowProcess);
             client = null;
         }
     }
 
     private void report(Stats stats, FlowProcess<Properties> flowProcess) {
         // report current stats
-        flowProcess.increment(Counters.BYTES_WRITTEN, stats.bytesWritten);
-        flowProcess.increment(Counters.BYTES_READ, stats.bytesRead);
-        flowProcess.increment(Counters.BYTES_RETRIED, stats.bytesRetried);
-        flowProcess.increment(Counters.BYTES_RECORDED, stats.bytesRecorded);
-
-        flowProcess.increment(Counters.DOCS_WRITTEN, stats.docsWritten);
-        flowProcess.increment(Counters.DOCS_READ, stats.docsRead);
-        flowProcess.increment(Counters.DOCS_RETRIED, stats.docsRetried);
-        flowProcess.increment(Counters.DOCS_RECORDED, stats.docsRecorded);
-
-        flowProcess.increment(Counters.BULK_WRITES, stats.bulkWrites);
-        flowProcess.increment(Counters.BULK_RETRIES, stats.bulkRetries);
-        flowProcess.increment(Counters.NODE_RETRIES, stats.nodeRetries);
-        flowProcess.increment(Counters.NET_RETRIES, stats.netRetries);
+        for (Counter count : Counter.ALL) {
+            flowProcess.increment(count, count.get(stats));
+        }
     }
 
     @Override
