@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -121,7 +120,7 @@ public class MRNewApiSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-" + (new Random().nextInt(950) + 10)));
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-500"));
         Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-990"));
     }
 
