@@ -8,44 +8,75 @@
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M2</version>
+  <version>1.3.0.M3</version>
 </dependency>
 ----
 
+The jar above contains all the features of {eh} and does not require any other dependencies at runtime; in other words it can be used as is.
+
 [[yarn]]
+Since 1.3.0.M3, the distribution jar is suitable for both Hadoop 1.x and Hadoop 2.x (also known as YARN) environments.
 YARN/Hadoop 2.x/MRv2 binary compatible releases are published using the 'yarn' classifier:
+
+=== Minimalistic binaries
+
+In addition to the 'uber' jar, {eh} provides minimalistic jars for each integration, taylored for those who use just one integration and interested in saving additional space (though the 'uber' jar itself is a mere couple of hundred KB). Thus one can 'select' the needed jar by specifying the library it wants as the
+'classifier' (in Maven terminology), as follows:
+
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M2</version>
-  <classifier>yarn</classifier><1>
+  <version>1.3.0.M3</version>
+  <classifier>mr</classifier><1>
 </dependency>
 ----
 
-<1> classifier selecting the 'yarn' artifact
-
-CAUTION: Many Hadoop distribution ship both YARN (or MRv2) and Hadoop 1.x (or MRv1) in the same package but running only one package at a time. Use the 'yarn' jars only when running on MRv2 - if you are using MRv1, do use the normal {eh} distribution.
-
-Releases are available in the central Maven http://repo1.maven.org/maven[repository].
-Additionally, one can use the following repository which contains both releases and nightly builds (see below):
+<1> classifier selecting the 'mr' artifact
 
 [source,xml]
 ----
-<repositories>
-  <repository>
-    <id>sonatype-oss</id>
-    <url>http://oss.sonatype.org/content/repositories/releases</url>
-  </repository>
-</repositories>
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>1.3.0.M3</version>
+  <classifier>hive</classifier><1>
+</dependency>
 ----
+
+<1> classifier selecting the 'hive' artifact
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>1.3.0.M3</version>
+  <classifier>pig</classifier><1>
+</dependency>
+----
+
+<1> classifier selecting the 'pig' artifact
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>1.3.0.M3</version>
+  <classifier>cascading</classifier><1>
+</dependency>
+----
+
+<1> classifier selecting the 'cascading' artifact
+
+Releases are available in the central Maven http://repo1.maven.org/maven[repository].
 
 [[download-dev]]
 === Development Builds
 
-Development (or nightly or snapshots) builds are published daily at the aforementioned 'sonatype-oss' repository. Make sure to
-use snapshot versioning:
+Development (or nightly or snapshots) builds are published daily at 'sonatype-oss' repository (see below). Make sure to use snapshot versioning:
 
 [source,xml]
 ----
@@ -56,19 +87,20 @@ use snapshot versioning:
 </dependency>
 ----
 
-<1> notice the 'SNAPSHOT' suffix indicating a development build
+<1> notice the 'BUILD-SNAPSHOT' suffix indicating a development build
 
-but also enable snapshots in the repository definition:
+but also enable the dedicated snapshots repository :
 
 [source,xml]
 ----
 <repositories>
   <repository>
     <id>sonatype-oss</id>
-    <url>http://oss.sonatype.org/content/repositories/releases</url>
-    <snapshots><enabled>true</enabled></snapshots> <1>
+    <url>http://oss.sonatype.org/content/repositories/releases</url> <1>
+    <snapshots><enabled>true</enabled></snapshots> <2>
   </repository>
 </repositories>
 ----
 
-<1> enable snapshots on the repository otherwise these will not be found by Maven
+<1> add snapshot repository
+<2> enable 'snapshots' capability on the repository otherwise these will not be found by Maven
