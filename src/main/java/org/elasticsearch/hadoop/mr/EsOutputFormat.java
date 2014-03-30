@@ -41,6 +41,7 @@ import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
@@ -138,7 +139,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         protected boolean initialized = false;
 
         protected RestRepository client;
-        private String uri, resource;
+        private String uri;
+        private Resource resource;
 
         private HeartBeat beat;
         private Progressable progressable;
@@ -185,11 +187,11 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
             beat.start();
 
-            resource = settings.getResourceWrite();
+            resource = new Resource(settings, false);
 
             // single index vs multi indices
             IndexFormat iformat = ObjectUtils.instantiate(settings.getMappingIndexFormatClassName(), settings);
-            iformat.compile(resource);
+            iformat.compile(resource.toString());
             if (iformat.hasPattern()) {
                 initMultiIndices(settings, currentInstance);
             }

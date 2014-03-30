@@ -269,6 +269,13 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
         http.setPath(prefixPath(request.path().toString()));
 
+        try {
+            // validate new URI
+            http.getURI();
+        } catch (URIException uriex) {
+            throw new EsHadoopTransportException("Invalid target URI " + request, uriex);
+        }
+
         CharSequence params = request.params();
         if (StringUtils.hasText(params)) {
             http.setQueryString(params.toString());

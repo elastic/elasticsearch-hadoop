@@ -207,7 +207,16 @@ public class MROldApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-{number}");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "/mroldapi/pattern-{number}");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testAlmostValidIndexPattern() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-{number}/pattern");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

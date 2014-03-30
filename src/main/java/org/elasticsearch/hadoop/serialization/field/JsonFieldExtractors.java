@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.AbstractIndexFormat;
 import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
@@ -89,7 +90,7 @@ public class JsonFieldExtractors {
                 return createJsonFieldExtractor(fieldName, jsonPaths);
             }
         };
-        indexFormat.compile(settings.getResourceWrite());
+        indexFormat.compile(new Resource(settings, false).toString());
 
         // if there's no pattern, simply remove it
         indexFormat = (indexFormat.hasPattern() ? indexFormat : null);

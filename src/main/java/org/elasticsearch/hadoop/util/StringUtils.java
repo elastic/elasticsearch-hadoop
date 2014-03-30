@@ -185,4 +185,15 @@ public abstract class StringUtils {
 
         return list;
     }
+
+    public static String sanitizeResource(String resource) {
+        String res = resource.trim();
+        if (res.startsWith("/")) {
+            res = res.substring(1);
+        }
+        if (res.endsWith("/")) {
+            res = res.substring(0, res.length() - 1);
+        }
+        return res;
+    }
 }

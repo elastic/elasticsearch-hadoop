@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.command.TemplatedCommand.FieldWriter;
@@ -102,7 +103,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
 
             // create adapter
             IndexFormat iformat = ObjectUtils.<IndexFormat> instantiate(settings.getMappingIndexFormatClassName(), settings);
-            iformat.compile(settings.getResourceWrite());
+            iformat.compile(new Resource(settings, false).toString());
 
             if (iformat.hasPattern()) {
                 indexFormat = iformat;

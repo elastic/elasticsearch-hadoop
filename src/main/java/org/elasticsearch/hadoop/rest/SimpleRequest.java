@@ -73,4 +73,18 @@ public class SimpleRequest implements Request {
     public ByteSequence body() {
         return body;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(method.name());
+        sb.append("@");
+        sb.append(uri);
+        sb.append("/");
+        sb.append(path);
+        if (params != null) {
+            sb.append("?");
+            sb.append(params);
+        }
+        return sb.toString();
+    }
 }

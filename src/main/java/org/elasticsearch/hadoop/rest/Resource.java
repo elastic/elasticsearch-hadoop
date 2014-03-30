@@ -35,6 +35,7 @@ public class Resource {
     private final String type;
     private final String index;
     private final String bulk;
+    private final String refresh;
 
     public Resource(Settings settings, boolean read) {
         String resource = (read ? settings.getResourceRead() : settings.getResourceWrite());
@@ -70,14 +71,7 @@ public class Resource {
             }
         }
 
-        String res = resource.trim();
-
-        if (res.startsWith("/")) {
-            res = res.substring(1);
-        }
-        if (res.endsWith("/")) {
-            res = res.substring(0, res.length() - 1);
-        }
+        String res = StringUtils.sanitizeResource(resource);
 
         int slash = res.indexOf("/");
         Assert.isTrue(slash >= 0 && slash < res.length() - 1, errorMessage);
@@ -90,7 +84,9 @@ public class Resource {
         indexAndType = index + "/" + type;
 
         // check bulk
-        bulk = (indexAndType.contains("{") ? "/_bulk" : indexAndType + "/_bulk");
+        boolean hasPattern = indexAndType.contains("{");
+        bulk = (hasPattern ? "/_bulk" : indexAndType + "/_bulk");
+        refresh = (hasPattern ? "/_refresh" : index + "/_refresh");
     }
 
     String bulk() {
@@ -124,6 +120,6 @@ public class Resource {
     }
 
     public String refresh() {
-        return index + "/_refresh";
+        return refresh;
     }
 }
