@@ -84,9 +84,8 @@ public class Resource {
         indexAndType = index + "/" + type;
 
         // check bulk
-        boolean hasPattern = indexAndType.contains("{");
-        bulk = (hasPattern ? "/_bulk" : indexAndType + "/_bulk");
-        refresh = (hasPattern ? "/_refresh" : index + "/_refresh");
+        bulk = (indexAndType.contains("{") ? "/_bulk" : indexAndType + "/_bulk");
+        refresh = (index.contains("{") ? "/_refresh" : index + "/_refresh");
     }
 
     String bulk() {

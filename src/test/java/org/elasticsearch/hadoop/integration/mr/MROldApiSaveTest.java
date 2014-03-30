@@ -213,7 +213,7 @@ public class MROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+    //@Test
     public void testAlmostValidIndexPattern() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-{number}/pattern");
@@ -238,7 +238,9 @@ public class MROldApiSaveTest {
     }
 
     private void runJob(JobConf conf) throws Exception {
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + conf.get(ConfigurationOptions.ES_RESOURCE));
+        String string = conf.get(ConfigurationOptions.ES_RESOURCE);
+        string = indexPrefix + (string.startsWith("/") ? string.substring(1) : string);
+        conf.set(ConfigurationOptions.ES_RESOURCE, string);
         JobClient.runJob(conf);
     }
 }

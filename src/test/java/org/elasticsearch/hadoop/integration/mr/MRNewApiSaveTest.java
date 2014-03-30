@@ -215,7 +215,9 @@ public class MRNewApiSaveTest {
     }
 
     private boolean runJob(Configuration conf) throws Exception {
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + conf.get(ConfigurationOptions.ES_RESOURCE));
+        String string = conf.get(ConfigurationOptions.ES_RESOURCE);
+        string = indexPrefix + (string.startsWith("/") ? string.substring(1) : string);
+        conf.set(ConfigurationOptions.ES_RESOURCE, string);
         return new Job(conf).waitForCompletion(true);
     }
 }
