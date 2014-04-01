@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Random;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -122,7 +121,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-" + new Random().nextInt(950)));
+        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-500"));
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-990"));
     }
 
