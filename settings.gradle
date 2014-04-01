@@ -1,4 +1,13 @@
 rootProject.name = "elasticsearch-hadoop"
 
+include 'mr'
+project(":mr").name = "elasticsearch-hadoop-mr"
+include 'hive'
+project(":hive").name = "elasticsearch-hadoop-hive"
+include 'pig'
+project(":pig").name = "elasticsearch-hadoop-pig"
+include 'cascading'
+project(":cascading").name = "elasticsearch-hadoop-cascading"
+
 include 'repository-hdfs'
 project(":repository-hdfs").name = "elasticsearch-repository-hdfs"

@@ -6,8 +6,13 @@ def customizePom(pom, gradleProject) {
 
         // eliminate test-scoped dependencies (no need in maven central poms)
         generatedPom.dependencies.removeAll { dep ->
-            dep.scope == 'test'
+            dep.scope == 'test' || dep.artifactId == 'elasticsearch-hadoop-mr'
         }
+		
+		// for es-hadoop optional is best served as provided/optional vs compile/optional
+		generatedPom.dependencies.findAll { it.optional == true }.each {
+			it.scope = "provided"
+		}
 
         // add all items necessary for maven central publication
         generatedPom.project {
