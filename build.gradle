@@ -475,6 +475,7 @@ allprojects { project ->
 		xml.enabled = true
 		html.enabled = false
 	  }
+	  enabled = project.hasProperty("enableFindbugs")
 	}
 
 	pmd {
@@ -485,8 +486,9 @@ allprojects { project ->
 	pmdMain {
 	  reports {
 		xml.enabled = true
-		html.enabled = true
+		html.enabled = false
 	  }
+	  enabled = project.hasProperty("enablePmd")
 	}
 
 	jacoco {
@@ -497,7 +499,7 @@ allprojects { project ->
 		reports {
 			xml.enabled true
 			csv.enabled true
-			html.enabled true
+			html.enabled false
 		}
 	}
 
