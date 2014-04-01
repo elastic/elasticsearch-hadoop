@@ -462,19 +462,27 @@ configure(rootProject) {
 // reporting
 allprojects { project ->
 	
-	findbugsMain {
+	findbugs {
 	  ignoreFailures = true
 	  effort = "max"
 	  reportLevel = "low"
+	  sourceSets = [sourceSets.main]
 	  
+	}
+	
+	findbugsMain {
 	  reports {
 		xml.enabled = true
 		html.enabled = false
 	  }
 	}
 
-	pmdMain {
+	pmd {
 	  ignoreFailures = true
+	  sourceSets = [sourceSets.main]
+	}
+	
+	pmdMain {
 	  reports {
 		xml.enabled = true
 		html.enabled = true
@@ -497,9 +505,6 @@ allprojects { project ->
 		findbugsMain.enabled = false
 		pmdMain.enabled = false
 	}
-	
-	findbugsTest.enabled = false
-	pmdTest.enabled = false   
 }
 
 
