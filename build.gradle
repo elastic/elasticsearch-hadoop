@@ -358,7 +358,7 @@ allprojects { project ->
 		maxHeapSize = "768m"
 
 	    testLogging {
-			events "started" , "standardOut", "standardError"
+			events "started" //, "standardOut", "standardError"
 			minGranularity 2
 			maxGranularity 2
 		}
