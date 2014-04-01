@@ -121,7 +121,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-500"));
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-990"));
     }
 
