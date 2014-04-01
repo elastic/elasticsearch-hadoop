@@ -35,12 +35,10 @@ import cascading.tuple.Fields;
 
 public class AbstractCascadingLocalJsonSaveTest {
 
-    private static final String INPUT = TestUtils.sampleArtistsJson(CascadingHadoopSuite.configuration);
-
     @Test
     public void testWriteToES() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextLine(new Fields("line")), INPUT);
+        Tap in = new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
         Tap out = new EsTap("json-cascading-local/artists");
 
         Pipe pipe = new Pipe("copy");
@@ -56,7 +54,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, "true");
 
         // local file-system source
-        Tap in = new FileTap(new TextLine(new Fields("line")), INPUT);
+        Tap in = new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
         Tap out = new EsTap("json-cascading-local/non-existing", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
