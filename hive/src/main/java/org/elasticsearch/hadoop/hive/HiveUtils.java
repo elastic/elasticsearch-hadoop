@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
+import org.apache.hadoop.hive.ql.metadata.VirtualColumn;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -75,6 +76,11 @@ abstract class HiveUtils {
     static Collection<String> columnToAlias(Settings settings) {
         FieldAlias fa = alias(settings);
         List<String> columnNames = StringUtils.tokenize(settings.getProperty(HiveConstants.COLUMNS), ",");
+        // eliminate virtual columns
+        for (VirtualColumn vc : VirtualColumn.VIRTUAL_COLUMNS) {
+            columnNames.remove(vc.getName());
+        }
+
         for (int i = 0; i < columnNames.size(); i++) {
             String original = columnNames.get(i);
             String alias = fa.toES(original);

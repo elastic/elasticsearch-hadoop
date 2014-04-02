@@ -19,7 +19,9 @@
 package org.elasticsearch.hadoop.rest.dto.mapping;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,13 @@ import org.elasticsearch.hadoop.util.StringUtils;
 @SuppressWarnings("rawtypes")
 public class MappingUtils {
 
+    private static final Set<String> BUILT_IN_FIELDS = new HashSet<String>();
+
+    static {
+        BUILT_IN_FIELDS.addAll(Arrays.asList("_uid", "_id", "_type", "_source", "_all", "_analyzer", "_boost",
+                "_parent", "_routing", "_index", "_size", "_timestamp", "_ttl"));
+    }
+
     public static void validateMapping(String fields, Field mapping, FieldPresenceValidation validation, Log log) {
         if (StringUtils.hasText(fields)) {
             validateMapping(StringUtils.tokenize(fields), mapping, validation, log);
@@ -45,7 +54,7 @@ public class MappingUtils {
             return;
         }
 
-        List[] results = findFixes(fields, mapping);
+        List[] results = findTypos(fields, mapping);
 
         if (results == null) {
             return;
@@ -62,13 +71,14 @@ public class MappingUtils {
     }
 
     // return a tuple for proper messages
-    static List[] findFixes(Collection<String> fields, Field mapping) {
+    static List[] findTypos(Collection<String> fields, Field mapping) {
         Map<String, FieldType> map = Field.toLookupMap(mapping);
+
         // find missing
         List<String> missing = new ArrayList<String>(fields.size());
 
         for (String field : fields) {
-            if (!map.containsKey(field)) {
+            if (!map.containsKey(field) && !isBuiltIn(field)) {
                 missing.add(field);
             }
         }
@@ -102,6 +112,10 @@ public class MappingUtils {
         }
 
         return new List[] { missing, typos };
+    }
+
+    private static boolean isBuiltIn(String field) {
+        return BUILT_IN_FIELDS.contains(field);
     }
 
     private static String removeDoubleBrackets(List col) {

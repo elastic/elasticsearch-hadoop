@@ -128,14 +128,19 @@ public class FieldTest {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
         Field fl = Field.parseField(value);
 
-        List<String>[] findFixes = MappingUtils.findFixes(Collections.singletonList("nam"), fl);
+        List<String>[] findFixes = MappingUtils.findTypos(Collections.singletonList("nam"), fl);
         assertThat(findFixes[1], contains("name"));
 
-        findFixes = MappingUtils.findFixes(Collections.singletonList("link.url"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("link.url"), fl);
         assertThat(findFixes[1], contains("links.url"));
 
-        findFixes = MappingUtils.findFixes(Collections.singletonList("ulr"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("ulr"), fl);
         assertThat(findFixes[1], contains("links.url"));
 
+        findFixes = MappingUtils.findTypos(Collections.singletonList("likn"), fl);
+        assertThat(findFixes[1], contains("links"));
+
+        findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), fl);
+        assertThat(findFixes, is(nullValue()));
     }
 }

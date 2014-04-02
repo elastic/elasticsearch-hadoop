@@ -111,7 +111,7 @@ public interface ConfigurationOptions {
     String ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT = "yes";
 
     String ES_FIELD_READ_VALIDATE_PRESENCE = "es.field.read.validate.presence";
-    String ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT = "strict";
+    String ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT = "warn";
 
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";

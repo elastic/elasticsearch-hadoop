@@ -97,13 +97,12 @@ public class Field implements Serializable {
     static void add(Map<String, FieldType> fields, Field field, String parentName) {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
 
+        fields.put(fieldName, field.type());
+
         if (FieldType.OBJECT == field.type()) {
             for (Field nestedField : field.properties()) {
                 add(fields, nestedField, fieldName);
             }
-        }
-        else {
-            fields.put(fieldName, field.type());
         }
     }
 
