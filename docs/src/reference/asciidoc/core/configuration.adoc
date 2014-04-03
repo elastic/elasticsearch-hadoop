@@ -13,12 +13,15 @@ NOTE: All configuration properties start with the `es` prefix. The namespace `es
 === Required settings
 
 `es.resource`::
-{es} resource location, relative to the {es} host/port (see below). It requiers the form `<index>/<type>`.
+{es} resource location, relative to the {es} host/port (see below). It requires the format `<index>/<type>`.
 
 [source,ini]
 ----
 es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 ----
+
+`es.resource.read`, `es.resource.write`::
+Used when reading and writing data to {es} within the same job. Typically not required to be setup by the user outside the {mr} module.
 
 [float]
 === Optional settings
@@ -57,29 +60,6 @@ TIP: We recommend using query dsl externalized in a file, included within the jo
 to identify, debug and organize your queries.
 Through-out the documentation we use the uri query to save text and increase readability - real-life queries quickly become unwielding when used as uris.
 
-[float]
-==== Network
-`es.nodes` (default localhost)::
-List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
-
-`es.port` (default 9200)::
-Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
-
-`es.nodes.discovery` (default true)::
-Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
-
-`es.http.timeout` (default 1m)::
-Timeout for HTTP/REST connections to {es}.
-
-`es.http.retries` (default 3)::
-Number of retries for estabilishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
-available {es} node (based on the declaration of `es.nodes`, followed by the discovered nodes - if enabled).
-
-`es.scroll.keepalive` (default 10m)::
-The maximum duration of result scrolls between query requests.
-
-`es.scroll.size` (default 50)::
-Number of results/items returned by each individual scroll.
 
 [float]
 ==== Operation
@@ -139,14 +119,48 @@ Whether {eh} will allow reading of non existing indices (and return an empty dat
 Whether {eh} will treat empty fields as `null`. This settings is typically not needed (as {eh} already handles the
 null case) but is enabled for making it easier to work with text fields that haven't been sanitized yet.
 
+`es.field.read.validate.presence` (default warn)::
+To help out spot possible mistakes when querying data from Hadoop (which results in incorrect data being returned), {eh} can 
+perform validation spotting missing fields and potential typos. Possible values are : `ignore` - no validation is performed,
+`warn` - a warning message is logged in case the validation fails, `strict` - an exception is thrown, halting the job, if a
+field is missing.
+
+
+[float]
+==== Network
+`es.nodes` (default localhost)::
+List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
+
+`es.port` (default 9200)::
+Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
+
+`es.nodes.discovery` (default true)::
+Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
+
+`es.http.timeout` (default 1m)::
+Timeout for HTTP/REST connections to {es}.
+
+`es.http.retries` (default 3)::
+Number of retries for estabilishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
+available {es} node (based on the declaration of `es.nodes`, followed by the discovered nodes - if enabled).
+
+`es.scroll.keepalive` (default 10m)::
+The maximum duration of result scrolls between query requests.
+
+`es.scroll.size` (default 50)::
+Number of results/items returned by each individual scroll.
+
+`es.action.heart.beat.lead` (default 15s)::
+The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
+
 [float]
 ==== Serialization
 
-`es.batch.size.bytes` (default 10mb)::
-Size (in bytes) for batch writes using {es} {ref}/docs-bulk.html[bulk] API
+`es.batch.size.bytes` (default 1mb)::
+Size (in bytes) for batch writes using {es} {ref}/docs-bulk.html[bulk] API. Note the bulk size is allocated _per task_ instance. Always multiply by the number of tasks within a Hadoop job to get the total bulk size at runtime hitting {es}.
 
-`es.batch.size.entries` (default 0/disabled)::
-Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API. Companion to `es.batch.size.bytes`, once one matches, the batch update is executed.
+`es.batch.size.entries` (default 1000)::
+Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API - (0 disables it). Companion to `es.batch.size.bytes`, once one matches, the batch update is executed. Similar to the size, this setting is _per task_ instance; it gets multiplied at runtime by the total number of Hadoop tasks running.
 
 `es.batch.write.refresh` (default true)::
 Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
