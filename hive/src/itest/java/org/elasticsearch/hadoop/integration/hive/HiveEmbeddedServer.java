@@ -88,17 +88,23 @@ class HiveEmbeddedServer implements HiveInstance {
         HdpBootstrap.hackHadoopStagingOnWin();
 
         // work-around for NTFS FS
+        // set permissive permissions since otherwise, on some OS it fails
         if (TestUtils.isWindows()) {
             conf.set("fs.file.impl", NTFSLocalFileSystem.class.getName());
+            conf.set("hive.scratch.dir.permission", "650");
             //conf.set("hadoop.bin.path", getClass().getClassLoader().getResource("hadoop.cmd").getPath());
             System.setProperty("path.separator", ";");
         }
+        else {
+            conf.set("hive.scratch.dir.permission", "777");
+        }
+
         int random = new Random().nextInt();
 
         conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse" + random);
         conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db" + random);
-        conf.set("hive.exec.scratchdir", "/tmp/hive");
-        conf.set("hive.scratch.dir.permission", "650");
+        //conf.set("hive.exec.scratchdir", "/tmp/hive");
+        conf.set("fs.permissions.umask-mode", "022");
         conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db" + random + ";create=true");
         conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");

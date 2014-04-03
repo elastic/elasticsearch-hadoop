@@ -31,7 +31,6 @@ import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -40,7 +39,6 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AbstractHiveSaveTest.class, AbstractHiveSaveJsonTest.class, AbstractHiveSearchTest.class, AbstractHiveSearchJsonTest.class })
 //@Suite.SuiteClasses({ AbstractHiveSearchTest.class })
-@Ignore
 public class HiveSuite {
 
     static HiveInstance server;
