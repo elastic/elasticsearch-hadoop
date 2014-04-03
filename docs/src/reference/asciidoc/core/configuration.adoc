@@ -121,10 +121,10 @@ null case) but is enabled for making it easier to work with text fields that hav
 
 `es.field.read.validate.presence` (default warn)::
 To help out spot possible mistakes when querying data from Hadoop (which results in incorrect data being returned), {eh} can 
-perform validation spotting missing fields and potential typos. Possible values are : `ignore` - no validation is performed,
-`warn` - a warning message is logged in case the validation fails, `strict` - an exception is thrown, halting the job, if a
-field is missing.
-
+perform validation spotting missing fields and potential typos. Possible values are :
+`ignore`;; no validation is performed
+`warn`;; a warning message is logged in case the validation fails
+`strict`;; an exception is thrown, halting the job, if a field is missing
 
 [float]
 ==== Network
@@ -152,6 +152,23 @@ Number of results/items returned by each individual scroll.
 
 `es.action.heart.beat.lead` (default 15s)::
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
+
+[float]
+===== Proxy
+
+`es.net.proxy.http.host`:: Http proxy host name
+`es.net.proxy.http.port`:: Http proxy port
+`es.net.proxy.http.user`:: Http proxy user name
+`es.net.proxy.http.pass`:: Http proxy password
+`es.net.proxy.http.use.system.props`(default yes):: Whether the use the system Http proxy properties (namely `http.proxyHost` and `http.proxyPort`) or not
+
+`es.net.proxy.socks.host`:: Http proxy host name
+`es.net.proxy.socks.port`:: Http proxy port
+`es.net.proxy.socks.user`:: Http proxy user name
+`es.net.proxy.socks.pass`:: Http proxy password
+`es.net.proxy.http.use.system.props`(default yes):: Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
+
+NOTE: {eh} allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
 
 [float]
 ==== Serialization
