@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
