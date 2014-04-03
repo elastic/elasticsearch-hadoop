@@ -16,60 +16,59 @@ The jar above contains all the features of {eh} and does not require any other d
 
 [[yarn]]
 Since 1.3.0.M3, the distribution jar is suitable for both Hadoop 1.x and Hadoop 2.x (also known as YARN) environments.
-YARN/Hadoop 2.x/MRv2 binary compatible releases are published using the 'yarn' classifier:
 
 === Minimalistic binaries
 
-In addition to the 'uber' jar, {eh} provides minimalistic jars for each integration, taylored for those who use just one integration and interested in saving additional space (though the 'uber' jar itself is a mere couple of hundred KB). Thus one can 'select' the needed jar by specifying the library it wants as the
-'classifier' (in Maven terminology), as follows:
+In addition to the 'uber' jar, {eh} provides minimalistic jars for each integration, tailored for those who use just _one_ module (in all other situations the `uber` jar is recommended); the jars are smaller in size and use a dedicated pom, covering only the needed dependencies. 
+These are available under the same `groupId`, using an `artifactId` with the pattern `elasticsearch-hadoop-{integration}`:
 
+.Map/Reduce
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
+  <artifactId>elasticsearch-hadoop-mr<1></artifactId>
   <version>1.3.0.M3</version>
-  <classifier>mr</classifier><1>
 </dependency>
 ----
 
-<1> classifier selecting the 'mr' artifact
+<1> 'mr' artifact
 
+.Apache Hive
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
+  <artifactId>elasticsearch-hadoop-hive<1></artifactId>
   <version>1.3.0.M3</version>
-  <classifier>hive</classifier><1>
 </dependency>
 ----
 
-<1> classifier selecting the 'hive' artifact
+<1> 'hive' artifact
 
+.Apache Pig
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
+  <artifactId>elasticsearch-hadoop-pig<1></artifactId>
   <version>1.3.0.M3</version>
-  <classifier>pig</classifier><1>
 </dependency>
 ----
 
-<1> classifier selecting the 'pig' artifact
+<1> 'pig' artifact
 
+.Cascading
 [source,xml]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
+  <artifactId>elasticsearch-hadoop-cascading<1></artifactId>
   <version>1.3.0.M3</version>
-  <classifier>cascading</classifier><1>
 </dependency>
 ----
 
-<1> classifier selecting the 'cascading' artifact
+<1> 'cascading' artifact
 
 Releases are available in the central Maven http://repo1.maven.org/maven[repository].
 
