@@ -1,5 +1,5 @@
 [[changes-13m2]]
-== Upgrading to 1.3 M2 from 1.3 M1
+== Upgrading to 1.3 M2 or higher from 1.3 M1
 
 {eh} 1.3 M2 introduces a few breaking changes compared to 1.3 M1. These are:
 
