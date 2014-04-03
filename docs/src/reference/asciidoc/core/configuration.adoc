@@ -154,7 +154,7 @@ Number of results/items returned by each individual scroll.
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
 
 [float]
-===== Proxy
+==== Proxy
 
 `es.net.proxy.http.host`:: Http proxy host name
 `es.net.proxy.http.port`:: Http proxy port
