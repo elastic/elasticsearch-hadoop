@@ -35,7 +35,8 @@ public class ReflectiveInvoker implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Method m = ReflectionUtils.findMethod(target.getClass(), method.getName(), method.getParameterTypes());
-        Assert.notNull(m, String.format("Cannot find method %s on target %s", method, target));
+        // toString on target seems to lead to weird effects to use the class name instead
+        Assert.notNull(m, String.format("Cannot find method %s on target %s", method, target.getClass()));
         return m.invoke(target, args);
     }
 

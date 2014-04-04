@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
@@ -31,7 +32,7 @@ public abstract class HadoopCfgUtils {
 
 
     public static boolean isLocal(Configuration cfg) {
-        return "local".equals(getJobTracker(cfg));
+        return "local".equals(cfg.get("mapreduce.framework.name")) || "local".equals(getJobTracker(cfg));
     }
 
     public static String getFileSystem(Configuration cfg) {
@@ -43,11 +44,11 @@ public abstract class HadoopCfgUtils {
     }
 
     public static String getJobTracker(Configuration cfg) {
-        return get(cfg, "mapreduce.framework.name", "mapred.job.tracker");
+        return get(cfg, "mapreduce.jobtracker.address", "mapred.job.tracker");
     }
 
     public static void setJobTracker(Configuration cfg, String value) {
-        set(cfg, value, "mapreduce.framework.name", "mapred.job.tracker");
+        set(cfg, value, "mapreduce.jobtracker.address", "mapred.job.tracker");
     }
 
     public static String getFileOutputFormatDir(Configuration cfg) {
@@ -127,5 +128,9 @@ public abstract class HadoopCfgUtils {
         if (hadoop1 != null) {
             cfg.set(hadoop1, value);
         }
+    }
+
+    public static JobConf asJobConf(Configuration cfg) {
+        return (cfg instanceof JobConf ? (JobConf) cfg : new JobConf(cfg));
     }
 }

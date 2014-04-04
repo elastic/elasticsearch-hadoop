@@ -18,10 +18,10 @@
  */
 package org.elasticsearch.hadoop.mr.compat;
 
-import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.conf.Configuration;
+
 
 public interface JobContext {
 
-    JobConf getConfiguration();
-
+    Configuration getConfiguration();
 }

@@ -398,7 +398,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     @Override
     public List<InputSplit> getSplits(JobContext context) throws IOException {
         org.elasticsearch.hadoop.mr.compat.JobContext compatJobContext = CompatHandler.jobContext(context);
-        JobConf conf = (JobConf) compatJobContext.getConfiguration();
+        JobConf conf = HadoopCfgUtils.asJobConf(compatJobContext.getConfiguration());
         // NOTE: this method expects a ShardInputSplit to be returned (which implements both the old and the new API).
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
