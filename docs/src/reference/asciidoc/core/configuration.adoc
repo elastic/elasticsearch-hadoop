@@ -235,23 +235,30 @@ $ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
                  -Dmapred.reduce.tasks.speculative.execution=false <jar>
 ----
 
-[float]
-=== Logging
+[[logging]]
+== Logging
 
 {eh} uses http://commons.apache.org/proper/commons-logging/[commons-logging] library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, {eh} logs relevant information about the job progress at `INFO` level.
 
 Configuring logging for Hadoop (or Cascading, Hive and Pig) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
 {eh} provides the following important packages:
-`org.elasticsearch.hadoop.cascading`:: Cascading integration
-`org.elasticsearch.hadoop.hive`:: Apache Hive integration
-`org.elasticsearch.hadoop.mr`:: {mr} functionality
-`org.elasticsearch.hadoop.pig`:: Apache Pig integration
-`org.elasticsearch.hadoop.rest`:: REST/transport infrastructure
-`org.elasticsearch.hadoop.serialization`:: Serialization package
+[cols="^,^",options="header"]
 
-The default logging level (`INFO`) is suitable for day to day use; if troubleshooting is needed, consider switching to `DEBUG` but be selective of the packages included. For low-level details, enable level `TRACE` however do remember that it will result in a significant amount of logging data which _will_ impact your job performance and environment.
+|===
+| Package | Purpose
 
-To put everything together, if you want to enable `DEBUG` logging on the {mr} package make sure the `log4j.properties` (used by your environment) has the following content (under Hadoop 2.x):
+|`org.elasticsearch.hadoop.cascading` 		| Cascading integration
+|`org.elasticsearch.hadoop.hive`	  		| Apache Hive integration
+|`org.elasticsearch.hadoop.mr`		  		| {mr} functionality
+|`org.elasticsearch.hadoop.pig`		  		| Apache Pig integration
+|`org.elasticsearch.hadoop.rest`	  		| REST/transport infrastructure
+|`org.elasticsearch.hadoop.serialization`   | Serialization package
+
+|===
+
+The default logging level (`INFO`) is suitable for day-to-day use; if troubleshooting is needed, consider switching to `DEBUG` but be selective of the packages included. For low-level details, enable level `TRACE` however do remember that it will result in a significant amount of logging data which _will_ impact your job performance and environment.
+
+To put everything together, if you want to enable `DEBUG` logging on the {mr} package make sure the `log4j.properties` (used by your environment):
 
 [source,bash]
 ----
