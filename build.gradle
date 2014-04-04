@@ -356,6 +356,7 @@ allprojects { project ->
 		
 		minHeapSize = "256m"
 		maxHeapSize = "768m"
+		jvmArgs '-XX:MaxPermSize=368m'
 
 	    testLogging {
 			events "started" //, "standardOut", "standardError"
