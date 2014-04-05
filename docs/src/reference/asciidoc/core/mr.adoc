@@ -2,7 +2,7 @@
 == {mr} integration
 
 For low-level or performance-sensitive environments, {eh} provides dedicated `InputFormat` and `OutputFormat` implementations that can read and write data to {es}.
-In {mr}, the `Mapper`s and `Reducer`s are reading and writing `Writable` objects, a Hadoop specific interface optimized for serialization. As such {eh} `InputFormat` and `OutputFormat` will return and expect a `MapWritable` objects, that is a map for each document being read or written. The map itself can have any type of internal structure as long as its objects are also `Writable` - it can hold nested maps, numbers or strings in their `Writable` representation.
+In {mr}, the ++Mapper++s and ++Reducer++s are reading and writing `Writable` objects, a Hadoop specific interface optimized for serialization. As such {eh} `InputFormat` and `OutputFormat` will return and expect a `MapWritable` objects, that is a map for each document being read or written. The map itself can have any type of internal structure as long as its objects are also `Writable` - it can hold nested maps, numbers or strings in their `Writable` representation.
 Internally {eh} automatically convert the `Map` of `Writable` to JSON documents and vice-versa so you do not have to deal with the low-level parsing or conversion to and from JSON. More-over, if the data sent to {es} is already in JSON format, it can be streamed in directly without any conversion to `Writable` objects.
 Read the rest of the chapter to find out more.
 
@@ -78,15 +78,16 @@ A `Mapper` implementation can use `EsOutputFormat` as follows:
 [source,java]
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
-	@Override
-	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
-	   // create the MapWritable object
-	   MapWritable doc = new MapWritable()
-	   ...
-	   // write the result to the output collector
-	   // one can pass whatever value to the key; EsOutputFormat ignores it
-	   output.collect(NullWritable.get(), map);
-	}}
+ @Override
+ public void map(Object key, Object value, OutputCollector output, Reporter reporter)
+        throws IOException {
+   // create the MapWritable object
+   MapWritable doc = new MapWritable();
+   ...
+   // write the result to the output collector
+   // one can pass whatever value to the key; EsOutputFormat ignores it
+   output.collect(NullWritable.get(), map);
+ }}
 ----
 
 [float]
@@ -126,14 +127,15 @@ The `Mapper` implementation becomes:
 [source,java]
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
-	@Override
-	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
-	   // assuming the document is a String called 'source'
-	   String source =  ...
-	   Text jsonDoc = new Text(source)
-	   // send the doc directly
-	   output.collect(NullWritable.get(), jsonDoc);
-	}}
+ @Override
+ public void map(Object key, Object value, OutputCollector output, Reporter reporter)
+        throws IOException {
+   // assuming the document is a String called 'source'
+   String source =  ...
+   Text jsonDoc = new Text(source);
+   // send the doc directly
+   output.collect(NullWritable.get(), jsonDoc);
+ }}
 ----
 
 [float]
@@ -165,13 +167,14 @@ Same goes for the `Mapper` instance :
 [source,java]
 ----
 public class SomeMapper extends Mapper {
-    @Override
-    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
-		// create the MapWritable object
-		MapWritable doc = new MapWritable()
-		...
-	    context.write(NullWritable.get(), doc);
-	}}
+ @Override
+ protected void map(Object key, Object value, Context context) 
+        throws IOException, InterruptedException {
+   // create the MapWritable object
+   MapWritable doc = new MapWritable();
+   ...
+   context.write(NullWritable.get(), doc);
+ }}
 ----
 
 [float]
@@ -195,14 +198,15 @@ JobClient.runJob(conf);
 [source,java]
 ----
 public class SomeMapper extends Mapper {
-    @Override
-    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
-	   // assuming the document is stored as bytes
-	   byte[] source =  ...
-	   BytesWritable jsonDoc = new BytesWritable(source);
-	   // send the doc directly
-	   context.write(NullWritable.get(), jsonDoc);
-	}}
+ @Override
+ protected void map(Object key, Object value, Context context) 
+        throws IOException, InterruptedException {
+   // assuming the document is stored as bytes
+   byte[] source =  ...
+   BytesWritable jsonDoc = new BytesWritable(source);
+   // send the doc directly
+   context.write(NullWritable.get(), jsonDoc);
+ }}
 ----
 
 [float]
@@ -234,14 +238,16 @@ JobClient.runJob(conf);
 
 A `Mapper` using `EsInputFormat` might look as follows:
 
+[source,java]
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
-	@Override
-	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
-	   Text docId = (Text) key;
-	   MapWritable doc = (MapWritable) value;
-	   ...
-	}}
+ @Override
+ public void map(Object key, Object value, OutputCollector output, Reporter reporter) 
+        throws IOException {
+   Text docId = (Text) key;
+   MapWritable doc = (MapWritable) value;
+   ...
+ }}
 ----
 NOTE: Feel free to use Java 5 generics to avoid the cast above. For clarity and readability, the examples in this chapter
 do not include generics.
@@ -269,12 +275,13 @@ and is, the `Mapper` implementation:
 [source,java]
 ----
 public class SomeMapper extends Mapper {
-    @Override
-    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
-	   Text docId = (Text) key;
-	   MapWritable doc = (MapWritable) value;
-	   ...
-	}}
+ @Override
+ protected void map(Object key, Object value, Context context) 
+        throws IOException, InterruptedException {
+   Text docId = (Text) key;
+   MapWritable doc = (MapWritable) value;
+   ...
+ }}
 ----
 
 [[type-conversion-writable]]
