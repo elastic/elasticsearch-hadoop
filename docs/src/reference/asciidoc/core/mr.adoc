@@ -37,7 +37,6 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 | `BooleanWritable` | `boolean`
 | `Text`            | `string`
 | `ByteWritable`    | `byte`
-| `ShortWritable`   | `short`
 | `IntWritable`     | `int`
 | `VInt`            | `int`
 | `LongWritable`    | `long`
@@ -52,6 +51,10 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 2+h| Available only in Apache Hadoop 1.x
 
 | `UTF8`            | `string`
+
+2+h| Available only in Apache Hadoop 2.x
+
+| `ShortWritable`   | `short`
 
 |===
 
