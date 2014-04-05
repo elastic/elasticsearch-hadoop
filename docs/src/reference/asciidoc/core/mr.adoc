@@ -1,12 +1,15 @@
 [[mapreduce]]
 == {mr} integration
 
-For low-level or performance-sensitive environments, {eh} provides dedicated `InputFormat` and `OutputFormat` implementations that can read and write data to {es}. The two IO interfaces will automatically convert JSON documents to `Map` of `Writable` objects and vice-versa.
+For low-level or performance-sensitive environments, {eh} provides dedicated `InputFormat` and `OutputFormat` implementations that can read and write data to {es}.
+In {mr}, the `Mapper`s and `Reducer`s are reading and writing `Writable` objects, a Hadoop specific interface optimized for serialization. As such {eh} `InputFormat` and `OutputFormat` will return and expect a `MapWritable` objects, that is a map for each document being read or written. The map itself can have any type of internal structure as long as its objects are also `Writable` - it can hold nested maps, numbers or strings in their `Writable` representation.
+Internally {eh} automatically convert the `Map` of `Writable` to JSON documents and vice-versa so you do not have to deal with the low-level parsing or conversion to and from JSON. More-over, if the data sent to {es} is already in JSON format, it can be streamed in directly without any conversion to `Writable` objects.
+Read the rest of the chapter to find out more.
 
 [float]
 === Installation
 
-In order to use {eh}, the jar needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the <<install,jar>> needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 IMPORTANT: All the options above affect _only_ the code running on the distributed nodes. If your code that launches the Hadoop job refers to {eh}, make sure to include the JAR in the `HADOOP_CLASSPATH`:
 `HADOOP_CLASSPATH="<colon-separated-paths-to-your-jars-including-elasticsearch-hadoop>"`
@@ -16,6 +19,262 @@ IMPORTANT: All the options above affect _only_ the code running on the distribut
 [source,bash]
 ----
 $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
+----
+
+[configuration-mr]
+[float]
+=== Configurating {eh} {mr}
+
+When using {eh} in a {mr} job, one can use Hadoop's +Configuration+ object to configure {eh} by setting the various options as properties on the aforementioned object.
+Typically one would set the {es} host and port (assuming it is not running on the default `localhost:9200`), the target index/type and potentially the query, for example:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.nodes", "es-server:9200");    <1>
+conf.set("es.resource", "radio/artists");  <2>
+...
+----
+<1> A node within the {es} cluster {eh} will be connecting to. By default, {eh} will detect the rest of the nodes in the cluster.
+<2> The `resource` (index/type) {eh} will use to read and write data.
+
+Simply use the configuration object when constructing the Hadoop job and you are all set.
+
+[float]
+=== Writing data to {es}
+
+With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#glossary-index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
+
+TIP: Both Hadoop 1.x and 2.x are supported
+
+`EsOutputFormat` expects a `Map<Writable, Writable>` representing a _document_ value that is converted interally into a JSON document and indexed in {es}.
+Hadoop `OutputFormat` requires implementations to expect a key and a value however, since for {es} only the document (that is the value) is necessary, `EsOutputFormat`
+ignores the key. 
+
+[float]
+==== 'Old' (`org.apache.hadoop.mapred`) API
+
+To write data to ES, use `org.elasticsearch.hadoop.mr.EsOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.setSpeculativeExecution(false);           <1>
+conf.set("es.nodes", "es-server:9200");    
+conf.set("es.resource", "radio/artists");      <2>
+conf.setOutputFormat(EsOutputFormat.class);    <3>
+conf.setMapOutputValueClass(MapWritable.class);<4>
+conf.setMapperClass(MyMapper.class);
+...
+JobClient.runJob(conf);
+----
+
+<1> Disable speculative execution
+<2> Target index/type
+<3> Dedicated `OutputFormat`
+<4> Specify the mapper output class (`MapWritable`)
+
+A `Mapper` implementation can use `EsOutputFormat` as follows:
+[source,java]
+----
+public class MyMapper extends MapReduceBase implements Mapper {
+	@Override
+	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+	   // create the MapWritable object
+	   MapWritable doc = new MapWritable()
+	   ...
+	   // write the result to the output collector
+	   // one can pass whatever value to the key; EsOutputFormat ignores it
+	   output.collect(NullWritable.get(), map);
+	}}
+----
+
+[float]
+[[writing-json-old-api]]
+==== Writing JSON directly to {es}
+
+For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects either a `Text` or `BytesWritable` (preffered as it requires no `String` conversion) object as output; if these types are not used, the library will simply fall back to the `toString` representation of the target object.
+
+.`Writable` to use for JSON representation
+
+[cols="^,^",options="header"]
+|===
+| `Writable` | Comment 
+
+| `BytesWritable`   | use this when the JSON data is represented as a `byte[]` or similar
+| `Text`            | use this if the JSON data is represented as a `String`
+| _anything else_   | make sure the `toString()` returns the desired JSON document
+
+|===
+
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The job output is considered the final form of the document sent to {es}.
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.input.json", "yes");        <1>
+conf.setMapOutputValueClass(Text.class); <2>
+...
+JobClient.runJob(conf);
+----
+
+<1> Indicate the input for `EsOutputFormat` is of type JSON.
+<2> Set the proper output type (`Text` in this case)
+
+The `Mapper` implementation becomes:
+[source,java]
+----
+public class MyMapper extends MapReduceBase implements Mapper {
+	@Override
+	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+	   // assuming the document is a String called 'source'
+	   String source =  ...
+	   Text jsonDoc = new Text(source)
+	   // send the doc directly
+	   output.collect(NullWritable.get(), jsonDoc);
+	}}
+----
+
+[float]
+==== 'New' (`org.apache.hadoop.mapreduce`) API
+
+Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.EsOutputFormat`) is used:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.setBoolean("mapred.map.tasks.speculative.execution", false);    <1>
+conf.setBoolean("mapred.reduce.tasks.speculative.execution", false); <2>
+conf.set("es.nodes", "es-server:9200");
+conf.set("es.resource", "radio/artists");                            <3>
+Job job = new Job(conf);
+job.setOutputFormat(EsOutputFormat.class);
+job.setMapOutputValueClass(MapWritable.class);                       <4>
+...
+job.waitForCompletion(true);
+----
+
+<1> Disable mapper speculative execution
+<2> Disable reducer speculative execution
+<3> Target index/type
+<4> Specify `Mapper` value output type (in this case `MapWritable`)
+
+Same goes for the `Mapper` instance :
+
+[source,java]
+----
+public class SomeMapper extends Mapper {
+    @Override
+    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
+		// create the MapWritable object
+		MapWritable doc = new MapWritable()
+		...
+	    context.write(NullWritable.get(), doc);
+	}}
+----
+
+[float]
+[[writing-json-new-api]]
+==== Writing JSON directly to {es}
+
+As before, when dealing with JSON directly, under the 'new' API the configuration looks as follows:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.input.json", "yes");                 <1>
+conf.setMapOutputValueClass(BytesWritable.class); <2>
+...
+JobClient.runJob(conf);
+----
+
+<1> Indicate the input for `EsOutputFormat` is of type JSON.
+<2> Set the output type, in this example `BytesWritable`
+
+[source,java]
+----
+public class SomeMapper extends Mapper {
+    @Override
+    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
+	   // assuming the document is stored as bytes
+	   byte[] source =  ...
+	   BytesWritable jsonDoc = new BytesWritable(source);
+	   // send the doc directly
+	   context.write(NullWritable.get(), jsonDoc);
+	}}
+----
+
+[float]
+=== Reading data from {es}
+
+In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.EsInputFormat` class.
+While it can read an entire index, it is much more convenient to use a query - {eh} will automatically execute the query __in real time__ and return back the feed the results back to Hadoop. Since the query is executed against the real data, this acts as a _live_ view of the data set.
+
+Just like its counter partner (`EsOutputFormat`), `EsInputFormat` returns a `Map<Writable, Writable>` for each JSON document returned by {es}. Since the `InputFormat` requires both a key and a value to be returned, `EsInputFormat` will return the document id (inside {es}) as the key (typically ignored) and the document/map as the value.
+
+[float]
+==== 'Old' (`org.apache.hadoop.mapred`) API
+
+Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.resource", "radio/artists");  <1>
+conf.set("es.query", "?q=me*");            <2>
+conf.setInputFormat(EsInputFormat.class);  <3>
+...
+JobClient.runJob(conf);
+----
+
+<1> Target index/type
+<2> Query
+<3> Dedicated `InputFormat`
+
+A `Mapper` using `EsInputFormat` might look as follows:
+
+----
+public class MyMapper extends MapReduceBase implements Mapper {
+	@Override
+	public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+	   Text docId = (Text) key;
+	   MapWritable doc = (MapWritable) value;
+	   ...
+	}}
+----
+NOTE: Feel free to use Java 5 generics to avoid the cast above. For clarity and readability, the examples in this chapter
+do not include generics.
+
+[float]
+==== 'New' (`org.apache.hadoop.mapreduce`) API
+
+As expected, the `mapreduce` API version is quite similar:
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource", "radio/artists/"); <1>
+conf.set("es.query", "?q=me*");            <2>      
+Job job = new Job(conf);                   
+job.setInputFormat(EsInputFormat.class);
+...
+job.waitForCompletion(true);
+----
+
+<1> Target index/type
+<2> Query
+
+and is, the `Mapper` implementation:
+
+[source,java]
+----
+public class SomeMapper extends Mapper {
+    @Override
+    protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
+	   Text docId = (Text) key;
+	   MapWritable doc = (MapWritable) value;
+	   ...
+	}}
 ----
 
 [[type-conversion-writable]]
@@ -58,148 +317,6 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 
 |===
 
-[float]
-=== Writing data to {es}
-
-With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#glossary-index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
-
-`EsOutputFormat` expects a `Map<Writable, Writable>` value that it will convert into a JSON document; the key is ignored.
-
-[float]
-==== 'Old' (`org.apache.hadoop.mapred`) API
-
-To write data to ES, use `org.elasticsearch.hadoop.mr.EsOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
-
-[source,java]
-----
-JobConf conf = new JobConf();
-conf.setSpeculativeExecution(false);           <1>
-conf.set("es.resource", "radio/artists");      <2>
-conf.setOutputFormat(EsOutputFormat.class);    <3>
-...
-JobClient.runJob(conf);
-----
-
-<1> Disable speculative execution
-<2> Target index/type
-<3> Dedicated `OutputFormat`
-
-[float]
-[[writing-json-old-api]]
-==== Writing JSON directly to {es}
-
-For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
-the `es.input.json` parameter. As such, in this case {eh} expects either a `Text` or `BytesWritable` (preffered as it requires no `String` conversion) object as output; if these types are not used, the library will simply fall back to the `toString` representation of the target object.
-
-.`Writable` to use for JSON representation
-
-[cols="^,^",options="header"]
-|===
-| `Writable` | Comment 
-
-| `BytesWritable`   | use this when the JSON data is represented as a `byte[]` or similar
-| `Text`            | use this if the JSON data is represented as a `String`
-| _anything else_   | make sure the `toString()` returns the desired JSON document
-
-|===
-
-IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The job output is considered the final form of the document sent to {es}.
-
-[source,java]
-----
-JobConf conf = new JobConf();
-conf.set("es.input.json", "yes");                 <1>
-conf.setMapOutputValueClass(BytesWritable.class); <2>
-...
-JobClient.runJob(conf);
-----
-
-<1> Indicate the input for `EsOutputFormat` is of type JSON.
-<2> Set the output type
-
-[float]
-==== 'New' (`org.apache.hadoop.mapreduce`) API
-
-Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.EsOutputFormat`) is used:
-
-[source,java]
-----
-Configuration conf = new Configuration();
-conf.setBoolean("mapred.map.tasks.speculative.execution", false);    <1>
-conf.setBoolean("mapred.reduce.tasks.speculative.execution", false); <2>
-conf.set("es.resource", "radio/artists");                            <3>
-Job job = new Job(conf);
-job.setOutputFormat(EsOutputFormat.class);
-...
-job.waitForCompletion(true);
-----
-
-<1> Disable mapper speculative execution
-<2> Disable reducer speculative execution
-<3> Target index/type
-
-[float]
-[[writing-json-new-api]]
-==== Writing JSON directly to {es}
-
-As before, when dealing with JSON directly, under the 'new' API the configuration looks as follows:
-
-[source,java]
-----
-Configuration conf = new Configuration();
-conf.set("es.input.json", "yes");                 <1>
-conf.setMapOutputValueClass(BytesWritable.class); <2>
-...
-JobClient.runJob(conf);
-----
-
-<1> Indicate the input for `EsOutputFormat` is of type JSON.
-<2> Set the output type
-
-[float]
-=== Reading data from {es}
-
-In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.EsInputFormat` class.
-While it can read an entire index, it is much more convenient to actually execute a query and then feed the results back to Hadoop.
-
-`EsInputFormat` returns a `Map<Writable, Writable>` converted from the JSON documents returned by {es} and a null (to be ignored) key.
-
-[float]
-==== 'Old' (`org.apache.hadoop.mapred`) API
-
-Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
-
-[source,java]
-----
-JobConf conf = new JobConf();
-conf.set("es.resource", "radio/artists");  <1>
-conf.set("es.query", "?q=me*");            <2>
-conf.setInputFormat(EsInputFormat.class);  <3>
-...
-JobClient.runJob(conf);
-----
-
-<1> Target index/type
-<2> Query
-<3> Dedicated `OutputFormat`
-
-[float]
-==== 'New' (`org.apache.hadoop.mapreduce`) API
-
-As expected, the `mapreduce` API version is quite similar:
-[source,java]
-----
-Configuration conf = new Configuration();
-conf.set("es.resource", "radio/artists/"); <1>
-conf.set("es.query", "?q=me*");            <2>      
-Job job = new Job(conf);                   
-job.setInputFormat(EsInputFormat.class);
-...
-job.waitForCompletion(true);
-----
-
-<1> Target index/type
-<2> Query
 
 ////
 
