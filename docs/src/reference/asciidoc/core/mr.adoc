@@ -23,7 +23,7 @@ $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 
 [configuration-mr]
 [float]
-=== Configuring {eh} {mr}
+=== Configuration
 
 When using {eh} in a {mr} job, one can use Hadoop's +Configuration+ object to configure {eh} by setting the various options as properties on the aforementioned object.
 Typically one would set the {es} host and port (assuming it is not running on the default `localhost:9200`), the target index/type and potentially the query, for example:
@@ -49,7 +49,7 @@ TIP: Both Hadoop 1.x and 2.x are supported
 
 `EsOutputFormat` expects a `Map<Writable, Writable>` representing a _document_ value that is converted interally into a JSON document and indexed in {es}.
 Hadoop `OutputFormat` requires implementations to expect a key and a value however, since for {es} only the document (that is the value) is necessary, `EsOutputFormat`
-ignores the key. 
+ignores the key.
 
 [float]
 ==== 'Old' (`org.apache.hadoop.mapred`) API
@@ -60,7 +60,7 @@ To write data to ES, use `org.elasticsearch.hadoop.mr.EsOutputFormat` on your jo
 ----
 JobConf conf = new JobConf();
 conf.setSpeculativeExecution(false);           <1>
-conf.set("es.nodes", "es-server:9200");    
+conf.set("es.nodes", "es-server:9200");
 conf.set("es.resource", "radio/artists");      <2>
 conf.setOutputFormat(EsOutputFormat.class);    <3>
 conf.setMapOutputValueClass(MapWritable.class);<4>
@@ -79,7 +79,7 @@ A `Mapper` implementation can use `EsOutputFormat` as follows:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, 
+ public void map(Object key, Object value, OutputCollector output,
                     Reporter reporter) throws IOException {
    // create the MapWritable object
    MapWritable doc = new MapWritable();
@@ -101,7 +101,7 @@ the `es.input.json` parameter. As such, in this case {eh} expects either a `Text
 
 [cols="^,^",options="header"]
 |===
-| `Writable` | Comment 
+| `Writable` | Comment
 
 | `BytesWritable`   | use this when the JSON data is represented as a `byte[]` or similar
 | `Text`            | use this if the JSON data is represented as a `String`
@@ -128,7 +128,7 @@ The `Mapper` implementation becomes:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, 
+ public void map(Object key, Object value, OutputCollector output,
                     Reporter reporter) throws IOException {
    // assuming the document is a String called 'source'
    String source =  ...
@@ -183,7 +183,7 @@ Same goes for the `Mapper` instance :
 ----
 public class SomeMapper extends Mapper {
  @Override
- protected void map(Object key, Object value, Context context) 
+ protected void map(Object key, Object value, Context context)
         throws IOException, InterruptedException {
    // create the MapWritable object
    MapWritable doc = new MapWritable();
@@ -214,7 +214,7 @@ JobClient.runJob(conf);
 ----
 public class SomeMapper extends Mapper {
  @Override
- protected void map(Object key, Object value, Context context) 
+ protected void map(Object key, Object value, Context context)
         throws IOException, InterruptedException {
    // assuming the document is stored as bytes
    byte[] source =  ...
@@ -271,7 +271,7 @@ A `Mapper` using `EsInputFormat` might look as follows:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, 
+ public void map(Object key, Object value, OutputCollector output,
                     Reporter reporter) throws IOException {
    Text docId = (Text) key;
    MapWritable doc = (MapWritable) value;
@@ -289,8 +289,8 @@ As expected, the `mapreduce` API version is quite similar:
 ----
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists/"); <1>
-conf.set("es.query", "?q=me*");            <2>      
-Job job = new Job(conf);                   
+conf.set("es.query", "?q=me*");            <2>
+Job job = new Job(conf);
 job.setInputFormat(EsInputFormat.class);
 ...
 job.waitForCompletion(true);
@@ -305,7 +305,7 @@ and is, the `Mapper` implementation:
 ----
 public class SomeMapper extends Mapper {
  @Override
- protected void map(Object key, Object value, Context context) 
+ protected void map(Object key, Object value, Context context)
         throws IOException, InterruptedException {
    Text docId = (Text) key;
    MapWritable doc = (MapWritable) value;

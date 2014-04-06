@@ -27,7 +27,9 @@ es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 {es} resource used for writing (but not reading) data. Used typically for __dynamic resource__ writes or when writing and reading data to different {es} indices within the _same_ job. Typically set automatically (expect for the {mr} module which requires manual configuration).
 
 [[cfg-multi-writes]]
-.Dynamic/multi resource writes
+[float]
+===== Dynamic/multi resource writes
+
 For writing, {eh} allows the target resource to be resolved at runtime by using patterns (by using the `{<field-name>}` format), resolved at runtime based on the data being streamed to {es}. That is, one can save documents to a certain `index` or `type` based on one or multiple fields resolved from the document about to be saved.
 
 For example, assuming the following document set (described here in JSON for readability - feel free to translate this into the actual Java objects):
@@ -65,7 +67,16 @@ For more information, please refer to the dedicated integration section.
 IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-search.html[search query].
 
 [float]
-=== Optional settings
+=== Essential settings
+
+[[cfg-network]]
+[float]
+==== Network
+`es.nodes` (default localhost)::
+List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
+
+`es.port` (default 9200)::
+Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
 
 [float]
 ==== Querying
@@ -100,7 +111,6 @@ In other words, `es.query` is flexible enough so that you can use whatever searc
 TIP: We recommend using query dsl externalized in a file, included within the job jar (and thus available on its classpath). This makes it easy 
 to identify, debug and organize your queries.
 Through-out the documentation we use the uri query to save text and increase readability - real-life queries quickly become unwielding when used as uris.
-
 
 [float]
 ==== Operation
@@ -146,6 +156,9 @@ es.mapping.id = uuid
 es.mapping.parent = \<123>
 ----
 
+[float]
+=== Advanced settings
+
 [[configuration-options-index]]
 [float]
 ==== Index
@@ -167,14 +180,8 @@ perform validation spotting missing fields and potential typos. Possible values 
 `warn`;; a warning message is logged in case the validation fails
 `strict`;; an exception is thrown, halting the job, if a field is missing
 
-[[cfg-network]]
 [float]
 ==== Network
-`es.nodes` (default localhost)::
-List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
-
-`es.port` (default 9200)::
-Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
 
 `es.nodes.discovery` (default true)::
 Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
