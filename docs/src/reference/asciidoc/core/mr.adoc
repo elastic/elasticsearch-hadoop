@@ -139,6 +139,21 @@ public class MyMapper extends MapReduceBase implements Mapper {
 ----
 
 [float]
+[[writing-dyn-index-old-api]]
+==== Writing to dynamic/multi-resources
+
+For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts pattern that are resolved from the document content, at runtime.
+Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.resource.write","my-collection/{media-type}");
+----
+
+If `Writable` objects are used, for each `MapWritable` {eh} will extract the value under `media-type` key and use that as the {es} type. If raw JSON is used, then {eh} will parse the document, extract the field `media-type` and use its value accordingly.
+
+[float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
 
 Using the 'new' is strikingly similar - in fact, the exact same class (`org.elasticsearch.hadoop.mr.EsOutputFormat`) is used:
@@ -208,6 +223,20 @@ public class SomeMapper extends Mapper {
    context.write(NullWritable.get(), jsonDoc);
  }}
 ----
+
+[float]
+[[writing-dyn-index-new-api]]
+==== Writing to dynamic/multi-resources
+
+As expected, the difference between the `old` and `new` API are minimal (to be read non-existing) in this case as well:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource.write","my-collection/{media-type}");
+...
+----
+
 
 [float]
 === Reading data from {es}
@@ -282,6 +311,20 @@ public class SomeMapper extends Mapper {
    MapWritable doc = (MapWritable) value;
    ...
  }}
+----
+
+[float]
+[[mr-read-write-job]]
+==== Using different indices for reading and writing
+
+Sometimes, one needs inside the same job, to read data from one {es} resource, process it and then writes back to a different one. `es.resource` setting is not enough since it implies the same resource both as a source and destination.
+In such cases, one should use `es.resource.read` and `es.resource.write` to differentiate between the two resources (the example below uses the 'mapreduce' API):
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource.read", "source/category");
+conf.set("es.resource.write", "sink/group");
 ----
 
 [[type-conversion-writable]]
