@@ -23,7 +23,7 @@ $ bin/hadoop jar myJar.jar -libjars elasticsearch-hadoop.jar
 
 [configuration-mr]
 [float]
-=== Configurating {eh} {mr}
+=== Configuring {eh} {mr}
 
 When using {eh} in a {mr} job, one can use Hadoop's +Configuration+ object to configure {eh} by setting the various options as properties on the aforementioned object.
 Typically one would set the {es} host and port (assuming it is not running on the default `localhost:9200`), the target index/type and potentially the query, for example:
@@ -79,8 +79,8 @@ A `Mapper` implementation can use `EsOutputFormat` as follows:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, Reporter reporter)
-        throws IOException {
+ public void map(Object key, Object value, OutputCollector output, 
+                    Reporter reporter) throws IOException {
    // create the MapWritable object
    MapWritable doc = new MapWritable();
    ...
@@ -128,8 +128,8 @@ The `Mapper` implementation becomes:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, Reporter reporter)
-        throws IOException {
+ public void map(Object key, Object value, OutputCollector output, 
+                    Reporter reporter) throws IOException {
    // assuming the document is a String called 'source'
    String source =  ...
    Text jsonDoc = new Text(source);
@@ -242,8 +242,8 @@ A `Mapper` using `EsInputFormat` might look as follows:
 ----
 public class MyMapper extends MapReduceBase implements Mapper {
  @Override
- public void map(Object key, Object value, OutputCollector output, Reporter reporter) 
-        throws IOException {
+ public void map(Object key, Object value, OutputCollector output, 
+                    Reporter reporter) throws IOException {
    Text docId = (Text) key;
    MapWritable doc = (MapWritable) value;
    ...

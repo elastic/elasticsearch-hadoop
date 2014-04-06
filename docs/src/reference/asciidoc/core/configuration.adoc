@@ -13,15 +13,55 @@ NOTE: All configuration properties start with the `es` prefix. The namespace `es
 === Required settings
 
 `es.resource`::
-{es} resource location, relative to the {es} host/port (see below). It requires the format `<index>/<type>`.
+{es} resource location, where data is read _and_ written to. Requires the format `<index>/<type>` (relative to the {es} host/port (see <<cfg-network,below>>))).
 
 [source,ini]
 ----
 es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 ----
 
-`es.resource.read`, `es.resource.write`::
-Used when reading and writing data to {es} within the same job. Typically not required to be setup by the user outside the {mr} module.
+`es.resource.read`::
+{es} resource used for reading (but not writing) data. Useful when reading and writing data to different {es} indices within the _same_ job. Typically set automatically (expect for the {mr} module which requires manual configuration).
+
+`es.resource.write`:: 
+{es} resource used for writing (but not reading) data. Used typically for __dynamic resource__ writes or when writing and reading data to different {es} indices within the _same_ job. Typically set automatically (expect for the {mr} module which requires manual configuration).
+
+.Dynamic/multi resource writes
+For writing, {eh} allows the target resource to be resolved at runtime by using patterns (by using the `{<field-name>}` format), resolved at runtime based on the data being streamed to {es}. That is, one can save documents to a certain `index` or `type` based on one or multiple fields resolved from the document about to be saved.
+
+For example, assuming the following document set (described here in JSON for readability - feel free to translate this into the actual Java objects):
+
+[source,json]
+----
+{
+    "media_type":"game",
+    "title":"Final Fantasy VI",
+    "year":"1994"
+},
+{
+    "media_type":"book",
+    "title":"Harry Potter",
+    "year":"2010"
+},
+{
+    "media_type":"music",
+    "title":"Surfing With The Alien",
+    "year":"1987"
+}
+----
+
+to index each of them based on their `media_type` one would use the following pattern:
+
+[source,ini]
+----
+# index the documents based on their type
+es.resource.write = my-collection/{media_type}
+----
+
+which would result in `Final Fantasy VI` indexed under `my-collection/game`, `Harry Potter` under `my-collection/book` and `Surfing With The Alien` under `my-collection/music`.
+For more information, please refer to the dedicated integration section.
+
+IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-search.html[search query].
 
 [float]
 === Optional settings
@@ -126,6 +166,7 @@ perform validation spotting missing fields and potential typos. Possible values 
 `warn`;; a warning message is logged in case the validation fails
 `strict`;; an exception is thrown, halting the job, if a field is missing
 
+[[cfg-network]]
 [float]
 ==== Network
 `es.nodes` (default localhost)::
