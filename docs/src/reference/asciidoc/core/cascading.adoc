@@ -6,17 +6,17 @@ ____
 http://www.cascading.org/[Cascading] is a data processing API and processing query planner used for defining, sharing, and executing data-processing workflows on a single computing node or distributed computing cluster. 
 ____
 
-Cascading abstracting the {mr} API and focusing on http://docs.cascading.org/cascading/2.1/userguide/htmlch03.html[data processing] 
-in terms of 'tuples' http://docs.cascading.org/cascading/2.1/userguide/htmlch03s08.html['flowing'] through http://docs.cascading.org/cascading/2.1/userguide/htmlch03s02.html[pipes] between http://docs.cascading.org/cascading/2.1/userguide/htmlch03s05.html['taps'], 
+Cascading abstracts the {mr} API and focuses on http://docs.cascading.org/cascading/2.5/userguide/htmlsingle/#N201FA[data processing] 
+in terms of 'tuples' http://docs.cascading.org/cascading/2.5/userguide/htmlsingle/#N20C4D['flowing'] through http://docs.cascading.org/cascading/2.5/userguide/htmlsingle/#N2024D['pipes'] between http://docs.cascading.org/cascading/2.5/userguide/htmlsingle/#N2087A['taps'], 
 from input (called `SourceTap`) to output (named `SinkTap`). As the data flows, various operations are applied to the tuple; the whole system being transformed to {mr} operations at runtime.
-With {eh}, {es} can be plugged into Cascading flows as a `SourceTap` or `SinkTap` through `EsTap`.
+With {eh}, {es} can be plugged into Cascading flows as a `SourceTap` or `SinkTap` through `EsTap`, data to/from {es} being transparently converted from/to Cascading `tuple`s.
 
 ****
 .Local or Hadoop mode?
-Cascading supports two 'execution' modes or http://docs.cascading.org/cascading/2.1/userguide/htmlch03s04.html[platforms]:
+Cascading supports two 'execution' modes or http://docs.cascading.org/cascading/2.5/userguide/htmlsingle/#N2081B[platforms]:
 
 Local:: for unit testing and quick POCs. Everything runs only on the local machine and file-system.
-Hadoop:: production mode - connects to a proper Hadoop cluster (as oppose to the 'local' mode which is running just on the local machine).
+Hadoop:: production mode - connects to a proper Hadoop (1.x or 2.x) cluster (as oppose to the 'local' mode which is running just on the local machine).
 
 {eh} supports *both* platforms automatically. One does not have to choose between different classes, `EsTap` can be used as both `sink` or `source`, in both modes transparently.
 ****
@@ -66,6 +66,24 @@ Tap movies = new EsTap("es-server", 9200, "my-col/movies", "?q=terminator");
 
 Note that the `Tap` configuration is merged with the global one so one can mix and match accordingly - for example specify the defaults in the global configuration and only declare the specifics on the `Tap` instance. Additionally, for maximum flexibility `EsTap` allows multiple arguments to be passed in, including a `Properties` object for the full range of options.
 
+[[cascading-alias]]
+[float]
+=== Mapping
+
+By default, {eh} uses the Cascading tuple to map the data in {es}, using both the field names and types in the process. There are cases however when the field names cannot be used directly with {es} (common case when working with an existing flow). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of names mapping in the following format: `Cascading field name`:`Elasticsearch field name`
+
+To wit:
+
+[source,java]
+----
+Properties myTapCfg = new Properties();
+myTapCfg.set("es.mapping.names", "date:@timestamp");	<1>
+Tap myTap = new EsTap(..., myTapCfg);
+----
+
+<1> Maps Cascading field `date` in {es} to `@timestamp`
+
+TIP: {es} accepts only lower-case field names and, as such, {eh} will always convert Cascading column names to lower-case. This can pose issues when dealing with upper-case fields due to case sensitivity.
 
 [[cascading-writing]]
 [float]
@@ -75,7 +93,7 @@ Simply hook, `EsTap` into the Cascading flow:
 
 [source,java]
 ----
-Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
+Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
              "/resources/artists.dat");
 Tap out = new EsTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
@@ -143,3 +161,37 @@ Depending on the http://docs.cascading.org/cascading/2.1/userguide/htmlch03s04.h
 (see the {mr} <<type-conversion-writable,conversion>> section) though we recommend using the same types (if possible) in both cases to avoid the overhead of maintaining two different versions.
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+
+[float]
+=== Cascading Lingual
+
+{eh} also provides integration with http://www.cascading.org/projects/lingual/[Lingual], a Cascading extension 
+that provides an ANSI SQL interface for Apache Hadoop. That is, one can execute in Hadoop, SQL queries directly on {es}.
+
+Below is a quick setup of using {eh} with Lingual (1.1) - for detailed information please refer to the Lingual http://docs.cascading.org/lingual/1.1/[user guide]:
+
+[source,bash]
+----
+export LINGUAL_PLATFORM=hadoop
+# register {es} as a provider
+lingual catalog --init
+lingual catalog --provider --add ./elasticsearch-hadoop-<version>.jar
+# add a custom schema (called 'titles') for querying
+lingual catalog --schema es-test --add
+lingual catalog --schema es-test --stereotype titles -add \
+    --columns emp_no,title,from_date,to_date --types int,string,date,date
+lingual catalog --schema es-test --format es --add --provider es
+lingual catalog --schema es-test --protocol es --add --provider es \
+    --properties=host=es-server
+lingual catalog --schema es-test --table titles --stereotype titles \
+    -add employees/titles --format es --provider es --protocol es
+----
+
+Once the desired catalog has been declared and {eh} registered with it, one can start querying the data
+
+[source,sql]
+----
+lingual shell
+(shell) select count(*) from "es-test"."titles" where "title" = 'Engineer';
+115003
+----
