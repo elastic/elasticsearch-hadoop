@@ -29,6 +29,8 @@ Just like other libraries, {eh} needs to be available in the jar classpath (eith
 [float]
 === Configuration
 
+[float]
+==== Global configuration
 Cascading is configured through a `Map<Object, Object>`, typically a `Properties` object which indicates the various Cascading settings and also the application jar:
 
 [source,java]
@@ -38,7 +40,7 @@ AppProps.setApplicationJarClass(props, Main.class);
 FlowConnector flow = new HadoopFlowConnector(props);
 ----
 
-{eh} options can be specified in the same way, these being picked up automatically by all `EsTap`s down the flow:
+{eh} options can be specified in the same way, these being picked up automatically by _all_ `EsTap`s down the flow:
 
 [source,java]
 ----
@@ -53,12 +55,17 @@ FlowConnector flow = new HadoopFlowConnector(props);
 This approach can be used for local and remote/Hadoop flows - simply use the appropriate `FlowConnector`.
 
 [float]
-=== Type conversion
+==== Per-`Tap` configuration
+If a `flow` contains multiple `{es}` taps, the global approach does not work since the settings will clash with each other.  For these scenario, `{eh}` allows using per-`Tap` configuration:
 
-Depending on the http://docs.cascading.org/cascading/2.1/userguide/htmlch03s04.html[platform] used, Cascading can use internally either `Writable` or JDK types for its tuples. {es} handles both transparently 
-(see the {mr} <<type-conversion-writable,conversion>> section) though we recommend using the same types (if possible) in both cases to avoid the overhead of maintaining two different versions.
+[source,java]
+----
+Tap books = new EsTap("es-server", 9200, "my-col/books", "?q=potter");
+Tap movies = new EsTap("es-server", 9200, "my-col/movies", "?q=terminator");
+----
 
-IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+Note that the `Tap` configuration is merged with the global one so one can mix and match accordingly - for example specify the defaults in the global configuration and only declare the specifics on the `Tap` instance. Additionally, for maximum flexibility `EsTap` allows multiple arguments to be passed in, including a `Properties` object for the full range of options.
+
 
 [[cascading-writing]]
 [float]
@@ -100,6 +107,19 @@ flow.connect(in, out, new Pipe("import-json")).complete();
 <1> Indicate the input is of type JSON.
 <2> Load the (JSON) data as a single field (`line`)
 
+
+[float]
+==== Writing to dynamic/multi-resources
+
+One can index the data to a different resource, depending on the tuple being read by using patterns. Reusing the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+[source,java]
+----
+Tap out = new EsTap("es.resource.write", "my-collection/{media.type}");
+----
+
+For each tuple about to be written, {eh} will extract the `media.type` entry and use its value to determine the target resource. The functionality is available when dealing with raw JSON as well - the value will be extracted from the document itself.
+
 [float]
 === Reading data from {es}
 
@@ -114,3 +134,12 @@ new LocalFlowConnector().connect(in, out, new Pipe("read-from-Es")).complete();
 
 <1> {eh} resource (index and type)
 <2> {eh} query
+
+
+[float]
+=== Type conversion
+
+Depending on the http://docs.cascading.org/cascading/2.1/userguide/htmlch03s04.html[platform] used, Cascading can use internally either `Writable` or JDK types for its tuples. {es} handles both transparently 
+(see the {mr} <<type-conversion-writable,conversion>> section) though we recommend using the same types (if possible) in both cases to avoid the overhead of maintaining two different versions.
+
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
