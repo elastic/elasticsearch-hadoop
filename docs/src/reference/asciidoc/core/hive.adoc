@@ -79,49 +79,6 @@ TBLPROPERTIES('es.resource' = 'radio/artists/',
 TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Hive column names to lower-case. This poses no issue as Hive is **case insensitive**
 however it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
 
-[[hive-type-conversion]]
-[float]
-=== Type conversion
-
-IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
-
-Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual`Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
-and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
-
-[cols="^,^",options="header"]
-
-|===
-| Hive type | {es} type
-
-| `void`            | `null`
-| `boolean`         | `boolean`
-| `tinyint`         | `byte`
-| `smallint`        | `short`
-| `int`             | `int`
-| `bigint`          | `long`
-| `double`          | `double`
-| `float`           | `float`
-| `string`          | `string`
-| `binary`          | `binary`
-| `timestamp`       | `date`
-| `struct`          | `map`
-| `map`             | `map`
-| `array`           | `array`
-| `union`           | not supported yet
-
-2+h| Available in Hive 0.11 or higher
-
-| `decimal`         | `string`
-
-2+h| Available in Hive 0.12 or higher
-
-| `date`            | `date`
-| `varchar`         | `string`
-
-|===
-
-NOTE: While {es} understands Hive types up to version 0.12, it is backwards compatible with Hive 0.9
-
 [float]
 === Writing data to {es}
 
@@ -195,11 +152,55 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists/_search?q=me*'<2>);
+TBLPROPERTIES('es.resource' = 'radio/artists'<2>, 'es.query' = '?q=me*'<3>);
 
 -- stream data from Elasticsearch
 SELECT * FROM artists;
 ----
 
 <1> same {es} Hive `StorageHandler`
-<2> {es} resource (in case of reading, a query) associated with the given storage
+<2> {es} resource
+<3> {es} query
+
+[[hive-type-conversion]]
+[float]
+=== Type conversion
+
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
+
+Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual`Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
+and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
+
+[cols="^,^",options="header"]
+
+|===
+| Hive type | {es} type
+
+| `void`            | `null`
+| `boolean`         | `boolean`
+| `tinyint`         | `byte`
+| `smallint`        | `short`
+| `int`             | `int`
+| `bigint`          | `long`
+| `double`          | `double`
+| `float`           | `float`
+| `string`          | `string`
+| `binary`          | `binary`
+| `timestamp`       | `date`
+| `struct`          | `map`
+| `map`             | `map`
+| `array`           | `array`
+| `union`           | not supported (yet)
+
+2+h| Available in Hive 0.11 or higher
+
+| `decimal`         | `string`
+
+2+h| Available in Hive 0.12 or higher
+
+| `date`            | `date`
+| `varchar`         | `string`
+
+|===
+
+NOTE: While {es} understands Hive types up to version 0.12, it is backwards compatible with Hive 0.9
