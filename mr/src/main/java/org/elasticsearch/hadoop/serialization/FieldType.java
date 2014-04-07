@@ -85,9 +85,9 @@ public enum FieldType {
             return true;
         }
 
-        if (NESTED == fieldType) {
-            throw new UnsupportedOperationException("Nested fields not supported yet...");
-        }
+        //        if (NESTED == fieldType) {
+        //            throw new UnsupportedOperationException("Nested fields not supported yet...");
+        //        }
 
         return true;
     }
