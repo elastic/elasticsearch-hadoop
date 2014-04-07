@@ -252,7 +252,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             settings.setHosts(uri);
 
             if (log.isDebugEnabled()) {
-                log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", uri));
+                log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", currentInstance, uri));
             }
 
             client = new RestRepository(settings);
