@@ -47,6 +47,7 @@ public class PigBytesConverter extends JdkBytesConverter {
         if (tupleSchema == null) {
             // write empty doc
             to.bytes("{}");
+            return;
         }
 
         ResourceFieldSchema[] fields = tupleSchema.getFields();
