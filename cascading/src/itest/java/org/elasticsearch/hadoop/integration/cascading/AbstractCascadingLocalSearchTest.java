@@ -25,7 +25,9 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cascading.EsTap;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -121,6 +123,13 @@ public class AbstractCascadingLocalSearchTest {
         build(cfg, in, out, pipe);
     }
 
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-990"));
+    }
 
     private Properties cfg() {
         Properties props = new TestSettings().getProperties();

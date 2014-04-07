@@ -23,17 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.Counter;
-import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.stats.Stats;
-import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -135,19 +132,13 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     @Override
     public void sinkConfInit(FlowProcess<Properties> flowProcess, Tap<Properties, ScrollQuery, Object> tap, Properties conf) {
         initClient(conf, false);
-        InitializationUtils.checkIndexExistence(SettingsManager.loadFrom(conf).merge(props), client);
+        InitializationUtils.checkIndexExistence(client);
     }
 
     private void initClient(Properties props, boolean read) {
         if (client == null) {
-            Settings settings = SettingsManager.loadFrom(props).merge(this.props);
+            Settings settings = CascadingUtils.addDefaultsToSettings(props, this.props, LogFactory.getLog(EsTap.class));
             CascadingUtils.init(settings, host, port, resource, query, read);
-
-            Log log = LogFactory.getLog(EsTap.class);
-            InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);
-            InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
-            InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
-            InitializationUtils.setFieldExtractorIfNotSet(settings, CascadingLocalFieldExtractor.class, log);
             client = new RestRepository(settings);
         }
     }

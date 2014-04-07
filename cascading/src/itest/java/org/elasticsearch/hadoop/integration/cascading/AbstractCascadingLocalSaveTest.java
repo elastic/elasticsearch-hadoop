@@ -95,6 +95,17 @@ public class AbstractCascadingLocalSaveTest {
         build(props, in, out, pipe);
     }
 
+    @Test
+    public void testIndexPattern() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+
+        // local file-system source
+        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap out = new EsTap("cascading-local/pattern-{id}", new Fields("id", "name", "url", "picture"));
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
         StatsUtils.proxy(new LocalFlowConnector(cfg).connect(in, out, pipe)).complete();
     }

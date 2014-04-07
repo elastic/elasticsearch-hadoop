@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -98,6 +99,13 @@ public class AbstractCascadingLocalJsonSearchTest {
         // print out
         Tap out = new OutputStreamTap(new TextLine(), OUT);
         build(cfg, in, out, pipe);
+    }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-990"));
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {

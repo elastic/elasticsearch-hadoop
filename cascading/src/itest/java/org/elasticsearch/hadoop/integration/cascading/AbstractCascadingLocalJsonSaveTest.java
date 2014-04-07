@@ -37,13 +37,14 @@ public class AbstractCascadingLocalJsonSaveTest {
 
     @Test
     public void testWriteToES() throws Exception {
+        Properties props = new TestSettings().getProperties();
+        props.setProperty(ConfigurationOptions.ES_INPUT_JSON, "true");
+
         // local file-system source
         Tap in = new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
         Tap out = new EsTap("json-cascading-local/artists");
 
         Pipe pipe = new Pipe("copy");
-        Properties props = new TestSettings().getProperties();
-        props.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, "true");
         build(props, in, out, pipe);
     }
 
@@ -51,11 +52,23 @@ public class AbstractCascadingLocalJsonSaveTest {
     public void testIndexAutoCreateDisabled() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
-        properties.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_BYTES_CLASS, "true");
+        properties.setProperty(ConfigurationOptions.ES_INPUT_JSON, "true");
 
         // local file-system source
         Tap in = new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
         Tap out = new EsTap("json-cascading-local/non-existing", new Fields("line"));
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testIndexPattern() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.setProperty(ConfigurationOptions.ES_INPUT_JSON, "yes");
+
+        // local file-system source
+        Tap in = new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
+        Tap out = new EsTap("json-cascading/pattern-{number}", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }

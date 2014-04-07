@@ -36,7 +36,6 @@ import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
-import org.elasticsearch.hadoop.mr.WritableBytesConverter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
@@ -141,9 +140,11 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         // define an output dir to prevent Cascading from setting up a TempHfs and overriding the OutputFormat
         Settings set = loadSettings(conf, false);
 
-        InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, LogFactory.getLog(EsTap.class));
-        InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, LogFactory.getLog(EsTap.class));
-        InitializationUtils.setBytesConverterIfNeeded(set, WritableBytesConverter.class, LogFactory.getLog(EsTap.class));
+        Log log = LogFactory.getLog(EsTap.class);
+        InitializationUtils.setValueWriterIfNotSet(set, CascadingValueWriter.class, log);
+        InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(set, CascadingLocalBytesConverter.class, log);
+        InitializationUtils.setFieldExtractorIfNotSet(set, CascadingFieldExtractor.class, log);
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());

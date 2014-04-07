@@ -64,4 +64,15 @@ public class AbstractCascadingHadoopSaveTest {
         props.setProperty("es.mapping.names", "url:address");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }
+
+    @Test
+    public void testIndexPattern() throws Exception {
+        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+
+        // local file-system source
+        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap out = new EsTap("cascading-hadoop/pattern-{id}", new Fields("id", "name", "url", "picture"));
+        Pipe pipe = new Pipe("copy");
+        StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
+    }
 }

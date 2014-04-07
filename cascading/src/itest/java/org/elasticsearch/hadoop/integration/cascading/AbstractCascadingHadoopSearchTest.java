@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -126,6 +127,13 @@ public class AbstractCascadingHadoopSearchTest {
         // print out
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
         build(cfg, in, out, pipe);
+    }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-990"));
     }
 
     private Properties cfg() {

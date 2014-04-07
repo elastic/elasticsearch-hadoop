@@ -26,8 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
-import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
@@ -54,9 +52,11 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     private static Log log = LogFactory.getLog(EsLocalTap.class);
     private final String target;
+    private final Properties tapProperties;
 
     public EsLocalTap(String host, int port, String resource, String query, Fields fields, Properties props) {
         this.target = resource;
+        this.tapProperties = props;
         setScheme(new EsLocalScheme(host, port, resource, query, fields, props));
     }
 
@@ -69,11 +69,9 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
     public TupleEntryIterator openForRead(FlowProcess<Properties> flowProcess, ScrollQuery input) throws IOException {
         if (input == null) {
             // get original copy
-            Settings settings = SettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProcess.getConfigCopy()));
-            // will be closed by the query is finished
-            InitializationUtils.discoverNodesIfNeeded(settings, log);
-            InitializationUtils.discoverEsVersion(settings, log);
+            Settings settings = CascadingUtils.addDefaultsToSettings(CascadingUtils.extractOriginalProperties(flowProcess.getConfigCopy()), tapProperties, log);
 
+            // will be closed by the query is finished
             RestRepository client = new RestRepository(settings);
             Field mapping = client.getMapping();
             Collection<String> fields = CascadingUtils.fieldToAlias(settings, getSourceFields());

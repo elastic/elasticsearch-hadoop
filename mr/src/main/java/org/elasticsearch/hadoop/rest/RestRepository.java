@@ -280,4 +280,8 @@ public class RestRepository implements Closeable, StatsAware {
         }
         return copy;
     }
+
+    public Settings getSettings() {
+        return settings;
+    }
 }

@@ -23,7 +23,7 @@ import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 
 import cascading.scheme.SinkCall;
 
-public class CascadingLocalFieldExtractor extends ConstantFieldExtractor {
+public class CascadingFieldExtractor extends ConstantFieldExtractor {
 
     @SuppressWarnings({ "rawtypes" })
     @Override

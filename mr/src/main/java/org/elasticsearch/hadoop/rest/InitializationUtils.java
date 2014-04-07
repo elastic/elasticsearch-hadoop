@@ -37,7 +37,6 @@ import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
-import org.elasticsearch.hadoop.serialization.field.NoOpFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -103,6 +102,10 @@ public abstract class InitializationUtils {
         }
     }
 
+    public static void checkIndexExistence(RestRepository client) {
+        checkIndexExistence(client.getSettings(), client);
+    }
+
     public static void checkIndexExistence(Settings settings, RestRepository client) {
         // check index existence
         if (!settings.getIndexAutoCreate()) {
@@ -126,13 +129,6 @@ public abstract class InitializationUtils {
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
 
             String name = clazz.getName();
-            if (settings.getInputAsJson()) {
-                name = NoOpFieldExtractor.class.getName();
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Elasticsearch input marked as JSON; using dedicated field extractor [%s] instead of [%s]", name, clazz));
-                }
-            }
-
             settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, name);
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Using pre-defined field extractor [%s] as default", settings.getMappingIdExtractorClassName()));
