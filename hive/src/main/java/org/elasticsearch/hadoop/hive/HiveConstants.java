@@ -35,4 +35,6 @@ interface HiveConstants {
 
     String INPUT_TBL_PROPERTIES = "es.internal.hive.input.tbl.properties";
     String OUTPUT_TBL_PROPERTIES = "es.internal.hive.output.tbl.properties";
+    String[] VIRTUAL_COLUMNS = new String[] { "INPUT__FILE__NAME", "BLOCK__OFFSET__INSIDE__FILE",
+            "ROW__OFFSET__INSIDE__BLOCK", "RAW__DATA__SIZE", "GROUPING__ID" };
 }
