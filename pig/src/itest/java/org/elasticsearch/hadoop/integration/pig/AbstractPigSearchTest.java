@@ -22,7 +22,9 @@ import java.util.Collection;
 
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -160,6 +162,14 @@ public class AbstractPigSearchTest {
 
         String tuple = "(Marilyn Manson,http://www.last.fm/music/Marilyn+Manson)";
     }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("pig/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("pig/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("pig/pattern-990"));
+    }
+
 
     @Test
     public void testNestedTuple() throws Exception {

@@ -140,7 +140,17 @@ public class AbstractPigSaveJsonTest {
                 "STORE A INTO 'json-pig/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=number','"
                                 + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no',"
-                                + "'es.input.json=true');";;
+                                + "'es.input.json=true');";
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testIndexPattern() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                loadSource() +
+                "STORE A INTO 'json-pig/pattern-{number}' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+
         pig.executeScript(script);
     }
 

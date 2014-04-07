@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -145,5 +146,12 @@ public class AbstractPigSearchJsonTest {
                       + "X = LIMIT A 3;"
                       + "DUMP X;";
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-1"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-500"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-990"));
     }
 }

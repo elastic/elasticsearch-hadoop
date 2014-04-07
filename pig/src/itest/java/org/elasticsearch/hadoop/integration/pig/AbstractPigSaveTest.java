@@ -208,6 +208,17 @@ public class AbstractPigSaveTest {
         RestUtils.waitForYellow("pig");
     }
 
+
+    @Test
+    public void testIndexPattern() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                loadSource() +
+                "STORE A INTO 'pig/pattern-{id}' USING org.elasticsearch.hadoop.pig.EsStorage();";
+
+        pig.executeScript(script);
+    }
+
     private String loadSource() {
         return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);";
     }
