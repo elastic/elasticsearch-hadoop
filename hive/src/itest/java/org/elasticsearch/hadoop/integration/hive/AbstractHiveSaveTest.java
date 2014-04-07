@@ -429,6 +429,37 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testIndexPattern() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("sourcepattern");
+        String load = loadData("sourcepattern");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE pattern ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/pattern-{id}");
+
+        String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM sourcepattern s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE pattern "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM sourcepattern s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
 
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("

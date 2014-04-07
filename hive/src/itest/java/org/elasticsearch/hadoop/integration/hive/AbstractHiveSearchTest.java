@@ -24,7 +24,9 @@ import java.util.Date;
 import java.util.List;
 
 import org.elasticsearch.hadoop.QueryTestParams;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -319,6 +321,13 @@ public class AbstractHiveSearchTest {
         assertContains(result, "Marilyn");
         assertContains(result, "last.fm/music/MALICE");
         assertContains(result, "last.fm/serve/252/5872875.jpg");
+    }
+
+    @Test
+    public void testDynamicPattern() throws Exception {
+        Assert.assertTrue(RestUtils.exists("hive/pattern-7"));
+        Assert.assertTrue(RestUtils.exists("hive/pattern-10"));
+        Assert.assertTrue(RestUtils.exists("hive/pattern-15"));
     }
 
     private static boolean containsNoNull(List<String> str) {

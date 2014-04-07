@@ -283,6 +283,35 @@ public class AbstractHiveSaveJsonTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testIndexPattern() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("jsonsourcepattern");
+        String load = loadData("jsonsourcepattern");
+
+        // create external table
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE jsonpattern ("
+                + "json     STRING) "
+                + tableProps("json-hive/pattern-{number}");
+
+        String selectTest = "SELECT s.json FROM jsonsourcepattern s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE jsonpattern "
+                + "SELECT s.json FROM jsonsourcepattern s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
 
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("
