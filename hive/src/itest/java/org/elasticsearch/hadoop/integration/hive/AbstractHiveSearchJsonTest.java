@@ -154,7 +154,7 @@ public class AbstractHiveSearchJsonTest {
         assertContains(result, "last.fm/serve/252/5872875.jpg");
     }
 
-    @Test
+    //@Test
     public void basicCountOperator() throws Exception {
         String create = "CREATE EXTERNAL TABLE jsonartistscount" + testInstance + " ("
                 + "number       STRING, "

@@ -86,7 +86,7 @@ public class AbstractHiveSearchTest {
         assertContains(result, "last.fm/serve/252/5872875.jpg");
     }
 
-    @Test
+    //@Test
     public void basicCountOperator() throws Exception {
         String create = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
                 + "id       BIGINT, "
@@ -121,7 +121,7 @@ public class AbstractHiveSearchTest {
         assertContains(result, "{\"6\":");
     }
 
-    @Test
+    //@Test
     public void basicTimestampLoad() throws Exception {
         String create = "CREATE EXTERNAL TABLE timestampload" + testInstance + " ("
                 + "id       BIGINT, "
@@ -167,7 +167,7 @@ public class AbstractHiveSearchTest {
         System.out.println(server.execute(select2));
     }
 
-    @Test
+    //@Test
     public void javaMethodInvocation() throws Exception {
         String create = "CREATE EXTERNAL TABLE methodInvocation" + testInstance + " ("
                 + "id       BIGINT, "
