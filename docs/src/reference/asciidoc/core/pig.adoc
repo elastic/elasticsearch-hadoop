@@ -65,7 +65,8 @@ Do note that it is possible (and recommended) to specify the configuration param
 ----
 DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('my.cfg.param=value');
 ----
-In fact, for the reminder of this section, the Pig alias will be implied and `EsStorage` will be used (instead of the fully qualified class name) for abbreviation.
+
+IMPORTANT: Pig definitions are replaced as are; even though the syntax allows _parametrization_, Pig will silently ignore any parameters outside the 'DEFINE' declaration.
 
 [[pig-alias]]
 [float]
@@ -78,8 +79,8 @@ For example:
 
 [source,sql]
 ----
-STORE B INTO  '...' USING 
-      EsStorage('<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
+STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
+	'<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
 ----
 
 <1> name mapping for two fields
@@ -88,6 +89,113 @@ STORE B INTO  '...' USING
 
 TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Pig column names to lower-case. Because Pig is **case sensitive**, {eh} handles the reverse
 field mapping as well. It is recommended to use the default Pig style and use upper-case names only for commands and avoid mixed-case names.
+
+[float]
+=== Writing data to {es}
+
+{es} is exposed as a native `Storage` to Pig so it can be used to store data into it:
+
+[source,sql]
+----
+-- load data from HDFS into Pig using a schema
+A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
+                    AS (id:long, name, url:chararray, picture: chararray);
+-- transform data
+B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
+-- save the result to Elasticsearch
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.pig.EsStorage(<2>);
+----
+
+<1> {es} resource (index and type) associated with the given storage
+<2> additional configuration parameters can be passed here - in this case the defaults are used
+
+[float]
+==== Writing existing JSON to {es}
+
+When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize common 'textual' types such as `chararray` or `bytearray` otherwise it just calls `toString` to get a hold of the JSON content.
+
+.Pig types to use for JSON representation
+
+[cols="^,^",options="header"]
+|===
+| `Pig type` | Comment 
+
+| `bytearray`       | use this when the JSON data is represented as a `byte[]` or similar
+| `chararray`       | use this if the JSON data is represented as a `String`
+| _anything else_   | make sure the `toString()` returns the desired JSON document
+
+|===
+IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content is considered the final form of the document sent to {es}.
+
+[source,sql]
+----
+A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray<1>);"
+STORE B INTO 'radio/artists' 
+    USING org.elasticsearch.pig.EsStorage('es.input.json=true'<2>...);
+----
+
+<1> Load the (JSON) data as a single field (`json`)
+<2> Indicate the input is of type JSON.
+
+[float]
+==== Writing to dynamic/multi-resources
+
+One can index the data to a different resource, depending on the 'row' being read, by using patterns. Reusing the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+[source,sql]
+----
+A = LOAD 'src/test/resources/media.dat' USING PigStorage()
+            AS (name:chararray, type:chararray <1>, year: chararray);
+STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.pig.EsStorage();
+----
+
+<1> Tuple field used by the resource pattern. Any of the declared fields can be used.
+<2> Resource pattern using field `type`
+
+
+For each tuple about to be written, {eh} will extract the `type` field and use its value to determine the target resource.
+
+The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself. Assuming the JSON source contains documents with the following structure:
+
+[source,js]
+----
+{
+    "media_type":"game",<1>
+    "title":"Final Fantasy VI",
+    "year":"1994"
+}
+----
+
+<1> field within the JSON document that will be used by the pattern
+
+the table declaration can be as follows:
+
+[source,sql]
+----
+A = LOAD '/resources/media.json' USING PigStorage() AS (json:chararray<1>);"
+STORE B INTO 'my-collection/{media_type}'<2>
+    USING org.elasticsearch.pig.EsStorage('es.input.json=true');
+----
+
+<1> Schema declaration for the tuple. Since JSON input is used, the schema is simply a holder to the raw data
+<2> Resource pattern relying on fields _within_ the JSON document and _not_ on the table schema
+
+[float]
+=== Reading data from {es}
+
+As you would expect, loading the data is straight forward:
+
+[source,sql]
+----
+-- execute Elasticsearch query and load data into Pig
+A = LOAD 'radio/artists'<1> 
+    USING org.elasticsearch.pig.EsStorage('es.query=?me*'<2>);
+DUMP A;
+----
+
+<1> {es} resource
+<2> search query to execute
 
 [[pig-type-conversion]]
 [float]
@@ -128,65 +236,3 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 |===
 
 NOTE: While {es} understands the Pig types up to version 0.12, it is backwards compatible with Pig 0.9
-
-[float]
-=== Writing data to {es}
-
-{es} is exposed as a native `Storage` to Pig so it can be used to store data into it:
-
-[source,sql]
-----
--- load data from HDFS into Pig using a schema
-A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
-                    AS (id:long, name, url:chararray, picture: chararray);
--- transform data
-B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
--- save the result to Elasticsearch
-STORE B INTO 'radio/artists'<1> USING EsStorage(<2>);
-----
-
-<1> {es} resource (index and type) associated with the given storage
-<2> additional configuration parameters can be passed here - in this case the defaults are used
-
-[float]
-==== Writing JSON directly to {es}
-
-When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
-the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize common 'textual' types such as `chararray` or `bytearray` otherwise it just calls `toString` to get a hold of the JSON content.
-
-.Pig types to use for JSON representation
-
-[cols="^,^",options="header"]
-|===
-| `Pig type` | Comment 
-
-| `bytearray`       | use this when the JSON data is represented as a `byte[]` or similar
-| `chararray`       | use this if the JSON data is represented as a `String`
-| _anything else_   | make sure the `toString()` returns the desired JSON document
-
-|===
-IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content is considered the final form of the document sent to {es}.
-
-[source,sql]
-----
-A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray<1>);"
-STORE B INTO 'radio/artists' USING EsStorage('es.input.json=true'<2>...);
-----
-
-<1> Load the (JSON) data as a single field (`json`)
-<2> Indicate the input is of type JSON.
-
-[float]
-=== Reading data from {es}
-
-As you would expect, loading the data is straight forward:
-
-[source,sql]
-----
--- execute Elasticsearch query and load data into Pig
-A = LOAD 'radio/artists'<1> USING EsStorage('es.query=?me*'<2>);
-DUMP A;
-----
-
-<1> {es} resource
-<2> search query to execute

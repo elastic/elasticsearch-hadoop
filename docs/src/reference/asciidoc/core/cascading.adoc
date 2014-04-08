@@ -94,7 +94,7 @@ Simply hook, `EsTap` into the Cascading flow:
 [source,java]
 ----
 Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
-             "/resources/artists.dat");
+                 "/resources/artists.dat");
 Tap out = new EsTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 ----
@@ -103,7 +103,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 <2> Cascading tuple declaration
 
 [float]
-==== Writing JSON directly to {es}
+==== Writing existing JSON to {es}
 
 When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize `Text` or `BytesWritable` types otherwise it just
@@ -122,21 +122,48 @@ FlowConnector flow = new HadoopFlowConnector(props);
 flow.connect(in, out, new Pipe("import-json")).complete();
 ----
 
-<1> Indicate the input is of type JSON.
+<1> Indicate the input is of type JSON
 <2> Load the (JSON) data as a single field (`line`)
-
 
 [float]
 ==== Writing to dynamic/multi-resources
 
-One can index the data to a different resource, depending on the tuple being read by using patterns. Reusing the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+One can index the data to a different resource, depending on the tuple being read, by using patterns. Reusing the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
 
 [source,java]
 ----
-Tap out = new EsTap("es.resource.write", "my-collection/{media.type}");
+Tap out = new EsTap("my-collection/{media.type}" <1>, 
+                    new Fields("name", "media.type", "year") <2>);
 ----
 
-For each tuple about to be written, {eh} will extract the `media.type` entry and use its value to determine the target resource. The functionality is available when dealing with raw JSON as well - the value will be extracted from the document itself.
+<1> Resource pattern using field `media.type`
+<2> Schema definition associated with the `Tap`. Any of the declared fields can be used (example uses `media.type`)
+
+For each tuple about to be written, {eh} will extract the `media.type` entry and use its value to determine the target resource.
+
+The functionality is available when dealing with raw JSON as well - in this case, the value will be extracted from the JSON document itself. Assuming the JSON source contains documents with the following structure:
+
+[source,js]
+----
+{
+    "media_type":"book",<1>
+    "title":"Harry Potter",
+    "year":"2010"
+}
+----
+<1> field within the JSON document that will be used by the pattern
+
+the `Tap` declaration can be as follows:
+
+[source,java]
+----
+props.setProperty("es.input.json", "true");                                     
+Tap in = new Lfs(new TextLine(new Fields("line")),"/archives/collection.json");
+Tap out = new EsTap("my-collection/{media_type}" <1>, new Fields("line") <2>);
+----
+
+<1> Resource pattern relying on fields _within_ the JSON document and _not_ on the `Tap` schema
+<2> Schema declaration for the `Tap`. Since JSON input is used, the schema is simply a holder to the raw data
 
 [float]
 === Reading data from {es}

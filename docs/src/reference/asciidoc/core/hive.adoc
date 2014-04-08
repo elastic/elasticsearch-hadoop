@@ -49,7 +49,7 @@ When using Hive, one can use `TBLPROPERTIES` to specify the <<configuration,conf
 ----
 CREATE EXTERNAL TABLE artists (...)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists/',
+TBLPROPERTIES('es.resource' = 'radio/artists',
               'es.index.auto.create' = 'false') <1>;
 ----
 
@@ -68,7 +68,7 @@ To wit:
 ----
 CREATE EXTERNAL TABLE artists (...)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'radio/artists/',
+TBLPROPERTIES('es.resource' = 'radio/artists',
             <1>'es.mapping.names' = 'date:@timestamp <2>, url:url_123 <3>');
 ----
 
@@ -91,7 +91,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists/'<2>);
+TBLPROPERTIES('es.resource' = 'radio/artists'<2>);
 
 -- insert data to Elasticsearch from another table called 'source'
 INSERT OVERWRITE TABLE artists 
@@ -104,7 +104,7 @@ INSERT OVERWRITE TABLE artists
 
 [float]
 [[writing-json-hive]]
-==== Writing JSON directly to {es}
+==== Writing existing JSON to {es}
 
 For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects the output table to contain only one field, who
@@ -139,6 +139,52 @@ TBLPROPERTIES('es.resource' = '...',
 
 <1> The table declaration only one field of type `STRING`
 <2> Indicate {eh} the table content is in JSON format
+
+[float]
+==== Writing to dynamic/multi-resources
+
+One can index the data to a different resource, depending on the 'row' being read, by using patterns. Coming back to the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE media (
+    name    STRING,
+    type    STRING,<1>
+    year    STRING,
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = 'my-collection/{type}'<2>);
+----
+
+<1> Table field used by the resource pattern. Any of the declared fields can be used.
+<2> Resource pattern using field `type`
+
+
+For each 'row' about to be written, {eh} will extract the `type` field and use its value to determine the target resource.
+
+The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself. Assuming the JSON source contains documents with the following structure:
+
+[source,js]
+----
+{
+    "media_type":"music",<1>
+    "title":"Surfing With The Alien",
+    "year":"1987"
+}
+----
+<1> field within the JSON document that will be used by the pattern
+
+the table declaration can be as follows:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE json (data STRING<1>)
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.resource' = 'my-collection/{media_type}'<2>,
+              'es.input.json` = 'yes');
+----
+
+<1> Schema declaration for the table. Since JSON input is used, the schema is simply a holder to the raw data
+<2> Resource pattern relying on fields _within_ the JSON document and _not_ on the table schema
 
 [float]
 === Reading data from {es}

@@ -92,7 +92,7 @@ public class MyMapper extends MapReduceBase implements Mapper {
 
 [float]
 [[writing-json-old-api]]
-==== Writing JSON directly to {es}
+==== Writing existing JSON to {es}
 
 For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects either a `Text` or `BytesWritable` (preffered as it requires no `String` conversion) object as output; if these types are not used, the library will simply fall back to the `toString` representation of the target object.
@@ -194,7 +194,7 @@ public class SomeMapper extends Mapper {
 
 [float]
 [[writing-json-new-api]]
-==== Writing JSON directly to {es}
+==== Writing existing JSON to {es}
 
 As before, when dealing with JSON directly, under the 'new' API the configuration looks as follows:
 

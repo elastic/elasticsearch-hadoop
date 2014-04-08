@@ -14,4 +14,4 @@ include::pig.adoc[]
 
 include::mapping.adoc[]
 
-include::counters.adoc[]
+include::metrics.adoc[]
