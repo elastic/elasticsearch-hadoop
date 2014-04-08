@@ -229,6 +229,7 @@ allprojects { project ->
 			]
 
 			excludes = [
+				"org/elasticsearch/hadoop/mr/compat/**", 
 				"org/elasticsearch/hadoop/rest/**", 
 				"org/elasticsearch/hadoop/serialization/**", 
 				"org/elasticsearch/hadoop/util/**"

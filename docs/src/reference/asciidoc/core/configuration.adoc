@@ -174,11 +174,18 @@ Whether {eh} will treat empty fields as `null`. This settings is typically not n
 null case) but is enabled for making it easier to work with text fields that haven't been sanitized yet.
 
 `es.field.read.validate.presence` (default warn)::
-To help out spot possible mistakes when querying data from Hadoop (which results in incorrect data being returned), {eh} can 
-perform validation spotting missing fields and potential typos. Possible values are :
+To help out spot possible mistakes when querying data from Hadoop (which results in incorrect data being returned), {eh} can perform validation spotting missing fields and potential typos. Possible values are :
 `ignore`;; no validation is performed
 `warn`;; a warning message is logged in case the validation fails
 `strict`;; an exception is thrown, halting the job, if a field is missing
+
+The default (`warn`) will log any typos to the console when the job starts:
+
+[source,bash]
+----
+WARN main mr.EsInputFormat - Field(s) [naem, adress] not found 
+   in the Elasticsearch mapping specified; did you mean [name, location.address]?
+----
 
 [float]
 ==== Network

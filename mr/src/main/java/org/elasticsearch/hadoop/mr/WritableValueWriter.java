@@ -21,27 +21,10 @@ package org.elasticsearch.hadoop.mr;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.io.AbstractMapWritable;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.MD5Hash;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.UTF8;
-import org.apache.hadoop.io.VIntWritable;
-import org.apache.hadoop.io.VLongWritable;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.io.*;
 import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
-@SuppressWarnings("deprecation")
 public class WritableValueWriter implements ValueWriter<Writable> {
 
     private final boolean writeUnknownTypes;
@@ -54,7 +37,7 @@ public class WritableValueWriter implements ValueWriter<Writable> {
         this.writeUnknownTypes = writeUnknownTypes;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public boolean write(Writable writable, Generator generator) {
         if (writable == null || writable instanceof NullWritable) {
             generator.writeNull();
