@@ -171,11 +171,11 @@ allprojects { project ->
 			manifest.attributes['Build'] = build
 		
 		String rev = "unknown"
-		
+
 		// parse the git files to find out the revision
-		File gitHead = file('.git/HEAD')
+		File gitHead = file("$rootDir/.git/HEAD")
 		if (gitHead.exists()) {
-			gitHead = file('.git/' + gitHead.text.trim().replace('ref: ',''))
+			gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
 			if (gitHead.exists()) { rev = gitHead.text }
 		}
 
@@ -284,7 +284,7 @@ def nestMRProject(target) {
 	}
 
 	target.jar {
-		from(project(":elasticsearch-hadoop-mr").jar.archivePath) {
+		from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
 			include "org/elasticsearch/hadoop/**"
 		}
 	}
@@ -294,11 +294,14 @@ def nestMRProject(target) {
 		classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
 	}
 	
+	target.sourcesJar {
+		from project(":elasticsearch-hadoop-mr").sourceSets.main.allJava.srcDirs
+	}
 }
 project(":elasticsearch-hadoop-cascading") {
 	description = "Elasticsearch Hadoop Cascading"
 	nestMRProject(project)
-	
+
 	dependencies {
 		provided("cascading:cascading-hadoop:$cascadingVersion")
 		provided("cascading:cascading-local:$cascadingVersion")
@@ -392,12 +395,9 @@ configure(rootProject) {
 		}
     }
 	
-	task sourcesJar(type: Jar, dependsOn:classes, overwrite: true) {
-		classifier = 'sources'
-		from sourceSets.main.allJava
-		
+	sourcesJar {
 		eshModules.each { subproject ->
-			from subproject.sourceSets.main.allJava
+			from subproject.sourceSets.main.allJava.srcDirs
 		}
 	}
 
@@ -443,14 +443,15 @@ configure(rootProject) {
 			//expand(yyyy: new Date().format("yyyy"), version: project.version)
 		}
 
-		eshModules.each { subproject ->
-			from subproject.jar.destinationDir
-			into ("${folderName}/dist")
+		from ("build/libs") {
+			into "$folderName/dist" 
+			exclude "*-testing.jar"
 		}
 
-		into ("${folderName}/dist") {
-			from "build/libs"
-			exclude "*-testing.jar"
+		eshModules.each { subproject ->
+			from (subproject.jar.destinationDir) {
+				into ("${folderName}/dist")
+			}
 		}
 	}
 
