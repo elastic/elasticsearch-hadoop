@@ -1,4 +1,4 @@
-description = 'Elasticsearch Hadoop'
+description = 'Elasticsearch for Apache Hadoop'
 
 buildscript {
     repositories {
