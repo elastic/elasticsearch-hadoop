@@ -78,11 +78,65 @@ uploadArchives {
 	}
 }
 
-//evaluationDependsOn "elasticsearch-hadoop-repository-hdfs"
-//install.dependsOn subprojects:assemble
-
 install {
 	repositories.mavenInstaller {
 		customizePom(pom, project)
+	}
+}
+
+
+//
+// S3
+//
+
+// task to upload artifacts belonging to S3 configuration object
+// need to share it across scripts so the method is defined as a task instead of a def
+// lazy depends could work but we avoid it since not all projects use distZip
+task uploadToS3() {
+	group = "Distribution"
+	description = "Upload ZIPs to S3"
+
+	logging.level = LogLevel.INFO
+	// execution phase only
+	doLast() {
+		// distZip might not create an s3 config so check its existence first
+		if (configurations.find({ it.name == 's3' })) {
+			uploadArtifactsToS3(project, toDir)
+		}
+	}
+}
+def uploadArtifactsToS3(target, toDir) {
+	
+	configurations { antlibs }
+	dependencies {
+		antlibs "org.springframework.build:org.springframework.build.aws.ant:3.0.6.RELEASE"
+		antlibs "net.java.dev.jets3t:jets3t:0.8.1"
+	}
+
+	// see ant logging
+	target.logging.level = LogLevel.INFO
+	ant {
+		taskdef(resource: 'org/springframework/build/aws/ant/antlib.xml', classpath: configurations.antlibs.asPath)
+		
+		s3(accessKey: s3AccessKey, secretKey: s3SecretAccessKey) {
+		  target.configurations["s3"].artifacts.each { artifact ->
+			def archive = artifact.archiveTask
+		
+			upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath,
+					toFile: toDir + "/${archive.archiveName}", 
+					publicRead: 'false') {
+				metadata(name: 'project.name', value: project)
+				metadata(name: 'package.file.name', value: archive.archiveName)
+			}
+			
+			// checksum
+			def checksum = file(archive.archivePath.absolutePath + ".sha1.txt")
+			if (checksum.exists()) {
+			upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath.absolutePath + ".sha1.txt",
+					toFile: toDir + "/${archive.archiveName}" + ".sha1.txt",
+					publicRead: 'false')
+			}
+		  }
+		}
 	}
 }
