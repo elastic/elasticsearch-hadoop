@@ -244,12 +244,12 @@ allprojects { project ->
 		from javadoc
 	}
 
-	artifacts {
-		archives javadocJar
-		archives sourcesJar
+	task pack(dependsOn: [jar, javadocJar, sourcesJar]) {
+		artifacts {
+			archives javadocJar
+			archives sourcesJar
+		}
 	}
-	
-	task pack(dependsOn: [jar, javadocJar, sourcesJar]) {}
 }
 
 project(":elasticsearch-hadoop-mr") {
@@ -352,7 +352,7 @@ configure(rootProject) {
 		}
 		classifier = 'testing'
 		
-		println "Created Remote Testing Jar"
+		logger.info("Created Remote Testing Jar")
 	}
 }
 
