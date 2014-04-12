@@ -40,6 +40,7 @@ import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -302,13 +303,13 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
     //
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) {
-        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, (JobConf) context.getConfiguration(), null, context);
+        return (org.apache.hadoop.mapreduce.RecordWriter) getRecordWriter(null, HadoopCfgUtils.asJobConf(CompatHandler.taskAttemptContext(context).getConfiguration()), null, context);
     }
 
     @Override
     public void checkOutputSpecs(JobContext context) throws IOException {
         // careful as it seems the info here saved by in the config is discarded
-        init(context.getConfiguration());
+        init(CompatHandler.jobContext(context).getConfiguration());
     }
 
     @Override
