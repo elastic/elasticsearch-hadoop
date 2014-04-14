@@ -60,7 +60,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
             if (w instanceof HiveBytesArrayWritable) {
                 HiveBytesArrayWritable hbaw = ((HiveBytesArrayWritable) w);
-                client.writeProcessedToIndex(hbaw.getContent());
+                repository.writeProcessedToIndex(hbaw.getContent());
             }
             else {
                 // we could allow custom BAs
