@@ -68,7 +68,7 @@ public class NetworkClient implements StatsAware, Closeable {
         return true;
     }
 
-    public Response execute(Request request) throws EsHadoopProtocolException {
+    public Response execute(Request request) throws EsHadoopInvalidRequest {
         Response response = null;
 
         SimpleRequest routedRequest = new SimpleRequest(request.method(), currentUri, request.path(), request.params(), request.body());
@@ -93,7 +93,7 @@ public class NetworkClient implements StatsAware, Closeable {
                 log.error(String.format("Node [%s] failed; " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), failed));
 
                 if (!newNode) {
-                    throw new EsHadoopProtocolException("Connection error (check network and/or proxy settings) - out of nodes and retries", ex);
+                    throw new EsHadoopNoNodesLeftException(nodes);
                 }
             }
         } while (newNode);

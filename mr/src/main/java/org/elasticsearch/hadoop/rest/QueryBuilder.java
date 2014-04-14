@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
@@ -197,11 +196,7 @@ public class QueryBuilder {
 
     public ScrollQuery build(RestRepository client, ScrollReader reader) {
         String scrollUri = assemble();
-        try {
-            return client.scan(scrollUri, bodyQuery, reader);
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalStateException("Cannot build scroll [" + scrollUri + "]", ex);
-        }
+        return client.scan(scrollUri, bodyQuery, reader);
     }
 
     @Override

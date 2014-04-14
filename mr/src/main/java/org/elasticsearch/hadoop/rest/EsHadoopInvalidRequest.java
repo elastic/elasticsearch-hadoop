@@ -20,19 +20,22 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.EsHadoopException;
 
-public class EsHadoopProtocolException extends EsHadoopException {
+/**
+ * Exception caused by an invalid request as reported by the Elasticsearch response.
+ */
+public class EsHadoopInvalidRequest extends EsHadoopException {
 
-    public EsHadoopProtocolException() {}
+    public EsHadoopInvalidRequest() {}
 
-    public EsHadoopProtocolException(String message, Throwable cause) {
+    public EsHadoopInvalidRequest(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public EsHadoopProtocolException(String message) {
+    public EsHadoopInvalidRequest(String message) {
         super(message);
     }
 
-    public EsHadoopProtocolException(Throwable cause) {
+    public EsHadoopInvalidRequest(Throwable cause) {
         super(cause);
     }
 }

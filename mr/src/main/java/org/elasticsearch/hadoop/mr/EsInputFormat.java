@@ -149,7 +149,6 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                         .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
-
     }
 
 

@@ -186,7 +186,7 @@ public class RestClient implements Closeable, StatsAware {
                     else {
                         String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status),
                                 status, error) : error);
-                        throw new EsHadoopProtocolException(String.format(
+                        throw new EsHadoopInvalidRequest(String.format(
                                 "Found unrecoverable error [%s]; Bailing out..", message));
                     }
                 }
@@ -198,6 +198,7 @@ public class RestClient implements Closeable, StatsAware {
             }
 
             return entryToDeletePosition > 0;
+            // catch IO/parsing exceptions
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
@@ -277,19 +278,15 @@ public class RestClient implements Closeable, StatsAware {
         if (checkStatus && response.hasFailed()) {
             // check error first
             String msg = null;
-            try {
-                // try to parse the answer
-                msg = parseContent(response.body(), "error");
-            } catch (Exception ex) {
-                // ignore
-            }
+            // try to parse the answer
+            msg = parseContent(response.body(), "error");
 
             if (!StringUtils.hasText(msg)) {
                 msg = String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]", request.method().name(),
                         request.path(), response.uri(), response.status(), response.statusDescription());
             }
 
-            throw new EsHadoopProtocolException(msg);
+            throw new EsHadoopInvalidRequest(msg);
         }
 
         return response;

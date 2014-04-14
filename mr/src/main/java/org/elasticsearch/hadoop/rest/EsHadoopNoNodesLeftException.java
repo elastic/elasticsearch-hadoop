@@ -18,26 +18,32 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.elasticsearch.hadoop.EsHadoopException;
+import java.util.Collections;
+import java.util.List;
 
 /**
- * Fatal, transport-level exception typically caused by communication/transport errors.
+ * Exception indicating that due to errors, all available nodes have been processed and no
+ * other nodes are left for retrying.
  */
-public class EsHadoopTransportException extends EsHadoopException {
+public class EsHadoopNoNodesLeftException extends EsHadoopTransportException {
 
-    public EsHadoopTransportException() {
-        super();
+    private final List<String> nodesUsed;
+
+    public EsHadoopNoNodesLeftException() {
+        super(initMessage(null));
+        nodesUsed = Collections.emptyList();
     }
 
-    public EsHadoopTransportException(String message, Throwable cause) {
-        super(message, cause);
+    public EsHadoopNoNodesLeftException(List<String> nodesUsed) {
+        super(initMessage(nodesUsed));
+        this.nodesUsed = nodesUsed;
     }
 
-    public EsHadoopTransportException(String message) {
-        super(message);
+    private static String initMessage(List<String> nodesUsed) {
+        return String.format("Connection error (check network and/or proxy settings)- all nodes failed; tried [%s] ", nodesUsed);
     }
 
-    public EsHadoopTransportException(Throwable cause) {
-        super(cause);
+    public List<String> nodesUsed() {
+        return nodesUsed;
     }
 }

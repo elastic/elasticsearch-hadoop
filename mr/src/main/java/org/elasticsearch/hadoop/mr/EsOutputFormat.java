@@ -139,7 +139,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         protected final Configuration cfg;
         protected boolean initialized = false;
 
-        protected RestRepository client;
+        protected RestRepository repository;
         private String uri;
         private Resource resource;
 
@@ -157,7 +157,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 initialized = true;
                 init();
             }
-            client.writeToIndex(value);
+            repository.writeToIndex(value);
         }
 
         protected void init() throws IOException {
@@ -206,16 +206,16 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.debug(String.format("Resource [%s] resolves as a single index", resource));
             }
 
-            client = new RestRepository(settings);
+            repository = new RestRepository(settings);
             // create the index if needed
-            if (client.touch()) {
-                if (client.waitForYellow()) {
+            if (repository.touch()) {
+                if (repository.waitForYellow()) {
                     log.warn(String.format("Timed out waiting for index [%s] to reach yellow health", resource));
                 }
             }
 
-            Map<Shard, Node> targetShards = client.getWriteTargetPrimaryShards();
-            client.close();
+            Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
+            repository.close();
 
             List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
             // make sure the order is strict
@@ -234,7 +234,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
             // override the global settings to communicate directly with the target node
             settings.setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
-            client = new RestRepository(settings);
+            repository = new RestRepository(settings);
             uri = SettingsUtils.nodes(settings).get(0);
 
             if (log.isDebugEnabled()) {
@@ -256,7 +256,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", currentInstance, uri));
             }
 
-            client = new RestRepository(settings);
+            repository = new RestRepository(settings);
         }
 
         private int detectCurrentInstance(Configuration conf) {
@@ -289,9 +289,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 beat.stop();
             }
 
-            if (client != null) {
-                client.close();
-                ReportingUtils.report(progressable, client.stats());
+            if (repository != null) {
+                repository.close();
+                ReportingUtils.report(progressable, repository.stats());
             }
 
             initialized = false;

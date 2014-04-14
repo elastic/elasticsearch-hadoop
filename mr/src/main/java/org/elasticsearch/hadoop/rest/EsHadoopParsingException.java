@@ -20,6 +20,11 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.EsHadoopException;
 
+/**
+ * Exception indicating an unrecoverable parsing error processing answers from Elasticsearch.
+ * This might be caused by an unsupported Elasticsearch version or potential proxying
+ * across the network.
+ */
 public class EsHadoopParsingException extends EsHadoopException {
 
     public EsHadoopParsingException() {}

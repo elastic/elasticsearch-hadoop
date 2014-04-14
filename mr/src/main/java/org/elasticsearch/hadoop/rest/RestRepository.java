@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
@@ -60,6 +61,11 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean executedBulkWrite = false;
     private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
+
+    // indicates whether there were writes errorrs or not
+    // flag indicating whether to flush the batch at close-time or not
+    private boolean hadWriteErrors = false;
+
 
     private RestClient client;
     private Resource resourceR;
@@ -105,7 +111,7 @@ public class RestRepository implements Closeable, StatsAware {
      * @param reader scroll reader
      * @return a scroll query
      */
-    ScrollQuery scan(String query, BytesArray body, ScrollReader reader) throws IOException {
+    ScrollQuery scan(String query, BytesArray body, ScrollReader reader) {
         String[] scrollInfo = client.scan(query, body);
         String scrollId = scrollInfo[0];
         long totalSize = Long.parseLong(scrollInfo[1]);
@@ -130,7 +136,7 @@ public class RestRepository implements Closeable, StatsAware {
      * @param data as a byte array
      * @param size the length to use from the given array
      */
-    public void writeProcessedToIndex(BytesArray ba) throws IOException {
+    public void writeProcessedToIndex(BytesArray ba) {
         Assert.notNull(ba, "no data given");
         Assert.isTrue(ba.length() > 0, "no data given");
 
@@ -140,7 +146,7 @@ public class RestRepository implements Closeable, StatsAware {
         doWriteToIndex(trivialBytesRef);
     }
 
-    private void doWriteToIndex(BytesRef payload) throws IOException {
+    private void doWriteToIndex(BytesRef payload) {
         // check space first
         if (payload.length() > ba.available()) {
             sendBatch();
@@ -155,12 +161,18 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    private void sendBatch() throws IOException {
+    private void sendBatch() {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
-        client.bulk(resourceW, data);
+        try {
+            client.bulk(resourceW, data);
+        } catch (EsHadoopException ex) {
+            hadWriteErrors = true;
+            throw ex;
+        }
+
         data.reset();
         dataEntries = 0;
         executedBulkWrite = true;
@@ -168,23 +180,28 @@ public class RestRepository implements Closeable, StatsAware {
 
     @Override
     public void close() {
-        try {
-            if (log.isDebugEnabled()) {
-                log.debug("Closing repository and connection to Elasticsearch ...");
-            }
-            if (data.length() > 0) {
+        if (log.isDebugEnabled()) {
+            log.debug("Closing repository and connection to Elasticsearch ...");
+        }
+
+        if (data.length() > 0) {
+            if (!hadWriteErrors) {
                 sendBatch();
             }
-            if (requiresRefreshAfterBulk && executedBulkWrite) {
-                // refresh batch
-                client.refresh(resourceW);
-
+            else {
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resourceW));
+                    log.debug("Dirty close; ignoring last existing write batch...");
                 }
             }
-        } catch (IOException ex) {
-            log.warn("Cannot flush data batch", ex);
+        }
+
+        if (requiresRefreshAfterBulk && executedBulkWrite) {
+            // refresh batch
+            client.refresh(resourceW);
+
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Refreshing index [%s]", resourceW));
+            }
         }
 
         if (client != null) {
@@ -198,7 +215,7 @@ public class RestRepository implements Closeable, StatsAware {
         return client;
     }
 
-    public Map<Shard, Node> getReadTargetShards() throws IOException {
+    public Map<Shard, Node> getReadTargetShards() {
         Map<String, Node> nodes = client.getNodes();
 
         List<List<Map<String, Object>>> info = client.targetShards(resourceR);
