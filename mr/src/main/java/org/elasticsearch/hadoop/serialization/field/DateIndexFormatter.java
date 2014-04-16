@@ -23,6 +23,7 @@ import java.util.Calendar;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.elasticsearch.hadoop.util.Constants;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 
@@ -34,7 +35,33 @@ public class DateIndexFormatter implements IndexFormatter {
     @Override
     public void configure(String format) {
         this.format = format;
+        format = fixDateForJdk(format);
         this.dateFormat = new SimpleDateFormat(format);
+    }
+
+    /**
+     * Work-around for year formatting in JDK 6 vs 7+.
+     * JDK6: does not know about 'YYYY' (only 'yyyy'). Considers 'y' and 'yyy' as 'yy'.
+     * JDK7: understands both 'YYYY' and 'yyyy'. Considers 'y' and 'yyy' as 'yyyy'
+     *
+     * This method checks the pattern and converts it into JDK7 when running on JDK6.
+     */
+    private String fixDateForJdk(String format) {
+        if (Constants.JRE_IS_MINIMUM_JAVA7) {
+            return format;
+        }
+        // JDK 6 - fix year formatting
+
+        // a. lower case Y to y
+        if (format.contains("Y")) {
+            format = format.replace("Y", "y");
+        }
+
+        // gotta love regex
+        // use lookahead to match isolated y/yyy with yyyy
+        format.replaceAll("((?<!y)(?:y|yyy)(?!y))", "yyyy");
+
+        return format;
     }
 
     @Override

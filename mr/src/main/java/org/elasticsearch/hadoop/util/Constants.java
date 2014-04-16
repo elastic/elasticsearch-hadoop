@@ -22,14 +22,14 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 
 // taken from Apache Lucene
-abstract class Constants {
+public abstract class Constants {
 
     public static final String OS_ARCH = System.getProperty("os.arch");
 
     public static final boolean JRE_IS_MINIMUM_JAVA7;
     public static final boolean JRE_IS_MINIMUM_JAVA8;
 
-    /** True iff running on a 64bit JVM */
+    /** True if running on a 64bit JVM */
     public static final boolean JRE_IS_64BIT;
 
     static {
