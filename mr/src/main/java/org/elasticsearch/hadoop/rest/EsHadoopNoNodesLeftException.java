@@ -18,8 +18,9 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 
 /**
  * Exception indicating that due to errors, all available nodes have been processed and no
@@ -27,23 +28,24 @@ import java.util.List;
  */
 public class EsHadoopNoNodesLeftException extends EsHadoopTransportException {
 
-    private final List<String> nodesUsed;
+    private final Map<String, Throwable> nodesUsed;
 
     public EsHadoopNoNodesLeftException() {
         super(initMessage(null));
-        nodesUsed = Collections.emptyList();
+        nodesUsed = Collections.emptyMap();
     }
 
-    public EsHadoopNoNodesLeftException(List<String> nodesUsed) {
+    public EsHadoopNoNodesLeftException(Map<String, Throwable> nodesUsed) {
         super(initMessage(nodesUsed));
         this.nodesUsed = nodesUsed;
     }
 
-    private static String initMessage(List<String> nodesUsed) {
-        return String.format("Connection error (check network and/or proxy settings)- all nodes failed; tried [%s] ", nodesUsed);
+    private static String initMessage(Map<String, Throwable> nodesUsed) {
+        return String.format("Connection error (check network and/or proxy settings)- all nodes failed; tried [%s] ",
+                nodesUsed.keySet());
     }
 
-    public List<String> nodesUsed() {
-        return nodesUsed;
+    public Collection<String> nodesUsed() {
+        return nodesUsed.keySet();
     }
 }

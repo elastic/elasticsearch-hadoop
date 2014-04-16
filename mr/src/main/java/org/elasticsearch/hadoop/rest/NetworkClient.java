@@ -19,7 +19,9 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +38,7 @@ public class NetworkClient implements StatsAware, Closeable {
 
     private final Settings settings;
     private final List<String> nodes;
+    private final Map<String, Throwable> failedNodes = new LinkedHashMap<String, Throwable>();
 
     private Transport currentTransport;
     private String currentUri;
@@ -88,12 +91,15 @@ public class NetworkClient implements StatsAware, Closeable {
                 }
 
                 String failed = currentUri;
+
+                failedNodes.put(failed, ex);
+
                 newNode = selectNextNode();
 
-                log.error(String.format("Node [%s] failed; " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), failed));
+                log.error(String.format("Node [%s] failed (%s); " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), ex.getMessage(), failed));
 
                 if (!newNode) {
-                    throw new EsHadoopNoNodesLeftException(nodes);
+                    throw new EsHadoopNoNodesLeftException(failedNodes);
                 }
             }
         } while (newNode);
