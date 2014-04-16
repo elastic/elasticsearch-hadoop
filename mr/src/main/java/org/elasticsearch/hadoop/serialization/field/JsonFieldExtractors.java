@@ -26,8 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
-import org.elasticsearch.hadoop.serialization.AbstractIndexFormat;
-import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -44,7 +42,7 @@ public class JsonFieldExtractors {
     private String[] paths;
 
     private FieldExtractor id, parent, routing, ttl, version, timestamp;
-    private IndexFormat indexFormat;
+    private AbstractIndexExtractor indexExtractor;
 
     class PrecomputedFieldExtractor implements FieldExtractor {
 
@@ -84,16 +82,18 @@ public class JsonFieldExtractors {
         timestamp = init(settings.getMappingTimestamp(), jsonPaths);
 
         // create index format
-        indexFormat = new AbstractIndexFormat() {
+        indexExtractor = new AbstractIndexExtractor() {
             @Override
-            protected Object createFieldExtractor(String fieldName) {
+            protected FieldExtractor createFieldExtractor(String fieldName) {
                 return createJsonFieldExtractor(fieldName, jsonPaths);
             }
         };
-        indexFormat.compile(new Resource(settings, false).toString());
+        indexExtractor.setSettings(settings);
+
+        indexExtractor.compile(new Resource(settings, false).toString());
 
         // if there's no pattern, simply remove it
-        indexFormat = (indexFormat.hasPattern() ? indexFormat : null);
+        indexExtractor = (indexExtractor.hasPattern() ? indexExtractor : null);
 
         paths = jsonPaths.toArray(new String[jsonPaths.size()]);
     }
@@ -123,8 +123,8 @@ public class JsonFieldExtractors {
         return null;
     }
 
-    public IndexFormat indexAndType() {
-        return indexFormat;
+    public IndexExtractor indexAndType() {
+        return indexExtractor;
     }
 
     public FieldExtractor id() {

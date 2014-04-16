@@ -54,7 +54,7 @@ import static org.junit.Assert.*;
 @RunWith(Parameterized.class)
 public class AbstractMRNewApiSaveTest {
 
-    public static class JsonMapper extends Mapper {
+    public static class TabMapper extends Mapper {
 
         @Override
         protected void map(Object key, Object value, Context context) throws IOException, InterruptedException {
@@ -64,9 +64,23 @@ public class AbstractMRNewApiSaveTest {
             entry.put("number", st.nextToken());
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
+
             if (st.hasMoreTokens()) {
-                entry.put("picture", st.nextToken());
+                String str = st.nextToken();
+                if (str.startsWith("http")) {
+                    entry.put("picture", str);
+
+                    if (st.hasMoreTokens()) {
+                        String token = st.nextToken();
+                        entry.put("@timestamp", token);
+                    }
+                }
+                else {
+                    entry.put("@timestamp", str);
+                }
             }
+
+
             context.write(key, WritableUtils.toWritable(entry));
         }
     }
@@ -80,7 +94,7 @@ public class AbstractMRNewApiSaveTest {
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(EsOutputFormat.class);
         job.setMapOutputValueClass(LinkedMapWritable.class);
-        job.setMapperClass(JsonMapper.class);
+        job.setMapperClass(TabMapper.class);
         job.setNumReduceTasks(0);
 
 
@@ -90,7 +104,7 @@ public class AbstractMRNewApiSaveTest {
         TextInputFormat.setMaxInputSplitSize(standard, splitSize);
         TextInputFormat.setMinInputSplitSize(standard, 50);
 
-        standard.setMapperClass(JsonMapper.class);
+        standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
         TextInputFormat.addInputPath(standard, new Path(TestUtils.sampleArtistsDat(conf)));
 
@@ -206,6 +220,15 @@ public class AbstractMRNewApiSaveTest {
     public void testIndexPattern() throws Exception {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/pattern-{number}");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testIndexPatternWithFormatting() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/pattern-format-{@timestamp:YYYY-MM-dd}");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

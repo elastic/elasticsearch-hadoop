@@ -16,20 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.field;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 
 
-public abstract class AbstractIndexFormat implements IndexFormat, SettingsAware {
+public abstract class AbstractIndexExtractor implements IndexExtractor, SettingsAware {
 
     protected Settings settings;
     protected String pattern;
@@ -64,11 +65,35 @@ public abstract class AbstractIndexFormat implements IndexFormat, SettingsAware 
             template.add(string.substring(0, startPattern));
             int endPattern = string.indexOf("}");
             Assert.isTrue(endPattern > startPattern + 1, "Invalid pattern given " + string);
-            template.add(createFieldExtractor(string.substring(startPattern + 1, endPattern)));
+            String nestedString = string.substring(startPattern + 1, endPattern);
+            int separator = nestedString.indexOf(":");
+            if (separator > 0) {
+                Assert.isTrue(nestedString.length() > separator + 1, "Invalid format given " + nestedString);
+                String format = nestedString.substring(separator + 1);
+                nestedString = nestedString.substring(0, separator);
+                template.add(wrapWithFormatter(format, createFieldExtractor(nestedString)));
+            }
+            else {
+                template.add(createFieldExtractor(nestedString));
+            }
             string = string.substring(endPattern + 1).trim();
         }
-        template.add(string);
+        if (StringUtils.hasText(string)) {
+            template.add(string);
+        }
         return template;
+    }
+
+    private Object wrapWithFormatter(String format, final FieldExtractor createFieldExtractor) {
+        // instantiate field extractor
+        final IndexFormatter iformatter = ObjectUtils.instantiate(settings.getMappingIndexFormatterClassName(), settings);
+        iformatter.configure(format);
+        return new FieldExtractor() {
+            @Override
+            public String field(Object target) {
+                return iformatter.format(createFieldExtractor.field(target));
+            }
+        };
     }
 
     private void append(StringBuilder sb, List<Object> list, Object target) {
@@ -106,5 +131,5 @@ public abstract class AbstractIndexFormat implements IndexFormat, SettingsAware 
         return hasPattern;
     }
 
-    protected abstract Object createFieldExtractor(String fieldName);
+    protected abstract FieldExtractor createFieldExtractor(String fieldName);
 }

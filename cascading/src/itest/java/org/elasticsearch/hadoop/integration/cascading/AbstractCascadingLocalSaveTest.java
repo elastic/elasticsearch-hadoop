@@ -42,7 +42,7 @@ public class AbstractCascadingLocalSaveTest {
     @Test
     public void testWriteToES() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-local/artists", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
@@ -52,12 +52,12 @@ public class AbstractCascadingLocalSaveTest {
     @Test
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.names", "url:address");
@@ -70,25 +70,25 @@ public class AbstractCascadingLocalSaveTest {
         properties.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
 
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
         build(properties, in, out, pipe);
     }
 
     @Test
     public void testFieldMapping() throws Exception {
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-local/fieldmapping", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.ttl", "<1>");
@@ -100,10 +100,26 @@ public class AbstractCascadingLocalSaveTest {
         Properties properties = new TestSettings().getProperties();
 
         // local file-system source
-        Tap in = new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-local/pattern-{id}", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testIndexPatternWithFormatAndAlias() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+
+        // local file-system source
+        Tap in = sourceTap();
+        Tap out = new EsTap("cascading-local/pattern-format-{ts:YYYY-MM-dd}", new Fields("id", "name", "url", "picture", "ts"));
+        Pipe pipe = new Pipe("copy");
+
+        build(properties, in, out, pipe);
+    }
+
+    private Tap sourceTap() {
+        return new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {

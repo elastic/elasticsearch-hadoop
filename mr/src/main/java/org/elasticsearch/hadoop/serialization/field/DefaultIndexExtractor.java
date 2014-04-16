@@ -16,19 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractCascadingLocalJsonSaveTest.class, AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalJsonSearchTest.class, AbstractCascadingLocalSearchTest.class })
-//@Suite.SuiteClasses({ AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalSearchTest.class })
-public class CascadingLocalSuite {
+public class DefaultIndexExtractor extends AbstractIndexExtractor {
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+    protected FieldExtractor createFieldExtractor(String fieldName) {
+        settings.setProperty(ConstantFieldExtractor.PROPERTY, fieldName);
+        return ObjectUtils.instantiate(settings.getMappingDefaultClassExtractor(), settings);
+    }
 }

@@ -53,10 +53,10 @@ public class AbstractHiveSearchJsonTest {
         this.query = query;
     }
 
-
     @Before
     public void before() throws Exception {
         provisionEsLib();
+        RestUtils.refresh("json-hive");
     }
 
     @After
@@ -234,6 +234,13 @@ public class AbstractHiveSearchJsonTest {
         Assert.assertTrue(RestUtils.exists("json-hive/pattern-7"));
         Assert.assertTrue(RestUtils.exists("json-hive/pattern-10"));
         Assert.assertTrue(RestUtils.exists("json-hive/pattern-3"));
+    }
+
+    @Test
+    public void testDynamicPatternFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2007-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2001-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2000-10-06"));
     }
 
     private static boolean containsNoNull(List<String> str) {

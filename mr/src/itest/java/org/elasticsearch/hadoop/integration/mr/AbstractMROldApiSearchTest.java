@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -55,6 +56,11 @@ public class AbstractMROldApiSearchTest {
     public AbstractMROldApiSearchTest(String indexPrefix, String query) {
         this.query = query;
         this.indexPrefix = indexPrefix;
+    }
+
+    @Before
+    public void before() throws Exception {
+        RestUtils.refresh(indexPrefix + "mroldapi");
     }
 
     @Test
@@ -125,6 +131,12 @@ public class AbstractMROldApiSearchTest {
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-990"));
     }
 
+    @Test
+    public void testDynamicPatternWithFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2936-10-06"));
+        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2051-10-06"));
+        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2345-10-06"));
+    }
 
     //@Test
     public void testNested() throws Exception {

@@ -183,8 +183,12 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_MAPPING_TIMESTAMP_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
     }
 
-    public String getMappingIndexFormatClassName() {
-        return getProperty(ES_MAPPING_INDEX_FORMAT_CLASS, ES_MAPPING_DEFAULT_INDEX_FORMAT_CLASS);
+    public String getMappingIndexExtractorClassName() {
+        return getProperty(ES_MAPPING_INDEX_EXTRACTOR_CLASS, ES_MAPPING_DEFAULT_INDEX_EXTRACTOR_CLASS);
+    }
+
+    public String getMappingIndexFormatterClassName() {
+        return getProperty(ES_MAPPING_INDEX_FORMATTER_CLASS, ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS);
     }
 
     public boolean getUpsertDoc() {

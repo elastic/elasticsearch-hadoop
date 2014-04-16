@@ -41,8 +41,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToES() throws Exception {
-        // local file-system source
-        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
@@ -52,13 +51,12 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESWithAlias() throws Exception {
-        // local file-system source
-        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-hadoop/alias", "", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
 
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
         props.setProperty("es.mapping.names", "url:address");
@@ -69,10 +67,23 @@ public class AbstractCascadingHadoopSaveTest {
     public void testIndexPattern() throws Exception {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
-        // local file-system source
-        Tap in = new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture")), INPUT);
+        Tap in = sourceTap();
         Tap out = new EsTap("cascading-hadoop/pattern-{id}", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
+    }
+
+    @Test
+    public void testIndexPatternWithFormat() throws Exception {
+        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+
+        Tap in = sourceTap();
+        Tap out = new EsTap("cascading-hadoop/pattern-format-{ts:YYYY-MM-dd}", new Fields("id", "name", "url", "picture", "ts"));
+        Pipe pipe = new Pipe("copy");
+        StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
+    }
+
+    private Tap sourceTap() {
+        return new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
     }
 }

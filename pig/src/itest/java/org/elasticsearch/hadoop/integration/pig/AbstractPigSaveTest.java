@@ -219,7 +219,17 @@ public class AbstractPigSaveTest {
         pig.executeScript(script);
     }
 
+    @Test
+    public void testIndexPatternFormat() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                loadSource() +
+                "STORE A INTO 'pig/pattern-format-{timestamp:YYYY-MM-dd}' USING org.elasticsearch.hadoop.pig.EsStorage();";
+
+        pig.executeScript(script);
+    }
+
     private String loadSource() {
-        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray);";
+        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray);";
     }
 }

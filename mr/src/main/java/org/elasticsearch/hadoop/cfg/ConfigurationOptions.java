@@ -18,7 +18,8 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
-import org.elasticsearch.hadoop.serialization.DefaultIndexFormat;
+import org.elasticsearch.hadoop.serialization.field.DateIndexFormatter;
+import org.elasticsearch.hadoop.serialization.field.DefaultIndexExtractor;
 
 /**
  * Class providing the various Configuration parameters used by the Elasticsearch Hadoop integration.
@@ -135,8 +136,11 @@ public interface ConfigurationOptions {
     String ES_MAPPING_TTL_EXTRACTOR_CLASS = "es.mapping.ttl.extractor.class";
     String ES_MAPPING_TIMESTAMP = "es.mapping.timestamp";
     String ES_MAPPING_TIMESTAMP_EXTRACTOR_CLASS = "es.mapping.timestamp.extractor.class";
-    String ES_MAPPING_INDEX_FORMAT_CLASS = "es.mapping.index.format.class";
-    String ES_MAPPING_DEFAULT_INDEX_FORMAT_CLASS = DefaultIndexFormat.class.getName();
+    String ES_MAPPING_INDEX_EXTRACTOR_CLASS = "es.mapping.index.extractor.class";
+    String ES_MAPPING_DEFAULT_INDEX_EXTRACTOR_CLASS = DefaultIndexExtractor.class.getName();
+    String ES_MAPPING_INDEX_FORMATTER_CLASS = "es.mapping.index.formatter.class";
+    String ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS = DateIndexFormatter.class.getName();
+
 
     /** Operation types */
     String ES_WRITE_OPERATION = "es.write.operation";

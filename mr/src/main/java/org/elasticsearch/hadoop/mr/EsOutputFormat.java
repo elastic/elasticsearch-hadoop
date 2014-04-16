@@ -46,7 +46,7 @@ import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.dto.Shard;
-import org.elasticsearch.hadoop.serialization.IndexFormat;
+import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -191,7 +191,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             resource = new Resource(settings, false);
 
             // single index vs multi indices
-            IndexFormat iformat = ObjectUtils.instantiate(settings.getMappingIndexFormatClassName(), settings);
+            IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
             iformat.compile(resource.toString());
             if (iformat.hasPattern()) {
                 initMultiIndices(settings, currentInstance);

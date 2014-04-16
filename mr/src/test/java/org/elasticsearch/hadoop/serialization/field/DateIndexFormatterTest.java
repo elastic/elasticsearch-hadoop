@@ -16,15 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
-import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.junit.Test;
 
-public class DefaultIndexFormat extends AbstractIndexFormat {
+import static org.junit.Assert.*;
 
-    protected Object createFieldExtractor(String fieldName) {
-        settings.setProperty(ConstantFieldExtractor.PROPERTY, fieldName);
-        return ObjectUtils.instantiate(settings.getMappingDefaultClassExtractor(), settings);
+import static org.hamcrest.Matchers.*;
+
+public class DateIndexFormatterTest {
+
+    private IndexFormatter formatter = new DateIndexFormatter();
+
+    @Test
+    public void testTimeYMDFormat() {
+        formatter.configure("YYYY.MM.dd");
+        assertThat(formatter.format("2014-10-06T19:20:25.000Z"), is("2014.10.06"));
+    }
+
+    @Test
+    public void testTimeYMFormat() {
+        formatter.configure("YYYY-MM");
+        assertThat(formatter.format("2014-10-06T19:20:25.000Z"), is("2014-10"));
+    }
+
+    @Test
+    public void testDateAndTimezone() {
+        formatter.configure("MM-dd");
+        assertThat(formatter.format("1969-08-20"), is("08-20"));
     }
 }

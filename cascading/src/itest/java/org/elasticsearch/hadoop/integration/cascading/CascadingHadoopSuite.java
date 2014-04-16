@@ -42,8 +42,8 @@ import org.junit.runners.Suite;
 import cascading.util.Update;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractCascadingHadoopSaveTest.class, AbstractCascadingHadoopSearchTest.class })
-//@Suite.SuiteClasses({ CascadingHadoopSearchTest.class })
+@Suite.SuiteClasses({ AbstractCascadingHadoopSaveTest.class, AbstractCascadingHadoopJsonSaveTest.class, AbstractCascadingHadoopSearchTest.class, AbstractCascadingHadoopJsonSearchTest.class })
+//@Suite.SuiteClasses({ AbstractCascadingHadoopJsonSaveTest.class, AbstractCascadingHadoopJsonSearchTest.class })
 public class CascadingHadoopSuite {
 
     @ClassRule

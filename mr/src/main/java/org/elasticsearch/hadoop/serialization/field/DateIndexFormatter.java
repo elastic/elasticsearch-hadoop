@@ -16,19 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractCascadingLocalJsonSaveTest.class, AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalJsonSearchTest.class, AbstractCascadingLocalSearchTest.class })
-//@Suite.SuiteClasses({ AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalSearchTest.class })
-public class CascadingLocalSuite {
+import javax.xml.bind.DatatypeConverter;
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+import org.elasticsearch.hadoop.util.StringUtils;
+
+
+public class DateIndexFormatter implements IndexFormatter {
+
+    private String format;
+    private SimpleDateFormat dateFormat;
+
+    @Override
+    public void configure(String format) {
+        this.format = format;
+        this.dateFormat = new SimpleDateFormat(format);
+    }
+
+    @Override
+    public String format(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+
+        Calendar calendar = DatatypeConverter.parseDateTime(value);
+        return dateFormat.format(calendar.getTime());
+    }
 }

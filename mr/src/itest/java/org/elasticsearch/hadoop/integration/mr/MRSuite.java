@@ -29,7 +29,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AbstractMROldApiSaveTest.class, AbstractMROldApiSearchTest.class, AbstractMRNewApiSaveTest.class, AbstractMRNewApiSearchTest.class })
-//@Suite.SuiteClasses({ MROldApiSaveTest.class, MROldApiSearchTest.class })
+//@Suite.SuiteClasses({ AbstractMROldApiSaveTest.class, AbstractMROldApiSearchTest.class })
 public class MRSuite {
     @ClassRule
     public static ExternalResource resource = new LocalEs();

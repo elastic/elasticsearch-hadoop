@@ -154,6 +154,16 @@ public class AbstractPigSaveJsonTest {
         pig.executeScript(script);
     }
 
+    @Test
+    public void testIndexPatternFormat() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                loadSource() +
+                "STORE A INTO 'json-pig/pattern-format-{@timestamp:YYYY-MM-dd}' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+
+        pig.executeScript(script);
+    }
+
     private String loadSource() {
         return "A = LOAD '" + org.elasticsearch.hadoop.util.TestUtils.sampleArtistsJson() + "' USING PigStorage() AS (json: chararray);";
     }

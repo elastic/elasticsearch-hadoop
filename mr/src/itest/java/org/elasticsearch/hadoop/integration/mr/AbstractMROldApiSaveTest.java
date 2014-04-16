@@ -58,7 +58,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSaveTest {
 
-    public static class JsonMapper extends MapReduceBase implements Mapper {
+    public static class TabMapper extends MapReduceBase implements Mapper {
 
         @Override
         public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
@@ -68,8 +68,20 @@ public class AbstractMROldApiSaveTest {
             entry.put("number", st.nextToken());
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
+
             if (st.hasMoreTokens()) {
-                entry.put("picture", st.nextToken());
+                String str = st.nextToken();
+                if (str.startsWith("http")) {
+                    entry.put("picture", str);
+
+                    if (st.hasMoreTokens()) {
+                        String token = st.nextToken();
+                        entry.put("@timestamp", token);
+                    }
+                }
+                else {
+                    entry.put("@timestamp", str);
+                }
             }
 
             output.collect(key, WritableUtils.toWritable(entry));
@@ -97,7 +109,7 @@ public class AbstractMROldApiSaveTest {
 
 
         JobConf standard = new JobConf(conf);
-        standard.setMapperClass(JsonMapper.class);
+        standard.setMapperClass(TabMapper.class);
         standard.setMapOutputValueClass(LinkedMapWritable.class);
         standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
         FileInputFormat.setInputPaths(standard, new Path(TestUtils.sampleArtistsDat(conf)));
@@ -214,10 +226,10 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    //@Test
-    public void testAlmostValidIndexPattern() throws Exception {
+    @Test
+    public void testIndexPatternWithFormatting() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-{number}/pattern");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

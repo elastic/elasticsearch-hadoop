@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -63,6 +64,11 @@ public class AbstractCascadingLocalSearchTest {
     }
 
     private OutputStream OUT = Stream.NULL.stream();
+
+    @Before
+    public void before() throws Exception {
+        RestUtils.refresh("cascading-local");
+    }
 
     @Test
     public void testReadFromES() throws Exception {
@@ -129,6 +135,13 @@ public class AbstractCascadingLocalSearchTest {
         Assert.assertTrue(RestUtils.exists("cascading-local/pattern-1"));
         Assert.assertTrue(RestUtils.exists("cascading-local/pattern-500"));
         Assert.assertTrue(RestUtils.exists("cascading-local/pattern-990"));
+    }
+
+    @Test
+    public void testDynamicPatternFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-format-2001-10-06"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-format-2500-10-06"));
+        Assert.assertTrue(RestUtils.exists("cascading-local/pattern-format-2990-10-06"));
     }
 
     private Properties cfg() {

@@ -58,6 +58,7 @@ public class AbstractHiveSearchTest {
     @Before
     public void before() throws Exception {
         provisionEsLib();
+        RestUtils.refresh("hive");
     }
 
     @After
@@ -329,6 +330,14 @@ public class AbstractHiveSearchTest {
         Assert.assertTrue(RestUtils.exists("hive/pattern-10"));
         Assert.assertTrue(RestUtils.exists("hive/pattern-15"));
     }
+
+    @Test
+    public void testDynamicPatternFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("hive/pattern-format-2007-10-06"));
+        Assert.assertTrue(RestUtils.exists("hive/pattern-format-2011-10-06"));
+        Assert.assertTrue(RestUtils.exists("hive/pattern-format-2001-10-06"));
+    }
+
 
     private static boolean containsNoNull(List<String> str) {
         for (String string : str) {

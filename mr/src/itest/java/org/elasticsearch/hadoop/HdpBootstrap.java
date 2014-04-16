@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobLocalizer;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
@@ -43,14 +44,23 @@ public class HdpBootstrap {
     public static void hackHadoopStagingOnWin() {
         // do the assignment only on Windows systems
         if (TestUtils.isWindows()) {
-            // 0655 = -rwxr-xr-x , 0655 = -rwxr-x---
+            // 0655 = -rwxr-xr-x , 0650 = -rwxr-x---
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
+
+            // handle distributed cache permissions
+            Field field = ReflectionUtils.findField(JobLocalizer.class, "privateCachePerms");
+
+            if (field != null) {
+                ReflectionUtils.makeAccessible(field);
+                FsPermission perm = (FsPermission) ReflectionUtils.getField(field, null);
+                perm.fromShort((short) 0650);
+            }
 
             // handle jar permissions as well - temporarily disable for CDH 4 / YARN
             try {
                 Class<?> tdcm = Class.forName("org.apache.hadoop.filecache.TrackerDistributedCacheManager");
-                Field field = ReflectionUtils.findField(tdcm, "PUBLIC_CACHE_OBJECT_PERM");
+                field = ReflectionUtils.findField(tdcm, "PUBLIC_CACHE_OBJECT_PERM");
                 ReflectionUtils.makeAccessible(field);
                 FsPermission perm = (FsPermission) ReflectionUtils.getField(field, null);
                 perm.fromShort((short) 0650);

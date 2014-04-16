@@ -22,13 +22,13 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import cascading.flow.local.LocalFlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.operation.AssertionLevel;
 import cascading.operation.aggregator.Count;
 import cascading.operation.assertion.AssertSizeLessThan;
@@ -45,22 +45,21 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
 @RunWith(Parameterized.class)
-public class AbstractCascadingLocalJsonSearchTest {
+public class AbstractCascadingHadoopJsonSearchTest {
 
     @Parameters
     public static Collection<Object[]> queries() {
-        return QueryTestParams.localParams();
+        return QueryTestParams.params();
     }
 
     private final String indexPrefix = "json-";
     private final String query;
 
-    public AbstractCascadingLocalJsonSearchTest(String query) {
+    public AbstractCascadingHadoopJsonSearchTest(String query) {
         this.query = query;
     }
 
@@ -68,13 +67,13 @@ public class AbstractCascadingLocalJsonSearchTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "cascading-local");
+        RestUtils.refresh(indexPrefix + "cascading-hadoop");
     }
 
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-local/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists");
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
@@ -84,50 +83,50 @@ public class AbstractCascadingLocalJsonSearchTest {
         pipe = new Every(pipe, new Count());
 
         // print out
-        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
         build(cfg(), in, out, pipe);
     }
 
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.putData(indexPrefix + "cascading-local/nestedmap", StringUtils.toUTF(data));
+        RestUtils.putData(indexPrefix + "cascading-hadoop/nestedmap", StringUtils.toUTF(data));
 
-        RestUtils.refresh(indexPrefix + "cascading-local");
+        RestUtils.refresh(indexPrefix + "cascading-hadoop");
 
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "nested:data.map.key");
 
-        Tap in = new EsTap(indexPrefix + "cascading-local/nestedmap", new Fields("nested"));
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop/nestedmap", new Fields("nested"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
 
         // print out
-        Tap out = new OutputStreamTap(new TextLine(), OUT);
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
         build(cfg, in, out, pipe);
     }
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-1"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-500"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-990"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-1"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-500"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-990"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2501-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2890-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2001-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2501-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2890-10-06"));
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
-        StatsUtils.proxy(new LocalFlowConnector(cfg).connect(in, out, pipe)).complete();
+        StatsUtils.proxy(new HadoopFlowConnector(cfg).connect(in, out, pipe)).complete();
     }
 
     private Properties cfg() {
-        Properties props = new TestSettings().getProperties();
+        Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(CascadingHadoopSuite.configuration));
         props.put(ConfigurationOptions.ES_QUERY, query);
         return props;
     }

@@ -34,6 +34,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveServer;
@@ -78,6 +80,36 @@ class HiveEmbeddedServer implements HiveInstance {
         }
     }
 
+    private static class DummyHiveAuthenticationProvider implements HiveAuthenticationProvider {
+
+        private Configuration conf;
+
+        @Override
+        public void setConf(Configuration conf) {
+            this.conf = conf;
+        }
+
+        @Override
+        public Configuration getConf() {
+            return conf;
+        }
+
+        @Override
+        public String getUserName() {
+            return System.getProperty("user.name");
+        }
+
+        @Override
+        public List<String> getGroupNames() {
+            return Collections.singletonList("0");
+        }
+
+        @Override
+        public void destroy() throws HiveException {
+            //
+        }
+    }
+
     private HiveConf configure() throws Exception {
         TestUtils.delete(new File("/tmp/hive"));
 
@@ -94,6 +126,8 @@ class HiveEmbeddedServer implements HiveInstance {
             conf.set("hive.scratch.dir.permission", "650");
             //conf.set("hadoop.bin.path", getClass().getClassLoader().getResource("hadoop.cmd").getPath());
             System.setProperty("path.separator", ";");
+            conf.setVar(HiveConf.ConfVars.HIVE_AUTHENTICATOR_MANAGER,
+                    DummyHiveAuthenticationProvider.class.getName());
         }
         else {
             conf.set("hive.scratch.dir.permission", "777");
@@ -104,7 +138,7 @@ class HiveEmbeddedServer implements HiveInstance {
         conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse" + random);
         conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db" + random);
         conf.set("hive.exec.scratchdir", "/tmp/hive");
-        //conf.set("fs.permissions.umask-mode", "022");
+        conf.set("fs.permissions.umask-mode", "022");
         conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db" + random + ";create=true");
         conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");

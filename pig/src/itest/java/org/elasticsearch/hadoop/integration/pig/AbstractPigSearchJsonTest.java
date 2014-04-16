@@ -26,6 +26,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,6 +61,10 @@ public class AbstractPigSearchJsonTest {
         pig.stop();
     }
 
+    @Before
+    public void before() throws Exception {
+        RestUtils.refresh("json-pig");
+    }
 
     @Test
     public void testNestedField() throws Exception {
@@ -153,5 +158,12 @@ public class AbstractPigSearchJsonTest {
         Assert.assertTrue(RestUtils.exists("json-pig/pattern-1"));
         Assert.assertTrue(RestUtils.exists("json-pig/pattern-500"));
         Assert.assertTrue(RestUtils.exists("json-pig/pattern-990"));
+    }
+
+    @Test
+    public void testDynamicPatternFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2010-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2500-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2853-10-06"));
     }
 }

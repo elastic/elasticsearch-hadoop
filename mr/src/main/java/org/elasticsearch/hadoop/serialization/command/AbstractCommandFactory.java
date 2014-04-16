@@ -25,11 +25,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
-import org.elasticsearch.hadoop.serialization.IndexFormat;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.command.TemplatedCommand.FieldWriter;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -45,7 +45,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
     private Settings settings;
     private ValueWriter<?> valueWriter;
     // used when specifying an index pattern
-    private IndexFormat indexFormat;
+    private IndexExtractor indexExtractor;
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
             timestampExtractor;
 
@@ -64,7 +64,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
             }
 
             jsonExtractors = new JsonFieldExtractors(settings);
-            indexFormat = jsonExtractors.indexAndType();
+            indexExtractor = jsonExtractors.indexAndType();
 
             idExtractor = jsonExtractors.id();
             parentExtractor = jsonExtractors.parent();
@@ -102,11 +102,11 @@ abstract class AbstractCommandFactory implements CommandFactory {
             }
 
             // create adapter
-            IndexFormat iformat = ObjectUtils.<IndexFormat> instantiate(settings.getMappingIndexFormatClassName(), settings);
+            IndexExtractor iformat = ObjectUtils.<IndexExtractor> instantiate(settings.getMappingIndexExtractorClassName(), settings);
             iformat.compile(new Resource(settings, false).toString());
 
             if (iformat.hasPattern()) {
-                indexFormat = iformat;
+                indexExtractor = iformat;
             }
 
 
@@ -134,8 +134,8 @@ abstract class AbstractCommandFactory implements CommandFactory {
         }
     }
 
-    protected IndexFormat index() {
-        return indexFormat;
+    protected IndexExtractor index() {
+        return indexExtractor;
     }
 
     protected FieldExtractor id() {

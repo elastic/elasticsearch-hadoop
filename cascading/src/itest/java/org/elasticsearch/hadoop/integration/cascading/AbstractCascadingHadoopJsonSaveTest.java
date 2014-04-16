@@ -20,72 +20,73 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.HdpBootstrap;
+import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Test;
 
-import cascading.flow.local.LocalFlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
 import cascading.pipe.Pipe;
-import cascading.scheme.local.TextLine;
+import cascading.scheme.hadoop.TextDelimited;
 import cascading.tap.Tap;
-import cascading.tap.local.FileTap;
+import cascading.tap.hadoop.Hfs;
 import cascading.tuple.Fields;
 
-public class AbstractCascadingLocalJsonSaveTest {
+public class AbstractCascadingHadoopJsonSaveTest {
+
+    private static final String INPUT = TestUtils.sampleArtistsJson(CascadingHadoopSuite.configuration);
 
     @Test
     public void testWriteToES() throws Exception {
-        Properties props = new TestSettings().getProperties();
-        props.setProperty(ConfigurationOptions.ES_INPUT_JSON, "true");
-
+        // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-local/artists");
+        Tap out = new EsTap("json-cascading-hadoop/artists");
 
         Pipe pipe = new Pipe("copy");
-        build(props, in, out, pipe);
+        build(cfg(), in, out, pipe);
     }
 
     @Test(expected = Exception.class)
     public void testIndexAutoCreateDisabled() throws Exception {
-        Properties properties = new TestSettings().getProperties();
-        properties.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
-        properties.setProperty(ConfigurationOptions.ES_INPUT_JSON, "true");
+        Properties cfg = cfg();
+        cfg.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
 
+        // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-local/non-existing", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop/non-existing", new Fields("line"));
         Pipe pipe = new Pipe("copy");
-        build(properties, in, out, pipe);
+        build(cfg, in, out, pipe);
     }
 
     @Test
     public void testIndexPattern() throws Exception {
-        Properties properties = new TestSettings().getProperties();
-        properties.setProperty(ConfigurationOptions.ES_INPUT_JSON, "yes");
-
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-local/pattern-{number}", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop/pattern-{number}", new Fields("line"));
         Pipe pipe = new Pipe("copy");
-        build(properties, in, out, pipe);
+        build(cfg(), in, out, pipe);
     }
 
     @Test
     public void testIndexPatternWithFormat() throws Exception {
-        Properties properties = new TestSettings().getProperties();
-        properties.setProperty(ConfigurationOptions.ES_INPUT_JSON, "yes");
-
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-local/pattern-format-{@timestamp:YYYY-MM-dd}", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop/pattern-format-{@timestamp:YYYY-MM-dd}", new Fields("line"));
         Pipe pipe = new Pipe("copy");
-        build(properties, in, out, pipe);
+        build(cfg(), in, out, pipe);
     }
 
-    private void build(Properties props, Tap in, Tap out, Pipe pipe) {
-        StatsUtils.proxy(new LocalFlowConnector(props).connect(in, out, pipe)).complete();
+    private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
+        StatsUtils.proxy(new HadoopFlowConnector(cfg).connect(in, out, pipe)).complete();
+    }
+
+    private Properties cfg() {
+        Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(CascadingHadoopSuite.configuration));
+        props.put(ConfigurationOptions.ES_INPUT_JSON, "true");
+        return props;
     }
 
     private Tap sourceTap() {
-        return new FileTap(new TextLine(new Fields("line")), TestUtils.sampleArtistsJson());
+        return new Hfs(new TextDelimited(new Fields("line")), INPUT);
     }
 }

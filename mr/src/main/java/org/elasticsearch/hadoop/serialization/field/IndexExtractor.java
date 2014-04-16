@@ -16,15 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 
 
 /**
  * Produces an index name based on the given pattern and arguments (field values).
  */
-public interface IndexFormat extends FieldExtractor {
+public interface IndexExtractor extends FieldExtractor {
 
     void compile(String pattern);
 

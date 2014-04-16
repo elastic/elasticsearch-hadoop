@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,6 +58,12 @@ public class AbstractPigSearchTest {
     @AfterClass
     public static void shutdown() {
         pig.stop();
+    }
+
+
+    @Before
+    public void before() throws Exception {
+        RestUtils.refresh("pig");
     }
 
     @Test
@@ -170,6 +177,12 @@ public class AbstractPigSearchTest {
         Assert.assertTrue(RestUtils.exists("pig/pattern-990"));
     }
 
+    @Test
+    public void testDynamicPatternFormat() throws Exception {
+        Assert.assertTrue(RestUtils.exists("pig/pattern-format-2010-10-06"));
+        Assert.assertTrue(RestUtils.exists("pig/pattern-format-2500-10-06"));
+        Assert.assertTrue(RestUtils.exists("pig/pattern-format-2990-10-06"));
+    }
 
     @Test
     public void testNestedTuple() throws Exception {

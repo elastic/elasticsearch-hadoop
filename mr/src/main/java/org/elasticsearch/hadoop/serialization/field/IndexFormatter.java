@@ -16,19 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.integration.cascading;
+package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+public interface IndexFormatter {
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractCascadingLocalJsonSaveTest.class, AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalJsonSearchTest.class, AbstractCascadingLocalSearchTest.class })
-//@Suite.SuiteClasses({ AbstractCascadingLocalSaveTest.class, AbstractCascadingLocalSearchTest.class })
-public class CascadingLocalSuite {
+    void configure(String format);
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+    String format(String value);
 }

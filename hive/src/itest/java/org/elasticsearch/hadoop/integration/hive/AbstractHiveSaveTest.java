@@ -460,6 +460,38 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testIndexPatternFormat() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("sourcepatternformat");
+        String load = loadData("sourcepatternformat");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE patternformat ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "ts       STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/pattern-format-{ts:YYYY-MM-dd}");
+
+        String selectTest = "SELECT s.name, s.ts, struct(s.url, s.picture) FROM sourcepatternformat s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE patternformat "
+                + "SELECT s.id, s.name, s.ts, named_struct('url', s.url, 'picture', s.picture) FROM sourcepatternformat s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
 
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("
@@ -468,7 +500,8 @@ public class AbstractHiveSaveTest {
                 + "url      STRING, "
                 + "picture  STRING, "
                 + "ignore1  STRING, "
-                + "ignore2  STRING) "
+                + "ignore2  STRING, "
+                + "ts       STRING) "
                 + "ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/%s/' "
                 , tableName, tableName);
