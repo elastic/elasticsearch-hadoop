@@ -184,10 +184,9 @@ public class RestClient implements Closeable, StatsAware {
                         entryToDeletePosition++;
                     }
                     else {
-                        String message = (status != null ? String.format("%s(%s) - %s", HttpStatus.getText(status),
-                                status, error) : error);
-                        throw new EsHadoopInvalidRequest(String.format(
-                                "Found unrecoverable error [%s]; Bailing out..", message));
+                        String message = (status != null ?
+                                String.format("[%s(%s) - %s]", HttpStatus.getText(status), status, prettify(error)) : prettify(error));
+                        throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
                     }
                 }
                 else {
@@ -202,6 +201,12 @@ public class RestClient implements Closeable, StatsAware {
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
+    }
+
+    private String prettify(String error) {
+        String invalidFragment = ErrorUtils.extractInvalidXContent(error);
+        String header = (invalidFragment != null ? "Invalid JSON fragment received[" + invalidFragment + "]" : "");
+        return header + "[" + error + "]";
     }
 
     public void refresh(Resource resource) {
