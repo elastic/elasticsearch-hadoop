@@ -69,7 +69,8 @@ public class AbstractPigSaveTest {
                 loadSource() +
                 //"ILLUSTRATE A;" +
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
-                //"ILLUSTRATE B;" +
+                "DESCRIBE B;" +
+                "ILLUSTRATE B;" +
                 "STORE B INTO 'pig/tupleartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
         //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         //"DUMP es_total;" +

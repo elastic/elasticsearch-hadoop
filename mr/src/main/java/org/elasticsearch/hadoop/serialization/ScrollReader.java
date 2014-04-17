@@ -165,7 +165,7 @@ public class ScrollReader {
         }
 
         Object array = reader.createArray(mapping(fieldMapping));
-        // create only one element since with fields, we always get arrays which creates unneeded allocations
+        // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         for (; parser.currentToken() != Token.END_ARRAY;) {
             content.add(read(parser.currentToken(), fieldMapping));

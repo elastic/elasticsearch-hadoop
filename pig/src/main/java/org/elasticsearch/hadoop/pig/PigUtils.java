@@ -102,8 +102,10 @@ class PigUtils {
 
     private static void addField(Schema schema, List<String> fields, FieldAlias fa, String currentNode) {
         for (FieldSchema field : schema.getFields()) {
-            if (field.schema != null) {
-                addField(schema, fields, fa, currentNode + "." + fa.toES(field.alias));
+            String node = fa.toES(field.alias);
+            node = (currentNode != null ? currentNode + "." +  node: node);
+            if (field.schema != null && field.type != DataType.TUPLE) {
+                addField(field.schema, fields, fa, node);
             }
             else {
                 fields.add(fa.toES(field.alias));

@@ -156,12 +156,12 @@ public class AbstractPigSearchTest {
         pig.executeScript(script);
     }
 
-    @Test
+    //@Test
     public void testNestedObject() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "', 'es.mapping.names=links:links.url');"
-                + "A = LOAD 'pig/tupleartists' USING EsStorage() AS (name: chararray, links: chararray);"
+                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');" // , 'es.mapping.names=links:links.url'
+                + "A = LOAD 'pig/tupleartists' USING EsStorage() AS (name: chararray, links: tuple(chararray));"
                 + "B = FOREACH A GENERATE name, links;"
                 //+ "ILLUSTRATE B;"
                 + "DUMP B;";

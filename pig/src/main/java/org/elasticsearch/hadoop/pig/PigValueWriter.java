@@ -38,10 +38,16 @@ import org.elasticsearch.hadoop.util.StringUtils;
 public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     private final boolean writeUnknownTypes;
+    private final boolean useTupleFieldNames;
     private FieldAlias alias;
 
     public PigValueWriter() {
+        this(false);
+    }
+
+    public PigValueWriter(boolean useTupleFieldNames) {
         writeUnknownTypes = false;
+        this.useTupleFieldNames = useTupleFieldNames;
         alias = new FieldAlias();
     }
 
@@ -53,15 +59,11 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     @Override
     public boolean write(PigTuple type, Generator generator) {
-        return write(type.getTuple(), type.getSchema(), generator, false);
+        return writeRootTuple(type.getTuple(), type.getSchema(), generator, true);
     }
 
-    public boolean write(Object object, ResourceFieldSchema field, Generator generator, boolean writeFieldName) {
+    private boolean write(Object object, ResourceFieldSchema field, Generator generator) {
         byte type = (field != null ? field.getType() : DataType.findType(object));
-
-        if (writeFieldName) {
-            generator.writeFieldName(alias.toES(field.getName()));
-        }
 
         if (object == null) {
             generator.writeNull();
@@ -125,35 +127,13 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
                 generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                write(entry.getValue(), nestedFields[0], generator, false);
+                write(entry.getValue(), nestedFields[0], generator);
             }
             generator.writeEndObject();
             break;
 
         case DataType.TUPLE:
-            nestedSchema = field.getSchema();
-
-            // empty tuple shortcut
-            if (nestedSchema == null) {
-                generator.writeBeginObject();
-                generator.writeEndObject();
-                break;
-            }
-
-            nestedFields = nestedSchema.getFields();
-
-            // use getAll instead of get(int) to avoid having to handle Exception...
-            List<Object> tuples = ((Tuple) object).getAll();
-
-            generator.writeBeginObject();
-            for (int i = 0; i < nestedFields.length; i++) {
-                String name = nestedFields[i].getName();
-                // handle schemas without names
-                name = (StringUtils.hasText(name) ? alias.toES(name) : Integer.toString(i));
-                generator.writeFieldName(name);
-                write(tuples.get(i), nestedFields[i], generator, false);
-            }
-            generator.writeEndObject();
+            writeTuple(object, field, generator, useTupleFieldNames, false);
             break;
 
         case DataType.BAG:
@@ -170,7 +150,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
             generator.writeBeginArray();
             for (Tuple tuple : (DataBag) object) {
-                write(tuple, bagType, generator, false);
+                write(tuple, bagType, generator);
             }
             generator.writeEndArray();
             break;
@@ -182,6 +162,64 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
         }
         return true;
     }
+
+    private boolean writeRootTuple(Tuple tuple, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames) {
+        return writeTuple(tuple, field, generator, writeTupleFieldNames, true);
+    }
+
+    private boolean writeTuple(Object object, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames, boolean isRoot) {
+        ResourceSchema nestedSchema = field.getSchema();
+
+        boolean result = true;
+        boolean writeAsObject = isRoot || writeTupleFieldNames;
+
+        // empty tuple shortcut
+        if (nestedSchema == null) {
+            if (!isRoot) {
+                generator.writeBeginArray();
+            }
+            if (writeAsObject) {
+                generator.writeBeginObject();
+                generator.writeEndObject();
+            }
+            if (!isRoot) {
+                generator.writeEndArray();
+            }
+            return result;
+        }
+
+        ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
+
+        // use getAll instead of get(int) to avoid having to handle Exception...
+        List<Object> tuples = ((Tuple) object).getAll();
+
+        if (!isRoot) {
+            generator.writeBeginArray();
+        }
+
+        if (writeAsObject) {
+            generator.writeBeginObject();
+        }
+
+        for (int i = 0; i < nestedFields.length; i++) {
+            if (writeAsObject) {
+                String name = nestedFields[i].getName();
+                // handle schemas without names
+                name = (StringUtils.hasText(name) ? alias.toES(name) : Integer.toString(i));
+                generator.writeFieldName(name);
+            }
+            result &= write(tuples.get(i), nestedFields[i], generator);
+        }
+        if (writeAsObject) {
+            generator.writeEndObject();
+        }
+        if (!isRoot) {
+            generator.writeEndArray();
+        }
+
+        return result;
+    }
+
 
     protected boolean handleUnknown(Object value, ResourceFieldSchema field, Generator generator) {
         return false;
