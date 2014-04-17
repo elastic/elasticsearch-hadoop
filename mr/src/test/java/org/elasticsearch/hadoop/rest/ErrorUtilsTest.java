@@ -29,7 +29,7 @@ public class ErrorUtilsTest {
     @Test
     public void testname() throws Exception {
         String error = "MapperParsingException[failed to parse]; nested: ElasticSearchParseException[Failed to derive xcontent from (offset=0, length=14): "
-                + "[83, 116, 114, 101, 97, 109, 32, 99, 108, 111, 115, 101, 100, 46]";
-        assertThat("Stream closed.", is(ErrorUtils.extractInvalidXContent(error)));
+                + "[83, 116, 114, 101, 97, 109, 32, 99, 108, 111, 115, 101, 100, 46]]";
+        assertThat(ErrorUtils.extractInvalidXContent(error), is("Stream closed."));
     }
 }

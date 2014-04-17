@@ -19,7 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,33 +28,48 @@ import org.elasticsearch.hadoop.util.StringUtils;
 class ErrorUtils {
 
     // find error inside ElasticsearchParseException
-    private static final Pattern XCONTENT_PAYLOAD = Pattern.compile("ElasticSearchParseException.+: \\[(.+)\\]");
+    private static final Pattern XCONTENT_PAYLOAD = Pattern.compile("Elastic[s|S]earchParseException.+: \\[(.+)\\]]");
+    private static final Pattern OFFSET = Pattern.compile("offset=(\\d+)");
+    private static final Pattern LENGTH = Pattern.compile("length=(\\d+)");
 
     static String extractInvalidXContent(String errorMessage) {
         if (!StringUtils.hasText(errorMessage)) {
             return null;
         }
 
-        Matcher matcher = XCONTENT_PAYLOAD.matcher(errorMessage);
-        if (!matcher.find()) {
+        String group = findMatch(XCONTENT_PAYLOAD.matcher(errorMessage));
+        if (!StringUtils.hasText(group)) {
             return null;
         }
-        String group = matcher.group(1);
-        Collection<Byte> bytes = new ArrayList<Byte>();
+
+        String match = findMatch(OFFSET.matcher(errorMessage));
+        int offset = (StringUtils.hasText(match) ? Integer.valueOf(match) : 0);
+        match = findMatch(LENGTH.matcher(errorMessage));
+        int length = (StringUtils.hasText(match) ? Integer.valueOf(match) : 0);
+
+
+        List<Byte> bytes = new ArrayList<Byte>();
         // parse the collection into numbers and back to a String
         try {
             for (String byteValue : StringUtils.tokenize(group, ",")) {
                 bytes.add(Byte.parseByte(byteValue));
             }
-            byte[] primitives = new byte[bytes.size()];
-            int index = 0;
-            for (Byte b : bytes) {
-                primitives[index++] = b.byteValue();
+            if (length == 0) {
+                length = bytes.size();
+            }
+
+            byte[] primitives = new byte[length];
+            for (int index = 0; index < length; index++) {
+                primitives[index] = bytes.get(index + offset).byteValue();
             }
             return new String(primitives);
         } catch (Exception ex) {
             // can't convert back the byte array - give up
             return null;
         }
+    }
+
+    private static String findMatch(Matcher matcher) {
+        return (matcher.find() ? matcher.group(1) : null);
     }
 }
