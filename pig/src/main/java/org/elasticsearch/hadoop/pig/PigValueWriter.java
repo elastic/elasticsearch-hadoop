@@ -173,8 +173,19 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
         boolean result = true;
         boolean writeAsObject = isRoot || writeTupleFieldNames;
 
+        boolean isEmpty = (nestedSchema == null);
+
+        if (!isEmpty) {
+            // check if the tuple contains only empty fields
+            boolean allEmpty = true;
+            for (ResourceFieldSchema nestedField : nestedSchema.getFields()) {
+                allEmpty &= (nestedField.getSchema() == null && PigUtils.isComplexType(nestedField));
+            }
+            isEmpty = allEmpty;
+        }
+
         // empty tuple shortcut
-        if (nestedSchema == null) {
+        if (isEmpty) {
             if (!isRoot) {
                 generator.writeBeginArray();
             }

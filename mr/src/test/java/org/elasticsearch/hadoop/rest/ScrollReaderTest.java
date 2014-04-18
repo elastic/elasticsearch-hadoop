@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -82,4 +82,17 @@ public class ScrollReaderTest {
         Object[] objects = read.get(0);
         assertTrue(((Map) objects[1]).isEmpty());
     }
+
+    @Test
+    public void testScrollMultiValueList() throws IOException {
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        InputStream stream = getClass().getResourceAsStream("list-with-null.json");
+        List<Object[]> read = reader.read(stream);
+        assertEquals(1, read.size());
+        Object[] objects = read.get(0);
+        Map map = (Map) read.get(0)[1];
+        List links = (List) map.get("links");
+        assertTrue(links.contains(null));
+    }
+
 }

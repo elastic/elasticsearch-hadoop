@@ -27,10 +27,10 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.rest.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -144,12 +144,14 @@ public class ScrollReader {
     }
 
     private Object parseValue(FieldType esType) {
+        Object obj;
         // special case of handing null (as text() will return "null")
         if (parser.currentToken() == Token.VALUE_NULL) {
-            return null;
+            obj = null;
         }
-
-        Object obj = reader.readValue(parser, parser.text(), esType);
+        else {
+            obj = reader.readValue(parser, parser.text(), esType);
+        }
         parser.nextToken();
         return obj;
     }

@@ -93,6 +93,10 @@ public class DelegatingInputStream extends InputStream implements StatsAware {
         return delegate == null;
     }
 
+    public InputStream delegate() {
+        return delegate;
+    }
+
     @Override
     public Stats stats() {
         return stats;

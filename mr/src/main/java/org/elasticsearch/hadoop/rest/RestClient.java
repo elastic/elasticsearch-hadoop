@@ -36,13 +36,14 @@ import org.codehaus.jackson.map.ObjectReader;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
-import org.elasticsearch.hadoop.rest.dto.Node;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -284,11 +285,16 @@ public class RestClient implements Closeable, StatsAware {
             // check error first
             String msg = null;
             // try to parse the answer
-            msg = parseContent(response.body(), "error");
+            try {
+                msg = parseContent(response.body(), "error");
+            } catch (Exception ex) {
+                // can't parse message, move on
+            }
 
             if (!StringUtils.hasText(msg)) {
-                msg = String.format("[%s] on [%s] failed; server[%s] returned [%s:%s]", request.method().name(),
-                        request.path(), response.uri(), response.status(), response.statusDescription());
+                msg = String.format("[%s] on [%s] failed; server[%s] returned [%s|%s:%s]", request.method().name(),
+                        request.path(), response.uri(), response.status(), response.statusDescription(),
+                        IOUtils.asStringAlways(response.body()));
             }
 
             throw new EsHadoopInvalidRequest(msg);

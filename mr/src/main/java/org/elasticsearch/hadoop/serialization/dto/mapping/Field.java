@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest.dto.mapping;
+package org.elasticsearch.hadoop.serialization.dto.mapping;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,6 +66,21 @@ public class Field implements Serializable {
         return (iterator.hasNext() ? parseField(iterator.next(), null) : null);
     }
 
+    public Field skipHeaders() {
+        return skipHeaders(this);
+    }
+
+    private static Field skipHeaders(Field field) {
+        Field[] props = field.properties();
+
+        // handle the common case of mapping by removing the first field (mapping.)
+        if (props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
+            // followed by <type> (index/type) removal
+            return props[0].properties()[0];
+        }
+        return field;
+    }
+
     /**
      * Returns the associated fields with the given mapping. Handles removal of mappings/<type>
      *
@@ -79,15 +94,7 @@ public class Field implements Serializable {
 
         Map<String, FieldType> map = new LinkedHashMap<String, FieldType>();
 
-        Field[] props = field.properties();
-
-        // handle the common case of mapping by removing the first field (mapping.)
-        if (props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
-            // followed by <type> (index/type) removal
-            props = props[0].properties()[0].properties();
-        }
-
-        for (Field nestedField : props) {
+        for (Field nestedField : skipHeaders(field).properties()) {
             add(map, nestedField, null);
         }
 

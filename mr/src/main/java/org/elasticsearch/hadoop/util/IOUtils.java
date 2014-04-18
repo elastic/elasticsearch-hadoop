@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Properties;
 
@@ -39,6 +41,13 @@ import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
  * Utility class used internally for the Pig support.
  */
 public abstract class IOUtils {
+
+    private final static Field BYTE_ARRAY_BUFFER;
+
+    static {
+        BYTE_ARRAY_BUFFER = ReflectionUtils.findField(ByteArrayInputStream.class, "buf");
+        ReflectionUtils.makeAccessible(BYTE_ARRAY_BUFFER);
+    }
 
     public static String serializeToBase64(Serializable object) throws IOException {
         FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
@@ -93,10 +102,20 @@ public abstract class IOUtils {
     }
 
     public static BytesArray asBytes(InputStream in) throws IOException {
+        BytesArray ba = unwrapStreamBuffer(in);
+        if (ba != null) {
+            return ba;
+        }
         return asBytes(new BytesArray(in.available()), in);
     }
 
     public static BytesArray asBytes(BytesArray ba, InputStream in) throws IOException {
+        BytesArray buf = unwrapStreamBuffer(in);
+        if (buf != null) {
+            ba.bytes(buf);
+            return ba;
+        }
+
         FastByteArrayOutputStream bos = new FastByteArrayOutputStream(ba);
         byte[] buffer = new byte[1024];
         int read = 0;
@@ -117,6 +136,17 @@ public abstract class IOUtils {
 
     public static String asString(InputStream in) throws IOException {
         return asBytes(in).toString();
+    }
+
+    public static String asStringAlways(InputStream in) {
+        if (in == null) {
+            return "";
+        }
+        try {
+            return asBytes(in).toString();
+        } catch (IOException ex) {
+            return "";
+        }
     }
 
     public static InputStream open(String resource, ClassLoader loader) {
@@ -151,5 +181,20 @@ public abstract class IOUtils {
                 // silently ignore
             }
         }
+    }
+
+    private static byte[] byteArrayInputStreamInternalBuffer(ByteArrayInputStream bais) {
+        return ReflectionUtils.getField(BYTE_ARRAY_BUFFER, bais);
+    }
+
+    private static BytesArray unwrapStreamBuffer(InputStream in) {
+        if (in instanceof FastByteArrayInputStream) {
+            return ((FastByteArrayInputStream) in).data;
+        }
+
+        if (in instanceof ByteArrayInputStream) {
+            return new BytesArray(byteArrayInputStreamInternalBuffer((ByteArrayInputStream) in));
+        }
+        return null;
     }
 }

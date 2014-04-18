@@ -34,6 +34,10 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
+
 /**
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -84,6 +88,11 @@ public class AbstractPigSaveTest {
     }
 
     @Test
+    public void testTupleMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/tupleartists").skipHeaders().toString(), is("tupleartists=[links=STRING, name=STRING]"));
+    }
+
+    @Test
     public void testBag() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -93,6 +102,11 @@ public class AbstractPigSaveTest {
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig/bagartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testBagMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/bagartists").skipHeaders().toString(), is("bagartists=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -110,6 +124,11 @@ public class AbstractPigSaveTest {
     }
 
     @Test
+    public void testTimestampMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/timestamp").skipHeaders().toString(), is("timestamp=[name=STRING, org.apache.pig.builtin.todate_26=DATE, url=STRING]"));
+    }
+
+    @Test
     public void testFieldAlias() throws Exception {
         long millis = new Date().getTime();
         String script =
@@ -121,6 +140,11 @@ public class AbstractPigSaveTest {
                 "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testFieldAliasMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/fieldalias").skipHeaders().toString(), is("fieldalias=[@name=STRING, @timestamp=DATE, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -136,6 +160,11 @@ public class AbstractPigSaveTest {
     }
 
     @Test
+    public void testEmptyComplexStructuresMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/emptyconst").skipHeaders().toString(), is("emptyconst=[]"));
+    }
+
+    @Test
     public void testCreateWithId() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -145,6 +174,11 @@ public class AbstractPigSaveTest {
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testCreateWithIdMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/createwithid").skipHeaders().toString(), is("createwithid=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -175,6 +209,11 @@ public class AbstractPigSaveTest {
         pig.executeScript(script);
     }
 
+    @Test
+    public void testUpdateWithIdMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/update").skipHeaders().toString(), is("update=[id=LONG, links=STRING, name=STRING]"));
+    }
+
     @Test(expected = EsHadoopIllegalStateException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         String script =
@@ -203,6 +242,11 @@ public class AbstractPigSaveTest {
     }
 
     @Test
+    public void testParentChildMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/child").skipHeaders().toString(), is("child=[id=LONG, links=STRING, name=STRING]"));
+    }
+
+    @Test
     public void testNestedTuple() throws Exception {
         RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
         RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
@@ -221,6 +265,11 @@ public class AbstractPigSaveTest {
     }
 
     @Test
+    public void testIndexPatternMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/pattern-123").skipHeaders().toString(), is("pattern-123=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+    }
+
+    @Test
     public void testIndexPatternFormat() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
@@ -228,6 +277,11 @@ public class AbstractPigSaveTest {
                 "STORE A INTO 'pig/pattern-format-{timestamp:YYYY-MM-dd}' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
+    }
+
+    @Test
+    public void testIndexPatternFormatMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").skipHeaders().toString(), is("pattern-format-2001-10-06=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
     }
 
     private String loadSource() {

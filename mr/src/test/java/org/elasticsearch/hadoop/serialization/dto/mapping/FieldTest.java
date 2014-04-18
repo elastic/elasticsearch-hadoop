@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest.dto.mapping;
+package org.elasticsearch.hadoop.serialization.dto.mapping;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +25,8 @@ import java.util.Map;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

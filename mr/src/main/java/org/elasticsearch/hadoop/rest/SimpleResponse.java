@@ -43,6 +43,12 @@ public class SimpleResponse implements Response {
 
     @Override
     public InputStream body() {
+        if (body instanceof ReusableInputStream) {
+            InputStream copy = ((ReusableInputStream) body).copy();
+            if (copy != null) {
+                return copy;
+            }
+        }
         return body;
     }
 

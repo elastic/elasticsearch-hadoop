@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest.dto.mapping;
+package org.elasticsearch.hadoop.serialization.dto.mapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;

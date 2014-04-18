@@ -156,7 +156,7 @@ public class AbstractPigSearchTest {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testNestedObject() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +

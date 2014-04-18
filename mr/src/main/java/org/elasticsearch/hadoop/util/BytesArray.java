@@ -71,6 +71,11 @@ public class BytesArray implements ByteSequence {
         this.size = size;
     }
 
+    public void bytes(BytesArray ba) {
+        this.bytes = ba.bytes;
+        this.size = ba.size;
+    }
+
     public void bytes(String from) {
         size = 0;
         UnicodeUtil.UTF16toUTF8(from, 0, from.length(), this);

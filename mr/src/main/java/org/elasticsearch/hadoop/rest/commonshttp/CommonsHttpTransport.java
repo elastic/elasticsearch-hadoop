@@ -18,7 +18,9 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 
@@ -36,11 +38,13 @@ import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.DelegatingInputStream;
 import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
 import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
+import org.elasticsearch.hadoop.rest.ReusableInputStream;
 import org.elasticsearch.hadoop.rest.SimpleResponse;
 import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -68,13 +72,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private HttpConnection conn;
     private String proxyInfo = "";
 
-    private static class ResponseInputStream extends DelegatingInputStream {
+    private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
         private final HttpMethod method;
+        private final boolean reusable;
 
         public ResponseInputStream(HttpMethod http) throws IOException {
             super(http.getResponseBodyAsStream());
             this.method = http;
+            reusable = (delegate() instanceof ByteArrayInputStream);
         }
 
         @Override
@@ -85,6 +91,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         @Override
         public boolean equals(Object obj) {
             return super.equals(obj);
+        }
+
+        @Override
+        public InputStream copy() {
+            try {
+                return (reusable ? method.getResponseBodyAsStream() : null);
+            } catch (IOException ex) {
+                throw new EsHadoopIllegalStateException(ex);
+            }
         }
 
         @Override

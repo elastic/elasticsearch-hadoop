@@ -27,6 +27,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import org.apache.pig.LoadPushDown.RequiredField;
 import org.apache.pig.LoadPushDown.RequiredFieldList;
+import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.data.DataType;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
@@ -137,5 +138,9 @@ class PigUtils {
         else {
             fields.add(fa.toES(field.getAlias()));
         }
+    }
+
+    static boolean isComplexType(ResourceFieldSchema fieldSchema) {
+        return (fieldSchema != null && fieldSchema.getType() >= 100);
     }
 }
