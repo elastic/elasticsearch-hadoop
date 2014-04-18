@@ -95,7 +95,7 @@ but also enable the dedicated snapshots repository :
 <repositories>
   <repository>
     <id>sonatype-oss</id>
-    <url>http://oss.sonatype.org/content/repositories/releases</url> <1>
+    <url>http://oss.sonatype.org/content/repositories/snapshots</url> <1>
     <snapshots><enabled>true</enabled></snapshots> <2>
   </repository>
 </repositories>
