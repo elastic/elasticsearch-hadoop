@@ -36,14 +36,12 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 import static org.hamcrest.CoreMatchers.*;
 
-@Ignore
 public class PigTypeToJsonTest {
 
     private static FastByteArrayOutputStream out;
@@ -70,89 +68,89 @@ public class PigTypeToJsonTest {
 
     @Test
     public void testNamedNull() {
-        String expected = "[null]";
-        assertThat(expected, is(pigTypeToJson(createTuple(null, createSchema("name:bytearray")))));
+        String expected = "{\"name\":null}";
+        assertThat(pigTypeToJson(createTuple(null, createSchema("name:bytearray"))), is(expected));
     }
 
     @Test
     public void testAnonNull() {
-        String expected = "[null]";
-        assertThat(expected, is(pigTypeToJson(createTuple(null, createSchema("bytearray")))));
+        String expected = "{\"val_0\":null}";
+        assertThat(pigTypeToJson(createTuple(null, createSchema("bytearray"))), is(expected));
     }
 
     @Test
     public void testNamedString() {
-        String expected = "[\"some string\"]";
-        assertThat(expected, is(pigTypeToJson(createTuple("some string", createSchema("name:chararray")))));
+        String expected = "{\"name\":\"some string\"}";
+        assertThat(pigTypeToJson(createTuple("some string", createSchema("name:chararray"))), is(expected));
     }
 
     @Test
     public void testAnonString() {
-        String expected = "[\"some string\"]";
-        assertThat(expected, is(pigTypeToJson(createTuple("some string", createSchema("chararray")))));
+        String expected = "{\"val_0\":\"some string\"}";
+        assertThat(pigTypeToJson(createTuple("some string", createSchema("chararray"))), is(expected));
     }
 
     @Test
     public void testLong() {
-        String expected = "[" + Long.MAX_VALUE + "]";
-        assertThat(expected, is(pigTypeToJson(createTuple(Long.MAX_VALUE, createSchema("name:long")))));
+        String expected = "{\"name\":" + Long.MAX_VALUE + "}";
+        assertThat(pigTypeToJson(createTuple(Long.MAX_VALUE, createSchema("name:long"))), is(expected));
     }
 
     @Test
     public void testInteger() {
-        String expected = "[" + Integer.MAX_VALUE + "]";
-        assertThat(expected, is(pigTypeToJson(createTuple(Integer.MAX_VALUE, createSchema("name:int")))));
+        String expected = "{\"name\":" + Integer.MAX_VALUE + "}";
+        assertThat(pigTypeToJson(createTuple(Integer.MAX_VALUE, createSchema("name:int"))), is(expected));
     }
 
     @Test
     public void testDouble() {
-        String expected = "[" + Double.MAX_VALUE + "]";
-        assertThat(expected, is(pigTypeToJson(createTuple(Double.MAX_VALUE, createSchema("name:double")))));
+        String expected = "{\"name\":" + Double.MAX_VALUE + "}";
+        assertThat(pigTypeToJson(createTuple(Double.MAX_VALUE, createSchema("name:double"))), is(expected));
     }
 
     @Test
     public void testFloat() {
-        String expected = "[" + Float.MAX_VALUE + "]";
-        assertThat(expected, is(pigTypeToJson(createTuple(Float.MAX_VALUE, createSchema("name:float")))));
+        String expected = "{\"name\":" + Float.MAX_VALUE + "}";
+        assertThat(pigTypeToJson(createTuple(Float.MAX_VALUE, createSchema("name:float"))), is(expected));
     }
 
     @Test
     public void testBoolean() {
-        String expected = "[" + Boolean.TRUE + "]";
-        assertThat(expected, is(pigTypeToJson(createTuple(Boolean.TRUE, createSchema("name:boolean")))));
+        String expected = "{\"name\":" + Boolean.TRUE + "}";
+        assertThat(pigTypeToJson(createTuple(Boolean.TRUE, createSchema("name:boolean"))), is(expected));
     }
 
     @Test
     public void testByte() {
-        String expected = "[" + Byte.MAX_VALUE + "]";
+        String expected = "{\"name\":" + Byte.MAX_VALUE + "}";
         // byte is not recognized by the schema
-        assertThat(expected, is(pigTypeToJson(createTuple(Byte.MAX_VALUE, createSchema("name:int")))));
+        assertThat(pigTypeToJson(createTuple(Byte.MAX_VALUE, createSchema("name:int"))), is(expected));
     }
 
     @Test
     public void testByteArray() {
-        String expected = "[\"Ynl0ZSBhcnJheQ==\"]";
-        assertThat(expected, is(pigTypeToJson(createTuple(new DataByteArray("byte array".getBytes()), createSchema("name:bytearray")))));
+        String expected = "{\"name\":\"Ynl0ZSBhcnJheQ==\"}";
+        assertThat(pigTypeToJson(createTuple(new DataByteArray("byte array".getBytes()), createSchema("name:bytearray"))), is(expected));
     }
 
     @Test
     public void testNamedTuple() {
-        String expected = "[[\"one\",\"two\"]]";
-        assertThat(expected, is(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two" })),
-                createSchema("namedTuple: (first:chararray, second:chararray)")))));
+        String expected = "{\"namedtuple\":[\"one\",\"two\"]}";
+        assertThat(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two" })),
+                        createSchema("namedtuple: (first:chararray, second:chararray)"))), is(expected));
     }
 
     @Test
     public void testAnonymousTuple() {
-        String expected = "[[\"xxx\",\"yyy\",\"zzz\"]]";
-        assertThat(expected, is(pigTypeToJson(createTuple(
+        String expected = "{\"anontuple\":[\"xxx\",\"yyy\",\"zzz\"]}";
+        assertThat(pigTypeToJson(createTuple(
                 TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "xxx", "yyy", "zzz" })),
-                createSchema("anonTuple: (chararray, chararray, chararray)")))));
+                        createSchema("anontuple: (chararray, chararray, chararray)"))), is(expected));
     }
 
     @Test
     public void testAnonMap() {
-        String expected = "[{\"one\":1,\"two\":2,\"three\":3}]";
+        String expected = "{\"map_0\":{\"one\":1,\"two\":2,\"three\":3}}";
         Map<String, Number> map = new LinkedHashMap<String, Number>();
         map.put("one", 1);
         map.put("two", 2);
@@ -162,7 +160,7 @@ public class PigTypeToJsonTest {
 
     @Test
     public void testNamedMap() {
-        String expected = "[{\"one\":1,\"two\":2,\"three\":3}]";
+        String expected = "{\"map\":{\"one\":1,\"two\":2,\"three\":3}}";
         Map<String, Number> map = new LinkedHashMap<String, Number>();
         map.put("one", 1);
         map.put("two", 2);
@@ -172,7 +170,7 @@ public class PigTypeToJsonTest {
 
     @Test
     public void testNamedBag() {
-        String expected = "[[[\"one\",\"two\",\"three\"],[\"one\",\"two\",\"three\"],[\"one\",\"two\",\"three\"]]]";
+        String expected = "{\"bag\":[[\"one\",\"two\",\"three\"],[\"one\",\"two\",\"three\"],[\"one\",\"two\",\"three\"]]}";
 
         Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two", "three" }));
         assertThat(pigTypeToJson(createTuple(new DefaultDataBag(Arrays.asList(new Tuple[] { tuple, tuple, tuple })),
@@ -181,7 +179,7 @@ public class PigTypeToJsonTest {
 
     @Test
     public void testBagWithAnonTuple() {
-        String expected = "[[[\"xxx\",\"yyy\"],[\"xxx\",\"yyy\"],[\"xxx\",\"yyy\"]]]";
+        String expected = "{\"bag\":[[\"xxx\",\"yyy\"],[\"xxx\",\"yyy\"],[\"xxx\",\"yyy\"]]}";
 
         Tuple tuple = TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "xxx", "yyy" }));
         assertThat((pigTypeToJson(createTuple(new DefaultDataBag(Arrays.asList(new Tuple[] { tuple, tuple, tuple })),
