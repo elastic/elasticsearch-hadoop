@@ -22,6 +22,7 @@ import java.util.Calendar;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DateWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
@@ -73,6 +74,10 @@ public class HiveWritableValueWriter extends WritableValueWriter {
         // HiveVarcharWritable - Hive 0.12+
         else if (writable != null && HiveConstants.VARCHAR_WRITABLE.equals(writable.getClass().getName())) {
             generator.writeString(writable.toString());
+        }
+        // HiveChar - Hive 0.13+
+        else if (writable != null && HiveConstants.CHAR_WRITABLE.equals(writable.getClass().getName())) {
+            generator.writeString(StringUtils.trim(writable.toString()));
         }
         else {
             return super.write(writable, generator);

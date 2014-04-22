@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
+import org.apache.hadoop.hive.ql.io.FSRecordWriter;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -42,7 +43,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 @SuppressWarnings("rawtypes")
 public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputFormat {
 
-    static class EsHiveRecordWriter extends EsOutputFormat.EsRecordWriter implements RecordWriter {
+    static class EsHiveRecordWriter extends EsOutputFormat.EsRecordWriter implements RecordWriter, FSRecordWriter {
 
         private final Progressable progress;
 
@@ -75,8 +76,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
         }
     }
 
-    @Override
-    public RecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
+    public EsHiveRecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
         // force the table properties to be merged into the configuration
         // NB: the properties are also available in HiveConstants#OUTPUT_TBL_PROPERTIES
         Settings settings = SettingsManager.loadFrom(jc).merge(tableProperties);

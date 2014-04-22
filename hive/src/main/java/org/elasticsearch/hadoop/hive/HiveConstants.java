@@ -30,8 +30,11 @@ interface HiveConstants {
     String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
     String DATE_WRITABLE = "org.apache.hadoop.hive.serde2.io.DateWritable";
     String VARCHAR_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveVarcharWritable";
+    String CHAR_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveCharWritable";
     String TABLE_LOCATION = "location";
+
     String MAPPING_NAMES = "es.mapping.names";
+    String COLUMN_COMMENTS = "columns.comments";
 
     String INPUT_TBL_PROPERTIES = "es.internal.hive.input.tbl.properties";
     String OUTPUT_TBL_PROPERTIES = "es.internal.hive.output.tbl.properties";

@@ -138,7 +138,7 @@ public class HiveTypeToJsonTest {
 
     @Test
     public void testDecimal() {
-        hiveTypeToJson(new MyHiveType(new HiveDecimalWritable(new HiveDecimal(BigDecimal.ONE)), decimalTypeInfo));
+        hiveTypeToJson(new MyHiveType(new HiveDecimalWritable(HiveDecimal.create(BigDecimal.ONE)), decimalTypeInfo));
     }
 
     @Test

@@ -44,6 +44,7 @@ import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.unit.Booleans;
 
 abstract class HiveUtils {
 
@@ -145,5 +146,14 @@ abstract class HiveUtils {
         } catch (IOException ex) {
             throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch version", ex);
         }
+    }
+
+    static void fixHive13InvalidComments(Settings settings, Properties tbl) {
+        if (Booleans.parseBoolean(settings.getProperty("es.hive.disable.columns.comments.fix"))) {
+            return;
+        }
+
+        settings.setProperty(HiveConstants.COLUMN_COMMENTS, "");
+        tbl.remove(HiveConstants.COLUMN_COMMENTS);
     }
 }

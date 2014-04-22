@@ -83,6 +83,7 @@ public class EsSerDe implements SerDe {
         settings = (cfg != null ? SettingsManager.loadFrom(cfg).merge(tbl) : SettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
 
+        HiveUtils.fixHive13InvalidComments(settings, tbl);
         this.tableProperties = tbl;
     }
 

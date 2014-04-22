@@ -23,12 +23,14 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 
 /**
  * Work-around some of the hiccups around NTFS.
  */
 public class NTFSLocalFileSystem extends LocalFileSystem {
 
+    private final static FsPermission WIN_PERMS = FsPermission.createImmutable((short) 650);
     public NTFSLocalFileSystem() {
         super();
     }
@@ -42,5 +44,17 @@ public class NTFSLocalFileSystem extends LocalFileSystem {
         super.rename(src, dst);
         // always return true
         return true;
+    }
+
+    @Override
+    public boolean mkdirs(Path f, FsPermission permission) throws IOException {
+        //  ignore permission
+        //return super.mkdirs(f, WIN_PERMS);
+        return super.mkdirs(f);
+    }
+
+    @Override
+    public void setPermission(Path p, FsPermission permission) throws IOException {
+        // ignore
     }
 }

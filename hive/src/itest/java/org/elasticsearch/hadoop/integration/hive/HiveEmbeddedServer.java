@@ -34,6 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.session.SessionState;
@@ -108,13 +109,17 @@ class HiveEmbeddedServer implements HiveInstance {
         public void destroy() throws HiveException {
             //
         }
+
+        // introduced in Hive 0.13
+        public void setSessionState(SessionState ss) {
+        }
     }
 
     private HiveConf configure() throws Exception {
         TestUtils.delete(new File("/tmp/hive"));
 
-        //HiveConf conf = new HiveConf(DriverContext.class);
-        HiveConf conf = new HiveConf();
+        Configuration cfg = new Configuration();
+        HiveConf conf = new HiveConf(cfg, HiveConf.class);
         refreshConfig(conf);
 
         HdpBootstrap.hackHadoopStagingOnWin();
@@ -124,6 +129,8 @@ class HiveEmbeddedServer implements HiveInstance {
         if (TestUtils.isWindows()) {
             conf.set("fs.file.impl", NTFSLocalFileSystem.class.getName());
             conf.set("hive.scratch.dir.permission", "650");
+            conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "650");
+            conf.set("hive.server2.enable.doAs", "false");
             //conf.set("hadoop.bin.path", getClass().getClassLoader().getResource("hadoop.cmd").getPath());
             System.setProperty("path.separator", ";");
             conf.setVar(HiveConf.ConfVars.HIVE_AUTHENTICATOR_MANAGER,
@@ -131,6 +138,7 @@ class HiveEmbeddedServer implements HiveInstance {
         }
         else {
             conf.set("hive.scratch.dir.permission", "777");
+            conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
         }
 
         int random = new Random().nextInt();
@@ -160,7 +168,7 @@ class HiveEmbeddedServer implements HiveInstance {
         tss.setAccessible(true);
         tss.set(null, new InterceptingThreadLocal());
 
-        return conf;
+        return new HiveConf(conf);
     }
 
     private void removeESSettings(HiveConf conf) {
