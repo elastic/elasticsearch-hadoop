@@ -22,9 +22,16 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
+
+import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
 
 import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
@@ -35,6 +42,7 @@ import cascading.tap.Tap;
 import cascading.tap.local.FileTap;
 import cascading.tuple.Fields;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingLocalSaveTest {
 
     private static final String INPUT = TestUtils.sampleArtistsDat();
@@ -47,6 +55,11 @@ public class AbstractCascadingLocalSaveTest {
 
         Pipe pipe = new Pipe("copy");
         build(new TestSettings().getProperties(), in, out, pipe);
+    }
+
+    @Test
+    public void testWriteToESMapping() throws Exception {
+        assertThat(RestUtils.getMapping("cascading-local/artists").skipHeaders().toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -63,6 +76,12 @@ public class AbstractCascadingLocalSaveTest {
         props.setProperty("es.mapping.names", "url:address");
         build(props, in, out, pipe);
     }
+
+    @Test
+    public void testWriteToESWithAliasMapping() throws Exception {
+        assertThat(RestUtils.getMapping("cascading-local/alias").skipHeaders().toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
+    }
+
 
     @Test(expected = Exception.class)
     public void testIndexAutoCreateDisabled() throws Exception {
@@ -96,6 +115,11 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
+    public void testWriteToESWithtestFieldMappingMapping() throws Exception {
+        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").skipHeaders().toString(), is("fieldmapping=[name=STRING, picture=STRING, url=STRING]"));
+    }
+
+    @Test
     public void testIndexPattern() throws Exception {
         Properties properties = new TestSettings().getProperties();
 
@@ -104,6 +128,11 @@ public class AbstractCascadingLocalSaveTest {
         Tap out = new EsTap("cascading-local/pattern-{id}", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testIndexPatternMapping() throws Exception {
+        assertThat(RestUtils.getMapping("cascading-local/pattern-12").skipHeaders().toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -117,6 +146,12 @@ public class AbstractCascadingLocalSaveTest {
 
         build(properties, in, out, pipe);
     }
+
+    @Test
+    public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
+        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").skipHeaders().toString(), is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+    }
+
 
     private Tap sourceTap() {
         return new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
