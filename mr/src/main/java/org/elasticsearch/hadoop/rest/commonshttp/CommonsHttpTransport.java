@@ -39,6 +39,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.DelegatingInputStream;
 import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
@@ -192,6 +193,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
             // client is not yet initialized so postpone state
             if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
+                if (!StringUtils.hasText(settings.getNetworkProxyHttpPass())) {
+                    log.warn(String.format("HTTP proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTP_PASS));
+
+                }
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
                 // client is not yet initialized so simply save the object for later
@@ -240,6 +245,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // we actually have a socks proxy, let's start the setup
         if (StringUtils.hasText(proxyHost)) {
             proxyInfo = proxyInfo.concat(String.format("[SOCKS proxy %s:%s]", proxyHost, proxyPort));
+
+            if (!StringUtils.hasText(proxyUser)) {
+                log.warn(String.format(
+                        "SOCKS proxy user specified but no/empty password defined - double check the [%s] property",
+                        ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS));
+            }
 
             if (log.isDebugEnabled()) {
                 if (StringUtils.hasText(proxyUser)) {
