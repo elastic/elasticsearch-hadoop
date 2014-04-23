@@ -130,6 +130,8 @@ public abstract class IOUtils {
             } catch (IOException ex) {
                 // ignore
             }
+            // non needed but used to avoid the warnings
+            bos.close();
         }
         return bos.bytes();
     }

@@ -74,7 +74,12 @@ public class JdkValueWriter implements ValueWriter<Object> {
             // check double vs long
             Number n = ((Number) value);
             double d = n.doubleValue();
-            generator.writeNumber((Math.floor(d) == d ? n.longValue() : d));
+            if (Math.floor(d) == d) {
+                generator.writeNumber(n.longValue());
+            }
+            else {
+                generator.writeNumber(d);
+            }
         }
         else if (value instanceof Boolean) {
             generator.writeBoolean(((Boolean) value).booleanValue());

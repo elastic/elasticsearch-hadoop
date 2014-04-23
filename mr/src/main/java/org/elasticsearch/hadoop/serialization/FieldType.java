@@ -68,7 +68,10 @@ public enum FieldType {
     }
 
     public static FieldType parse(String name) {
-        String n = (name != null ? name.toUpperCase(Locale.ENGLISH) : name);
+        if (name == null) {
+            return null;
+        }
+        String n = name.toUpperCase(Locale.ENGLISH);
         return (KNOWN_TYPES.contains(n) ? FieldType.valueOf(n) : null);
     }
 

@@ -23,7 +23,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
 
-import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -35,16 +35,10 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
  */
 public abstract class Settings implements InternalConfigurationOptions {
 
-    private static boolean ES_HOST_WARNING = true;
-
     public String getNodes() {
         String host = getProperty(ES_HOST);
         if (StringUtils.hasText(host)) {
-            if (ES_HOST_WARNING) {
-                LogFactory.getLog(Settings.class).warn(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
-                ES_HOST_WARNING = false;
-            }
-            return host;
+            throw new EsHadoopIllegalArgumentException(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
         }
 
         return getProperty(ES_NODES, ES_NODES_DEFAULT);
