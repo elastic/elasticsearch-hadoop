@@ -212,6 +212,31 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testChar() throws Exception {
+        String localTable = createTable("charsource");
+        String load = loadData("charsource");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE charsave ("
+                + "id       BIGINT, "
+                + "name     CHAR(20), "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/charsave");
+
+        // this does not
+        String insert =
+                "INSERT OVERWRITE TABLE charsave "
+                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM charsource s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(insert));
+    }
+
+    @Test
     public void testExternalSerDe() throws Exception {
         String localTable = "CREATE TABLE externalserde ("
                 + "data       STRING) "

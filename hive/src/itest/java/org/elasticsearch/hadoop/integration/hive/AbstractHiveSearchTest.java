@@ -238,7 +238,27 @@ public class AbstractHiveSearchTest {
         assertContains(result, "Marilyn");
         assertContains(result, "last.fm/music/MALICE");
         assertContains(result, "last.fm/serve/252/2181591.jpg");
+    }
 
+    @Test
+    public void testCharLoad() throws Exception {
+        // create external table
+        String create =
+                "CREATE EXTERNAL TABLE charload" + testInstance + " ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/charsave");
+
+        // this does not
+        String select = "SELECT * FROM charload" + testInstance;
+
+        server.execute(create);
+        List<String> result = server.execute(select);
+        assertTrue(result.size() > 1);
+        assertContains(result, "Marilyn");
+        assertContains(result, "last.fm/music/MALICE");
+        assertContains(result, "last.fm/serve/252/2181591.jpg");
     }
 
     @Test
