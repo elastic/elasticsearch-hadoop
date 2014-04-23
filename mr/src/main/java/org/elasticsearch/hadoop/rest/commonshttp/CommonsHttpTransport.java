@@ -171,6 +171,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private Object[] setupHttpProxy(Settings settings, HostConfiguration hostConfig) {
         // return HostConfiguration + HttpState
         Object[] results = new Object[2];
+        results[0] = hostConfig;
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
