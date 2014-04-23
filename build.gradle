@@ -223,7 +223,7 @@ allprojects { project ->
 				"http://commons.apache.org/proper/commons-logging/apidocs/",
 				"http://hadoop.apache.org/docs/stable1/api/",
 				//"http://hbase.apache.org/apidocs/",
-				"http://pig.apache.org/docs/r0.12.0/api/",
+				"http://pig.apache.org/docs/r0.12.1/api/",
 				"http://hive.apache.org/javadocs/r0.12.0/api/",
 				"http://docs.cascading.org/cascading/2.1/javadoc/"
 			]
