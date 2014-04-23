@@ -245,9 +245,11 @@ allprojects { project ->
 	}
 
 	task pack(dependsOn: [jar, javadocJar, sourcesJar]) {
-		artifacts {
-			archives javadocJar
-			archives sourcesJar
+		doLast {
+			artifacts {
+				archives javadocJar
+				archives sourcesJar
+			}
 		}
 	}
 	
