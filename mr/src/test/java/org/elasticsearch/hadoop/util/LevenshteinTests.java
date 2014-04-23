@@ -58,14 +58,15 @@ public class LevenshteinTests {
 
     @Test
     public void testDistance() {
-        assertThat(levenshteinDistance("bar", "bor"), is(1));
-        assertThat(levenshteinDistance("bar", "bara"), is(1));
-        assertThat(levenshteinDistance("bar", "abar"), is(1));
-        assertThat(levenshteinDistance("bar", "abara"), is(2));
-        assertThat(levenshteinDistance("bar", "abora"), is(3));
-        assertThat(levenshteinDistance("bar", "arb"), is(2));
-        assertThat(levenshteinDistance("bar", "aarb"), is(2));
-        assertThat(levenshteinDistance("bar", "aarbx"), is(3));
+        assertThat(levenshteinDistance("bar", "bor", 1), is(1));
+        assertThat(levenshteinDistance("bar", "bara", 1), is(1));
+        assertThat(levenshteinDistance("bar", "abar", 1), is(1));
+        assertThat(levenshteinDistance("bar", "abara", 3), is(2));
+        assertThat(levenshteinDistance("bar", "abora", 5), is(3));
+        assertThat(levenshteinDistance("bar", "arb", 3), is(2));
+        assertThat(levenshteinDistance("bar", "aarb", 2), is(2));
+        assertThat(levenshteinDistance("bar", "aarbx", 3), is(3));
+        assertThat(levenshteinDistance("bar", "aarbx", 2), is(-1));
     }
 
     @Test

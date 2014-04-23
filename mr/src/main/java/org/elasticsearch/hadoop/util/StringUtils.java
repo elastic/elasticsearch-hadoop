@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -141,28 +142,84 @@ public abstract class StringUtils {
         return string.getBytes(UTF_8);
     }
 
-    public static int levenshteinDistance(CharSequence s1, CharSequence s2) {
-        int[] prev = new int[s2.length() + 1];
-        for (int j = 0; j < s2.length() + 1; j++) {
-            prev[j] = j;
+    // Based on "Algorithms on Strings, Trees and Sequences by Dan Gusfield".
+    // returns -1 if the two strings are within the given threshold of each other, -1 otherwise
+    public static int levenshteinDistance(CharSequence one, CharSequence another, int threshold) {
+        int n = one.length();
+        int m = another.length();
+
+        // if one string is empty, the edit distance is necessarily the length of the other
+        if (n == 0) {
+            return m <= threshold ? m : -1;
+        } else if (m == 0) {
+            return n <= threshold ? n : -1;
         }
 
-        for (int i = 1; i < s1.length() + 1; i++) {
-            int[] curr = new int[s2.length() + 1];
-            curr[0] = i;
+        if (n > m) {
+            // swap the two strings to consume less memory
+            final CharSequence tmp = one;
+            one = another;
+            another = tmp;
+            n = m;
+            m = another.length();
+        }
 
-            for (int j = 1; j < s2.length() + 1; j++) {
-                int d1 = prev[j] + 1;
-                int d2 = curr[j - 1] + 1;
-                int d3 = prev[j - 1];
-                if (s1.charAt(i - 1) != s2.charAt(j - 1)) {
-                    d3 += 1;
-                }
-                curr[j] = Math.min(Math.min(d1, d2), d3);
+        int p[] = new int[n + 1]; // 'previous' cost array, horizontally
+        int d[] = new int[n + 1]; // cost array, horizontally
+        int _d[]; // placeholder to assist in swapping p and d
+
+        // fill in starting table values
+        final int boundary = Math.min(n, threshold) + 1;
+        for (int i = 0; i < boundary; i++) {
+            p[i] = i;
+        }
+
+        // these fills ensure that the value above the rightmost entry of our
+        // stripe will be ignored in following loop iterations
+        Arrays.fill(p, boundary, p.length, Integer.MAX_VALUE);
+        Arrays.fill(d, Integer.MAX_VALUE);
+
+        for (int j = 1; j <= m; j++) {
+            final char t_j = another.charAt(j - 1);
+            d[0] = j;
+
+            // compute stripe indices, constrain to array size
+            final int min = Math.max(1, j - threshold);
+            final int max = (j > Integer.MAX_VALUE - threshold) ? n : Math.min(n, j + threshold);
+
+            // the stripe may lead off of the table if s and t are of different sizes
+            if (min > max) {
+                return -1;
             }
-            prev = curr;
+
+            // ignore entry left of leftmost
+            if (min > 1) {
+                d[min - 1] = Integer.MAX_VALUE;
+            }
+
+            // iterates through [min, max] in s
+            for (int i = min; i <= max; i++) {
+                if (one.charAt(i - 1) == t_j) {
+                    // diagonally left and up
+                    d[i] = p[i - 1];
+                } else {
+                    // 1 + minimum of cell to the left, to the top, diagonally left and up
+                    d[i] = 1 + Math.min(Math.min(d[i - 1], p[i]), p[i - 1]);
+                }
+            }
+
+            // copy current distance counts to 'previous row' distance counts
+            _d = p;
+            p = d;
+            d = _d;
         }
-        return prev[s2.length()];
+
+        // if p[n] is greater than the threshold, there's no guarantee on it being the correct
+        // distance
+        if (p[n] <= threshold) {
+            return p[n];
+        }
+        return -1;
     }
 
     public static List<String> findSimiliar(CharSequence match, Collection<String> potential) {
@@ -172,14 +229,16 @@ public abstract class StringUtils {
         int maxDistance = 2;
 
         for (String string : potential) {
-            int dist = levenshteinDistance(match, string);
-            if (dist < maxDistance) {
-                maxDistance = dist;
-                list.clear();
-                list.add(string);
-            }
-            else if (dist == maxDistance) {
-                list.add(string);
+            int dist = levenshteinDistance(match, string, maxDistance);
+            if (dist >= 0) {
+                if (dist < maxDistance) {
+                    maxDistance = dist;
+                    list.clear();
+                    list.add(string);
+                }
+                else if (dist == maxDistance) {
+                    list.add(string);
+                }
             }
         }
 
