@@ -28,7 +28,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import static org.junit.Assert.*;
+
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+import static org.hamcrest.CoreMatchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveTest {
@@ -73,6 +76,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testBasicSaveMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/artists").skipHeaders().toString(), is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -124,6 +132,14 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testCompoundSaveMapping() throws Exception {
+        assertThat(
+                RestUtils.getMapping("hive/compound").skipHeaders().toString(),
+                is("compound=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
+    }
+
+
+    @Test
     public void testTimestampSave() throws Exception {
         String localTable = createTable("timestampsource");
         String load = loadData("timestampsource");
@@ -154,6 +170,11 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testTimestampSaveMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/artiststimestamp").skipHeaders().toString(), is("artiststimestamp=[date=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+    }
+
+    @Test
     public void testFieldAlias() throws Exception {
         String localTable = createTable("aliassource");
         String load = loadData("aliassource");
@@ -177,6 +198,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testFieldAliasMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/aliassave").skipHeaders().toString(), is("aliassave=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
     }
 
     @Test
@@ -212,6 +238,12 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    @Ignore
+    public void testDateSaveMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/datesave").skipHeaders().toString(), is("datesave=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
+    }
+
+    @Test
     public void testChar() throws Exception {
         String localTable = createTable("charsource");
         String load = loadData("charsource");
@@ -234,6 +266,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testCharMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/charsave").skipHeaders().toString(), is("charsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -264,6 +301,11 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testExternalSerDeMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/externalserde").skipHeaders().toString(), is("externalserde=[data=STRING]"));
+    }
+
+    @Test
     public void testVarcharSave() throws Exception {
         String localTable = createTable("varcharsource");
         String load = loadData("varcharsource");
@@ -286,6 +328,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(localTable));
         System.out.println(server.execute(load));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testVarcharSaveMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/varcharsave").skipHeaders().toString(), is("varcharsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -319,6 +366,12 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testCreateMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/createsave").skipHeaders().toString(),
+                is("createsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveServerException.class)
@@ -387,6 +440,10 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testUpdateWithIdMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/updatesave").skipHeaders().toString(), is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+    }
 
     @Test(expected = HiveServerException.class)
     public void testUpdateWithoutUpsert() throws Exception {
@@ -455,6 +512,11 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testParentChildMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/child").skipHeaders().toString(), is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+    }
+
+    @Test
     public void testIndexPattern() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -483,6 +545,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
+    }
+
+    @Test
+    public void testIndexPatternMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/pattern-12").skipHeaders().toString(), is("pattern-12=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -517,6 +584,11 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(insert));
     }
 
+    @Test
+    public void testIndexPatternFormatMapping() throws Exception {
+        assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").skipHeaders().toString(),
+                is("pattern-format-2012-10-06=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
+    }
 
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("
