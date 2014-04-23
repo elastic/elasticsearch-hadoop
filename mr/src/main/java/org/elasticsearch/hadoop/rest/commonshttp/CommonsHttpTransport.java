@@ -144,7 +144,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         HostConfiguration hostConfig = new HostConfiguration();
 
         hostConfig = setupSocksProxy(settings, hostConfig);
-        hostConfig = setupHttpProxy(settings, hostConfig);
+        Object[] httpProxySettings = setupHttpProxy(settings, hostConfig);
+        hostConfig = (HostConfiguration) httpProxySettings[0];
 
         try {
             hostConfig.setHost(new URI(prefixUri(host), false));
@@ -154,12 +155,22 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         client = new HttpClient(params, new SocketTrackingConnectionManager());
         client.setHostConfiguration(hostConfig);
 
+        completeHttpProxyInit(httpProxySettings);
+
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
         connectionParams.setTcpNoDelay(true);
     }
 
-    private HostConfiguration setupHttpProxy(Settings settings, HostConfiguration hostConfig) {
+    private void completeHttpProxyInit(Object[] httpProxySettings) {
+        if (httpProxySettings[1] != null) {
+            client.setState((HttpState) httpProxySettings[1]);
+        }
+    }
+
+    private Object[] setupHttpProxy(Settings settings, HostConfiguration hostConfig) {
+        // return HostConfiguration + HttpState
+        Object[] results = new Object[2];
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
@@ -178,10 +189,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             hostConfig.setProxy(proxyHost, proxyPort);
             proxyInfo = proxyInfo.concat(String.format("[HTTP proxy %s:%s]", proxyHost, proxyPort));
 
+            // client is not yet initialized so postpone state
             if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
-                client.setState(state);
+                // client is not yet initialized so simply save the object for later
+                results[1] = state;
             }
 
             if (log.isDebugEnabled()) {
@@ -194,7 +207,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             }
         }
 
-        return hostConfig;
+        return results;
     }
 
     private HostConfiguration setupSocksProxy(Settings settings, HostConfiguration hostConfig) {
