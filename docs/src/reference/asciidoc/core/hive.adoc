@@ -247,6 +247,10 @@ and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/
 | `date`            | `date`
 | `varchar`         | `string`
 
+2+h| Available in Hive 0.13 or higher
+
+| `char`            | `string`
+
 |===
 
-NOTE: While {es} understands Hive types up to version 0.12, it is backwards compatible with Hive 0.9
+NOTE: While {es} understands Hive types up to version 0.13, it is backwards compatible with Hive 0.9
