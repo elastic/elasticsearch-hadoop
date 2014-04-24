@@ -31,8 +31,8 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Properties;
 
-import javax.xml.bind.DatatypeConverter;
-
+import org.codehaus.jackson.node.BinaryNode;
+import org.codehaus.jackson.node.TextNode;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
@@ -50,6 +50,9 @@ public abstract class IOUtils {
     }
 
     public static String serializeToBase64(Serializable object) throws IOException {
+        if (object == null) {
+            return StringUtils.EMPTY;
+        }
         FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         try {
@@ -57,14 +60,15 @@ public abstract class IOUtils {
         } finally {
             close(oos);
         }
-        return DatatypeConverter.printBase64Binary(baos.bytes().bytes());
+        return new BinaryNode(baos.bytes().bytes()).getValueAsText();
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends Serializable> T deserializeFromBase64(String data) {
-        byte[] rawData = DatatypeConverter.parseBase64Binary(data);
         ObjectInputStream ois = null;
+
         try {
+            byte[] rawData = new TextNode(data).getBinaryValue();
             ois = new ObjectInputStream(new FastByteArrayInputStream(rawData));
             Object o = ois.readObject();
             return (T) o;
