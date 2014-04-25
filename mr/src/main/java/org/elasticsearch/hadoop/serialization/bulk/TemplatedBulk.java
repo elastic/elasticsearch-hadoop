@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
 
@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
-class TemplatedCommand implements Command {
+class TemplatedBulk implements BulkCommand {
 
     static class FieldWriter {
         final FieldExtractor extractor;
@@ -61,7 +61,7 @@ class TemplatedCommand implements Command {
 
     private final ValueWriter<?> valueWriter;
 
-    TemplatedCommand(Collection<Object> beforeObject, Collection<Object> afterObject, ValueWriter<?> valueWriter) {
+    TemplatedBulk(Collection<Object> beforeObject, Collection<Object> afterObject, ValueWriter<?> valueWriter) {
         this.beforeObject = beforeObject;
         this.afterObject = afterObject;
         this.valueWriter = valueWriter;

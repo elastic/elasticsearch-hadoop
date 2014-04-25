@@ -167,19 +167,19 @@ public class AbstractMROldApiSaveTest {
         testCreateWithId();
     }
 
-    @Test(expected = EsHadoopIllegalArgumentException.class)
+    @Test(expected = IOException.class)
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
         runJob(conf);
     }
 
     @Test
-    public void testUpdateWithId() throws Exception {
+    public void testUpsertWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
 
@@ -192,7 +192,92 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
-        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyScript() throws Exception {
+        JobConf conf = createJobConf();
+        // use an existing id to allow the update to succeed
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyParamJsonScript() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertScript() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertParamScript() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-param");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertParamJsonScript() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-json-param");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         runJob(conf);
     }

@@ -175,9 +175,9 @@ public class AbstractMRNewApiSaveTest {
     }
 
     @Test
-    public void testUpdateWithId() throws Exception {
+    public void testUpsertWithId() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/update");
 
@@ -190,9 +190,94 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/updatewoupsert");
-        conf.set(ConfigurationOptions.ES_UPSERT_DOC, "false");
 
         assertFalse("job should have failed", runJob(conf));
+    }
+
+    @Test
+    public void testUpdateOnlyScript() throws Exception {
+        Configuration conf = createConf();
+        // use an existing id to allow the update to succeed
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyParamJsonScript() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertScript() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/upsert-script");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertParamScript() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/upsert-script-param");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testUpsertParamJsonScript() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/upsert-script-param");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        runJob(conf);
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)

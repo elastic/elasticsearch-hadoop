@@ -185,8 +185,41 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_MAPPING_INDEX_FORMATTER_CLASS, ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS);
     }
 
-    public boolean getUpsertDoc() {
-        return Booleans.parseBoolean(getProperty(ES_UPSERT_DOC, ES_UPSERT_DOC_DEFAULT));
+    public String getMappingParamsExtractorClassName() {
+        return getProperty(ES_MAPPING_PARAMS_EXTRACTOR_CLASS, ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS);
+    }
+
+    public int getUpdateRetryOnConflict() {
+        return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
+    }
+
+    public String getUpdateScript() {
+        return getProperty(ES_UPDATE_SCRIPT);
+    }
+
+    public String getUpdateScriptLang() {
+        return getProperty(ES_UPDATE_SCRIPT_LANG);
+    }
+
+    public String getUpdateScriptParams() {
+        return getProperty(ES_UPDATE_SCRIPT_PARAMS);
+    }
+
+    public String getUpdateScriptParamsJson() {
+        return getProperty(ES_UPDATE_SCRIPT_PARAMS_JSON);
+    }
+
+    public boolean hasUpdateScript() {
+        String op = getOperation();
+        return ((ConfigurationOptions.ES_OPERATION_UPDATE.equals(op) || ConfigurationOptions.ES_OPERATION_UPSERT.equals(op)) && StringUtils.hasText(getUpdateScript()));
+    }
+
+    public boolean hasUpdateScriptParams() {
+        return hasUpdateScript() && StringUtils.hasText(getUpdateScriptParams());
+    }
+
+    public boolean hasUpdateScriptParamsJson() {
+        return hasUpdateScript() && StringUtils.hasText(getUpdateScriptParamsJson());
     }
 
     public boolean getFieldReadEmptyAsNull() {
@@ -334,4 +367,5 @@ public abstract class Settings implements InternalConfigurationOptions {
     }
 
     protected abstract Properties asProperties();
+
 }

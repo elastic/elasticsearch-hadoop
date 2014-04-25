@@ -203,7 +203,7 @@ public class AbstractHiveSaveJsonTest {
                 + "json     STRING) "
                 + tableProps("json-hive/updatesave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
         String selectTest = "SELECT s.json FROM jsonupdatesource s";
 
@@ -235,8 +235,7 @@ public class AbstractHiveSaveJsonTest {
                 + "json     STRING) "
                 + tableProps("json-hive/updatewoupsertsave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'",
-                             "'" + ConfigurationOptions.ES_UPSERT_DOC + "'='false'");
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
         String selectTest = "SELECT s.json FROM jsonupdatewoupsertsource s";
 

@@ -16,11 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.field;
 
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
-interface CommandFactory {
+public class DefaultParamsExtractor extends AbstractDefaultParamsExtractor {
 
-    Command createCommand();
-
+    @Override
+    protected FieldExtractor createFieldExtractor(String fieldName) {
+        settings.setProperty(ConstantFieldExtractor.PROPERTY, fieldName);
+        return ObjectUtils.<FieldExtractor> instantiate(settings.getMappingDefaultClassExtractor(), settings);
+    }
 }

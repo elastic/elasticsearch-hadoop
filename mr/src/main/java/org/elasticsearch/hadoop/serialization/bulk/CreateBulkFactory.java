@@ -16,19 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 
-class IndexCommandFactory extends AbstractCommandFactory {
+public class CreateBulkFactory extends AbstractBulkFactory {
 
-    public IndexCommandFactory(Settings settings) {
+    public CreateBulkFactory(Settings settings) {
         super(settings);
     }
 
     @Override
     protected String getOperation() {
-        return ConfigurationOptions.ES_OPERATION_INDEX;
+        return ConfigurationOptions.ES_OPERATION_CREATE;
     }
 }

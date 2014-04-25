@@ -176,6 +176,7 @@ public abstract class ParsingUtils {
                         if (matcher.matched) {
                             inactive.add(matcher);
                             if (!valueRead) {
+                                valueRead = true;
                                 switch (parser.nextToken()) {
                                 case VALUE_NUMBER:
                                     value = parser.numberValue();

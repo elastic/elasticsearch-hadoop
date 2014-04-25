@@ -43,6 +43,7 @@ public class JsonFieldExtractors {
 
     private FieldExtractor id, parent, routing, ttl, version, timestamp;
     private AbstractIndexExtractor indexExtractor;
+    private AbstractDefaultParamsExtractor params;
 
     class PrecomputedFieldExtractor implements FieldExtractor {
 
@@ -94,6 +95,16 @@ public class JsonFieldExtractors {
 
         // if there's no pattern, simply remove it
         indexExtractor = (indexExtractor.hasPattern() ? indexExtractor : null);
+
+        if (settings.hasUpdateScriptParams()) {
+            params = new AbstractDefaultParamsExtractor() {
+                @Override
+                protected FieldExtractor createFieldExtractor(String fieldName) {
+                    return init(fieldName, jsonPaths);
+                }
+            };
+            params.setSettings(settings);
+        }
 
         paths = jsonPaths.toArray(new String[jsonPaths.size()]);
     }
@@ -163,5 +174,9 @@ public class JsonFieldExtractors {
             log.trace(String.format("About to look for paths [%s] in doc [%s]", Arrays.toString(paths), storage));
         }
         results.addAll(ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths));
+    }
+
+    public FieldExtractor params() {
+        return params;
     }
 }

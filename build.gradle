@@ -383,6 +383,8 @@ allprojects { project ->
 		classpath = sourceSets.integrationTest.runtimeClasspath
 		excludes = ["**/Abstract*.class"]
 		
+		ignoreFailures = true
+		
 		minHeapSize = "256m"
 		maxHeapSize = "768m"
 		if (!java8)

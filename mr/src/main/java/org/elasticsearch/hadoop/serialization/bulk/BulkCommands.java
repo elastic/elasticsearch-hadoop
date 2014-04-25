@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -27,24 +27,27 @@ import org.elasticsearch.hadoop.cfg.Settings;
  */
 public abstract class BulkCommands {
 
-    public static Command create(Settings settings) {
+    public static BulkCommand create(Settings settings) {
 
         String operation = settings.getOperation();
-        CommandFactory factory = null;
+        BulkFactory factory = null;
 
         if (ConfigurationOptions.ES_OPERATION_CREATE.equals(operation)) {
-            factory = new CreateCommandFactory(settings);
+            factory = new CreateBulkFactory(settings);
         }
         else if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
-            factory = new IndexCommandFactory(settings);
+            factory = new IndexBulkFactory(settings);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
-            factory = new UpdateCommandFactory(settings);
+            factory = new UpdateBulkFactory(settings);
+        }
+        else if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(operation)) {
+            factory = new UpdateBulkFactory(settings, true);
         }
         else {
             throw new EsHadoopIllegalArgumentException("Unknown operation " + operation);
         }
 
-        return factory.createCommand();
+        return factory.createBulk();
     }
 }

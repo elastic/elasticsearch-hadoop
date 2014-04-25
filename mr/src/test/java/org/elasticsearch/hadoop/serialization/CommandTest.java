@@ -28,8 +28,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.command.BulkCommands;
-import org.elasticsearch.hadoop.serialization.command.Command;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
@@ -123,7 +123,6 @@ public class CommandTest {
     public void testTimestamp() throws Exception {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
-
         create(settings).write(map).copyTo(ba);
         String result = prefix() + "\"_timestamp\":\"3\"}}" + map();
         assertEquals(result, ba.toString());
@@ -160,7 +159,7 @@ public class CommandTest {
         create(set).write(map).copyTo(ba);
     }
 
-    private Command create(Settings settings) {
+    private BulkCommand create(Settings settings) {
         settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         return BulkCommands.create(settings);
     }
@@ -187,7 +186,7 @@ public class CommandTest {
     private String map() {
         StringBuilder sb = new StringBuilder("\n{");
         if (isUpdateOp()) {
-            sb.append("\"doc_as_upsert\":true,\"doc\":{");
+            sb.append("\"doc\":{");
         }
 
         sb.append("\"n\":1,\"s\":\"v\"}");

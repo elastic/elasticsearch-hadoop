@@ -204,7 +204,7 @@ public class AbstractPigSaveTest {
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.EsStorage('"
-                                + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
     }
@@ -222,8 +222,7 @@ public class AbstractPigSaveTest {
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
-                                + ConfigurationOptions.ES_MAPPING_ID + "=id','"
-                                + ConfigurationOptions.ES_UPSERT_DOC + "=false');";
+                                + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
     }
 

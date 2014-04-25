@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.cfg;
 
 import org.elasticsearch.hadoop.serialization.field.DateIndexFormatter;
 import org.elasticsearch.hadoop.serialization.field.DefaultIndexExtractor;
+import org.elasticsearch.hadoop.serialization.field.DefaultParamsExtractor;
 
 /**
  * Class providing the various Configuration parameters used by the Elasticsearch Hadoop integration.
@@ -29,7 +30,6 @@ public interface ConfigurationOptions {
     /** Elasticsearch host **/
     // deprecated
     String ES_HOST = "es.host";
-    String ES_HOST_DEFAULT = "localhost";
     String ES_NODES = "es.nodes";
     String ES_NODES_DEFAULT = "localhost";
 
@@ -140,6 +140,8 @@ public interface ConfigurationOptions {
     String ES_MAPPING_DEFAULT_INDEX_EXTRACTOR_CLASS = DefaultIndexExtractor.class.getName();
     String ES_MAPPING_INDEX_FORMATTER_CLASS = "es.mapping.index.formatter.class";
     String ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS = DateIndexFormatter.class.getName();
+    String ES_MAPPING_PARAMS_EXTRACTOR_CLASS = "es.mapping.params.extractor.class";
+    String ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS = DefaultParamsExtractor.class.getName();
 
 
     /** Operation types */
@@ -147,11 +149,18 @@ public interface ConfigurationOptions {
     String ES_OPERATION_INDEX = "index";
     String ES_OPERATION_CREATE = "create";
     String ES_OPERATION_UPDATE = "update";
+    String ES_OPERATION_UPSERT = "upsert";
     String ES_OPERATION_DELETE = "delete";
     String ES_WRITE_OPERATION_DEFAULT = ES_OPERATION_INDEX;
 
-    String ES_UPSERT_DOC = "es.upsert.doc";
-    String ES_UPSERT_DOC_DEFAULT = "true";
+    String ES_UPDATE_RETRY_ON_CONFLICT = "es.update.retry.on.conflict";
+    String ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT = "0";
+
+    String ES_UPDATE_SCRIPT = "es.update.script";
+    String ES_UPDATE_SCRIPT_LANG = "es.update.script.lang";
+    String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
+    String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
+
 
     /** Network options */
     String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";

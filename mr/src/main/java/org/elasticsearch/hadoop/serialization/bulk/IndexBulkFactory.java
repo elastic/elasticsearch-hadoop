@@ -16,24 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
-import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
 
+class IndexBulkFactory extends AbstractBulkFactory {
 
-/**
- * Bulk command to execute.
- */
-public interface Command {
+    public IndexBulkFactory(Settings settings) {
+        super(settings);
+    }
 
-    /**
-     * Serialized the given object as a {@link BytesRef}.
-     * Note that the {@link BytesRef} is not guaranteed to be unique - in fact,
-     * expect the same instance to be reused by multiple calls.
-     * In other words, make a copy if you need to hang on to this object.
-     *
-     * @param object
-     * @return
-     */
-    BytesRef write(Object object);
+    @Override
+    protected String getOperation() {
+        return ConfigurationOptions.ES_OPERATION_INDEX;
+    }
 }

@@ -32,8 +32,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.command.BulkCommands;
-import org.elasticsearch.hadoop.serialization.command.Command;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -70,7 +70,7 @@ public class RestRepository implements Closeable, StatsAware {
     private RestClient client;
     private Resource resourceR;
     private Resource resourceW;
-    private Command command;
+    private BulkCommand command;
     private final Settings settings;
     private final Stats stats = new Stats();
 

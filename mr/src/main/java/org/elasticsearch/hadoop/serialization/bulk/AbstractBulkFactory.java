@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
-import org.elasticsearch.hadoop.serialization.command.TemplatedCommand.FieldWriter;
+import org.elasticsearch.hadoop.serialization.bulk.TemplatedBulk.FieldWriter;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
@@ -35,21 +35,21 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 
-abstract class AbstractCommandFactory implements CommandFactory {
+abstract class AbstractBulkFactory implements BulkFactory {
 
-    private static Log log = LogFactory.getLog(AbstractCommandFactory.class);
+    private static Log log = LogFactory.getLog(AbstractBulkFactory.class);
 
     private boolean jsonInput;
     private JsonFieldExtractors jsonExtractors;
 
-    private Settings settings;
+    protected Settings settings;
     private ValueWriter<?> valueWriter;
     // used when specifying an index pattern
     private IndexExtractor indexExtractor;
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
-            timestampExtractor;
+            timestampExtractor, paramsExtractor;
 
-    AbstractCommandFactory(Settings settings) {
+    AbstractBulkFactory(Settings settings) {
         this.settings = settings;
         this.valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
         initFieldExtractors(settings);
@@ -72,6 +72,7 @@ abstract class AbstractCommandFactory implements CommandFactory {
             versionExtractor = jsonExtractors.version();
             ttlExtractor = jsonExtractors.ttl();
             timestampExtractor = jsonExtractors.timestamp();
+            paramsExtractor = jsonExtractors.params();
         }
         else {
             // init extractors (if needed)
@@ -109,6 +110,11 @@ abstract class AbstractCommandFactory implements CommandFactory {
                 indexExtractor = iformat;
             }
 
+            // param extractor
+            if (settings.hasUpdateScriptParams()) {
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getUpdateScriptParams());
+                paramsExtractor = ObjectUtils.instantiate(settings.getMappingParamsExtractorClassName(), settings);
+            }
 
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Instantiated value writer [%s]", valueWriter));
@@ -129,6 +135,9 @@ abstract class AbstractCommandFactory implements CommandFactory {
                 }
                 if (timestampExtractor != null) {
                     log.trace(String.format("Instantiated timestamp extractor [%s]", timestampExtractor));
+                }
+                if (paramsExtractor != null) {
+                    log.trace(String.format("Instantiated params extractor [%s]", paramsExtractor));
                 }
             }
         }
@@ -162,19 +171,33 @@ abstract class AbstractCommandFactory implements CommandFactory {
         return timestampExtractor;
     }
 
-    @Override
-    public Command createCommand() {
-        List<Object> before = new ArrayList<Object>();
+    protected FieldExtractor params() {
+        return paramsExtractor;
+    }
 
+    @Override
+    public BulkCommand createBulk() {
+        List<Object> before = new ArrayList<Object>();
         writeBeforeObject(before);
+
         List<Object> after = new ArrayList<Object>();
         writeAfterObject(after);
 
         before = compact(before);
         after = compact(after);
 
+        boolean isScriptUpdate = settings.hasUpdateScript();
         // compress pieces
-        return (jsonInput ? new JsonTemplatedCommand(before, after, jsonExtractors, settings) : new TemplatedCommand(before, after, valueWriter));
+        if (jsonInput) {
+            if (isScriptUpdate) {
+                return new JsonScriptTemplateBulk(before, after, jsonExtractors, settings);
+            }
+            return new JsonTemplatedBulk(before, after, jsonExtractors, settings);
+        }
+        if (isScriptUpdate) {
+            return new ScriptTemplateBulk(settings, before, after, valueWriter);
+        }
+        return new TemplatedBulk(before, after, valueWriter);
     }
 
     protected void writeAfterObject(List<Object> after) {
@@ -226,7 +249,10 @@ abstract class AbstractCommandFactory implements CommandFactory {
         version(pieces);
         timestamp(pieces);
 
+        otherHeader(pieces);
         endHeader(pieces);
+
+        scriptParams(pieces);
     }
 
     private void startHeader(List<Object> pieces) {
@@ -302,6 +328,27 @@ abstract class AbstractCommandFactory implements CommandFactory {
             pieces.add("\"_timestamp\":\"");
             pieces.add(timestamp());
             pieces.add("\"");
+            return true;
+        }
+        return false;
+    }
+
+    protected void otherHeader(List<Object> pieces) {
+        // no-op
+    }
+
+    private boolean scriptParams(List<Object> pieces) {
+        // handle json params first
+        if (settings.hasUpdateScriptParamsJson()) {
+            pieces.add("{\"params\":");
+            pieces.add(settings.getUpdateScriptParamsJson().trim());
+            pieces.add(",");
+            return true;
+        }
+        if (params() != null) {
+            pieces.add("{\"params\":{");
+            pieces.add(params());
+            pieces.add("},");
             return true;
         }
         return false;

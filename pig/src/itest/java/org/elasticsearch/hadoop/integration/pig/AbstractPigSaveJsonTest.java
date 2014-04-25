@@ -111,7 +111,7 @@ public class AbstractPigSaveJsonTest {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "STORE A INTO 'json-pig/update' USING org.elasticsearch.hadoop.pig.EsStorage('"
-                                + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
+                                + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
         pig.executeScript(script);
@@ -124,8 +124,7 @@ public class AbstractPigSaveJsonTest {
                 loadSource() +
                 "STORE A INTO 'json-pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
-                                + ConfigurationOptions.ES_MAPPING_ID + "=number','"
-                                + ConfigurationOptions.ES_UPSERT_DOC + "=false',"
+                                + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
         pig.executeScript(script);
     }

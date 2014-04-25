@@ -45,8 +45,8 @@ import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.serialization.command.BulkCommands;
-import org.elasticsearch.hadoop.serialization.command.Command;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -68,7 +68,7 @@ public class EsSerDe implements SerDe {
     private HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
-    private Command command;
+    private BulkCommand command;
 
     private boolean writeInitialized = false;
     private boolean readInitialized = false;

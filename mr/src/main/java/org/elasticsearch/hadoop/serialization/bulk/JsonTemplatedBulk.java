@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.command;
+package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
 
@@ -34,18 +34,20 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 /**
  * Dedicated JSON command that skips the content generation phase (since the data is already JSON).
  */
-class JsonTemplatedCommand extends TemplatedCommand {
+class JsonTemplatedBulk extends TemplatedBulk {
 
-    private static Log log = LogFactory.getLog(JsonTemplatedCommand.class);
+    private static Log log = LogFactory.getLog(JsonTemplatedBulk.class);
 
-    private final JsonFieldExtractors jsonExtractors;
-    private final BytesConverter jsonWriter;
+    protected final JsonFieldExtractors jsonExtractors;
+    protected final BytesConverter jsonWriter;
+    protected final Settings settings;
 
-    public JsonTemplatedCommand(Collection<Object> beforeObject, Collection<Object> afterObject,
+    public JsonTemplatedBulk(Collection<Object> beforeObject, Collection<Object> afterObject,
             JsonFieldExtractors jsonExtractors, Settings settings) {
         super(beforeObject, afterObject, new NoOpValueWriter());
         this.jsonExtractors = jsonExtractors;
         this.jsonWriter = ObjectUtils.instantiate(settings.getSerializerBytesConverterClassName(), settings);
+        this.settings = settings;
     }
 
     @Override
