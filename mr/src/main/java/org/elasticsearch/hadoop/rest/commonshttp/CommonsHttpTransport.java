@@ -199,6 +199,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
+                state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
                 // client is not yet initialized so simply save the object for later
                 results[1] = state;
             }
