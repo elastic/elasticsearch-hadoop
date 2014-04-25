@@ -166,6 +166,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private void completeHttpProxyInit(Object[] httpProxySettings) {
         if (httpProxySettings[1] != null) {
             client.setState((HttpState) httpProxySettings[1]);
+            client.getParams().setAuthenticationPreemptive(true);
         }
     }
 
