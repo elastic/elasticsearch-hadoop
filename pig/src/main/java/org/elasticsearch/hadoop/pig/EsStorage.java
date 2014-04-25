@@ -135,7 +135,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         Properties props = getUDFProperties();
 
         // save schema to back-end for JSON translation
-        if (props.getProperty(ResourceSchema.class.getName()) == null) {
+        if (!StringUtils.hasText(props.getProperty(ResourceSchema.class.getName()))) {
             // save the schema as String (used JDK serialization since toString() screws up the signature - see the testcase)
             props.setProperty(ResourceSchema.class.getName(), IOUtils.serializeToBase64(s));
         }
@@ -175,7 +175,13 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         Properties props = getUDFProperties();
         String s = props.getProperty(ResourceSchema.class.getName());
-        this.schema = IOUtils.deserializeFromBase64(s);
+        if (!StringUtils.hasText(s)) {
+            log.warn("No resource schema found; using an empty one....");
+            this.schema = new ResourceSchema();
+        }
+        else {
+            this.schema = IOUtils.deserializeFromBase64(s);
+        }
         this.pigTuple = new PigTuple(schema);
     }
 
