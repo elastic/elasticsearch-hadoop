@@ -24,7 +24,6 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -32,15 +31,11 @@ import org.junit.runners.MethodSorters;
 
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class AbstractPigSaveJsonTest {
-
-    static PigWrapper pig;
+public class AbstractPigSaveJsonTest extends AbstractPigTests {
 
     @BeforeClass
     public static void startup() throws Exception {
-        pig = new PigWrapper();
-        pig.start();
-
+        AbstractPigTests.startup();
         // initialize Pig in local mode
         RestClient client = new RestClient(new TestSettings());
         try {
@@ -48,11 +43,6 @@ public class AbstractPigSaveJsonTest {
         } catch (Exception ex) {
             // ignore
         }
-    }
-
-    @AfterClass
-    public static void shutdown() {
-        pig.stop();
     }
 
     @Test

@@ -96,20 +96,27 @@ class PigUtils {
 
     static String asProjection(Schema schema, Properties props) {
         List<String> fields = new ArrayList<String>();
-        addField(schema, fields, alias(new PropertiesSettings(props)), "");
+        addField(schema, fields, alias(new PropertiesSettings(props)), null);
 
         return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");
     }
 
     private static void addField(Schema schema, List<String> fields, FieldAlias fa, String currentNode) {
         for (FieldSchema field : schema.getFields()) {
-            String node = fa.toES(field.alias);
-            node = (currentNode != null ? currentNode + "." +  node: node);
+            String node;
+            if (field.alias != null) {
+                // if no field
+                node = fa.toES(field.alias);
+                node = (currentNode != null ? currentNode + "." + node : node);
+            }
+            else {
+                node = currentNode;
+            }
             if (field.schema != null && field.type != DataType.TUPLE) {
                 addField(field.schema, fields, fa, node);
             }
             else {
-                fields.add(fa.toES(field.alias));
+                fields.add(fa.toES(node));
                 //                if (!StringUtils.hasText(field.alias)) {
                 //                    LogFactory.getLog(PigUtils.class).debug("Cannot detect alias for field in schema" + schema);
                 //                    return null;

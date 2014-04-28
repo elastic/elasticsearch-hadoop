@@ -86,7 +86,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     private static final Log log = LogFactory.getLog(EsStorage.class);
     private final boolean trace = log.isTraceEnabled();
 
-    private Properties properties;
+    private Properties properties = new Properties();
 
     private String relativeLocation;
     private String signature;
@@ -105,7 +105,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     public EsStorage(String... configuration) {
         if (!ObjectUtils.isEmpty(configuration)) {
             try {
-                properties = new Properties();
                 for (String string : configuration) {
                     // replace ; with line separators
                     properties.load(new StringReader(string));
@@ -242,6 +241,13 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             return;
         }
 
+
+        // projection is disabled for now since it is called _only_ in some cases
+        //extractProjection(cfg);
+    }
+
+
+    private void extractProjection(Configuration cfg) throws IOException {
         String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);
         if (fields != null) {
             if (log.isDebugEnabled()) {
@@ -293,7 +299,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             getUDFProperties().setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
         }
     }
-
 
     @Override
     public String relativeToAbsolutePath(String location, Path curDir) throws IOException {

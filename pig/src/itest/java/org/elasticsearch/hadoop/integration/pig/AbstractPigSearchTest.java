@@ -23,19 +23,15 @@ import java.util.Collection;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
-public class AbstractPigSearchTest {
-
-    static PigWrapper pig;
+public class AbstractPigSearchTest extends AbstractPigTests {
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -47,19 +43,6 @@ public class AbstractPigSearchTest {
     public AbstractPigSearchTest(String query) {
         this.query = query;
     }
-
-
-    @BeforeClass
-    public static void startup() throws Exception {
-        pig = new PigWrapper();
-        pig.start();
-    }
-
-    @AfterClass
-    public static void shutdown() {
-        pig.stop();
-    }
-
 
     @Before
     public void before() throws Exception {
