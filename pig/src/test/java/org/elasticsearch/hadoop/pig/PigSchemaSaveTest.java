@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.pig;
 
+import java.util.Properties;
+
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.Utils;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -43,5 +45,12 @@ public class PigSchemaSaveTest {
         Schema schemaFromString = Utils.getSchemaFromString("name:bytearray,links:{(missing:chararray)}");
         Schema schemaSaved = IOUtils.deserializeFromBase64(IOUtils.serializeToBase64(schemaFromString));
         assertEquals(schemaFromString.toString(), schemaSaved.toString());
+    }
+
+    @Test
+    public void testProjection() throws Exception {
+        String schemaString = "ES_PARENT: {(parent_name: chararray,parent_value: chararray)}";
+        Schema schema = Utils.getSchemaFromString(schemaString);
+        System.out.println(PigUtils.asProjection(schema, new Properties()));
     }
 }

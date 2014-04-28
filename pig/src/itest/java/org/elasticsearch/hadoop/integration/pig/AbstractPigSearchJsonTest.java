@@ -47,6 +47,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     @Before
     public void before() throws Exception {
+        RestUtils.touch("json-pig");
         RestUtils.refresh("json-pig");
     }
 
@@ -55,7 +56,6 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String data = "{ \"data\" : { \"map\" : { \"key\" :  10  } } }";
         RestUtils.putData("json-pig/nestedmap", StringUtils.toUTF(data));
 
-        //RestUtils.waitForYellow("json-hive");
         RestUtils.refresh("json-pig");
 
         String script =

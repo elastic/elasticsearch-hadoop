@@ -241,7 +241,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             return;
         }
 
-
         // projection is disabled for now since it is called _only_ in some cases
         //extractProjection(cfg);
     }
@@ -260,6 +259,12 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         if (log.isTraceEnabled()) {
             log.trace("No field projection specified, looking for existing stores...");
+        }
+
+        List pigInputs = (List) ObjectSerializer.deserialize(cfg.get("pig.inputs"));
+        // can't determine alias
+        if (pigInputs.size() != 1) {
+            return;
         }
 
         String mapValues = cfg.get(JobControlCompiler.PIG_MAP_STORES);
@@ -317,6 +322,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @Override
     public void prepareToRead(RecordReader reader, PigSplit split) throws IOException {
         this.reader = reader;
+        extractProjection(split.getConf());
         aliasesTupleNames = StringUtils.tokenize(getUDFProperties().getProperty(
                 InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS));
     }
@@ -342,9 +348,11 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                         Object result = dataMap;
                         // check for multi-level alias
                         for (String level : StringUtils.tokenize(aliasesTupleNames.get(i), ".")) {
-                            result = ((Map) result).get(level);
-                            if (result == null) {
-                                break;
+                            if (result instanceof Map) {
+                                result = ((Map) result).get(level);
+                                if (result == null) {
+                                    break;
+                                }
                             }
                         }
                         tuple.set(i, result);

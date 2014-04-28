@@ -28,8 +28,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSaveJsonTest.class, AbstractPigSearchTest.class, AbstractPigSearchJsonTest.class })
-//@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSearchTest.class })
+@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSaveJsonTest.class, AbstractPigSearchTest.class, AbstractPigSearchJsonTest.class, AbstractPigExtraTests.class })
+//@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSearchTest.class, AbstractPigExtraTests.class })
 public class PigSuite {
 
     @ClassRule

@@ -112,7 +112,8 @@ class PigUtils {
             else {
                 node = currentNode;
             }
-            if (field.schema != null && field.type != DataType.TUPLE) {
+            // && field.type != DataType.TUPLE
+            if (field.schema != null) {
                 addField(field.schema, fields, fa, node);
             }
             else {
