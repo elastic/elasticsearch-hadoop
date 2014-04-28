@@ -52,6 +52,7 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.Version;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
@@ -351,6 +352,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.warn("Speculative execution enabled for mapper - consider disabling it to prevent data corruption");
             }
         }
+
+        log.info(String.format("Elasticsearch Hadoop %s started - writing to [%s]", Version.version(), settings.getResourceWrite()));
 
         //log.info(String.format("Starting to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }

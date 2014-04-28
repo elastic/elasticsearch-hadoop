@@ -23,6 +23,8 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.util.Version;
+import org.slf4j.LoggerFactory;
 
 import cascading.flow.Flow;
 import cascading.flow.FlowElement;
@@ -43,6 +45,8 @@ public class EsTap extends Tap<Object, Object, Object> {
     private static final long serialVersionUID = 2062780701366901965L;
 
     private static Log log = LogFactory.getLog(EsTap.class);
+
+    private static boolean logVersion = false;
 
     private String resource;
     private String query;
@@ -192,6 +196,12 @@ public class EsTap extends Tap<Object, Object, Object> {
         setScheme(actualTap.getScheme());
         if (log.isDebugEnabled()) {
             log.debug(String.format("Detected %s environment; initializing [%s]", (runningInHadoop ? "Hadoop" : "local"), actualTap.getClass().getSimpleName()));
+        }
+
+        // use SLF4J just like Cascading
+        if (!logVersion) {
+            logVersion = true;
+            LoggerFactory.getLogger(EsTap.class).info(String.format("Elasticsearch Hadoop %s initialized", Version.version()));
         }
     }
 }

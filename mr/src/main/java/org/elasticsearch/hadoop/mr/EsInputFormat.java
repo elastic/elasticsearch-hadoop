@@ -60,6 +60,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.Version;
 
 /**
  * ElasticSearch {@link InputFormat} for streaming data (typically based on a query) from ElasticSearch.
@@ -444,6 +445,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                 log.trace("Creating splits for shards " + targetShards);
             }
         }
+
+        log.info(String.format("Elasticsearch Hadoop %s started - reading from [%s]", Version.version(), settings.getResourceRead()));
 
         String savedMapping = null;
         if (!targetShards.isEmpty()) {

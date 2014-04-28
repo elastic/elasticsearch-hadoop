@@ -109,6 +109,20 @@ configurations.all {
   }
 }
 
+	def String gitHash() {
+		String rev = "unknown"
+
+		// parse the git files to find out the revision
+		File gitHead = file("$rootDir/.git/HEAD")
+		if (gitHead.exists()) {
+			gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
+			if (gitHead.exists()) { rev = gitHead.text.trim() }
+		}
+		return rev
+	}
+	
+
+
 allprojects { project ->
 
 	compileJava {
@@ -159,34 +173,27 @@ allprojects { project ->
 	}
 
 	jar {
-		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-		manifest.attributes['Implementation-Title'] = project.name
-		manifest.attributes['Implementation-Version'] = project.version
-		manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-		manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-		manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-		
-		def build = System.env['ESHDP.BUILD']
-		if (build != null)
-			manifest.attributes['Build'] = build
-		
-		String rev = "unknown"
-
-		// parse the git files to find out the revision
-		File gitHead = file("$rootDir/.git/HEAD")
-		if (gitHead.exists()) {
-			gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
-			if (gitHead.exists()) { rev = gitHead.text }
+		doLast() {
+			manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+			manifest.attributes['Implementation-Title'] = project.name
+			manifest.attributes['Implementation-Version'] = project.version
+			manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+			manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
+			manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
+			
+			def build = System.env['ESHDP.BUILD']
+			if (build != null)
+				manifest.attributes['Build'] = build
+			
+			manifest.attributes['Repository-Revision'] = gitHash()
+			
+			from("$rootDir/docs/src/info") {
+				include "license.txt"
+				include "notice.txt"
+				into "META-INF"
+				expand(copyright: new Date().format('yyyy'), version: project.version)
+			}
 		}
-
-		from("$rootDir/docs/src/info") {
-			include "license.txt"
-			include "notice.txt"
-			into "META-INF"
-			expand(copyright: new Date().format('yyyy'), version: project.version)
-		}
-
-		manifest.attributes['Repository-Revision'] = rev
 	}
 	
 	task sourcesJar(type: Jar, dependsOn:classes) {
@@ -273,6 +280,15 @@ project(":elasticsearch-hadoop-mr") {
 		}
 	}
 	
+	processResources {
+		doLast() {
+			Properties props = new Properties()
+			props.put("version", version)
+			props.put("hash", gitHash())
+			props.store(file("src/main/resources/esh-build.properties").newWriter(), null) 
+		}
+	}
+	
 	eclipse.classpath.file {
 		whenMerged { cp ->
 			// export all jars (to be used upstream by dependent projects)	<-- for some reason Gradle removes all jars
@@ -304,6 +320,7 @@ def nestMRProject(target) {
 	target.jar {
 		from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
 			include "org/elasticsearch/hadoop/**"
+			include "/esh-build.properties"
 		}
 	}
 
