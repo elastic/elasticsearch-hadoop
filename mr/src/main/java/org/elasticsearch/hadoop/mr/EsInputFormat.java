@@ -446,7 +446,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             }
         }
 
-        log.info(String.format("Elasticsearch Hadoop %s started - reading from [%s]", Version.version(), settings.getResourceRead()));
+        Version.logVersion();
+        log.info(String.format("Reading from [%s]", settings.getResourceRead()));
 
         String savedMapping = null;
         if (!targetShards.isEmpty()) {

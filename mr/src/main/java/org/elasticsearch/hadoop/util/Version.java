@@ -20,12 +20,17 @@ package org.elasticsearch.hadoop.util;
 
 import java.util.Properties;
 
+import org.apache.commons.logging.LogFactory;
+
+
 public abstract class Version {
 
     private static final String UNKNOWN = "Unknown";
     private static final String VER;
     private static final String HASH;
     private static final String SHORT_HASH;
+
+    public static boolean printed = false;
 
     static {
         Properties build = new Properties();
@@ -53,5 +58,12 @@ public abstract class Version {
 
     public static String versionHashShort() {
         return SHORT_HASH;
+    }
+
+    public static void logVersion() {
+        if (!printed) {
+            printed = true;
+            LogFactory.getLog(Version.class).info("Elasticsearch for Hadoop " + version());
+        }
     }
 }

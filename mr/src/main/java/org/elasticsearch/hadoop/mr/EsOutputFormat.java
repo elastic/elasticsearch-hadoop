@@ -353,7 +353,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             }
         }
 
-        log.info(String.format("Elasticsearch Hadoop %s started - writing to [%s]", Version.version(), settings.getResourceWrite()));
+        Version.logVersion();
+        log.info(String.format("Writing to [%s]", settings.getResourceWrite()));
 
         //log.info(String.format("Starting to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }
