@@ -362,6 +362,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     }
 
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void extractProjection(Configuration cfg) throws IOException {
         String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);
         if (fields != null) {

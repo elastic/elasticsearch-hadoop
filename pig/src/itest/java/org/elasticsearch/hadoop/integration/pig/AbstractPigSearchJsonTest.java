@@ -106,9 +106,10 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
         String results = getResults("" + tmpPig() + "/testtuple");
 
-        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T22:20:25.000+03:00")));
+        // remove time itself
+        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T")));
+        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T")));
+        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T")));
     }
 
     @Test
@@ -140,9 +141,9 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
         String results = getResults("" + tmpPig() + "/testfieldalias");
 
-        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T22:20:25.000+03:00")));
+        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T")));
+        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T")));
+        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T")));
     }
 
     @Test
@@ -171,9 +172,9 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
         String results = getResults("" + tmpPig() + "/testparentchild");
 
-        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T22:20:25.000+03:00")));
-        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T22:20:25.000+03:00")));
+        assertThat(results, containsString(tabify("12", "Behemoth", "http://www.last.fm/music/Behemoth", "http://userserve-ak.last.fm/serve/252/54196161.jpg", "2011-10-06T")));
+        assertThat(results, containsString(tabify("918", "Megadeth", "http://www.last.fm/music/Megadeth","http://userserve-ak.last.fm/serve/252/8129787.jpg", "2871-10-06T")));
+        assertThat(results, containsString(tabify("982", "Foo Fighters", "http://www.last.fm/music/Foo+Fighters","http://userserve-ak.last.fm/serve/252/59495563.jpg", "2933-10-06T")));
     }
 
     @Test
