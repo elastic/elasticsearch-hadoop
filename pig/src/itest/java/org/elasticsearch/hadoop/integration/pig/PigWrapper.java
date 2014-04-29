@@ -75,14 +75,16 @@ public class PigWrapper {
 
     public void executeScript(String script) throws Exception {
         pig.registerScript(new ByteArrayInputStream(script.getBytes()));
-        List<ExecJob> executeBatch = pig.executeBatch();
-        for (ExecJob execJob : executeBatch) {
-            if (execJob.getStatus() == ExecJob.JOB_STATUS.FAILED) {
-                throw new EsHadoopIllegalStateException("Pig execution failed");
+        try {
+            List<ExecJob> executeBatch = pig.executeBatch();
+            for (ExecJob execJob : executeBatch) {
+                if (execJob.getStatus() == ExecJob.JOB_STATUS.FAILED) {
+                    throw new EsHadoopIllegalStateException("Pig execution failed");
+                }
             }
+        } finally {
+            pig.discardBatch();
+            pig.setBatchOn();
         }
-        pig.discardBatch();
-        pig.setBatchOn();
-
     }
 }

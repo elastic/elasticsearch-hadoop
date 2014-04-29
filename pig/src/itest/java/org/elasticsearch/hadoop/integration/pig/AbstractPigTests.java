@@ -18,10 +18,22 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+
+import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.runners.MethodSorters;
+
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractPigTests {
@@ -37,5 +49,46 @@ public abstract class AbstractPigTests {
     @AfterClass
     public static void shutdown() {
         pig.stop();
+    }
+
+    public static String getResults(String outputFolder) {
+        File fl = new File(outputFolder);
+        assertThat(String.format("Folder [%s] not found", outputFolder), fl.exists(), is(true));
+        assertThat(new File(outputFolder, "_SUCCESS").exists(), is(true));
+
+        File[] files = fl.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return (name.startsWith("part-r-") || name.startsWith("part-m-"));
+            }
+        });
+
+        StringBuilder content = new StringBuilder();
+
+        for (File file : files) {
+            try {
+                String data = IOUtils.asString(new FileInputStream(file)).trim();
+                if (StringUtils.hasText(data)) {
+                    content.append(data);
+                    content.append("\n");
+                }
+            } catch (FileNotFoundException ex) {
+                throw new RuntimeException(ex);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        return content.toString();
+    }
+
+    public static String tabify(String...strings) {
+        StringBuilder sb = new StringBuilder();
+        for (String string : strings) {
+            sb.append(string);
+            sb.append("\t");
+        }
+
+        return sb.substring(0, sb.length() - 1).toString();
     }
 }

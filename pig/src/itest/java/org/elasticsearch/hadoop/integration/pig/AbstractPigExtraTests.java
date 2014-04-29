@@ -21,6 +21,11 @@ package org.elasticsearch.hadoop.integration.pig;
 import org.elasticsearch.hadoop.Provisioner;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
+
+
 public class AbstractPigExtraTests extends AbstractPigTests {
 
     @Test
@@ -36,8 +41,22 @@ public class AbstractPigExtraTests extends AbstractPigTests {
                 "ES_PARENT = LOAD 'pig-test/parent' using org.elasticsearch.hadoop.pig.EsStorage() as (parent_name: chararray, parent_value: chararray);" +
                 "ES_CHILD = LOAD 'pig-test/child' using org.elasticsearch.hadoop.pig.EsStorage() as (child_name: chararray, parent_name: chararray, child_value: long);" +
                 "CO_GROUP = COGROUP ES_PARENT by parent_name, ES_CHILD by parent_name;" +
-                "DUMP CO_GROUP;";
+                "PARENT_CHILD = JOIN ES_PARENT by parent_name, ES_CHILD by parent_name;" +
+                "STORE PARENT_CHILD INTO 'tmp-pig/testjoin-join';" +
+                "STORE CO_GROUP INTO 'tmp-pig/testjoin-cogroup';";
         pig.executeScript(script);
         pig.executeScript(script2);
+
+        String join = getResults("tmp-pig/testjoin-join");
+        assertThat(join, containsString(tabify("parent1", "name1", "child1", "parent1", "100")));
+        assertThat(join, containsString(tabify("parent1", "name1", "child2", "parent1", "200")));
+        assertThat(join, containsString(tabify("parent2", "name2", "child3", "parent2", "300")));
+
+        String cogroup = getResults("tmp-pig/testjoin-cogroup");
+        assertThat(cogroup, containsString(tabify("parent1", "{(parent1,name1)}")));
+        // bags are not ordered so check each tuple individually
+        assertThat(cogroup, containsString("(child2,parent1,200)"));
+        assertThat(cogroup, containsString("(child1,parent1,100)"));
+        assertThat(cogroup, containsString(tabify("parent2", "{(parent2,name2)}", "{(child3,parent2,300)}")));
     }
 }

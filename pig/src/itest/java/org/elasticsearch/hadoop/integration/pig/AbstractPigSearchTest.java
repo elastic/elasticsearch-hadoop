@@ -30,8 +30,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
+
+
 @RunWith(Parameterized.class)
 public class AbstractPigSearchTest extends AbstractPigTests {
+
+    private static int testInstance = 0;
+    private static String previousQuery;
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -42,6 +50,10 @@ public class AbstractPigSearchTest extends AbstractPigTests {
 
     public AbstractPigSearchTest(String query) {
         this.query = query;
+        if (!query.equals(previousQuery)) {
+            previousQuery = query;
+            testInstance++;
+        }
     }
 
     @Before
@@ -57,8 +69,12 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                 "A = LOAD 'pig/tupleartists' USING EsStorage();" +
                 "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
-                "DUMP X;";
+                "STORE A INTO '" + tmpPig() + "/testtuple';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testtuple");
+        assertThat(results, containsString(tabify("Behemoth", "(http://www.last.fm/music/Behemoth,http://userserve-ak.last.fm/serve/252/54196161.jpg)")));
+        assertThat(results, containsString(tabify("Megadeth", "(http://www.last.fm/music/Megadeth,http://userserve-ak.last.fm/serve/252/8129787.jpg)")));
+        assertThat(results, containsString(tabify("Foo Fighters", "(http://www.last.fm/music/Foo+Fighters,http://userserve-ak.last.fm/serve/252/59495563.jpg)")));
     }
 
     @Test
@@ -67,10 +83,13 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');" +
                 "A = LOAD 'pig/tupleartists' USING EsStorage() AS (name:chararray);" +
-                //"DESCRIBE A;" +
                 "X = LIMIT A 3;" +
-                "DUMP X;";
+                "STORE A INTO '" + tmpPig() + "/testtupleschema';";
         pig.executeScript(script);
+
+        String results = getResults("" + tmpPig() + "/testtupleschema");
+        assertThat(results, containsString("Behemoth"));
+        assertThat(results, containsString("Megadeth"));
     }
 
     @Test
@@ -80,8 +99,13 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');"
                       + "A = LOAD 'pig/bagartists' USING EsStorage();"
                       + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "STORE A INTO '" + tmpPig() + "/testbag';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testbag");
+
+        assertThat(results, containsString(tabify("Behemoth", "((http://www.last.fm/music/Behemoth),(http://userserve-ak.last.fm/serve/252/54196161.jpg))")));
+        assertThat(results, containsString(tabify("Megadeth", "((http://www.last.fm/music/Megadeth),(http://userserve-ak.last.fm/serve/252/8129787.jpg))")));
+        assertThat(results, containsString(tabify("Foo Fighters", "((http://www.last.fm/music/Foo+Fighters),(http://userserve-ak.last.fm/serve/252/59495563.jpg))")));
     }
 
     @Test
@@ -90,9 +114,14 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "', 'es.mapping.names=data:name');"
                       + "A = LOAD 'pig/bagartists' USING EsStorage() AS (data: chararray);"
-                      + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "B = ORDER A BY * DESC;"
+                      + "X = LIMIT B 3;"
+                      + "STORE X INTO '" + tmpPig() + "/testbagschema';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testbagschema");
+        assertThat(results, containsString("xotox"));
+        assertThat(results, containsString("the Chemodan"));
+        assertThat(results, containsString("www.DjFahad.com"));
     }
 
     @Test
@@ -102,8 +131,9 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');"
                       + "A = LOAD 'pig/timestamp' USING EsStorage();"
                       + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "STORE A INTO '" + tmpPig() + "/testtimestamp';";
         pig.executeScript(script);
+        System.out.println(getResults("" + tmpPig() + "/testtimestamp"));
     }
 
     @Test
@@ -113,8 +143,14 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture', 'es.query=" + query + "');"
                       + "A = LOAD 'pig/fieldalias' USING EsStorage();"
                       + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "STORE A INTO '" + tmpPig() + "/testfieldlalias';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testfieldlalias");
+
+        assertThat(results, containsString("Megadeth"));
+        assertThat(results, containsString("http://www.last.fm/music/Megadeth"));
+        assertThat(results, containsString("Blur"));
+        assertThat(results, containsString("http://www.last.fm/music/Soundgarden"));
     }
 
     @Test
@@ -124,8 +160,10 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
                       + "A = LOAD 'foo/bar' USING EsStorage();"
                       + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "STORE X INTO '" + tmpPig() + "/testmissingindex';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testmissingindex");
+        assertThat(results.length(), is(0));
     }
 
     @Test
@@ -135,8 +173,13 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
                       + "A = LOAD 'pig/child' USING EsStorage();"
                       + "X = LIMIT A 3;"
-                      + "DUMP X;";
+                      + "STORE A INTO '" + tmpPig() + "/testparentchild';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testparentchild");
+
+        assertThat(results, containsString(tabify("181", "Paradise Lost", "((http://www.last.fm/music/Paradise+Lost),(http://userserve-ak.last.fm/serve/252/35325935.jpg))")));
+        assertThat(results, containsString(tabify("918", "Megadeth", "((http://www.last.fm/music/Megadeth),(http://userserve-ak.last.fm/serve/252/8129787.jpg))")));
+        assertThat(results, containsString(tabify("506", "Anathema", "((http://www.last.fm/music/Anathema),(http://userserve-ak.last.fm/serve/252/45858121.png))")));
     }
 
     @Test
@@ -146,11 +189,15 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');" // , 'es.mapping.names=links:links.url'
                 + "A = LOAD 'pig/tupleartists' USING EsStorage() AS (name: chararray, links: tuple(chararray));"
                 + "B = FOREACH A GENERATE name, links;"
-                //+ "ILLUSTRATE B;"
-                + "DUMP B;";
+                + "C = ORDER B BY name DESC;"
+                + "D = LIMIT C 3;"
+                + "STORE C INTO '" + tmpPig() + "/testnestedobject';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testnestedobject");
 
-        String tuple = "(Marilyn Manson,http://www.last.fm/music/Marilyn+Manson)";
+        assertThat(results, containsString(tabify("Paradise Lost", "(http://www.last.fm/music/Paradise+Lost,http://userserve-ak.last.fm/serve/252/35325935.jpg)")));
+        assertThat(results, containsString(tabify("Megadeth", "(http://www.last.fm/music/Megadeth,http://userserve-ak.last.fm/serve/252/8129787.jpg)")));
+        assertThat(results, containsString(tabify("Anathema", "(http://www.last.fm/music/Anathema,http://userserve-ak.last.fm/serve/252/45858121.png)")));
     }
 
     @Test
@@ -175,9 +222,15 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                 + "A = LOAD 'pig/nestedtuple' USING EsStorage() AS (my_array:tuple());"
                 //+ "B = FOREACH A GENERATE COUNT(my_array) AS count;"
                 //+ "ILLUSTRATE B;"
-                + "DUMP A;"
-                //+ "DUMP B;"
-                ;
+                + "X = LIMIT A 3;"
+                + "STORE A INTO '" + tmpPig() + "/testnestedtuple';";
         pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/testnestedtuple");
+        assertThat(results, containsString("(1.a,1.b)"));
+        assertThat(results, containsString("(2.a,2.b)"));
+    }
+
+    private static String tmpPig() {
+        return "tmp-pig/search-" + testInstance;
     }
 }

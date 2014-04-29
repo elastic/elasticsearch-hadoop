@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.pig;
 
+import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.HdfsUtils;
 import org.elasticsearch.hadoop.LocalEs;
 import org.elasticsearch.hadoop.Provisioner;
@@ -29,7 +30,8 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSaveJsonTest.class, AbstractPigSearchTest.class, AbstractPigSearchJsonTest.class, AbstractPigExtraTests.class })
-//@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSearchTest.class, AbstractPigExtraTests.class })
+//@Suite.SuiteClasses({ AbstractPigSaveJsonTest.class, AbstractPigSearchJsonTest.class })
+//@Suite.SuiteClasses({ AbstractPigExtraTests.class })
 public class PigSuite {
 
     @ClassRule
@@ -38,5 +40,6 @@ public class PigSuite {
     @BeforeClass
     public static void setup() {
         HdfsUtils.copyFromLocal(Provisioner.ESHADOOP_TESTING_JAR, Provisioner.HDFS_ES_HDP_LIB);
+        HdfsUtils.rmr(new Configuration(), "tmp-pig");
     }
 }

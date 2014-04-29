@@ -228,7 +228,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     //
     // LoadFunc
     //
-    @SuppressWarnings("unchecked")
     public void setLocation(String location, Job job) throws IOException {
         init(location, job, true);
 
@@ -241,68 +240,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
             return;
         }
 
-        // projection is disabled for now since it is called _only_ in some cases
-        //extractProjection(cfg);
-    }
-
-
-    private void extractProjection(Configuration cfg) throws IOException {
-        String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);
-        if (fields != null) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Found field project [%s] in UDF properties", fields));
-            }
-
-            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
-            return;
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("No field projection specified, looking for existing stores...");
-        }
-
-        List pigInputs = (List) ObjectSerializer.deserialize(cfg.get("pig.inputs"));
-        // can't determine alias
-        if (pigInputs.size() != 1) {
-            return;
-        }
-
-        String mapValues = cfg.get(JobControlCompiler.PIG_MAP_STORES);
-        String reduceValues = cfg.get(JobControlCompiler.PIG_REDUCE_STORES);
-
-        List<POStore> mapStore = Collections.emptyList();
-        List<POStore> reduceStore = Collections.emptyList();
-
-        if (StringUtils.hasText(mapValues)) {
-            mapStore = (List<POStore>) ObjectSerializer.deserialize(mapValues);
-        }
-        if (StringUtils.hasText(reduceValues)) {
-            reduceStore = (List<POStore>) ObjectSerializer.deserialize(reduceValues);
-        }
-        if (mapStore.size() + reduceStore.size() > 1) {
-            log.warn("Too many POstores - cannot properly determine Pig schema");
-        }
-        else if (mapStore.size() + reduceStore.size() == 0) {
-            log.warn("No POstores - cannot properly determine Pig schema");
-        }
-        else {
-            POStore store = (reduceStore.isEmpty() ? mapStore.get(0) : reduceStore.get(0));
-            // no schema specified - load all fields (or the default)
-            if (store.getSchema() == null) {
-                if (log.isTraceEnabled()) {
-                    log.trace(String.format("Store [%s] defines no schema; falling back to default projection", store));
-                }
-                return;
-            }
-            else {
-                fields = PigUtils.asProjection(store.getSchema(), properties);
-            }
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Found field projection [%s] in store %s", fields, store));
-            }
-            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
-            getUDFProperties().setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
-        }
+        extractProjection(cfg);
     }
 
     @Override
@@ -322,7 +260,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @Override
     public void prepareToRead(RecordReader reader, PigSplit split) throws IOException {
         this.reader = reader;
-        extractProjection(split.getConf());
         aliasesTupleNames = StringUtils.tokenize(getUDFProperties().getProperty(
                 InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS));
     }
@@ -422,5 +359,65 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @Override
     public void setUDFContextSignature(String signature) {
         this.signature = signature;
+    }
+
+
+    private void extractProjection(Configuration cfg) throws IOException {
+        String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);
+        if (fields != null) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found field project [%s] in UDF properties", fields));
+            }
+
+            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
+            return;
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("No field projection specified, looking for existing stores...");
+        }
+
+        List pigInputs = (List) ObjectSerializer.deserialize(cfg.get("pig.inputs"));
+        // can't determine alias
+        if (pigInputs == null || pigInputs.size() != 1) {
+            return;
+        }
+
+        String mapValues = cfg.get(JobControlCompiler.PIG_MAP_STORES);
+        String reduceValues = cfg.get(JobControlCompiler.PIG_REDUCE_STORES);
+
+        List<POStore> mapStore = Collections.emptyList();
+        List<POStore> reduceStore = Collections.emptyList();
+
+        if (StringUtils.hasText(mapValues)) {
+            mapStore = (List<POStore>) ObjectSerializer.deserialize(mapValues);
+        }
+        if (StringUtils.hasText(reduceValues)) {
+            reduceStore = (List<POStore>) ObjectSerializer.deserialize(reduceValues);
+        }
+        if (mapStore.size() + reduceStore.size() > 1) {
+            log.warn("Too many POstores - cannot properly determine Pig schema");
+        }
+        else if (mapStore.size() + reduceStore.size() == 0) {
+            log.warn("No POstores - cannot properly determine Pig schema");
+        }
+        else {
+            POStore store = (reduceStore.isEmpty() ? mapStore.get(0) : reduceStore.get(0));
+            // no schema specified - load all fields (or the default)
+            if (store.getSchema() == null) {
+                if (log.isTraceEnabled()) {
+                    log.trace(String.format("Store [%s] defines no schema; falling back to default projection", store));
+                }
+                return;
+            }
+            else {
+                fields = PigUtils.asProjection(store.getSchema(), properties);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found field projection [%s] in store %s", fields, store));
+            }
+            cfg.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
+            getUDFProperties().setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, fields);
+        }
     }
 }
