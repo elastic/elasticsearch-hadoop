@@ -29,10 +29,6 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.*;
-
-import static org.hamcrest.CoreMatchers.*;
-
 import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
@@ -41,6 +37,10 @@ import cascading.scheme.local.TextDelimited;
 import cascading.tap.Tap;
 import cascading.tap.local.FileTap;
 import cascading.tuple.Fields;
+
+import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingLocalSaveTest {
@@ -152,6 +152,141 @@ public class AbstractCascadingLocalSaveTest {
         assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").skipHeaders().toString(), is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
+    @Test
+    public void testUpdate() throws Exception {
+        // local file-system source
+        Tap in = sourceTap();
+        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+        Properties props = new TestSettings().getProperties();
+        props.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+
+        Pipe pipe = new Pipe("copy");
+        build(props, in, out, pipe);
+    }
+
+
+    @Test
+    public void testUpdateOnlyScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+        properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+        properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:id ");
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testUpdateOnlyParamJsonScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+        properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+
+    @Test
+    public void testUpsert() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+
+        Tap in = sourceTap();
+        Tap out = new EsTap("cascading-local/upsert", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testUpsertScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/upsert-script", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testUpsertParamScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:id ");
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/upsert-param-script", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testUpsertParamJsonScript() throws Exception {
+        Properties properties = new TestSettings().getProperties();
+        properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
+        properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
+
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        Tap in = sourceTap();
+        // use an existing id to allow the update to succeed
+        Tap out = new EsTap("cascading-local/upsert-script-json-script", new Fields("id", "name", "url", "picture"));
+
+        Pipe pipe = new Pipe("copy");
+        build(properties, in, out, pipe);
+    }
 
     private Tap sourceTap() {
         return new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
