@@ -65,20 +65,21 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" :  10  } } }";
-        RestUtils.putData("json-pig/nestedmap", StringUtils.toUTF(data));
+        RestUtils.putData("json-pig/nestedmap" + testInstance, StringUtils.toUTF(data));
         RestUtils.refresh("json-pig");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nested:data.map.key');" +
                 //"A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (nested:tuple(key:int));" +
-                "A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (nested:chararray);" +
+                "A = LOAD 'json-pig/nestedmap" + testInstance + "' USING EsStorage() AS (nested:chararray);" +
                 "B = ORDER A BY nested DESC;" +
                 "X = LIMIT B 3;" +
                 "STORE A INTO '" + tmpPig() + "/testnestedfield';";
         pig.executeScript(script);
 
         String results = getResults("" + tmpPig() + "/testnestedfield");
+        assertThat(results, containsString("10"));
 
 //        script =
 //                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
