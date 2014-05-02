@@ -16,21 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.hadoop.hive.ql.io;
+package org.elasticsearch.hadoop.hive;
 
 import java.io.IOException;
+import java.util.Properties;
 
-import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.io.FSRecordWriter;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.Progressable;
 
-/**
- * The only reason this class exists, is to allow es-hadoop to be compatible with Hive 0.13 while still compiling with
- * Hive 0.12 or lower.
- *
- * See HIVE-6952
- */
-public interface FSRecordWriter extends RecordWriter {
-    void write(Writable w) throws IOException;
+interface Hive13OutputFormat {
 
-    void close(boolean abort) throws IOException;
+    FSRecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, final Class<? extends Writable> valueClass, boolean isCompressed, Properties tableProperties, Progressable progress)
+            throws IOException;
 }

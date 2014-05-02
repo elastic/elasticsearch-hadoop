@@ -16,21 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.hadoop.hive.ql.io;
+package org.elasticsearch.hadoop.hive;
 
-import java.io.IOException;
+import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 
-import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
-import org.apache.hadoop.io.Writable;
+interface HiveCompatOutputFormat extends HiveOutputFormat, Hive13OutputFormat, Hive12OutputFormat {
 
-/**
- * The only reason this class exists, is to allow es-hadoop to be compatible with Hive 0.13 while still compiling with
- * Hive 0.12 or lower.
- *
- * See HIVE-6952
- */
-public interface FSRecordWriter extends RecordWriter {
-    void write(Writable w) throws IOException;
-
-    void close(boolean abort) throws IOException;
 }

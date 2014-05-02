@@ -27,7 +27,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator.RecordWriter;
 import org.apache.hadoop.hive.ql.io.FSRecordWriter;
-import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
@@ -41,7 +40,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
  * Hive specific OutputFormat.
  */
 @SuppressWarnings("rawtypes")
-public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputFormat {
+public class EsHiveOutputFormat extends EsOutputFormat implements HiveCompatOutputFormat {
 
     static class EsHiveRecordWriter extends EsOutputFormat.EsRecordWriter implements RecordWriter, FSRecordWriter {
 
