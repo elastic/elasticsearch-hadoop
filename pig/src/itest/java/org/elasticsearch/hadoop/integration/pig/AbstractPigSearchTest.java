@@ -78,6 +78,15 @@ public class AbstractPigSearchTest extends AbstractPigTests {
     }
 
     @Test
+    public void testTupleCount() throws Exception {
+        String script = "A = LOAD 'pig/tupleartists' using org.elasticsearch.hadoop.pig.EsStorage();" +
+                "COUNT = FOREACH (GROUP A ALL) GENERATE COUNT(A);" +
+                "DUMP COUNT;";
+
+        pig.executeScript(script);
+    }
+
+    @Test
     public void testTupleWithSchema() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +

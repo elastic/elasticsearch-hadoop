@@ -25,6 +25,7 @@ import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.pig.LoadPushDown.RequiredField;
 import org.apache.pig.LoadPushDown.RequiredFieldList;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
@@ -117,11 +118,13 @@ class PigUtils {
                 addField(field.schema, fields, fa, node);
             }
             else {
-                fields.add(fa.toES(node));
-                //                if (!StringUtils.hasText(field.alias)) {
-                //                    LogFactory.getLog(PigUtils.class).debug("Cannot detect alias for field in schema" + schema);
-                //                    return null;
-                //                }
+                if (!StringUtils.hasText(node)) {
+                    LogFactory.getLog(PigUtils.class).warn("Cannot detect alias for field in schema" + schema);
+                }
+
+                if (node != null) {
+                    fields.add(fa.toES(node));
+                }
             }
         }
     }
