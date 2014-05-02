@@ -3,7 +3,7 @@
 
 For low-level or performance-sensitive environments, {eh} provides dedicated `InputFormat` and `OutputFormat` implementations that can read and write data to {es}.
 In {mr}, the ++Mapper++s and ++Reducer++s are reading and writing `Writable` objects, a Hadoop specific interface optimized for serialization. As such {eh} `InputFormat` and `OutputFormat` will return and expect a `MapWritable` objects, that is a map for each document being read or written. The map itself can have any type of internal structure as long as its objects are also `Writable` - it can hold nested maps, numbers or strings in their `Writable` representation.
-Internally {eh} automatically convert the `Map` of `Writable` to JSON documents and vice-versa so you do not have to deal with the low-level parsing or conversion to and from JSON. Moreover, if the data sent to {es} is already in JSON format, it can be streamed in directly without any conversion to `Writable` objects.
+Internally {eh} automatically converts the `Map` of `Writable` to JSON documents and vice-versa so you do not have to deal with the low-level parsing or conversion to and from JSON. Moreover, if the data sent to {es} is already in JSON format, it can be streamed in directly without any conversion to `Writable` objects.
 Read the rest of the chapter to find out more.
 
 [float]
