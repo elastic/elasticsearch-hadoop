@@ -153,7 +153,7 @@ public class QueryBuilder {
         if (StringUtils.hasText(fields)) {
             if (IS_ES_10) {
                 uriQuery.put("_source", fields);
-                uriQuery.remove("fields");
+                uriQuery.remove("escapedFields");
             }
             else {
                 uriQuery.put("fields", fields);
@@ -195,7 +195,7 @@ public class QueryBuilder {
     }
 
     public ScrollQuery build(RestRepository client, ScrollReader reader) {
-        String scrollUri = assemble();
+        String scrollUri = StringUtils.escapeUri(assemble());
         return client.scan(scrollUri, bodyQuery, reader);
     }
 

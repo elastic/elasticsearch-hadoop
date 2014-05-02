@@ -18,8 +18,10 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
@@ -39,13 +41,13 @@ public class ResourceTest {
         assertEquals("fo_o/ba_r", res.indexAndType());
     }
 
-    @Test
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUri() throws Exception {
         Resource res = createResource("foo/bar/_search=?somequery");
         assertEquals("foo/bar", res.indexAndType());
     }
 
-    @Test
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUriWithParams() throws Exception {
         Resource res = createResource("foo/bar/_search=?somequery&bla=bla");
         assertEquals("foo/bar", res.indexAndType());
@@ -57,4 +59,10 @@ public class ResourceTest {
         return new Resource(s, true);
     }
 
+    @Test
+    public void testURiEscaping() throws Exception {
+        assertEquals("http://localhost:9200/index/type%7Cfoo?q=foo%7Cbar:bar%7Cfoo", StringUtils.escapeUri("http://localhost:9200/index/type|foo?q=foo|bar:bar|foo"));
+        assertEquals("foo%7Cbar", StringUtils.escapeUri("foo|bar"));
+        System.out.println(StringUtils.escapeUri("foo|bar,abc,xyz|rpt"));
+    }
 }

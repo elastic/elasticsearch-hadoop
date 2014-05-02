@@ -26,6 +26,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+
 
 /**
  * Utility class around Strings. Used to remove dependency on other libraries that might (or not) be available at runtime.
@@ -254,5 +258,13 @@ public abstract class StringUtils {
             res = res.substring(0, res.length() - 1);
         }
         return res;
+    }
+
+    public static String escapeUri(String uri) {
+        try {
+            return URIUtil.encodePathQuery(uri);
+        } catch (URIException ex) {
+            throw new EsHadoopIllegalArgumentException("Cannot escape uri" + uri);
+        }
     }
 }

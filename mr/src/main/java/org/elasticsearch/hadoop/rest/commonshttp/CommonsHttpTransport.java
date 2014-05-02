@@ -149,7 +149,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         hostConfig = (HostConfiguration) httpProxySettings[0];
 
         try {
-            hostConfig.setHost(new URI(prefixUri(host), false));
+            hostConfig.setHost(new URI(escapeUri(host), false));
         } catch (IOException ex) {
             throw new EsHadoopTransportException("Invalid target URI " + host, ex);
         }
@@ -306,7 +306,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         CharSequence uri = request.uri();
         if (StringUtils.hasText(uri)) {
-            http.setURI(new URI(prefixUri(uri.toString()), false));
+            http.setURI(new URI(escapeUri(uri.toString()), false));
         }
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
         http.setPath(prefixPath(request.path().toString()));
@@ -366,8 +366,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private static String prefixUri(String uri) {
-        return uri.contains("://") ? uri : "http://" + uri;
+    private static String escapeUri(String uri) {
+        // escape the uri right away
+        String escaped = StringUtils.escapeUri(uri);
+        return escaped.contains("://") ? escaped : "http://" + escaped;
     }
 
     private static String prefixPath(String string) {
