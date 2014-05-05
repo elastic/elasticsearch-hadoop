@@ -124,6 +124,7 @@ The write operation {eh} should peform - can be any of:
 `index` (default);; new data is added while existing data (based on its id) is updated.
 `create`;; adds new data - if the data already exists (based on its id), an exception is thrown.
 `update`;; updates existing data (based on its id). If no data is found, an exception is thrown.
+`upsert`;; known as _merge_ or insert if the data does not exist, updates if the data exists (based on its id).
 
 [float]
 ==== Mapping
@@ -155,6 +156,39 @@ es.mapping.id = uuid
 # specifying a parent with id '123'
 es.mapping.parent = \<123>
 ----
+[float]
+==== Update settings
+
+One using the `update` or `upsert` operation, additional settings (that mirror the http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-update.html[update] API) are available:
+`es.update.script` (default none)::
+Script used for updating the document.
+
+`es.update.script.lang` (default none)::
+Script language. By default, no value is specified applying the node configuration.
+
+`es.update.script.params` (default none)::
+Script parameters (if any). The document (currently read) field/property who's value is used. To specify a constant, use the `<CONSTANT>` format.
+Multiple values can be specified through commas (`,`)
+
+For example:
+[source,ini]
+----
+# specifying 2 parameters, one extracting the value from field 'number', the other containing the value '123':
+es.update.params = param1:number,param2:\<123>
+----
+
+`es.update.script.params.json`::
+Script parameters specified in `raw`, JSON format. The specified value is passed as is, without any further processing or filtering.
+
+For example:
+[source,ini]
+----
+es.update.params.json = {"param1":1, "param2":2}
+----
+
+`es.update.retry.on.conflict` (default 0)::
+How many times an update to a document is retried in case of conflict. Useful in concurrent environments.
+
 
 [float]
 === Advanced settings
