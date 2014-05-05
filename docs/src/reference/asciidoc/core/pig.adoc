@@ -5,13 +5,13 @@
 ____
 http://pig.apache.org/[Apache Pig] is a platform for analyzing large data sets that consists of a high-level language for expressing data analysis programs, coupled with infrastructure for evaluating these programs.
 ____
-It provides a high-level, powerful, _scripting_-like transformation language which gets compiled into {mr} jobs at runtime by the Pig 'compiler'. To simplify working with arbitrary data, Pig associates a 'schema' (or type information) with each data set for validation and performance. This in turn, breaks it down into 'discrete' data types that can be transformed through various operators or custom functions (or http://pig.apache.org/docs/r0.11.1/udf.html[UDF]s). Data can be loaded from and stored to various storages such as the local file-system or HDFS, and with {eh} into {es} as well.
+It provides a high-level, powerful, _scripting_-like transformation language which gets compiled into {mr} jobs at runtime by the Pig 'compiler'. To simplify working with arbitrary data, Pig associates a 'schema' (or type information) with each data set for validation and performance. This in turn, breaks it down into 'discrete' data types that can be transformed through various operators or custom functions (or http://pig.apache.org/docs/r0.12.1/udf.html[UDF]s). Data can be loaded from and stored to various storages such as the local file-system or HDFS, and with {eh} into {es} as well.
 
 [[pig-installation]]
 [float]
 === Installation
 
-In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.11.1/basic.html#register[REGISTER] command is used:
+In order to use {eh}, its jar needs to be in Pig's classpath. There are various ways of making that happen though typically the http://pig.apache.org/docs/r0.12.1/basic.html#register[REGISTER] command is used:
 
 [source,sql]
 ----
@@ -66,7 +66,17 @@ Do note that it is possible (and recommended) to specify the configuration param
 DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('my.cfg.param=value');
 ----
 
-IMPORTANT: Pig definitions are replaced as are; even though the syntax allows _parametrization_, Pig will silently ignore any parameters outside the 'DEFINE' declaration.
+IMPORTANT: Pig definitions are replaced as are; even though the syntax allows _parametrization_, Pig will silently ignore any parameters outside the `DEFINE` declaration.
+
+[[tuple-names]]
+[float]
+==== Tuple field names
+
+Among the http://pig.apache.org/docs/r0.12.1/basic.html#data-types[various types] available in Pig, ++tuple++s are used the most. Tuples are defined as ``ordered sets of fields'' (e.g. `(19,2)`) however structurally they are shaped
+as ordered _maps_ since each field has a name, which may be defined or not (e.g. `(field:19, another:2)`).
+Obeying the rule of http://en.wikipedia.org/wiki/Principle_of_least_astonishment[least surprise], {eh} by default will _disregard_ a tuple field names, both when writing and reading.
+
+To change this behavior (which in effect means treating tuples as maps instead of sets or arrays), use the boolean property `es.mapping.pig.tuple.use.field.names` (by default `false`) and set it to `true`.
 
 [[pig-alias]]
 [float]
@@ -216,7 +226,7 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 | `double`          | `double`
 | `float`           | `float`
 | `bytearray`       | `binary`
-| `tuple`           | `map`
+| `tuple`           | `array` or `map` (depending on <<tuple-names,this>> settings)
 | `bag`             | `array`
 | `map`             | `map`
 
