@@ -25,6 +25,12 @@ As an alternative, one can use the command-line:
 .CLI configuration
 [source,bash]
 ----
+$ bin/hive --auxpath=/path/elasticsearch-hadoop.jar
+----
+or use the `hive.aux.jars.path` property specified either through the command-line or, if available, through if the `hive-site.xml` file, to register additional jars (that accepts an URI as well):
+
+[source,bash]
+----
 $ bin/hive -hiveconf hive.aux.jars.path=/path/elasticsearch-hadoop.jar
 ----
 or if the `hive-site.xml` configuration can be modified, one can register additional jars through the `hive.aux.jars.path` option (that accepts an URI as well):
@@ -215,7 +221,7 @@ SELECT * FROM artists;
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual`Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
-and Serde2 http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/docs/r0.11.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
+and Serde2 http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
 [cols="^,^",options="header"]
 

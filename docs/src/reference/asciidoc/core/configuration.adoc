@@ -178,7 +178,7 @@ es.update.params = param1:number,param2:\<123>
 ----
 
 `es.update.script.params.json`::
-Script parameters specified in `raw`, JSON format. The specified value is passed as is, without any further processing or filtering.
+Script parameters specified in `raw`, JSON format. The specified value is passed as is, without any further processing or filtering. Typically used for migrating existing update scripts.
 
 For example:
 [source,ini]
@@ -188,7 +188,6 @@ es.update.params.json = {"param1":1, "param2":2}
 
 `es.update.retry.on.conflict` (default 0)::
 How many times an update to a document is retried in case of conflict. Useful in concurrent environments.
-
 
 [float]
 === Advanced settings
