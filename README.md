@@ -1,16 +1,16 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
-Elasticsearch real-time search and analytics natively integrated with Hadoop. Supports [MapReduce](#mapreduce), [Cascading](#cascading), [Hive](#hive) and [Pig](#pig).
+Elasticsearch real-time search and analytics natively integrated with Hadoop. Supports [Map/Reduce](#map/reduce), [Cascading](#cascading), [Apache Hive](#hive) and [Apache Pig](#pig).
 
-See the official [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for more, in-depth information.
+See  [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
-# Requirements
-Elasticsearch (__0.9X__ series or __1.0.0__ or higher) cluster accessible through [REST][]. That's it!
+## Requirements
+Elasticsearch (__0.9X__ series or __1.0.0__ or higher (_highly_ recommended)) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html).
 
-# Installation
+## Installation
 
-## Release 1.3.0 M3
+### Release (currently `1.3.0.M3`)mapreduce
 Available through any Maven-compatible tool:
 
 ```xml
@@ -20,16 +20,16 @@ Available through any Maven-compatible tool:
   <version>1.3.0.M3</version>
 </dependency>
 ```
-or as a stand-alone [ZIP](https://download.elasticsearch.org/hadoop/hadoop-latest.zip).
+or as a stand-alone [ZIP](http://www.elasticsearch.org/overview/hadoop/download/).
 
-## Development Snapshot
+### Development Snapshot
 Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) again through Maven:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.BUILD-SNAPSHOT</version>
+  <version>2.0.0.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -47,18 +47,17 @@ or [build](#building-the-source) the project yourself.
 
 We do build and test the code on _each_ commit.
 
-## Hadoop 2.0/YARN build
+### Hadoop 2.0/YARN
 
-It does not matter if you are using Hadoop 1.x or 2.x, the same jar works across both Hadoop environments (since 1.3 M3).
+Already supported - it does not matter if you are using Hadoop 1.x or 2.x, the same jar works across both Hadoop environments.
 More information in this [section](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/install.html).
 
-# Feedback / Q&A
+## Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
 
-# Usage
+## Usage
 
-
-## Configuration Properties
+### Configuration Properties
 
 All configuration properties start with `es` prefix. Note that the `es.internal` namespace is reserved for the library internal use and should _not_ be used by the user at any point.
 The properties are read mainly from the Hadoop configuration but the user can specify (some of) them directly depending on the library used. 
@@ -76,7 +75,7 @@ es.port=<ES REST port>    				       # defaults to 9200
 
 The full list is available [here](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)
 
-## [MapReduce][]
+## [Map/Reduce][]
 
 For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to Elasticsearch. To use them, add the `es-hadoop` jar to your job classpath
 (either by bundling the library along - it's ~300kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
@@ -126,7 +125,7 @@ job.setOutputFormat(EsOutputFormat.class);
 job.waitForCompletion(true);
 ```
 
-## [Hive][]
+## [Apache Hive][]
 ES-Hadoop provides a Hive storage handler for Elasticsearch, meaning one can define an [external table][] on top of ES.
 
 Add es-hadoop-<version>.jar to `hive.aux.jars.path` or register it manually in your Hive script (recommended):
@@ -167,7 +166,7 @@ INSERT OVERWRITE TABLE artists
 
 As one can note, currently the reading and writing are treated separately but we're working on unifying the two and automatically translating [HiveQL][] to Elasticsearch queries.
 
-## [Pig][]
+## [Apache Pig][]
 ES-Hadoop provides both read and write functions for Pig so you can access Elasticsearch from Pig scripts.
 
 Register ES-Hadoop jar into your script or add it to your Pig classpath:
@@ -211,14 +210,14 @@ Tap out = new EsTap("radio/artists", new Fields("name", "url", "picture"));
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 ```
 
-# Building the source
+## Building the source
 
-Elasticsearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default, it automatically runs unit tests. For integration testing, use the `integrationTests` task.
+Elasticsearch Hadoop uses [Gradle][] for its build system and it is not required to have it installed on your machine. By default (`gradlew`), it automatically builds the package and runs the unit tests. For integration testing, use the `integrationTests` task.
 See `gradlew tasks` for more information.
 
-To create a distributable jar, run `gradlew distZip` from the command line; once completed you will find the jar in `build/libs`.
+To create a distributable zip, run `gradlew distZip` from the command line; once completed you will find the jar in `build/libs`.
 
-# License
+## License
 This project is released under version 2.0 of the [Apache License][]
 
 ```
@@ -240,12 +239,10 @@ specific language governing permissions and limitations
 under the License.
 ```
 
-
-
 [Hadoop]: http://hadoop.apache.org
-[MapReduce]: http://hadoop.apache.org/docs/r1.0.4/mapred_tutorial.html
-[Pig]: http://pig.apache.org
-[Hive]: http://hive.apache.org
+[Map/Reduce]: http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html
+[Apache Pig]: http://pig.apache.org
+[Apache Hive]: http://hive.apache.org
 [HiveQL]: http://cwiki.apache.org/confluence/display/Hive/LanguageManual
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
