@@ -1,5 +1,6 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
-Elasticsearch real-time search and analytics natively integrated with Hadoop. Supports [Map/Reduce](#map/reduce), [Cascading](#cascading), [Apache Hive](#hive) and [Apache Pig](#pig).
+Elasticsearch real-time search and analytics natively integrated with Hadoop.
+  Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive) and [Apache Pig](#apache-pig).
 
 See  [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
@@ -10,7 +11,7 @@ For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/
 
 ## Installation
 
-### Release (currently `1.3.0.M3`)mapreduce
+### Release (currently `1.3.0.M3`)
 Available through any Maven-compatible tool:
 
 ```xml
@@ -79,6 +80,7 @@ The full list is available [here](http://www.elasticsearch.org/guide/en/elastics
 
 For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to Elasticsearch. To use them, add the `es-hadoop` jar to your job classpath
 (either by bundling the library along - it's ~300kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
+See the [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for more information.
 
 Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `EsInputFormat` and `EsOutputFormat` classes.
 
