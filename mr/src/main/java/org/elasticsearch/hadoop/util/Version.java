@@ -45,7 +45,7 @@ public abstract class Version {
     }
 
     public static String version() {
-        return "v" + versionNumber() + "[" + versionHashShort() + "]";
+        return "v" + versionNumber() + " [" + versionHashShort() + "]";
     }
 
     public static String versionNumber() {
@@ -63,7 +63,7 @@ public abstract class Version {
     public static void logVersion() {
         if (!printed) {
             printed = true;
-            LogFactory.getLog(Version.class).info("Elasticsearch for Hadoop " + version());
+            LogFactory.getLog(Version.class).info("Elasticsearch Hadoop " + version());
         }
     }
 }
