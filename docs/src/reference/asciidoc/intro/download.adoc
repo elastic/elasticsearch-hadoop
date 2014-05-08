@@ -15,7 +15,7 @@
 The jar above contains all the features of {eh} and does not require any other dependencies at runtime; in other words it can be used as is.
 
 [[yarn]]
-Since 1.3.0.M3, the distribution jar is suitable for both Hadoop 1.x and Hadoop 2.x (also known as YARN) environments.
+{eh} binary is suitable for both Hadoop 1.x and Hadoop 2.x (also known as YARN) environments without any changes.
 
 === Minimalistic binaries
 
