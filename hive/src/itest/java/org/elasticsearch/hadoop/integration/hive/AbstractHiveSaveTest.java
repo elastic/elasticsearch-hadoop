@@ -423,8 +423,7 @@ public class AbstractHiveSaveTest {
                 + "links    STRUCT<url:STRING, picture:STRING>) "
                 + tableProps("hive/updatesave",
                              "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
- "'"
-                        + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
+                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM updatesource s";
 
