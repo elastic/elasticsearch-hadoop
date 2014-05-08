@@ -173,26 +173,24 @@ allprojects { project ->
 	}
 
 	jar {
-		doLast() {
-			manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-			manifest.attributes['Implementation-Title'] = project.name
-			manifest.attributes['Implementation-Version'] = project.version
-			manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-			manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-			manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-			
-			def build = System.env['ESHDP.BUILD']
-			if (build != null)
-				manifest.attributes['Build'] = build
-			
-			manifest.attributes['Repository-Revision'] = gitHash()
-			
-			from("$rootDir/docs/src/info") {
-				include "license.txt"
-				include "notice.txt"
-				into "META-INF"
-				expand(copyright: new Date().format('yyyy'), version: project.version)
-			}
+		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+		manifest.attributes['Implementation-Title'] = project.name
+		manifest.attributes['Implementation-Version'] = project.version
+		manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+		manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
+		manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
+		
+		def build = System.env['ESHDP.BUILD']
+		if (build != null)
+			manifest.attributes['Build'] = build
+		
+		manifest.attributes['Repository-Revision'] = gitHash()
+		
+		from("$rootDir/docs/src/info") {
+			include "license.txt"
+			include "notice.txt"
+			into "META-INF"
+			expand(copyright: new Date().format('yyyy'), version: project.version)
 		}
 	}
 	
@@ -239,7 +237,8 @@ allprojects { project ->
 				"org/elasticsearch/hadoop/mr/compat/**", 
 				"org/elasticsearch/hadoop/rest/**", 
 				"org/elasticsearch/hadoop/serialization/**", 
-				"org/elasticsearch/hadoop/util/**"
+				"org/elasticsearch/hadoop/util/**",
+				"org/apache/hadoop/hive/**"
 			]
 		}
 
@@ -252,11 +251,9 @@ allprojects { project ->
 	}
 
 	task pack(dependsOn: [jar, javadocJar, sourcesJar]) {
-		doLast {
-			artifacts {
-				archives javadocJar
-				archives sourcesJar
-			}
+		artifacts {
+			archives javadocJar
+			archives sourcesJar
 		}
 	}
 	
@@ -281,12 +278,10 @@ project(":elasticsearch-hadoop-mr") {
 	}
 	
 	processResources {
-		doLast() {
-			Properties props = new Properties()
-			props.put("version", version)
-			props.put("hash", gitHash())
-			props.store(file("src/main/resources/esh-build.properties").newWriter(), null) 
-		}
+		Properties props = new Properties()
+		props.put("version", version)
+		props.put("hash", gitHash())
+		props.store(file("src/main/resources/esh-build.properties").newWriter(), null) 
 	}
 	
 	eclipse.classpath.file {
@@ -320,7 +315,7 @@ def nestMRProject(target) {
 	target.jar {
 		from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
 			include "org/elasticsearch/hadoop/**"
-			include "/esh-build.properties"
+			include "esh-build.properties"
 		}
 	}
 

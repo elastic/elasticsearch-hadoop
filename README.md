@@ -11,14 +11,14 @@ For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/
 
 ## Installation
 
-### Release (currently `1.3.0.M3`)
+### Release (currently `2.0.0.RC1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>1.3.0.M3</version>
+  <version>2.0.0.RC1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elasticsearch.org/overview/hadoop/download/).
