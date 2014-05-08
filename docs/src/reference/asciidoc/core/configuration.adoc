@@ -331,7 +331,7 @@ $ bin/hadoop jar -Dmapred.map.tasks.speculative.execution=false \
 
 [source,bash]
 ----
-16:13:01,946  INFO main util.Version - Elasticsearch for Hadoop v1.3.0.BUILD-SNAPSHOT[701a0e73f5]
+16:13:01,946  INFO main util.Version - Elasticsearch Hadoop v2.0.0.BUILD-SNAPSHOT [f2c5c3e280]
 ----
 
 Configuring logging for Hadoop (or Cascading, Hive and Pig) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
