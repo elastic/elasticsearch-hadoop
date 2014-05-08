@@ -44,9 +44,12 @@ import org.joda.time.format.ISODateTimeFormat;
 
 class PigUtils {
 
-    private static final String MAPPING_NAMES = "es.mapping.names";
+    static final String MAPPING_NAMES = "es.mapping.names";
+    static final String NAMED_TUPLE = "es.mapping.pig.tuple.use.field.names";
+    static final boolean NAMED_TUPLE_DEFAULT = false;
 
     private final static boolean pig11Available;
+
 
     static {
         // initialize

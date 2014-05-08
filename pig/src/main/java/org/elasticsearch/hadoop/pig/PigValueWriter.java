@@ -34,11 +34,12 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.unit.Booleans;
 
 public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     private final boolean writeUnknownTypes;
-    private final boolean useTupleFieldNames;
+    private boolean useTupleFieldNames;
     private FieldAlias alias;
 
     public PigValueWriter() {
@@ -54,8 +55,8 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
     @Override
     public void setSettings(Settings settings) {
         alias = PigUtils.alias(settings);
+        useTupleFieldNames = Booleans.parseBoolean(settings.getProperty(PigUtils.NAMED_TUPLE), PigUtils.NAMED_TUPLE_DEFAULT);
     }
-
 
     @Override
     public boolean write(PigTuple type, Generator generator) {
