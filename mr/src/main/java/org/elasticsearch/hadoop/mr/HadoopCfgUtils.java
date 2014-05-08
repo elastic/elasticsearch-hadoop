@@ -133,4 +133,8 @@ public abstract class HadoopCfgUtils {
     public static JobConf asJobConf(Configuration cfg) {
         return (cfg instanceof JobConf ? (JobConf) cfg : new JobConf(cfg));
     }
+
+    public static String getMapValueClass(Configuration cfg) {
+        return get(cfg, "mapred.mapoutput.value.class", "mapreduce.map.output.value.class");
+    }
 }

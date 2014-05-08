@@ -20,8 +20,10 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -49,6 +51,7 @@ public class AbstractMRNewApiSearchTest {
 
     private final String query;
     private final String indexPrefix;
+    private final Random random = new Random();
 
     public AbstractMRNewApiSearchTest(String indexPrefix, String query) {
         this.indexPrefix = indexPrefix;
@@ -143,7 +146,9 @@ public class AbstractMRNewApiSearchTest {
         job.setInputFormatClass(EsInputFormat.class);
         job.setOutputFormatClass(PrintStreamOutputFormat.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(LinkedMapWritable.class);
+        boolean type = random.nextBoolean();
+        Class<?> mapType = (type ? MapWritable.class : LinkedMapWritable.class);
+        job.setOutputValueClass(mapType);
         conf.set(ConfigurationOptions.ES_QUERY, query);
 
         QueryTestParams.provisionQueries(conf);

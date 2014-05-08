@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -347,12 +348,23 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     }
 
     protected static class WritableShardRecordReader extends ShardRecordReader<Text, Map<Writable, Writable>> {
+
+        private boolean useLinkedMapWritable = true;
+
         public WritableShardRecordReader() {
             super();
         }
 
         public WritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             super(split, job, reporter);
+        }
+
+
+        @Override
+        void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
+            useLinkedMapWritable = (!MapWritable.class.getName().equals(HadoopCfgUtils.getMapValueClass(cfg)));
+
+            super.init(esSplit, cfg, progressable);
         }
 
         @Override
@@ -362,7 +374,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         @Override
         public Map<Writable, Writable> createValue() {
-            return new LinkedMapWritable();
+            return (useLinkedMapWritable ? new LinkedMapWritable() : new MapWritable());
         }
 
         @Override

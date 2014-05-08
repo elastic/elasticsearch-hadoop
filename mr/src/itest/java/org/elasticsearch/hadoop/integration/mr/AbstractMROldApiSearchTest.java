@@ -20,8 +20,10 @@ package org.elasticsearch.hadoop.integration.mr;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Random;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -52,6 +54,7 @@ public class AbstractMROldApiSearchTest {
 
     private final String query;
     private final String indexPrefix;
+    private final Random random = new Random();
 
     public AbstractMROldApiSearchTest(String indexPrefix, String query) {
         this.query = query;
@@ -154,7 +157,9 @@ public class AbstractMROldApiSearchTest {
         conf.setInputFormat(EsInputFormat.class);
         conf.setOutputFormat(PrintStreamOutputFormat.class);
         conf.setOutputKeyClass(Text.class);
-        conf.setOutputValueClass(LinkedMapWritable.class);
+        boolean type = random.nextBoolean();
+        Class<?> mapType = (type ? MapWritable.class : LinkedMapWritable.class);
+        conf.setOutputValueClass(mapType);
         HadoopCfgUtils.setGenericOptions(conf);
         conf.set(ConfigurationOptions.ES_QUERY, query);
         conf.setNumReduceTasks(0);
