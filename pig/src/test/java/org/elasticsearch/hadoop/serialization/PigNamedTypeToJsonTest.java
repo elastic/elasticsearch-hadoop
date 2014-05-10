@@ -185,6 +185,13 @@ public class PigNamedTypeToJsonTest {
     }
 
     @Test
+    public void testNamedTupleWithMixedValues() {
+        String expected = "{\"namedtuplewithmixedvalues\":[{\"first\":1,\"second\":\"two\"}]}";
+        assertThat(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new Object[] { 1, "two" })),
+                        createSchema("namedtuplewithmixedvalues: (first:int, second:chararray)"))), is(expected));
+    }
+
+    @Test
     public void testAnonTuple() {
         String expected = "{\"anontuple\":[{\"val_0\":\"xxx\",\"val_1\":\"yyy\",\"val_2\":\"zzz\"}]}";
         assertThat(pigTypeToJson(createTuple(

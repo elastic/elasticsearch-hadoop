@@ -26,12 +26,76 @@ When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wi
 By default, {es} provides {ref}/docs-index_.html[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.
 
 [[auto-mapping-type-loss]]
-It is important to remember that automatic mapping uses the payload values to identify its {ref}/mapping-core-types.html[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - `byte`, `short`, `int`, `long` are all placed in the same `integer` 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
+It is important to remember that automatic mapping uses the payload values to identify its {ref}/mapping-core-types.html[type], using the *first document* creates the mapping. {eh} communicates with {es} through JSON which does not provide any type information, rather only the field names and their values. One can think of it as 'type erasure' or information loss; for example JSON does not differentiate integer numeric types - `byte`, `short`, `int`, `long` are all placed in the same `long` 'bucket'. this can have unexpected side-effects since the type information is _guessed_ such as:
 
-numbers mapped only as `long`/`double`:: Whenever {es} encounters a number, it will allocate the largest type for it since it does not know the exact number type of the field. Allocating a small type (such as `byte`, `int` or `float`) can lead to problems if a future document is larger, so {es} uses a safe default. 
-incorrect mapping:: This happens when a string field contains only numbers (say `1234`) - {es} has no information that the number is actually a string and thus it map the field as a number. The same issue tends to occur with dates and strings.
+[float]
+===== numbers mapped only as `long`/`double`
+Whenever {es} encounters a number, it will allocate the largest type for it since it does not know the exact number type of the field. Allocating a small type (such as `byte`, `int` or `float`) can lead to problems if a future document is larger, so {es} uses a safe default. 
+For example, the document:
+[source, json]
+----
+{
+    "tweet" {
+        "user" : "kimchy",
+        "message" : "This is a tweet!",
+        "postDate" : "2009-11-15T14:12:12",
+        "priority" : 4,
+        "rank" : 12.3
+    }
+}
+----
+triggers the following mapping:
+[source, json]
+----
+{ "test" : {
+    "mappings" : {
+      "index" : {
+        "properties" : {
+          "message" : {
+            "type" : "string"
+          },
+          "postDate" : {                       
+            "type" : "date",
+            "format" : "dateOptionalTime"      <1> 
+          },
+          "priority" : {
+            "type" : "long"                    <2>
+          },
+          "rank" : {
+            "type" : "double"                  <3>
+          },
+          "user" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
+----
+<1> The _postDate_ field was recognized as a date in ISO 8601 format (+dateOptionalTime+)
+<2> The _integer_ number (+4+) was mapped to the largest available type (+long+)
+<3> The _fractional_ number (+12.3+) was mapped to the largest available type (+double+)
 
-Only if the defaults need to be overridden and/or if you experience the problems exposed below, consider using <<explicit-mapping>>.
+[float]
+===== incorrect mapping
+This happens when a string field contains numbers (say +1234+) - {es} has no information that the number is actually a string and thus it map the field as a number, causing a parsing exception when a string is encountered.
+For example, this document:
+[source, json]
+----
+{ "array":[123, "string"] }
+----
+
+causes an exception with automatic mapping:
+[source, json]
+----
+{"error":"MapperParsingException[failed to parse [array]]; nested: NumberFormatException[For input string: \"string\"]; ","status":400}
+----
+
+because the field +array+ is initially detected as a number (because of +123+) which causes +"string"+ to trigger the parsing exception since clearly it is not a number. The same issue tends to occur with strings might be 
+interpreted as dates.
+
+Hence if the defaults need to be overridden and/or if you experience the problems exposed above, potentially due to a diverse dataset, consider using <<explicit-mapping>>.
 
 [float]
 ==== Disabling automatic mapping
@@ -42,7 +106,7 @@ Only if the defaults need to be overridden and/or if you experience the problems
 [[explicit-mapping]]
 === Explicit mapping
 
-Explicit or manual mapping should be considered only when the defaults need to be overridden and/or if you experience the problems exposed above. 
+Explicit or manual mapping should be considered when the defaults need to be overridden, if the data is detected incorrectly (as explained above) or, in most cases, to customize the index analysis.
 Refer to {es} {ref}/indices-create-index.html[create index] and {ref}/indices-put-mapping.html[mapping] documentation on how to define an index and its types - note that these need to be present *before* data is being uploaded to {es} (otherwise automatic mapping will be used by {es}, if enabled).
 
 TIP: In most cases, {ref}/indices-templates.html[templates] are quite handy as they are automatically applied to new indices created that match the pattern; in other words instead of defining the mapping per index, one can just define the template once and then have it applied to all indices that match its pattern.

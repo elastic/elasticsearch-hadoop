@@ -78,6 +78,27 @@ Obeying the rule of http://en.wikipedia.org/wiki/Principle_of_least_astonishment
 
 To change this behavior (which in effect means treating tuples as maps instead of sets or arrays), use the boolean property `es.mapping.pig.tuple.use.field.names` (by default `false`) and set it to `true`.
 
+The table below illustrates the difference between the two settings:
+
+[cols="^,^,^",options="header"]
+|===
+| Tuple schema | Tuple value | Resulting JSON representation
+
+3+h| `es.mapping.pig.tuple.use.field.names` *`false`* (default)
+
+| `(foo: (nr:int, name:chararray))` | `(1,"kimchy")` | `{"foo":[1, "kimchy"]}`
+| `(bar: (int, chararray))` | `(1,"kimchy")` | `{"bar":[1, "kimchy"]}`
+
+3+h| `es.mapping.pig.tuple.use.field.names` *`true`*
+
+| `(foo: (nr:int, name:chararray))` | `(1,"kimchy")` | `{"foo":[{"nr":1, "name":"kimchy"]}`
+| `(bar: (int, chararray))` | `(1,"kimchy")` | `{"bar":["val_0":1, "val_1":"name"]}`
+
+|===
+
+IMPORTANT: When using tuples, it is _highly_ recommended to create the index mapping before-hand as it is quite common for tuples to contain mixed types (numbers, strings, other tuples, etc...) which, when mapped as an array (the default) can cause parsing errors (as the automatic mapping can infer the fields to be numbers instead of strings, etc...). In fact, the example above falls in this category since the tuple contains both a number (+1+) and a string (+"kimchy"+), which will the auto-detection to map both +foo+ and +bar+ as a number and thus causing an exception when encountering +"kimchy"+. Please refer to <<auto-mapping-type-loss,this>> for more information.
+Additionally consider +breaking+/++flatten++ing the tuple into primitive/data atoms before sending the data off to Elasticsearch.
+
 [[pig-alias]]
 [float]
 === Mapping
