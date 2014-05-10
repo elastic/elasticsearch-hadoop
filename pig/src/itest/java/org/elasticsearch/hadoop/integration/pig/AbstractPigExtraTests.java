@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import org.elasticsearch.hadoop.Provisioner;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -58,5 +59,20 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         assertThat(cogroup, containsString("(child2,parent1,200)"));
         assertThat(cogroup, containsString("(child1,parent1,100)"));
         assertThat(cogroup, containsString(tabify("parent2", "{(parent2,name2)}", "{(child3,parent2,300)}")));
+    }
+
+    @Test
+    public void testGroup() throws Exception {
+        RestUtils.touch("pig-test");
+        //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
+
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "data = LOAD 'src/itest/resources/group-sample.txt' using PigStorage(',') as (no:long,name:chararray,age:long);" +
+                "data = GROUP data by $0;" +
+                "data = FOREACH data GENERATE $1 as details;" +
+                "DUMP data;" +
+                "STORE data into 'pig-test/group-data-2' using org.elasticsearch.hadoop.pig.EsStorage();";
+        pig.executeScript(script);
     }
 }

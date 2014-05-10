@@ -111,20 +111,25 @@ configurations.all {
 
 def File gitBranch() {
 	// parse the git files to find out the revision
-	return file("$rootDir/.git/HEAD")
+	File gitHead = 	file("$rootDir/.git/HEAD")
+
+	if (gitHead.exists()) {
+		return file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
+	}
+	return null
 }
 
 def String gitHash() {
 	String rev = "unknown"
 
 	File gitHead = 	gitBranch()
-
 	if (gitHead.exists()) {
-		gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
-		if (gitHead.exists()) { rev = gitHead.text.trim() }
+		rev = gitHead.text.trim()
 	}
 	return rev
 }
+
+def revHash = gitHash()
 
 allprojects { project ->
 
@@ -187,7 +192,7 @@ allprojects { project ->
 		if (build != null)
 			manifest.attributes['Build'] = build
 		
-		manifest.attributes['Repository-Revision'] = gitHash()
+		manifest.attributes['Repository-Revision'] = revHash
 		
 		from("$rootDir/docs/src/info") {
 			include "license.txt"
@@ -270,7 +275,6 @@ allprojects { project ->
 	uploadToS3 {
 		ext.toDir = "hadoop"
 	}
-
 }
 
 project(":elasticsearch-hadoop-mr") {
@@ -439,7 +443,6 @@ allprojects { project ->
 	}
 }
 
-
 configure(rootProject) {
 	description = "Elasticsearch Hadoop"
 	
@@ -480,7 +483,6 @@ configure(rootProject) {
 			}
 		}
 	}
-	
 	
 	javadoc {
 		// aggregate
@@ -537,7 +539,6 @@ configure(rootProject) {
 	}
 }
 
-
 // reporting
 allprojects { project ->
 	
@@ -587,7 +588,6 @@ allprojects { project ->
 		pmdMain.enabled = false
 	}
 }
-
 
 // skip creation of javadoc jars 
 assemble.dependsOn = ['jar', 'hadoopTestingJar']
