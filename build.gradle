@@ -308,6 +308,7 @@ project(":elasticsearch-hadoop-mr") {
 			props.put("version", version)
 			props.put("hash", gitHash())
 			File output = new File(generatedResources, "esh-build.properties")
+			generatedResources.mkdirs()
 			output.createNewFile()
 			props.store(output.newWriter(), null) 
 		}
