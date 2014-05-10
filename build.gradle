@@ -109,19 +109,22 @@ configurations.all {
   }
 }
 
-	def String gitHash() {
-		String rev = "unknown"
+def File gitBranch() {
+	// parse the git files to find out the revision
+	return file("$rootDir/.git/HEAD")
+}
 
-		// parse the git files to find out the revision
-		File gitHead = file("$rootDir/.git/HEAD")
-		if (gitHead.exists()) {
-			gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
-			if (gitHead.exists()) { rev = gitHead.text.trim() }
-		}
-		return rev
+def String gitHash() {
+	String rev = "unknown"
+
+	File gitHead = 	gitBranch()
+
+	if (gitHead.exists()) {
+		gitHead = file("$rootDir/.git/" + gitHead.text.trim().replace('ref: ',''))
+		if (gitHead.exists()) { rev = gitHead.text.trim() }
 	}
-	
-
+	return rev
+}
 
 allprojects { project ->
 
@@ -251,16 +254,23 @@ allprojects { project ->
 	}
 
 	task pack(dependsOn: [jar, javadocJar, sourcesJar]) {
+		outputs.files {
+			jar.archivePath
+			javadocJar.archivePath
+			sourcesJar.archivePath
+		}
+		doLast {
 		artifacts {
 			archives javadocJar
 			archives sourcesJar
-		}
+		} }
 	}
-	
+
 	configurations { s3 }
 	uploadToS3 {
 		ext.toDir = "hadoop"
 	}
+
 }
 
 project(":elasticsearch-hadoop-mr") {
@@ -277,11 +287,26 @@ project(":elasticsearch-hadoop-mr") {
 		}
 	}
 	
-	processResources {
-		Properties props = new Properties()
-		props.put("version", version)
-		props.put("hash", gitHash())
-		props.store(file("src/main/resources/esh-build.properties").newWriter(), null) 
+	def generatedResources = "$buildDir/generated-resources/main"
+	
+	sourceSets {
+		main {
+			output.dir(generatedResources, builtBy: "generateGitHash")
+		}
+	}
+	
+	task generateGitHash {
+		inputs.file gitBranch()
+		outputs.file generatedResources
+		
+		doLast {
+			Properties props = new Properties()
+			props.put("version", version)
+			props.put("hash", gitHash())
+			File output = new File(generatedResources, "esh-build.properties")
+			output.createNewFile()
+			props.store(output.newWriter(), null) 
+		}
 	}
 	
 	eclipse.classpath.file {
