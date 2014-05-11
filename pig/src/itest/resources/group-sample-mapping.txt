@@ -1,0 +1,26 @@
+{
+    "group-data" : {
+        "mappings" : {
+            "id" : {
+                "properties" : {
+                    "details" : {
+                        "properties" : {
+                            "age" : {
+                                "type" : "integer",
+                                "store" : true
+                            },
+                            "name" : {
+                                "type" : "string",
+                                "store" : true
+                            },
+                            "no" : {
+                                "type" : "integer",
+                                "store" : true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
