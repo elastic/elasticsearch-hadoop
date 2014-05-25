@@ -61,7 +61,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         assertThat(cogroup, containsString(tabify("parent2", "{(parent2,name2)}", "{(child3,parent2,300)}")));
     }
 
-    @Test
+    //@Test
     public void testGroup() throws Exception {
         RestUtils.touch("pig-test");
         //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
