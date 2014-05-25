@@ -61,7 +61,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         assertThat(cogroup, containsString(tabify("parent2", "{(parent2,name2)}", "{(child3,parent2,300)}")));
     }
 
-    //@Test
+    @Test
     public void testGroup() throws Exception {
         RestUtils.touch("pig-test");
         //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
@@ -73,6 +73,21 @@ public class AbstractPigExtraTests extends AbstractPigTests {
                 "data = FOREACH data GENERATE $1 as details;" +
                 "DUMP data;" +
                 "STORE data into 'pig-test/group-data-2' using org.elasticsearch.hadoop.pig.EsStorage();";
+        pig.executeScript(script);
+    }
+
+    //@Test
+    public void testIterate() throws Exception {
+        RestUtils.touch("pig-test");
+        RestUtils.putData("pig-test/iterate", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.putData("pig-test/iterate", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "data = LOAD 'pig-test/iterate' using org.elasticsearch.hadoop.pig.EsStorage() as (message:chararray,message_date:chararray);" +
+                "data = FOREACH data GENERATE message as message, message_date as date;" +
+                "DUMP data;";
+                //"STORE data into 'pig-test/pig-iterate-out' using org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
     }
 }
