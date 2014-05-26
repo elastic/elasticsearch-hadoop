@@ -62,7 +62,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         RestUtils.refresh("json-pig");
     }
 
-    @Test
+    //@Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" :  10  } } }";
         RestUtils.putData("json-pig/nestedmap" + testInstance, StringUtils.toUTF(data));

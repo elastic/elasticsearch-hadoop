@@ -76,18 +76,21 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         pig.executeScript(script);
     }
 
-    //@Test
+    @Test
     public void testIterate() throws Exception {
         RestUtils.touch("pig-test");
         RestUtils.putData("pig-test/iterate", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.putData("pig-test/iterate", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.refresh("pig-test");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "data = LOAD 'pig-test/iterate' using org.elasticsearch.hadoop.pig.EsStorage() as (message:chararray,message_date:chararray);" +
-                "data = FOREACH data GENERATE message as message, message_date as date;" +
-                "DUMP data;";
-                //"STORE data into 'pig-test/pig-iterate-out' using org.elasticsearch.hadoop.pig.EsStorage();";
+                "data = FOREACH data GENERATE message_date as date, message as message;" +
+                "STORE data INTO 'tmp-pig/pig-iterate';";
         pig.executeScript(script);
+
+        String iterate = getResults("tmp-pig/pig-iterate");
+        assertThat(iterate, containsString("World"));
     }
 }

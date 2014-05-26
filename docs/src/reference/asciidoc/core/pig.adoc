@@ -228,6 +228,10 @@ DUMP A;
 <1> {es} resource
 <2> search query to execute
 
+IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, +LoadFunc+tions are not aware of any schema associated with them. This means +EsStorage+ is forced to fully the documents 
+from Elasticsearch before passing the data to Pig for projection. In practice, this has little impact as long as a document top-level fields are used; for nested fields consider extracting the values
+yourself in Pig.
+
 [[pig-type-conversion]]
 [float]
 === Type conversion
