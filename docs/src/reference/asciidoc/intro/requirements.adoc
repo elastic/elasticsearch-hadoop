@@ -30,7 +30,7 @@ The {es} version is shown in its folder name:
 [source,bash]
 ----
 $ ls
-elasticsearch-1.1.1
+elasticsearch-1.2.0
 ----
 
 If {es} is running (locally or remotely), one can find out through REST its version:
@@ -40,13 +40,13 @@ If {es} is running (locally or remotely), one can find out through REST its vers
 $ curl -XGET http://localhost:9200
 {
   "status" : 200,
-  "name" : "Decay II",
+  "name" : "Dazzler",
   "version" : {
-    "number" : "1.1.1",
-    "build_hash" : "f1585f096d3f3985e73456debdc1a0745f512bbc",
-    "build_timestamp" : "2014-04-16T14:27:12Z",
+    "number" : "1.2.0",
+    "build_hash" : "c82387f290c21505f781c695f365d0ef4098b272",
+    "build_timestamp" : "2014-05-22T12:49:13Z",
     "build_snapshot" : false,
-    "lucene_version" : "4.7"
+    "lucene_version" : "4.8"
   },
   "tagline" : "You Know, for Search"
 }
