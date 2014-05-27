@@ -23,7 +23,7 @@ java version "1.7.0_55"
 [[requirements-es]]
 === {es}
 
-version *0.90* or higher, though we highly recommend using the latest Elasticsearch (currently 1.1.1) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
+version *0.90* or higher, though we highly recommend using the latest Elasticsearch (currently 1.2.0) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
 
 The {es} version is shown in its folder name:
 

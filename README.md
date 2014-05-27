@@ -11,14 +11,14 @@ For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/
 
 ## Installation
 
-### Release (currently `2.0.0.RC1`)
+### Release (currently `2.0.0`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.0.RC1</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elasticsearch.org/overview/hadoop/download/).
@@ -30,7 +30,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.0.BUILD-SNAPSHOT</version>
+  <version>2.1.0.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 

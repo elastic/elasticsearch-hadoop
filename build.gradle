@@ -264,11 +264,10 @@ allprojects { project ->
 			javadocJar.archivePath
 			sourcesJar.archivePath
 		}
-		doLast {
 		artifacts {
 			archives javadocJar
 			archives sourcesJar
-		} }
+		}
 	}
 
 	configurations { s3 }

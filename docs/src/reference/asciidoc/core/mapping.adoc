@@ -8,7 +8,7 @@ This section takes a closer look at how the type conversion takes place and how 
 === Converting data to {es}
 
 By design, {eh} provides no data transformation or mapping layer itself simply because there is no need for them: Hadoop is designed to do ETL and some libraries (like Pig and Hive) provide type information themselves; further more {es} has rich support for mapping out of the box including automatic detection,  dynamic/schema-less mapping, templates and full manual control. 
-Need to split strings into token, do data validation or eliminate unneeded data ? there are plenty of ways to do that in Hadoop before reading/writing data from/to {es}; need control over how data is stored in {es} ? use {es} APIs to define the  {ref}/indices-put-mapping.html[mapping], to update {ref}/indices-update-settings.html[settings] or add generic {ref}/mapping-meta.html[meta-data].
+Need to split strings into token, do data validation or eliminate unneeded data ? There are plenty of ways to do that in Hadoop before reading/writing data from/to {es}; need control over how data is stored in {es} ? Use {es} APIs to define the  {ref}/indices-put-mapping.html[mapping], to update {ref}/indices-update-settings.html[settings] or add generic {ref}/mapping-meta.html[meta-data].
 
 //// 
 Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses on what is missing by recognizing and leveraging existing features. 
