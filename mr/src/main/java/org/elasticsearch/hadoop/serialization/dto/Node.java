@@ -24,18 +24,28 @@ public class Node {
 
     private String id;
     private String name;
+    private boolean hasHttp;
     private String ipAddress;
     private int httpPort;
 
     public Node(String id, Map<String, Object> data) {
         this.id = id;
         name = data.get("name").toString();
-        String httpAddr = data.get("http_address").toString();
+        Object http = data.get("http_address");
+        hasHttp = (http != null);
+        if (!hasHttp) {
+            return;
+        }
+        String httpAddr = http.toString();
         // strip ip address - regex would work but it's overkill
         int startIndex = httpAddr.indexOf("/") + 1;
         int endIndex = httpAddr.indexOf(":");
         ipAddress = httpAddr.substring(startIndex, endIndex);
         httpPort = Integer.valueOf(httpAddr.substring(endIndex + 1, httpAddr.indexOf("]")));
+    }
+
+    public boolean hasHttp() {
+        return hasHttp;
     }
 
     public String getId() {

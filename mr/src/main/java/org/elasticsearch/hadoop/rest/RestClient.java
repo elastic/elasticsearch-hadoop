@@ -243,7 +243,9 @@ public class RestClient implements Closeable, StatsAware {
 
         for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
             Node node = new Node(entry.getKey(), entry.getValue());
-            nodes.put(entry.getKey(), node);
+            if (node.hasHttp()) {
+                nodes.put(entry.getKey(), node);
+            }
         }
         return nodes;
     }
