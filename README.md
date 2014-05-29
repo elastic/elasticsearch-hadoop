@@ -30,7 +30,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version>
+  <version>2.0.1.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 

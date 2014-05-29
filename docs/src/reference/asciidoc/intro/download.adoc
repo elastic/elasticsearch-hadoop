@@ -82,7 +82,7 @@ Development (or nightly or snapshots) builds are published daily at 'sonatype-os
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version> <1>
+  <version>2.0.1.BUILD-SNAPSHOT</version> <1>
 </dependency>
 ----
 
