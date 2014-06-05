@@ -74,10 +74,10 @@ public class NetworkClient implements StatsAware, Closeable {
     public Response execute(Request request) throws EsHadoopInvalidRequest {
         Response response = null;
 
-        SimpleRequest routedRequest = new SimpleRequest(request.method(), currentUri, request.path(), request.params(), request.body());
-
         boolean newNode;
         do {
+            SimpleRequest routedRequest = new SimpleRequest(request.method(), null, request.path(), request.params(), request.body());
+
             newNode = false;
             try {
                 response = currentTransport.execute(routedRequest);
