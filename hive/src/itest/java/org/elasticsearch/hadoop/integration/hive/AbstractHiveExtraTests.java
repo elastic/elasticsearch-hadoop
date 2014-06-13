@@ -44,11 +44,8 @@ public class AbstractHiveExtraTests {
 
     @Test
     public void testQuery() throws Exception {
-        if (!RestUtils.exists("cars/transactions")) {
-            RestUtils.bulkData("cars/transactions", "cars-bulk.txt");
-            RestUtils.refresh("cars");
-        }
-
+        RestUtils.bulkData("cars/transactions", "cars-bulk.txt");
+        RestUtils.refresh("cars");
 
         String drop = "DROP TABLE IF EXISTS cars2";
         String create = "CREATE EXTERNAL TABLE cars2 ("
