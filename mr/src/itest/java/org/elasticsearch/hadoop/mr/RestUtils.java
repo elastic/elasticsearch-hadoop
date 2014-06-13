@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.mr;
 import java.io.IOException;
 
 import org.elasticsearch.hadoop.rest.Request;
-import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestClient.HEALTH;
@@ -29,9 +28,12 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
+
+import static org.elasticsearch.hadoop.rest.Request.Method.*;
 
 public class RestUtils {
 
@@ -41,13 +43,16 @@ public class RestUtils {
             super(new TestSettings());
         }
 
-        @Override
-        public Response execute(Method method, String path, ByteSequence buffer) {
+        public Response execute(Request.Method method, String path, ByteSequence buffer) {
             return super.execute(method, path, buffer);
         }
 
-        public String put(String index, byte[] buffer) throws IOException {
+        public String post(String index, byte[] buffer) throws IOException {
             return IOUtils.asString(execute(Request.Method.POST, index, new BytesArray(buffer)).body());
+        }
+
+        public String put(String index, byte[] buffer) throws IOException {
+            return IOUtils.asString(execute(PUT, index, new BytesArray(buffer)).body());
         }
 
         public String refresh(String index) throws IOException {
@@ -73,14 +78,21 @@ public class RestUtils {
         putMapping(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
     }
 
-
     public static void putData(String index, String location) throws Exception {
-        putData(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
+        byte[] fromInputStream = TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location));
+        System.out.println(StringUtils.asUTFString(fromInputStream));
+        putData(index, fromInputStream);
     }
 
     public static void putData(String index, byte[] content) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
-        rc.put(index, content);
+        rc.post(index, content);
+        rc.close();
+    }
+
+    public static void bulkData(String index, String location) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.put(index + "/_bulk", TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
         rc.close();
     }
 
