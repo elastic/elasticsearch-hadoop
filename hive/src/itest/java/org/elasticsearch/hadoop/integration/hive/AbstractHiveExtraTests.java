@@ -47,6 +47,7 @@ public class AbstractHiveExtraTests {
         RestUtils.bulkData("cars/transactions", "cars-bulk.txt");
         RestUtils.refresh("cars");
 
+        String drop = "DROP TABLE IF EXISTS cars2";
         String create = "CREATE EXTERNAL TABLE cars2 ("
                 + "color STRING,"
                 + "price BIGINT,"
@@ -56,6 +57,7 @@ public class AbstractHiveExtraTests {
         String query = "SELECT * from cars2";
         String count = "SELECT count(1) from cars2";
 
+        server.execute(drop);
         server.execute(create);
         List<String> result = server.execute(query);
         assertEquals(6, result.size());
