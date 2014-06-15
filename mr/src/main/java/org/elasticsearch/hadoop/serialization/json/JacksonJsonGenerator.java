@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization.json;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonEncoding;
@@ -27,19 +28,24 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class JacksonJsonGenerator implements Generator {
 
-    private static final boolean JACKSON_16 = ObjectUtils.isClassPresent("org.codehaus.jackson.Version",
-            JacksonJsonGenerator.class.getClassLoader());
+    private static final boolean HAS_UTF_8;
     private static final JsonFactory JSON_FACTORY;
     private final JsonGenerator generator;
     private final OutputStream out;
 
     static {
-        if (!JACKSON_16) {
+        boolean hasMethod = false;
+        try {
+            Method m = JsonGenerator.class.getMethod("writeUTF8String", byte[].class, int.class, int.class);
+            hasMethod = true;
+        } catch (NoSuchMethodException ex) {
+        }
+        HAS_UTF_8 = hasMethod;
+        if (!HAS_UTF_8) {
             LogFactory.getLog(JacksonJsonGenerator.class).warn(
                     "Old Jackson version (pre-1.7) detected; consider upgrading to improve performance");
         }
@@ -119,7 +125,7 @@ public class JacksonJsonGenerator implements Generator {
     @Override
     public void writeUTF8String(byte[] text, int offset, int len) {
         try {
-            if (JACKSON_16) {
+            if (HAS_UTF_8) {
                 generator.writeUTF8String(text, offset, len);
             }
             else {
