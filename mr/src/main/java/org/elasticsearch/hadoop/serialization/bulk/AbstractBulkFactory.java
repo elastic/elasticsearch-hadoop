@@ -210,29 +210,32 @@ abstract class AbstractBulkFactory implements BulkFactory {
         }
 
         List<Object> compacted = new ArrayList<Object>();
-        StringBuilder accumulator = new StringBuilder();
+        StringBuilder stringAccumulator = new StringBuilder();
         String lastString = null;
+        boolean hasSeenIndexExtractor = false;
         for (Object object : list) {
             if (object instanceof FieldExtractor) {
-                if (accumulator.length() > 0) {
-                    compacted.add(accumulator.toString().getBytes(StringUtils.UTF_8));
-                    accumulator.setLength(0);
+                hasSeenIndexExtractor = object instanceof IndexExtractor;
+                if (stringAccumulator.length() > 0) {
+                    compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
+                    stringAccumulator.setLength(0);
                     lastString = null;
                 }
                 compacted.add(new FieldWriter((FieldExtractor) object));
             }
             else {
                 String str = object.toString();
-                if ("\"".equals(lastString) && str.startsWith("\"")) {
-                    accumulator.append(",");
+                if (("\"".equals(lastString) || (lastString == null && hasSeenIndexExtractor)) && str.startsWith("\"")) {
+                    stringAccumulator.append(",");
                 }
+                hasSeenIndexExtractor = false;
                 lastString = str;
-                accumulator.append(str);
+                stringAccumulator.append(str);
             }
         }
 
-        if (accumulator.length() > 0) {
-            compacted.add(accumulator.toString().getBytes(StringUtils.UTF_8));
+        if (stringAccumulator.length() > 0) {
+            compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
         }
         return compacted;
     }
