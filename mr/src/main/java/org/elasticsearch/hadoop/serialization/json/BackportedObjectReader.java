@@ -37,7 +37,7 @@ import org.codehaus.jackson.map.introspect.VisibilityChecker;
 import org.codehaus.jackson.map.jsontype.TypeResolverBuilder;
 import org.codehaus.jackson.map.type.TypeFactory;
 import org.codehaus.jackson.type.JavaType;
-import org.eclipse.jdt.internal.core.Assert;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 /**
