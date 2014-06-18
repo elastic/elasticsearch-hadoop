@@ -126,7 +126,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testtupleschema");
         assertThat(results, containsString("999"));
         assertThat(results, containsString("12"));
-        assertThat(results, containsString("356"));
+        assertThat(results, containsString("230"));
     }
 
     @Test
@@ -187,8 +187,8 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     @Test
     public void testDynamicPatternFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2010-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2500-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2853-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2200-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2873-10-06"));
     }
 
     private static String tmpPig() {
