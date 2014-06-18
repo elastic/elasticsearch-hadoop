@@ -32,7 +32,6 @@ import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectReader;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
@@ -40,6 +39,7 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.json.BackportedObjectReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -160,7 +160,7 @@ public class RestClient implements Closeable, StatsAware {
     @SuppressWarnings("rawtypes")
     private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) {
         try {
-            ObjectReader r = mapper.reader(Map.class);
+            BackportedObjectReader r = BackportedObjectReader.create(mapper, Map.class);
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
             try {
                 if (ParsingUtils.seek("items", new JacksonJsonParser(parser)) == null) {

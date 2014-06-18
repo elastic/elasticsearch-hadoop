@@ -25,8 +25,8 @@ import java.util.Map;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectReader;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.json.BackportedObjectReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.junit.Test;
 
@@ -37,13 +37,14 @@ public class ParseBulkErrorsTest {
     @Test
     public void testParseItems() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        ObjectReader r = mapper.reader(Map.class);
         InputStream in = getClass().getResourceAsStream("bulk-error.json");
         JsonParser parser = mapper.getJsonFactory().createJsonParser(in);
         ParsingUtils.seek("items", new JacksonJsonParser(parser));
 
+        BackportedObjectReader r = BackportedObjectReader.create(mapper, Map.class);
+
         for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
-            Map map = iterator.next();
+            Map map = mapper.readValue(parser, Map.class);
             String error = (String) ((Map) map.values().iterator().next()).get("error");
             assertNotNull(error);
             assertTrue(error.contains("document already exists"));
