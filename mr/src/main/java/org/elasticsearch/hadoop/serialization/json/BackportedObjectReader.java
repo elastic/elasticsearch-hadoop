@@ -62,7 +62,7 @@ public class BackportedObjectReader {
 
     static {
         Field fl = ReflectionUtils.findField(ObjectMapper.class, "_rootDeserializers");
-        Assert.isNotNull(fl, "Cannot find root deserializers");
+        Assert.notNull(fl, "Cannot find root deserializers");
         ROOT_DESERIALIZERS = fl;
         ReflectionUtils.makeAccessible(fl);
     }
