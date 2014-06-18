@@ -320,6 +320,16 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
+    @Test
+    public void testIndexPatternWithFormattingAndId() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}-with-id");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        runJob(conf);
+    }
+
+
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
