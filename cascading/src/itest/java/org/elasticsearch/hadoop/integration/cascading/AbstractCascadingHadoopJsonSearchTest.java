@@ -117,7 +117,7 @@ public class AbstractCascadingHadoopJsonSearchTest {
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2501-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2198-10-06"));
         Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2890-10-06"));
     }
 

@@ -129,8 +129,8 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         pig.executeScript(script);
         String results = getResults("" + tmpPig() + "/testbagschema");
         assertThat(results, containsString("xotox"));
-        assertThat(results, containsString("the Chemodan"));
-        assertThat(results, containsString("www.DjFahad.com"));
+        assertThat(results, containsString("t.A.T.u"));
+        assertThat(results, containsString("strom noir"));
     }
 
     @Test
@@ -159,7 +159,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         assertThat(results, containsString("Megadeth"));
         assertThat(results, containsString("http://www.last.fm/music/Megadeth"));
         assertThat(results, containsString("Blur"));
-        assertThat(results, containsString("http://www.last.fm/music/Soundgarden"));
+        assertThat(results, containsString("http://www.last.fm/music/Gorillaz"));
     }
 
     @Test
