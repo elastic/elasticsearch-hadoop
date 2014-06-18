@@ -105,7 +105,7 @@ if (rootProject == project) {
 
 configurations.all {
   resolutionStrategy {
-	forcedModules = ['commons-httpclient:commons-httpclient:3.0.1', "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"]
+	forcedModules = ['commons-httpclient:commons-httpclient:3.0.1']
   }
 }
 
