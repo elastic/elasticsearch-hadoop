@@ -160,6 +160,7 @@ es.mapping.parent = \<123>
 ==== Update settings
 
 One using the `update` or `upsert` operation, additional settings (that mirror the http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-update.html[update] API) are available:
+
 `es.update.script` (default none)::
 Script used for updating the document.
 
