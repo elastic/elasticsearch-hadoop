@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 class ErrorUtils {
@@ -31,6 +32,9 @@ class ErrorUtils {
     private static final Pattern XCONTENT_PAYLOAD = Pattern.compile("Elastic[s|S]earchParseException.+: \\[(.+)\\]]");
     private static final Pattern OFFSET = Pattern.compile("offset=(\\d+)");
     private static final Pattern LENGTH = Pattern.compile("length=(\\d+)");
+
+    private static final Pattern LINE = Pattern.compile("line: (\\d+)");
+    private static final Pattern COLUMN = Pattern.compile("column: (\\d+)");
 
     static String extractInvalidXContent(String errorMessage) {
         if (!StringUtils.hasText(errorMessage)) {
@@ -67,6 +71,37 @@ class ErrorUtils {
             // can't convert back the byte array - give up
             return null;
         }
+    }
+
+
+    static String extractJsonParse(String errorMessage, ByteSequence body) {
+        if (!StringUtils.hasText(errorMessage)) {
+            return null;
+        }
+        if (!errorMessage.startsWith("JsonParseException")) {
+            return null;
+        }
+
+        String match = findMatch(LINE.matcher(errorMessage));
+        int line = (StringUtils.hasText(match) ? Integer.valueOf(match) : 0);
+        match = findMatch(COLUMN.matcher(errorMessage));
+        int column = (StringUtils.hasText(match) ? Integer.valueOf(match) : 0);
+
+        String payload = body.toString();
+        int position = 0;
+        int linesRead = 1;
+        for (int index = 0; index < payload.length() && linesRead < line; index++) {
+            if (payload.charAt(index) == '\n') {
+                linesRead++;
+            }
+            position++;
+        }
+        position += column;
+
+        // found line, return column +/- some chars
+        int from = Math.max(position - 15, 0);
+        int to = Math.min(position + 5, payload.length());
+        return payload.substring(from, to);
     }
 
     private static String findMatch(Matcher matcher) {

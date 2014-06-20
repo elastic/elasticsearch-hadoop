@@ -210,6 +210,11 @@ public class RestClient implements Closeable, StatsAware {
         return header + "[" + error + "]";
     }
 
+    private String prettify(String error, ByteSequence body) {
+        String message = ErrorUtils.extractJsonParse(error, body);
+        return (message != null ? error + "; fragment[" + message + "]" : error);
+    }
+
     public void refresh(Resource resource) {
         execute(POST, resource.refresh());
     }
@@ -289,6 +294,7 @@ public class RestClient implements Closeable, StatsAware {
             // try to parse the answer
             try {
                 msg = parseContent(response.body(), "error");
+                msg = prettify(msg, request.body());
             } catch (Exception ex) {
                 // can't parse message, move on
             }
