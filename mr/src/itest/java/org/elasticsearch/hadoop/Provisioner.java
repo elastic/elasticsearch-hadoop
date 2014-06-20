@@ -52,7 +52,7 @@ public abstract class Provisioner {
                 }
             });
             Assert.isTrue(files != null && files.length == 1,
-                    String.format("Cannot find elasticsearch hadoop jar;%s", Arrays.toString(files)));
+                    String.format("Cannot find elasticsearch hadoop jar (too many or no file found);%s", Arrays.toString(files)));
             ESHADOOP_TESTING_JAR = files[0].getAbsoluteFile().toURI().toString();
 
         } catch (IOException ex) {
