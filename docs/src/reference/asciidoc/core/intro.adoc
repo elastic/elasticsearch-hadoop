@@ -17,6 +17,8 @@ This part of the documentation explains the core functionality of {eh} starting 
 
 <<pig>>:: how-to on using {es} in Pig scripts through {eh}.
 
+<<spark>>:: describes how to use Apache Spark with {es} through {eh}.
+
 <<mapping>>:: deep-dive into the strategies employed by {eh} for doing type conversion and mapping to and from {es}.
 
 <<metrics>>:: Elasticsearch Hadoop metrics

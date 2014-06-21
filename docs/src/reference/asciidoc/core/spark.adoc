@@ -1,0 +1,127 @@
+[[spark]]
+== Apache Spark support
+
+[quote, Spark website]
+____
+http://spark.apache.org[Apache Spark] is a fast and general-purpose cluster computing system. It provides high-level APIs in Java, Scala and Python, and an optimized engine that supports general execution graphs.
+____
+Spark provides fast iterative/functional-like capabilities over large data sets, typically by _caching_ data in memory. As opposed to the rest of the libraries mentioned in this documentation, Apache Spark is computing framework that is not tied to {mr} itself however it does integrate with Hadoop, mainly to HDFS.
+
+[[spark-installation]]
+[float]
+=== Installation
+
+Just like other libraries, {eh} needs to be available in Spark's classpath. As Spark has multiple deployment modes, this can translate to the target classpath, whether it is on only one node (as is the case with the local mode - which will be used through-out the documentation) or per-node depending on the desired infrastructure.
+
+[float]
+=== Configuration
+
+Through {eh}, Spark can integrate with Elasticsearch through its dedicated `InputFormat`, and in case of writing, through `OutputFormat`. These are described at length in the <<mapreduce, {mr}>> chapter so please refer to that for an in-depth explanation.
+
+In short, one needs to setup a basic Hadoop +Configuration+ object with the target {es} cluster and index, potentially a query, and she's good to go.
+
+From Spark's perspective, they only thing required is setting up serialization - Spark relies by default on Java serialization which is convenient but fairly inefficient. This is the reason why Hadoop itself introduced its own serialization mechanism and its own types - namely +Writable+s. As such, +InputFormat+ and +OutputFormat+s are required to return +Writables+ which, out of the box, Spark does not understand.
+The good news is, one can easily enable a different serialization (https://github.com/EsotericSoftware/kryo[Kryo]) which handles the conversion automatically and also does this quite efficiently.
+
+[source,java]
+----
+SparkConf sc = new SparkConf(); //.setMaster("local");
+sc.set("spark.serializer", KryoSerializer.class.getName()); <1>
+
+// needed only when using the Java API      
+JavaSparkContext jsc = new JavaSparkContext(sc);    
+----
+
+<1> Enable the Kryo serialization support with Spark
+
+Or if you prefer Scala
+
+[source,scala]
+----
+val sc = new SparkContext(...)
+sc.set("spark.serializer", classOf[Foo].getName)    <1>
+----
+
+<1> Enable the Kryo serialization support with Spark
+
+Note that the Kryo serialization is used as a work-around for dealing with +Writable+ types; one can choose to convert the types directly (from +Writable+ to +Serializable+ types) - which is fine however for getting started, the one liner above seems to be the most effective.
+
+[float]
+=== Reading data from {es}
+
+To read data, simply pass in the `org.elasticsearch.hadoop.mr.EsInputFormat` class - since it supports both the `old` and the `new` {mr} APIs, you are free to use either method on ++SparkContext++'s, +hadoopRDD+ (which we recommend for conciseness reasons) or +newAPIHadoopRDD+. Which ever you chose, stick with it to avoid confusion and problems down the road.
+
+[float]
+==== 'Old' (`org.apache.hadoop.mapred`) API
+
+[source,java]
+----
+JobConf conf = new JobConf();                   <1>
+conf.set("es.resource", "radio/artists");       <2>
+conf.set("es.query", "?q=me*");                 <3>
+
+JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class, 
+                                        Text.class, MapWritable.class); <4>
+long docCount = esRDD.count();
+----
+
+<1> Create the Hadoop object (use the old API)
+<2> Configure the source (index)
+<3> Setup the query (optional)
+<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+
+The Scala version is below:
+
+[source,scala]
+----
+val conf = new JobConf()                                <1>
+conf.set("es.resource", "radio/artists")                <2>
+conf.set("es.query", "?q=me*")                          <3>
+val esRDD = sc.hadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
+                               classOf[Text], classOf[MapWritable]))
+val docCount = esRDD.count();
+----
+
+<1> Create the Hadoop object (use the old API)
+<2> Configure the source (index)
+<3> Setup the query (optional)
+<4> Create a Spark RDD on top of {es} through `EsInputFormat`
+
+[float]
+==== 'New' (`org.apache.hadoop.mapreduce`) API
+
+As expected, the `mapreduce` API version is strikingly similar - replace +hadoopRDD+ with +newAPIHadoopRDD+ and +JobConf+ with +Configuration+. That's about it.
+
+[source,java]
+----
+Configuration conf = new Configuration();                   <1>
+conf.set("es.resource", "radio/artists");       <2>
+conf.set("es.query", "?q=me*");                 <3>
+
+JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class, 
+                                              Text.class, MapWritable.class); <4>
+long docCount = esRDD.count();
+----
+
+<1> Create the Hadoop object (use the new API)
+<2> Configure the source (index)
+<3> Setup the query (optional)
+<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+
+The Scala version is below:
+
+[source,scala]
+----
+val conf = new Configuration()                          <1>
+conf.set("es.resource", "radio/artists")                <2>
+conf.set("es.query", "?q=me*")                          <3>
+val esRDD = sc.newHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
+                                  classOf[Text], classOf[MapWritable]))
+val docCount = esRDD.count();
+----
+
+<1> Create the Hadoop object (use the new API)
+<2> Configure the source (index)
+<3> Setup the query (optional)
+<4> Create a Spark RDD on top of {es} through `EsInputFormat`
+
