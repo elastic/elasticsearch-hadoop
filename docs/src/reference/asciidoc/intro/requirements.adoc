@@ -12,6 +12,9 @@ TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built o
 
 JDK level 6.0 (or above) just like Hadoop. We strongly recommend using JDK 6.0 (version 25) or if possible, JDK 7.0 update u55. See this  http://www.elasticsearch.org/blog/java-1-7u55-safe-use-elasticsearch-lucene/[blog post] for more information on why the JVM versions are important (from Lucene point of view).
 
+(!)Alert: for ElasticSearch 1.2.0 JDK 7 is required.
+We recommend using Oracle’s JDK 7u55 or JDK 7u25. Avoid any of the updates in-between as they contain a nasty bug which can cause index corruption.
+
 One can check the available JDK version from the command line:
 
 [source,bash]
