@@ -116,7 +116,9 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTimestampMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/timestamp").skipHeaders().toString(), is("timestamp=[name=STRING, org.apache.pig.builtin.todate_26=DATE, url=STRING]"));
+        String mapping = RestUtils.getMapping("pig/timestamp").skipHeaders().toString();
+        assertThat(mapping, startsWith("timestamp=[name=STRING, org.apache.pig.builtin.todate_"));
+        assertThat(mapping, endsWith("=DATE, url=STRING]"));
     }
 
     @Test
