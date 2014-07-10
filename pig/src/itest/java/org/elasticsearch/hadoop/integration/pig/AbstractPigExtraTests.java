@@ -61,6 +61,20 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         assertThat(cogroup, containsString(tabify("parent2", "{(parent2,name2)}", "{(child3,parent2,300)}")));
     }
 
+    @Test
+    public void testTemporarySchema() throws Exception {
+        RestUtils.touch("pig-test");
+        //RestUtils.putMapping("pig-test/group-data", "group-sample-mapping.txt");
+
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "data = LOAD 'src/itest/resources/group-sample.txt' using PigStorage(',') as (no:long,name:chararray,age:long);" +
+                "data_limit = LIMIT data 1;" +
+                "data_final = FOREACH data_limit GENERATE TRIM(name) as details, no as number;" +
+                "STORE data_final into 'pig-test/temp_schema' using org.elasticsearch.hadoop.pig.EsStorage('es.mapping.id=details');";
+        pig.executeScript(script);
+    }
+
     //@Test
     public void testGroup() throws Exception {
         RestUtils.touch("pig-test");
