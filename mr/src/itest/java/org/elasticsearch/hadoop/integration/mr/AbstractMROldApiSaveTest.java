@@ -63,11 +63,12 @@ public class AbstractMROldApiSaveTest {
         @Override
         public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
             StringTokenizer st = new StringTokenizer(value.toString(), "\t");
-            Map<String, String> entry = new LinkedHashMap<String, String>();
+            Map<String, Object> entry = new LinkedHashMap<String, Object>();
 
             entry.put("number", st.nextToken());
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
+            entry.put("list", Arrays.asList("quick", "brown", "fox"));
 
             if (st.hasMoreTokens()) {
                 String str = st.nextToken();
@@ -241,6 +242,55 @@ public class AbstractMROldApiSaveTest {
 
         runJob(conf);
     }
+
+    @Test
+    public void testUpdateOnlyParamJsonScriptWithArray() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
+
+        runJob(conf);
+
+//        conf = createJobConf();
+//        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+//        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+//
+//        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+//        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
+//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
+//
+//        runJob(conf);
+    }
+
+    @Test
+    public void testUpdateOnlyParamJsonScriptWithArrayOnArrayField() throws Exception {
+        String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
+        String index = indexPrefix + "mroldapi/createwitharray";
+        RestUtils.putData(index + "/1", docWithArray.getBytes());
+        RestUtils.refresh(indexPrefix + "mroldapi");
+        RestUtils.waitForYellow(indexPrefix + "mroldapi");
+
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwitharray");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+
+        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"new_date\": [\"add me\", \"and me\"]}");
+
+        runJob(conf);
+    }
+
 
     @Test
     public void testUpsertScript() throws Exception {
