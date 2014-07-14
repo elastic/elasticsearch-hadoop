@@ -23,6 +23,7 @@ import org.apache.pig.impl.io.FileLocalizer;
 import org.elasticsearch.hadoop.HdfsUtils;
 import org.elasticsearch.hadoop.LocalEs;
 import org.elasticsearch.hadoop.Provisioner;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
@@ -36,7 +37,9 @@ import org.junit.runners.Suite;
 public class PigSuite {
 
     static {
-        FileLocalizer.OWNER_ONLY_PERMS.fromShort((short) 650);
+        if (TestUtils.isWindows()) {
+            FileLocalizer.OWNER_ONLY_PERMS.fromShort((short) 0650);
+        }
     }
 
     @ClassRule

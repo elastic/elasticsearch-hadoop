@@ -49,7 +49,7 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
             }
         }
 
-        return UNKNOWN;
+        return NOT_FOUND;
     }
 
     @Override
