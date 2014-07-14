@@ -139,7 +139,7 @@ public class CommandTest {
     }
 
 
-    @Test
+    //@Test
     public void testAll() throws Exception {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");

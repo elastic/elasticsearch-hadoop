@@ -85,8 +85,8 @@ abstract class AbstractBulkFactory implements BulkFactory {
                 generator.close();
                 // jackson add leading/trailing "" which are added down the pipeline so remove them
                 int size = pad.length();
-                pad.size(size - 2);
-                pad.offset(1);
+                pad.size(Math.min(0, size - 2));
+                pad.offset(Math.min(1, pad.length()));
             }
             return pad;
         }
