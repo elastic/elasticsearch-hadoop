@@ -30,12 +30,12 @@ public class MapWritableFieldExtractor extends ConstantFieldExtractor implements
 
     @SuppressWarnings("rawtypes")
     @Override
-    protected String extractField(Object target) {
+    protected Object extractField(Object target) {
         if (target instanceof Map) {
             Map map = (Map) target;
-            Object w = map.get(fieldName);
-            // since keys are likely primitives, just do a toString
-            return (w != null ? w.toString() : null);
+            if (map.containsKey(fieldName)) {
+                return map.get(fieldName);
+            }
         }
         return NOT_FOUND;
     }

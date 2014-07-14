@@ -28,8 +28,6 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-
-
 public abstract class AbstractIndexExtractor implements IndexExtractor, SettingsAware {
 
     protected Settings settings;
@@ -90,8 +88,9 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
         iformatter.configure(format);
         return new FieldExtractor() {
             @Override
-            public String field(Object target) {
-                return iformatter.format(createFieldExtractor.field(target));
+            public Object field(Object target) {
+                // hack: an index will always be a primitive so just call toString (instead of doing JSON parsing)
+                return iformatter.format(createFieldExtractor.field(target).toString());
             }
         };
     }
@@ -99,8 +98,8 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
     private void append(StringBuilder sb, List<Object> list, Object target) {
         for (Object object : list) {
             if (object instanceof FieldExtractor) {
-                String field = ((FieldExtractor) object).field(target);
-                if (field == null) {
+                Object field = ((FieldExtractor) object).field(target);
+                if (field == NOT_FOUND) {
                     throw new EsHadoopIllegalArgumentException(String.format("Cannot find match for %s", pattern));
                 }
                 else {

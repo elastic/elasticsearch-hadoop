@@ -62,6 +62,6 @@ public class PigTuple {
 
     @Override
     public String toString() {
-        return String.format("[%s]=", "PigTuple", tuple);
+        return String.format("[%s]=(%s:%s)", "PigTuple", schemaField, tuple);
     }
 }

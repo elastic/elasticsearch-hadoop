@@ -135,11 +135,11 @@ public abstract class StringUtils {
     }
 
     public static String asUTFString(byte[] content) {
-        return asUTFString(content, content.length);
+        return asUTFString(content, 0, content.length);
     }
 
-    public static String asUTFString(byte[] content, int length) {
-        return (content == null || length == 0 ? EMPTY : new String(content, 0, length, UTF_8));
+    public static String asUTFString(byte[] content, int offset, int length) {
+        return (content == null || length == 0 ? EMPTY : new String(content, offset, length, UTF_8));
     }
 
     public static byte[] toUTF(String string) {

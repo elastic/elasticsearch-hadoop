@@ -23,14 +23,18 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
-import org.elasticsearch.hadoop.serialization.bulk.TemplatedBulk.FieldWriter;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -43,11 +47,51 @@ abstract class AbstractBulkFactory implements BulkFactory {
     private JsonFieldExtractors jsonExtractors;
 
     protected Settings settings;
-    private ValueWriter<?> valueWriter;
+    private ValueWriter valueWriter;
     // used when specifying an index pattern
     private IndexExtractor indexExtractor;
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
             timestampExtractor, paramsExtractor;
+
+    class FieldWriter {
+        final FieldExtractor extractor;
+        final BytesArray pad;
+
+        FieldWriter(FieldExtractor extractor) {
+            this(extractor, new BytesArray(64));
+        }
+
+        FieldWriter(FieldExtractor extractor, BytesArray pad) {
+            this.extractor = extractor;
+            this.pad = pad;
+        }
+
+        BytesArray write(Object object) {
+            pad.reset();
+
+            Object value = extractor.field(object);
+            if (value == FieldExtractor.NOT_FOUND) {
+                String obj = (extractor instanceof FieldExplainer ? ((FieldExplainer) extractor).toString(object) : object.toString());
+                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, obj));
+            }
+            // common-case - constants
+            if (value instanceof String) {
+                pad.bytes(value.toString());
+            }
+            else {
+                JacksonJsonGenerator generator = new JacksonJsonGenerator(new FastByteArrayOutputStream(pad));
+                valueWriter.write(value, generator);
+                generator.flush();
+                generator.close();
+                // jackson add leading/trailing "" which are added down the pipeline so remove them
+                int size = pad.length();
+                pad.size(size - 2);
+                pad.offset(1);
+            }
+            return pad;
+        }
+    }
+
 
     AbstractBulkFactory(Settings settings) {
         this.settings = settings;

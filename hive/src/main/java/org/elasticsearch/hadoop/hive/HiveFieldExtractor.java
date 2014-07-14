@@ -35,7 +35,7 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
     private String fieldName;
 
     @Override
-    protected String extractField(Object target) {
+    protected Object extractField(Object target) {
         if (target instanceof HiveType) {
             HiveType type = (HiveType) target;
             ObjectInspector inspector = type.getObjectInspector();
