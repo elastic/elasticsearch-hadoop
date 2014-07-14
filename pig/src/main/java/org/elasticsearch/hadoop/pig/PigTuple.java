@@ -59,4 +59,9 @@ public class PigTuple {
             throw new EsHadoopIllegalStateException(String.format("Cannot use schema [%s]", schema), ex);
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("[%s]=", "PigTuple", tuple);
+    }
 }

@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.integration.pig;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.pig.impl.io.FileLocalizer;
 import org.elasticsearch.hadoop.HdfsUtils;
 import org.elasticsearch.hadoop.LocalEs;
 import org.elasticsearch.hadoop.Provisioner;
@@ -33,6 +34,10 @@ import org.junit.runners.Suite;
 //@Suite.SuiteClasses({ AbstractPigSaveTest.class, AbstractPigSearchTest.class })
 //@Suite.SuiteClasses({ AbstractPigExtraTests.class })
 public class PigSuite {
+
+    static {
+        FileLocalizer.OWNER_ONLY_PERMS.fromShort((short) 650);
+    }
 
     @ClassRule
     public static ExternalResource resource = new LocalEs();

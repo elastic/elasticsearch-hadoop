@@ -23,10 +23,12 @@ import java.util.Collection;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 class TemplatedBulk implements BulkCommand {
 
@@ -45,10 +47,13 @@ class TemplatedBulk implements BulkCommand {
 
         BytesArray write(Object object) {
             String value = extractor.field(object);
-            if (value == null) {
-                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, object));
+            if (value == FieldExtractor.UNKNOWN) {
+                String obj = (extractor instanceof FieldExplainer ? ((FieldExplainer) extractor).toString(object) : object.toString());
+                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, obj));
             }
-            pad.bytes(value);
+            if (StringUtils.hasText(value)) {
+                pad.bytes(value);
+            }
             return pad;
         }
     }

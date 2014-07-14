@@ -34,7 +34,7 @@ public class MapFieldExtractor extends ConstantFieldExtractor {
             // since keys are likely primitives, just do a toString
             return (w != null ? w.toString() : null);
         }
-        return null;
+        return UNKNOWN;
     }
 
     @Override
