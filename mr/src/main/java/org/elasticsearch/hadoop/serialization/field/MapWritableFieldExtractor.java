@@ -18,12 +18,13 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.cfg.Settings;
 
-public class MapWritableFieldExtractor extends ConstantFieldExtractor {
+public class MapWritableFieldExtractor extends ConstantFieldExtractor implements FieldExplainer {
 
     private Text fieldName;
 
@@ -36,12 +37,21 @@ public class MapWritableFieldExtractor extends ConstantFieldExtractor {
             // since keys are likely primitives, just do a toString
             return (w != null ? w.toString() : null);
         }
-        return null;
+        return UNKNOWN;
     }
 
     @Override
     public void setSettings(Settings settings) {
         super.setSettings(settings);
         fieldName = new Text(getFieldName());
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Override
+    public String toString(Object field) {
+        if (field instanceof Map) {
+            return new LinkedHashMap((Map) field).toString();
+        }
+        return field.toString();
     }
 }

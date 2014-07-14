@@ -20,10 +20,11 @@ package org.elasticsearch.hadoop.cascading;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 
 import cascading.scheme.SinkCall;
 
-public class CascadingFieldExtractor extends ConstantFieldExtractor {
+public class CascadingFieldExtractor extends ConstantFieldExtractor implements FieldExplainer {
 
     @SuppressWarnings({ "rawtypes" })
     @Override
@@ -34,11 +35,19 @@ public class CascadingFieldExtractor extends ConstantFieldExtractor {
                 return object.toString();
             }
         }
-        return null;
+        return UNKNOWN;
     }
 
     @Override
     public void setSettings(Settings settings) {
         super.setSettings(settings);
+    }
+
+    @Override
+    public String toString(Object field) {
+        if (field instanceof SinkCall) {
+            return ((SinkCall) field).getOutgoingEntry().toString();
+        }
+        return field.toString();
     }
 }

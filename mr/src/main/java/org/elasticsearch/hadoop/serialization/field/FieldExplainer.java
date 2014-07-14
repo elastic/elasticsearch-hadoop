@@ -18,22 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.serialization.SettingsAware;
+public interface FieldExplainer {
 
-/**
- * Basic extractor (for serialization purposes) of a field. Typically used with {@link SettingsAware} for configuration/injection purposes.
- *
- */
-public interface FieldExtractor {
-
-    public String UNKNOWN = "(unknown)";
-
-    /**
-     * Returns the associated JSON representation for the given target.
-     * If the target cannot be handled, {@value #UNKNOWN} should be returned.
-     *
-     * @param target
-     * @return
-     */
-    String field(Object target);
+    public String toString(Object field);
 }

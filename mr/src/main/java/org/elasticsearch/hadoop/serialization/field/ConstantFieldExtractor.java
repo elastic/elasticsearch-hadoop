@@ -33,7 +33,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected String extractField(Object target) {
-        return null;
+        return UNKNOWN;
     }
 
     @Override
@@ -51,5 +51,10 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     protected String getFieldName() {
         return fieldName;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s for field [%s]", getClass().getSimpleName(), fieldName);
     }
 }
