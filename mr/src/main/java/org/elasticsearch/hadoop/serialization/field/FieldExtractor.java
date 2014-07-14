@@ -35,5 +35,5 @@ public interface FieldExtractor {
      * @param target
      * @return
      */
-    String field(Object target);
+    Object field(Object target);
 }

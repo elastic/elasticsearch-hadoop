@@ -30,6 +30,7 @@ public class BytesArray implements ByteSequence {
     public static final byte[] EMPTY = new byte[0];
 
     byte[] bytes = EMPTY;
+    int offset = 0;
     int size = 0;
 
     public BytesArray(int size) {
@@ -69,15 +70,18 @@ public class BytesArray implements ByteSequence {
     public void bytes(byte[] array, int size) {
         this.bytes = array;
         this.size = size;
+        this.offset = 0;
     }
 
     public void bytes(BytesArray ba) {
         this.bytes = ba.bytes;
         this.size = ba.size;
+        this.offset = ba.offset;
     }
 
     public void bytes(String from) {
         size = 0;
+        offset = 0;
         UnicodeUtil.UTF16toUTF8(from, 0, from.length(), this);
     }
 
@@ -85,17 +89,22 @@ public class BytesArray implements ByteSequence {
         this.size = size;
     }
 
+    public void offset(int offset) {
+        this.offset = offset;
+    }
+
     @Override
     public String toString() {
-        return StringUtils.asUTFString(bytes, size);
+        return StringUtils.asUTFString(bytes, offset, size);
     }
 
     public void reset() {
+        offset = 0;
         size = 0;
     }
 
     public void copyTo(BytesArray to) {
-        to.add(bytes, 0, size);
+        to.add(bytes, offset, size);
     }
 
     public void add(int b) {
@@ -129,7 +138,7 @@ public class BytesArray implements ByteSequence {
     }
 
     public void writeTo(OutputStream out) throws IOException {
-        out.write(bytes, 0, size);
+        out.write(bytes, offset, size);
         out.flush();
     }
 }

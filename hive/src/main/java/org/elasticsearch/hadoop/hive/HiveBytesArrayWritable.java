@@ -91,7 +91,7 @@ public class HiveBytesArrayWritable extends BinaryComparable implements Writable
      * Generate the stream of bytes as hex pairs separated by ' '.
      */
     public String toString() {
-        return (ba != null ? StringUtils.asUTFString(ba.bytes(), ba.length()) : "");
+        return (ba != null ? StringUtils.asUTFString(ba.bytes(), 0, ba.length()) : "");
     }
 
 

@@ -28,11 +28,11 @@ public class CascadingFieldExtractor extends ConstantFieldExtractor implements F
 
     @SuppressWarnings({ "rawtypes" })
     @Override
-    protected String extractField(Object target) {
+    protected Object extractField(Object target) {
         if (target instanceof SinkCall) {
             Object object = ((SinkCall) target).getOutgoingEntry().getObject(getFieldName());
             if (object != null) {
-                return object.toString();
+                return object;
             }
         }
         return NOT_FOUND;
