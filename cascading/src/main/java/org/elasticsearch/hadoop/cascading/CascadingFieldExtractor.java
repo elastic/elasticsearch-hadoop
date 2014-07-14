@@ -35,7 +35,7 @@ public class CascadingFieldExtractor extends ConstantFieldExtractor implements F
                 return object.toString();
             }
         }
-        return UNKNOWN;
+        return NOT_FOUND;
     }
 
     @Override

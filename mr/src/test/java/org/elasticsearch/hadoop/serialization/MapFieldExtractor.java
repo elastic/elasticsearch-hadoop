@@ -30,11 +30,14 @@ public class MapFieldExtractor extends ConstantFieldExtractor {
     protected String extractField(Object target) {
         if (target instanceof Map) {
             Map map = (Map) target;
+            if (!map.containsKey(getFieldName())) {
+                return NOT_FOUND;
+            }
             Object w = map.get(getFieldName());
             // since keys are likely primitives, just do a toString
             return (w != null ? w.toString() : null);
         }
-        return UNKNOWN;
+        return NOT_FOUND;
     }
 
     @Override

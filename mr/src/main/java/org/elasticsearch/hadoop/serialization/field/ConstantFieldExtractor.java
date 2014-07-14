@@ -33,7 +33,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected String extractField(Object target) {
-        return UNKNOWN;
+        return NOT_FOUND;
     }
 
     @Override

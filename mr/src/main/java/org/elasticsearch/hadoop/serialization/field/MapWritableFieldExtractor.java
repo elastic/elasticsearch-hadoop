@@ -37,7 +37,7 @@ public class MapWritableFieldExtractor extends ConstantFieldExtractor implements
             // since keys are likely primitives, just do a toString
             return (w != null ? w.toString() : null);
         }
-        return UNKNOWN;
+        return NOT_FOUND;
     }
 
     @Override

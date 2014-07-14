@@ -26,11 +26,11 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
  */
 public interface FieldExtractor {
 
-    public String UNKNOWN = "(unknown)";
+    public String NOT_FOUND = "(not found)";
 
     /**
      * Returns the associated JSON representation for the given target.
-     * If the target cannot be handled, {@value #UNKNOWN} should be returned.
+     * If the target cannot be handled, {@value #NOT_FOUND} should be returned.
      *
      * @param target
      * @return
