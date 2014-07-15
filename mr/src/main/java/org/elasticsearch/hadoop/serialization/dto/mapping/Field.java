@@ -35,16 +35,18 @@ import org.elasticsearch.hadoop.serialization.FieldType;
 @SuppressWarnings("serial")
 public class Field implements Serializable {
 
+    private static final Field[] NO_FIELDS = new Field[0];
+
     private final String name;
     private final FieldType type;
     private final Field[] properties;
 
     public Field(String name, FieldType type) {
-        this(name, type, (Field[]) null);
+        this(name, type, (Field[]) NO_FIELDS);
     }
 
     public Field(String name, FieldType type, Collection<Field> properties) {
-        this(name, type, (properties != null ? properties.toArray(new Field[properties.size()]) : null));
+        this(name, type, (properties != null ? properties.toArray(new Field[properties.size()]) : NO_FIELDS));
     }
 
     Field(String name, FieldType type, Field[] properties) {
