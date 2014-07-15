@@ -55,6 +55,10 @@ public class BytesArray implements ByteSequence {
         return bytes;
     }
 
+    public int offset() {
+        return offset;
+    }
+
     public int length() {
         return size;
     }

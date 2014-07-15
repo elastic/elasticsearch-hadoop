@@ -83,10 +83,13 @@ abstract class AbstractBulkFactory implements BulkFactory {
                 valueWriter.write(value, generator);
                 generator.flush();
                 generator.close();
-                // jackson add leading/trailing "" which are added down the pipeline so remove them
-                int size = pad.length();
-                pad.size(Math.min(0, size - 2));
-                pad.offset(Math.min(1, pad.length()));
+                // jackson likely will add leading/trailing "" which are added down the pipeline so remove them
+                // however that's not mandatory in case the source is a number (instead of a string)
+                if (pad.bytes()[pad.offset()] == '"') {
+                    int size = pad.length();
+                    pad.size(Math.max(0, size - 2));
+                    pad.offset(1);
+                }
             }
             return pad;
         }
