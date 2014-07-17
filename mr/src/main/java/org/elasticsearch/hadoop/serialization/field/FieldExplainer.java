@@ -20,5 +20,5 @@ package org.elasticsearch.hadoop.serialization.field;
 
 public interface FieldExplainer {
 
-    public String toString(Object field);
+    String toString(Object field);
 }

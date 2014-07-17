@@ -32,8 +32,10 @@ import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
+import org.elasticsearch.hadoop.serialization.field.WithoutQuotes;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.BytesArrayPool;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -53,45 +55,75 @@ abstract class AbstractBulkFactory implements BulkFactory {
     private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
             timestampExtractor, paramsExtractor;
 
+    static final BytesArray QUOTE = new BytesArray("\"");
+
     class FieldWriter {
         final FieldExtractor extractor;
-        final BytesArray pad;
+        final boolean addQuotesIfNecessary;
+        final BytesArrayPool pool = new BytesArrayPool();
 
         FieldWriter(FieldExtractor extractor) {
-            this(extractor, new BytesArray(64));
-        }
-
-        FieldWriter(FieldExtractor extractor, BytesArray pad) {
             this.extractor = extractor;
-            this.pad = pad;
+            addQuotesIfNecessary = (extractor instanceof WithoutQuotes);
         }
 
-        BytesArray write(Object object) {
-            pad.reset();
+        BytesArrayPool write(Object object) {
+            pool.reset();
 
             Object value = extractor.field(object);
             if (value == FieldExtractor.NOT_FOUND) {
                 String obj = (extractor instanceof FieldExplainer ? ((FieldExplainer) extractor).toString(object) : object.toString());
                 throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, obj));
             }
+
+            if (value instanceof List) {
+                List list = (List) value;
+                for (int i = 0; i < list.size() - 1; i++) {
+                    doWrite(list.get(i), false);
+                }
+                //
+                doWrite(list.get(list.size() - 1), true);
+            }
+            // weird if/else to save one collection/iterator instance
+            else {
+                doWrite(value, true);
+            }
+
+            return pool;
+        }
+
+        void doWrite(Object value, boolean lookForQuotes) {
             // common-case - constants
-            if (value instanceof String) {
-                pad.bytes(value.toString());
+            if (value instanceof String || jsonInput) {
+                String val = value.toString();
+                if (lookForQuotes && addQuotesIfNecessary) {
+                    if (val.startsWith("[") || val.startsWith("{")) {
+                        pool.get().bytes(val);
+                    }
+                    else {
+                        pool.get().bytes(QUOTE);
+                        pool.get().bytes(val);
+                        pool.get().bytes(QUOTE);
+                    }
+                }
+                else {
+                    pool.get().bytes(val);
+                }
             }
             else {
-                JacksonJsonGenerator generator = new JacksonJsonGenerator(new FastByteArrayOutputStream(pad));
+                BytesArray ba = pool.get();
+                JacksonJsonGenerator generator = new JacksonJsonGenerator(new FastByteArrayOutputStream(ba));
                 valueWriter.write(value, generator);
                 generator.flush();
                 generator.close();
+
                 // jackson likely will add leading/trailing "" which are added down the pipeline so remove them
                 // however that's not mandatory in case the source is a number (instead of a string)
-                if (pad.bytes()[pad.offset()] == '"') {
-                    int size = pad.length();
-                    pad.size(Math.max(0, size - 2));
-                    pad.offset(1);
+                if ((lookForQuotes && !addQuotesIfNecessary) && ba.bytes()[ba.offset()] == '"') {
+                    ba.size(Math.max(0, ba.length() - 2));
+                    ba.offset(1);
                 }
             }
-            return pad;
         }
     }
 
@@ -268,7 +300,7 @@ abstract class AbstractBulkFactory implements BulkFactory {
                     stringAccumulator.setLength(0);
                     lastString = null;
                 }
-                compacted.add(new FieldWriter((FieldExtractor) object));
+                compacted.add(createFieldWriter((FieldExtractor) object));
             }
             else {
                 String str = object.toString();
@@ -285,6 +317,10 @@ abstract class AbstractBulkFactory implements BulkFactory {
             compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
         }
         return compacted;
+    }
+
+    protected Object createFieldWriter(FieldExtractor extractor) {
+        return new FieldWriter(extractor);
     }
 
     protected void writeBeforeObject(List<Object> pieces) {

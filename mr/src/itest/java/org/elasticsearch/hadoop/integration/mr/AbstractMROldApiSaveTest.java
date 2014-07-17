@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -53,6 +55,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assume.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -88,6 +92,18 @@ public class AbstractMROldApiSaveTest {
             output.collect(key, WritableUtils.toWritable(entry));
         }
     }
+
+    public static class ConstantMapper extends MapReduceBase implements Mapper {
+
+        @Override
+        public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+            MapWritable map = new MapWritable();
+            map.put(new Text("key"), new Text("value"));
+            output.collect(new LongWritable(), map);
+        }
+    }
+
+
     public static class SplittableTextInputFormat extends TextInputFormat {
 
         @Override
@@ -135,6 +151,18 @@ public class AbstractMROldApiSaveTest {
         this.config = config;
     }
 
+
+    @Test
+    public void testNoInput() throws Exception {
+        JobConf conf = createJobConf();
+
+        // use only when dealing with constant input
+        assumeFalse(conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/constant");
+        conf.setMapperClass(ConstantMapper.class);
+
+        runJob(conf);
+    }
 
     @Test
     public void testBasicIndex() throws Exception {
@@ -348,7 +376,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.tags = update_tags");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, "update_tags:tags");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, (conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true") ? "update_tags:name" :"update_tags:list"));
 
         runJob(conf);
     }

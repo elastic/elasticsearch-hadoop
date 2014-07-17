@@ -18,22 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
-import org.elasticsearch.hadoop.serialization.SettingsAware;
+// Marker interface indicating that a field extractor does not handle quotes and thus these need to be added further down the pipe-line
+public interface WithoutQuotes {
 
-/**
- * Basic extractor (for serialization purposes) of a field. Typically used with {@link SettingsAware} for configuration/injection purposes.
- *
- */
-public interface FieldExtractor {
-
-    public Object NOT_FOUND = new Object();
-
-    /**
-     * Returns the associated JSON representation for the given target.
-     * If the target cannot be handled, {@value #NOT_FOUND} should be returned.
-     *
-     * @param target
-     * @return
-     */
-    Object field(Object target);
 }

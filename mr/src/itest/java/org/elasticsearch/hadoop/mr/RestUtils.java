@@ -47,6 +47,10 @@ public class RestUtils {
             return super.execute(method, path, buffer);
         }
 
+        public String get(String index) throws IOException {
+            return IOUtils.asString(execute(Request.Method.GET, index));
+        }
+
         public String post(String index, byte[] buffer) throws IOException {
             return IOUtils.asString(execute(Request.Method.POST, index, new BytesArray(buffer)).body());
         }
@@ -72,6 +76,13 @@ public class RestUtils {
         Field parseField = Field.parseField(rc.getMapping(index + "/_mapping"));
         rc.close();
         return parseField;
+    }
+
+    public static String get(String index) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        String str = rc.get(index);
+        rc.close();
+        return str;
     }
 
     public static void putMapping(String index, String location) throws Exception {

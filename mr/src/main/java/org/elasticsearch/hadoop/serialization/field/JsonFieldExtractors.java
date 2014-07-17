@@ -48,14 +48,25 @@ public class JsonFieldExtractors {
     class PrecomputedFieldExtractor implements FieldExtractor {
 
         private final int slot;
+        private final String fieldName;
 
-        public PrecomputedFieldExtractor(int slot) {
+        public PrecomputedFieldExtractor(int slot, String fieldName) {
             this.slot = slot;
+            this.fieldName = fieldName;
         }
 
         @Override
-        public String field(Object target) {
-            return results.get(slot);
+        public Object field(Object target) {
+            String result = results.get(slot);
+            if (result == ParsingUtils.NOT_FOUND) {
+                return FieldExtractor.NOT_FOUND;
+            }
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("JsonExtractor for field [%s]", fieldName);
         }
     }
 
@@ -69,6 +80,11 @@ public class JsonFieldExtractors {
         @Override
         public String field(Object target) {
             return value;
+        }
+
+        @Override
+        public String toString() {
+            return "ConstantJsonExtractor";
         }
     }
 
@@ -124,7 +140,7 @@ public class JsonFieldExtractors {
 
     private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList) {
         pathList.add(fieldName);
-        return new PrecomputedFieldExtractor(pathList.size() - 1);
+        return new PrecomputedFieldExtractor(pathList.size() - 1, fieldName);
     }
 
     private String initConstant(String field) {
