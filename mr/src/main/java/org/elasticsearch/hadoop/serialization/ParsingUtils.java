@@ -29,6 +29,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class ParsingUtils {
 
+    public static final String NOT_FOUND = "(not found)";
+
     /**
      * Seeks the field with the given name in the stream and positions (and returns) the parser to the next available token (value or not).
      * Return null if no token is found.
@@ -139,7 +141,7 @@ public abstract class ParsingUtils {
 
         List<String> matches = new ArrayList<String>();
         for (Matcher matcher : matchers) {
-            matches.add(matcher.matched ? matcher.value.toString() : null);
+            matches.add(matcher.matched ? (matcher.value != null ? matcher.value.toString() : StringUtils.EMPTY) : NOT_FOUND);
         }
 
         return matches;

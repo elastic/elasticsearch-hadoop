@@ -29,6 +29,12 @@ public class BytesRef {
     List<Object> list = null;
     private int size = 0;
 
+    public void add(BytesArrayPool baPool) {
+        for (BytesArray pool : baPool.inUse()) {
+            add(pool);
+        }
+    }
+
     public void add(BytesArray bytes) {
         if (list == null) {
             list = new ArrayList<Object>();

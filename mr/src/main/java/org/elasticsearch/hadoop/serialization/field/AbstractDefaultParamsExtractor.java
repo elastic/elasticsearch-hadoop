@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,22 +29,35 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, SettingsAware {
+public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, SettingsAware, FieldExplainer, WithoutQuotes {
 
     private Map<String, FieldExtractor> params = new LinkedHashMap<String, FieldExtractor>();
     protected Settings settings;
+    // field explainer saved in case of a failure for diagnostics
+    private FieldExtractor lastFailingFieldExtractor;
 
     @Override
-    public String field(Object target) {
-        StringBuilder sb = new StringBuilder();
+    public Object field(Object target) {
+        List<Object> list = new ArrayList<Object>(params.size());
         for (Entry<String, FieldExtractor> entry : params.entrySet()) {
-            sb.append("\"");
-            sb.append(entry.getKey());
-            sb.append("\":\"");
-            sb.append(entry.getValue().field(target));
-            sb.append("\",");
+            list.add("\"");
+            list.add(entry.getKey());
+            list.add("\":");
+            Object field = entry.getValue().field(target);
+            if (field == FieldExtractor.NOT_FOUND) {
+                lastFailingFieldExtractor = entry.getValue();
+                return FieldExtractor.NOT_FOUND;
+            }
+            list.add(field);
+            list.add(",");
         }
-        return sb.substring(0, sb.length() - 1);
+        list.remove(list.size() - 1);
+        return list;
+    }
+
+    @Override
+    public String toString(Object target) {
+        return (lastFailingFieldExtractor instanceof FieldExplainer ? ((FieldExplainer) lastFailingFieldExtractor).toString(target) : target.toString());
     }
 
     @Override
@@ -58,6 +72,15 @@ public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, 
 
             params.put(param.get(0), createFieldExtractor(param.get(1)));
         }
+    }
+
+    @Override
+    public String toString() {
+        if (lastFailingFieldExtractor != null) {
+            return lastFailingFieldExtractor.toString();
+        }
+
+        return String.format("%s for fields [%s]", getClass().getSimpleName(), params.keySet());
     }
 
     protected abstract FieldExtractor createFieldExtractor(String fieldName);

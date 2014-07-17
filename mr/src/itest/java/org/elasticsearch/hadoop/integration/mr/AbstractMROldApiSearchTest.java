@@ -44,6 +44,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
+
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSearchTest {
 
@@ -139,6 +143,15 @@ public class AbstractMROldApiSearchTest {
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2936-10-06"));
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2051-10-06"));
         Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2945-10-06"));
+    }
+
+    @Test
+    public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
+        String target = "mroldapi/createwitharrayupsert/1";
+        Assert.assertTrue(RestUtils.exists(target));
+        String result = RestUtils.get(target);
+        System.out.println(result);
+        assertThat(result, not(containsString("ArrayWritable@")));
     }
 
     //@Test

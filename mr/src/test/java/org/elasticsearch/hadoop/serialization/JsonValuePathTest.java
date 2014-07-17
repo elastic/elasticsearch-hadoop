@@ -48,7 +48,7 @@ public class JsonValuePathTest {
         List<String> vals = ParsingUtils.values(parser, "firstName", "foo", "age");
         assertEquals(3, vals.size());
         assertEquals("John", vals.get(0));
-        assertNull(vals.get(1));
+        assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
         assertEquals("25", vals.get(2));
     }
 
@@ -57,8 +57,8 @@ public class JsonValuePathTest {
         List<String> vals = ParsingUtils.values(parser, "address.state", "address.foo", "address.building.floors", "address.building.bar");
         assertEquals(4, vals.size());
         assertEquals("NY", vals.get(0));
-        assertNull(vals.get(1));
+        assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
         assertEquals("10", vals.get(2));
-        assertNull(vals.get(3));
+        assertSame(ParsingUtils.NOT_FOUND, vals.get(3));
     }
 }
