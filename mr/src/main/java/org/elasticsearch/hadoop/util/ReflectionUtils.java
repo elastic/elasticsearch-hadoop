@@ -57,6 +57,14 @@ public abstract class ReflectionUtils {
         }
     }
 
+    public static void setField(Field field, Object target, Object value) {
+        try {
+            field.set(target, value);
+        } catch (IllegalAccessException ex) {
+            throw new EsHadoopIllegalStateException("Unexpected reflection exception - " + ex.getClass().getName() + ": "+ ex.getMessage());
+        }
+    }
+
     public static void makeAccessible(AccessibleObject accessible) {
         if (!accessible.isAccessible()) {
             accessible.setAccessible(true);
