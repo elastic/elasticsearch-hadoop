@@ -90,7 +90,7 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = Text.class;
         }
 
-        return new ArrayWritable(arrayType);
+        return new WritableArrayWritable(arrayType);
     }
 
     @Override
