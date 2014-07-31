@@ -99,6 +99,7 @@ public class HiveSuite {
     @ClassRule
     public static ExternalResource resource = new ChainedExternalResource(new LocalEs(), hive);
 
+    @SuppressWarnings("deprecation")
     @BeforeClass
     public static void setup() throws Exception {
         if (!isLocal) {

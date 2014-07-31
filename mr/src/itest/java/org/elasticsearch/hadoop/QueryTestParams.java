@@ -84,6 +84,7 @@ public class QueryTestParams {
                 });
     }
 
+    @SuppressWarnings("deprecation")
     public static <T extends Configuration> T provisionQueries(T cfg) {
         if (HadoopCfgUtils.isLocal(cfg)) {
             return cfg;
