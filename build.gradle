@@ -400,10 +400,17 @@ project(":elasticsearch-hadoop-hive") {
 	}
 }
 
-	
+
 project(":elasticsearch-spark") {
 	description = "Elasticsearch Spark"
-	apply plugin: 'scala'
+
+	if (java8) {
+		println "Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
+		// scaladoc doesn't work on Java8 - at least in Gradle, see GRADLE-3094
+	}
+	else {
+		apply plugin: 'scala'
+	}
 
 	nestMRProject(project)
 	
