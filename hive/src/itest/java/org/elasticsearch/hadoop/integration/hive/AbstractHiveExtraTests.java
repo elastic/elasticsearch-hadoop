@@ -55,7 +55,7 @@ public class AbstractHiveExtraTests {
                 + "color STRING,"
                 + "price BIGINT,"
                 + "sold TIMESTAMP) "
-                + HiveSuite.tableProps("cars/transactions", null, null);
+                + HiveSuite.tableProps("cars/transactions", null, (String[]) null);
 
         String query = "SELECT * from cars2";
         String count = "SELECT count(1) from cars2";
