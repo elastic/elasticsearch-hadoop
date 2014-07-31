@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.spark.integration;
 
+import java.util.concurrent.TimeUnit;
+
 import scala.annotation.migration
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.runtime.ScalaRunTime.stringOf
@@ -39,35 +41,36 @@ class AbstractScalaEsScalaSpark extends Serializable {
     @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
     @transient var cfg: SparkConf = null
     @transient var sc: SparkContext = null
-    
+
     @Before def setup() {
       cfg = conf.clone()
     }
-    
+
     @After def clean() {
       if (sc != null) {
         sc.stop
+        Thread.sleep(TimeUnit.SECONDS.toMillis(2))
       }
     }
-    
+
     @Test
     def testBasicRead() {
         val sc = new SparkContext(conf)
         val input = TestUtils.sampleArtistsDat()
         val data = sc.textFile(input).cache();
 
-        assertTrue(data.count > 300) 
+        assertTrue(data.count > 300)
     }
 
     @Test
     def testEsRDDWrite() {
-    	val doc1 = Map("one" -> 1, "two" -> 2)
-    	val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
-    	
-    	sc = new SparkContext(cfg)
-    	sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/basic-write")
-    	RestUtils.exists("spark-test/scala-basic-write")
-    	println(RestUtils.get("spark-test/basic-write/_search?"))
+        val doc1 = Map("one" -> 1, "two" -> 2)
+        val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+        sc = new SparkContext(cfg)
+        sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/basic-write")
+        RestUtils.exists("spark-test/scala-basic-write")
+        println(RestUtils.get("spark-test/basic-write/_search?"))
     }
 
     @Test

@@ -54,8 +54,8 @@ import com.esotericsoftware.kryo.Kryo;
 public class AbstractHadoopBasicSparkTest implements Serializable {
 
     private transient final SparkConf conf = new SparkConf().setMaster("local").setAppName("basictest");
-    private SparkConf cfg = null;
-    private JavaSparkContext sc;
+    private transient SparkConf cfg = null;
+    private transient JavaSparkContext sc;
 
 
     @Before
@@ -67,6 +67,7 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
     public void clean() throws Exception {
         if (sc != null) {
             sc.stop();
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
         }
     }
 

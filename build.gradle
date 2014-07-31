@@ -227,6 +227,7 @@ allprojects { project ->
 			'Elasticsearch Cascading' : ['org.elasticsearch.hadoop.cascading*'],
 			'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
 			'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
+			'Elasticsearch Spark' : ['org.elasticsearch.spark*'],
 			]
 
 			links = [
@@ -236,7 +237,8 @@ allprojects { project ->
 				//"http://hbase.apache.org/apidocs/",
 				"http://pig.apache.org/docs/r0.12.1/api/",
 				"http://hive.apache.org/javadocs/r0.12.0/api/",
-				"http://docs.cascading.org/cascading/2.1/javadoc/"
+				"http://docs.cascading.org/cascading/2.1/javadoc/",
+				"http://spark.apache.org/docs/latest/api/java/"
 			]
 
 			excludes = [
