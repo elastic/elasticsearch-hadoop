@@ -400,17 +400,16 @@ project(":elasticsearch-hadoop-hive") {
 	}
 }
 
-
 project(":elasticsearch-spark") {
-	description = "Elasticsearch Spark"
-
 	if (java8) {
-		println "Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
-		// scaladoc doesn't work on Java8 - at least in Gradle, see GRADLE-3094
+		println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
+		tasks.all { enabled = false }
 	}
 	else {
 		apply plugin: 'scala'
 	}
+	
+	description = "Elasticsearch Spark"
 
 	nestMRProject(project)
 	
@@ -425,8 +424,6 @@ project(":elasticsearch-spark") {
 		//itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
 	}
 }
-
-
 
 configure(rootProject) {
 	def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
