@@ -18,12 +18,9 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,24 +34,17 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
+import org.elasticsearch.hadoop.rest.RestService;
+import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.elasticsearch.hadoop.util.SettingsUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.Version;
-
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -170,7 +160,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                         currentInstance));
             }
 
-            Settings settings = SettingsManager.loadFrom(cfg).copy();
+            Settings settings = HadoopSettingsManager.loadFrom(cfg).copy();
 
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Init shard writer from cfg %s", HadoopCfgUtils.asProperties(cfg)));
@@ -179,85 +169,13 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
-            InitializationUtils.discoverNodesIfNeeded(settings, log);
-            InitializationUtils.discoverEsVersion(settings, log);
-            // pick the host based on id
-            List<String> nodes = SettingsUtils.nodes(settings);
-            Collections.rotate(nodes, -currentInstance);
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
 
-            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
-            beat.start();
+            PartitionWriter pw = RestService.createWriter(settings, currentInstance, -1, log);
 
-            resource = new Resource(settings, false);
-
-            // single index vs multi indices
-            IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
-            iformat.compile(resource.toString());
-            if (iformat.hasPattern()) {
-                initMultiIndices(settings, currentInstance);
-            }
-            else {
-                initSingleIndex(settings, currentInstance);
-            }
-        }
-
-        private void initSingleIndex(Settings settings, int currentInstance) throws IOException {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Resource [%s] resolves as a single index", resource));
-            }
-
-            repository = new RestRepository(settings);
-            // create the index if needed
-            if (repository.touch()) {
-                if (repository.waitForYellow()) {
-                    log.warn(String.format("Timed out waiting for index [%s] to reach yellow health", resource));
-                }
-            }
-
-            Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
-            repository.close();
-
-            List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
-            // make sure the order is strict
-            Collections.sort(orderedShards);
-            if (log.isTraceEnabled()) {
-                log.trace(String.format("ESRecordWriter instance [%s] discovered %s primary shards %s", currentInstance, orderedShards.size(), orderedShards));
-            }
-
-            // if there's no task info, just pick a random bucket
-            if (currentInstance <= 0) {
-                currentInstance = new Random().nextInt(targetShards.size()) + 1;
-            }
-            int bucket = currentInstance % targetShards.size();
-            Shard chosenShard = orderedShards.get(bucket);
-            Node targetNode = targetShards.get(chosenShard);
-
-            // override the global settings to communicate directly with the target node
-            settings.setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
-            repository = new RestRepository(settings);
-            uri = SettingsUtils.nodes(settings).get(0);
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("EsRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
-            }
-        }
-
-        private void initMultiIndices(Settings settings, int currentInstance) throws IOException {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
-            }
-
-            // use target node for indexing
-            uri = SettingsUtils.nodes(settings).get(0);
-            // override the global settings to communicate directly with the target node
-            settings.setHosts(uri);
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", currentInstance, uri));
-            }
-
-            repository = new RestRepository(settings);
+            this.repository = pw.repository;
+            
+            this.beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+            this.beat.start();
         }
 
         private int detectCurrentInstance(Configuration conf) {
@@ -333,7 +251,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
 
     // NB: all changes to the config objects are discarded before the job is submitted if _the old MR api_ is used
     private void init(Configuration cfg) throws IOException {
-        Settings settings = SettingsManager.loadFrom(cfg);
+        Settings settings = HadoopSettingsManager.loadFrom(cfg);
         Assert.hasText(settings.getResourceWrite(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // lazy-init

@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -32,9 +31,8 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
@@ -59,14 +57,10 @@ public abstract class CascadingUtils {
     private static final boolean CASCADING_22_AVAILABLE = ObjectUtils.isClassPresent("cascading.tuple.type.CoercibleType", Tap.class.getClassLoader());
 
     static Settings addDefaultsToSettings(Properties flowProperties, Properties tapProperties, Log log) {
-        Settings settings = SettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProperties)).merge(tapProperties);
+        Settings settings = HadoopSettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProperties)).merge(tapProperties);
 
-        try {
-            InitializationUtils.discoverNodesIfNeeded(settings, log);
-            InitializationUtils.discoverEsVersion(settings, log);
-        } catch (IOException ex) {
-            throw new EsHadoopIllegalStateException("Cannot discover Elasticsearch information", ex);
-        }
+        InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.discoverEsVersion(settings, log);
 
         InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);

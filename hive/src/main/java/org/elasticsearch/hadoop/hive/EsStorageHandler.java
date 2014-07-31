@@ -31,7 +31,7 @@ import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.Assert;
@@ -88,7 +88,7 @@ public class EsStorageHandler extends DefaultStorageHandler {
         Configuration cfg = getConf();
         // NB: we can't just merge the table properties in, we need to save them per input/output otherwise clashes occur which confuse Hive
 
-        Settings settings = SettingsManager.loadFrom(cfg);
+        Settings settings = HadoopSettingsManager.loadFrom(cfg);
         //settings.setProperty((read ? HiveConstants.INPUT_TBL_PROPERTIES : HiveConstants.OUTPUT_TBL_PROPERTIES), IOUtils.propsToString(tableDesc.getProperties()));
         if (read) {
             // no generic setting

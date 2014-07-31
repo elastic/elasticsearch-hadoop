@@ -32,7 +32,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 
@@ -78,7 +78,7 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveCompatOutp
     public EsHiveRecordWriter getHiveRecordWriter(JobConf jc, Path finalOutPath, Class valueClass, boolean isCompressed, Properties tableProperties, Progressable progress) {
         // force the table properties to be merged into the configuration
         // NB: the properties are also available in HiveConstants#OUTPUT_TBL_PROPERTIES
-        Settings settings = SettingsManager.loadFrom(jc).merge(tableProperties);
+        Settings settings = HadoopSettingsManager.loadFrom(jc).merge(tableProperties);
 
         Log log = LogFactory.getLog(getClass());
 

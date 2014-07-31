@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -100,6 +101,9 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
     @Override
     public Object[] next() {
+    	if (!hasNext()) {
+    		throw new NoSuchElementException("No more documents available");
+    	}
         return batch.get(batchIndex++);
     }
 

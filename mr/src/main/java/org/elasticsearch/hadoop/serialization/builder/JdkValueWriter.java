@@ -87,7 +87,7 @@ public class JdkValueWriter implements ValueWriter<Object> {
         else if (value instanceof byte[]) {
             generator.writeBinary((byte[]) value);
         }
-        else if (value instanceof Object[]) {
+        else if (value.getClass().isArray()) {
             generator.writeBeginArray();
             for (Object o : (Object[]) value) {
                 write(o, generator);

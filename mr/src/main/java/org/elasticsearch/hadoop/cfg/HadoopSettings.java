@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.util.Assert;
 
 public class HadoopSettings extends Settings {
 
-    private Configuration cfg;
+    private final Configuration cfg;
 
     public HadoopSettings(Configuration cfg) {
         Assert.notNull(cfg, "Non-null properties expected");

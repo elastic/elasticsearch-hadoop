@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.cfg;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -352,6 +354,18 @@ public abstract class Settings implements InternalConfigurationOptions {
             }
         }
 
+        return this;
+    }
+    
+    public Settings merge(Map<String, String> map) {
+        if (map == null || map.isEmpty()) {
+            return this;
+        }
+
+        for (Entry<String, String> entry : map.entrySet()) {
+			setProperty(entry.getKey(), entry.getValue());
+		}
+        
         return this;
     }
 

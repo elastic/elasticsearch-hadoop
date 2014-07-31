@@ -160,9 +160,7 @@ allprojects { project ->
 	}
 
 	sourceSets {
-		integrationTest {
-			java.srcDir file('src/itest/java')
-			resources.srcDir file('src/itest/resources')
+		itest {
 		}
     }
 
@@ -173,11 +171,11 @@ allprojects { project ->
 		testRuntime "log4j:log4j:$log4jVersion"
 
 		
-		integrationTestCompile sourceSets.main.output
-		integrationTestCompile configurations.testCompile
-		integrationTestCompile configurations.provided
-		integrationTestCompile sourceSets.test.output
-		integrationTestRuntime configurations.testRuntime
+		itestCompile sourceSets.main.output
+		itestCompile configurations.testCompile
+		itestCompile configurations.provided
+		itestCompile sourceSets.test.output
+		itestRuntime configurations.testRuntime
 	}
 
 	jar {
@@ -338,7 +336,7 @@ def nestMRProject(target) {
 		provided(project(":elasticsearch-hadoop-mr"))
 		provided(project(path: ":elasticsearch-hadoop-mr", configuration:"provided"))
 		
-		integrationTestCompile project(":elasticsearch-hadoop-mr").sourceSets.integrationTest.runtimeClasspath
+		itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
 	}
 
 	target.jar {
@@ -385,7 +383,7 @@ project(":elasticsearch-hadoop-pig") {
 		testRuntime "com.google.guava:guava:11.0"
 		testRuntime "jline:jline:0.9.94"
 
-		integrationTestRuntime "dk.brics.automaton:automaton:1.11-8"
+		itestRuntime "dk.brics.automaton:automaton:1.11-8"
 	}
 }
 
@@ -396,9 +394,29 @@ project(":elasticsearch-hadoop-hive") {
 	dependencies {
 		provided("org.apache.hive:hive-service:$hiveVersion")
 
-		integrationTestRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
+		itestRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
 	}
 }
+
+	
+project(":elasticsearch-spark") {
+	description = "Elasticsearch Spark"
+	apply plugin: 'scala'
+
+	nestMRProject(project)
+	
+	dependencies {
+		provided("org.apache.spark:spark-core_2.10:$sparkVersion") {
+			exclude group: 'javax.servlet'
+		}
+		provided("javax.servlet:javax.servlet-api:3.0.1")
+		compile("org.scala-lang:scala-library:$scalaVersion")
+
+		//testCompile "org.scalatest:scalatest_2.10:2.2.0"
+		//itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
+	}
+}
+
 
 
 configure(rootProject) {
@@ -409,7 +427,7 @@ configure(rootProject) {
 		eshModules.each { subproject ->
 			from subproject.sourceSets.test.output
 			from subproject.sourceSets.main.output
-			from subproject.sourceSets.integrationTest.output
+			from subproject.sourceSets.itest.output
 		}
 		classifier = 'testing'
 		
@@ -420,8 +438,8 @@ configure(rootProject) {
 allprojects { project ->
 
 	task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
-		testClassesDir = sourceSets.integrationTest.output.classesDir
-		classpath = sourceSets.integrationTest.runtimeClasspath
+		testClassesDir = sourceSets.itest.output.classesDir
+		classpath = sourceSets.itest.runtimeClasspath
 		excludes = ["**/Abstract*.class"]
 		
 		ignoreFailures = true

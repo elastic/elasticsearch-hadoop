@@ -18,9 +18,10 @@
  */
 package org.elasticsearch.hadoop.serialization.dto;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class Shard implements Comparable<Shard> {
+public class Shard implements Comparable<Shard>, Serializable {
 
     public enum State {
         UNASSIGNED, INITIALIZING, STARTED, RELOCATING;

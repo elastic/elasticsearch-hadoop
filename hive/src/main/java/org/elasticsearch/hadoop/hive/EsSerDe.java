@@ -43,7 +43,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
@@ -80,7 +80,7 @@ public class EsSerDe implements SerDe {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         cfg = conf;
-        settings = (cfg != null ? SettingsManager.loadFrom(cfg).merge(tbl) : SettingsManager.loadFrom(tbl));
+        settings = (cfg != null ? HadoopSettingsManager.loadFrom(cfg).merge(tbl) : HadoopSettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
 
         HiveUtils.fixHive13InvalidComments(settings, tbl);
@@ -135,7 +135,7 @@ public class EsSerDe implements SerDe {
             return;
         }
         writeInitialized = true;
-        Settings settings = SettingsManager.loadFrom(tableProperties);
+        Settings settings = HadoopSettingsManager.loadFrom(tableProperties);
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);

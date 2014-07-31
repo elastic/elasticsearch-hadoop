@@ -236,7 +236,7 @@ public class RestRepository implements Closeable, StatsAware {
         return shards;
     }
 
-    public Map<Shard, Node> getWriteTargetPrimaryShards() throws IOException {
+    public Map<Shard, Node> getWriteTargetPrimaryShards() {
         Map<String, Node> nodes = client.getNodes();
 
         List<List<Map<String, Object>>> info = client.targetShards(resourceW);
@@ -272,20 +272,20 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    public boolean indexExists(boolean read) throws IOException {
+    public boolean indexExists(boolean read) {
         Resource res = (read ? resourceR : resourceW);
         return client.exists(res.indexAndType());
     }
 
-    public void putMapping(BytesArray mapping) throws IOException {
+    public void putMapping(BytesArray mapping) {
         client.putMapping(resourceW.index(), resourceW.mapping(), mapping.bytes());
     }
 
-    public boolean touch() throws IOException {
+    public boolean touch() {
         return client.touch(resourceW.index());
     }
 
-    public boolean waitForYellow() throws IOException {
+    public boolean waitForYellow() {
         return client.health(resourceW.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
     }
 

@@ -25,7 +25,7 @@ import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.Counter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -77,7 +77,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sourcePrepare(flowProcess, sourceCall);
 
         Object[] context = new Object[1];
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
+        Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
         IS_ES_10 = SettingsUtils.isEs10(settings);
@@ -119,7 +119,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         super.sinkPrepare(flowProcess, sinkCall);
 
         Object[] context = new Object[1];
-        Settings settings = SettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
+        Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
     }

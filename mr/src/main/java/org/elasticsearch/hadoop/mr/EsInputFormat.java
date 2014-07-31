@@ -22,10 +22,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,27 +40,23 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
+import org.elasticsearch.hadoop.rest.RestService;
+import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
+import org.elasticsearch.hadoop.rest.RestService.PartitionReader;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
-import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.Version;
 
 /**
  * ElasticSearch {@link InputFormat} for streaming data (typically based on a query) from ElasticSearch.
@@ -69,7 +64,7 @@ import org.elasticsearch.hadoop.util.Version;
  *
  * <p/>This class implements both the "old" (<tt>org.apache.hadoop.mapred</tt>) and the "new" (<tt>org.apache.hadoop.mapreduce</tt>) API.
  */
-public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V> {
+public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache.hadoop.mapred.InputFormat<K, V>{
 
     private static Log log = LogFactory.getLog(EsInputFormat.class);
 
@@ -85,13 +80,13 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         public ShardInputSplit() {}
 
-        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, Integer shard,
+        public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, String shard,
                 String mapping, String settings) {
             this.nodeIp = nodeIp;
             this.httpPort = httpPort;
             this.nodeId = nodeId;
             this.nodeName = nodeName;
-            this.shardId = shard.toString();
+            this.shardId = shard;
             this.mapping = mapping;
             this.settings = settings;
         }
@@ -119,7 +114,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             byte[] utf = StringUtils.toUTF(mapping);
             out.writeInt(utf.length);
             out.write(utf);
-
+            // same goes for settings
             utf = StringUtils.toUTF(settings);
             out.writeInt(utf.length);
             out.write(utf);
@@ -193,7 +188,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
             // get a copy to override the host/port
-            Settings settings = SettingsManager.loadFrom(cfg).copy().load(esSplit.settings);
+            Settings settings = HadoopSettingsManager.loadFrom(cfg).copy().load(esSplit.settings);
 
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Init shard reader from cfg %s", HadoopCfgUtils.asProperties(cfg)));
@@ -207,32 +202,16 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
             // initialize mapping/ scroll reader
             InitializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
-            ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
-
-            String mappingData = esSplit.mapping;
-
-            Field mapping = null;
-
-            if (StringUtils.hasText(mappingData)) {
-                mapping = IOUtils.deserializeFromBase64(mappingData);
-            }
-            else {
-                log.warn(String.format("No mapping found for [%s] - either no index exists or the split configuration has been corrupted", esSplit));
-            }
-
-            scrollReader = new ScrollReader(reader, mapping);
-
+            
+            PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, settings.save(), esSplit.mapping);
+            PartitionReader partitionReader = RestService.createReader(settings, part, log);
+            
+            this.scrollReader = partitionReader.scrollReader;
+            this.client = partitionReader.client;
+            this.queryBuilder = partitionReader.queryBuilder;
+            
             // heart-beat
             beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
-
-            // initialize REST client
-            client = new RestRepository(settings);
-
-            queryBuilder = QueryBuilder.query(settings)
-                    .shard(esSplit.shardId)
-                    .onlyNode(esSplit.nodeId);
-
-            queryBuilder.fields(settings.getScrollFields());
 
             this.progressable = progressable;
 
@@ -430,64 +409,14 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     @Override
     public org.apache.hadoop.mapred.InputSplit[] getSplits(JobConf job, int numSplits) throws IOException {
 
-        Settings settings = SettingsManager.loadFrom(job);
-        InitializationUtils.discoverNodesIfNeeded(settings, log);
-        InitializationUtils.discoverEsVersion(settings, log);
-
-        String savedSettings = settings.save();
-
-        RestRepository client = new RestRepository(settings);
-        boolean indexExists = client.indexExists(true);
-        Map<Shard, Node> targetShards = null;
-
-        if (!indexExists) {
-            if (settings.getIndexReadMissingAsEmpty()) {
-                log.info(String.format("Index [%s] missing - treating it as empty", settings.getResourceRead()));
-                targetShards = Collections.emptyMap();
-            }
-            else {
-                client.close();
-                throw new EsHadoopIllegalArgumentException(
-                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
-            }
-        }
-        else {
-            targetShards = client.getReadTargetShards();
-            if (log.isTraceEnabled()) {
-                log.trace("Creating splits for shards " + targetShards);
-            }
-        }
-
-        Version.logVersion();
-        log.info(String.format("Reading from [%s]", settings.getResourceRead()));
-
-        String savedMapping = null;
-        if (!targetShards.isEmpty()) {
-            Field mapping = client.getMapping();
-            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
-            // validate if possible
-            FieldPresenceValidation validation = settings.getFieldExistanceValidation();
-            if (validation.isRequired()) {
-                MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
-            }
-
-            //TODO: implement this more efficiently
-            savedMapping = IOUtils.serializeToBase64(mapping);
-
-        }
-
-        client.close();
-
-        ShardInputSplit[] splits = new ShardInputSplit[targetShards.size()];
-
+        Settings settings = HadoopSettingsManager.loadFrom(job);
+        Collection<PartitionDefinition> partitions = RestService.findPartitions(settings, log);
+        ShardInputSplit[] splits = new ShardInputSplit[partitions.size()];
+        
         int index = 0;
-        for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-            Shard shard = entry.getKey();
-            Node node = entry.getValue();
-            splits[index++] =
-                        new ShardInputSplit(node.getIpAddress(), node.getHttpPort(), node.getId(), node.getName(), shard.getName(), savedMapping, savedSettings);
-        }
-
+        for (PartitionDefinition part : partitions) {
+			splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId, part.serializedMapping, part.serializedSettings);
+		}
         log.info(String.format("Created [%d] shard-splits", splits.length));
         return splits;
     }

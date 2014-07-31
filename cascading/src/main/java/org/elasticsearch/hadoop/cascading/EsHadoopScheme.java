@@ -32,7 +32,7 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
@@ -157,7 +157,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     }
 
     private Settings loadSettings(Object source, boolean read) {
-        return CascadingUtils.init(SettingsManager.loadFrom(source).merge(props), nodes, port, index, query, read);
+        return CascadingUtils.init(HadoopSettingsManager.loadFrom(source).merge(props), nodes, port, index, query, read);
     }
 
     @SuppressWarnings("unchecked")

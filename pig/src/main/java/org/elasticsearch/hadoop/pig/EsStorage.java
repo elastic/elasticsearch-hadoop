@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.pig;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,18 +45,15 @@ import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceStatistics;
 import org.apache.pig.StoreFuncInterface;
 import org.apache.pig.StoreMetadata;
-import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.JobControlCompiler;
 import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
-import org.apache.pig.backend.hadoop.executionengine.physicalLayer.relationalOperators.POStore;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
-import org.apache.pig.impl.util.ObjectSerializer;
 import org.apache.pig.impl.util.UDFContext;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -146,7 +142,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     }
 
     private void init(String location, Job job, boolean read) {
-        Settings settings = SettingsManager.loadFrom(job.getConfiguration()).merge(properties);
+        Settings settings = HadoopSettingsManager.loadFrom(job.getConfiguration()).merge(properties);
 
         settings = (read ? settings.setResourceRead(location) : settings.setResourceWrite(location));
 
@@ -233,7 +229,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         Configuration cfg = job.getConfiguration();
 
-        Settings settings = SettingsManager.loadFrom(cfg);
+        Settings settings = HadoopSettingsManager.loadFrom(cfg);
         IS_ES_10 = SettingsUtils.isEs10(settings);
 
         if (settings.getScrollFields() != null) {

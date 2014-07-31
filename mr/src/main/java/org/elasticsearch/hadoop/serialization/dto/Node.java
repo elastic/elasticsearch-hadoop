@@ -18,9 +18,10 @@
  */
 package org.elasticsearch.hadoop.serialization.dto;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class Node {
+public class Node implements Serializable {
 
     private String id;
     private String name;
