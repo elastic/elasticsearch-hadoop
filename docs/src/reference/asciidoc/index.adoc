@@ -4,6 +4,7 @@
 :eh: 	elasticsearch-hadoop
 :es: 	Elasticsearch
 :mr: 	Map/Reduce
+:sp:	Apache Spark
 :ref:  	http://www.elasticsearch.org/guide/en/elasticsearch/reference/current
 :description: Reference documentation of {eh}
 

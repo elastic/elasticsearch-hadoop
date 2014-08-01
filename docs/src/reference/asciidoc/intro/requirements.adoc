@@ -115,25 +115,56 @@ cascading-2.5.4.jar
 [[requirements-hive]]
 === Apache Hive
 
-Apache Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.12.0 or 0.13.0).
+Apache Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.12.0 or 0.13.1).
 
 One can find out the Hive version from its folder name or command-line:
 
 [source, bash]
 ----
 $ bin/hive -version
-Hive version 0.13.0
+Hive version 0.13.1
 ----
 
 [[requirements-pig]]
 === Apache Pig
 
-Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.12.1).
+Pig 0.10.0 or higher. We recommend using the latest release of Pig (currently 0.13.0).
 
 In a similar fashion, Pig version can be discovered from its folder path or through the command-line:
 
 [source, bash]
 ----
 $ bin/pig -i
-Apache Pig version 0.12.1
+Apache Pig version 0.13.0
+----
+
+[[requirements-spark]]
+=== Apache Spark
+
+Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.0.1). As {eh} provides
+native integration (which is recommended) with {sp} it does not matter what binary one is using. 
+The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
+Hadoop distributions out there.
+
+The Spark version can be typically discovery by looking at its folder name:
+
+[source, bash]
+----
+$ pwd
+/libs/spark/spark-1.0.1-bin-XXXXX
+----
+
+or by running its shell:
+
+[source, bash]
+----
+$ bin/spark-shell
+...
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 1.0.1
+      /_/
+...
 ----

@@ -4,9 +4,11 @@
 [[setup-intro]]
 [partintro]
 --
-{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading) to 'interact' with {es}.
-Data flows 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
-{ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster.
+{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading or new upcoming libraries like {sp} ) to 'interact' with {es}. One can think of it as a _connector_ that allows data to flow 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
+
+{ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. As such,
+{ehtm} is a _passive_ component, allowing Hadoop jobs to use it as a library and interact with {es} through {ehtm} APIs.
+
 [[project-name-alias]]
 While the official name of the project is {ehtm} throught out the documentation the term {eh} will be used instead to increase readability.
 
