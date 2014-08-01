@@ -25,19 +25,20 @@ import org.elasticsearch.hadoop.rest.RestRepository;
  */
 public class Stats {
 
-    /** writes */
-    public long bytesWritten;
-    public long docsWritten;
-    public long bulkWrites;
+    /** sent */
+    public long bytesSent;
+    public long docsSent;
     public long docsRetried;
     public long bytesRetried;
-    public long bulkRetries;
     /** ack */
     public long bytesAccepted;
     public long docsAccepted;
     /** reads */
-    public long bytesRead;
-    public long docsRead;
+    public long bytesReceived;
+    public long docsReceived;
+    /** bulk */
+    public long bulkTotal;
+    public long bulkRetries;
     /** fall overs */
     public int nodeRetries;
     public int netRetries;
@@ -47,7 +48,7 @@ public class Stats {
     public long bulkRetriesTotalTime;
     /** scroll */
     public long scrollTotalTime;
-    public long scrollReads;
+    public long scrollTotal;
 
     public Stats() {};
 
@@ -56,9 +57,9 @@ public class Stats {
             return;
         }
 
-        this.bytesWritten = stats.bytesWritten;
-        this.docsWritten = stats.docsWritten;
-        this.bulkWrites = stats.bulkWrites;
+        this.bytesSent = stats.bytesSent;
+        this.docsSent = stats.docsSent;
+        this.bulkTotal = stats.bulkTotal;
 
         this.docsRetried = stats.docsRetried;
         this.bytesRetried = stats.bytesRetried;
@@ -67,8 +68,8 @@ public class Stats {
         this.bytesAccepted = stats.bytesAccepted;
         this.docsAccepted = stats.docsAccepted;
 
-        this.bytesRead = stats.bytesRead;
-        this.docsRead = stats.docsRead;
+        this.bytesReceived = stats.bytesReceived;
+        this.docsReceived = stats.docsReceived;
 
         this.nodeRetries = stats.nodeRetries;
         this.netRetries = stats.netRetries;
@@ -77,7 +78,7 @@ public class Stats {
         this.bulkTotalTime = stats.bulkTotalTime;
         this.bulkRetriesTotalTime = stats.bulkRetriesTotalTime;
 
-        this.scrollReads = stats.scrollReads;
+        this.scrollTotal = stats.scrollTotal;
         this.scrollTotalTime = stats.scrollTotalTime;
     }
 
@@ -86,17 +87,17 @@ public class Stats {
             return this;
         }
 
-        bytesWritten += other.bytesWritten;
-        docsWritten += other.docsWritten;
-        bulkWrites += other.bulkWrites;
+        bytesSent += other.bytesSent;
+        docsSent += other.docsSent;
+        bulkTotal += other.bulkTotal;
         docsRetried += other.docsRetried;
         bytesRetried += other.bytesRetried;
         bulkRetries += other.bulkRetries;
         bytesAccepted += other.bytesAccepted;
         docsAccepted += other.docsAccepted;
 
-        bytesRead += other.bytesRead;
-        docsRead += other.docsRead;
+        bytesReceived += other.bytesReceived;
+        docsReceived += other.docsReceived;
 
         nodeRetries += other.nodeRetries;
         netRetries += other.netRetries;
@@ -105,7 +106,7 @@ public class Stats {
         bulkTotalTime += other.bulkTotalTime;
         bulkRetriesTotalTime += other.bulkRetriesTotalTime;
 
-        scrollReads += other.scrollReads;
+        scrollTotal += other.scrollTotal;
         scrollTotalTime += other.scrollTotalTime;
 
         return this;

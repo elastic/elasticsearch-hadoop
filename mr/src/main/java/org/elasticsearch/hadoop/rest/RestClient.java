@@ -139,8 +139,8 @@ public class RestClient implements Closeable, StatsAware {
             Response response = execute(PUT, resource.bulk(), data);
             long spent = network.transportStats().netTotalTime - start;
 
-            stats.bulkWrites++;
-            stats.docsWritten += data.entries();
+            stats.bulkTotal++;
+            stats.docsSent += data.entries();
             stats.bulkTotalTime += spent;
             // bytes will be counted by the transport layer
 
@@ -327,7 +327,7 @@ public class RestClient implements Closeable, StatsAware {
             // use post instead of get to avoid some weird encoding issues (caused by the long URL)
             InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
                     new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
-            stats.scrollReads++;
+            stats.scrollTotal++;
             return is;
         } finally {
             stats.scrollTotalTime += network.transportStats().netTotalTime - start;

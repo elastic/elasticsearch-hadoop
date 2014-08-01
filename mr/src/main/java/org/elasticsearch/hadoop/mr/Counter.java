@@ -28,22 +28,16 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
  */
 public enum Counter {
 
-    BYTES_WRITTEN {
+    BYTES_SENT {
         @Override
         public long get(Stats stats) {
-            return stats.bytesWritten;
+            return stats.bytesSent;
         }
     },
-    DOCS_WRITTEN {
+    DOCS_SENT {
         @Override
         public long get(Stats stats) {
-            return stats.docsWritten;
-        }
-    },
-    BULK_WRITES {
-        @Override
-        public long get(Stats stats) {
-            return stats.bulkWrites;
+            return stats.docsSent;
         }
     },
     BYTES_ACCEPTED {
@@ -58,7 +52,6 @@ public enum Counter {
             return stats.docsAccepted;
         }
     },
-
     DOCS_RETRIED {
         @Override
         public long get(Stats stats) {
@@ -71,22 +64,28 @@ public enum Counter {
             return stats.bytesRetried;
         }
     },
+    BYTES_RECEIVED {
+        @Override
+        public long get(Stats stats) {
+            return stats.bytesReceived;
+        }
+    },
+    DOCS_RECEIVED {
+        @Override
+        public long get(Stats stats) {
+            return stats.docsReceived;
+        }
+    },
+    BULK_TOTAL {
+        @Override
+        public long get(Stats stats) {
+            return stats.bulkTotal;
+        }
+    },
     BULK_RETRIES {
         @Override
         public long get(Stats stats) {
             return stats.bulkRetries;
-        }
-    },
-    BYTES_READ {
-        @Override
-        public long get(Stats stats) {
-            return stats.bytesRead;
-        }
-    },
-    DOCS_READ {
-        @Override
-        public long get(Stats stats) {
-            return stats.docsRead;
         }
     },
     NODE_RETRIES {
@@ -119,10 +118,10 @@ public enum Counter {
             return stats.bulkRetriesTotalTime;
         }
     },
-    SCROLL_READS {
+    SCROLL_TOTAL {
         @Override
         public long get(Stats stats) {
-            return stats.scrollReads;
+            return stats.scrollTotal;
         }
     },
     SCROLL_TOTAL_TIME_MS {

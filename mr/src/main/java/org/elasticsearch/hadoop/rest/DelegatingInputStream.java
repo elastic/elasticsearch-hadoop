@@ -44,7 +44,7 @@ public class DelegatingInputStream extends InputStream implements StatsAware {
     public int read(byte[] b) throws IOException {
         int result = delegate.read(b);
         if (result > 0) {
-            stats.bytesRead++;
+            stats.bytesReceived++;
         }
         return result;
     }
@@ -56,7 +56,7 @@ public class DelegatingInputStream extends InputStream implements StatsAware {
     public int read(byte[] b, int off, int len) throws IOException {
         int result = delegate.read(b, off, len);
         if (result > 0) {
-            stats.bytesRead += result;
+            stats.bytesReceived += result;
         }
         return result;
     }
