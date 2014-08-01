@@ -63,12 +63,12 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-spark<1></artifactId>
+  <artifactId>elasticsearch-spark_2.10<1></artifactId>
   <version>2.1.0.M1</version>
 </dependency>
 ----
 
-<1> 'spark' artifact
+<1> 'spark' artifact. Notice the `_2.10` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself
 
 .Cascading
 [source,xml]

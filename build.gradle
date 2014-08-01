@@ -401,6 +401,8 @@ project(":elasticsearch-hadoop-hive") {
 }
 
 project(":elasticsearch-spark") {
+	ext.postfix = "_$scalaMajorVersion"
+	
 	if (java8) {
 		println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
 		tasks.all { enabled = false }
@@ -414,13 +416,13 @@ project(":elasticsearch-spark") {
 	nestMRProject(project)
 	
 	dependencies {
-		provided("org.apache.spark:spark-core_2.10:$sparkVersion") {
+		provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
 			exclude group: 'javax.servlet'
 		}
 		provided("javax.servlet:javax.servlet-api:3.0.1")
 		compile("org.scala-lang:scala-library:$scalaVersion")
 
-		//testCompile "org.scalatest:scalatest_2.10:2.2.0"
+		//testCompile "org.scalatest:scalatest_$scalaMajorVersion:2.2.0"
 		//itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
 	}
 }
