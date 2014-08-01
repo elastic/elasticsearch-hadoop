@@ -134,7 +134,7 @@ A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
 -- transform data
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 -- save the result to Elasticsearch
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.pig.EsStorage(<2>);
+STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage(<2>);
 ----
 
 <1> {es} resource (index and type) associated with the given storage
@@ -163,7 +163,7 @@ IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content
 ----
 A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray<1>);"
 STORE B INTO 'radio/artists' 
-    USING org.elasticsearch.pig.EsStorage('es.input.json=true'<2>...);
+    USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true'<2>...);
 ----
 
 <1> Load the (JSON) data as a single field (`json`)
@@ -178,7 +178,7 @@ One can index the data to a different resource, depending on the 'row' being rea
 ----
 A = LOAD 'src/test/resources/media.dat' USING PigStorage()
             AS (name:chararray, type:chararray <1>, year: chararray);
-STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.pig.EsStorage();
+STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.hadoop.pig.EsStorage();
 ----
 
 <1> Tuple field used by the resource pattern. Any of the declared fields can be used.
@@ -206,7 +206,7 @@ the table declaration can be as follows:
 ----
 A = LOAD '/resources/media.json' USING PigStorage() AS (json:chararray<1>);"
 STORE B INTO 'my-collection/{media_type}'<2>
-    USING org.elasticsearch.pig.EsStorage('es.input.json=true');
+    USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');
 ----
 
 <1> Schema declaration for the tuple. Since JSON input is used, the schema is simply a holder to the raw data
@@ -221,7 +221,7 @@ As you would expect, loading the data is straight forward:
 ----
 -- execute Elasticsearch query and load data into Pig
 A = LOAD 'radio/artists'<1> 
-    USING org.elasticsearch.pig.EsStorage('es.query=?me*'<2>);
+    USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?me*'<2>);
 DUMP A;
 ----
 
