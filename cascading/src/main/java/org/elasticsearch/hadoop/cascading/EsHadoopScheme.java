@@ -106,7 +106,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         super.sinkPrepare(flowProcess, sinkCall);
 
         Object[] context = new Object[1];
-        // the tuple wil be fixed, so we can just use a collection/index
+        // the tuple is fixed, so we can just use a collection/index
         Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
