@@ -83,7 +83,7 @@ public class NetworkClient implements StatsAware, Closeable {
                 response = currentTransport.execute(routedRequest);
                 ByteSequence body = routedRequest.body();
                 if (body != null) {
-                    stats.bytesWritten += body.length();
+                    stats.bytesSent += body.length();
                 }
             } catch (Exception ex) {
                 if (log.isTraceEnabled()) {

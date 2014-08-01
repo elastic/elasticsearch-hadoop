@@ -78,7 +78,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
                 throw new EsHadoopIllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
             read += batch.size();
-            stats.docsRead += batch.size();
+            stats.docsReceived += batch.size();
 
             if (batch.isEmpty()) {
                 finished = true;

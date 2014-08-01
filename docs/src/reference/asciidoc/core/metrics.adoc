@@ -13,36 +13,36 @@ The Hadoop system records a set of metric counters for each job that it runs. {e
 
 2+h| Data focused
 
-| BYTES_WRITTEN | Total number of data/communication written over the network in bytes
+| BYTES_SENT     | Total number of data/communication sent over the network, to {es} in bytes
 | BYTES_ACCEPTED | Data/Documents accepted by {es} in bytes 
-| BYTES_RETRIED | Data/Documents rejected by {es} in bytes 
-| BYTES_READ | Data/Documents read by {es} in bytes 
+| BYTES_RETRIED  | Data/Documents rejected by {es} in bytes 
+| BYTES_RECEIVED | Data/Documents received from {es} in bytes 
 
 2+h| Document focused
 
-| DOCS_WRITTEN | Number of docs written/sent over the network 
+| DOCS_SENT     | Number of docs sent over the network to {es}
 | DOCS_ACCEPTED | Number of documents sent and accepted by {es} 
-| DOCS_RETRIED | Number of documents sent but rejected by {es} 
-| DOCS_READ | Number of documents read from {es} 
+| DOCS_RETRIED  | Number of documents sent but rejected by {es} 
+| DOCS_RECEIVED | Number of documents received from {es} 
 
 2+h| Network focused
 
-| BULK_WRITES  | Number of bulk requests made 
+| BULK_TOTAL   | Number of bulk requests made to {es}
 | BULK_RETRIES | Number of bulk retries (caused by document rejections) 
-| SCROLL_READS | Number of scroll reads 
+| SCROLL_TOTAL | Number of scroll pulled from {es}
 | NODE_RETRIES | Number of node fall backs (caused by network errors) 
 | NET_RETRIES  | Number of network retries (caused by network errors) 
 
 2+h| Time focused
 
-| NET_TOTAL_TIME_MS | Overall time (in ms) spent over the network 
-| BULK_TOTAL_TIME_MS | Time (in ms) spent over the network by the bulk requests 
+| NET_TOTAL_TIME_MS 		 | Overall time (in ms) spent over the network 
+| BULK_TOTAL_TIME_MS 		 | Time (in ms) spent over the network by the bulk requests 
 | BULK_RETRIES_TOTAL_TIME_MS | Time (in ms) spent over the network retrying bulk requests 
-| SCROLL_TOTAL_TIME_MS | Time (in ms) spent over the network reading the scroll requests 
+| SCROLL_TOTAL_TIME_MS       | Time (in ms) spent over the network reading the scroll requests 
 
 |===
 
-One can the counters programatically, depending on the API used, http://hadoop.apache.org/docs/r2.2.0/api/index.html?org/apache/hadoop/mapred/Counters.html[mapred] or http://hadoop.apache.org/docs/r2.2.0/api/index.html?org/apache/hadoop/mapreduce/Counter.html[mapreduce]. Whatever the choice, {eh} performs automatic reports without any user intervention. In fact, when using {eh} one will see the stats reported at the end of the job run, for example:
+One can use the counters programatically, depending on the API used, through http://hadoop.apache.org/docs/r2.2.0/api/index.html?org/apache/hadoop/mapred/Counters.html[mapred] or http://hadoop.apache.org/docs/r2.2.0/api/index.html?org/apache/hadoop/mapreduce/Counter.html[mapreduce]. Whatever the choice, {eh} performs automatic reports without any user intervention. In fact, when using {eh} one will see the stats reported at the end of the job run, for example:
 
 [source, bash]
 ----
@@ -52,20 +52,20 @@ One can the counters programatically, depending on the API used, http://hadoop.a
 Elasticsearch Hadoop Counters
     Bulk Retries=0
     Bulk Retries Total Time(ms)=0
+    Bulk Total=20
     Bulk Total Time(ms)=518
-    Bulk Writes=20
     Bytes Accepted=159129
-    Bytes Read=79921
+    Bytes Sent=159129
+    Bytes Received=79921
     Bytes Retried=0
-    Bytes Written=159129
     Documents Accepted=993
-    Documents Read=0
+    Documents Sent=993
+    Documents Received=0
     Documents Retried=0
-    Documents Written=993
     Network Retries=0
     Network Total Time(ms)=937
     Node Retries=0
-    Scroll Reads=0
+    Scroll Total=0
     Scroll Total Time(ms)=0
 
 ----
