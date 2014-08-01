@@ -6,6 +6,7 @@ ____
 http://spark.apache.org[Apache Spark] is a fast and general-purpose cluster computing system. It provides high-level APIs in Java, Scala and Python, and an optimized engine that supports general execution graphs.
 ____
 Spark provides fast iterative/functional-like capabilities over large data sets, typically by _caching_ data in memory. As opposed to the rest of the libraries mentioned in this documentation, Apache Spark is computing framework that is not tied to {mr} itself however it does integrate with Hadoop, mainly to HDFS.
+{eh} allows {es} to be used in Spark in two ways: through the dedicated support available since 2.1 or through the {mr} bridge since 2.0
 
 [[spark-installation]]
 [float]
@@ -13,8 +14,166 @@ Spark provides fast iterative/functional-like capabilities over large data sets,
 
 Just like other libraries, {eh} needs to be available in Spark's classpath. As Spark has multiple deployment modes, this can translate to the target classpath, whether it is on only one node (as is the case with the local mode - which will be used through-out the documentation) or per-node depending on the desired infrastructure.
 
+
+added[2.1]
+
+[[spark-native]]
 [float]
-=== Configuration
+=== Native support
+
+{eh} provides _native_ integration between {es} and {sp}, in the form of a RDD (Resilient Distributed Dataset) that can read data from Elasticsearch. The RDD is offered in two 'flavors': one for Scala (which returns the data as Scala collections) and one for Java (which returns the data though `java.util` collections).
+
+IMPORTANT: Whenever possible, consider using the _native_ integration as it offers the best performance and maximum flexibility.
+
+[[spark-native-cfg]]
+[float]
+==== Configuration
+
+To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.0.1/programming-guide.html#initializing-spark[`SparkCfg`] object:
+
+[source,scala]
+----
+import org.apache.spark.SparkConf
+
+val conf = new SparkConf().setAppName(appName).setMaster(master)
+conf.set("es.index.auto.create", "true")
+----
+
+[source,java]
+----
+SparkConf conf = new SparkConf().setAppName(appName).setMaster(master);
+conf.set("es.index.auto.create", "true");
+----
+
+[float]
+==== Reading data from {es}
+
+Once configured, one should define the {es} RDD that _streams_ data from {es} to Spark.
+
+.Scala
+
+When using Scala, simply import the `org.elasticsearch.spark` package which, through the http://www.artima.com/weblogs/viewpost.jsp?thread=179766[__pimp my library__] pattern, enriches the `SparkContext` API with `esRDD` methods:
+
+[source,scala]
+----
+import org.apache.spark.SparkContext    <1>
+import org.apache.spark.SparkContext._
+
+import org.elasticsearch.spark._        <2>
+
+...
+
+val conf = ...
+val sc = new SparkContext(conf)         <3>
+
+val rdd = sc.esRDD("radio/artists")     <4>
+----
+
+<1> Spark Scala imports
+<2> {eh} Scala imports
+<3> start Spark through its Scala API
+<4> a dedicated `RDD` for {es} is created for index `radio/artists`
+
+The method can be overloaded to specify an additional query or even a configuration `Map` (overriding `SparkConf`):
+
+[source,scala]
+----
+...
+import org.elasticsearch.spark._
+
+...
+val conf = ...
+val sc = new SparkContext(conf)
+
+sc.esRDD("radio/artists", "?me*") <1>
+----
+
+<1> create an `RDD` streaming all the documents matching `me*` from index `radio/artists`
+
+The documents from {es} are returned, by default, as Scala http://docs.scala-lang.org/overviews/collections/overview.html[collections], namely one `Map[String, Any]`
+for each document, where the keys represent the field names and the value their respective values.
+
+.Java
+
+Java users have a dedicated `RDD` that works the same as its Scala counterpart however it returns the documents as native, `java.util` collections.
+The main entry class is, `org.elasticsearch.hadoop.spark.api.java.JavaEsSpark`,similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]:
+
+[source,java]
+----
+import org.apache.spark.api.java.JavaSparkContext;   <1>
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.SparkConf;
+
+import org.elasticsearch.spark.java.api.JavaEsSpark; <2>
+...
+
+SparkConf conf = ...
+JavaSparkContext jsc = new JavaSparkContext(conf);   <3>
+
+JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists"); <4>
+----
+
+<1> Spark Java imports
+<2> {eh} Java imports
+<3> start Spark through its Java API
+<4> a dedicated `RDD` for {es} is created for index `radio/artists`
+
+in a similar fashion one can use the overloaded `esRDD` methods to specify a query or pass a `Map` object for advanced configuration.
+Let us see how this looks like, but this time around using http://docs.oracle.com/javase/1.5.0/docs/guide/language/static-import.html[Java static imports]:
+
+[source,java]
+----
+import static org.elasticsearch.spark.java.api.JavaEsSpark.*;     <1>
+
+...
+JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*"); <2>
+----
+
+<1> statically import `JavaEsSpark` class
+<2> create an `RDD` streaming all the documents starting with `me` from index `radio/artists`. Note the method does not have to be fully qualified due to the static import
+
+By using the `JavaEsSpark` API, one gets a hold of Spark's dedicated `JavaRDD` which are better suited in Java environments than the base `RDD` (due to its Scala
+signatures). Moreover, the dedicated RDD returs {es} documents as proper Java collections so one does not have to deal with Scala collections (which
+is typically the case with ++RDD++s). This is particulary powerful when using Java 8, which we strongly advice as its 
+http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions] make collection processing _extremely_
+concise.
+
+To wit, let us assume one wants to filter the documents from the RDD and return only those that contain a value that contain `mega` (please ignore the fact one can and should do the filtering directly through {es}).
+
+In versions prior to Java 8, the code would look something like this:
+[source, java]
+----
+JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*");
+JavaRDD<Map<String, Object>> filtered = esRDD.filter(
+    new Function<Map<String, Object>, Boolean>() {
+      @Override
+      public Boolean call(Map<String, Object> map) throws Exception {
+          for (Entry<String, Object> entry: map.entrySet()) {
+              if (entry.getValue().toString().contains("mega")) {
+                  return Boolean.TRUE;
+              }
+          }
+          return Boolean.FALSE;
+      }
+    });
+----
+
+with Java 8, the filtering becomes a one liner:
+
+[source,java]
+----
+JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*");
+JavaRDD<Map<String, Object>> filtered = esRDD.filter(
+                m -> m.values().stream().filter(v -> v.contains("mega")));
+----
+
+
+[[spark-mr]]
+[float]
+=== Using the {mr} layer
+
+[float]
+==== Configuration
 
 Through {eh}, Spark can integrate with Elasticsearch through its dedicated `InputFormat`, and in case of writing, through `OutputFormat`. These are described at length in the <<mapreduce, {mr}>> chapter so please refer to that for an in-depth explanation.
 
@@ -47,12 +206,12 @@ sc.set("spark.serializer", classOf[KryoSerializer].getName)    <1>
 Note that the Kryo serialization is used as a work-around for dealing with +Writable+ types; one can choose to convert the types directly (from +Writable+ to +Serializable+ types) - which is fine however for getting started, the one liner above seems to be the most effective.
 
 [float]
-=== Reading data from {es}
+==== Reading data from {es}
 
 To read data, simply pass in the `org.elasticsearch.hadoop.mr.EsInputFormat` class - since it supports both the `old` and the `new` {mr} APIs, you are free to use either method on ++SparkContext++'s, +hadoopRDD+ (which we recommend for conciseness reasons) or +newAPIHadoopRDD+. Which ever you chose, stick with it to avoid confusion and problems down the road.
 
 [float]
-==== 'Old' (`org.apache.hadoop.mapred`) API
+===== 'Old' (`org.apache.hadoop.mapred`) API
 
 [source,java]
 ----
@@ -88,7 +247,7 @@ val docCount = esRDD.count();
 <4> Create a Spark RDD on top of {es} through `EsInputFormat`
 
 [float]
-==== 'New' (`org.apache.hadoop.mapreduce`) API
+===== 'New' (`org.apache.hadoop.mapreduce`) API
 
 As expected, the `mapreduce` API version is strikingly similar - replace +hadoopRDD+ with +newAPIHadoopRDD+ and +JobConf+ with +Configuration+. That's about it.
 
