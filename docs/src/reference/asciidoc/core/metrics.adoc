@@ -13,7 +13,7 @@ The Hadoop system records a set of metric counters for each job that it runs. {e
 
 2+h| Data focused
 
-| BYTES_SENT     | Total number of data/communication sent over the network, to {es} in bytes
+| BYTES_SENT     | Total number of data/communication bytes sent over the network to {es}
 | BYTES_ACCEPTED | Data/Documents accepted by {es} in bytes 
 | BYTES_RETRIED  | Data/Documents rejected by {es} in bytes 
 | BYTES_RECEIVED | Data/Documents received from {es} in bytes 
