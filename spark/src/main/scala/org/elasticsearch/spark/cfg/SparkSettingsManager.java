@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.spark.cfg;
+package org.elasticsearch.spark.cfg;
 
 import org.apache.spark.SparkConf;
 import org.elasticsearch.hadoop.cfg.Settings;

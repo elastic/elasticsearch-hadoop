@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.spark.cfg;
+package org.elasticsearch.spark.cfg;
 
 import java.io.InputStream;
 import java.util.Properties;

@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop;
+package org.elasticsearch;
 
 import scala.reflect.ClassTag
 import org.apache.spark.SparkContext
@@ -8,10 +8,10 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.cfg.Settings
-import org.elasticsearch.hadoop.spark.cfg.SparkSettingsManager
-import org.elasticsearch.hadoop.spark.rdd.EsRDDWriter
-import org.elasticsearch.hadoop.spark.api.java.JavaEsSpark
-import org.elasticsearch.hadoop.spark.rdd.EsRDDFunctions
+import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.spark.rdd.EsRDDWriter
+import org.elasticsearch.spark.api.java.JavaEsSpark
+import org.elasticsearch.spark.rdd.EsRDDFunctions
 
 
 package object spark {

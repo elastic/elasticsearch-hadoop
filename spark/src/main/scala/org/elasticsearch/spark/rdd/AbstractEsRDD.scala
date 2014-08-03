@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.rdd;
+package org.elasticsearch.spark.rdd;
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
@@ -12,7 +12,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
-import org.elasticsearch.hadoop.spark.cfg.SparkSettingsManager
+import org.elasticsearch.spark.cfg.SparkSettingsManager
 
 private[rdd] abstract class AbstractEsRDD[T: ClassTag](
   @transient sc: SparkContext,

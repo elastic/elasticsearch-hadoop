@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.rdd
+package org.elasticsearch.spark.rdd
 
 import scala.collection.Map
 
@@ -8,7 +8,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
 import org.apache.spark.Partition
 import org.elasticsearch.hadoop.cfg.Settings
-import org.elasticsearch.hadoop.spark.serialization.ScalaValueReader
+import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 

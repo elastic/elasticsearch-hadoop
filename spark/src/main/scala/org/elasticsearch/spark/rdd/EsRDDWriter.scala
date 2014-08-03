@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.rdd
+package org.elasticsearch.spark.rdd
 
 import scala.reflect.ClassTag
 import org.apache.commons.logging.LogFactory
@@ -8,7 +8,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
 import org.elasticsearch.hadoop.serialization.MapFieldExtractor
-import org.elasticsearch.hadoop.spark.serialization.ScalaValueWriter
+import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 private[spark] class EsRDDWriter[T: ClassTag]
 	(val serializedSettings: String) 

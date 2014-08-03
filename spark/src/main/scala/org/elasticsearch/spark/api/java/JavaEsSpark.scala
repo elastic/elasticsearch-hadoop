@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.api.java
+package org.elasticsearch.spark.api.java
 
 import java.util.{Map => JMap}
 
@@ -11,9 +11,9 @@ import org.apache.spark.api.java.JavaRDD._
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
-import org.elasticsearch.hadoop.spark.cfg.SparkSettingsManager
-import org.elasticsearch.hadoop.spark.rdd.{EsRDDFunctions => ERF}
-import org.elasticsearch.hadoop.spark.rdd.EsRDDWriter
+import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.spark.rdd.{EsRDDFunctions => ERF}
+import org.elasticsearch.spark.rdd.EsRDDWriter
 
 object JavaEsSpark {
 

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.spark.integration;
+package org.elasticsearch.spark.integration;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -33,8 +33,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.elasticsearch.hadoop.spark.api.java.JavaEsSpark;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.spark.api.java.JavaEsSpark;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

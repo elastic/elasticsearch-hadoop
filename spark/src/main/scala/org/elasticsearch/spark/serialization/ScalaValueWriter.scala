@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.serialization
+package org.elasticsearch.spark.serialization
 
 import scala.collection.Map
 import scala.collection.immutable.Nil

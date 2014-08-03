@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.spark.integration;
+package org.elasticsearch.spark.integration;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +27,8 @@ import scala.runtime.ScalaRunTime.stringOf
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.spark.sparkContextFunctions
-import org.elasticsearch.hadoop.spark.sparkRDDFunctions
+import org.elasticsearch.spark.sparkContextFunctions
+import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.junit.After

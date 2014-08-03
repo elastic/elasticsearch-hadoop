@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.serialization
+package org.elasticsearch.spark.serialization
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.LinkedHashMap

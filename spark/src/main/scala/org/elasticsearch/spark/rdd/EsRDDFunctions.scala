@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.rdd
+package org.elasticsearch.spark.rdd
 
 import scala.collection.JavaConverters._
 import scala.collection.Map
@@ -8,7 +8,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
-import org.elasticsearch.hadoop.spark.cfg.SparkSettingsManager
+import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.apache.spark.api.java.JavaSparkContext
 
 private[spark] object EsRDDFunctions {

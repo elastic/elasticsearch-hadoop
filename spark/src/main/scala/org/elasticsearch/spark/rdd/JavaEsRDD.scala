@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.spark.rdd
+package org.elasticsearch.spark.rdd
 
 import java.util.Collections
 import java.util.Map
