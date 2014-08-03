@@ -21,6 +21,14 @@ Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses o
 When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping-date-format.html[date format] section in {eh} reference documentation for more information.
 
 [float]
+[[mapping-arrays]]
+=== Ordering and Mapping
+
+It is important to note that JSON objects (delimited by `{}` and typically associated with maps) are *unordered*, in other words, they do *not* maintain order. JSON
+arrays (typically associated with lists or sequences) are *ordered*, that is, they *do* preserve the initial insertion order. This impacts the way objects are read from {es} as one might find the insertion structure to be different than the extraction one.
+It is however easy to circuvent this problem - as JSON objects (maps) contain fields, use the field names (or keys) instead of their position inside the document to reliably get their values (in Java terms think of a JSON object as a +HashMap+ as oppose to a +LinkedHashMap+).
+
+[float]
 === Automatic mapping
 
 By default, {es} provides {ref}/docs-index_.html[automatic index and mapping] when data is added under an index that has not been created before. In other words, data can be added into {es} without the index and the mappings being defined a priori. This is quite convenient since {es} automatically adapts to the data being fed to it - moreover, if certain entries have extra fields, {es} schema-less nature allows them to be indexed without any issues.

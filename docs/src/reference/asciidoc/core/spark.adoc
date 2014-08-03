@@ -14,12 +14,11 @@ Spark provides fast iterative/functional-like capabilities over large data sets,
 
 Just like other libraries, {eh} needs to be available in Spark's classpath. As Spark has multiple deployment modes, this can translate to the target classpath, whether it is on only one node (as is the case with the local mode - which will be used through-out the documentation) or per-node depending on the desired infrastructure.
 
-
-added[2.1]
-
 [[spark-native]]
 [float]
 === Native support
+
+added[2.1]
 
 {eh} provides _native_ integration between {es} and {sp}, in the form of a RDD (Resilient Distributed Dataset) that can read data from Elasticsearch. The RDD is offered in two 'flavors': one for Scala (which returns the data as Scala collections) and one for Java (which returns the data though `java.util` collections).
 
@@ -167,10 +166,64 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(
                 m -> m.values().stream().filter(v -> v.contains("mega")));
 ----
 
+[float]
+==== Writing data to {es}
+
+With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. When that is not the case, one can easily _transform_ the data
+in Spark or plug-in their own customer <<configuration-serialization,+ValueWriter+>>.
+
+.Scala
+
+Just like in the reading case, importing the {eh} package enriches `SparkContext` with the `saveToEs` methods:
+
+[source,scala]
+----
+import org.elasticsearch.spark._
+
+...
+val conf = ...
+val sc = new SparkContext(conf)
+
+val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
+val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+sc.makeRDD<1>(Seq(numbers, airports)).saveToEs<2>("spark/docs")
+----
+
+<1> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other RDD (in Java or Scala) can be passed in
+<2> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
+
+NOTE: Scala might be tempted of using +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. Those similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, these cannot be used as documents as they cannot be mapped to a JSON object; however they can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
+
+.Java
+
+Just like before, under Java one should use the +JavaEsSpark+ class which provides convenience methods and allows _static_ importing as exemplified below:
+
+[source,java]
+----
+import static org.elasticsearch.spark.java.api.JavaEsSpark.*;     <1>
+
+SparkContext cfg = ...
+JavaSparkContext jsc = new JavaSparkContext(cfg);
+
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2); <2>
+Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
+
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <3>
+saveToEs(javaRDD, "spark/docs"); <4>
+----
+
+<1> statically import `JavaEsSpark` class
+<2> to simplify the example, use https://code.google.com/p/guava-libraries/[Guava](a dependency of Spark) +Immutable+* methods for simple +Map+, +List+ creation
+<3> create a simple +RDD+ over the two collections; any other RDD (in Java or Scala) can be passed in
+<4> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
 [[spark-mr]]
 [float]
 === Using the {mr} layer
+
+Another way of using Spark with {es} is through the {mr} layer, that is by leveraging the dedicate +Input/OuputFormat+ in {eh}. However, unless one is stuck on 
+{eh} 2.0, we _strongly_ recommend using the native integration as it offers significantly better performance and flexibility.
 
 [float]
 ==== Configuration

@@ -260,6 +260,7 @@ The lead to task timeout before {eh} informs Hadoop the task is still running to
 NOTE: {eh} allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
 
 [float]
+[[configuration-serialization]]
 ==== Serialization
 
 `es.batch.size.bytes` (default 1mb)::
