@@ -401,7 +401,7 @@ project(":elasticsearch-hadoop-hive") {
 }
 
 project(":elasticsearch-spark") {
-	ext.postfix = "_$scalaMajorVersion"
+	ext.suffix = "_$scalaMajorVersion"
 	
 	if (java8) {
 		println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
