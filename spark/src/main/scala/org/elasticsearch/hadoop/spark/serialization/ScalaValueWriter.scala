@@ -26,18 +26,33 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
          generator.writeBeginObject()
          for ((k,v) <- m) {
            generator.writeFieldName(k.toString())
-           write(v, generator)
+           if (!write(v, generator)) {
+             return false
+           }
          }
          generator.writeEndObject()
       }
       
       case i: Traversable[AnyRef] 	=> {
-         generator.writeBeginArray();
+         generator.writeBeginArray()
          for (v <- i) {
-            write(v, generator);
+           if (!write(v, generator)) {
+             return false
+           }
          }
-         generator.writeEndArray();
+         generator.writeEndArray()
       }
+      
+      case p: Product				=> {
+        generator.writeBeginArray()
+        for (t <- p.productIterator) {
+          if (!write(t.asInstanceOf[AnyRef], generator)) {
+             return false
+          }
+        }
+        generator.writeEndArray()
+      }
+
       case _ 		       			=> return super.write(value, generator)
     }
      

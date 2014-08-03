@@ -90,7 +90,9 @@ public class JdkValueWriter implements ValueWriter<Object> {
         else if (value.getClass().isArray()) {
             generator.writeBeginArray();
             for (Object o : (Object[]) value) {
-                write(o, generator);
+                if (!write(o, generator)) {
+                	return false;
+                }
             }
             generator.writeEndArray();
         }
@@ -98,14 +100,18 @@ public class JdkValueWriter implements ValueWriter<Object> {
             generator.writeBeginObject();
             for (Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
                 generator.writeFieldName(entry.getKey().toString());
-                write(entry.getValue(), generator);
+                if (!write(entry.getValue(), generator)) {
+                	return false;
+                }
             }
             generator.writeEndObject();
         }
         else if (value instanceof Iterable) {
             generator.writeBeginArray();
             for (Object o : (Iterable<?>) value) {
-                write(o, generator);
+                if (!write(o, generator)) {
+                	return false;
+                }
             }
             generator.writeEndArray();
         }
