@@ -122,7 +122,7 @@ Let us see how this looks like, but this time around using http://docs.oracle.co
 
 [source,java]
 ----
-import static org.elasticsearch.spark.java.api.JavaEsSpark.*;     <1>
+import static org.elasticsearch.spark.java.api.JavaEsSpark.*;             <1>
 
 ...
 JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*"); <2>
@@ -206,7 +206,7 @@ import static org.elasticsearch.spark.java.api.JavaEsSpark.*;     <1>
 SparkContext cfg = ...
 JavaSparkContext jsc = new JavaSparkContext(cfg);
 
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2); <2>
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     <2>
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
 JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <3>
@@ -240,8 +240,8 @@ The good news is, one can easily enable a different serialization (https://githu
 SparkConf sc = new SparkConf(); //.setMaster("local");
 sc.set("spark.serializer", KryoSerializer.class.getName()); <1>
 
-// needed only when using the Java API      
-JavaSparkContext jsc = new JavaSparkContext(sc);    
+// needed only when using the Java API
+JavaSparkContext jsc = new JavaSparkContext(sc);
 ----
 
 <1> Enable the Kryo serialization support with Spark
@@ -251,7 +251,7 @@ Or if you prefer Scala
 [source,scala]
 ----
 val sc = new SparkContext(...)
-sc.set("spark.serializer", classOf[KryoSerializer].getName)    <1>
+sc.set("spark.serializer", classOf[KryoSerializer].getName) <1>
 ----
 
 <1> Enable the Kryo serialization support with Spark
@@ -289,7 +289,7 @@ The Scala version is below:
 val conf = new JobConf()                                <1>
 conf.set("es.resource", "radio/artists")                <2>
 conf.set("es.query", "?q=me*")                          <3>
-val esRDD = sc.hadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
+val esRDD = sc.hadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]], <4>
                                classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
 ----
@@ -306,7 +306,7 @@ As expected, the `mapreduce` API version is strikingly similar - replace +hadoop
 
 [source,java]
 ----
-Configuration conf = new Configuration();                   <1>
+Configuration conf = new Configuration();       <1>
 conf.set("es.resource", "radio/artists");       <2>
 conf.set("es.query", "?q=me*");                 <3>
 
@@ -327,7 +327,7 @@ The Scala version is below:
 val conf = new Configuration()                          <1>
 conf.set("es.resource", "radio/artists")                <2>
 conf.set("es.query", "?q=me*")                          <3>
-val esRDD = sc.newHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
+val esRDD = sc.newHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]], <4>
                                   classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
 ----
