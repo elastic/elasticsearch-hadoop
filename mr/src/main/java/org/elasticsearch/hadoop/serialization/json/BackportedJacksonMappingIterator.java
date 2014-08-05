@@ -40,7 +40,7 @@ import org.codehaus.jackson.type.JavaType;
  *
  * @since 1.8
  */
-public class BackportedJacksonMappingIterator<T> implements Iterator<T> {
+class BackportedJacksonMappingIterator<T> implements Iterator<T> {
     protected final static BackportedJacksonMappingIterator<?> EMPTY_ITERATOR = new BackportedJacksonMappingIterator<Object>(null, null, null, null);
 
     protected final JavaType _type;
