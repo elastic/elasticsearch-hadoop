@@ -41,7 +41,9 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 /**
- * Backported class from Jackson 1.8.8 for Jackson 1.5.2
+ * Backported class from Jackson 1.8.8 for Jackson 1.5.2.
+ * Used only when dealing with Jackson 1.5 otherwise the proper Jackson class is used which
+ * saves us the hassle of keeping up with the breaking changes in Jackson library.
  *
  * Builder object that can be used for per-serialization configuration of
  * deserialization parameters, such as root type to use or object
@@ -56,7 +58,7 @@ import org.elasticsearch.hadoop.util.ReflectionUtils;
  * @since 1.6
  */
 
-public class BackportedObjectReader {
+public class BackportedObjectReader implements ObjectReader {
 
     final static Field ROOT_DESERIALIZERS;
 
@@ -158,11 +160,20 @@ public class BackportedObjectReader {
      */
     protected JsonDeserializer<Object> _findRootDeserializer(DeserializationConfig cfg, JavaType valueType)
             throws JsonMappingException {
+
+        // Sanity check: must have actual type...
+        if (valueType == null) {
+            throw new JsonMappingException("No value type configured for ObjectReader");
+        }
+
         // First: have we already seen it?
         JsonDeserializer<Object> deser = _rootDeserializers.get(valueType);
         if (deser != null) {
             return deser;
         }
+
+        // es-hadoop: findType with 2 args have been removed since 1.9 so this code compiles on 1.8 (which has the fallback method)
+        // es-hadoop: on 1.5 only the 2 args method exists, since 1.9 only the one with 3 args hence the if
 
         // Nope: need to ask provider to resolve it
         deser = _provider.findTypedValueDeserializer(cfg, valueType);
