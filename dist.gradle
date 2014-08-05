@@ -48,8 +48,7 @@ def customizePom(pom, gradleProject) {
         }
 		
 		groupId = "org.elasticsearch"
-		// used by spark project to add the scala version
-		artifactId = project.hasProperty("suffix") ? project.name + getProperty("suffix") : project.name
+		artifactId = project.archivesBaseName
 	}
 }
 
