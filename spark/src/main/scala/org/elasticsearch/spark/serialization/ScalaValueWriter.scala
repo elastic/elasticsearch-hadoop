@@ -13,10 +13,6 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
   }
   
   override def write(value: AnyRef, generator: Generator): Boolean = {
-    if (value == null) {
-      generator.writeNull();
-    }
-    
     value match {
       case None		  	   			=> generator.writeNull()
       case Unit	  	  	   			=> generator.writeNull()
