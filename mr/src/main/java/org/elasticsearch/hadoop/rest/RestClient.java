@@ -31,7 +31,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
@@ -56,10 +58,17 @@ import static org.elasticsearch.hadoop.rest.Request.Method.*;
 public class RestClient implements Closeable, StatsAware {
 
     private NetworkClient network;
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
+
+    {
+        mapper = new ObjectMapper();
+        mapper.configure(DeserializationConfig.Feature.USE_ANNOTATIONS, false);
+        mapper.configure(SerializationConfig.Feature.USE_ANNOTATIONS, false);
+    }
+
 
     private final Stats stats = new Stats();
 
