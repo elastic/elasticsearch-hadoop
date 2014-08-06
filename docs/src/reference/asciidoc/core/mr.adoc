@@ -47,7 +47,7 @@ With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/g
 
 TIP: Both Hadoop 1.x and 2.x are supported by the same binary
 
-`EsOutputFormat` expects a `Map<Writable, Writable>` representing a _document_ value that is converted interally into a JSON document and indexed in {es}.
+`EsOutputFormat` expects a `Map<Writable, Writable>` representing a _document_ value that is converted internally into a JSON document and indexed in {es}.
 Hadoop `OutputFormat` requires implementations to expect a key and a value however, since for {es} only the document (that is the value) is necessary, `EsOutputFormat`
 ignores the key.
 

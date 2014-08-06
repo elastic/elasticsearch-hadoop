@@ -45,13 +45,132 @@ conf.set("es.index.auto.create", "true");
 ----
 
 [float]
-==== Reading data from {es}
+[[spark-write]]
+==== Writing data to {es}
 
-Once configured, one should define the {es} RDD that _streams_ data from {es} to Spark.
+With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. When that is not the case, one can easily _transform_ the data
+in Spark or plug-in their own customer <<configuration-serialization,+ValueWriter+>>.
 
 .Scala
 
-When using Scala, simply import the `org.elasticsearch.spark` package which, through the http://www.artima.com/weblogs/viewpost.jsp?thread=179766[__pimp my library__] pattern, enriches the `SparkContext` API with `esRDD` methods:
+When using Scala, simply import the `org.elasticsearch.spark` package which, through the http://www.artima.com/weblogs/viewpost.jsp?thread=179766[__pimp my library__] pattern, enriches the  _any_ +RDD+ API with `saveToEs` methods:
+
+[source,scala]
+----
+import org.apache.spark.SparkContext    <1>
+import org.apache.spark.SparkContext._
+
+import org.elasticsearch.spark._        <2>
+
+...
+
+val conf = ...
+val sc = new SparkContext(conf)         <3>
+
+val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
+val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
+----
+
+<1> Spark Scala imports
+<2> {eh} Scala imports
+<3> start Spark through its Scala API
+<4> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other RDD (in Java or Scala) can be passed in
+<5> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
+
+NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
+
+.Java
+
+Java users have a dedicated class that provides a similar functionality, namely +org.elasticsearch.hadoop.spark.api.java.JavaEsSpark+,similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]:
+
+[source,java]
+----
+import org.apache.spark.api.java.JavaSparkContext;   <1>
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.SparkConf;
+
+import org.elasticsearch.spark.java.api.JavaEsSpark; <2>
+...
+
+SparkConf conf = ...
+JavaSparkContext jsc = new JavaSparkContext(conf);   <3>
+
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     <4>
+Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
+
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <5>
+JavaEsSpark.saveToEs(javaRDD, "spark/docs"); <6>
+----
+
+<1> Spark Java imports
+<2> {eh} Java imports
+<3> start Spark through its Java API
+<4> to simplify the example, use https://code.google.com/p/guava-libraries/[Guava](a dependency of Spark) +Immutable+* methods for simple +Map+, +List+ creation
+<5> create a simple +RDD+ over the two collections; any other RDD (in Java or Scala) can be passed in
+<6> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
+
+The code can be further simplifies by using Java 5 _static_ imports, namely:
+
+[source,java]
+----
+import static org.elasticsearch.spark.java.api.JavaEsSpark; <1>
+...
+saveToEs(javaRDD, "spark/docs"); <2>
+----
+
+<1> statically import +JavaEsSpark+
+<2> call +saveToEs+ method without having to type +JavaEsSpark+ again
+
+[float]
+[[spark-write-dyn]]
+==== Writing to dynamic/multi-resources
+
+For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts pattern that are resolved from the document content, at runtime. Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+.Scala
+
+[source,scala]
+----
+val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
+val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
+val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
+
+sc.makeRDD(Seq(game, book, cd)).saveToEs("my-collection/{media-type}")  <2>
+----
+
+<1> Document _key_ used for splitting the data. Any field can be declared (but make sure it is available in all documents)
+<2> Save each object based on its resource pattern, in this example based on +media_type+
+
+For each document/object about to be written, {eh} will extract the +media_type+ field and use its value to determine the target resource.
+
+.Java
+
+As expected, things in Java are strikingly similar:
+
+[source,java]
+----
+Map<String, ?> game = 
+  ImmutableMap.of("media_type", "game", "title", "FF VI", "year", "1994");
+Map<String, ?> book = ...
+Map<String, ?> cd = ...
+
+JavaRDD<Map<String, ?>> javaRDD = 
+  jsc.parallelize(ImmutableList.of(game, book, cd));
+saveToEs(javaRDD, "my-collection/{media-type}");  <1>
+----
+
+<1> Save each object based on its resource pattern, +media_type+ in this example
+
+[float]
+==== Reading data from {es}
+
+For reading, one should define the {es} RDD that _streams_ data from {es} to Spark.
+
+.Scala
+
+Similar to writing, the +org.elasticsearch.spark+ package, enriches the +SparkContext+ API with +esRDD+ methods:
 
 [source,scala]
 ----
@@ -95,14 +214,11 @@ for each document, where the keys represent the field names and the value their 
 .Java
 
 Java users have a dedicated `RDD` that works the same as its Scala counterpart however it returns the documents as native, `java.util` collections.
-The main entry class is, `org.elasticsearch.hadoop.spark.api.java.JavaEsSpark`,similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]:
+Again by using +org.elasticsearch.hadoop.spark.api.java.JavaEsSpark+, _any_ +RDD+ can be saved to {es}:
 
 [source,java]
 ----
 import org.apache.spark.api.java.JavaSparkContext;   <1>
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.SparkConf;
-
 import org.elasticsearch.spark.java.api.JavaEsSpark; <2>
 ...
 
@@ -132,12 +248,12 @@ JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*"); <2>
 <2> create an `RDD` streaming all the documents starting with `me` from index `radio/artists`. Note the method does not have to be fully qualified due to the static import
 
 By using the `JavaEsSpark` API, one gets a hold of Spark's dedicated `JavaRDD` which are better suited in Java environments than the base `RDD` (due to its Scala
-signatures). Moreover, the dedicated RDD returs {es} documents as proper Java collections so one does not have to deal with Scala collections (which
-is typically the case with ++RDD++s). This is particulary powerful when using Java 8, which we strongly advice as its 
+signatures). Moreover, the dedicated RDD returns {es} documents as proper Java collections so one does not have to deal with Scala collections (which
+is typically the case with ++RDD++s). This is particularly powerful when using Java 8, which we strongly advice as its 
 http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions] make collection processing _extremely_
 concise.
 
-To wit, let us assume one wants to filter the documents from the RDD and return only those that contain a value that contain `mega` (please ignore the fact one can and should do the filtering directly through {es}).
+To wit, let us assume one wants to filter the documents from the RDD and return only those that contain a value that contain +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
 
 In versions prior to Java 8, the code would look something like this:
 [source, java]
@@ -166,57 +282,6 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(
                 m -> m.values().stream().filter(v -> v.contains("mega")));
 ----
 
-[float]
-==== Writing data to {es}
-
-With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. When that is not the case, one can easily _transform_ the data
-in Spark or plug-in their own customer <<configuration-serialization,+ValueWriter+>>.
-
-.Scala
-
-Just like in the reading case, importing the {eh} package enriches `SparkContext` with the `saveToEs` methods:
-
-[source,scala]
-----
-import org.elasticsearch.spark._
-
-...
-val conf = ...
-val sc = new SparkContext(conf)
-
-val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
-val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
-
-sc.makeRDD<1>(Seq(numbers, airports)).saveToEs<2>("spark/docs")
-----
-
-<1> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other RDD (in Java or Scala) can be passed in
-<2> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
-
-NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
-
-.Java
-
-Just like before, under Java one should use the +JavaEsSpark+ class which provides convenience methods and allows _static_ importing as exemplified below:
-
-[source,java]
-----
-import static org.elasticsearch.spark.java.api.JavaEsSpark.*;     <1>
-
-SparkContext cfg = ...
-JavaSparkContext jsc = new JavaSparkContext(cfg);
-
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     <2>
-Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
-
-JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <3>
-saveToEs(javaRDD, "spark/docs"); <4>
-----
-
-<1> statically import `JavaEsSpark` class
-<2> to simplify the example, use https://code.google.com/p/guava-libraries/[Guava](a dependency of Spark) +Immutable+* methods for simple +Map+, +List+ creation
-<3> create a simple +RDD+ over the two collections; any other RDD (in Java or Scala) can be passed in
-<4> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
 [[spark-mr]]
 [float]
@@ -228,7 +293,7 @@ Another way of using Spark with {es} is through the {mr} layer, that is by lever
 [float]
 ==== Configuration
 
-Through {eh}, Spark can integrate with Elasticsearch through its dedicated `InputFormat`, and in case of writing, through `OutputFormat`. These are described at length in the <<mapreduce, {mr}>> chapter so please refer to that for an in-depth explanation.
+Through {eh}, Spark can integrate with {es} through its dedicated `InputFormat`, and in case of writing, through `OutputFormat`. These are described at length in the <<mapreduce, {mr}>> chapter so please refer to that for an in-depth explanation.
 
 In short, one needs to setup a basic Hadoop +Configuration+ object with the target {es} cluster and index, potentially a query, and she's good to go.
 
