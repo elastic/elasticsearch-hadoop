@@ -18,12 +18,10 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.TimeUnit
 import scala.annotation.migration
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.runtime.ScalaRunTime.stringOf
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.elasticsearch.hadoop.mr.RestUtils
@@ -35,27 +33,37 @@ import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.Assert._
+import org.hamcrest.Matchers._
+import org.junit.BeforeClass
+import org.junit.AfterClass
+
+object AbstractScalaEsScalaSpark {
+  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
+  @transient var cfg: SparkConf = null
+  @transient var sc: SparkContext = null
+
+  @BeforeClass
+  def setup() {
+    sc = new SparkContext(conf)
+  }
+  
+  @AfterClass
+  def cleanup() {
+    if (sc != null) {
+      sc.stop
+      // give jetty time to clean its act up
+      Thread.sleep(TimeUnit.SECONDS.toMillis(3))
+    }
+  }
+}
 
 class AbstractScalaEsScalaSpark extends Serializable {
 
-    @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
-    @transient var cfg: SparkConf = null
-    @transient var sc: SparkContext = null
-
-    @Before def setup() {
-      cfg = conf.clone()
-    }
-
-    @After def clean() {
-      if (sc != null) {
-        sc.stop
-        Thread.sleep(TimeUnit.SECONDS.toMillis(2))
-      }
-    }
-
+	val sc = AbstractScalaEsScalaSpark.sc
+	
     @Test
     def testBasicRead() {
-        val sc = new SparkContext(conf)
         val input = TestUtils.sampleArtistsDat()
         val data = sc.textFile(input).cache();
 
@@ -63,31 +71,42 @@ class AbstractScalaEsScalaSpark extends Serializable {
     }
 
     @Test
-    def testEsRDDWrite() {
-        val doc1 = Map("one" -> null, "two" -> 2)
-        val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+    def testEsMultiIndexRDDWrite() {
+      val key = "airport"
+      val trip1 = Map("reason" -> "business", "airport" -> "SFO")
+      val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
-        sc = new SparkContext(cfg)
-        sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/basic-write")
-        RestUtils.exists("spark-test/scala-basic-write")
-        println(RestUtils.get("spark-test/basic-write/_search?"))
+      sc.makeRDD(Seq(trip1, trip2)).saveToEs("spark-test/trip-{airport}")
+      assertTrue(RestUtils.exists("spark-test/trip-OTP"))
+      assertTrue(RestUtils.exists("spark-test/trip-SFO"))
+
+      assertThat(RestUtils.get("spark-test/trip-SFO/_search?"), containsString("business"))
+      assertThat(RestUtils.get("spark-test/trip-OTP/_search?"), containsString("participants"))
+    }
+
+    @Test
+    def testEsRDDWrite() {
+      val doc1 = Map("one" -> null, "two" -> 2)
+      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+      sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
+      assertTrue(RestUtils.exists("spark-test/scala-basic-write"))
+      assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
     }
 
     @Test
     def testEsRDDRead() {
-        val target = "spark-test/scala-basic-read";
-        RestUtils.touch("spark-test");
-        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.refresh("spark-test");
+      val target = "spark-test/scala-basic-read";
+      RestUtils.touch("spark-test");
+      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+      RestUtils.refresh("spark-test");
 
-        sc = new SparkContext(cfg);
-        val esData = sc.esRDD(target);
+      val esData = sc.esRDD(target);
+      val messages = esData.filter(doc => doc.values.find(_.toString.contains("message")).nonEmpty)
 
-        val messages = esData.filter(doc => doc.values.find(_.toString.contains("message")).nonEmpty)
-
-        assertTrue(messages.count() ==  2);
-        System.out.println(stringOf(messages.take(10)));
-        System.out.println(stringOf(messages));
+      assertTrue(messages.count() ==  2);
+      assertNotNull(messages.take(10));
+      assertNotNull(messages);
     }
 }
