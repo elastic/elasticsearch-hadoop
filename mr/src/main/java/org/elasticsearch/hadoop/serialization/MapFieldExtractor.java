@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.util.Map;
 
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 
 public class MapFieldExtractor extends ConstantFieldExtractor {
@@ -35,10 +34,5 @@ public class MapFieldExtractor extends ConstantFieldExtractor {
             }
         }
         return NOT_FOUND;
-    }
-
-    @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
     }
 }

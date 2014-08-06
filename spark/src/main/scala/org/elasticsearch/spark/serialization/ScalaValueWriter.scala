@@ -18,6 +18,8 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case Unit	  	  	   			=> generator.writeNull()
       case Nil		   	   			=> generator.writeBeginArray(); generator.writeEndArray()
       
+      case s: Some[AnyRef]			=> return write(s.get, generator) 
+      
       case m: Map[_, AnyRef]  		=> {
          generator.writeBeginObject()
          for ((k,v) <- m) {
@@ -48,7 +50,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         }
         generator.writeEndArray()
       }
-
+      
       case _ 		       			=> return super.write(value, generator)
     }
      

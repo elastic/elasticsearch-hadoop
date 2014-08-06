@@ -7,7 +7,7 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
-import org.elasticsearch.hadoop.serialization.MapFieldExtractor
+import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 private[spark] class EsRDDWriter[T: ClassTag]
@@ -23,7 +23,7 @@ private[spark] class EsRDDWriter[T: ClassTag]
   def write(taskContext: TaskContext, data: Iterator[T]) {
       InitializationUtils.setValueWriterIfNotSet(settings, classOf[ScalaValueWriter], log);
       InitializationUtils.setBytesConverterIfNeeded(settings, classOf[JdkBytesConverter], log);
-      InitializationUtils.setFieldExtractorIfNotSet(settings, classOf[MapFieldExtractor], log);
+      InitializationUtils.setFieldExtractorIfNotSet(settings, classOf[ScalaMapFieldExtractor], log);
       
       val writer = RestService.createWriter(settings, taskContext.partitionId, -1, log)
       
