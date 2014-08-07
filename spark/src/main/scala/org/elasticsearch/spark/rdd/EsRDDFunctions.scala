@@ -4,6 +4,7 @@ import scala.collection.JavaConverters._
 import scala.collection.Map
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
@@ -23,16 +24,14 @@ private[spark] object EsRDDFunctions {
   def esRDD(jsc: JavaSparkContext, map: Map[String, String]) = new JavaEsRDD(jsc.sc, map)
   def esRDD(jsc: JavaSparkContext, resource: String) = new JavaEsRDD(jsc.sc, Map(ES_RESOURCE_READ -> resource))
   def esRDD(jsc: JavaSparkContext, resource: String, query: String) = 
-    new ScalaEsRDD(jsc.sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+    new JavaEsRDD(jsc.sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
 
   def saveToEs(rdd: RDD[_], resource: String) {
     saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource))
   }
   
   def saveToEs(rdd: RDD[_], resource: String, params: Map[String, String]) {
-    val copyParams = collection.mutable.Map(params.toSeq: _*)
-    copyParams.put(ES_RESOURCE_WRITE, resource)
-    saveToEs(rdd, copyParams)
+    saveToEs(rdd, collection.mutable.Map(params.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   
   def saveToEs(rdd: RDD[_], params: Map[String, String]) {
@@ -41,5 +40,19 @@ private[spark] object EsRDDFunctions {
     cfg.merge(params.asJava)
       
     rdd.sparkContext.runJob(rdd, new EsRDDWriter(cfg.save()).write _)
+  }
+  
+  // JSON variant
+  
+  def saveJsonToEs(rdd: RDD[_], resource: String) {
+    saveToEs(rdd, resource, Map(ES_INPUT_JSON -> true.toString))
+  }
+  
+  def saveJsonToEs(rdd: RDD[_], resource: String, params: Map[String, String]) {
+    saveToEs(rdd, resource, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
+  }
+  
+  def saveJsonToEs(rdd: RDD[_], params: Map[String, String]) {
+    saveToEs(rdd, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 }

@@ -18,11 +18,6 @@
  */
 package org.elasticsearch.spark.integration;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static scala.collection.JavaConversions.propertiesAsScalaMap;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,26 +30,31 @@ import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.api.java.JavaEsSpark;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
+
+import static scala.collection.JavaConversions.*;
+
 public class AbstractJavaEsSparkTest implements Serializable {
 
-    private final transient SparkConf conf = new SparkConf().setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS)).setMaster("local").setAppName("estest");
-    private transient SparkConf cfg;
-    private transient JavaSparkContext sc = null;
+    private static final transient SparkConf conf = new SparkConf().setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS)).setMaster("local").setAppName("estest");
+    private static transient JavaSparkContext sc = null;
 
-    @Before
-    public void setup() {
-        cfg = conf.clone();
+    @BeforeClass
+    public static void setup() {
+        sc = new JavaSparkContext(conf);
     }
 
-    @After
-    public void clean() throws Exception {
+    @AfterClass
+    public static void clean() throws Exception {
         if (sc != null) {
             sc.stop();
             // wait for jetty & spark to properly shutdown
@@ -68,7 +68,6 @@ public class AbstractJavaEsSparkTest implements Serializable {
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
         String target = "spark-test/java-basic-write";
-        sc = new JavaSparkContext(cfg);
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target);
@@ -78,11 +77,49 @@ public class AbstractJavaEsSparkTest implements Serializable {
     }
 
     @Test
+    public void testEsMultiIndexRDDWrite() throws Exception {
+      Map<String, ?> doc1 = ImmutableMap.of("reason", "business", "airport", "SFO");
+      Map<String, ?> doc2 = ImmutableMap.of("participants", 2, "airport", "OTP");
+
+      String target = "spark-test/java-trip-{airport}";
+      
+      JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
+      JavaEsSpark.saveToEs(javaRDD, target);
+      
+      assertTrue(RestUtils.exists("spark-test/java-trip-OTP"));
+      assertTrue(RestUtils.exists("spark-test/java-trip-SFO"));
+
+      assertThat(RestUtils.get("spark-test/java-trip-SFO/_search?"), containsString("business"));
+      assertThat(RestUtils.get("spark-test/java-trip-OTP/_search?"), containsString("participants"));
+    }
+
+    @Test
+    public void testEsWriteAsJsonMultiWrite() throws Exception {
+      String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";
+      String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
+
+      JavaRDD<String> stringRDD = sc.parallelize(ImmutableList.of(json1, json2));
+      JavaEsSpark.saveJsonToEs(stringRDD, "spark-test/json-{airport}");
+
+      byte[] json1BA = json1.getBytes();
+      byte[] json2BA = json2.getBytes();
+
+      JavaRDD<byte[]> byteRDD = sc.parallelize(ImmutableList.of(json1BA, json2BA));
+      //JavaEsSpark.saveJsonToEs(byteRDD, "spark-test/json-ba-{airport}");
+      //JavaEsSpark.
+
+      assertTrue(RestUtils.exists("spark-test/json-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json-OTP"));
+
+      //assertTrue(RestUtils.exists("spark-test/json-ba-SFO"));
+      //assertTrue(RestUtils.exists("spark-test/json-ba-OTP"));
+
+      assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"));
+      assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"));
+    }
+    
+    @Test
     public void testEsRDDRead() throws Exception {
-        SparkConf clone = conf.clone();
-
-        sc = new JavaSparkContext(clone);
-
         String target = "spark-test/java-basic-read";
 
         RestUtils.touch("spark-test");

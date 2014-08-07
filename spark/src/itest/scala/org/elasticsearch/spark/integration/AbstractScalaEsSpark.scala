@@ -19,24 +19,24 @@
 package org.elasticsearch.spark.integration;
 
 import java.util.concurrent.TimeUnit
+
 import scala.annotation.migration
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.runtime.ScalaRunTime.stringOf
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.spark.sparkContextFunctions
-import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.junit.After
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
-import org.junit.Assert._
+
+import org.elasticsearch.spark._
 import org.hamcrest.Matchers._
-import org.junit.BeforeClass
 import org.junit.AfterClass
+import org.junit.Assert._
+import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
+import org.junit.Test
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -71,8 +71,17 @@ class AbstractScalaEsScalaSpark extends Serializable {
     }
 
     @Test
+    def testEsRDDWrite() {
+      val doc1 = Map("one" -> null, "two" -> 2)
+      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+      sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
+      assertTrue(RestUtils.exists("spark-test/scala-basic-write"))
+      assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
+    }
+
+    @Test
     def testEsMultiIndexRDDWrite() {
-      val key = "airport"
       val trip1 = Map("reason" -> "business", "airport" -> "SFO")
       val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
@@ -85,15 +94,27 @@ class AbstractScalaEsScalaSpark extends Serializable {
     }
 
     @Test
-    def testEsRDDWrite() {
-      val doc1 = Map("one" -> null, "two" -> 2)
-      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+    def testEsWriteAsJsonMultiWrite() {
+      val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";
+      val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
 
-      sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
-      assertTrue(RestUtils.exists("spark-test/scala-basic-write"))
-      assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
+      sc.makeRDD(Seq(json1, json2)).saveJsonToEs("spark-test/json-{airport}")
+
+      val json1BA = json1.getBytes()
+      val json2BA = json2.getBytes()
+
+      sc.makeRDD(Seq(json1BA, json2BA)).saveJsonToEs("spark-test/json-ba-{airport}")
+
+      assertTrue(RestUtils.exists("spark-test/json-SFO"))
+      assertTrue(RestUtils.exists("spark-test/json-OTP"))
+
+      assertTrue(RestUtils.exists("spark-test/json-ba-SFO"))
+      assertTrue(RestUtils.exists("spark-test/json-ba-OTP"))
+
+      assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"))
+      assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"))
     }
-
+    
     @Test
     def testEsRDDRead() {
       val target = "spark-test/scala-basic-read";

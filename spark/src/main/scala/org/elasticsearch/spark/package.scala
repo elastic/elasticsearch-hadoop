@@ -16,8 +16,7 @@ import org.elasticsearch.spark.rdd.EsRDDFunctions
 
 package object spark {
 
-  implicit def sparkContextFunctions(sc: SparkContext): SparkContextFunctions =
-    new SparkContextFunctions(sc)
+  implicit def sparkContextFunctions(sc: SparkContext)= new SparkContextFunctions(sc)
 
   class SparkContextFunctions(sc: SparkContext) extends Serializable {
     def esRDD() = EsRDDFunctions.esRDD(sc)
@@ -26,12 +25,20 @@ package object spark {
     def esRDD(params: scala.collection.Map[String, String]) = EsRDDFunctions.esRDD(sc, params)
   }
   
-  implicit def sparkRDDFunctions[T : ClassTag](rdd: RDD[T]): SparkRDDFunctions[T] =
-    new SparkRDDFunctions[T](rdd)
+  implicit def sparkRDDFunctions[T : ClassTag](rdd: RDD[T]) = new SparkRDDFunctions[T](rdd)
 
   class SparkRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     def saveToEs(resource: String) { EsRDDFunctions.saveToEs(rdd, resource) }
     def saveToEs(resource: String, params: scala.collection.Map[String, String]) { EsRDDFunctions.saveToEs(rdd, resource, params) }
     def saveToEs(params: scala.collection.Map[String, String]) { EsRDDFunctions.saveToEs(rdd, params)    }
-  } 
+  }
+    
+  implicit def sparkStringJsonRDDFunctions(rdd: RDD[String]) = new SparkJsonRDDFunctions[String](rdd)
+  implicit def sparkByteArrayJsonRDDFunctions(rdd: RDD[Array[Byte]]) = new SparkJsonRDDFunctions[Array[Byte]](rdd)
+
+  class SparkJsonRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
+    def saveJsonToEs(resource: String) { EsRDDFunctions.saveJsonToEs(rdd, resource) }
+    def saveJsonToEs(resource: String, params: scala.collection.Map[String, String]) { EsRDDFunctions.saveJsonToEs(rdd, resource, params) }
+    def saveJsonToEs(params: scala.collection.Map[String, String]) { EsRDDFunctions.saveJsonToEs(rdd, params) }
+  }
 }
