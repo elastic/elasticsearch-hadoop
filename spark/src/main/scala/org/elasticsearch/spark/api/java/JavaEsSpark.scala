@@ -28,7 +28,10 @@ object JavaEsSpark {
   def saveToEs(jrdd: JavaRDD[_], cfg: JMap[String, String]) = ERF.saveToEs(jrdd.rdd, cfg.asScala)
   
   def saveJsonToEs(jrdd: JavaRDD[String], resource: String) = ERF.saveJsonToEs(jrdd.rdd, resource)
-  def saveJsonToEs(jrdd: JavaRDD[Array[Byte]], resource: String)(implicit d: DummyImplicit) = ERF.saveJsonToEs(jrdd.rdd, resource)
   def saveJsonToEs(jrdd: JavaRDD[String], resource: String, params: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, params.asScala)
   def saveJsonToEs(jrdd: JavaRDD[String], cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, cfg.asScala)
+
+  def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String) = ERF.saveJsonToEs(jrdd.rdd, resource)
+  def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String, params: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, params.asScala)
+  def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, cfg.asScala)
 }

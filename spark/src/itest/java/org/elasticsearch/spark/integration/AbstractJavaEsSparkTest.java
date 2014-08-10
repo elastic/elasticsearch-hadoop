@@ -105,14 +105,13 @@ public class AbstractJavaEsSparkTest implements Serializable {
       byte[] json2BA = json2.getBytes();
 
       JavaRDD<byte[]> byteRDD = sc.parallelize(ImmutableList.of(json1BA, json2BA));
-      //JavaEsSpark.saveJsonToEs(byteRDD, "spark-test/json-ba-{airport}");
-      //JavaEsSpark.
+      JavaEsSpark.saveJsonByteArrayToEs(byteRDD, "spark-test/json-ba-{airport}");
 
       assertTrue(RestUtils.exists("spark-test/json-SFO"));
       assertTrue(RestUtils.exists("spark-test/json-OTP"));
 
-      //assertTrue(RestUtils.exists("spark-test/json-ba-SFO"));
-      //assertTrue(RestUtils.exists("spark-test/json-ba-OTP"));
+      assertTrue(RestUtils.exists("spark-test/json-ba-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json-ba-OTP"));
 
       assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"));
       assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"));
