@@ -35,7 +35,7 @@ If a monitoring solution is not possible, use the metrics provided by Hadoop, {e
 [float]
 === Increase logging
 
-Logging gives you a lot of insight into what is going on. Both Hadoop and {es} have extensive logging mechanisms as <<logging, does>> {eh} however use that judiciously: too much logging can hide the actual issue so again, do it in small increments.
+Logging gives you a lot of insight into what is going on. Hadoop, Spark and {es} have extensive logging mechanisms as <<logging, does>> {eh} however use that judiciously: too much logging can hide the actual issue so again, do it in small increments.
 
 [float]
 === Measure, do not assume
@@ -62,11 +62,11 @@ Whichever it is, a *clear* description of the problem will help other users to h
 [float]
 === What information is useful?
 - OS & JVM version
-- Hadoop version / distribution
+- Hadoop / Spark version / distribution
 - if using a certain library (Cascading, Hive, Pig), the version used
 - {eh} version
 - the job or script that is causing the issue
-- Hadoop cluster size
+- Hadoop / Spark cluster size
 - {es} cluster size
 - the size of the dataset and a snippet of it in its raw format (CSV, TSV, etc..)
 
