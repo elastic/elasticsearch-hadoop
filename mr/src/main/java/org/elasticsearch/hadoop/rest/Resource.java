@@ -39,8 +39,8 @@ public class Resource {
     public Resource(Settings settings, boolean read) {
         String resource = (read ? settings.getResourceRead() : settings.getResourceWrite());
 
-        String errorMessage = "invalid resource given; expecting [index]/[type]";
-        Assert.hasText(resource, errorMessage);
+        String errorMessage = "invalid resource given; expecting [index]/[type] - received ";
+        Assert.hasText(resource, errorMessage + resource);
 
         // add compatibility for now
         if (resource.contains("?") || resource.contains("&")) {
@@ -57,7 +57,7 @@ public class Resource {
                 // clean resource
                 resource = resource.substring(0, index);
                 index = resource.lastIndexOf("/");
-                Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage);
+                Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage + resource);
                 resource = resource.substring(0, index);
 
                 settings.setProperty(ConfigurationOptions.ES_RESOURCE, resource);
@@ -68,7 +68,7 @@ public class Resource {
         String res = StringUtils.sanitizeResource(resource);
 
         int slash = res.indexOf("/");
-        Assert.isTrue(slash >= 0 && slash < res.length() - 1, errorMessage);
+        Assert.isTrue(slash >= 0 && slash < res.length() - 1, errorMessage + res);
         index = res.substring(0, slash);
         type = res.substring(slash + 1);
 

@@ -27,6 +27,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.api.java.JavaEsSpark;
@@ -72,6 +73,21 @@ public class AbstractJavaEsSparkTest implements Serializable {
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target);
         RestUtils.exists("spark-test/java-write");
+        String results = RestUtils.get(target + "/_search?");
+        assertThat(results, containsString("SFO"));
+    }
+
+    @Test
+    public void testEsRDDWriteWithMappingId() throws Exception {
+        Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
+        Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
+
+        String target = "spark-test/java-id-write";
+        JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
+        // eliminate with static import
+        JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ConfigurationOptions.ES_MAPPING_ID, "number"));
+        RestUtils.exists(target + "/1");
+        RestUtils.exists(target + "/2");
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }

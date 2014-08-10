@@ -24,14 +24,14 @@ object JavaEsSpark {
   def esRDD(jsc: JavaSparkContext, cfg: JMap[String, String]): JavaRDD[JMap[String, Object]] = fromRDD(ERF.esRDD(jsc, cfg.asScala)) 
 
   def saveToEs(jrdd: JavaRDD[_], resource: String) = ERF.saveToEs(jrdd.rdd, resource)
-  def saveToEs(jrdd: JavaRDD[_], resource: String, params: JMap[String, String]) = ERF.saveToEs(jrdd.rdd, params.asScala)
+  def saveToEs(jrdd: JavaRDD[_], resource: String, cfg: JMap[String, String]) = ERF.saveToEs(jrdd.rdd, resource, cfg.asScala)
   def saveToEs(jrdd: JavaRDD[_], cfg: JMap[String, String]) = ERF.saveToEs(jrdd.rdd, cfg.asScala)
   
   def saveJsonToEs(jrdd: JavaRDD[String], resource: String) = ERF.saveJsonToEs(jrdd.rdd, resource)
-  def saveJsonToEs(jrdd: JavaRDD[String], resource: String, params: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, params.asScala)
+  def saveJsonToEs(jrdd: JavaRDD[String], resource: String, cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, resource, cfg.asScala)
   def saveJsonToEs(jrdd: JavaRDD[String], cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, cfg.asScala)
 
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String) = ERF.saveJsonToEs(jrdd.rdd, resource)
-  def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String, params: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, params.asScala)
+  def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String, cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, resource, cfg.asScala)
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = ERF.saveJsonToEs(jrdd.rdd, cfg.asScala)
 }
