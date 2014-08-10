@@ -124,6 +124,41 @@ saveToEs(javaRDD, "spark/docs"); <2>
 <2> call +saveToEs+ method without having to type +JavaEsSpark+ again
 
 [float]
+[[spark-write-json]]
+==== Writing existing JSON to {es}
+
+For cases where the data in the `RDD` is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. As such, in this case, {eh} expects either an +RDD+
+containing +String+ or byte arrays (+byte[]+/+Array[Byte]+), assuming each entry represents a JSON document. If the +RDD+ does not have the proper signature, the +saveJsonToEs+ methods cannot be applied (in Scala they will not be available).
+
+.Scala
+
+[source,scala]
+----
+val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"                    <1>
+val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
+
+new SparkContext(conf).makeRDD(Seq(json1, json2)).saveJsonToEs("spark/json-trips") <2>
+----
+
+<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation
+<2> index the JSON data through the dedicated +saveJsonToEs+ method
+
+.Java
+[source,java]
+----
+String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";                <1>
+String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
+
+JavaContextSpark jsc = ...
+JavaRDD<String><2> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
+JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");                           <3>
+----
+
+<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation
+<2> notice the +RDD<String>+ signature
+<3> index the JSON data through the dedicated +saveJsonToEs+ method
+
+[float]
 [[spark-write-dyn]]
 ==== Writing to dynamic/multi-resources
 
