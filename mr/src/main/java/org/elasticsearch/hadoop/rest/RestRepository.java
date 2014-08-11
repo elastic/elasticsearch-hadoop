@@ -274,7 +274,14 @@ public class RestRepository implements Closeable, StatsAware {
 
     public boolean indexExists(boolean read) throws IOException {
         Resource res = (read ? resourceR : resourceW);
-        return client.exists(res.indexAndType());
+        // cheap hit
+        boolean exists = client.exists(res.indexAndType());
+        // could be a _all or a pattern which is valid for read
+        // try again by asking the mapping - could be expensive
+        if (!exists && read) {
+        	exists = !client.getMapping(res.mapping()).isEmpty();
+        }
+        return exists;
     }
 
     public void putMapping(BytesArray mapping) throws IOException {

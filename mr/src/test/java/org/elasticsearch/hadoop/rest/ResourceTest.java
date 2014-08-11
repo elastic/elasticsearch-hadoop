@@ -30,6 +30,18 @@ import static org.junit.Assert.*;
 public class ResourceTest {
 
     @Test
+    public void testJustIndex() throws Exception {
+        Resource res = createResource("foo/_all");
+        assertEquals("foo/_all", res.indexAndType());
+    }
+
+    @Test
+    public void testJustType() throws Exception {
+        Resource res = createResource("_all/foo");
+        assertEquals("_all/foo", res.indexAndType());
+    }
+
+    @Test
     public void testIndexAndType() throws Exception {
         Resource res = createResource("foo/bar");
         assertEquals("foo/bar", res.indexAndType());
