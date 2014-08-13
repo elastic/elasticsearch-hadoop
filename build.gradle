@@ -151,11 +151,8 @@ allprojects { project ->
 
 	test {
 		jacoco {
-			//def jacocoEnabled = project.hasProperty("jacocoCoverage")
-			enabled = project.hasProperty("jacocoCoverage")
-		   
-			if (enabled)
-				println "Enabling Jacoco Coverage"
+			enabled = project.hasProperty("enableJacoco")
+			destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
 		}
 	}
 
@@ -418,7 +415,6 @@ configure(rootProject) {
 }
 
 allprojects { project ->
-
 	task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
 		testClassesDir = sourceSets.integrationTest.output.classesDir
 		classpath = sourceSets.integrationTest.runtimeClasspath
@@ -438,7 +434,9 @@ allprojects { project ->
 		}
 		
 		jacoco {
-			enabled = project.hasProperty("jacocoCoverage")
+			enabled = project.hasProperty("enableJacoco")
+			append = true
+			destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
 		}
 	}
 }
@@ -533,6 +531,20 @@ configure(rootProject) {
 		dependsOn(distZip)
 	}
 
+	jacocoTestReport {
+		subprojects.each {
+			sourceSets it.sourceSets.main
+		}
+		reports {
+			xml.enabled false
+			csv.enabled false
+			html {
+				enabled = true
+				destination "${buildDir}/jacoco/html"
+			}
+		}
+	}
+	
 	task wrapper(type: Wrapper) {
 		description = 'Generates gradlew[.bat] scripts'
 		gradleVersion = '1.12'
@@ -572,15 +584,7 @@ allprojects { project ->
 	}
 
 	jacoco {
-		toolVersion = "0.6.3.201306030806"
-	}
-
-	jacocoTestReport {
-		reports {
-			xml.enabled true
-			csv.enabled true
-			html.enabled false
-		}
+		toolVersion = "0.7.1.201405082137"
 	}
 
 	if (java8) {
