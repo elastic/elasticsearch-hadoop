@@ -422,6 +422,12 @@ project(":elasticsearch-spark") {
 		//testCompile "org.scalatest:scalatest_$scalaMajorVersion:2.2.0"
 		//itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
 	}
+	
+	if (!java8) {
+		scaladoc {
+			title = "${rootProject.description} ${version} API"
+		}
+	}
 }
 
 configure(rootProject) {
