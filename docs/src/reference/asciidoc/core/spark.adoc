@@ -28,7 +28,7 @@ IMPORTANT: Whenever possible, consider using the _native_ integration as it offe
 [float]
 ==== Configuration
 
-To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.0.1/programming-guide.html#initializing-spark[`SparkCfg`] object:
+To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.0.1/programming-guide.html#initializing-spark[`SparkConf`] object:
 
 [source,scala]
 ----
