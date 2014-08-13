@@ -33,7 +33,9 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.api.java.JavaEsSpark;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -44,6 +46,7 @@ import static org.hamcrest.Matchers.*;
 
 import static scala.collection.JavaConversions.*;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkTest implements Serializable {
 
     private static final transient SparkConf conf = new SparkConf().setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS)).setMaster("local").setAppName("estest");
@@ -110,7 +113,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
     }
 
     @Test
-    public void testEsWriteAsJsonMultiWrite() throws Exception {
+    public void testEsRDDWriteAsJsonMultiWrite() throws Exception {
       String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";
       String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
 
@@ -134,7 +137,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
     }
     
     @Test
-    public void testEsRDDRead() throws Exception {
+    public void testEsRDDZRead() throws Exception {
         String target = "spark-test/java-basic-read";
 
         RestUtils.touch("spark-test");
@@ -173,5 +176,21 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat((int) messages.count(), is(2));
         System.out.println(messages.take(10));
         System.out.println(messages);
+    }
+    
+    @Test
+    public void testEsRDDZReadMultiIndex() throws Exception {
+    	String index = "spark-test";
+    	
+        RestUtils.putData(index + "/foo", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.putData(index + "/bar", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.refresh(index);
+        //RestUtils.flush(index);
+
+    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, "spark*/foo");
+    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo");
+
+    	assertTrue(allRDD.count() == wildRDD.count());
+    	assertTrue(allRDD.count() == 1);
     }
 }
