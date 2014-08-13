@@ -32,8 +32,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
+import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -218,8 +218,9 @@ public class RestRepository implements Closeable, StatsAware {
     public Map<Shard, Node> getReadTargetShards() {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resourceR);
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
+        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
+
+        List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
 
         for (List<Map<String, Object>> shardGroup : info) {
             // find the first started shard in each group (round-robin)
@@ -239,7 +240,7 @@ public class RestRepository implements Closeable, StatsAware {
     public Map<Shard, Node> getWriteTargetPrimaryShards() {
         Map<String, Node> nodes = client.getNodes();
 
-        List<List<Map<String, Object>>> info = client.targetShards(resourceW);
+        List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
 
         for (List<Map<String, Object>> shardGroup : info) {
@@ -279,7 +280,12 @@ public class RestRepository implements Closeable, StatsAware {
         // could be a _all or a pattern which is valid for read
         // try again by asking the mapping - could be expensive
         if (!exists && read) {
-        	exists = !client.getMapping(res.mapping()).isEmpty();
+            try {
+                // make sure the mapping is null since the index might exist but the type might be missing
+                exists = !client.getMapping(res.mapping()).isEmpty();
+            } catch (EsHadoopInvalidRequest ex) {
+                exists = false;
+            }
         }
         return exists;
     }

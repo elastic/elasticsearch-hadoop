@@ -72,6 +72,14 @@ public class AbstractMRNewApiSearchTest {
     }
 
     @Test
+    public void testBasicWildSearch() throws Exception {
+        Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnew*/save");
+
+        new Job(conf).waitForCompletion(true);
+    }
+
+    @Test
     public void testSearchWithId() throws Exception {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrnewapi/savewithid");

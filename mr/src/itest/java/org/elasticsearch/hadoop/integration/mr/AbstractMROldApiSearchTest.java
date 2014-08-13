@@ -78,6 +78,15 @@ public class AbstractMROldApiSearchTest {
         JobClient.runJob(conf);
     }
 
+
+    @Test
+    public void testBasicSearchWithWildCard() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrold*/save");
+
+        JobClient.runJob(conf);
+    }
+
     @Test
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
@@ -150,7 +159,6 @@ public class AbstractMROldApiSearchTest {
         String target = "mroldapi/createwitharrayupsert/1";
         Assert.assertTrue(RestUtils.exists(target));
         String result = RestUtils.get(target);
-        System.out.println(result);
         assertThat(result, not(containsString("ArrayWritable@")));
     }
 
