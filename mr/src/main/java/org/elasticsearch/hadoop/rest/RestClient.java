@@ -233,11 +233,13 @@ public class RestClient implements Closeable, StatsAware {
         execute(DELETE, index);
     }
 
-    public List<List<Map<String, Object>>> targetShards(Resource resource) {
+    public List<List<Map<String, Object>>> targetShards(String index) {
         List<List<Map<String, Object>>> shardsJson = null;
 
+        // https://github.com/elasticsearch/elasticsearch/issues/2726
+        String target = index + "/_search_shards";
         if (indexReadMissingAsEmpty) {
-            Response res = execute(GET, resource.targetShards(), false);
+            Response res = execute(GET, target, false);
             if (res.status() == HttpStatus.NOT_FOUND) {
                 shardsJson = Collections.emptyList();
             }
@@ -246,7 +248,7 @@ public class RestClient implements Closeable, StatsAware {
             }
         }
         else {
-            shardsJson = get(resource.targetShards(), "shards");
+            shardsJson = get(target, "shards");
         }
 
         return shardsJson;
@@ -362,6 +364,10 @@ public class RestClient implements Closeable, StatsAware {
     public String esVersion() {
         Map<String, String> version = get("", "version");
         return version.get("number");
+    }
+
+    public Map<String, Object> aliases(String index) {
+        return get(index, null);
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) {

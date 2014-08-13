@@ -86,13 +86,12 @@ public class Resource {
         return bulk;
     }
 
-    // https://github.com/elasticsearch/elasticsearch/issues/2726
-    String targetShards() {
-        return indexAndType + "/_search_shards";
-    }
-
     String mapping() {
         return indexAndType + "/_mapping";
+    }
+
+    String aliases() {
+        return index + "/_aliases";
     }
 
     String indexAndType() {
