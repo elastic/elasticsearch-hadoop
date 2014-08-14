@@ -214,7 +214,7 @@ ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a
 ### Reading
 To read data from ES, create a dedicated `RDD` and specify the query as an argument:
 
-```
+```scala
 import org.elasticsearch.spark._
 
 ..
@@ -224,7 +224,7 @@ sc.esRDD("radio/artists", "?me*")
 ```
 ### Writing
 Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on your `RDD`s:
-```
+```scala
 import org.elasticsearch.spark._        
 
 ...
@@ -244,7 +244,7 @@ In a Java environment, use the `org.elasticsearch.spark.java.api` package, in pa
 ### Reading
 To read data from ES, create a dedicated `RDD` and specify the query as an argument.
 
-```
+```java
 import org.apache.spark.api.java.JavaSparkContext;   
 import org.elasticsearch.spark.java.api.JavaEsSpark; 
 ...
@@ -258,7 +258,7 @@ JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
 ### Writing
 
 Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
-```
+```java
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf); 
 
