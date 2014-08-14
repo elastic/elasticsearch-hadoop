@@ -1,6 +1,6 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.  
-Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive) and [Apache Pig](#apache-pig).
+Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig) and [Apache Spark](#apache-spark).
 
 See  [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
@@ -11,16 +11,27 @@ For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/
 
 ## Installation
 
-### Release (currently `2.0.0`)
+### Stable Release (currently `2.0.1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </dependency>
 ```
+### Beta Release (currently `2.1.0.Beta1`)
+Available through any Maven-compatible tool:
+
+```xml
+<dependency>
+  <groupId>org.elasticsearch</groupId>
+  <artifactId>elasticsearch-hadoop</artifactId>
+  <version>2.1.0.Beta1</version>
+</dependency>
+```
+
 or as a stand-alone [ZIP](http://www.elasticsearch.org/overview/hadoop/download/).
 
 ### Development Snapshot
@@ -195,6 +206,68 @@ A = LOAD 'src/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, 
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
 ```
+## [Apache Spark][]
+ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for write methods that work on any `RDD`.
+
+### Scala
+
+### Reading
+To read data from ES, create a dedicated `RDD` and specify the query as an argument:
+
+```
+import org.elasticsearch.spark._
+
+..
+val conf = ...
+val sc = new SparkContext(conf)
+sc.esRDD("radio/artists", "?me*")
+```
+### Writing
+Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on your `RDD`s:
+```
+import org.elasticsearch.spark._        
+
+...
+val conf = ...
+val sc = new SparkContext(conf)         
+
+val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
+val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+sc.makeRDD(Seq(numbers, airports)).saveToEs("spark/docs")
+```
+
+### Java
+
+In a Java environment, use the `org.elasticsearch.spark.java.api` package, in particular the `JavaEsSpark` class.
+
+### Reading
+To read data from ES, create a dedicated `RDD` and specify the query as an argument.
+
+```
+import org.apache.spark.api.java.JavaSparkContext;   
+import org.elasticsearch.spark.java.api.JavaEsSpark; 
+...
+
+SparkConf conf = ...
+JavaSparkContext jsc = new JavaSparkContext(conf);   
+
+JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
+```
+
+### Writing
+
+Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
+```
+SparkConf conf = ...
+JavaSparkContext jsc = new JavaSparkContext(conf); 
+
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     
+Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
+
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); 
+JavaEsSpark.saveToEs(javaRDD, "spark/docs");
+```
 
 ## [Cascading][]
 ES-Hadoop offers a dedicate Elasticsearch [Tap][], `EsTap` that can be used both as a sink or a source. Note that `EsTap` can be used in both local (`LocalFlowConnector`) and Hadoop (`HadoopFlowConnector`) flows:
@@ -245,6 +318,7 @@ under the License.
 [Map/Reduce]: http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html
 [Apache Pig]: http://pig.apache.org
 [Apache Hive]: http://hive.apache.org
+[Apache Spark]: http://spark.apache.org
 [HiveQL]: http://cwiki.apache.org/confluence/display/Hive/LanguageManual
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
