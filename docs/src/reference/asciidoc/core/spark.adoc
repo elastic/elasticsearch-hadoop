@@ -134,7 +134,7 @@ containing +String+ or byte arrays (+byte[]+/+Array[Byte]+), assuming each entry
 
 [source,scala]
 ----
-val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"                    <1>
+val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"      <1>
 val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
 
 new SparkContext(conf).makeRDD(Seq(json1, json2)).saveJsonToEs("spark/json-trips") <2>
@@ -146,12 +146,12 @@ new SparkContext(conf).makeRDD(Seq(json1, json2)).saveJsonToEs("spark/json-trips
 .Java
 [source,java]
 ----
-String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";                <1>
+String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
 String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
 
 JavaContextSpark jsc = ...
 JavaRDD<String><2> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
-JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");                           <3>
+JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");             <3>
 ----
 
 <1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation

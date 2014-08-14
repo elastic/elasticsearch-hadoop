@@ -227,7 +227,6 @@ Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on you
 ```scala
 import org.elasticsearch.spark._        
 
-...
 val conf = ...
 val sc = new SparkContext(conf)         
 
@@ -247,7 +246,6 @@ To read data from ES, create a dedicated `RDD` and specify the query as an argum
 ```java
 import org.apache.spark.api.java.JavaSparkContext;   
 import org.elasticsearch.spark.java.api.JavaEsSpark; 
-...
 
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);   
@@ -259,6 +257,8 @@ JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
 
 Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
 ```java
+import org.elasticsearch.spark.java.api.JavaEsSpark; 
+
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf); 
 
