@@ -40,7 +40,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
         if (esType == null) {
-            return null;
+            return nullValue();
         }
 
         switch (esType) {

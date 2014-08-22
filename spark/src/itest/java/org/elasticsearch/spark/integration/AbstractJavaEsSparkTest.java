@@ -19,6 +19,7 @@
 package org.elasticsearch.spark.integration;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.api.java.JavaEsSpark;
@@ -45,6 +46,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import static scala.collection.JavaConversions.*;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkTest implements Serializable {
@@ -75,6 +77,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target);
+        JavaEsSpark.saveToEs(javaRDD, ImmutableMap.of(ES_RESOURCE, target + "1"));
+        
         RestUtils.exists("spark-test/java-write");
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
@@ -88,7 +92,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         String target = "spark-test/java-id-write";
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         // eliminate with static import
-        JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ConfigurationOptions.ES_MAPPING_ID, "number"));
+        JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "number"));
         RestUtils.exists(target + "/1");
         RestUtils.exists(target + "/2");
         String results = RestUtils.get(target + "/_search?");
@@ -119,18 +123,34 @@ public class AbstractJavaEsSparkTest implements Serializable {
 
       JavaRDD<String> stringRDD = sc.parallelize(ImmutableList.of(json1, json2));
       JavaEsSpark.saveJsonToEs(stringRDD, "spark-test/json-{airport}");
+      JavaEsSpark.saveJsonToEs(stringRDD, "spark-test/json1-{airport}", Collections.<String, String> emptyMap());
+      JavaEsSpark.saveJsonToEs(stringRDD, ImmutableMap.of(ES_RESOURCE, "spark-test/json2-{airport}"));
 
       byte[] json1BA = json1.getBytes();
       byte[] json2BA = json2.getBytes();
 
       JavaRDD<byte[]> byteRDD = sc.parallelize(ImmutableList.of(json1BA, json2BA));
       JavaEsSpark.saveJsonByteArrayToEs(byteRDD, "spark-test/json-ba-{airport}");
-
+      JavaEsSpark.saveJsonByteArrayToEs(byteRDD, "spark-test/json-ba1-{airport}", Collections.<String, String> emptyMap());
+      JavaEsSpark.saveJsonByteArrayToEs(byteRDD, ImmutableMap.of(ES_RESOURCE, "spark-test/json-ba2-{airport}"));
+      
       assertTrue(RestUtils.exists("spark-test/json-SFO"));
       assertTrue(RestUtils.exists("spark-test/json-OTP"));
 
+      assertTrue(RestUtils.exists("spark-test/json1-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json1-OTP"));
+
+      assertTrue(RestUtils.exists("spark-test/json2-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json2-OTP"));
+
       assertTrue(RestUtils.exists("spark-test/json-ba-SFO"));
       assertTrue(RestUtils.exists("spark-test/json-ba-OTP"));
+
+      assertTrue(RestUtils.exists("spark-test/json-ba1-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json-ba1-OTP"));
+
+      assertTrue(RestUtils.exists("spark-test/json-ba2-SFO"));
+      assertTrue(RestUtils.exists("spark-test/json-ba2-OTP"));
 
       assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"));
       assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"));
@@ -185,12 +205,17 @@ public class AbstractJavaEsSparkTest implements Serializable {
         RestUtils.putData(index + "/foo", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.putData(index + "/bar", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh(index);
-        //RestUtils.flush(index);
 
-    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, "spark*/foo");
-    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo");
-
+    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo"));
+    	
+    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "");
     	assertTrue(allRDD.count() == wildRDD.count());
     	assertTrue(allRDD.count() == 1);
+    }
+    
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testNoResourceSpecified() throws Exception {
+    	JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc);
+    	rdd.count();
     }
 }

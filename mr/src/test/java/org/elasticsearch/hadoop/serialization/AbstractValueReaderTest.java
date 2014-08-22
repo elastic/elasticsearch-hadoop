@@ -19,7 +19,6 @@
 package org.elasticsearch.hadoop.serialization;
 
 import org.codehaus.jackson.Base64Variants;
-import org.elasticsearch.hadoop.mr.WritableValueReader;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
@@ -27,75 +26,87 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.junit.Before;
 import org.junit.Test;
 
-public class WritableTypeFromJsonTest {
+public abstract class AbstractValueReaderTest {
 
-    private ValueReader vr = new WritableValueReader();
+    public ValueReader vr;
+
+    public abstract ValueReader createValueReader();
+    public abstract void checkNull(Object typeFromJson);
+    public abstract void checkEmptyString(Object typeFromJson);
+    public abstract void checkString(Object typeFromJson);
+    public abstract void checkInteger(Object typeFromJson);
+    public abstract void checkLong(Object typeFromJson);
+    public abstract void checkDouble(Object typeFromJson);
+    public abstract void checkFloat(Object typeFromJson);
+    public abstract void checkBoolean(Object typeFromJson);
+    public abstract void checkByteArray(Object typeFromJson, String encode);
+
 
     @Before
     public void start() {
-        vr = new WritableValueReader();
+        vr = createValueReader();
     }
 
     @Test
     public void testNull() {
-        writableTypeFromJson("null");
+        checkNull(typeFromJson("null"));
     }
 
     @Test
     public void testEmptyString() {
-        writableTypeFromJson("");
+        checkEmptyString(typeFromJson(""));
     }
 
     @Test
     public void testString() {
-        writableTypeFromJson("\"someText\"");
+        checkString(typeFromJson("\"someText\""));
     }
 
     @Test
     public void testInteger() {
-        writableTypeFromJson("123");
+        checkInteger(typeFromJson("" + Integer.MAX_VALUE));
     }
 
     @Test
     public void testLong() {
-        writableTypeFromJson("321");
+        checkLong(typeFromJson("" + Long.MAX_VALUE));
     }
 
     @Test
     public void testDouble() {
-        writableTypeFromJson("12.3e8");
+        checkDouble(typeFromJson("" + Double.MAX_VALUE));
     }
 
     @Test
     public void testFloat() {
-        writableTypeFromJson("1.3");
+        checkFloat(typeFromJson("" + Float.MAX_VALUE));
     }
 
     @Test
     public void testBoolean() {
-        writableTypeFromJson("true");
+        checkBoolean(typeFromJson("true"));
     }
 
     @Test
     public void testByteArray() {
-        writableTypeFromJson("\"" + Base64Variants.getDefaultVariant().encode("byte array".getBytes()) + "\"");
+        String encode = Base64Variants.getDefaultVariant().encode("byte array".getBytes());
+        checkByteArray(typeFromJson("\"" + encode + "\""), encode);
     }
 
     //@Test
     public void testArray() {
-        writableTypeFromJson("[ \"one\" ,\"two\"]");
+        typeFromJson("[ \"one\" ,\"two\"]");
     }
 
     //@Test
     public void testMap() {
-        writableTypeFromJson("{ one:1, two:2 }");
+        typeFromJson("{ one:1, two:2 }");
     }
 
-    private void writableTypeFromJson(String json) {
+    private Object typeFromJson(String json) {
         JacksonJsonParser parser = new JacksonJsonParser(json.getBytes());
         parser.nextToken();
-        Object readValue = vr.readValue(parser, parser.text(), fromJson(parser, parser.currentToken()));
-        System.out.println(readValue);
+        return vr.readValue(parser, parser.text(), fromJson(parser, parser.currentToken()));
     }
 
     private static FieldType fromJson(Parser parser, Token currentToken) {

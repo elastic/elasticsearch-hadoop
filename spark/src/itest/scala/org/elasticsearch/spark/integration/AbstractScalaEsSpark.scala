@@ -72,7 +72,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
 
     @Test
     def testEsRDDWrite() {
-      val doc1 = Map("one" -> null, "two" -> 2)
+      val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
       val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
       sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
