@@ -19,8 +19,11 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
@@ -32,6 +35,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
 
 public class JdkTypeToJsonTest {
 
@@ -150,6 +155,11 @@ public class JdkTypeToJsonTest {
     }
 
     @Test
+    public void testArray() {
+        assertEquals("[\"one\",\"two\"]", jdkTypeToJson(new String[] { "one", "two" }));
+    }
+
+    @Test
     public void testList() {
         assertEquals("[\"one\",\"two\"]", jdkTypeToJson(Arrays.asList(new String[] { "one", "two" })));
     }
@@ -157,6 +167,43 @@ public class JdkTypeToJsonTest {
     @Test
     public void testMap() {
         assertEquals("{\"key\":\"value\"}", jdkTypeToJson(Collections.singletonMap("key", "value")));
+    }
+
+    @Test
+    public void testDate() {
+        assertThat(jdkTypeToJson(new Date(0)), containsString("1970-01-01"));
+    }
+
+    @Test
+    public void testCalendar() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date(0));
+        assertThat(jdkTypeToJson(cal), containsString("1970-01-01"));
+    }
+
+    @Test
+    public void testTimestamp() {
+        Timestamp ts = new Timestamp(0);
+        assertThat(jdkTypeToJson(new Date(0)), containsString("1970-01-01"));
+    }
+
+    @Test(expected = EsHadoopSerializationException.class)
+    public void testUnknown() {
+        jdkTypeToJson(new Object());
+    }
+
+    public void testHandleUnknown() {
+        final String message = "True Belief";
+
+        Object obj = new Object() {
+            @Override
+            public String toString() {
+                return message;
+            }
+        };
+
+        ContentBuilder.generate(out, new JdkValueWriter(true)).value(obj).flush().close();
+        assertEquals(message, out.bytes().toString());
     }
 
     private String jdkTypeToJson(Object obj) {
