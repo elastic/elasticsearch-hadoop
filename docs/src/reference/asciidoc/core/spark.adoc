@@ -129,6 +129,7 @@ saveToEs(javaRDD, "spark/docs"); <2>
 
 For cases where the data in the `RDD` is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. As such, in this case, {eh} expects either an +RDD+
 containing +String+ or byte arrays (+byte[]+/+Array[Byte]+), assuming each entry represents a JSON document. If the +RDD+ does not have the proper signature, the +saveJsonToEs+ methods cannot be applied (in Scala they will not be available).
+This method is implemented using Elasticsearch's http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-bulk.html[Bulk API] so entries must not contain newline characters.
 
 .Scala
 
