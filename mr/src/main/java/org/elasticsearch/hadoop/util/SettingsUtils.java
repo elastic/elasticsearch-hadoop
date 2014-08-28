@@ -45,7 +45,8 @@ public abstract class SettingsUtils {
         String h = null;
         // are there discovered hosts?
         String discoveredHosts = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS);
-        h = (StringUtils.hasText(discoveredHosts) ? discoveredHosts : settings.getNodes());
+        // Prefer existing nodes first since we may be trying to talk to a specific node for a partition.
+        h = (StringUtils.hasText(discoveredHosts) ? settings.getNodes() + "," + discoveredHosts : settings.getNodes());
         return qualifyHosts(h, settings.getPort());
     }
 
