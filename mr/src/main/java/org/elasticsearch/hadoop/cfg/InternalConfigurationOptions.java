@@ -24,7 +24,10 @@ package org.elasticsearch.hadoop.cfg;
 public interface InternalConfigurationOptions extends ConfigurationOptions {
 
     String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
-    // discovered hosts
-    String INTERNAL_ES_HOSTS = "es.internal.hosts";
+    // discovered node
+    String INTERNAL_ES_DISCOVERED_NODES = "es.internal.discovered.nodes";
+    // pinned node
+    String INTERNAL_ES_PINNED_NODE = "es.internal.pinned.node";
+
     String INTERNAL_ES_VERSION = "es.internal.es.version";
 }

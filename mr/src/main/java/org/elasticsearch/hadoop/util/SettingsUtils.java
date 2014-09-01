@@ -18,35 +18,71 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 
 public abstract class SettingsUtils {
 
-    private static List<String> qualifyHosts(String hosts, int defaultPort) {
-        List<String> list = StringUtils.tokenize(hosts);
+    private static List<String> qualifyNodes(String nodes, int defaultPort) {
+        List<String> list = StringUtils.tokenize(nodes);
         for (int i = 0; i < list.size(); i++) {
             String host = list.get(i);
-            list.set(i, qualifyHost(host, defaultPort));
+            list.set(i, qualifyNode(host, defaultPort));
         }
         return list;
     }
 
-    private static String qualifyHost(String host, int defaultPort) {
-        return (host.contains(":") ? host : host + ":" + defaultPort);
+    private static String qualifyNode(String node, int defaultPort) {
+        return (node.contains(":") ? node : node + ":" + defaultPort);
     }
 
-    public static List<String> nodes(Settings settings) {
-        String h = null;
-        // are there discovered hosts?
-        String discoveredHosts = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS);
-        h = (StringUtils.hasText(discoveredHosts) ? discoveredHosts : settings.getNodes());
-        return qualifyHosts(h, settings.getPort());
+    public static void pinNode(Settings settings, String node) {
+        pinNode(settings, node, settings.getPort());
+    }
+
+    public static void pinNode(Settings settings, String node, int port) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, qualifyNode(node, port));
+    }
+
+    public static boolean hasPinnedNode(Settings settings) {
+        return StringUtils.hasText(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE));
+    }
+
+    public static String getPinnedNode(Settings settings) {
+        String node = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE);
+        Assert.hasText(node, "Task has not been pinned to a node...");
+        return node;
+    }
+
+    public static void addDiscoveredNodes(Settings settings, List<String> discoveredNodes) {
+        // clean-up and merge
+        Set<String> nodes = new LinkedHashSet<String>();
+        nodes.addAll(declaredNodes(settings));
+        nodes.addAll(discoveredNodes);
+
+        setDiscoveredNodes(settings, nodes);
+    }
+
+    public static void setDiscoveredNodes(Settings settings, Collection<String> nodes) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES, StringUtils.concatenate(nodes, ","));
+    }
+
+    public static List<String> declaredNodes(Settings settings) {
+        return qualifyNodes(settings.getNodes(), settings.getPort());
+    }
+
+    public static List<String> discoveredOrDeclaredNodes(Settings settings) {
+        // returned the discovered nodes or, if not defined, the set nodes
+        String discoveredNodes = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES);
+        return (StringUtils.hasText(discoveredNodes) ? StringUtils.tokenize(discoveredNodes) : declaredNodes(settings));
     }
 
     public static Map<String, String> aliases(String definition) {

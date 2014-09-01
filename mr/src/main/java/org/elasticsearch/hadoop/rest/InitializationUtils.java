@@ -18,19 +18,15 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.serialization.BytesConverter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
@@ -63,13 +59,7 @@ public abstract class InitializationUtils {
                 log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
             }
 
-            // clean-up and merge
-            Set<String> nodes = new LinkedHashSet<String>();
-            nodes.addAll(SettingsUtils.nodes(settings));
-            nodes.addAll(discoveredNodes);
-
-            // save result
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
+            SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
             bootstrap.close();
 
             return true;

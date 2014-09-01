@@ -8,15 +8,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
@@ -34,26 +33,26 @@ import org.elasticsearch.hadoop.util.Version;
 
 public abstract class RestService implements Serializable {
 
-	public static class PartitionDefinition implements Serializable {
-		public final String serializedSettings, serializedMapping;
-		public final String nodeIp, nodeId, nodeName, shardId;
-		public final int nodePort;
-		
-		PartitionDefinition(Shard shard, Node node, String settings, String mapping) {
-			this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(), settings, mapping);
-		}
-		
-		public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId, String settings, String mapping) {
-			this.nodeIp = nodeIp;
-			this.nodePort = nodePort;
-			this.nodeName = nodeName;
-			this.nodeId = nodeId;
-			this.shardId = shardId;
-			
-			this.serializedSettings = settings;
-			this.serializedMapping = mapping;
-		}
-		
+    public static class PartitionDefinition implements Serializable {
+        public final String serializedSettings, serializedMapping;
+        public final String nodeIp, nodeId, nodeName, shardId;
+        public final int nodePort;
+
+        PartitionDefinition(Shard shard, Node node, String settings, String mapping) {
+            this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(), settings, mapping);
+        }
+
+        public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId, String settings, String mapping) {
+            this.nodeIp = nodeIp;
+            this.nodePort = nodePort;
+            this.nodeName = nodeName;
+            this.nodeId = nodeId;
+            this.shardId = shardId;
+
+            this.serializedSettings = settings;
+            this.serializedMapping = mapping;
+        }
+
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
@@ -62,60 +61,61 @@ public abstract class RestService implements Serializable {
                         .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
-        
+
         public Settings settings() {
-        	return new PropertiesSettings(new Properties()).load(serializedSettings);
+            return new PropertiesSettings(new Properties()).load(serializedSettings);
         }
-	}
+    }
 
-	public static class PartitionReader implements Closeable {
-		public final ScrollReader scrollReader;
-		public final RestRepository client;
-		public final QueryBuilder queryBuilder;
-		
-		private boolean closed = false;
-		
-		PartitionReader(ScrollReader scrollReader, RestRepository client, QueryBuilder queryBuilder) {
-			this.scrollReader = scrollReader;
-			this.client = client;
-			this.queryBuilder = queryBuilder;
-		}
+    public static class PartitionReader implements Closeable {
+        public final ScrollReader scrollReader;
+        public final RestRepository client;
+        public final QueryBuilder queryBuilder;
 
-		@Override
-		public void close() throws IOException {
-			if (!closed) {
-				closed = true;
-				client.close();
-			}
-		}
-	}
-	
-	public static class PartitionWriter implements Closeable {
-		public final RestRepository repository;
-		public final int number;
-		public final int total;
-		public final Settings settings;
-		
-		private boolean closed = false;
-		
-		PartitionWriter(Settings settings, int splitIndex, int splitsSize, RestRepository repository) {
-			this.settings = settings;
-			this.repository = repository;
-			this.number = splitIndex;
-			this.total = splitsSize;
-		}
-		
-		public void close() throws IOException {
-			if (!closed) {
-				closed = true;
-				repository.close();
-			}
-		}
-	}
-	
-	public static Collection<PartitionDefinition> findPartitions(Settings settings, Log log) throws IOException {
-		Map<Shard, Node> targetShards = null;
-		
+        private boolean closed = false;
+
+        PartitionReader(ScrollReader scrollReader, RestRepository client, QueryBuilder queryBuilder) {
+            this.scrollReader = scrollReader;
+            this.client = client;
+            this.queryBuilder = queryBuilder;
+        }
+
+        @Override
+        public void close() {
+            if (!closed) {
+                closed = true;
+                client.close();
+            }
+        }
+    }
+
+    public static class PartitionWriter implements Closeable {
+        public final RestRepository repository;
+        public final int number;
+        public final int total;
+        public final Settings settings;
+
+        private boolean closed = false;
+
+        PartitionWriter(Settings settings, int splitIndex, int splitsSize, RestRepository repository) {
+            this.settings = settings;
+            this.repository = repository;
+            this.number = splitIndex;
+            this.total = splitsSize;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!closed) {
+                closed = true;
+                repository.close();
+            }
+        }
+    }
+
+    public static Collection<PartitionDefinition> findPartitions(Settings settings, Log log) throws IOException {
+        Map<Shard, Node> targetShards = null;
+
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
@@ -160,17 +160,21 @@ public abstract class RestService implements Serializable {
         }
 
         client.close();
-        
+
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(targetShards.size());
-        
+
         for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-        	partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping));
-		}
-        
+            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping));
+        }
+
         return partitions;
-	}
-	
-	public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
+    }
+
+    public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
+
+        if (!SettingsUtils.hasPinnedNode(settings)) {
+            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
+        }
 
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
 
@@ -194,30 +198,29 @@ public abstract class RestService implements Serializable {
 
         queryBuilder.fields(settings.getScrollFields());
 
-		return new PartitionReader(scrollReader, client, queryBuilder);
-	}
-	
-	public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log)  {
-		
+        return new PartitionReader(scrollReader, client, queryBuilder);
+    }
+
+    public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log)  {
+
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
-        // pick the host based on id
-        List<String> nodes = SettingsUtils.nodes(settings);
-        Collections.rotate(nodes, -currentSplit);
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
-        
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        // select the appropriate nodes first, to spread the load before-hand
+        SettingsUtils.pinNode(settings, nodes.get(currentSplit % nodes.size()));
+
         Resource resource = new Resource(settings, false);
 
         // single index vs multi indices
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
         iformat.compile(resource.toString());
-        
+
         RestRepository repository = (iformat.hasPattern() ? initMultiIndices(settings, currentSplit, resource, log) : initSingleIndex(settings, currentSplit, resource, log));
-        
+
         return new PartitionWriter(settings, currentSplit, totalSplits, repository);
-	}
-	
+    }
+
     private static RestRepository initSingleIndex(Settings settings, int currentInstance, Resource resource, Log log) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Resource [%s] resolves as a single index", resource));
@@ -249,15 +252,15 @@ public abstract class RestService implements Serializable {
         Shard chosenShard = orderedShards.get(bucket);
         Node targetNode = targetShards.get(chosenShard);
 
-        // override the global settings to communicate directly with the target node
-        settings.setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
+        // pin settings
+        SettingsUtils.pinNode(settings, targetNode.getIpAddress(), targetNode.getHttpPort());
+        String node = SettingsUtils.getPinnedNode(settings);
         repository = new RestRepository(settings);
-        String uri = SettingsUtils.nodes(settings).get(0);
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
+            log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), node));
         }
-        
+
         return repository;
     }
 
@@ -266,13 +269,14 @@ public abstract class RestService implements Serializable {
             log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
         }
 
-        // use target node for indexing
-        String uri = SettingsUtils.nodes(settings).get(0);
+        // multi-index write - since we don't know before hand what index will be used, pick a random node from the given list
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        String node = nodes.get(new Random().nextInt(nodes.size()));
         // override the global settings to communicate directly with the target node
-        settings.setHosts(uri);
+        SettingsUtils.pinNode(settings, node);
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, uri));
+            log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, node));
         }
 
         return new RestRepository(settings);

@@ -29,14 +29,16 @@ public class EsEmbeddedServer {
 
     private final Node node;
 
-    public EsEmbeddedServer(String clusterName, String dataPath, String httpRange, String transportRange) {
+    public EsEmbeddedServer(String clusterName, String dataPath, String httpRange, String transportRange, boolean hasSlave) {
         Properties props = new Properties();
         props.setProperty("path.data", dataPath);
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
         props.setProperty("es.index.store.type", "memory");
         props.setProperty("gateway.type", "none");
-        props.setProperty("discovery.zen.ping.multicast.enabled", "false");
+        if (!hasSlave) {
+            props.setProperty("discovery.zen.ping.multicast.enabled", "false");
+        }
         props.setProperty("script.disable_dynamic", "false");
 
         Settings settings = ImmutableSettings.settingsBuilder().put(props).build();

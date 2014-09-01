@@ -52,10 +52,6 @@ import org.elasticsearch.hadoop.rest.RestService.PartitionReader;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.builder.ValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
-import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -195,21 +191,18 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
                 log.trace(String.format("Init shard reader w/ settings %s", esSplit.settings));
             }
 
-            // override the global settings to communicate directly with the target node
-            settings.setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
-
             this.esSplit = esSplit;
 
             // initialize mapping/ scroll reader
             InitializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
-            
+
             PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, settings.save(), esSplit.mapping);
             PartitionReader partitionReader = RestService.createReader(settings, part, log);
-            
+
             this.scrollReader = partitionReader.scrollReader;
             this.client = partitionReader.client;
             this.queryBuilder = partitionReader.queryBuilder;
-            
+
             // heart-beat
             beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
 
@@ -412,11 +405,12 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         Settings settings = HadoopSettingsManager.loadFrom(job);
         Collection<PartitionDefinition> partitions = RestService.findPartitions(settings, log);
         ShardInputSplit[] splits = new ShardInputSplit[partitions.size()];
-        
+
         int index = 0;
         for (PartitionDefinition part : partitions) {
-			splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId, part.serializedMapping, part.serializedSettings);
-		}
+            splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId,
+                    part.serializedMapping, part.serializedSettings);
+        }
         log.info(String.format("Created [%d] shard-splits", splits.length));
         return splits;
     }

@@ -48,7 +48,6 @@ import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -77,7 +76,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public RestClient(Settings settings) {
-        network = new NetworkClient(settings, SettingsUtils.nodes(settings));
+        network = new NetworkClient(settings);
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
