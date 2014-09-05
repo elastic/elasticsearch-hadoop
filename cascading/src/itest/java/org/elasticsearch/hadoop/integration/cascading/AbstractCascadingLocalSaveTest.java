@@ -295,14 +295,15 @@ public class AbstractCascadingLocalSaveTest {
     @Test
     public void testCascadeConnector() {
         Pipe copy = new Pipe("copy");
+        Properties cfg = new TestSettings().getProperties();
 
         FlowDef flow = new FlowDef().addSource(copy, sourceTap()).addTailSink(copy,
                 new EsTap("cascading-local/cascade-connector"));
 
-        FlowConnector connector = new LocalFlowConnector();
+        FlowConnector connector = new LocalFlowConnector(cfg);
         Flow[] flows = new Flow[] { connector.connect(flow) };
 
-        CascadeConnector cascadeConnector = new CascadeConnector();
+        CascadeConnector cascadeConnector = new CascadeConnector(cfg);
         cascadeConnector.connect(flows).complete();
     }
 

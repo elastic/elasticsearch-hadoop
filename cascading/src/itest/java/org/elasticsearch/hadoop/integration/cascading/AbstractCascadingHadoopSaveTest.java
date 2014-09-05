@@ -33,7 +33,6 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowDef;
 import cascading.flow.hadoop.HadoopFlowConnector;
-import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
@@ -119,14 +118,15 @@ public class AbstractCascadingHadoopSaveTest {
     @Test
     public void testCascadeConnector() {
         Pipe copy = new Pipe("copy");
+        Properties cfg = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         FlowDef flow = new FlowDef().addSource(copy, sourceTap())
                 .addTailSink(copy, new EsTap("cascading-hadoop/cascade-connector"));
 
-        FlowConnector connector = new HadoopFlowConnector();
+        FlowConnector connector = new HadoopFlowConnector(cfg);
         Flow[] flows = new Flow[] { connector.connect(flow) };
 
-        CascadeConnector cascadeConnector = new CascadeConnector();
+        CascadeConnector cascadeConnector = new CascadeConnector(cfg);
         cascadeConnector.connect(flows).complete();
     }
 
