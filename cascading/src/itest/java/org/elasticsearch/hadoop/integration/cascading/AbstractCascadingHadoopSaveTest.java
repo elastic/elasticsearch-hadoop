@@ -28,8 +28,12 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import cascading.cascade.CascadeConnector;
+import cascading.flow.Flow;
+import cascading.flow.FlowConnector;
 import cascading.flow.FlowDef;
 import cascading.flow.hadoop.HadoopFlowConnector;
+import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
@@ -110,6 +114,20 @@ public class AbstractCascadingHadoopSaveTest {
     public void testIndexPatternWithFormatMapping() throws Exception {
         assertThat(RestUtils.getMapping("cascading-hadoop/pattern-format-2012-10-06").skipHeaders().toString(),
                 is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+    }
+
+    @Test
+    public void testCascadeConnector() {
+        Pipe copy = new Pipe("copy");
+
+        FlowDef flow = new FlowDef().addSource(copy, sourceTap())
+                .addTailSink(copy, new EsTap("cascading-hadoop/cascade-connector"));
+
+        FlowConnector connector = new HadoopFlowConnector();
+        Flow[] flows = new Flow[] { connector.connect(flow) };
+
+        CascadeConnector cascadeConnector = new CascadeConnector();
+        cascadeConnector.connect(flows).complete();
     }
 
     private Tap sourceTap() {
