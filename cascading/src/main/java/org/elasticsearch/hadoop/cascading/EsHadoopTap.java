@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.RecordReader;
 
 import cascading.flow.Flow;
 import cascading.flow.FlowProcess;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeCollector;
 import cascading.tap.hadoop.io.HadoopTupleEntrySchemeIterator;
@@ -45,8 +46,8 @@ class EsHadoopTap extends Tap<JobConf, RecordReader, OutputCollector> {
     private final String target;
 
     public EsHadoopTap(String host, int port, String index, String query, Fields fields, Properties props) {
+        super(new EsHadoopScheme(host, port, index, query, fields, props), SinkMode.UPDATE);
         this.target = index;
-        setScheme(new EsHadoopScheme(host, port, index, query, fields, props));
     }
 
     @Override

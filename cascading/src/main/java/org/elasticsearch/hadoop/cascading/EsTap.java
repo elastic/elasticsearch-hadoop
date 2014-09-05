@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import cascading.flow.Flow;
 import cascading.flow.FlowElement;
 import cascading.flow.FlowProcess;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
@@ -91,6 +92,7 @@ public class EsTap extends Tap<Object, Object, Object> {
     }
 
     public EsTap(String host, int port, String resource, String query, Fields fields, Properties tapSettings) {
+        super(null, SinkMode.UPDATE);
         this.resource = resource;
         this.query = query;
         this.host = host;

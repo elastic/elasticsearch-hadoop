@@ -29,6 +29,10 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import cascading.cascade.CascadeConnector;
+import cascading.flow.Flow;
+import cascading.flow.FlowConnector;
+import cascading.flow.FlowDef;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.operation.Identity;
 import cascading.pipe.Each;
@@ -286,6 +290,20 @@ public class AbstractCascadingLocalSaveTest {
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
+    }
+
+    @Test
+    public void testCascadeConnector() {
+        Pipe copy = new Pipe("copy");
+
+        FlowDef flow = new FlowDef().addSource(copy, sourceTap()).addTailSink(copy,
+                new EsTap("cascading-local/cascade-connector"));
+
+        FlowConnector connector = new LocalFlowConnector();
+        Flow[] flows = new Flow[] { connector.connect(flow) };
+
+        CascadeConnector cascadeConnector = new CascadeConnector();
+        cascadeConnector.connect(flows).complete();
     }
 
     private Tap sourceTap() {
