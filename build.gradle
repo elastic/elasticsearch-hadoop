@@ -116,7 +116,7 @@ def File gitBranch() {
 	if (gitHead.exists()) {
 		String content = gitHead.text.trim()
 		if (content.startsWith("ref:")) {
-			return file("$rootDir/.git/" + replace('ref: ',''))
+			return file("$rootDir/.git/" + content.replace('ref: ',''))
 		}
 		return gitHead
 	}
