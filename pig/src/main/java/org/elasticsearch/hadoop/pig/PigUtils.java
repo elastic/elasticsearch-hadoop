@@ -102,7 +102,7 @@ class PigUtils {
         List<String> fields = new ArrayList<String>();
         addField(schema, fields, alias(new PropertiesSettings(props)), null);
 
-        return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");
+        return StringUtils.concatenate(fields, ",");
     }
 
     private static void addField(Schema schema, List<String> fields, FieldAlias fa, String currentNode) {
@@ -139,7 +139,7 @@ class PigUtils {
             addField(field, fields, alias, "");
         }
 
-        return StringUtils.concatenate(fields.toArray(new String[fields.size()]), ",");
+        return StringUtils.concatenateAndUriEncode(fields, ",");
     }
 
     private static void addField(RequiredField field, List<String> fields, FieldAlias fa, String currentNode) {
