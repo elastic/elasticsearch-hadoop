@@ -471,7 +471,13 @@ allprojects { project ->
 			jvmArgs '-XX:MaxPermSize=368m'
 
 	    testLogging {
-			events "started" //, "standardOut", "standardError"
+			displayGranularity 0
+			events "started", "failed" //, "standardOut", "standardError"
+			exceptionFormat "full"
+			showCauses true
+			showExceptions true
+			showStackTraces true
+			stackTraceFilters "groovy"
 			minGranularity 2
 			maxGranularity 2
 		}
