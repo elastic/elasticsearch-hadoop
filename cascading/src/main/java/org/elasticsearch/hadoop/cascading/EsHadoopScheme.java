@@ -126,7 +126,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
         Collection<String> fields = CascadingUtils.fieldToAlias(set, getSourceFields());
         // load only the necessary fields
-        conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(fields, ","));
+        conf.set(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenateAndUriEncode(fields, ","));
 
         if (log.isTraceEnabled()) {
             log.trace("Initialized (source) configuration " + HadoopCfgUtils.asProperties(conf));

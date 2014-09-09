@@ -1,12 +1,12 @@
 { "index": {}}
-{ "price" : 30000, "color" : "green", "make" : "ford", "sold" : "2014-05-18" }
+{ "price" : 30000, "color" : "green", "make" : "ford", "sold" : "2014-05-18", "&c" : "foobar" }
 { "index": {}}
-{ "price" : 15000, "color" : "blue", "make" : "toyota", "sold" : "2014-07-02" }
+{ "price" : 15000, "color" : "blue", "make" : "toyota", "sold" : "2014-07-02", "&c" : "foobar" }
 { "index": {}}
-{ "price" : 12000, "color" : "green", "make" : "toyota", "sold" : "2014-08-19" }
+{ "price" : 12000, "color" : "green", "make" : "toyota", "sold" : "2014-08-19", "&c" : "foobar" }
 { "index": {}}
-{ "price" : 20000, "color" : "red", "make" : "honda", "sold" : "2014-11-05" }
+{ "price" : 20000, "color" : "red", "make" : "honda", "sold" : "2014-11-05", "&c" : "foobar" }
 { "index": {}}
-{ "price" : 80000, "color" : "red", "make" : "bmw", "sold" : "2014-01-01" }
+{ "price" : 80000, "color" : "red", "make" : "bmw", "sold" : "2014-01-01", "&c" : "foobar" }
 { "index": {}}
-{ "price" : 25000, "color" : "blue", "make" : "ford", "sold" : "2014-02-12" }
+{ "price" : 25000, "color" : "blue", "make" : "ford", "sold" : "2014-02-12", "&c" : "foobar" }

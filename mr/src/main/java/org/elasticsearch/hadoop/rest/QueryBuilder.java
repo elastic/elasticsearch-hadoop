@@ -141,7 +141,10 @@ public class QueryBuilder {
     }
 
     private String assemble() {
-        StringBuilder sb = new StringBuilder(resource.indexAndType());
+        StringBuilder sb = new StringBuilder();
+        sb.append(StringUtils.encodePath(resource.index()));
+        sb.append("/");
+        sb.append(StringUtils.encodePath(resource.type()));
         sb.append("/_search?");
 
         // override infrastructure params
@@ -153,7 +156,7 @@ public class QueryBuilder {
         if (StringUtils.hasText(fields)) {
             if (IS_ES_10) {
                 uriQuery.put("_source", fields);
-                uriQuery.remove("escapedFields");
+                uriQuery.remove("fields");
             }
             else {
                 uriQuery.put("fields", fields);
@@ -195,7 +198,7 @@ public class QueryBuilder {
     }
 
     public ScrollQuery build(RestRepository client, ScrollReader reader) {
-        String scrollUri = StringUtils.escapeUri(assemble());
+        String scrollUri = assemble();
         return client.scan(scrollUri, bodyQuery, reader);
     }
 

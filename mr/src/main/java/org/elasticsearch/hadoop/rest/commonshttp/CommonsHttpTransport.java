@@ -368,7 +368,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
     private static String escapeUri(String uri) {
         // escape the uri right away
-        String escaped = StringUtils.escapeUri(uri);
+        String escaped = StringUtils.encodeUri(uri);
         return escaped.contains("://") ? escaped : "http://" + escaped;
     }
 

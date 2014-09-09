@@ -103,7 +103,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writabl
         Log log = LogFactory.getLog(getClass());
         // move on to initialization
         InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenateAndUriEncode(HiveUtils.columnToAlias(settings), ","));
         // set read resource
         settings.setResourceRead(settings.getResourceRead());
         HiveUtils.init(settings, log);

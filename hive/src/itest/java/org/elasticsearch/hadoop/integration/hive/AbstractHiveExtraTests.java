@@ -54,8 +54,9 @@ public class AbstractHiveExtraTests {
         String create = "CREATE EXTERNAL TABLE cars2 ("
                 + "color STRING,"
                 + "price BIGINT,"
-                + "sold TIMESTAMP) "
-                + HiveSuite.tableProps("cars/transactions", null, (String[]) null);
+                + "sold TIMESTAMP, "
+                + "alias STRING) "
+                + HiveSuite.tableProps("cars/transactions", null, "'es.mapping.names'='alias:&c'");
 
         String query = "SELECT * from cars2";
         String count = "SELECT count(1) from cars2";
@@ -64,6 +65,7 @@ public class AbstractHiveExtraTests {
         server.execute(create);
         List<String> result = server.execute(query);
         assertEquals(6, result.size());
+        assertTrue(result.get(0).contains("foobar"));
         result = server.execute(count);
         assertEquals("6", result.get(0));
     }
