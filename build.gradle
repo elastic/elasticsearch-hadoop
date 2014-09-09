@@ -156,6 +156,8 @@ allprojects { project ->
 	sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
 
 	test {
+		reports.html.enabled = false		
+
 		jacoco {
 			enabled = project.hasProperty("enableJacoco")
 			destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
@@ -482,6 +484,8 @@ allprojects { project ->
 			maxGranularity 2
 		}
 		
+		reports.html.enabled = false
+		
 		jacoco {
 			enabled = project.hasProperty("enableJacoco")
 			append = true
@@ -596,6 +600,13 @@ configure(rootProject) {
 				destination "${buildDir}/jacoco/html"
 			}
 		}
+	}
+	
+	task testReport(type: TestReport) {
+		destinationDir = file("$buildDir/reports/allTests")
+		// Include the results from the `test` task in all subprojects
+		reportOn subprojects*.test
+		reportOn subprojects*.integrationTest
 	}
 	
 	task wrapper(type: Wrapper) {
