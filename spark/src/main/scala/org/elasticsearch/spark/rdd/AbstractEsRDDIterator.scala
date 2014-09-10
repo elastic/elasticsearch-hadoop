@@ -31,7 +31,6 @@ private[rdd] abstract class AbstractEsRDDIterator[T](
      // initialize mapping/ scroll reader
      initReader(settings, log)
 
-     settings.setHosts(partition.nodeIp).setPort(partition.nodePort);
      val readr = RestService.createReader(settings, partition, log)
      readr.queryBuilder.build(readr.client, readr.scrollReader);
   }
