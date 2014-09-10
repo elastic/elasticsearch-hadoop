@@ -23,6 +23,8 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+
 /**
  * Tweaked settings for testing.
  */

@@ -16,20 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
+package org.elasticsearch.storm;
 
-import org.elasticsearch.hadoop.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 
-@RunWith(Suite.class)
-//@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class })
-@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class, AbstractHadoopBasicSparkTest.class })
-public class SparkSuite {
-
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
+public class StormFieldExtractor extends ConstantFieldExtractor {
 
 }

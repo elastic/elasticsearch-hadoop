@@ -1,11 +1,10 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,10 +38,12 @@ public abstract class RestService implements Serializable {
         public final int nodePort;
 
         PartitionDefinition(Shard shard, Node node, String settings, String mapping) {
-            this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(), settings, mapping);
+            this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(),
+                    settings, mapping);
         }
 
-        public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId, String settings, String mapping) {
+        public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId,
+                String settings, String mapping) {
             this.nodeIp = nodeIp;
             this.nodePort = nodePort;
             this.nodeName = nodeName;
@@ -72,6 +73,8 @@ public abstract class RestService implements Serializable {
         public final RestRepository client;
         public final QueryBuilder queryBuilder;
 
+        private ScrollQuery scrollQuery;
+
         private boolean closed = false;
 
         PartitionReader(ScrollReader scrollReader, RestRepository client, QueryBuilder queryBuilder) {
@@ -84,8 +87,19 @@ public abstract class RestService implements Serializable {
         public void close() {
             if (!closed) {
                 closed = true;
+                if (scrollQuery != null) {
+                    scrollQuery.close();
+                }
                 client.close();
             }
+        }
+
+        public ScrollQuery scrollQuery() {
+            if (scrollQuery == null) {
+                scrollQuery = queryBuilder.build(client, scrollReader);
+            }
+
+            return scrollQuery;
         }
     }
 
@@ -104,8 +118,7 @@ public abstract class RestService implements Serializable {
             this.total = splitsSize;
         }
 
-        @Override
-        public void close() throws IOException {
+        public void close() {
             if (!closed) {
                 closed = true;
                 repository.close();
@@ -113,7 +126,95 @@ public abstract class RestService implements Serializable {
         }
     }
 
-    public static Collection<PartitionDefinition> findPartitions(Settings settings, Log log) throws IOException {
+    public static class MultiReaderIterator implements Closeable, Iterator {
+        private final List<PartitionDefinition> definitions;
+        private final Iterator<PartitionDefinition> definitionIterator;
+        private PartitionReader currentReader;
+        private ScrollQuery currentScroll;
+        private boolean finished = false;
+
+        private final Settings settings;
+        private final Log log;
+
+        MultiReaderIterator(List<PartitionDefinition> defs, Settings settings, Log log) {
+            this.definitions = defs;
+            definitionIterator = defs.iterator();
+
+            this.settings = settings;
+            this.log = log;
+        }
+
+        @Override
+        public void close() {
+            if (finished) {
+                return;
+            }
+
+            ScrollQuery sq = getCurrent();
+            if (sq != null) {
+                sq.close();
+            }
+            if (currentReader != null) {
+                currentReader.close();
+            }
+
+            finished = true;
+        }
+
+        @Override
+        public boolean hasNext() {
+            ScrollQuery sq = getCurrent();
+            return (sq != null ? sq.hasNext() : false);
+        }
+
+        private ScrollQuery getCurrent() {
+            if (finished) {
+                return null;
+            }
+
+
+            for (boolean hasValue = false; !hasValue;) {
+                if (currentReader == null) {
+                    if (definitionIterator.hasNext()) {
+                        currentReader = RestService.createReader(settings, definitionIterator.next(), log);
+                    }
+                    else {
+                        finished = true;
+                        return null;
+                    }
+                }
+
+                if (currentScroll == null) {
+                    currentScroll = currentReader.scrollQuery();
+                }
+
+                hasValue = currentScroll.hasNext();
+
+                if (!hasValue) {
+                    currentScroll.close();
+                    currentScroll = null;
+
+                    currentReader.close();
+                    currentReader = null;
+                }
+            }
+
+            return currentScroll;
+        }
+
+        @Override
+        public Object[] next() {
+            ScrollQuery sq = getCurrent();
+            return sq.next();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
         Map<Shard, Node> targetShards = null;
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
@@ -192,16 +293,55 @@ public abstract class RestService implements Serializable {
         // initialize REST client
         RestRepository client = new RestRepository(settings);
 
-        QueryBuilder queryBuilder = QueryBuilder.query(settings)
-                .shard(partition.shardId)
-                .onlyNode(partition.nodeId);
+        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).onlyNode(partition.nodeId);
 
         queryBuilder.fields(settings.getScrollFields());
 
         return new PartitionReader(scrollReader, client, queryBuilder);
     }
 
-    public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log)  {
+
+    // expects currentTask to start from 0
+    public static List<PartitionDefinition> assignPartitions(List<PartitionDefinition> partitions, int currentTask, int totalTasks) {
+        int esPartitions = partitions.size();
+        if (totalTasks >= esPartitions) {
+            return (currentTask >= esPartitions ? Collections.<PartitionDefinition> emptyList() : Collections.singletonList(partitions.get(currentTask)));
+        }
+        else {
+            int partitionsPerTask = esPartitions / totalTasks;
+            int remainder = esPartitions % totalTasks;
+
+            int partitionsPerCurrentTask = partitionsPerTask;
+
+            // spread the reminder against the tasks
+            if (currentTask < remainder) {
+                partitionsPerCurrentTask++;
+            }
+
+            // find the offset inside the collection
+            int offset = partitionsPerTask * currentTask;
+            if (currentTask != 0) {
+                offset += (remainder > currentTask ? 1 : remainder);
+            }
+
+            // common case
+            if (partitionsPerCurrentTask == 1) {
+                return Collections.singletonList(partitions.get(offset));
+            }
+
+            List<PartitionDefinition> pa = new ArrayList<PartitionDefinition>(partitionsPerCurrentTask);
+            for (int index = offset; index < offset + partitionsPerCurrentTask; index++) {
+                pa.add(partitions.get(index));
+            }
+            return pa;
+        }
+    }
+
+    public static MultiReaderIterator multiReader(Settings settings, List<PartitionDefinition> definitions, Log log) {
+        return new MultiReaderIterator(definitions, settings, log);
+    }
+
+    public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
@@ -258,7 +398,7 @@ public abstract class RestService implements Serializable {
         repository = new RestRepository(settings);
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), node));
+			log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), node));
         }
 
         return repository;

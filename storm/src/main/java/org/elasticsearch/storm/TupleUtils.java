@@ -16,20 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
+package org.elasticsearch.storm;
 
-import org.elasticsearch.hadoop.LocalEs;
-import org.junit.ClassRule;
-import org.junit.rules.ExternalResource;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import backtype.storm.Constants;
+import backtype.storm.tuple.Tuple;
 
-@RunWith(Suite.class)
-//@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class })
-@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class, AbstractHadoopBasicSparkTest.class })
-public class SparkSuite {
+public abstract class TupleUtils {
 
-    @ClassRule
-    public static ExternalResource resource = new LocalEs();
-
+    public static boolean isTickTuple(Tuple tuple) {
+        return tuple.getSourceComponent().equals(Constants.SYSTEM_COMPONENT_ID)
+                && tuple.getSourceStreamId().equals(Constants.SYSTEM_TICK_STREAM_ID);
+    }
 }

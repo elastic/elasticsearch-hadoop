@@ -49,14 +49,17 @@ public abstract class IOUtils {
         ReflectionUtils.makeAccessible(BYTE_ARRAY_BUFFER);
     }
 
-    public static String serializeToBase64(Serializable object) throws IOException {
+    public static String serializeToBase64(Serializable object) {
         if (object == null) {
             return StringUtils.EMPTY;
         }
         FastByteArrayOutputStream baos = new FastByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        ObjectOutputStream oos = null;
         try {
+            oos = new ObjectOutputStream(baos);
             oos.writeObject(object);
+        } catch (IOException ex) {
+            throw new EsHadoopSerializationException("Cannot serialize object " + object, ex);
         } finally {
             close(oos);
         }

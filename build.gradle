@@ -17,6 +17,8 @@ allprojects {
 	  mavenCentral()
 	  // cascading
 	  maven { url "http://conjars.org/repo" }
+	  // storm dependencies
+	  maven { url "http://clojars.org/repo" }
 	  maven { url 'http://repo.spring.io/plugins-release' }
 	  
   	  // Hive depends on JDO ec2 missing from Maven Central
@@ -187,6 +189,17 @@ allprojects { project ->
 		itestRuntime configurations.testRuntime
 	}
 
+	// adding the M/R project creates duplicates in the Eclipse CP so here we filter them out
+	// the lib entries with sources seem to be placed first so they 'win' over those w/o sources
+	eclipse.classpath.file {
+		whenMerged { cp ->
+			cp.entries.unique { a, b ->
+				return a.path.compareTo(b.path)
+			}
+		}
+	}
+
+	
 	jar {
 		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
 		manifest.attributes['Implementation-Title'] = project.name
@@ -440,6 +453,18 @@ project(":elasticsearch-spark") {
 		scaladoc {
 			title = "${rootProject.description} ${version} API"
 		}
+	}
+}
+
+project(":elasticsearch-storm") {
+	description = "Elasticsearch Storm"
+	nestMRProject(project)
+	
+	dependencies {
+		provided("org.apache.storm:storm-core:$stormVersion")
+		
+		//testRuntime "com.esotericsoftware.kryo:kryo:2.21"
+		itestRuntime "com.twitter:carbonite:1.4.0"
 	}
 }
 

@@ -32,10 +32,13 @@ import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
+
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
-public abstract class Settings implements InternalConfigurationOptions {
+public abstract class Settings {
 
     public String getNodes() {
         String host = getProperty(ES_HOST);
@@ -84,6 +87,10 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public boolean getBatchRefreshAfterWrite() {
         return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_REFRESH, ES_BATCH_WRITE_REFRESH_DEFAULT));
+    }
+
+    public boolean getBatchFlushManual() {
+        return Booleans.parseBoolean(getProperty(ES_BATCH_FLUSH_MANUAL, ES_BATCH_FLUSH_MANUAL_DEFAULT));
     }
 
     public long getScrollKeepAlive() {

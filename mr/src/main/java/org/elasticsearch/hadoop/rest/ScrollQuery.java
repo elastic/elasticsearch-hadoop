@@ -56,7 +56,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         finished = true;
         batch = Collections.emptyList();
     }
@@ -101,9 +101,9 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
     @Override
     public Object[] next() {
-    	if (!hasNext()) {
-    		throw new NoSuchElementException("No more documents available");
-    	}
+        if (!hasNext()) {
+            throw new NoSuchElementException("No more documents available");
+        }
         return batch.get(batchIndex++);
     }
 

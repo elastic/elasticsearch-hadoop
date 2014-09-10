@@ -10,6 +10,7 @@ include 'cascading'
 project(":cascading").name = "elasticsearch-hadoop-cascading"
 include 'spark'
 project(":spark").name = "elasticsearch-spark"
-
+include 'storm'
+project(":storm").name = "elasticsearch-storm"
 include 'repository-hdfs'
 project(":repository-hdfs").name = "elasticsearch-repository-hdfs"

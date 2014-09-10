@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -136,7 +137,7 @@ public class RestClient implements Closeable, StatsAware {
         return (T) (string != null ? map.get(string) : map);
     }
 
-    public void bulk(Resource resource, TrackingBytesArray data) {
+    public BitSet bulk(Resource resource, TrackingBytesArray data) {
         Retry retry = retryPolicy.init();
         int httpStatus = 0;
 
@@ -164,6 +165,8 @@ public class RestClient implements Closeable, StatsAware {
 
             httpStatus = (retryFailedEntries(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
         } while (data.length() > 0 && retry.retry(httpStatus));
+
+        return data.leftoversPosition();
     }
 
     @SuppressWarnings("rawtypes")

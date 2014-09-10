@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.rest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -61,6 +63,7 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean executedBulkWrite = false;
     private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
+    private boolean autoFlush = true;
 
     // indicates whether there were writes errorrs or not
     // flag indicating whether to flush the batch at close-time or not
@@ -95,6 +98,7 @@ public class RestRepository implements Closeable, StatsAware {
         if (!writeInitialized) {
             writeInitialized = true;
 
+            autoFlush = !settings.getBatchFlushManual();
             ba.bytes(new byte[settings.getBatchSizeInBytes()], 0);
             trivialBytesRef = new BytesRef();
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
@@ -123,7 +127,7 @@ public class RestRepository implements Closeable, StatsAware {
      *
      * @param object object to add to the index
      */
-    public void writeToIndex(Object object) throws IOException {
+    public void writeToIndex(Object object) {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
@@ -149,33 +153,58 @@ public class RestRepository implements Closeable, StatsAware {
     private void doWriteToIndex(BytesRef payload) {
         // check space first
         if (payload.length() > ba.available()) {
-            sendBatch();
+            if (autoFlush) {
+                flush();
+            }
+            else {
+                throw new EsHadoopIllegalStateException(
+                        String.format("Auto flush disabled and bulk buffer full; disable manual flush or increase capacity [current size %s]; bailing out", ba.capacity()));
+            }
         }
 
         data.copyFrom(payload);
         payload.reset();
 
         dataEntries++;
-        if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
-            sendBatch();
+        if (autoFlush && bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
+            flush();
         }
     }
 
-    private void sendBatch() {
+    public BitSet tryFlush() {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
+        BitSet bulk;
+
         try {
-            client.bulk(resourceW, data);
+            bulk = client.bulk(resourceW, data);
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
             throw ex;
         }
 
+        executedBulkWrite = true;
+
+        // data still in the pipeline, don't clean it
+        if (!bulk.isEmpty()) {
+            discard();
+        }
+
+        return bulk;
+    }
+
+    public void discard() {
         data.reset();
         dataEntries = 0;
-        executedBulkWrite = true;
+    }
+
+    public void flush() {
+        BitSet bulk = tryFlush();
+        if (!bulk.isEmpty()) {
+            throw new EsHadoopException(String.format("Could not write all entries [%s/%s] (maybe ES was overloaded?). Bailing out...", bulk.cardinality(), bulk.size()));
+        }
     }
 
     @Override
@@ -186,7 +215,7 @@ public class RestRepository implements Closeable, StatsAware {
 
         if (data.length() > 0) {
             if (!hadWriteErrors) {
-                sendBatch();
+                flush();
             }
             else {
                 if (log.isDebugEnabled()) {
@@ -258,7 +287,7 @@ public class RestRepository implements Closeable, StatsAware {
         return shards;
     }
 
-    public Field getMapping() throws IOException {
+    public Field getMapping() {
         return Field.parseField((Map<String, Object>) client.getMapping(resourceR.mapping()));
     }
 

@@ -20,22 +20,26 @@ package org.elasticsearch.hadoop.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- *  Wrapper class around a {@link BytesArray} with 'awarness' around the underlying content.
+ *  Wrapper class around a {@link BytesArray} with 'awareness' around the underlying content.
  *  Considers each addition an entry and allows removal of specific entries (and by that skipping their backing content).
+ *  Meant to be used as a buffer that is first filled, then emptied (in chunks) then cleaned-up.
  */
 public class TrackingBytesArray implements ByteSequence {
 
     private static class Entry {
         final int offset;
         final int length;
+        final int initialPosition;
 
-        Entry(int offset, int length) {
+        Entry(int offset, int length, int initialPosition) {
             this.offset = offset;
             this.length = length;
+            this.initialPosition = initialPosition;
         }
 
         @Override
@@ -65,6 +69,7 @@ public class TrackingBytesArray implements ByteSequence {
     }
 
     private final BytesArray data;
+    private int maxEntries = 0;
     private int size = 0;
     private List<Entry> entries = new LinkedList<TrackingBytesArray.Entry>();
 
@@ -90,10 +95,20 @@ public class TrackingBytesArray implements ByteSequence {
         return entries.size();
     }
 
+    public BitSet leftoversPosition() {
+        BitSet bitSet = new BitSet(maxEntries);
+        for (Entry entry : entries) {
+            bitSet.set(entry.initialPosition);
+        }
+
+        return bitSet;
+    }
+
     private void addEntry(int length) {
         // implied offset - data.size
-        entries.add(new Entry(data.size, length));
+        entries.add(new Entry(data.size, length, entries.size()));
         size += length;
+        maxEntries = size;
     }
 
     public void remove(int index) {
@@ -118,6 +133,7 @@ public class TrackingBytesArray implements ByteSequence {
 
     public void reset() {
         size = 0;
+        maxEntries = 0;
         entries.clear();
         data.reset();
     }
