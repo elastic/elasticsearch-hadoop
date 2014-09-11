@@ -36,8 +36,8 @@ import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
 
 @RunWith(Suite.class)
-//@Suite.SuiteClasses({ AbstractStormBoltTests.class, AbstractStormSpoutTests.class })
-@Suite.SuiteClasses({ AbstractStormSpoutTests.class })
+@Suite.SuiteClasses({ AbstractStormBoltTests.class, AbstractStormSpoutTests.class })
+//@Suite.SuiteClasses({ AbstractStormBoltTests.class })
 public class StormSuite {
 
     static ILocalCluster stormCluster;
@@ -49,7 +49,7 @@ public class StormSuite {
     public static Counter COMPONENT_HAS_COMPLETED;
 
     // storm + suite
-    public static final Counter DONE = new Counter(2);
+    //public static final Counter DONE = new Counter(2);
 
     @ClassRule
     public static ExternalResource resource = new LocalEs() {
@@ -102,7 +102,7 @@ public class StormSuite {
             public void run() {
                 try {
                     start(name, topo);
-                    counter.waitForZero(TimeValue.timeValueSeconds(15));
+                    counter.waitForZero(TimeValue.timeValueSeconds(10));
                 } finally {
                     stop(name);
                 }

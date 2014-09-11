@@ -80,7 +80,7 @@ public class AbstractStormSpoutTests {
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
-        RestUtils.exists(target);
+        assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("Hello"));
         assertThat(results, containsString("Goodbye"));
@@ -118,14 +118,9 @@ public class AbstractStormSpoutTests {
         Map ackWithSize = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(), StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1");
 
         return Arrays.asList(new Object[][] {
-                { noAck, "storm" },
-                { ack, "storm-reliable" },
-                { ackWithSize, "storm-reliable-size" } });
+                { noAck, "storm-spout" },
+                { ack, "storm-spout-reliable" },
+                { ackWithSize, "storm-spout-reliable-size" } });
     }
 
-
-    @Test
-    public void testZZZ() throws Exception {
-        StormSuite.DONE.decrement();
-    }
 }

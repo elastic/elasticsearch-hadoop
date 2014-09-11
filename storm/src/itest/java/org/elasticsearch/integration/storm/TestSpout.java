@@ -107,15 +107,19 @@ public class TestSpout extends BaseRichSpout {
 
         if (spout != null) {
             spout.nextTuple();
+
+            if (!collector.hasEmitted()) {
+                done = true;
+            }
         }
         else {
             for (List tuple : tuples) {
                 collector.emit(tuple);
             }
+            done = true;
         }
 
-        if (!collector.hasEmitted()) {
-            done = true;
+        if (done) {
             log.info("Spout finished emitting; sending signal");
             // done
             collector.emit(Collections.singletonList(DONE));

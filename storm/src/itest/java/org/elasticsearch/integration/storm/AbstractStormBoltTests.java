@@ -81,7 +81,7 @@ public class AbstractStormBoltTests {
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
-        RestUtils.exists(target);
+        assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
@@ -94,11 +94,6 @@ public class AbstractStormBoltTests {
         // write ack
         Map ack = ImmutableMap.of(StormConfigurationOptions.ES_STORM_BOLT_ACK, Boolean.TRUE.toString());
 
-        return Arrays.asList(new Object[][] { { noAck, "storm" }, { ack, "storm-ack" } });
-    }
-
-    @Test
-    public void testZZZ() throws Exception {
-        StormSuite.DONE.decrement();
+        return Arrays.asList(new Object[][] { { noAck, "storm-bolt" }, { ack, "storm-bolt-ack" } });
     }
 }
