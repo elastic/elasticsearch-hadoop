@@ -79,7 +79,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaEsSpark.saveToEs(javaRDD, target);
         JavaEsSpark.saveToEs(javaRDD, ImmutableMap.of(ES_RESOURCE, target + "1"));
         
-        RestUtils.exists("spark-test/java-write");
+        assertTrue(RestUtils.exists("spark-test/java-write"));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
@@ -93,8 +93,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "number"));
-        RestUtils.exists(target + "/1");
-        RestUtils.exists(target + "/2");
+        assertTrue(RestUtils.exists(target + "/1"));
+        assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }

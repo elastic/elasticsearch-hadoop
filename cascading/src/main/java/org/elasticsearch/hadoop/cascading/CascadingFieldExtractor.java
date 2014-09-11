@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 
@@ -36,11 +35,6 @@ public class CascadingFieldExtractor extends ConstantFieldExtractor implements F
             }
         }
         return NOT_FOUND;
-    }
-
-    @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
     }
 
     @Override
