@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.integration.storm;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -72,15 +73,21 @@ public class TestSpout extends BaseRichSpout {
     private static Log log = LogFactory.getLog(TestSpout.class);
 
     public static final Object DONE = "TestSpout-Done";
+    public List<Object> DONE_TUPLE = null;
 
     public TestSpout(IRichSpout delegate) {
         this.spout = delegate;
+        DONE_TUPLE = Collections.singletonList(DONE);
     }
 
     public TestSpout(List<List> tuples, Fields output) {
         this.tuples = tuples;
         this.fields = output;
         this.spout = null;
+        DONE_TUPLE = new ArrayList(output.size());
+        for (int i = 0; i < output.size(); i++) {
+            DONE_TUPLE.add(DONE);
+        }
     }
 
     @Override
@@ -122,7 +129,7 @@ public class TestSpout extends BaseRichSpout {
         if (done) {
             log.info("Spout finished emitting; sending signal");
             // done
-            collector.emit(Collections.singletonList(DONE));
+            collector.emit(DONE_TUPLE);
         }
     }
 

@@ -94,7 +94,7 @@ abstract class AbstractBulkFactory implements BulkFactory {
 
         void doWrite(Object value, boolean lookForQuotes) {
             // common-case - constants
-            if (value instanceof String || jsonInput) {
+            if (value instanceof String || jsonInput || value instanceof Number) {
                 String val = value.toString();
                 if (lookForQuotes && addQuotesIfNecessary) {
                     if (val.startsWith("[") || val.startsWith("{")) {

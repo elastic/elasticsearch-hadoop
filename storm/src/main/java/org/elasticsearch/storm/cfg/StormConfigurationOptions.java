@@ -21,13 +21,13 @@ package org.elasticsearch.storm.cfg;
 
 public interface StormConfigurationOptions {
 
-    String ES_STORM_TICK_TUPLE_FLUSH = "es.storm.tick.tuple.flush";
-    String ES_STORM_TICK_TUPLE_FLUSH_DEFAULT = "true";
+    String ES_STORM_BOLT_TICK_TUPLE_FLUSH = "es.storm.bolt.tick.tuple.flush";
+    String ES_STORM_BOLT_TICK_TUPLE_FLUSH_DEFAULT = "true";
 
-    String ES_STORM_BOLT_ACK = "es.storm.bolt.ack";
+    String ES_STORM_BOLT_ACK = "es.storm.bolt.write.ack";
     String ES_STORM_BOLT_ACK_DEFAULT = "false";
 
-    String ES_STORM_FLUSH_ENTRIES_SIZE = "es.storm.flush.entries.size";
+    String ES_STORM_BOLT_FLUSH_ENTRIES_SIZE = "es.storm.bolt.flush.entries.size";
 
     String ES_STORM_SPOUT_RELIABLE = "es.storm.spout.reliable";
     String ES_STORM_SPOUT_RELIABLE_DEFAULT = "false";

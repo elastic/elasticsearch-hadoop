@@ -5,6 +5,7 @@
 :es: 	Elasticsearch
 :mr: 	Map/Reduce
 :sp:	Apache Spark
+:st:	Apache Storm
 :ref:  	http://www.elasticsearch.org/guide/en/elasticsearch/reference/current
 :description: Reference documentation of {eh}
 

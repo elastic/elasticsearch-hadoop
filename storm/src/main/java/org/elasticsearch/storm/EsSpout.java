@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.MultiReaderIterator;
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
 
 import backtype.storm.spout.SpoutOutputCollector;
@@ -58,12 +59,23 @@ public class EsSpout implements IRichSpout {
     private Queue<Object[]> replayQueue = null;
 
     public EsSpout(String target) {
-        spoutConfig.put(ES_RESOURCE_READ, target);
+        this(target, null, null);
     }
 
-    public EsSpout(String target, Map configuration) {
-        spoutConfig.putAll(configuration);
-        spoutConfig.put(ES_RESOURCE_READ, target);
+    public EsSpout(String target, String query) {
+        this(target, query, null);
+    }
+
+    public EsSpout(String target, String query, Map configuration) {
+        if (configuration != null) {
+            spoutConfig.putAll(configuration);
+        }
+        if (StringUtils.hasText(query)) {
+            spoutConfig.put(ES_QUERY, query);
+        }
+        if (StringUtils.hasText(target)) {
+            spoutConfig.put(ES_RESOURCE_READ, target);
+        }
     }
 
     @Override

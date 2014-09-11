@@ -16,10 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.storm;
+package org.elasticsearch.storm.serialization;
 
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 
-public class StormFieldExtractor extends ConstantFieldExtractor {
+import backtype.storm.tuple.Tuple;
 
+public class StormTupleFieldExtractor extends ConstantFieldExtractor implements FieldExplainer {
+
+    @Override
+    protected Object extractField(Object target) {
+        if (target instanceof Tuple) {
+            Object object = ((Tuple) target).getValueByField(getFieldName());
+            if (object != null) {
+                return object;
+            }
+        }
+        return NOT_FOUND;
+    }
+
+    @Override
+    public String toString(Object field) {
+        if (field instanceof Tuple) {
+            return ((Tuple) field).getValues().toString();
+        }
+        return field.toString();
+    }
 }

@@ -1,0 +1,102 @@
+[[storm]]
+added[2.1]
+== Apache Storm support
+
+[quote, Storm website]
+____
+http://storm.incubator.apache.org[Apache Storm] is a free and open source distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. 
+____
+With Storm, one can compute, transform and filter data typically in a streaming scenario. As opposed to the rest of the libraries mentioned in this documentation, Apache Storm is a computational framework that is not tied to {mr} itself however it does integrate with Hadoop, mainly through HDFS.
+
+[[storm-installation]]
+[float]
+=== Installation
+
+In order to use {eh}, its jar needs to be available in Storm's classpath. The Storm https://storm.incubator.apache.org/documentation/Documentation.html[documentation] covers this in detail but in short, one can either have the jar available on all Storm nodes or have {eh} part of the jar being deploy (which we recommend). The latter approach allows isolation between the jobs and since the jar is self-contained, can be easily be moved across environments without additional setup making it much more robust. 
+
+[[storm-configuration]]
+[float]
+=== Configuration
+
+The Storm integration supports the configuration options described in the <<configuration>> chapter plus a few more that are specific to Storm, namely:
+
+[[storm-cfg-spout]]
+[float]
+==== Spout specific
+`es.storm.spout.reliable` (default false)::
+Indicates whether the dedicated +EsSpout+ is _reliable_, that is replays the documents in case of failure or not. By default it is set to +false+ since replaying requires the documents to be kept in memory until are being acknowledged.
+
+`es.storm.spout.reliable.queue.size` (default 0)::
+Applicable only if +es.storm.spout.reliable+ is +true+. Sets the size of the queue which holds documents in memory to be replayed until they are acknowledged. By default, the queue is _unbounded_ (+0+) however in a production environment
+it is indicated to limit the queue to limit the consumption of memory. If the queue is full, the +Bolt+ drops any incoming +Tuple+s and throws an exception.
+
+[[storm-cfg-bolt]]
+[float]
+==== Bolt specific
+`es.storm.bolt.write.ack` (default false)::
+Indicates whether the dedicated +EsBolt+ is _reliable_, that is acknowledges the +Tuple+ _after_ it was written to {es} or the instance it receives it. By default it is +false+. Note that turning this on increases the memory requirements of the +Bolt+ since it has to keep the data in memory until it is fully written. 
+
+`es.storm.bolt.flush.entries.size` (default 1000)::
+The number of entries that trigger a _micro-batch_ write to {es}. By default, it uses the same value as `es.batch.size.entries` which, by default is `1000`.
+
+`es.storm.bolt.tick.tuple.flush` (default true)::
+Whether or not to flush the existing data if the +Bolt+ receives a https://storm.incubator.apache.org/apidocs/[Tick] tuple. This _heart-beat_-like mechanism goes hand in hand with the flush limit above to create both a time and size trigger.
+
+[[storm-cfg-set]]
+[float]
+==== Setting the configuration
+The configuration can be set through Storm's https://storm.incubator.apache.org/apidocs/index.html?backtype/storm/Config.html[Config] class, in which case they are available _globally_ or, individually for each +EsSpout+ and +EsBolt+ instance. In general, it is recommended to set globally _only_ the properties that apply to all the components and are unlikely to change:
+
+[source,java]
+----
+Config conf = new Config();
+conf.put("es.index.auto.create", "true");
+StormSubmitter.submitTopology("myTopology", conf, topology);
+----
+
+For this reason, typically, one should use the _per-component_ configuration model since it allows different configurations to be used within the same Storm topology:
+
+[source,java]
+----
+Map conf = new HashMap();
+conf.put("es.index.auto.crate", "true");
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("esSpout", new EsSpout("index/type", conf));
+----
+
+[float]
+[[storm-write]]
+=== Writing data to {es}
+
+Through {eh}, {es} is exposed to Storm through a native +Bolt+, namely +org.elasticsearch.storm.EsBolt+ that writes the Storm +Tuple+s to {es}:
+
+[source,java]
+----
+import org.elasticsearch.storm.EsBolt; <1>
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("spout", new RandomSentenceSpout(), 10);
+builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>).shuffleGrouping("spout");
+----
+
+<1> {eh} +EsBolt+ package import
+<2> +EsBolt+ declaration
+<3> Various constructors are available for +EsBolt+ - at least the {es} resource under which the data is indexed, is required
+<4> The number of +EsBolt+ instances for this topology
+
+IMPORTANT: The number of bolt instances depends highly on your topology and environment. In general a good rule of thumb is to take into account the number of the target index shards as well as the number of spouts sending data to it - a good formula is to take the minimum between the source spouts and the index shards; in this example 5. A high number of +Bolt+s does not translate to a bigger through-put - make sure the +Bolt+s are the bottleneck since increasing the number simply translates otherwise to wasted cycles.
+
+[float]
+[[storm-write-dyn]]
+==== Writing to dynamic/multi-resources
+
+In cases where the data needs to be indexed based on its content, one can choose the target index based on a +Tuple+ field.  Reusing the aforementioned <<cfg-multi-writes,media example>>, one can _partition_ the documents based on their type. Assuming the document tuple contains fields +media_type+, +title+ and +year+ one can index them as follows:
+
+[source, java]
+----
+builder.setBolt("es-bolt", new EsBolt("my-collection/{type}"<1>)).shuffleGrouping("spout");
+----
+
+<1> Resource pattern using field +type+
+
+For each tuple about to be written, {eh} will extract the +type+ field and use its value to determine the target resource. The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself.

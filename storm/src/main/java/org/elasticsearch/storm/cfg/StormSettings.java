@@ -41,7 +41,7 @@ public class StormSettings extends Settings {
     }
 
     public boolean getStormTickTupleFlush() {
-        return Booleans.parseBoolean(getProperty(ES_STORM_TICK_TUPLE_FLUSH, ES_STORM_TICK_TUPLE_FLUSH_DEFAULT));
+        return Booleans.parseBoolean(getProperty(ES_STORM_BOLT_TICK_TUPLE_FLUSH, ES_STORM_BOLT_TICK_TUPLE_FLUSH_DEFAULT));
     }
 
     public boolean getStormBoltAck() {
@@ -49,7 +49,7 @@ public class StormSettings extends Settings {
     }
 
     public int getStormBulkSize() {
-        String value = getProperty(ES_STORM_FLUSH_ENTRIES_SIZE);
+        String value = getProperty(ES_STORM_BOLT_FLUSH_ENTRIES_SIZE);
         if (StringUtils.hasText(value)) {
             return Integer.valueOf(value);
         }

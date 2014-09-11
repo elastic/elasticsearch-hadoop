@@ -31,8 +31,8 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter;
-import org.elasticsearch.hadoop.serialization.MapFieldExtractor;
 import org.elasticsearch.storm.cfg.StormSettings;
+import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
 
 import backtype.storm.task.OutputCollector;
@@ -41,6 +41,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.storm.cfg.StormConfigurationOptions.*;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class EsBolt implements IRichBolt {
@@ -58,6 +59,11 @@ public class EsBolt implements IRichBolt {
 
     public EsBolt(String target) {
         boltConfig.put(ES_RESOURCE_WRITE, target);
+    }
+
+    public EsBolt(String target, boolean writeAck) {
+        boltConfig.put(ES_RESOURCE_WRITE, target);
+        boltConfig.put(ES_STORM_BOLT_ACK, Boolean.toString(writeAck));
     }
 
     public EsBolt(String target, Map configuration) {
@@ -91,7 +97,7 @@ public class EsBolt implements IRichBolt {
 
         InitializationUtils.setValueWriterIfNotSet(settings, StormValueWriter.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, JdkBytesConverter.class, log);
-        InitializationUtils.setFieldExtractorIfNotSet(settings, MapFieldExtractor.class, log);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);
     }

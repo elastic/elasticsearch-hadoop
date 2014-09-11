@@ -36,8 +36,8 @@ import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractStormBoltTests.class, AbstractStormSpoutTests.class })
-//@Suite.SuiteClasses({ AbstractStormBoltTests.class })
+//@Suite.SuiteClasses({ AbstractStormBoltTests.class, AbstractStormSpoutTests.class })
+@Suite.SuiteClasses({ AbstractStormBoltTests.class })
 public class StormSuite {
 
     static ILocalCluster stormCluster;
@@ -102,7 +102,7 @@ public class StormSuite {
             public void run() {
                 try {
                     start(name, topo);
-                    counter.waitForZero(TimeValue.timeValueSeconds(10));
+                    counter.waitForZero(TimeValue.timeValueSeconds(25));
                 } finally {
                     stop(name);
                 }

@@ -141,7 +141,7 @@ Apache Pig version 0.13.0
 [[requirements-spark]]
 === Apache Spark
 
-Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.0.1). As {eh} provides
+Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.0.2). As {eh} provides
 native integration (which is recommended) with {sp} it does not matter what binary one is using. 
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
@@ -151,7 +151,7 @@ The Spark version can be typically discovery by looking at its folder name:
 [source, bash]
 ----
 $ pwd
-/libs/spark/spark-1.0.1-bin-XXXXX
+/libs/spark/spark-1.0.2-bin-XXXXX
 ----
 
 or by running its shell:
@@ -164,7 +164,22 @@ Welcome to
       ____              __
      / __/__  ___ _____/ /__
     _\ \/ _ \/ _ `/ __/  '_/
-   /___/ .__/\_,_/_/ /_/\_\   version 1.0.1
+   /___/ .__/\_,_/_/ /_/\_\   version 1.0.2
       /_/
 ...
 ----
+
+
+[[requirements-storm]]
+=== Apache Storm
+
+Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently 0.9.2).
+
+One can discover the Storm version by looking at its folder or by invoking the command:
+
+[source, bash]
+----
+$ bin/storm version
+0.9.2-incubating
+----
+
