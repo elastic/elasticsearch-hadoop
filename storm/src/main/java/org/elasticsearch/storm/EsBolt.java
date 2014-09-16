@@ -30,8 +30,8 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
-import org.elasticsearch.hadoop.serialization.JdkBytesConverter;
 import org.elasticsearch.storm.cfg.StormSettings;
+import org.elasticsearch.storm.serialization.StormTupleBytesConverter;
 import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
 
@@ -96,7 +96,7 @@ public class EsBolt implements IRichBolt {
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
 
         InitializationUtils.setValueWriterIfNotSet(settings, StormValueWriter.class, log);
-        InitializationUtils.setBytesConverterIfNeeded(settings, JdkBytesConverter.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(settings, StormTupleBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);

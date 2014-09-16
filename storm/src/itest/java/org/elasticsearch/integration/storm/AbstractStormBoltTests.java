@@ -21,6 +21,7 @@ package org.elasticsearch.integration.storm;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
@@ -34,7 +35,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.ImmutableMap;
 
-import static org.elasticsearch.integration.storm.SpoutStormSuite.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -62,10 +63,10 @@ public abstract class AbstractStormBoltTests {
     @Parameters
     public static Collection<Object[]> configs() throws IOException {
         // no ack
-        Map noAck = ImmutableMap.of(StormConfigurationOptions.ES_STORM_BOLT_ACK, Boolean.FALSE.toString());
+        Map noAck = new HashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_BOLT_ACK, Boolean.FALSE.toString()));
 
         // write ack
-        Map ack = ImmutableMap.of(StormConfigurationOptions.ES_STORM_BOLT_ACK, Boolean.TRUE.toString());
+        Map ack = new HashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_BOLT_ACK, Boolean.TRUE.toString()));
         return Arrays.asList(new Object[][] { { noAck, "storm-bolt" }, { ack, "storm-bolt-ack" } });
     }
 }
