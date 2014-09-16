@@ -45,7 +45,6 @@ public class CascadingLocalBytesConverter extends WritableBytesConverter {
 
         // postpone the coercion
         Tuple tuple = CascadingUtils.coerceToString(sinkCall);
-        to.bytes(tuple.getObject(0).toString());
-        return;
+        super.convert(tuple.getObject(0), to);
     }
 }
