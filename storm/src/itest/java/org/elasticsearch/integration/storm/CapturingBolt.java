@@ -44,7 +44,7 @@ public class CapturingBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         if (TestSpout.DONE.equals(tuple.getValue(0))) {
-            StormSuite.COMPONENT_HAS_COMPLETED.decrement();
+            SpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
         }
         else {
             captured.add(tuple);

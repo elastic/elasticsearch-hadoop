@@ -101,14 +101,8 @@ public class TestSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        if (done) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        if (done)
             return;
-        }
 
         collector.reset();
 

@@ -49,13 +49,17 @@ public class TestBolt implements IRichBolt {
     public void execute(Tuple input) {
         // cleanup first to make sure the connection to ES is closed before the test suite shuts down
 
+        if (done) {
+            return;
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Received tuple " + input);
         }
         if (TestSpout.DONE.equals(input.getValue(0))) {
             delegate.cleanup();
             done = true;
-            StormSuite.COMPONENT_HAS_COMPLETED.decrement();
+            SpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
         }
         if (!done) {
             delegate.execute(input);

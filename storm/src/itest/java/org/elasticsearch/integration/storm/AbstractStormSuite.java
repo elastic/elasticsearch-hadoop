@@ -36,9 +36,7 @@ import backtype.storm.LocalCluster;
 import backtype.storm.generated.StormTopology;
 
 @RunWith(Suite.class)
-//@Suite.SuiteClasses({ AbstractStormBoltTests.class, AbstractStormSpoutTests.class })
-@Suite.SuiteClasses({ AbstractStormBoltTests.class })
-public class StormSuite {
+public abstract class AbstractStormSuite {
 
     static ILocalCluster stormCluster;
     static Config cfg = new Config();
@@ -76,7 +74,7 @@ public class StormSuite {
 
             isLocal = "local".equals(stormMode);
             //cfg.setDebug(true);
-            cfg.setNumWorkers(Integer.parseInt(props.getProperty("storm.numworkers", "3")));
+            cfg.setNumWorkers(Integer.parseInt(props.getProperty("storm.numworkers", "2")));
 
             stormCluster = new LocalCluster();
         }
@@ -96,13 +94,13 @@ public class StormSuite {
         }
     };
 
-    public static void run(final String name, final StormTopology topo, final Counter counter) throws Exception {
+    public static void run(final String name, final StormTopology topo, final Counter hasCompleted) throws Exception {
         Thread th = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     start(name, topo);
-                    counter.waitForZero(TimeValue.timeValueSeconds(25));
+                    hasCompleted.waitForZero(TimeValue.timeValueSeconds(15));
                 } finally {
                     stop(name);
                 }

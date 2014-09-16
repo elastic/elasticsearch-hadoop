@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.elasticsearch.storm.EsSpout;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -41,7 +42,7 @@ import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.*;
 
-import static org.elasticsearch.integration.storm.StormSuite.*;
+import static org.elasticsearch.integration.storm.SpoutStormSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -63,20 +64,25 @@ public class AbstractStormSpoutTests {
         COMPONENT_HAS_COMPLETED = new Counter(2);
     }
 
+    @After
+    public void destroy() {
+        COMPONENT_HAS_COMPLETED.decrement();
+    }
+
     @Test
     public void testSimpleRead() throws Exception {
-        String target = "storm-test/basic-read";
+        String target = index + "/basic-read";
 
-        RestUtils.touch("storm-test");
+        RestUtils.touch(index);
         RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.refresh("storm-test");
+        RestUtils.refresh(index);
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("es-spout", new TestSpout(new EsSpout(target)));
         builder.setBolt("test-bolt", new CapturingBolt()).shuffleGrouping("es-spout");
 
-        StormSuite.run(index + "simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        SpoutStormSuite.run(index + "simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
@@ -86,8 +92,8 @@ public class AbstractStormSpoutTests {
         assertThat(results, containsString("Goodbye"));
     }
 
+    @Test
     public void testMultiIndexRead() throws Exception {
-        String index = "storm-test";
 
         RestUtils.putData(index + "/foo", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.putData(index + "/bar", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
@@ -98,7 +104,7 @@ public class AbstractStormSpoutTests {
         builder.setSpout("es-spout", new TestSpout(new EsSpout(target)));
         builder.setBolt("test-bolt", new CapturingBolt()).shuffleGrouping("es-spout");
 
-        StormSuite.run(index + "multi", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        SpoutStormSuite.run(index + "multi", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
