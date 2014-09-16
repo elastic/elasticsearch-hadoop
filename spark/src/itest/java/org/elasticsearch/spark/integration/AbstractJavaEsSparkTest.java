@@ -79,7 +79,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaEsSpark.saveToEs(javaRDD, target);
         JavaEsSpark.saveToEs(javaRDD, ImmutableMap.of(ES_RESOURCE, target + "1"));
         
-        assertTrue(RestUtils.exists("spark-test/java-write"));
+        assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
