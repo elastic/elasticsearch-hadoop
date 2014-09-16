@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.apache.hadoop.hive.serde2.io.ByteWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
+import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
@@ -134,6 +136,11 @@ public class HiveTypeToJsonTest {
     @Test
     public void testByteArray() {
         hiveTypeToJson(new MyHiveType(new BytesWritable("byte array".getBytes()), binaryTypeInfo));
+    }
+
+    @Test
+    public void testTimestamp() {
+        hiveTypeToJson(new MyHiveType(new TimestampWritable(new Timestamp(1407239910771l)), timestampTypeInfo));
     }
 
     @Test
