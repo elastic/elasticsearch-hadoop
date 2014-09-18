@@ -1,6 +1,7 @@
 [[storm]]
-added[2.1]
 == Apache Storm support
+
+added[2.1]
 
 [quote, Storm website]
 ____
@@ -84,7 +85,31 @@ builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>).shuffleGrouping
 <3> Various constructors are available for +EsBolt+ - at least the {es} resource under which the data is indexed, is required
 <4> The number of +EsBolt+ instances for this topology
 
-IMPORTANT: The number of bolt instances depends highly on your topology and environment. In general a good rule of thumb is to take into account the number of the target index shards as well as the number of spouts sending data to it - a good formula is to take the minimum between the source spouts and the index shards; in this example 5. A high number of +Bolt+s does not translate to a bigger through-put - make sure the +Bolt+s are the bottleneck since increasing the number simply translates otherwise to wasted cycles.
+IMPORTANT: The number of bolt instances depends highly on your topology and environment. In general a good rule of thumb is to take into account the number of the target index shards as well as the number of spouts sending data to it - a good formula is to take the minimum between the source spouts and the index shards; in this example 5. A high number of ++Bolt++s does not translate to a bigger through-put - make sure the ++Bolt++s are the bottleneck since increasing the number simply translates otherwise to wasted cycles.
+
+[float]
+[[storm-write-json]]
+==== Writing existing JSON to {es}
+
+If the data passed to Storm is already in JSON format, +EsBolt+ can pass it directly to {es} _without_ any transformation; the data is taken as is and sent over the wire. In such cases, one needs to indicate the JSON input by setting the `es.input.json` parameter to `true`. Further more,  the +Bolt+ expects the receiving +Tuple+ to contain only _one_ value/field representing the JSON document. By default, common _textual_ types are recognized, such as +chararray+ or +bytearray+; otherwise it falls back to calling +toString+ to get a hold of the JSON content.
+
+[source,java]
+----
+String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
+String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
+
+Map conf = new HashMap();
+conf.put("es.input.json", "true"); <2>
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("json-spout", new StringSpout<3>(Arrays.asList(json1, json2));
+builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf<4>)).shuffleGrouping("json-spout");
+----
+
+<1> JSON document represented as a +String+
+<2> Option indicating the input is in JSON format
+<3> Basic +Spout+ which replays the given ++String++s as +Tuples+ with only one value
+<4> Configure +EsBolt+ to process JSON - the same setting can be passed through the global +Conf+ object however it is typically convenient to define it _locally_
 
 [float]
 [[storm-write-dyn]]
@@ -94,9 +119,61 @@ In cases where the data needs to be indexed based on its content, one can choose
 
 [source, java]
 ----
-builder.setBolt("es-bolt", new EsBolt("my-collection/{type}"<1>)).shuffleGrouping("spout");
+builder.setBolt("es-bolt", 
+    new EsBolt("my-collection/{media_type}"<1>)).shuffleGrouping("spout");
 ----
 
 <1> Resource pattern using field +type+
 
 For each tuple about to be written, {eh} will extract the +type+ field and use its value to determine the target resource. The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself.
+
+The functionality is also available when dealing with raw JSON - in this case, the value will be extracted from the JSON document itself. Assuming the JSON source contains documents with the following structure:
+
+[source,js]
+----
+{
+    "media_type":"game",<1>
+    "title":"Final Fantasy VI",
+    "year":"1994"
+}
+----
+
+<1> field within the JSON document that will be used by the pattern
+
+the +EsBolt+ with the configuration:
+
+[source, java]
+----
+Map conf = new HashMap();
+conf.put("es.input.json", "true"); <1>
+
+builder.setBolt("es-bolt", 
+    new EsBolt("my-collection-{media_type}/{year}"<2>, conf<3>)).shuffleGrouping("spout");
+----
+
+<1> Option indicating the input is in JSON format
+<2> Resource pattern - notice how the pattern is used both in the index and the type
+<3> Pass configuration to +EsBolt+ to indicate the JSON input
+
+
+[float]
+==== Reading data from {es}
+
+As you can expect, for reading data (typically executing queries) {eh} offers a dedicated +Spout+ through +org.elasticsearch.storm.EsSpout+ which executes the query in {es} and _streams_ the results back to {st}:
+
+[source,java]
+----
+import org.elasticsearch.storm.EsSpout; <1>
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("es-spout", new EsSpout<2>("storm/docs"<3>, "?q=me*<4>), 5<5>);
+builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
+----
+
+<1> {eh} +EsSpout+ package import
+<2> +EsSpout+ declaration
+<3> The source {es} resource (index and type) for the data
+<4> The query to execute (optional) - if no query is specified, the entire indexed data is streamed
+<5> The number of +EsSpout+ instances for this topology. The number should *not* be greater than the number of shards available for an index; if it does, it just wastes CPU cycles without improving performance.
+
+IMPORTANT: The number of +Spout+ instances depends highly on your topology and environment. Typically you should use the number of shards of your target data as an indicator - if you index has 5 shards, create 5 ++EsSpout++s; however sometimes the shards number might be considerably bigger than the number of ++Spout++s you can add to your {st} cluster; in that case, it is better to limit the number of ++EsSpout++ instances. Last but not least, adding more ++EsSpout++ instances than the number of shards of the source index does *not* improve performance; in fact the extra instances will just waste resources without processing anything.
