@@ -112,7 +112,7 @@ INSERT OVERWRITE TABLE artists
 [[writing-json-hive]]
 ==== Writing existing JSON to {es}
 
-For cases where the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+For cases where the job input data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects the output table to contain only one field, who
 s content is used as the JSON document. That is, the library will recognize specific 'textual' types (such as `string` or `binary`) or simply call (`toString`).
 

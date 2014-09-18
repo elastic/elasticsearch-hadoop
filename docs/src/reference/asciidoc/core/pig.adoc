@@ -143,7 +143,7 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage(<2>
 [float]
 ==== Writing existing JSON to {es}
 
-When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+When the job input data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize common 'textual' types such as `chararray` or `bytearray` otherwise it just calls `toString` to get a hold of the JSON content.
 
 .Pig types to use for JSON representation
@@ -182,7 +182,7 @@ STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.hadoop.pig.EsStor
 ----
 
 <1> Tuple field used by the resource pattern. Any of the declared fields can be used.
-<2> Resource pattern using field `type`
+<2> Resource pattern using field `type` - note the pattern can be used _anywhere_ in the resource (on the index, on the type, in both places, etc...)
 
 
 For each tuple about to be written, {eh} will extract the `type` field and use its value to determine the target resource.

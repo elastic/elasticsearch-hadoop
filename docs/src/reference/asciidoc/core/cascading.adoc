@@ -105,7 +105,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 [float]
 ==== Writing existing JSON to {es}
 
-When the job output data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
+When the job input data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects to receive a tuple with a single field (representing the JSON document); the library will recognize `Text` or `BytesWritable` types otherwise it just
 calls `toString` to get a hold of the JSON content.
 
