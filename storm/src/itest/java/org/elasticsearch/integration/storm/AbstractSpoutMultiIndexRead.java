@@ -18,50 +18,61 @@
  */
 package org.elasticsearch.integration.storm;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
-import org.elasticsearch.storm.EsBolt;
+import org.elasticsearch.storm.EsSpout;
+import org.junit.Before;
 import org.junit.Test;
 
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-
-import com.google.common.collect.ImmutableList;
 
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
-import static org.hamcrest.CoreMatchers.*;
 
-public class AbstractStormJsonSimpleBoltTests extends AbstractStormBoltTests {
+import static org.hamcrest.Matchers.*;
 
-    public AbstractStormJsonSimpleBoltTests(Map conf, String index) {
+public class AbstractSpoutMultiIndexRead extends AbstractStormSpoutTests {
+
+    private int counter = 0;
+
+    public AbstractSpoutMultiIndexRead(Map conf, String index) {
         super(conf, index);
-        conf.put(ConfigurationOptions.ES_INPUT_JSON, "true");
+    }
+
+    @Before
+    public void setup() {
+        // -1 bolt, -1 test
+        COMPONENT_HAS_COMPLETED = new Counter(2);
+        CapturingBolt.CAPTURED.clear();
     }
 
     @Test
-    public void testSimpleWriteTopology() throws Exception {
-        List doc1 = Collections.singletonList("{\"reason\" : \"business\",\"airport\" : \"SFO\"}");
-        List doc2 = Collections.singletonList("{\"participants\" : 5,\"airport\" : \"OTP\"}");
+    public void testMultiIndexRead() throws Exception {
 
-        String target = index + "/json-simple-write";
+        counter++;
+
+        RestUtils.putData(index + "/foo",
+                "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.putData(index + "/bar",
+                "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.refresh(index);
+
+        String target = "_all/foo";
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("test-spout-1", new TestSpout(ImmutableList.of(doc1, doc2), new Fields("json")));
-        builder.setBolt("es-bolt-1", new TestBolt(new EsBolt(target, conf))).shuffleGrouping("test-spout-1");
+        builder.setSpout("es-spout", new TestSpout(new EsSpout(target)));
+        builder.setBolt("test-bolt", new CapturingBolt()).shuffleGrouping("es-spout");
 
-        MultiIndexSpoutStormSuite.run(index + "json-simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        MultiIndexSpoutStormSuite.run(index + "multi", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
-        RestUtils.refresh(index);
-        assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
-        assertThat(results, containsString("SFO"));
+        assertThat(results, containsString("Hello"));
+
+        assertThat(CapturingBolt.CAPTURED.size(), greaterThanOrEqualTo(counter));
+        System.out.println(CapturingBolt.CAPTURED);
     }
 }

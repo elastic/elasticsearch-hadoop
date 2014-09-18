@@ -20,6 +20,6 @@ package org.elasticsearch.integration.storm;
 
 import org.junit.runners.Suite;
 
-@Suite.SuiteClasses({ AbstractStormSpoutTests.class })
-public class SpoutStormSuite extends AbstractStormSuite {
+@Suite.SuiteClasses({ AbstractSpoutMultiIndexRead.class })
+public class MultiIndexSpoutStormSuite extends AbstractStormSuite {
 }

@@ -18,9 +18,9 @@
  */
 package org.elasticsearch.integration.storm;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +34,11 @@ import backtype.storm.tuple.Tuple;
 public class CapturingBolt extends BaseRichBolt {
     private static Log log = LogFactory.getLog(CapturingBolt.class);
     private OutputCollector collector;
-    private final List<Tuple> captured = new ArrayList<Tuple>();
+    public static final List<Tuple> CAPTURED = new CopyOnWriteArrayList<Tuple>();
+
+    {
+        CAPTURED.clear();
+    }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -44,10 +48,10 @@ public class CapturingBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         if (TestSpout.DONE.equals(tuple.getValue(0))) {
-            SpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
+            MultiIndexSpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
         }
         else {
-            captured.add(tuple);
+            CAPTURED.add(tuple);
             if (log.isDebugEnabled()) {
                 log.debug("Received tuple " + tuple);
             }

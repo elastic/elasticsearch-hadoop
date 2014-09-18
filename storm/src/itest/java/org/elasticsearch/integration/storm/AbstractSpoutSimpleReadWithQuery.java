@@ -18,56 +18,49 @@
  */
 package org.elasticsearch.integration.storm;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
-import org.elasticsearch.storm.EsBolt;
+import org.elasticsearch.storm.EsSpout;
 import org.junit.Test;
 
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-
-import com.google.common.collect.ImmutableList;
 
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
-public class AbstractStormIdMappingBoltTests extends AbstractStormBoltTests {
+public class AbstractSpoutSimpleReadWithQuery extends AbstractStormSpoutTests {
 
-    public AbstractStormIdMappingBoltTests(Map conf, String index) {
+    public AbstractSpoutSimpleReadWithQuery(Map conf, String index) {
         super(conf, index);
     }
 
     @Test
-    public void test2WriteWithId() throws Exception {
-        List doc1 = ImmutableList.of("one", "f1", "two", "f2", "number", 1);
-        List doc2 = ImmutableList.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
+    public void testSimpleRead() throws Exception {
+        String target = index + "/basic-read";
 
-        Map localCfg = new LinkedHashMap(conf);
-        localCfg.put(ConfigurationOptions.ES_MAPPING_ID, "number");
+        RestUtils.touch(index);
+        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.refresh(index);
 
-        String target = index + "/id-write";
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("test-spout-2", new TestSpout(ImmutableList.of(doc2, doc1), new Fields("key1", "val1", "key2",
-                "val2", "key3", "number")));
-        builder.setBolt("es-bolt-2", new TestBolt(new EsBolt(target, localCfg))).shuffleGrouping("test-spout-2");
+        builder.setSpout("es-spout", new TestSpout(new EsSpout(target, "?q=*")));
+        builder.setBolt("test-bolt", new CapturingBolt()).shuffleGrouping("es-spout");
 
-        MultiIndexSpoutStormSuite.run(index + "id-write", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        MultiIndexSpoutStormSuite.run(index + "simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
-        RestUtils.refresh(index);
-        Thread.sleep(1000);
-        assertTrue(RestUtils.exists(target + "/1"));
-        assertTrue(RestUtils.exists(target + "/2"));
-
+        assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
-        assertThat(results, containsString("two"));
+        assertThat(results, containsString("Hello"));
+        assertThat(results, containsString("Goodbye"));
+
+        System.out.println(CapturingBolt.CAPTURED);
+        assertThat(CapturingBolt.CAPTURED.size(), is(2));
     }
 }

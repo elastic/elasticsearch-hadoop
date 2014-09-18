@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 
 import static org.junit.Assert.*;
 
-import static org.elasticsearch.integration.storm.SpoutStormSuite.*;
+import static org.elasticsearch.integration.storm.MultiIndexSpoutStormSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class AbstractStormIndexPatternBoltTests extends AbstractStormBoltTests {
@@ -53,7 +53,7 @@ public class AbstractStormIndexPatternBoltTests extends AbstractStormBoltTests {
                 "val2", "key3", "number")));
         builder.setBolt("es-bolt-3", new TestBolt(new EsBolt(target, conf))).shuffleGrouping("test-spout-3");
 
-        SpoutStormSuite.run(index + "write-pattern", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        MultiIndexSpoutStormSuite.run(index + "write-pattern", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(20));
 

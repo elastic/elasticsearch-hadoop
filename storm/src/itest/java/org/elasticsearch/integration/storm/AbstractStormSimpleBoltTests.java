@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.*;
 
-import static org.elasticsearch.integration.storm.SpoutStormSuite.*;
+import static org.elasticsearch.integration.storm.MultiIndexSpoutStormSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class AbstractStormSimpleBoltTests extends AbstractStormBoltTests {
@@ -54,7 +54,7 @@ public class AbstractStormSimpleBoltTests extends AbstractStormBoltTests {
         builder.setSpout("test-spout-1", new TestSpout(ImmutableList.of(doc2, doc1), new Fields("doc")));
         builder.setBolt("es-bolt-1", new TestBolt(new EsBolt(target, conf))).shuffleGrouping("test-spout-1");
 
-        SpoutStormSuite.run(index + "simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
+        MultiIndexSpoutStormSuite.run(index + "simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
