@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.JobLocalizer;
 import org.apache.hadoop.mapreduce.JobSubmissionFiles;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
@@ -48,13 +47,20 @@ public class HdpBootstrap {
             JobSubmissionFiles.JOB_DIR_PERMISSION.fromShort((short) 0650);
             JobSubmissionFiles.JOB_FILE_PERMISSION.fromShort((short) 0650);
 
-            // handle distributed cache permissions
-            Field field = ReflectionUtils.findField(JobLocalizer.class, "privateCachePerms");
+            Field field = null;
 
-            if (field != null) {
-                ReflectionUtils.makeAccessible(field);
-                FsPermission perm = (FsPermission) ReflectionUtils.getField(field, null);
-                perm.fromShort((short) 0650);
+            // handle distributed cache permissions on Hadoop < 2.4
+            try {
+                Class<?> jl = Class.forName("org.apache.hadoop.mapred.JobLocalizer");
+                field = ReflectionUtils.findField(jl, "privateCachePerms");
+
+                if (field != null) {
+                    ReflectionUtils.makeAccessible(field);
+                    FsPermission perm = (FsPermission) ReflectionUtils.getField(field, null);
+                    perm.fromShort((short) 0650);
+                }
+            } catch (ClassNotFoundException cnfe) {
+                // ignore
             }
 
             // handle jar permissions as well - temporarily disable for CDH 4 / YARN

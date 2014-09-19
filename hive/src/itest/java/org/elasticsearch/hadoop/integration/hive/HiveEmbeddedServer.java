@@ -131,6 +131,7 @@ class HiveEmbeddedServer implements HiveInstance {
             conf.set("hive.scratch.dir.permission", "650");
             conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "650");
             conf.set("hive.server2.enable.doAs", "false");
+            conf.set("hive.execution.engine", "mr");
             //conf.set("hadoop.bin.path", getClass().getClassLoader().getResource("hadoop.cmd").getPath());
             System.setProperty("path.separator", ";");
             conf.setVar(HiveConf.ConfVars.HIVE_AUTHENTICATOR_MANAGER,

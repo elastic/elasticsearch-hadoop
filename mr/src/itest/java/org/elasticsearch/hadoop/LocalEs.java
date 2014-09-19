@@ -39,7 +39,7 @@ public class LocalEs extends ExternalResource {
     public static final String DATA_PORTS_SLAVE = "9700-9799";
     public static final String TRANSPORT_PORTS_SLAVE = "9800-9899";
 
-    private boolean USE_SLAVE = true;
+    private boolean USE_SLAVE = false;
     private boolean disabled = false;
 
     @Override

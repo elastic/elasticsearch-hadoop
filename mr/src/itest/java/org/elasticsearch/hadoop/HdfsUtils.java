@@ -45,7 +45,7 @@ public class HdfsUtils {
                 fs.copyFromLocalFile(false, true, src, dst);
                 System.out.println(String.format("Copying [%s] to [%s]", src, dst));
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
