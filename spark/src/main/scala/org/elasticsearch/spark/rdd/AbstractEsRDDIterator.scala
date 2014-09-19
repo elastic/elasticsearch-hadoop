@@ -31,16 +31,15 @@ private[rdd] abstract class AbstractEsRDDIterator[T](
      // initialize mapping/ scroll reader
      initReader(settings, log)
 
-     settings.setHosts(partition.nodeIp).setPort(partition.nodePort)
      val readr = RestService.createReader(settings, partition, log)
      readr.scrollQuery()
   }
   
   // Register an on-task-completion callback to close the input stream.
-  context.addOnCompleteCallback{ () => closeIfNeeded() }
+  CompatUtils.addOnCompletition(context, () => closeIfNeeded())
 
   def hasNext: Boolean = {
-    if (context.interrupted) {
+    if (CompatUtils.isInterrupted(context)) {
       throw new TaskKilledException
     }
     
