@@ -77,7 +77,7 @@ public class AbstractHiveExtraTests {
         String resource = "hive/date-as-long";
         RestUtils.touch("hive");
         RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date.json");
-        RestUtils.putData(resource + "/1", "{\"type\" : 1, \"date\" : 1407239910771}".getBytes());
+        RestUtils.putData(resource + "/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
 
         RestUtils.refresh("hive");
 
@@ -85,9 +85,7 @@ public class AbstractHiveExtraTests {
         String create = "CREATE EXTERNAL TABLE nixtime ("
                 + "type     BIGINT,"
                 + "date     TIMESTAMP)"
-                + HiveSuite.tableProps("hive/date-as-long", null, (String[]) null);
-
-        //"'es.mapping.names'='date:&t'"
+                + HiveSuite.tableProps("hive/date-as-long", null, "'es.mapping.names'='date:&t'");
 
         String query = "SELECT * from nixtime WHERE type = 1";
 
