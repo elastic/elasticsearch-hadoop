@@ -42,8 +42,8 @@ public class HiveValueReaderTest {
         Map map = (Map) objects[1];
         System.out.println(map);
         assertTrue(map.containsKey(new Text("type")));
-        assertTrue(map.containsKey(new Text("date")));
-        assertTrue(map.get(new Text("date")).toString().contains("2014-08-05"));
+        assertTrue(map.containsKey(new Text("&t")));
+        assertTrue(map.get(new Text("&t")).toString().contains("2014-08-05"));
     }
 
     private Field mapping(String resource) throws Exception {
