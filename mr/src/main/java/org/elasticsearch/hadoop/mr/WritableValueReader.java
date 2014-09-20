@@ -21,17 +21,7 @@ package org.elasticsearch.hadoop.mr;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.*;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 
@@ -121,38 +111,38 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
-    protected Object parseBoolean(String value) {
-        return new BooleanWritable(Boolean.parseBoolean(value));
+    protected Object processBoolean(Boolean value) {
+        return new BooleanWritable(value);
     }
 
     @Override
-    protected Object parseDouble(String value) {
-        return new DoubleWritable(Double.parseDouble(value));
+    protected Object processDouble(Double value) {
+        return new DoubleWritable(value);
     }
 
     @Override
-    protected Object parseFloat(String value) {
-        return new FloatWritable(Float.parseFloat(value));
+    protected Object processFloat(Float value) {
+        return new FloatWritable(value);
     }
 
     @Override
-    protected Object parseLong(String value) {
-        return new LongWritable(Long.parseLong(value));
+    protected Object processLong(Long value) {
+        return new LongWritable(value);
     }
 
     @Override
-    protected Object parseInteger(String value) {
-        return new IntWritable(Integer.parseInt(value));
+    protected Object processInteger(Integer value) {
+        return new IntWritable(value);
     }
 
     @Override
-    protected Object parseByte(String value) {
-        return new ByteWritable(Byte.parseByte(value));
+    protected Object processByte(Byte value) {
+        return new ByteWritable(value);
     }
 
     @Override
-    protected Object parseShort(String value) {
-        return WritableCompatUtil.availableShortWritable(Short.parseShort(value));
+    protected Object processShort(Short value) {
+        return WritableCompatUtil.availableShortWritable(value);
     }
 
     @Override

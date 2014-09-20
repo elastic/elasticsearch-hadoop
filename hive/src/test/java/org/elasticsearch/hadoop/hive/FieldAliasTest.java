@@ -54,14 +54,15 @@ public class FieldAliasTest {
     @Test
     public void testColumnToAlias() throws Exception {
         Properties tableProperties = new Properties();
-        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo");
-        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo");
+        tableProperties.put(HiveConstants.MAPPING_NAMES, "timestamp:@timestamp , foo:123foo, date:&foo");
+        tableProperties.put(HiveConstants.COLUMNS, "id,name,timestamp,foo,date");
         Collection<String> columnToAlias = HiveUtils.columnToAlias(new PropertiesSettings(tableProperties));
-        assertEquals(4, columnToAlias.size());
+        assertEquals(5, columnToAlias.size());
         Iterator<String> iterator = columnToAlias.iterator();
         assertEquals("id", iterator.next());
         assertEquals("name", iterator.next());
         assertEquals("@timestamp", iterator.next());
         assertEquals("123foo", iterator.next());
+        assertEquals("&foo", iterator.next());
     }
 }
