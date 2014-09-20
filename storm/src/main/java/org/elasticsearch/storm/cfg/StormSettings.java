@@ -33,11 +33,11 @@ import static org.elasticsearch.storm.cfg.StormConfigurationOptions.*;
 
 public class StormSettings extends Settings {
 
-    private final Map cfg;
+    private final Map<Object, Object> cfg;
 
-    public StormSettings(Map settings) {
+    public StormSettings(Map<?, ?> settings) {
         // the Storm APersistentMap is read-only so make a copy
-        this.cfg = new LinkedHashMap(settings);
+        this.cfg = new LinkedHashMap<Object, Object>(settings);
     }
 
     public boolean getStormTickTupleFlush() {
@@ -71,7 +71,7 @@ public class StormSettings extends Settings {
 
     @Override
     public Settings copy() {
-        return new StormSettings(new LinkedHashMap(cfg));
+        return new StormSettings(new LinkedHashMap<Object, Object>(cfg));
     }
 
     @Override
