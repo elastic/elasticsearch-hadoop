@@ -1,0 +1,10 @@
+{
+    "date-as-long" : {
+        "properties" : {
+            "date" : {
+                "type" : "date",
+                "format" : "date"
+            }
+        }
+    }
+}

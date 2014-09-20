@@ -29,6 +29,8 @@ import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
+import static org.hamcrest.Matchers.*;
+
 public class AbstractHiveExtraTests {
 
     @Before
@@ -68,5 +70,35 @@ public class AbstractHiveExtraTests {
         assertTrue(result.get(0).contains("foobar"));
         result = server.execute(count);
         assertEquals("6", result.get(0));
+    }
+
+    @Test
+    public void testDate() throws Exception {
+        String resource = "hive/date-as-long";
+        RestUtils.touch("hive");
+        RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date.json");
+        RestUtils.putData(resource + "/1", "{\"type\" : 1, \"date\" : 1407239910771}".getBytes());
+
+        RestUtils.refresh("hive");
+
+        String drop = "DROP TABLE IF EXISTS nixtime";
+        String create = "CREATE EXTERNAL TABLE nixtime ("
+                + "type     BIGINT,"
+                + "date     TIMESTAMP)"
+                + HiveSuite.tableProps("hive/date-as-long", null, null);
+
+        //"'es.mapping.names'='date:&t'"
+
+        String query = "SELECT * from nixtime WHERE type = 1";
+
+        String string = RestUtils.get(resource + "/1");
+        assertThat(string, containsString("140723"));
+
+        server.execute(drop);
+        server.execute(create);
+        List<String> result = server.execute(query);
+
+        assertThat(result.size(), is(1));
+        assertThat(result.toString(), containsString("2014-08-05"));
     }
 }

@@ -39,6 +39,7 @@ import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.format.ISODateTimeFormat;
 
 
@@ -64,6 +65,10 @@ class PigUtils {
         return (pig11Available ? Pig11OrHigherConverter.convertFromES(esDate) : PigUpTo10Converter.convertFromES(esDate));
     }
 
+    static Object convertDateFromES(Long esDate) {
+        return (pig11Available ? Pig11OrHigherConverter.convertFromES(esDate) : PigUpTo10Converter.convertFromES(esDate));
+    }
+
     private static abstract class PigUpTo10Converter {
         static String convertToES(Object pigDate) {
             if (pigDate instanceof Number) {
@@ -80,6 +85,10 @@ class PigUtils {
         static Object convertFromES(String esDate) {
             return DatatypeConverter.parseDateTime(esDate).getTimeInMillis();
         }
+
+        static Object convertFromES(Long esDate) {
+            return esDate;
+        }
     }
 
     private static abstract class Pig11OrHigherConverter {
@@ -91,6 +100,10 @@ class PigUtils {
 
         static Object convertFromES(String esDate) {
             return ISODateTimeFormat.dateOptionalTimeParser().parseDateTime(esDate);
+        }
+
+        static Object convertFromES(Long esDate) {
+            return new DateTime(esDate, DateTimeZone.UTC);
         }
     }
 

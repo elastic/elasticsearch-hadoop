@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.serialization.builder;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Map;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.Parser;
+import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -49,24 +51,24 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case STRING:
             return textValue(value);
         case BYTE:
-            return byteValue(value);
+            return byteValue(value, parser);
         case SHORT:
-            return shortValue(value);
+            return shortValue(value, parser);
         case INTEGER:
-            return intValue(value);
+            return intValue(value, parser);
         case TOKEN_COUNT:
         case LONG:
-            return longValue(value);
+            return longValue(value, parser);
         case FLOAT:
-            return floatValue(value);
+            return floatValue(value, parser);
         case DOUBLE:
-            return doubleValue(value);
+            return doubleValue(value, parser);
         case BOOLEAN:
-            return booleanValue(value);
+            return booleanValue(value, parser);
         case BINARY:
             return binaryValue(parser.binaryValue());
         case DATE:
-            return date(value);
+            return date(value, parser);
         case OBJECT:
             // everything else (IP, GEO) gets translated to strings
         default:
@@ -97,68 +99,208 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         return value;
     }
 
-    protected Object binaryValue(byte[] value) {
-        return value;
-    }
-
-    protected Object booleanValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseBoolean(value)) : nullValue());
-    }
-
     private boolean isEmpty(String value) {
         return value.length() == 0 && emptyAsNull;
     }
 
-    protected Object parseBoolean(String value) {
+    protected Object binaryValue(byte[] value) {
+        return value;
+    }
+
+    protected Object booleanValue(String value, Parser parser) {
+        Boolean val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_BOOLEAN) {
+                val = parser.booleanValue();
+            }
+            else {
+                val = parseBoolean(value);
+            }
+        }
+
+        return processBoolean(val);
+    }
+
+    protected Boolean parseBoolean(String value) {
         return Boolean.parseBoolean(value);
     }
 
-    protected Object doubleValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseDouble(value)) : nullValue());
+    protected Object processBoolean(Boolean value) {
+        return value;
     }
 
-    protected Object parseDouble(String value) {
+    protected Object doubleValue(String value, Parser parser) {
+        Double val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = parser.doubleValue();
+            }
+            else {
+                val = parseDouble(value);
+            }
+        }
+
+        return processDouble(val);
+    }
+
+    protected Double parseDouble(String value) {
         return Double.parseDouble(value);
     }
 
-    protected Object floatValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseFloat(value)) : nullValue());
+    protected Object processDouble(Double value) {
+        return value;
     }
 
-    protected Object parseFloat(String value) {
+    protected Object floatValue(String value, Parser parser) {
+        Float val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = parser.floatValue();
+            }
+            else {
+                val = parseFloat(value);
+            }
+        }
+
+        return processFloat(val);
+    }
+
+    protected Float parseFloat(String value) {
         return Float.parseFloat(value);
     }
 
-    protected Object longValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseLong(value)) : nullValue());
+    protected Object processFloat(Float value) {
+        return value;
     }
 
-    protected Object parseLong(String value) {
+    protected Object longValue(String value, Parser parser) {
+        Long val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = parser.longValue();
+            }
+            else {
+                val = parseLong(value);
+            }
+        }
+
+        return processLong(val);
+    }
+
+    protected Long parseLong(String value) {
         return Long.parseLong(value);
     }
 
-    protected Object intValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseInteger(value)) : nullValue());
+    protected Object processLong(Long value) {
+        return value;
     }
 
-    protected Object parseInteger(String value) {
+    protected Object intValue(String value, Parser parser) {
+        Integer val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = parser.intValue();
+            }
+            else {
+                val = parseInteger(value);
+            }
+        }
+
+        return processInteger(val);
+    }
+
+    protected Integer parseInteger(String value) {
         return Integer.parseInt(value);
     }
 
-    protected Object byteValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseByte(value)) : nullValue());
+    protected Object processInteger(Integer value) {
+        return value;
     }
 
-    protected Object parseByte(String value) {
+    protected Object byteValue(String value, Parser parser) {
+        Byte val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = (byte) parser.intValue();
+            }
+            else {
+                val = parseByte(value);
+            }
+        }
+
+        return processByte(val);
+    }
+
+    protected Byte parseByte(String value) {
         return Byte.parseByte(value);
     }
 
-    protected Object shortValue(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseShort(value)) : nullValue());
+    protected Object processByte(Byte value) {
+        return value;
     }
 
-    protected Object parseShort(String value) {
+    protected Object shortValue(String value, Parser parser) {
+        Short val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            if (tk == Token.VALUE_NUMBER) {
+                val = parser.shortValue();
+            }
+            else {
+                val = parseShort(value);
+            }
+        }
+
+        return processShort(val);
+    }
+
+    protected Short parseShort(String value) {
         return Short.parseShort(value);
+    }
+
+    protected Object processShort(Short value) {
+        return value;
     }
 
     protected Object textValue(String value) {
@@ -173,12 +315,37 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         return null;
     }
 
-    protected Object date(String value) {
-        return (value != null ? (isEmpty(value) ? nullValue() : parseDate(value)) : nullValue());
+    protected Object date(String value, Parser parser) {
+        Object val = null;
+
+        if (value == null || isEmpty(value)) {
+            return nullValue();
+        }
+        else {
+            Token tk = parser.currentToken();
+
+            // UNIX time format
+            if (tk == Token.VALUE_NUMBER) {
+                val = parseDate(parser.longValue());
+            }
+            else {
+                val = parseDate(value);
+            }
+        }
+
+        return processDate(val);
+    }
+
+    protected Object parseDate(Long value) {
+        return new Date(value);
     }
 
     protected Object parseDate(String value) {
         return parseString(value);
+    }
+
+    protected Object processDate(Object value) {
+        return value;
     }
 
     @Override
