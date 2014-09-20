@@ -85,7 +85,7 @@ public class AbstractHiveExtraTests {
         String create = "CREATE EXTERNAL TABLE nixtime ("
                 + "type     BIGINT,"
                 + "date     TIMESTAMP)"
-                + HiveSuite.tableProps("hive/date-as-long", null, null);
+                + HiveSuite.tableProps("hive/date-as-long", null, (String[]) null);
 
         //"'es.mapping.names'='date:&t'"
 
