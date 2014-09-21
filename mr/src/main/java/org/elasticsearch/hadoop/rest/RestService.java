@@ -347,8 +347,12 @@ public abstract class RestService implements Serializable {
         InitializationUtils.discoverEsVersion(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+
+        // check invalid splits (applicable when running in non-MR environments) - in this case fall back to Random..
+        int selectedNode = (currentSplit < 0) ? new Random().nextInt(nodes.size()) : currentSplit % nodes.size();
+        		
         // select the appropriate nodes first, to spread the load before-hand
-        SettingsUtils.pinNode(settings, nodes.get(currentSplit % nodes.size()));
+        SettingsUtils.pinNode(settings, nodes.get(selectedNode));
 
         Resource resource = new Resource(settings, false);
 
