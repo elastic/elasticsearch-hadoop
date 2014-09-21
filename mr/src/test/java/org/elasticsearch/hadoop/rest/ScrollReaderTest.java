@@ -44,6 +44,16 @@ public class ScrollReaderTest {
     }
 
     @Test
+    public void testScrollWithMatchedQueries() throws IOException {
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        InputStream stream = getClass().getResourceAsStream("scroll-matched-queries.json");
+        List<Object[]> read = reader.read(stream);
+        assertEquals(3, read.size());
+        Object[] objects = read.get(0);
+        assertTrue(((Map) objects[1]).containsKey("fields"));
+    }
+
+    @Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
         Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));

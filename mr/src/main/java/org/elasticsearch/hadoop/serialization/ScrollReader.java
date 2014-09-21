@@ -112,6 +112,13 @@ public class ScrollReader {
         // no fields found
         result[1] = (seek == null ? Collections.emptyMap() : read(t, null));
 
+        // in case of additional fields, skip them all
+        while (parser.currentToken() == Token.FIELD_NAME) {
+            parser.nextToken();
+            parser.skipChildren();
+            parser.nextToken();
+        }
+
         if (trace) {
             log.trace(String.format("Read hit result [%s]=[%s]", result[0], result[1]));
         }
