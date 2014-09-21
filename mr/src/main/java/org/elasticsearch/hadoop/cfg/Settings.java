@@ -236,7 +236,7 @@ public abstract class Settings {
     }
 
     public FieldPresenceValidation getFieldExistanceValidation() {
-        return FieldPresenceValidation.valueOf(getProperty(ES_FIELD_READ_VALIDATE_PRESENCE, ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT).toUpperCase());
+        return FieldPresenceValidation.valueOf(getProperty(ES_FIELD_READ_VALIDATE_PRESENCE, ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT).toUpperCase(Locale.ENGLISH));
     }
 
     public TimeValue getHeartBeatLead() {
