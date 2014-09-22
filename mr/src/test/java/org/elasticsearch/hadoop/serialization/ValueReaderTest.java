@@ -41,7 +41,7 @@ public class ValueReaderTest {
 
     @Test
     public void testSimplePathReader() throws Exception {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, false, "_metadata");
         System.out.println(reader.read(in));
     }
 }

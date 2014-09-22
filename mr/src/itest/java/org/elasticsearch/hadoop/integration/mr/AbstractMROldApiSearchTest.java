@@ -51,6 +51,7 @@ import static org.hamcrest.Matchers.*;
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSearchTest {
 
+
     @Parameters
     public static Collection<Object[]> queries() {
         return QueryTestParams.jsonParams();
@@ -59,10 +60,12 @@ public class AbstractMROldApiSearchTest {
     private final String query;
     private final String indexPrefix;
     private final Random random = new Random();
+    private boolean readMetadata;
 
-    public AbstractMROldApiSearchTest(String indexPrefix, String query) {
+    public AbstractMROldApiSearchTest(String indexPrefix, String query, boolean readMetadata) {
         this.query = query;
         this.indexPrefix = indexPrefix;
+        this.readMetadata = readMetadata;
     }
 
     @Before
@@ -184,6 +187,8 @@ public class AbstractMROldApiSearchTest {
         HadoopCfgUtils.setGenericOptions(conf);
         conf.set(ConfigurationOptions.ES_QUERY, query);
         conf.setNumReduceTasks(0);
+
+        conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(readMetadata));
 
         QueryTestParams.provisionQueries(conf);
         FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));

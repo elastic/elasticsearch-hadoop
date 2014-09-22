@@ -147,6 +147,13 @@ public interface ConfigurationOptions {
     String ES_MAPPING_PARAMS_EXTRACTOR_CLASS = "es.mapping.params.extractor.class";
     String ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS = DefaultParamsExtractor.class.getName();
 
+    /** Read settings */
+    String ES_READ_METADATA = "es.read.metadata";
+    String ES_READ_METADATA_DEFAULT = "false";
+    String ES_READ_METADATA_FIELD = "es.read.metadata.field";
+    String ES_READ_METADATA_FIELD_DEFAULT = "_metadata";
+    String ES_READ_METADATA_VERSION = "es.read.metadata.version";
+    String ES_READ_METADATA_VERSION_DEFAULT = "false";
 
     /** Operation types */
     String ES_WRITE_OPERATION = "es.write.operation";

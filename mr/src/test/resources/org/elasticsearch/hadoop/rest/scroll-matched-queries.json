@@ -16,9 +16,9 @@
                 "_id" : "23hrGo7VRCyao8lB9Uu5Kw",
                 "_score" : 0.0,
                 "fields" : {
-                    "fields" : "fields"
+                    "foo" : "bar"
                 },
-                "matched_queries": ["myquery"]
+                "matched_queries": ["queryA", "queryB"]
             }, {
                 "_index" : "pig",
                 "_type" : "tupleartists",

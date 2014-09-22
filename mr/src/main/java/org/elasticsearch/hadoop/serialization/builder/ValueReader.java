@@ -35,6 +35,8 @@ public interface ValueReader {
 
     void addToMap(Object map, Object key, Object value);
 
+    Object wrapString(String value);
+
     Object createArray(FieldType type);
 
     Object addToArray(Object array, List<Object> values);

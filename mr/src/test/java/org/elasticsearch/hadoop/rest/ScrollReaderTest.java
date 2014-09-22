@@ -20,6 +20,8 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -28,14 +30,26 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.*;
 
+@RunWith(Parameterized.class)
 public class ScrollReaderTest {
+
+    private boolean readMetadata = false;
+    private String metadataField;
+
+    public ScrollReaderTest(boolean readMetadata, String metadataField) {
+        this.readMetadata = readMetadata;
+        this.metadataField = metadataField;
+    }
 
     @Test
     public void testScrollWithFields() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField);
         InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
@@ -45,19 +59,19 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithMatchedQueries() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField);
         InputStream stream = getClass().getResourceAsStream("scroll-matched-queries.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).containsKey("fields"));
+        assertTrue(((Map) objects[1]).containsKey("foo"));
     }
 
     @Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
         Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), fl);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), fl, readMetadata, metadataField);
         stream = getClass().getResourceAsStream("scroll-source.json");
 
         List<Object[]> read = reader.read(stream);
@@ -75,7 +89,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithSource() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField);
         InputStream stream = getClass().getResourceAsStream("scroll-source.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
@@ -85,17 +99,22 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithoutSource() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField);
         InputStream stream = getClass().getResourceAsStream("empty-source.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(2, read.size());
         Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).isEmpty());
+        if (readMetadata) {
+            assertTrue(((Map) objects[1]).containsKey(metadataField));
+        }
+        else {
+            assertTrue(((Map) objects[1]).isEmpty());
+        }
     }
 
     @Test
     public void testScrollMultiValueList() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null);
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField);
         InputStream stream = getClass().getResourceAsStream("list-with-null.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(1, read.size());
@@ -105,4 +124,11 @@ public class ScrollReaderTest {
         assertTrue(links.contains(null));
     }
 
+
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                { Boolean.TRUE, "_metabutu" },
+                { Boolean.FALSE, "" } });
+    }
 }

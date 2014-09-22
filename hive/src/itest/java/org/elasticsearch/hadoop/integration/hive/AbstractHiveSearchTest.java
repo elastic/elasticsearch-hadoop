@@ -19,11 +19,14 @@
 package org.elasticsearch.hadoop.integration.hive;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
 import org.elasticsearch.hadoop.QueryTestParams;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -49,9 +52,11 @@ public class AbstractHiveSearchTest {
     }
 
     private String query;
+    private boolean readMetadata;
 
-    public AbstractHiveSearchTest(String query) {
+    public AbstractHiveSearchTest(String query, boolean readMetadata) {
         this.query = query;
+        this.readMetadata = readMetadata;
     }
 
 
@@ -380,6 +385,8 @@ public class AbstractHiveSearchTest {
 
 
     private String tableProps(String resource, String... params) {
-        return HiveSuite.tableProps(resource, query, params);
+        List<String> copy = new ArrayList(Arrays.asList(params));
+        copy.add("'" + ConfigurationOptions.ES_READ_METADATA + "'='" + readMetadata + "'");
+        return HiveSuite.tableProps(resource, query, copy.toArray(new String[copy.size()]));
     }
 }

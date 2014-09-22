@@ -109,6 +109,8 @@ public interface Parser extends Closeable {
 
     String currentName();
 
+    Object currentValue();
+
     String text();
 
     byte[] bytes();

@@ -288,7 +288,7 @@ public abstract class RestService implements Serializable {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));
         }
 
-        ScrollReader scrollReader = new ScrollReader(reader, fieldMapping);
+        ScrollReader scrollReader = new ScrollReader(reader, fieldMapping, settings.getReadMetadata(), settings.getReadMetadataField());
 
         // initialize REST client
         RestRepository client = new RestRepository(settings);
@@ -350,7 +350,7 @@ public abstract class RestService implements Serializable {
 
         // check invalid splits (applicable when running in non-MR environments) - in this case fall back to Random..
         int selectedNode = (currentSplit < 0) ? new Random().nextInt(nodes.size()) : currentSplit % nodes.size();
-        		
+
         // select the appropriate nodes first, to spread the load before-hand
         SettingsUtils.pinNode(settings, nodes.get(selectedNode));
 
@@ -402,7 +402,8 @@ public abstract class RestService implements Serializable {
         repository = new RestRepository(settings);
 
         if (log.isDebugEnabled()) {
-			log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), node));
+            log.debug(String.format("Partition writer instance [%s] assigned to primary shard [%s] at address [%s]",
+                    currentInstance, chosenShard.getName(), node));
         }
 
         return repository;

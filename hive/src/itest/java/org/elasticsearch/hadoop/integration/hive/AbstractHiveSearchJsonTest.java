@@ -18,10 +18,13 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import org.elasticsearch.hadoop.QueryTestParams;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.After;
@@ -41,6 +44,7 @@ import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 public class AbstractHiveSearchJsonTest {
 
     private static int testInstance = 0;
+    private boolean readMetadata;
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -49,8 +53,9 @@ public class AbstractHiveSearchJsonTest {
 
     private String query;
 
-    public AbstractHiveSearchJsonTest(String query) {
+    public AbstractHiveSearchJsonTest(String query, boolean readMetadata) {
         this.query = query;
+        this.readMetadata = readMetadata;
     }
 
     @Before
@@ -264,6 +269,8 @@ public class AbstractHiveSearchJsonTest {
 
 
     private String tableProps(String resource, String... params) {
-        return HiveSuite.tableProps(resource, query, params);
+        List<String> copy = new ArrayList(Arrays.asList(params));
+        copy.add("'" + ConfigurationOptions.ES_READ_METADATA + "'='" + readMetadata + "'");
+        return HiveSuite.tableProps(resource, query, copy.toArray(new String[copy.size()]));
     }
 }

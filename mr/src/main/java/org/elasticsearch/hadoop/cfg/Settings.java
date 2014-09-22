@@ -329,6 +329,18 @@ public abstract class Settings {
         return getProperty(ES_QUERY);
     }
 
+    public boolean getReadMetadata() {
+        return Booleans.parseBoolean(getProperty(ES_READ_METADATA, ES_READ_METADATA_DEFAULT));
+    }
+
+    public String getReadMetadataField() {
+        return getProperty(ES_READ_METADATA_FIELD, ES_READ_METADATA_FIELD_DEFAULT);
+    }
+
+    public boolean getReadMetadataVersion() {
+        return Booleans.parseBoolean(getProperty(ES_READ_METADATA_VERSION, ES_READ_METADATA_VERSION_DEFAULT));
+    }
+
     public abstract InputStream loadResource(String location);
 
     public abstract Settings copy();

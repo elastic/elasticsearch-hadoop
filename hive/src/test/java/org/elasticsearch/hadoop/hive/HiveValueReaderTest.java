@@ -35,12 +35,12 @@ public class HiveValueReaderTest {
 
     @Test
     public void testDateMapping() throws Exception {
-        ScrollReader reader = new ScrollReader(new HiveValueReader(), mapping("hive-date.json"));
+        ScrollReader reader = new ScrollReader(new HiveValueReader(), mapping("hive-date.json"), false, "_mapping");
         InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(1, read.size());
-        Object[] objects = read.get(0);
-        Map map = (Map) objects[1];
+        Object[] doc = read.get(0);
+        Map map = (Map) doc[1];
         System.out.println(map);
         assertTrue(map.containsKey(new Text("type")));
         assertTrue(map.containsKey(new Text("&t")));

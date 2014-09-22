@@ -70,6 +70,15 @@ public class JacksonJsonParser implements Parser {
     }
 
     @Override
+    public Object currentValue() {
+        try {
+            return (parser.getCurrentToken().isNumeric() ? parser.getNumberValue() : parser.getText());
+        } catch (IOException ex) {
+            throw new EsHadoopSerializationException(ex);
+        }
+    }
+
+    @Override
     public Token nextToken() {
         try {
             return convertToken(parser.nextToken());

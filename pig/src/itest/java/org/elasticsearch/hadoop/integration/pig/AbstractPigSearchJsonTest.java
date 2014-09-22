@@ -40,6 +40,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     private static int testInstance = 0;
     private static String previousQuery;
+    private boolean readMetadata;
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -48,8 +49,10 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     private final String query;
 
-    public AbstractPigSearchJsonTest(String query) {
+    public AbstractPigSearchJsonTest(String query, boolean metadata) {
         this.query = query;
+        this.readMetadata = metadata;
+
         if (!query.equals(previousQuery)) {
             previousQuery = query;
             testInstance++;
@@ -97,7 +100,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testTuple() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');" +
+                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
                 "A = LOAD 'json-pig/tupleartists' USING EsStorage();" +
                 "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
@@ -116,7 +119,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testTupleWithSchema() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');" +
+                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
                 "A = LOAD 'json-pig/tupleartists' USING EsStorage() AS (name:chararray);" +
                 "B = ORDER A BY name DESC;" +
                 "X = LIMIT B 3;" +
@@ -133,7 +136,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testFieldAlias() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query="+ query + "');"
+                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query="+ query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD 'json-pig/fieldalias' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testfieldalias';";
@@ -150,7 +153,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testMissingIndex() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
+                      "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD 'foo/bar' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testmissingindex';";
@@ -164,7 +167,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     public void testParentChild() throws Exception {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                      "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "');"
+                      "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
                       + "A = LOAD 'json-pig/child' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testparentchild';";

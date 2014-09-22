@@ -99,6 +99,11 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         return value;
     }
 
+    @Override
+    public Object wrapString(String value) {
+        return textValue(value);
+    }
+
     private boolean isEmpty(String value) {
         return value.length() == 0 && emptyAsNull;
     }

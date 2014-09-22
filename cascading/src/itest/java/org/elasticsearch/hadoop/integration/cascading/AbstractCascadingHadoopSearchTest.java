@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cascading.EsTap;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Assert;
@@ -54,9 +55,11 @@ public class AbstractCascadingHadoopSearchTest {
     }
 
     private String query;
+    private boolean readMetadata;
 
-    public AbstractCascadingHadoopSearchTest(String query) {
+    public AbstractCascadingHadoopSearchTest(String query, boolean readMetadata) {
         this.query = query;
+        this.readMetadata = readMetadata;
     }
 
     @Before
@@ -151,7 +154,8 @@ public class AbstractCascadingHadoopSearchTest {
 
     private Properties cfg() {
         Properties props = HdpBootstrap.asProperties(QueryTestParams.provisionQueries(CascadingHadoopSuite.configuration));
-        //props.put(ConfigurationOptions.ES_QUERY, query);
+        props.put(ConfigurationOptions.ES_QUERY, query);
+        props.put(ConfigurationOptions.ES_READ_METADATA, readMetadata);
 
         return props;
     }

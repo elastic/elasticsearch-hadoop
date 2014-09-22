@@ -106,10 +106,15 @@ class ScalaValueReader extends ValueReader with SettingsAware {
     new LinkedHashMap
   }
   
-  def addToMap(map: AnyRef, key: AnyRef, value: AnyRef) = {
+  override def addToMap(map: AnyRef, key: AnyRef, value: AnyRef) = {
     map.asInstanceOf[Map[AnyRef, AnyRef]].put(key, value)
   }
+
+  override def wrapString(value: String) = {
+    value
+  }
   
+
   def createArray(typ: FieldType) = {
     List.empty;
   }

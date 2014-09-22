@@ -49,6 +49,8 @@ public class ScrollReader {
     private final ValueReader reader;
     private final Map<String, FieldType> esMapping;
     private final boolean trace = log.isTraceEnabled();
+    private final boolean readMetadata;
+    private final String metadataField;
 
     private static final String[] HITS = new String[] { "hits" };
     private static final String[] ID = new String[] { "_id" };
@@ -56,11 +58,12 @@ public class ScrollReader {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ValueReader reader, Field rootField) {
+    public ScrollReader(ValueReader reader, Field rootField, boolean readMetadata, String metadataName) {
         this.reader = reader;
-        esMapping = Field.toLookupMap(rootField);
+        this.esMapping = Field.toLookupMap(rootField);
+        this.readMetadata = readMetadata;
+        this.metadataField = metadataName;
     }
-
 
     public List<Object[]> read(InputStream content) throws IOException {
         Assert.notNull(content);
@@ -102,25 +105,83 @@ public class ScrollReader {
         return results;
     }
 
+    @SuppressWarnings("rawtypes")
     private Object[] readHit() {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
-        Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
         Object[] result = new Object[2];
-        result[0] = parser.text();
-        Token seek = ParsingUtils.seek(parser, SOURCE, FIELDS);
-        // no fields found
-        result[1] = (seek == null ? Collections.emptyMap() : read(t, null));
+        Object metadata = null;
+        Object id = null;
 
-        // in case of additional fields, skip them all
+        // read everything until SOURCE or FIELDS is encountered
+        if (readMetadata) {
+            metadata = reader.createMap();
+            result[1] = metadata;
+            String name;
+
+            // move parser
+            t = parser.nextToken();
+            while ((t = parser.currentToken()) != null) {
+                name = parser.currentName();
+                Object value = null;
+                if (t == Token.FIELD_NAME && !("fields".equals(name) || "_source".equals(name))) {
+                    value = read(parser.nextToken(), null);
+                    if ("_id".equals(name)) {
+                        id = value;
+                    }
+
+                    reader.addToMap(metadata, reader.wrapString(name), value);
+                }
+                else {
+                    // if = no _source or field found, else select START_OBJECT
+                    t = (t != Token.FIELD_NAME) ? null : parser.nextToken();
+                    break;
+                }
+            }
+
+            Assert.notNull(id, "no id found");
+            result[0] = id;
+        }
+        // no metadata is needed, fast fwd
+        else {
+            Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
+            result[0] = reader.wrapString(parser.text());
+            t = ParsingUtils.seek(parser, SOURCE, FIELDS);
+        }
+
+        // no fields found
+        Object data = Collections.emptyMap();
+
+        if (t != null) {
+            data = read(t, null);
+            if (readMetadata) {
+                reader.addToMap(data, reader.wrapString(metadataField), metadata);
+            }
+        }
+        else {
+            if (readMetadata) {
+                data = reader.createMap();
+                reader.addToMap(data, reader.wrapString(metadataField), metadata);
+            }
+        }
+
+        result[1] = data;
+
+        // in case of additional fields (matched_query), add them to the metadata
         while (parser.currentToken() == Token.FIELD_NAME) {
-            parser.nextToken();
-            parser.skipChildren();
-            parser.nextToken();
+            String name = parser.currentName();
+            if (readMetadata) {
+                reader.addToMap(data, reader.wrapString(name), read(parser.nextToken(), null));
+            }
+            else {
+                parser.nextToken();
+                parser.skipChildren();
+                parser.nextToken();
+            }
         }
 
         if (trace) {
-            log.trace(String.format("Read hit result [%s]=[%s]", result[0], result[1]));
+            log.trace(String.format("Read hit result [%s]", result));
         }
 
         return result;
@@ -199,7 +260,7 @@ public class ScrollReader {
 
         Object map = reader.createMap();
 
-        for (; parser.currentToken() != Token.END_OBJECT; ) {
+        for (; parser.currentToken() != Token.END_OBJECT;) {
             String currentName = parser.currentName();
             String nodeMapping = fieldMapping;
 
@@ -239,13 +300,13 @@ public class ScrollReader {
         switch (currentToken) {
         case VALUE_NULL:
             esType = FieldType.NULL;
-                break;
+            break;
         case VALUE_BOOLEAN:
             esType = FieldType.BOOLEAN;
-                break;
+            break;
         case VALUE_STRING:
             esType = FieldType.STRING;
-                break;
+            break;
         case VALUE_NUMBER:
             NumberType numberType = parser.numberType();
             switch (numberType) {
@@ -268,10 +329,10 @@ public class ScrollReader {
             default:
                 break;
             }
-                break;
+            break;
         default:
             break;
-            }
-        return esType;
         }
+        return esType;
+    }
 }
