@@ -31,5 +31,14 @@
             "type": "fax",
             "number": "646 555-4567"
         }
+    ],
+    "small-object": {
+        "foo": "bar",
+        "nested": {
+            "foo1":"bar1"
+        }
+    },
+    "small-array": [
+        "foo", "bar"
     ]
 }
