@@ -38,8 +38,9 @@ Or if you prefer Scala
 
 [source,scala]
 ----
-val sc = new SparkContext(...)
-sc.set("spark.serializer", classOf[KryoSerializer].getName)    <1>
+val conf = new SparkConf().setMaster(...).setAppName(...)
+conf.set("spark.serializer", classOf[KryoSerializer].getName)
+val sc = new SparkContext(conf)  <1>
 ----
 
 <1> Enable the Kryo serialization support with Spark
