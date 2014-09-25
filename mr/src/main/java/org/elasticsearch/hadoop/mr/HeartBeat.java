@@ -24,9 +24,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.TaskID;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
@@ -48,7 +50,21 @@ class HeartBeat {
         this.progressable = progressable;
         this.rate = new TimeValue(tv.getMillis() - delay.getMillis(), TimeUnit.MILLISECONDS);
         this.log = log;
-        TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(cfg));
+
+        TaskID taskID = null;
+        // first try with the attempt since some Hadoop versions mix the two
+
+        String taskAttemptId = HadoopCfgUtils.getTaskAttemptId(cfg);
+        if (StringUtils.hasText(taskAttemptId)) {
+            taskID = TaskAttemptID.forName(taskAttemptId).getTaskID();
+        }
+        else {
+            String taskIdProp = HadoopCfgUtils.getTaskId(cfg);
+            // double-check task id bug in Hadoop 2.5.x
+            if (StringUtils.hasText(taskIdProp) && !taskIdProp.contains("attempt")) {
+                taskID = TaskID.forName(taskIdProp);
+            }
+        }
 
         String taskId;
         if (taskID == null) {
