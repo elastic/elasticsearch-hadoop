@@ -55,7 +55,7 @@ $ curl -XGET http://localhost:9200
 [[requirements-hadoop]]
 === Hadoop
 
-Hadoop 1.x (ideally the latest stable version in the 1.x line, currently 1.2.1) or 2.x (ideally the latest stable version, currently 2.2.0). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine. 
+Hadoop 1.x (ideally the latest stable version in the 1.x line, currently 1.2.1) or 2.x (ideally the latest stable version, currently 2.4.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine. 
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
@@ -70,26 +70,32 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 |===
 | Distribution		| Release
 
+| Apache Hadoop		| 2.4.x
 | Apache Hadoop		| 2.2.x
 | Apache Hadoop		| 1.2.x
 | Apache Hadoop		| 1.1.x
 
-| Amazon EMR		| 3.0.1
-| Amazon EMR		| 2.4.2
-| Cloudera CDH		| 5.0
+| Amazon EMR		| 3.1.x
+| Amazon EMR		| 3.0.x
+| Amazon EMR		| 2.4.x
+
+| Cloudera CDH		| 5.1.x
+| Cloudera CDH		| 5.0.x
 | Cloudera CDH		| 4.5.x
 | Cloudera CDH		| 4.4.x
-| Cloudera CDH		| 4.2.2
-| Hortonworks HDP   | 2.1
-| Hortonworks HDP   | 2.0
-| Hortonworks HDP   | 1.3
-| Greenplum GPHD   	| 1.2
-| Intel	Hadoop		| 2.5.1
-| Pivotal HD   		| 2.0
-| Pivotal HD   		| 1.1
-| MapR				| 3.1
-| MapR				| 3.0.1
-| MapR				| 2.1
+| Cloudera CDH		| 4.2.x
+
+| Hortonworks HDP   | 2.1.x
+| Hortonworks HDP   | 2.0.x
+| Hortonworks HDP   | 1.3.x
+
+| Pivotal HD   		| 2.1.x
+| Pivotal HD   		| 2.0.x
+| Pivotal HD   		| 1.1.x
+
+| MapR				| 3.1.x
+| MapR				| 3.0.x
+| MapR				| 2.1.x
 |===
 
 IMPORTANT: Use the table above for guidance only; if your distro (or its version) is not there, it does not mean {eh} is not compatible with it; rather go ahead and try it out and let us know how it went.
@@ -115,7 +121,7 @@ cascading-2.5.4.jar
 [[requirements-hive]]
 === Apache Hive
 
-Apache Hive 0.9 or higher. We recommend using the latest release of Hive (currently 0.12.0 or 0.13.1).
+Apache Hive 0.10 or higher. We recommend using the latest release of Hive (currently 0.12.0 or 0.13.1).
 
 One can find out the Hive version from its folder name or command-line:
 
@@ -141,7 +147,7 @@ Apache Pig version 0.13.0
 [[requirements-spark]]
 === Apache Spark
 
-Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.0.2). As {eh} provides
+Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.1.0). As {eh} provides
 native integration (which is recommended) with {sp} it does not matter what binary one is using. 
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
@@ -151,7 +157,7 @@ The Spark version can be typically discovery by looking at its folder name:
 [source, bash]
 ----
 $ pwd
-/libs/spark/spark-1.0.2-bin-XXXXX
+/libs/spark/spark-1.1.0-bin-XXXXX
 ----
 
 or by running its shell:
@@ -164,7 +170,7 @@ Welcome to
       ____              __
      / __/__  ___ _____/ /__
     _\ \/ _ \/ _ `/ __/  '_/
-   /___/ .__/\_,_/_/ /_/\_\   version 1.0.2
+   /___/ .__/\_,_/_/ /_/\_\   version 1.1.0
       /_/
 ...
 ----
