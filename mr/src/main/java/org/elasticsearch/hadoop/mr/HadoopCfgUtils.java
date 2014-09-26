@@ -23,6 +23,9 @@ import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.TaskAttemptID;
+import org.apache.hadoop.mapred.TaskID;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 /**
@@ -136,5 +139,21 @@ public abstract class HadoopCfgUtils {
 
     public static String getMapValueClass(Configuration cfg) {
         return get(cfg, "mapred.mapoutput.value.class", "mapreduce.map.output.value.class");
+    }
+
+    public static TaskID getTaskID(Configuration cfg) {
+        // first try with the attempt since some Hadoop versions mix the two
+        String taskAttemptId = HadoopCfgUtils.getTaskAttemptId(cfg);
+        if (StringUtils.hasText(taskAttemptId)) {
+            return TaskAttemptID.forName(taskAttemptId).getTaskID();
+        }
+        else {
+            String taskIdProp = HadoopCfgUtils.getTaskId(cfg);
+            // double-check task id bug in Hadoop 2.5.x
+            if (StringUtils.hasText(taskIdProp) && !taskIdProp.contains("attempt")) {
+                return TaskID.forName(taskIdProp);
+            }
+        }
+        return null;
     }
 }

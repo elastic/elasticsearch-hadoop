@@ -261,7 +261,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         }
 
         private int detectCurrentInstance(Configuration conf) {
-            TaskID taskID = TaskID.forName(HadoopCfgUtils.getTaskId(conf));
+            TaskID taskID = HadoopCfgUtils.getTaskID(conf);
 
             if (taskID == null) {
                 log.warn(String.format("Cannot determine task id - redirecting writes in a random fashion"));
