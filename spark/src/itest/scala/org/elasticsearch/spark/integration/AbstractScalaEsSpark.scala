@@ -29,6 +29,7 @@ import org.apache.spark.SparkContext
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 
 import org.elasticsearch.spark._
 import org.hamcrest.Matchers._
@@ -78,6 +79,20 @@ class AbstractScalaEsScalaSpark extends Serializable {
       sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
       assertTrue(RestUtils.exists("spark-test/scala-basic-write"))
       assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
+    }
+
+    @Test
+    def testEsRDDWriteWithMappingId() {
+      val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
+      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
+
+      val target = "spark-test/scala-id-write";
+
+      sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, Map(ES_MAPPING_ID -> "number"))
+      assertTrue(RestUtils.exists(target + "/1"));
+      assertTrue(RestUtils.exists(target + "/2"));
+
+      assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
     }
 
     @Test
