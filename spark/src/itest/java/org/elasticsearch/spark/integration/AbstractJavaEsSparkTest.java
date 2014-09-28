@@ -21,7 +21,6 @@ package org.elasticsearch.spark.integration;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.spark.SparkConf;
@@ -43,10 +42,11 @@ import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.*;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+
 import static org.hamcrest.Matchers.*;
 
 import static scala.collection.JavaConversions.*;
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkTest implements Serializable {
@@ -177,21 +177,17 @@ public class AbstractJavaEsSparkTest implements Serializable {
 //            }
 //        });
 
-        JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(sc, target);
+        JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(sc, target).values();
+        System.out.println(esRDD.collect());
         JavaRDD<Map<String, Object>> messages = esRDD.filter(new Function<Map<String, Object>, Boolean>() {
 			@Override
 			public Boolean call(Map<String, Object> map) throws Exception {
-				for (Entry<String, Object> entry: map.entrySet()) {
-					if (entry.getValue().toString().contains("message")) {
-						return Boolean.TRUE;
-					}
-				}
-				return Boolean.FALSE;
+				return map.containsKey("message");
 			}
         });
         
         // jdk8
-        //esRDD.filter(m -> m.values().stream().filter(v -> v.contains("message")));
+        //esRDD.filter(m -> m.stream().filter(v -> v.contains("message")));
         
         assertThat((int) messages.count(), is(2));
         System.out.println(messages.take(10));
@@ -206,16 +202,16 @@ public class AbstractJavaEsSparkTest implements Serializable {
         RestUtils.putData(index + "/bar", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh(index);
 
-    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo"));
+    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo")).values();
     	
-    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "");
+    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
     	assertTrue(allRDD.count() == wildRDD.count());
     	assertTrue(allRDD.count() == 1);
     }
     
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testNoResourceSpecified() throws Exception {
-    	JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc);
+    	JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc).values();
     	rdd.count();
     }
 }

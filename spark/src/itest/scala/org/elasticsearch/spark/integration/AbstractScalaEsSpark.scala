@@ -19,18 +19,16 @@
 package org.elasticsearch.spark.integration;
 
 import java.util.concurrent.TimeUnit
-
 import scala.annotation.migration
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.runtime.ScalaRunTime.stringOf
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.PairRDDFunctions._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-
 import org.elasticsearch.spark._
 import org.hamcrest.Matchers._
 import org.junit.AfterClass
@@ -38,6 +36,7 @@ import org.junit.Assert._
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
+import org.apache.spark.rdd.PairRDDFunctions
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -139,7 +138,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
       RestUtils.refresh("spark-test");
 
       val esData = sc.esRDD(target);
-      val messages = esData.filter(doc => doc.values.find(_.toString.contains("message")).nonEmpty)
+      val messages = esData.filter(doc => doc._2.find(_.toString.contains("message")).nonEmpty)
 
       assertTrue(messages.count() ==  2);
       assertNotNull(messages.take(10));

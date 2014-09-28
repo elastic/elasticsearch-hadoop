@@ -15,7 +15,7 @@ import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 private[spark] class ScalaEsRDD(
     @transient sc: SparkContext,
     params: Map[String, String] = Map.empty)
-  extends AbstractEsRDD[Map[String, Any]](sc, params) {
+  extends AbstractEsRDD[(String, Map[String, Any])](sc, params) {
 
   override def compute(split: Partition, context: TaskContext): ScalaEsRDDIterator = {
     new ScalaEsRDDIterator(context, split.asInstanceOf[EsPartition].esPartition)
@@ -25,7 +25,7 @@ private[spark] class ScalaEsRDD(
 private[rdd] class ScalaEsRDDIterator(
     context: TaskContext,
     partition: PartitionDefinition)
- extends AbstractEsRDDIterator[Map[String, Any]](context, partition) {
+ extends AbstractEsRDDIterator[(String, Map[String, Any])](context, partition) {
 
   override def getLogger() = LogFactory.getLog(classOf[ScalaEsRDD])
   
@@ -33,7 +33,7 @@ private[rdd] class ScalaEsRDDIterator(
     InitializationUtils.setValueReaderIfNotSet(settings, classOf[ScalaValueReader], log)
   }
 
-  override def createValue(value: Array[Object]): Map[String, Any] = {
-    Map[String, Any](value(0).toString() -> value(1))
+  override def createValue(value: Array[Object]): (String, Map[String, Any]) = {
+    (value(0).toString() -> value(1).asInstanceOf[Map[String, Any]])
   }
 }
