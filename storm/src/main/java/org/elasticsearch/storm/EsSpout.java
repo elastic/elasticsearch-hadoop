@@ -81,8 +81,7 @@ public class EsSpout implements IRichSpout {
             spoutConfig.put(ES_RESOURCE_READ, target);
         }
         if (spoutConfig.containsKey(StormConfigurationOptions.ES_STORM_FIELDS)) {
-            String fieldList = (String) spoutConfig
-                    .get(StormConfigurationOptions.ES_STORM_FIELDS);
+            String fieldList = (String) spoutConfig.get(StormConfigurationOptions.ES_STORM_FIELDS);
             outputFields = StringUtils.tokenize(fieldList, ",");
             if (outputFields.size() == 0)
                 outputFields = null;
@@ -90,8 +89,7 @@ public class EsSpout implements IRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context,
-            SpoutOutputCollector collector) {
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
 
         LinkedHashMap copy = new LinkedHashMap(conf);
@@ -99,8 +97,7 @@ public class EsSpout implements IRichSpout {
 
         StormSettings settings = new StormSettings(copy);
 
-        InitializationUtils.setValueReaderIfNotSet(settings,
-                JdkValueReader.class, log);
+        InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
 
         ackReads = settings.getStormSpoutReliable();
         if (ackReads) {
@@ -109,15 +106,12 @@ public class EsSpout implements IRichSpout {
             queueSize = settings.getStormSpoutReliableQueueSize();
         }
 
-        int totalTasks = context
-                .getComponentTasks(context.getThisComponentId()).size();
+        int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
         int currentTask = context.getThisTaskIndex();
 
         // match the partitions based on the current topology
-        List<PartitionDefinition> partitions = RestService.findPartitions(
-                settings, log);
-        List<PartitionDefinition> assigned = RestService.assignPartitions(
-                partitions, currentTask, totalTasks);
+        List<PartitionDefinition> partitions = RestService.findPartitions(settings, log);
+        List<PartitionDefinition> assigned = RestService.assignPartitions(partitions, currentTask, totalTasks);
         iterator = RestService.multiReader(settings, assigned, log);
     }
 
@@ -177,19 +171,18 @@ public class EsSpout implements IRichSpout {
             if (ackReads) {
                 if (queueSize > 0) {
                     if (inTransitQueue.size() >= queueSize) {
-                        throw new EsHadoopIllegalStateException(
-                                String.format(
-                                        "Ack-tuples queue has exceeded the specified size [%s]",
-                                        inTransitQueue.size()));
+                        throw new EsHadoopIllegalStateException(String.format("Ack-tuples queue has exceeded the specified size [%s]", inTransitQueue.size()));
                     }
                     inTransitQueue.put(next[0], output);
                 }
 
                 collector.emit(output, next[0]);
-            } else {
+            }
+            else {
                 collector.emit(output);
             }
-        } else {
+        }
+        else {
             // per doc indication
             try {
                 Thread.sleep(1);
