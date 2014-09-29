@@ -18,12 +18,14 @@
  */
 package org.elasticsearch.storm;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,6 +36,7 @@ import org.elasticsearch.hadoop.rest.RestService.MultiReaderIterator;
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.elasticsearch.storm.cfg.StormSettings;
 
 import backtype.storm.spout.SpoutOutputCollector;
@@ -57,6 +60,7 @@ public class EsSpout implements IRichSpout {
     private int queueSize = 0;
     private Map<Object, Object> inTransitQueue;
     private Queue<Object[]> replayQueue = null;
+    private List<String> outputFields = null;
 
     public EsSpout(String target) {
         this(target, null, null);
@@ -76,10 +80,18 @@ public class EsSpout implements IRichSpout {
         if (StringUtils.hasText(target)) {
             spoutConfig.put(ES_RESOURCE_READ, target);
         }
+        if (spoutConfig.containsKey(StormConfigurationOptions.ES_STORM_FIELDS)) {
+            String fieldList = (String) spoutConfig
+                    .get(StormConfigurationOptions.ES_STORM_FIELDS);
+            outputFields = StringUtils.tokenize(fieldList, ",");
+            if (outputFields.size() == 0)
+                outputFields = null;
+        }
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map conf, TopologyContext context,
+            SpoutOutputCollector collector) {
         this.collector = collector;
 
         LinkedHashMap copy = new LinkedHashMap(conf);
@@ -87,7 +99,8 @@ public class EsSpout implements IRichSpout {
 
         StormSettings settings = new StormSettings(copy);
 
-        InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
+        InitializationUtils.setValueReaderIfNotSet(settings,
+                JdkValueReader.class, log);
 
         ackReads = settings.getStormSpoutReliable();
         if (ackReads) {
@@ -96,12 +109,15 @@ public class EsSpout implements IRichSpout {
             queueSize = settings.getStormSpoutReliableQueueSize();
         }
 
-        int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
+        int totalTasks = context
+                .getComponentTasks(context.getThisComponentId()).size();
         int currentTask = context.getThisTaskIndex();
 
         // match the partitions based on the current topology
-        List<PartitionDefinition> partitions = RestService.findPartitions(settings, log);
-        List<PartitionDefinition> assigned = RestService.assignPartitions(partitions, currentTask, totalTasks);
+        List<PartitionDefinition> partitions = RestService.findPartitions(
+                settings, log);
+        List<PartitionDefinition> assigned = RestService.assignPartitions(
+                partitions, currentTask, totalTasks);
         iterator = RestService.multiReader(settings, assigned, log);
     }
 
@@ -136,27 +152,44 @@ public class EsSpout implements IRichSpout {
 
         if (replayQueue != null && !replayQueue.isEmpty()) {
             next = replayQueue.poll();
-        }
-        else if (iterator.hasNext()) {
+        } else if (iterator.hasNext()) {
             next = iterator.next();
         }
 
         if (next != null) {
+            List<Object> output = null;
+            // whether to structure the output per fields or not
+            if (outputFields != null) {
+                output = new ArrayList<Object>(outputFields.size());
+                if (next[1] instanceof Map) {
+                    Map tempMap = (Map) next[1];
+                    for (String field : outputFields) {
+                        output.add(tempMap.get(field));
+                    }
+                }
+            }
+
+            // lumps the whole map under a single 'doc' field
+            if (output == null || output.size() == 0) {
+                output = Collections.singletonList(next[1]);
+            }
+
             if (ackReads) {
                 if (queueSize > 0) {
                     if (inTransitQueue.size() >= queueSize) {
-                        throw new EsHadoopIllegalStateException(String.format("Ack-tuples queue has exceeded the specified size [%s]", inTransitQueue.size()));
+                        throw new EsHadoopIllegalStateException(
+                                String.format(
+                                        "Ack-tuples queue has exceeded the specified size [%s]",
+                                        inTransitQueue.size()));
                     }
-                    inTransitQueue.put(next[0], next[1]);
+                    inTransitQueue.put(next[0], output);
                 }
 
-                collector.emit(Collections.singletonList(next[1]), next[0]);
+                collector.emit(output, next[0]);
+            } else {
+                collector.emit(output);
             }
-            else {
-                collector.emit(Collections.singletonList(next[1]));
-            }
-        }
-        else {
+        } else {
             // per doc indication
             try {
                 Thread.sleep(1);
@@ -178,7 +211,11 @@ public class EsSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("doc"));
+        if (outputFields == null)
+            declarer.declare(new Fields("doc"));
+        else {
+            declarer.declare(new Fields(outputFields));
+        }
     }
 
     @Override
