@@ -71,7 +71,8 @@ public abstract class AbstractStormSpoutTests {
         // read ack bounded queue with no retries
         Map ackWithSizeNoRetries = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(),
                 StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1",
-                StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE, "1");
+                StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE, "1",
+                StormConfigurationOptions.ES_STORM_SPOUT_FIELDS, "message");
 
         return Arrays.asList(new Object[][] {
                 { noAck, "storm-spout" },

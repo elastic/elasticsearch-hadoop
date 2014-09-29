@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.storm;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -55,6 +56,8 @@ public class EsSpout implements IRichSpout {
     private transient SpoutOutputCollector collector;
     private transient MultiReaderIterator iterator;
 
+    private final List<String> tupleFields;
+
     private boolean ackReads = false;
     private int queueSize = 0;
     private Map<Object, Object> inTransitQueue;
@@ -82,6 +85,8 @@ public class EsSpout implements IRichSpout {
         if (StringUtils.hasText(target)) {
             spoutConfig.put(ES_RESOURCE_READ, target);
         }
+
+        tupleFields = new StormSettings(spoutConfig).getStormSpoutFields();
     }
 
     @Override
@@ -96,6 +101,7 @@ public class EsSpout implements IRichSpout {
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
 
         ackReads = settings.getStormSpoutReliable();
+
         if (ackReads) {
             inTransitQueue = new LinkedHashMap<Object, Object>();
             replayQueue = new LinkedList<Object[]>();
@@ -156,7 +162,10 @@ public class EsSpout implements IRichSpout {
             next = iterator.next();
         }
 
+
         if (next != null) {
+            List<Object> tuple = createTuple(next[1]);
+
             if (ackReads) {
                 if (queueSize > 0) {
                     if (inTransitQueue.size() >= queueSize) {
@@ -165,10 +174,10 @@ public class EsSpout implements IRichSpout {
                     inTransitQueue.put(next[0], next[1]);
                 }
 
-                collector.emit(Collections.singletonList(next[1]), next[0]);
+                collector.emit(tuple, next[0]);
             }
             else {
-                collector.emit(Collections.singletonList(next[1]));
+                collector.emit(tuple);
             }
         }
         else {
@@ -179,6 +188,21 @@ public class EsSpout implements IRichSpout {
                 // interrupted sleep - go on
             }
         }
+    }
+
+    private List<Object> createTuple(Object value) {
+        List<Object> tuple;
+        if (!tupleFields.isEmpty()) {
+            tuple = new ArrayList<Object>(tupleFields.size());
+            Map<String, Object> doc = (Map<String, Object>) value;
+
+            for (String field : tupleFields) {
+                tuple.add(doc.get(field));
+            }
+            return tuple;
+        }
+
+        return Collections.singletonList(value);
     }
 
     @Override
@@ -216,7 +240,8 @@ public class EsSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("doc"));
+        Fields fields = (this.tupleFields.isEmpty() ? new Fields("doc") : new Fields(this.tupleFields));
+        declarer.declare(fields);
     }
 
     @Override

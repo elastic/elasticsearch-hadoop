@@ -40,4 +40,7 @@ public interface StormConfigurationOptions {
 
     String ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE = "es.storm.spout.reliable.handle.tuple.failure";
     String ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE_DEFAULT = "abort";
+
+    String ES_STORM_SPOUT_FIELDS = "es.storm.spout.fields";
+    String ES_STORM_SPOUT_FIELDS_DEFAULT = null;
 }
