@@ -128,14 +128,15 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
                 generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                write(entry.getValue(), nestedFields[0], generator);
+                if (!write(entry.getValue(), nestedFields[0], generator)) {
+                    return false;
+                }
             }
             generator.writeEndObject();
             break;
 
         case DataType.TUPLE:
-            writeTuple(object, field, generator, useTupleFieldNames, false);
-            break;
+            return writeTuple(object, field, generator, useTupleFieldNames, false);
 
         case DataType.BAG:
             nestedSchema = field.getSchema();
@@ -151,7 +152,9 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
             generator.writeBeginArray();
             for (Tuple tuple : (DataBag) object) {
-                write(tuple, bagType, generator);
+                if (!write(tuple, bagType, generator)) {
+                    return false;
+                }
             }
             generator.writeEndArray();
             break;

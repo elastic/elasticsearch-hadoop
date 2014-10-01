@@ -23,7 +23,7 @@ private[spark] class JavaEsRDD(
   }
 }
   
-private[rdd] class JavaEsRDDIterator(
+private[spark] class JavaEsRDDIterator(
     context: TaskContext,
     partition: PartitionDefinition)
  extends AbstractEsRDDIterator[(String, JMap[String, Object])](context, partition) {

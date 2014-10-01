@@ -461,6 +461,8 @@ project(":elasticsearch-spark") {
 		provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
 			exclude group: 'javax.servlet'
 		}
+		
+		optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
 		provided("javax.servlet:javax.servlet-api:3.0.1")
 		compile("org.scala-lang:scala-library:$scalaVersion")
 

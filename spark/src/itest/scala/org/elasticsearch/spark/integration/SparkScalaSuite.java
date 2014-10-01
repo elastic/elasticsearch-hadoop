@@ -7,7 +7,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractScalaEsScalaSpark.class })
+@Suite.SuiteClasses({ AbstractScalaEsScalaSparkSQL.class })
 public class SparkScalaSuite {
 
     @ClassRule

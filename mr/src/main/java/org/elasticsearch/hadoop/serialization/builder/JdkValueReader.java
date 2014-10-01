@@ -76,9 +76,8 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    public Map createMap() {
+    public Object createMap() {
         return new LinkedHashMap<Object, Object>();
     }
 

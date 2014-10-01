@@ -102,7 +102,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   
   def setSettings(settings: Settings) = { emptyAsNull = settings.getFieldReadEmptyAsNull() }
   
-  def createMap() = {
+  def createMap(): AnyRef = {
     new LinkedHashMap
   }
   

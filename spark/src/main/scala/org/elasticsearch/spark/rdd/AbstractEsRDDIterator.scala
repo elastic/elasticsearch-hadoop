@@ -10,7 +10,7 @@ import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 import scala.collection.mutable.LinkedHashMap
 
-private[rdd] abstract class AbstractEsRDDIterator[T](
+private[spark] abstract class AbstractEsRDDIterator[T](
     val context: TaskContext,
     partition: PartitionDefinition) 
   extends Iterator[T] {

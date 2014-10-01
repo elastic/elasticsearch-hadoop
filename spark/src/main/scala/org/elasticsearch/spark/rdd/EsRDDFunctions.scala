@@ -29,11 +29,9 @@ private[spark] object EsRDDFunctions {
   def saveToEs(rdd: RDD[_], resource: String) {
     saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource))
   }
-  
   def saveToEs(rdd: RDD[_], resource: String, params: Map[String, String]) {
     saveToEs(rdd, collection.mutable.Map(params.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  
   def saveToEs(rdd: RDD[_], params: Map[String, String]) {
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val cfg = new PropertiesSettings().load(sparkCfg.save())
@@ -47,11 +45,9 @@ private[spark] object EsRDDFunctions {
   def saveJsonToEs(rdd: RDD[_], resource: String) {
     saveToEs(rdd, resource, Map(ES_INPUT_JSON -> true.toString))
   }
-  
   def saveJsonToEs(rdd: RDD[_], resource: String, params: Map[String, String]) {
     saveToEs(rdd, resource, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
-  
   def saveJsonToEs(rdd: RDD[_], params: Map[String, String]) {
     saveToEs(rdd, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }

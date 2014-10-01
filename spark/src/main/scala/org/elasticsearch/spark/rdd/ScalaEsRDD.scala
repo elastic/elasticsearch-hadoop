@@ -13,8 +13,8 @@ import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 
 private[spark] class ScalaEsRDD(
-    @transient sc: SparkContext,
-    params: Map[String, String] = Map.empty)
+  @transient sc: SparkContext,
+  params: Map[String, String] = Map.empty)
   extends AbstractEsRDD[(String, Map[String, Any])](sc, params) {
 
   override def compute(split: Partition, context: TaskContext): ScalaEsRDDIterator = {
@@ -22,14 +22,14 @@ private[spark] class ScalaEsRDD(
   }
 }
 
-private[rdd] class ScalaEsRDDIterator(
-    context: TaskContext,
-    partition: PartitionDefinition)
- extends AbstractEsRDDIterator[(String, Map[String, Any])](context, partition) {
+private[spark] class ScalaEsRDDIterator(
+  context: TaskContext,
+  partition: PartitionDefinition)
+  extends AbstractEsRDDIterator[(String, Map[String, Any])](context, partition) {
 
   override def getLogger() = LogFactory.getLog(classOf[ScalaEsRDD])
-  
-  override def initReader(settings:Settings, log: Log) = {
+
+  override def initReader(settings: Settings, log: Log) = {
     InitializationUtils.setValueReaderIfNotSet(settings, classOf[ScalaValueReader], log)
   }
 
