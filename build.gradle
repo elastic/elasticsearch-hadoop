@@ -468,6 +468,7 @@ project(":elasticsearch-spark") {
 
 		//testCompile "org.scalatest:scalatest_$scalaMajorVersion:2.2.0"
 		//itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
+		itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
 	}
 	
 	if (!java8) {
