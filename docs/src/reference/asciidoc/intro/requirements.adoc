@@ -175,6 +175,14 @@ Welcome to
 ...
 ----
 
+[[requirements-spark-sql]]
+==== Apache Spark SQL
+
+If planning on using Spark SQL make sure to download the appropriate jar. While it is part of the Spark distribution,
+it is _not_ part of Spark core but rather has its own jar. Thus, when constructing the classpath make sure to
+include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-1.1.0-<distro>.jar+
+
+Spark SQL 1.1.0 (and thus Spark 1.1.0) is required. Note that Spark SQL is currently an _alpha_ component
 
 [[requirements-storm]]
 === Apache Storm

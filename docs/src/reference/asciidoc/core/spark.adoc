@@ -198,6 +198,7 @@ saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 
 <1> Save each object based on its resource pattern, +media_type+ in this example
 
+[[spark-read]]
 [float]
 ==== Reading data from {es}
 
@@ -309,6 +310,168 @@ JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*").values(
 JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc -> doc.contains("mega"));
 ----
 
+[[spark-sql]]
+[float]
+=== Spark SQL support
+
+added[2.1]
+
+[quote, Spark website]
+____
+http://spark.apache.org/sql/[Spark SQL] allows relational queries expressed in SQL, HiveQL, or Scala to be executed using Spark. At the core of this component is a new type of RDD, SchemaRDD. A SchemaRDD is similar to a table in a traditional relational database. [...] Spark SQL is currently an alpha component. 
+____
+On top of the core Spark support, {eh} also provides integration with Spark SQL. In other words, {es} becomes a _native_ source for Spark SQL so that data can be indexed and queried from Spark SQL _transparently_.
+
+IMPORTANT: Spark SQL is an alpha component. As such, the integration of {eh} is marked as alpha. While we strive to maintain compatibility going forward, support may change.
+
+IMPORTANT: Spark SQL is a _separate_ component from Spark _core_. To use it, make sure to properly add it to your classpath - please see the <<requirements>> page for more details.
+
+Spark SQL support is available under +org.elasticsearch.spark.sql+ package.
+
+[float]
+[[spark-sql-write]]
+==== Writing +SchemaRDD+ to {es}
+
+With {eh}, +SchemaRDD+s can be indexed to {es}.
+
+.Scala
+
+In Scala, simply import +org.elasticsearch.spark.sql+ package which enriches the given +SchemaRDD+ class with +saveToEs+ methods; while these have the same signature as the +org.elasticsearch.spark+ package, they are designed for +SchemaRDD+ implementations:
+
+[source,scala]
+----
+// reusing the example from Spark SQL documentation
+
+import org.apache.spark.sql.SQLContext	  <1>
+import org.apache.spark.sql.SQLContext._  
+
+import org.elasticsearch.spark.sql._      <2>
+
+...
+
+// sc = existing SparkContext
+val sqlContext = new SQLContext(sc)
+val schemaRDD = sqlContext.
+
+// case class used to define the RDD schema
+case class Person(name: String, surname: String, age: Int)
+
+//  create SchemaRDD
+val people = sc.textFile("people.txt")    <3>
+        .map(_.split(","))
+		.map(p => 
+		   Person(p(0), p(1), p(2).trim.toInt))
+
+
+people.saveToEs("spark/people")          <4>
+----
+
+<1> Spark SQL package import
+<2> {eh} Spark package import
+<3> Read a text file as _normal_ +RDD+ and map it to a +SchemaRDD+ (using the +Person+ case class)
+<4> Index the resulting +SchemaRDD+ to {es} through the +saveToEs+ method
+
+.Java
+
+In a similar fashion, for Java usage the dedicated package +org.elasticsearch.spark.sql.java.api+ provides similar functionality through the +JavaEsSparkSQL+ :
+
+[source,java]
+----
+import org.apache.spark.sql.api.java.*;                      <1>
+import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;  <2>
+...
+
+JavaSchemaRDD people = ...
+JavaEsSparkSQL.saveToEs("spark/people");			         <3>
+----
+
+<1> Spark SQL Java imports
+<2> {eh} Spark SQL Java imports
+<3> index the +JavaSchemaRDD+ in {es} under +spark/people+
+
+Again, with Java 5 _static_ imports this can be further simplied to:
+
+[source,java]
+----
+import static org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL; <1>
+...
+saveToEs("spark/people");			                               <2>
+----
+
+<1> statically import +JavaEsSparkSQL+
+<2> call +saveToEs+ method without having to type +JavaEsSpark+ again
+
+IMPORTANT: For maximum control over the mapping of your +SchemaRDD+ in {es}, it is highly recommended to create the mapping before hand. See <<mapping, this>> chapter for more information.
+
+[[spark-sql-read]]
+[float]
+==== Reading +SchemaRDD+s from {es}
+
+As you might have guessed, one can define a +SchemaRDD+ backed by {es} documents. Or even better, have them backed by a query result, effectively creating dynamic, real-time _views_ over your data.
+
+.Scala
+
+Through the +org.elasticsearch.spark.sql+ package, +esRDD+ methods are available on the +SQLContext+ API:
+
+[source,scala]
+----
+import org.apache.spark.sql.SQLContext	      <1>
+
+import org.elasticsearch.spark.sql._	      <2>
+...
+
+val sql = new SQLContext(sc)
+
+val people = sqlContext.esRDD("spark/people") <3>
+
+// check the associated schema
+println(people.schema)                        <4>
+// root
+//  |-- name: string (nullable = true)
+//  |-- surname: string (nullable = true)
+//  |-- age: long (nullable = true)           <5>
+----
+
+<1> Spark SQL Scala imports
+<2> {eh} SQL Scala imports
+<3> create a +SchemaRDD+ backed by the +spark/people+ index in {es}
+<4> the +SchemaRDD+ associated schema discovered from {es}
+<5> notice how the +age+ field was transformed into a +Long+ when using the default {es} mapping as discussed in the <<mapping>> chapter.
+
+And just as with the Spark _core_ support, additional parameters can be specified such as a query. This is quite a _powerful_ concept as one can filter the data at the source ({es}) and use Spark only on the results:
+
+[source,scala]
+----
+// get only the Smiths
+val smiths = sqlContext.esRDD("spark/people","?q=Smith" <1>)
+----
+
+<1> {es} query whose results comprise the +RDD+
+
+.Java
+
+[source,java]
+----
+import org.apache.spark.sql.api.java.JavaSQLContext;          <1>
+import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;   <2>
+...
+JavaSQLContext sql = new JavaSQLContext(sc);
+
+JavaSchemaRDD people = JavaSQLContext.esRDD("spark/people");  <3>
+----
+
+<1> Spark SQL import
+<2> {eh} import
+<3> create a Java +SchemaRDD+ backed by an {es} index
+
+Better yet, the +JavaSchemaRDD+ can be backed by a query result:
+
+[source,java]
+----
+JavaSchemaRDD people = JavaSQLContext.esRDD("spark/people", "?q=Smith"  <1>); 
+----
+
+<1> {es} query backing the {eh} +SchemaRDD+
 
 [[spark-mr]]
 [float]

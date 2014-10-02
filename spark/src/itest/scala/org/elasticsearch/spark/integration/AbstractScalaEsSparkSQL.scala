@@ -18,30 +18,38 @@
  */
 package org.elasticsearch.spark.integration;
 
+import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
-import scala.annotation.migration
+
 import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.runtime.ScalaRunTime.stringOf
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
-import org.apache.spark.rdd.PairRDDFunctions._
-import org.apache.spark.sql._
+import org.apache.spark.sql.IntegerType
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.apache.spark.sql.StringType
+import org.apache.spark.sql.StructField
+import org.apache.spark.sql.StructType
+import org.apache.spark.sql.TimestampType
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.spark._
 import org.elasticsearch.spark.sql._
-import org.hamcrest.Matchers._
+import org.elasticsearch.spark.sql.sqlContextFunctions
+import org.hamcrest.Matchers.containsString
 import org.junit.AfterClass
-import org.junit.Assert._
+import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
-import org.junit.Test
-import javax.xml.bind.DatatypeConverter
-import java.sql.Timestamp
 import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
+
+import org.junit.Test
+
+import javax.xml.bind.DatatypeConverter
+
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
