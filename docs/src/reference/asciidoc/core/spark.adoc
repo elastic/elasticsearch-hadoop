@@ -345,6 +345,9 @@ http://spark.apache.org/sql/[Spark SQL] allows relational queries expressed in S
 ____
 On top of the core Spark support, {eh} also provides integration with Spark SQL. In other words, {es} becomes a _native_ source for Spark SQL so that data can be indexed and queried from Spark SQL _transparently_.
 
+IMPORTANT: Spark SQL works with _structured_ data - in other words, all entries are expected to have the _same_ structure (same number of fields, of the same type and name). Using unstructured data (documents with different
+structures) is _not_ supported and will cause problems. For such cases, use ++PairRDD++s.
+
 IMPORTANT: Spark SQL is an alpha component. As such, the integration of {eh} is marked as alpha. While we strive to maintain compatibility going forward, support may change.
 
 IMPORTANT: Spark SQL is a _separate_ component from Spark _core_. To use it, make sure to properly add it to your classpath - please see the <<requirements>> page for more details.
