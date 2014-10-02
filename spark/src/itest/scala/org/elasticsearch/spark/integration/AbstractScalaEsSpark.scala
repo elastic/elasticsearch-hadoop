@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.spark._
+import org.elasticsearch.spark.rdd.EsSpark
 import org.hamcrest.Matchers._
 import org.junit.AfterClass
 import org.junit.Assert._
@@ -131,17 +132,17 @@ class AbstractScalaEsScalaSpark extends Serializable {
     
     @Test
     def testEsRDDRead() {
-      val target = "spark-test/scala-basic-read";
-      RestUtils.touch("spark-test");
-      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+      val target = "spark-test/scala-basic-read"
+      RestUtils.touch("spark-test")
+      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
       RestUtils.refresh("spark-test");
 
-      val esData = sc.esRDD(target);
+      val esData = EsSpark.esRDD(sc, target)
       val messages = esData.filter(doc => doc._2.find(_.toString.contains("message")).nonEmpty)
 
-      assertTrue(messages.count() ==  2);
-      assertNotNull(messages.take(10));
-      assertNotNull(messages);
+      assertTrue(messages.count() ==  2)
+      assertNotNull(messages.take(10))
+      assertNotNull(messages)
     }
 }

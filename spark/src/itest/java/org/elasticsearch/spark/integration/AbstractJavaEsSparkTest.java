@@ -30,7 +30,7 @@ import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
-import org.elasticsearch.spark.api.java.JavaEsSpark;
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;

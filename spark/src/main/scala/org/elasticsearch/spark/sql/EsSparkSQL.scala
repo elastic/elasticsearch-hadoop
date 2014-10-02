@@ -2,27 +2,29 @@ package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
+
+import org.apache.spark.annotation.AlphaComponent
+import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.api.java.JavaRDD.fromRDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SchemaRDD
 import org.apache.spark.sql.api.java.JavaSQLContext
 import org.apache.spark.sql.api.java.JavaSchemaRDD
+import org.apache.spark.sql.api.java.{StructType => JStructType}
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.spark.cfg.SparkSettingsManager
-import org.elasticsearch.spark.rdd.ScalaEsRDD
-import org.elasticsearch.spark.rdd.JavaEsRDD
-import org.apache.spark.sql.api.java.{StructType => JStructType}
 
-private[spark] object EsSchemaRDDFunctions {
+object EsSparkSQL {
 
   def esRDD(sc: SQLContext): SchemaRDD = esRDD(sc, Map.empty[String, String])
   def esRDD(sc: SQLContext, resource: String): SchemaRDD = esRDD(sc, Map(ES_RESOURCE_READ -> resource))
   def esRDD(sc: SQLContext, resource: String, query: String): SchemaRDD = esRDD(sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esRDD(sc: SQLContext, map: Map[String, String]): SchemaRDD = {
     val rowRDD = new ScalaEsRowRDD(sc.sparkContext, map)
-    val schema = SQLUtils.discoverMapping(rowRDD.esCfg)
+    val schema = MappingUtils.discoverMapping(rowRDD.esCfg)
     sc.applySchema(rowRDD, schema)
   }
 
@@ -31,7 +33,7 @@ private[spark] object EsSchemaRDDFunctions {
   def esRDD(jsc: JavaSQLContext, resource: String, query: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esRDD(jsc: JavaSQLContext, map: Map[String, String]): JavaSchemaRDD = { 
     val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, map)
-    val schema = DataTypeConversions.asJavaDataType(SQLUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
+    val schema = DataTypeConversions.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
     jsc.applySchema(rowRDD, schema)
   }
   

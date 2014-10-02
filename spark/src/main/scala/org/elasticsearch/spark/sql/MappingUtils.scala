@@ -38,7 +38,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 
-private[sql] object SQLUtils {
+private[sql] object MappingUtils {
 
   def discoverMapping(cfg: Settings): StructType = {
     val repo = new RestRepository(cfg)

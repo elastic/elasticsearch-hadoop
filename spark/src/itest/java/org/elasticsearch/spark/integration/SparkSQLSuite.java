@@ -25,8 +25,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class, AbstractHadoopBasicSparkTest.class })
-public class SparkSuite {
+@Suite.SuiteClasses({ AbstractJavaEsSparkSQLTest.class })
+public class SparkSQLSuite {
 
     @ClassRule
     public static ExternalResource resource = new LocalEs();

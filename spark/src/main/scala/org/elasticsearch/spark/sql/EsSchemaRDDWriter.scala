@@ -8,7 +8,6 @@ import org.elasticsearch.hadoop.serialization.JdkBytesConverter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.hadoop.serialization.BytesConverter
-import org.elasticsearch.spark.serialization.SchemaRDDValueWriter
 import org.apache.spark.sql.catalyst.types.StructType
 
 private[spark] class EsSchemaRDDWriter

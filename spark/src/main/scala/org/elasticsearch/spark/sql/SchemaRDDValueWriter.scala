@@ -1,12 +1,10 @@
-package org.elasticsearch.spark.serialization
+package org.elasticsearch.spark.sql
 
 import java.sql.Timestamp
 import java.util.{Map => JMap}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
-
 import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.catalyst.types.ArrayType
 import org.apache.spark.sql.catalyst.types.BinaryType
@@ -26,6 +24,7 @@ import org.apache.spark.sql.catalyst.types.TimestampType
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
+import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWriter[(Row, StructType)] {
 
