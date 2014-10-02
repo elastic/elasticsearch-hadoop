@@ -137,7 +137,8 @@ containing +String+ or byte arrays (+byte[]+/+Array[Byte]+), assuming each entry
 val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"      <1>
 val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
 
-new SparkContext(conf).makeRDD(Seq(json1, json2)).saveJsonToEs("spark/json-trips") <2>
+new SparkContext(conf).makeRDD(Seq(json1, json2))
+                                   .saveJsonToEs("spark/json-trips") <2>
 ----
 
 <1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation
@@ -192,7 +193,7 @@ Map<String, ?> book = ...
 Map<String, ?> cd = ...
 
 JavaRDD<Map<String, ?>> javaRDD = 
-  jsc.parallelize(ImmutableList.of(game, book, cd));
+                jsc.parallelize(ImmutableList.of(game, book, cd));
 saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 ----
 
@@ -252,14 +253,15 @@ Java users have a dedicated `JavaPairRDD` that works the same as its Scala count
 
 [source,java]
 ----
-import org.apache.spark.api.java.JavaSparkContext;   <1>
-import org.elasticsearch.spark.java.api.JavaEsSpark; <2>
+import org.apache.spark.api.java.JavaSparkContext;               <1>
+import org.elasticsearch.spark.java.api.JavaEsSpark;             <2>
 ...
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf);   <3>
+JavaSparkContext jsc = new JavaSparkContext(conf);               <3>
 
-JavaPairRDD<String, Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists"); <4>
+JavaPairRDD<String, Map<String, Object>> esRDD = 
+                        JavaEsSpark.esRDD(jsc, "radio/artists"); <4>
 ----
 
 <1> Spark Java imports
@@ -275,7 +277,8 @@ Let us see how this looks like, but this time around using http://docs.oracle.co
 import static org.elasticsearch.spark.java.api.JavaEsSpark.*;             <1>
 
 ...
-JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*"<2>).values()<3>; 
+JavaRDD<Map<String, Object>> esRDD = 
+                        esRDD(jsc, "radio/artists", "?me*"<2>).values()<3>; 
 ----
 
 <1> statically import `JavaEsSpark` class
@@ -292,7 +295,8 @@ To wit, let us assume one wants to filter the documents from the RDD and return 
 In versions prior to Java 8, the code would look something like this:
 [source, java]
 ----
-JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*").values();
+JavaRDD<Map<String, Object>> esRDD = 
+                        esRDD(jsc, "radio/artists", "?me*").values();
 JavaRDD<Map<String, Object>> filtered = esRDD.filter(
     new Function<Map<String, Object>, Boolean>() {
       @Override
@@ -306,8 +310,10 @@ with Java 8, the filtering becomes a one liner:
 
 [source,java]
 ----
-JavaRDD<Map<String, Object>> esRDD = esRDD(jsc, "radio/artists", "?me*").values();
-JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc -> doc.contains("mega"));
+JavaRDD<Map<String, Object>> esRDD = 
+                        esRDD(jsc, "radio/artists", "?me*").values();
+JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc -> 
+                                                doc.contains("mega"));
 ----
 
 [[spark-sql]]
@@ -342,7 +348,7 @@ In Scala, simply import +org.elasticsearch.spark.sql+ package which enriches the
 ----
 // reusing the example from Spark SQL documentation
 
-import org.apache.spark.sql.SQLContext	  <1>
+import org.apache.spark.sql.SQLContext    <1>
 import org.apache.spark.sql.SQLContext._  
 
 import org.elasticsearch.spark.sql._      <2>
@@ -359,8 +365,7 @@ case class Person(name: String, surname: String, age: Int)
 //  create SchemaRDD
 val people = sc.textFile("people.txt")    <3>
         .map(_.split(","))
-		.map(p => 
-		   Person(p(0), p(1), p(2).trim.toInt))
+        .map(p => Person(p(0), p(1), p(2).trim.toInt))
 
 
 people.saveToEs("spark/people")          <4>
@@ -382,7 +387,7 @@ import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;  <2>
 ...
 
 JavaSchemaRDD people = ...
-JavaEsSparkSQL.saveToEs("spark/people");			         <3>
+JavaEsSparkSQL.saveToEs("spark/people");                     <3>
 ----
 
 <1> Spark SQL Java imports
@@ -395,7 +400,7 @@ Again, with Java 5 _static_ imports this can be further simplied to:
 ----
 import static org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL; <1>
 ...
-saveToEs("spark/people");			                               <2>
+saveToEs("spark/people");                                          <2>
 ----
 
 <1> statically import +JavaEsSparkSQL+
@@ -405,7 +410,7 @@ IMPORTANT: For maximum control over the mapping of your +SchemaRDD+ in {es}, it 
 
 [[spark-sql-read]]
 [float]
-==== Reading +SchemaRDD+s from {es}
+==== Reading ++SchemaRDD++s from {es}
 
 As you might have guessed, one can define a +SchemaRDD+ backed by {es} documents. Or even better, have them backed by a query result, effectively creating dynamic, real-time _views_ over your data.
 
@@ -415,9 +420,9 @@ Through the +org.elasticsearch.spark.sql+ package, +esRDD+ methods are available
 
 [source,scala]
 ----
-import org.apache.spark.sql.SQLContext	      <1>
+import org.apache.spark.sql.SQLContext        <1>
 
-import org.elasticsearch.spark.sql._	      <2>
+import org.elasticsearch.spark.sql._          <2>
 ...
 
 val sql = new SQLContext(sc)
@@ -523,12 +528,12 @@ To read data, simply pass in the `org.elasticsearch.hadoop.mr.EsInputFormat` cla
 
 [source,java]
 ----
-JobConf conf = new JobConf();                   <1>
-conf.set("es.resource", "radio/artists");       <2>
-conf.set("es.query", "?q=me*");                 <3>
+JobConf conf = new JobConf();                             <1>
+conf.set("es.resource", "radio/artists");                 <2>
+conf.set("es.query", "?q=me*");                           <3>
 
 JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class, 
-                                        Text.class, MapWritable.class); <4>
+                          Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
 
@@ -541,11 +546,12 @@ The Scala version is below:
 
 [source,scala]
 ----
-val conf = new JobConf()                                <1>
-conf.set("es.resource", "radio/artists")                <2>
-conf.set("es.query", "?q=me*")                          <3>
-val esRDD = sc.hadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]], <4>
-                               classOf[Text], classOf[MapWritable]))
+val conf = new JobConf()                                   <1>
+conf.set("es.resource", "radio/artists")                   <2>
+conf.set("es.query", "?q=me*")                             <3>
+val esRDD = sc.hadoopRDD(conf, 
+                classOf[EsInputFormat[Text, MapWritable]], <4>
+                classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
 ----
 
@@ -566,7 +572,7 @@ conf.set("es.resource", "radio/artists");       <2>
 conf.set("es.query", "?q=me*");                 <3>
 
 JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class, 
-                                              Text.class, MapWritable.class); <4>
+                Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
 
@@ -579,11 +585,12 @@ The Scala version is below:
 
 [source,scala]
 ----
-val conf = new Configuration()                          <1>
-conf.set("es.resource", "radio/artists")                <2>
-conf.set("es.query", "?q=me*")                          <3>
-val esRDD = sc.newHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]], <4>
-                                  classOf[Text], classOf[MapWritable]))
+val conf = new Configuration()                             <1>
+conf.set("es.resource", "radio/artists")                   <2>
+conf.set("es.query", "?q=me*")                             <3>
+val esRDD = sc.newHadoopRDD(conf, 
+                classOf[EsInputFormat[Text, MapWritable]], <4>
+                classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
 ----
 
