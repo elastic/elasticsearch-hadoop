@@ -81,27 +81,43 @@ sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
 
 NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
 
+As an alternative to the _implicit_ import above, one can {eh} Spark support in Scala through +EsSpark+ in +org.elasticsearch.spark.rdd+ package which acts as an utility class allowing explicit method invocations; thus the example 
+above can be rewritten as:
+
+[source,scala]
+----
+import org.apache.spark.SparkContext             
+import org.elasticsearch.spark.rdd.EsSpark       <1>
+
+...
+val rdd = sc.makeRDD(Seq(numbers, airports))
+EsSpark.saveToEs(sc, "spark/docs")               <2> 
+----
+
+<1> +EsSpark+ import
+<2> Index the +RDD+ explictely through +EsSpark+
+
 .Java
 
-Java users have a dedicated class that provides a similar functionality, namely +org.elasticsearch.hadoop.spark.api.java.JavaEsSpark+,similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]:
+Java users have a dedicated class that provides a similar functionality to +EsSpark+, namely +JavaEsSpark+ in the +org.elasticsearch.hadoop.spark.rdd.api.java+ (a package similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]):
 
 [source,java]
 ----
-import org.apache.spark.api.java.JavaSparkContext;   <1>
+import org.apache.spark.api.java.JavaSparkContext;                               <1>
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.SparkConf;
 
-import org.elasticsearch.spark.java.api.JavaEsSpark; <2>
+import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;                         <2>
 ...
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf);   <3>
+JavaSparkContext jsc = new JavaSparkContext(conf);                               <3>
 
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     <4>
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);                    <4>
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
 JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <5>
-JavaEsSpark.saveToEs(javaRDD, "spark/docs"); <6>
+JavaEsSpark.saveToEs(javaRDD, "spark/docs");                                     <6>
 ----
 
 <1> Spark Java imports
@@ -145,6 +161,7 @@ new SparkContext(conf).makeRDD(Seq(json1, json2))
 <2> index the JSON data through the dedicated +saveJsonToEs+ method
 
 .Java
+
 [source,java]
 ----
 String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
@@ -269,7 +286,7 @@ JavaPairRDD<String, Map<String, Object>> esRDD =
 <3> start Spark through its Java API
 <4> a dedicated `JavaPairRDD` for {es} is created for index `radio/artists`
 
-in a similar fashion one can use the overloaded `esRDD` methods to specify a query or pass a `Map` object for advanced configuration.
+In a similar fashion one can use the overloaded `esRDD` methods to specify a query or pass a `Map` object for advanced configuration.
 Let us see how this looks like, but this time around using http://docs.oracle.com/javase/1.5.0/docs/guide/language/static-import.html[Java static imports] - further more, let us discard the documents ids and retrieve only the +RDD+ values:
 
 [source,java]
