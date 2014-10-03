@@ -1,3 +1,4 @@
+package org.elasticsearch.storm.cfg;
 /*
  * Licensed to Elasticsearch under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -16,12 +17,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.cfg;
 
-public enum FieldPresenceValidation {
+public enum TupleFailureHandling {
     IGNORE,
     WARN,
-    STRICT;
+    ABORT;
 
     public boolean isRequired() {
         return !(IGNORE == this);

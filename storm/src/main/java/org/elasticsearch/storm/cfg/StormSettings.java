@@ -20,6 +20,7 @@ package org.elasticsearch.storm.cfg;
 
 import java.io.InputStream;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -62,6 +63,14 @@ public class StormSettings extends Settings {
 
     public int getStormSpoutReliableQueueSize() {
         return Integer.parseInt(getProperty(ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE_DEFAULT));
+    }
+
+    public int getStormSpoutReliableRetriesPerTuple() {
+        return Integer.parseInt(getProperty(ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE, ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE_DEFAULT));
+    }
+
+    public TupleFailureHandling getStormSpoutReliableTupleFailureHandling() {
+        return TupleFailureHandling.valueOf(getProperty(ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE, ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE_DEFAULT).toUpperCase(Locale.ENGLISH));
     }
 
     @Override

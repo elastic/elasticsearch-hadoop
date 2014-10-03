@@ -34,4 +34,10 @@ public interface StormConfigurationOptions {
 
     String ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE = "es.storm.spout.reliable.queue.size";
     String ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE_DEFAULT = "0";
+
+    String ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE = "es.storm.spout.reliable.retries.per.tuple";
+    String ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE_DEFAULT = "5";
+
+    String ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE = "es.storm.spout.reliable.handle.tuple.failure";
+    String ES_STORM_SPOUT_RELIABLE_TUPLE_FAILURE_HANDLE_DEFAULT = "abort";
 }

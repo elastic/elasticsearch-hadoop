@@ -19,6 +19,7 @@
 package org.elasticsearch.storm;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
+import org.elasticsearch.storm.cfg.TupleFailureHandling;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -57,6 +59,10 @@ public class EsSpout implements IRichSpout {
     private int queueSize = 0;
     private Map<Object, Object> inTransitQueue;
     private Queue<Object[]> replayQueue = null;
+    private Map<Object, Integer> retries;
+    // keep on trying
+    private Integer tupleRetries = Integer.valueOf(-1);
+    private TupleFailureHandling tupleFailure = null;
 
     public EsSpout(String target) {
         this(target, null, null);
@@ -93,7 +99,10 @@ public class EsSpout implements IRichSpout {
         if (ackReads) {
             inTransitQueue = new LinkedHashMap<Object, Object>();
             replayQueue = new LinkedList<Object[]>();
+            retries = new HashMap<Object, Integer>();
             queueSize = settings.getStormSpoutReliableQueueSize();
+            tupleRetries = settings.getStormSpoutReliableRetriesPerTuple();
+            tupleFailure = settings.getStormSpoutReliableTupleFailureHandling();
         }
 
         int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
@@ -110,6 +119,11 @@ public class EsSpout implements IRichSpout {
         if (replayQueue != null) {
             replayQueue.clear();
             replayQueue = null;
+        }
+
+        if (retries != null) {
+            retries.clear();
+            retries = null;
         }
 
         if (inTransitQueue != null) {
@@ -132,6 +146,7 @@ public class EsSpout implements IRichSpout {
 
     @Override
     public void nextTuple() {
+        // 0 - docId, 1 - doc
         Object[] next = null;
 
         if (replayQueue != null && !replayQueue.isEmpty()) {
@@ -169,11 +184,34 @@ public class EsSpout implements IRichSpout {
     @Override
     public void ack(Object msgId) {
         inTransitQueue.remove(msgId);
+        retries.remove(msgId);
     }
 
     @Override
     public void fail(Object msgId) {
-        replayQueue.add(new Object[] { msgId, inTransitQueue.remove(msgId) });
+        Object tuple = inTransitQueue.remove(msgId);
+        Integer attempts = retries.remove(msgId);
+        if (attempts == null) {
+            attempts = tupleRetries;
+        }
+
+        int primitive = attempts.intValue();
+        if (primitive == 0) {
+            switch (tupleFailure) {
+               case ABORT: throw new EsHadoopIllegalStateException(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
+               case WARN: log.warn(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
+               case IGNORE: // move on
+            }
+            return;
+        }
+        if (primitive > 0) {
+            primitive--;
+        }
+        // negative means keep on trying
+
+        // retry
+        retries.put(msgId, Integer.valueOf(primitive));
+        replayQueue.add(new Object[] { msgId, tuple });
     }
 
     @Override
