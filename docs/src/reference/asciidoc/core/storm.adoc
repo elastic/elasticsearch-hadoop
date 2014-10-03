@@ -27,6 +27,9 @@ The Storm integration supports the configuration options described in the <<conf
 `es.storm.spout.reliable` (default false)::
 Indicates whether the dedicated +EsSpout+ is _reliable_, that is replays the documents in case of failure or not. By default it is set to +false+ since replaying requires the documents to be kept in memory until are being acknowledged.
 
+`es.storm.spout.fields` (default "")::
+Specify what fields +EsSpout+ will declare in its topology and extract from the returned documents. By default is unset meaning the documents are returned as ++Map++s under the default field +doc+.
+
 `es.storm.spout.reliable.queue.size` (default 0)::
 Applicable only if +es.storm.spout.reliable+ is +true+. Sets the size of the queue which holds documents in memory to be replayed until they are acknowledged. By default, the queue is _unbounded_ (+0+) however in a production environment
 it is indicated to limit the queue to limit the consumption of memory. If the queue is full, the +Bolt+ drops any incoming +Tuple+s and throws an exception.
@@ -39,6 +42,8 @@ Applicable only if +es.storm.spout.reliable+ is +true+. Indicates how to handle 
 `ignore`;; the tuple is discarded
 `warn`;; a warning message is logged and the tuple is discarded
 `strict`;; an exception is thrown, aborting the current job
+
+
 
 [[storm-cfg-bolt]]
 [float]
@@ -166,6 +171,7 @@ builder.setBolt("es-bolt",
 
 
 [float]
+[[storm-read]]
 ==== Reading data from {es}
 
 As you can expect, for reading data (typically executing queries) {eh} offers a dedicated +Spout+ through +org.elasticsearch.storm.EsSpout+ which executes the query in {es} and _streams_ the results back to {st}:
@@ -186,3 +192,11 @@ builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
 <5> The number of +EsSpout+ instances for this topology. The number should *not* be greater than the number of shards available for an index; if it does, it just wastes CPU cycles without improving performance.
 
 IMPORTANT: The number of +Spout+ instances depends highly on your topology and environment. Typically you should use the number of shards of your target data as an indicator - if you index has 5 shards, create 5 ++EsSpout++s; however sometimes the shards number might be considerably bigger than the number of ++Spout++s you can add to your {st} cluster; in that case, it is better to limit the number of ++EsSpout++ instances. Last but not least, adding more ++EsSpout++ instances than the number of shards of the source index does *not* improve performance; in fact the extra instances will just waste resources without processing anything.
+
+[float]
+===== Customizing +EsSpout+ fields
+
+Since Storm requires each +Spout+ to declare its fields when creating a topology, by default +EsSpout+ declares for its tuples a generic +doc+ field containing the documents returned (one per tuple) from {es}. When dealing with structured data (documents sharing the same fields), one can configure the +EsSpout+ to _declare_ as fields the document properties effectively _unwrapping_ the document as a +Tuple+. By setting up +es.storm.spout.fields+, +EsSpout+ will use them indicate to the Storm topology the tuple content and extract them from the returned document.
+
+For example if the {es} documents contain 3 fields: +name+, +age+ and +gender+ by setting +es.storm.spout.fields+ to ++name, age, gender++, instead of returning a tuple with one field (+doc+, containing the document), a tuple containing
+the three named fields (+name+, +age+ and +gender+) will be returned instead.
