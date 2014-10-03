@@ -24,7 +24,6 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 
@@ -62,10 +61,5 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
         }
 
         return NOT_FOUND;
-    }
-
-    @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
     }
 }

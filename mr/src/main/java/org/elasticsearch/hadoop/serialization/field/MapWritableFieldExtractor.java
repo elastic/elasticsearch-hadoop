@@ -41,9 +41,8 @@ public class MapWritableFieldExtractor extends ConstantFieldExtractor implements
     }
 
     @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
-        fieldName = new Text(getFieldName());
+    protected void processField(Settings settings, String fieldName) {
+        this.fieldName = new Text(fieldName);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

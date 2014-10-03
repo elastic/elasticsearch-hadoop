@@ -42,6 +42,12 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
         if (fieldName.startsWith("<") && fieldName.endsWith(">")) {
             value = initValue(fieldName.substring(1, fieldName.length() - 1));
         }
+        if (value == null) {
+            processField(settings, fieldName);
+        }
+    }
+
+    protected void processField(Settings settings, String fieldName) {
     }
 
     protected Object initValue(String value) {
