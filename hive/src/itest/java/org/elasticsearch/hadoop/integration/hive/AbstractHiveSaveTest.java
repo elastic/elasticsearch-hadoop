@@ -92,7 +92,7 @@ public class AbstractHiveSaveTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "ts       STRING) "
-                + tableProps("hive/artists", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<5m>'");
+                + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<5m>'");
 
         String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
 

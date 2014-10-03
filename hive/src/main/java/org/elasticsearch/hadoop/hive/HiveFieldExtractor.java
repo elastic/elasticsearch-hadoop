@@ -63,13 +63,13 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
     public void processField(Settings settings, String fl) {
         Map<String, String> columnNames = HiveUtils.columnMap(settings);
         // replace column name with _colX (which is what Hive uses during serialization)
-        fieldName = columnNames.get(getFieldName().toLowerCase(Locale.ENGLISH));
+        fieldName = columnNames.get(fl.toLowerCase(Locale.ENGLISH));
 
         if (!settings.getInputAsJson() && !StringUtils.hasText(fieldName)) {
             throw new EsHadoopIllegalArgumentException(
                     String.format(
                             "Cannot find field [%s] in mapping %s ; maybe a value was specified without '<','>' or there is a typo?",
-                            getFieldName(), columnNames.keySet()));
+                            fl, columnNames.keySet()));
         }
     }
 }
