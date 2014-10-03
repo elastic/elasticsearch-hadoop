@@ -21,6 +21,10 @@ It depends on whether you have Hadoop installed on your nodes or not. If you do,
 If you do not have Hadoop installed, then select either the default version (for Hadoop stable/1.x) or, if you are using Hadoop 2, the `hadoop2` version.
 
 ## Installation
+
+### Node restart
+_After_ installing the plugin, be sure to restart the node. This applies to _all_ nodes on which the plugins have been installed.
+
 As with any other plugin, simply run:
 `bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.0.1`
 
