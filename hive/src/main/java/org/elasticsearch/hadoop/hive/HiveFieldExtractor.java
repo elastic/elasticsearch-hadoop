@@ -65,7 +65,7 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
         // replace column name with _colX (which is what Hive uses during serialization)
         fieldName = columnNames.get(getFieldName().toLowerCase(Locale.ENGLISH));
 
-        if (!StringUtils.hasText(fieldName)) {
+        if (!settings.getInputAsJson() && !StringUtils.hasText(fieldName)) {
             throw new EsHadoopIllegalArgumentException(
                     String.format(
                             "Cannot find field [%s] in mapping %s ; maybe a value was specified without '<','>' or there is a typo?",
