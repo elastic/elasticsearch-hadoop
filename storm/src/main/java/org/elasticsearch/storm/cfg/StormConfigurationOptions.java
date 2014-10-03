@@ -34,4 +34,7 @@ public interface StormConfigurationOptions {
 
     String ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE = "es.storm.spout.reliable.queue.size";
     String ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE_DEFAULT = "0";
+    
+    String ES_STORM_FIELDS = "es.storm.spout.fields";
+    String ES_STORM_FIELDS_DEFAULT = null;
 }
