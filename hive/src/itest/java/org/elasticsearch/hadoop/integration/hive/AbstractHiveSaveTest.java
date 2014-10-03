@@ -79,6 +79,37 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    public void testMappingttl() throws Exception {
+        // load the raw data as a native, managed table
+        // and then insert its content into the external one
+
+        String localTable = createTable("sourcewithmetadata");
+        String load = loadData("sourcewithmetadata");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE savewithmetadata ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "ts       STRING) "
+                + tableProps("hive/artists", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<5m>'");
+
+        String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE savewithmetadata "
+                + "SELECT s.id, s.name, s.ts FROM sourcewithmetadata s";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+    }
+
+    @Test
     public void testBasicSaveMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/artists").skipHeaders().toString(), is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }

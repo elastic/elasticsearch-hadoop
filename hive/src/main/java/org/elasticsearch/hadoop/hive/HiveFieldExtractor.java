@@ -25,6 +25,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.NullWritable;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
@@ -59,10 +60,16 @@ public class HiveFieldExtractor extends ConstantFieldExtractor {
     }
 
     @Override
-    public void setSettings(Settings settings) {
-        super.setSettings(settings);
+    public void processField(Settings settings, String fl) {
         Map<String, String> columnNames = HiveUtils.columnMap(settings);
         // replace column name with _colX (which is what Hive uses during serialization)
         fieldName = columnNames.get(getFieldName().toLowerCase(Locale.ENGLISH));
+
+        if (!StringUtils.hasText(fieldName)) {
+            throw new EsHadoopIllegalArgumentException(
+                    String.format(
+                            "Cannot find field [%s] in mapping %s ; maybe a value was specified without '<','>' or there is a typo?",
+                            getFieldName(), columnNames.keySet()));
+        }
     }
 }
