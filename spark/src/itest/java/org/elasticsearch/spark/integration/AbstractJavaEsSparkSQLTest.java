@@ -26,7 +26,11 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import com.google.common.collect.ImmutableMap;
+
 import static org.junit.Assert.*;
+
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 import static org.hamcrest.Matchers.*;
 
@@ -38,6 +42,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	private static final transient SparkConf conf = new SparkConf()
 			.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
 			.setMaster("local").setAppName("estest");
+	
 	private static transient JavaSparkContext sc = null;
 	private static transient JavaSQLContext sqc = null;
 
@@ -79,6 +84,17 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	}
 
 	@Test
+	public void testEsSchemaRDD1WriteWithId() throws Exception {
+		JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+
+		String target = "sparksql-test/scala-basic-write-id-mapping";
+		JavaEsSparkSQL.saveToEs(schemaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "id"));
+		assertTrue(RestUtils.exists(target));
+		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
+		assertThat(RestUtils.exists(target + "/1"), is(true));
+	}
+
+	@Test
 	public void testEsSchemaRDD2Read() throws Exception {
 		String target = "sparksql-test/scala-basic-write";
 
@@ -105,16 +121,11 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 
 		StructType schema = DataType
 				.createStructType(new StructField[] {
-						DataType.createStructField("id", DataType.IntegerType,
-								false),
-						DataType.createStructField("name", DataType.StringType,
-								false),
-						DataType.createStructField("url", DataType.StringType,
-								true),
-						DataType.createStructField("pictures",
-								DataType.StringType, true),
-						DataType.createStructField("time",
-								DataType.TimestampType, true) });
+						DataType.createStructField("id", DataType.IntegerType, false),
+						DataType.createStructField("name", DataType.StringType, false),
+						DataType.createStructField("url", DataType.StringType, true),
+						DataType.createStructField("pictures", DataType.StringType, true),
+						DataType.createStructField("time", DataType.TimestampType, true) });
 
 		JavaRDD<Row> rowData = data.map(new Function<String, String[]>() {
 			@Override
@@ -125,8 +136,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 			@Override
 			public Row call(String[] r) throws Exception {
 				return Row.create(Integer.parseInt(r[0]), r[1], r[2], r[3],
-						new Timestamp(DatatypeConverter.parseDateTime(r[4])
-								.getTimeInMillis()));
+						new Timestamp(DatatypeConverter.parseDateTime(r[4]).getTimeInMillis()));
 			}
 		});
 

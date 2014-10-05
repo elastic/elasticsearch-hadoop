@@ -73,7 +73,7 @@ abstract class AbstractBulkFactory implements BulkFactory {
             Object value = extractor.field(object);
             if (value == FieldExtractor.NOT_FOUND) {
                 String obj = (extractor instanceof FieldExplainer ? ((FieldExplainer) extractor).toString(object) : object.toString());
-                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from object [%s]", extractor, obj));
+                throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from entity [%s] | instance [%s]", extractor, obj.getClass(), obj));
             }
 
             if (value instanceof List) {

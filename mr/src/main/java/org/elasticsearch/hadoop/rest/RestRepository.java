@@ -56,11 +56,14 @@ public class RestRepository implements Closeable, StatsAware {
     // serialization artifacts
     private int bufferEntriesThreshold;
 
+    // raw data
     private final BytesArray ba = new BytesArray(0);
+    // tracking array (backed by the BA above)
     private final TrackingBytesArray data = new TrackingBytesArray(ba);
     private int dataEntries = 0;
     private boolean requiresRefreshAfterBulk = false;
     private boolean executedBulkWrite = false;
+    // wrapper around existing BA (for cases where the serialization already occurred)
     private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
     private boolean autoFlush = true;
@@ -158,7 +161,7 @@ public class RestRepository implements Closeable, StatsAware {
             }
             else {
                 throw new EsHadoopIllegalStateException(
-                        String.format("Auto flush disabled and bulk buffer full; disable manual flush or increase capacity [current size %s]; bailing out", ba.capacity()));
+                        String.format("Auto-flush disabled and bulk buffer full; disable manual flush or increase capacity [current size %s]; bailing out", ba.capacity()));
             }
         }
 
@@ -166,8 +169,14 @@ public class RestRepository implements Closeable, StatsAware {
         payload.reset();
 
         dataEntries++;
-        if (autoFlush && bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
-            flush();
+        if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
+            if (autoFlush) {
+                flush();
+            }
+            else {
+                throw new EsHadoopIllegalStateException(
+                        String.format("Auto-flush disabled and maximum number of entries surpassed; disable manual flush or increase capacity [current size %s]; bailing out", bufferEntriesThreshold));
+            }
         }
     }
 
@@ -176,10 +185,10 @@ public class RestRepository implements Closeable, StatsAware {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
-        BitSet bulk;
+        BitSet bulkResult;
 
         try {
-            bulk = client.bulk(resourceW, data);
+            bulkResult = client.bulk(resourceW, data);
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
             throw ex;
@@ -187,12 +196,13 @@ public class RestRepository implements Closeable, StatsAware {
 
         executedBulkWrite = true;
 
-        // data still in the pipeline, don't clean it
-        if (!bulk.isEmpty()) {
-            discard();
-        }
+        // discard the data buffer, only if it was properly sent/processed
+        //if (bulkResult.isEmpty()) {
+        // always discard data since there's no code path that uses the in flight data
+        discard();
+        //}
 
-        return bulk;
+        return bulkResult;
     }
 
     public void discard() {

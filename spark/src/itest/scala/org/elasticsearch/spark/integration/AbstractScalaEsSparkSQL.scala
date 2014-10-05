@@ -39,12 +39,15 @@ import org.elasticsearch.spark._
 import org.elasticsearch.spark.sql._
 import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.is
 import org.junit.AfterClass
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
+
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 
 import org.junit.Test
 
@@ -99,7 +102,18 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       assertTrue(RestUtils.exists(target))
       assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
     }
-    
+
+    @Test
+    def testEsSchemaRDD1WriteWithMapping() {
+      val schemaRDD = artistsAsSchemaRDD
+
+      val target = "sparksql-test/scala-basic-write-id-mapping"
+      schemaRDD.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
+      assertTrue(RestUtils.exists(target))
+      assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+      assertThat(RestUtils.exists(target + "/1"), is(true))
+    }
+
     @Test
     def testEsSchemaRDD2Read() {
       val target = "sparksql-test/scala-basic-write"
