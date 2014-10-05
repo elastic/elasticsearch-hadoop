@@ -55,6 +55,7 @@ public class EsBolt implements IRichBolt {
     private transient boolean ackWrites = false;
 
     private transient List<Tuple> inflightTuples = null;
+    private transient int numberOfEntries = 0;
     private transient OutputCollector collector;
 
     public EsBolt(String target) {
@@ -87,7 +88,7 @@ public class EsBolt implements IRichBolt {
             settings.setProperty(ES_BATCH_FLUSH_MANUAL, Boolean.TRUE.toString());
 
             // align Bolt / es-hadoop batch settings
-            int numberOfEntries = settings.getStormBulkSize();
+            numberOfEntries = settings.getStormBulkSize();
             settings.setProperty(ES_BATCH_SIZE_ENTRIES, String.valueOf(numberOfEntries));
 
             inflightTuples = new ArrayList<Tuple>(numberOfEntries + 1);
@@ -104,35 +105,38 @@ public class EsBolt implements IRichBolt {
 
     @Override
     public void execute(Tuple input) {
-        if (TupleUtils.isTickTuple(input)) {
+        if (flushOnTickTuple && TupleUtils.isTickTuple(input)) {
             flush();
+            return;
         }
-        else {
-            if (ackWrites) {
-                inflightTuples.add(input);
+        if (ackWrites) {
+            inflightTuples.add(input);
+        }
+        try {
+            writer.repository.writeToIndex(input);
+
+            // manual flush in case of ack writes - handle it here.
+            if (numberOfEntries > 0 && inflightTuples.size() >= numberOfEntries) {
+                flush();
             }
-            try {
-                writer.repository.writeToIndex(input);
-                if (!ackWrites) {
-                    collector.ack(input);
-                }
-            } catch (RuntimeException ex) {
-                if (!ackWrites) {
-                    collector.fail(input);
-                }
-                throw ex;
+
+            if (!ackWrites) {
+                collector.ack(input);
             }
+        } catch (RuntimeException ex) {
+            if (!ackWrites) {
+                collector.fail(input);
+            }
+            throw ex;
         }
     }
 
     private void flush() {
-        if (flushOnTickTuple) {
-            if (ackWrites) {
-                flushWithAck();
-            }
-            else {
-                flushNoAck();
-            }
+        if (ackWrites) {
+            flushWithAck();
+        }
+        else {
+            flushNoAck();
         }
     }
 
