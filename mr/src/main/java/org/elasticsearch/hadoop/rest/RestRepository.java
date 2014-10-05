@@ -52,6 +52,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 public class RestRepository implements Closeable, StatsAware {
 
     private static Log log = LogFactory.getLog(RestRepository.class);
+    private static final BitSet EMPTY = new BitSet();
 
     // serialization artifacts
     private int bufferEntriesThreshold;
@@ -174,8 +175,13 @@ public class RestRepository implements Closeable, StatsAware {
                 flush();
             }
             else {
-                throw new EsHadoopIllegalStateException(
-                        String.format("Auto-flush disabled and maximum number of entries surpassed; disable manual flush or increase capacity [current size %s]; bailing out", bufferEntriesThreshold));
+                // handle the corner case of manual flush that occurs only after the buffer is completely full (think size of 1)
+                if (dataEntries > bufferEntriesThreshold) {
+                    throw new EsHadoopIllegalStateException(
+                            String.format(
+                                    "Auto-flush disabled and maximum number of entries surpassed; disable manual flush or increase capacity [current size %s]; bailing out",
+                                    bufferEntriesThreshold));
+                }
             }
         }
     }
@@ -185,10 +191,13 @@ public class RestRepository implements Closeable, StatsAware {
             log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
         }
 
-        BitSet bulkResult;
+        BitSet bulkResult = EMPTY;
 
         try {
-            bulkResult = client.bulk(resourceW, data);
+            // double check data - it might be a false flush (called on clean-up)
+            if (data.entries() > 0) {
+                bulkResult = client.bulk(resourceW, data);
+            }
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
             throw ex;
