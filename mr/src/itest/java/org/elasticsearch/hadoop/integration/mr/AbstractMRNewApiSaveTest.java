@@ -205,7 +205,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
 
         runJob(conf);
     }
@@ -219,7 +219,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         runJob(conf);
@@ -234,7 +234,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         runJob(conf);
@@ -260,7 +260,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         runJob(conf);
@@ -274,7 +274,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         runJob(conf);

@@ -236,7 +236,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
 
         runJob(conf);
     }
@@ -250,7 +250,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         runJob(conf);
@@ -265,7 +265,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         runJob(conf);
@@ -280,7 +280,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
 
         runJob(conf);
@@ -292,7 +292,7 @@ public class AbstractMROldApiSaveTest {
 //        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
 //        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
-//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
 //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
 //
 //        runJob(conf);
@@ -313,7 +313,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"new_date\": [\"add me\", \"and me\"]}");
 
         runJob(conf);
@@ -340,7 +340,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         runJob(conf);
@@ -354,7 +354,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         runJob(conf);
@@ -375,7 +375,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.tags = update_tags");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, (conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true") ? "update_tags:name" :"update_tags:list"));
 
         runJob(conf);

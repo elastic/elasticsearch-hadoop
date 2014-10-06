@@ -107,7 +107,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         Tap in = sourceTap();
@@ -126,7 +126,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
@@ -146,7 +146,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
 
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
@@ -196,7 +196,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "number");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         Tap in = sourceTap();
@@ -214,7 +214,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "number");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "mvel");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         Tap in = sourceTap();
