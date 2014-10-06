@@ -195,7 +195,7 @@ public class RestRepository implements Closeable, StatsAware {
 
         try {
             // double check data - it might be a false flush (called on clean-up)
-            if (data.entries() > 0) {
+            if (data.length() > 0) {
                 bulkResult = client.bulk(resourceW, data);
             }
         } catch (EsHadoopException ex) {
@@ -232,14 +232,12 @@ public class RestRepository implements Closeable, StatsAware {
             log.debug("Closing repository and connection to Elasticsearch ...");
         }
 
-        if (data.length() > 0) {
-            if (!hadWriteErrors) {
-                flush();
-            }
-            else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Dirty close; ignoring last existing write batch...");
-                }
+        if (!hadWriteErrors) {
+            flush();
+        }
+        else {
+            if (log.isDebugEnabled()) {
+                log.debug("Dirty close; ignoring last existing write batch...");
             }
         }
 
