@@ -429,6 +429,7 @@ saveToEs("spark/people");                                          <2>
 IMPORTANT: For maximum control over the mapping of your +SchemaRDD+ in {es}, it is highly recommended to create the mapping before hand. See <<mapping, this>> chapter for more information.
 
 [[spark-sql-json]]
+[float]
 ==== Writing existing JSON to {es}
 
 When using Spark SQL, if the input data is in JSON format, simply convert it to +SchemaRDD+ (as described in Spark https://spark.apache.org/docs/latest/sql-programming-guide.html#json-datasets[documentation]) through +SQLContext+/+JavaSQLContext+ +jsonFile+ methods.
