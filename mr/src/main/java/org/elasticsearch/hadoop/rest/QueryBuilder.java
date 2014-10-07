@@ -49,12 +49,14 @@ public class QueryBuilder {
     private String shard;
     private String node;
     private final boolean IS_ES_10;
+    private final boolean INCLUDE_VERSION;
 
     private String fields;
 
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings, true);
         IS_ES_10 = SettingsUtils.isEs10(settings);
+        INCLUDE_VERSION = settings.getReadMetadata() && settings.getReadMetadataVersion();
         String query = settings.getQuery();
         if (!StringUtils.hasText(query)) {
             query = MATCH_ALL;
@@ -151,6 +153,9 @@ public class QueryBuilder {
         uriQuery.put("search_type", "scan");
         uriQuery.put("scroll", String.valueOf(time.minutes()));
         uriQuery.put("size", String.valueOf(size));
+        if (INCLUDE_VERSION) {
+            uriQuery.put("version", "");
+        }
 
         // override fields
         if (StringUtils.hasText(fields)) {
@@ -187,8 +192,10 @@ public class QueryBuilder {
         for (Iterator<Entry<String, String>> it = uriQuery.entrySet().iterator(); it.hasNext();) {
             Entry<String, String> entry = it.next();
             sb.append(entry.getKey());
-            sb.append("=");
-            sb.append(entry.getValue());
+            if (StringUtils.hasText(entry.getValue())) {
+                sb.append("=");
+                sb.append(entry.getValue());
+            }
             if (it.hasNext()) {
                 sb.append("&");
             }

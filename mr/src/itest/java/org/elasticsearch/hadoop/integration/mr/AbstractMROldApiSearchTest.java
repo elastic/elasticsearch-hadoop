@@ -189,6 +189,7 @@ public class AbstractMROldApiSearchTest {
         conf.setNumReduceTasks(0);
 
         conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(readMetadata));
+        conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
 
         QueryTestParams.provisionQueries(conf);
         FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));
