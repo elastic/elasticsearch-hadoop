@@ -156,6 +156,21 @@ es.mapping.id = uuid
 # specifying a parent with id '123'
 es.mapping.parent = \<123>
 ----
+
+[float]
+
+==== Metadata
+
++es.read.metadata+ (default false)::
+Whether to include the document metadata (such as id and version) in the results or not (default).
+
++es.read.metadata.field+ (default _metadata)::
+The field under which the metadata information is placed. When +es.read.metadata+ is set to true, the information is returned as a +Map+ under the specified field.
+
++es.read.metadata.version+ (default false)::
+Whether to include the document version in the returned metadata. Applicable only if +es.read.metadata+ is enabled.
+
+
 [float]
 ==== Update settings
 
