@@ -274,7 +274,7 @@ public class RestRepository implements Closeable, StatsAware {
                 Shard shard = new Shard(shardData);
                 if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
-                    Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
+                    Assert.notNull(node, String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, shardGroup, info));
                     shards.put(shard, node);
                     break;
                 }
@@ -295,7 +295,7 @@ public class RestRepository implements Closeable, StatsAware {
                 Shard shard = new Shard(shardData);
                 if (shard.isPrimary()) {
                     Node node = nodes.get(shard.getNode());
-                    Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
+                    Assert.notNull(node, String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, shardGroup, info));
                     shards.put(shard, node);
                     break;
                 }
