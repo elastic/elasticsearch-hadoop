@@ -19,9 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,15 +61,9 @@ public abstract class InitializationUtils {
                 log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
             }
 
-            // clean-up and merge
-            Set<String> nodes = new LinkedHashSet<String>();
-            nodes.addAll(SettingsUtils.nodes(settings));
-            nodes.addAll(discoveredNodes);
-
-            // save result
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
             bootstrap.close();
 
+            SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
             return true;
         }
 

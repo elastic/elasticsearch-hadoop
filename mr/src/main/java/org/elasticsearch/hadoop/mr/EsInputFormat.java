@@ -60,6 +60,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.Version;
 
@@ -195,13 +196,14 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             // get a copy to override the host/port
             Settings settings = SettingsManager.loadFrom(cfg).copy().load(esSplit.settings);
 
+            if (!SettingsUtils.hasPinnedNode(settings)) {
+                SettingsUtils.pinNode(settings, esSplit.nodeIp, esSplit.httpPort);
+            }
+
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Init shard reader from cfg %s", HadoopCfgUtils.asProperties(cfg)));
                 log.trace(String.format("Init shard reader w/ settings %s", esSplit.settings));
             }
-
-            // override the global settings to communicate directly with the target node
-            settings.setHosts(esSplit.nodeIp).setPort(esSplit.httpPort);
 
             this.esSplit = esSplit;
 

@@ -37,7 +37,6 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
@@ -51,7 +50,6 @@ import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.Version;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
@@ -181,10 +179,10 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
             InitializationUtils.discoverNodesIfNeeded(settings, log);
             InitializationUtils.discoverEsVersion(settings, log);
-            // pick the host based on id
-            List<String> nodes = SettingsUtils.nodes(settings);
-            Collections.rotate(nodes, -currentInstance);
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_HOSTS, StringUtils.concatenate(nodes, ","));
+
+            List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            // select the appropriate nodes first, to spread the load before-hand
+            SettingsUtils.pinNode(settings, nodes.get(currentInstance % nodes.size()));
 
             beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
             beat.start();
@@ -233,10 +231,10 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Shard chosenShard = orderedShards.get(bucket);
             Node targetNode = targetShards.get(chosenShard);
 
-            // override the global settings to communicate directly with the target node
-            settings.setHosts(targetNode.getIpAddress()).setPort(targetNode.getHttpPort());
+            // pin settings
+            SettingsUtils.pinNode(settings, targetNode.getIpAddress(), targetNode.getHttpPort());
+
             repository = new RestRepository(settings);
-            uri = SettingsUtils.nodes(settings).get(0);
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("EsRecordWriter instance [%s] assigned to primary shard [%s] at address [%s]", currentInstance, chosenShard.getName(), uri));
@@ -248,10 +246,11 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
             }
 
-            // use target node for indexing
-            uri = SettingsUtils.nodes(settings).get(0);
+            // multi-index write - since we don't know before hand what index will be used, pick a random node from the given list
+            List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            String node = nodes.get(new Random().nextInt(nodes.size()));
             // override the global settings to communicate directly with the target node
-            settings.setHosts(uri);
+            SettingsUtils.pinNode(settings, node);
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("EsRecordWriter instance [%s] assigned to [%s]", currentInstance, uri));

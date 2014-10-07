@@ -72,6 +72,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final Stats stats = new Stats();
     private HttpConnection conn;
     private String proxyInfo = "";
+    private final String httpInfo;
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
@@ -126,6 +127,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     public CommonsHttpTransport(Settings settings, String host) {
+        httpInfo = host;
+
         HttpClientParams params = new HttpClientParams();
         params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(
                 settings.getHttpRetries(), false) {
@@ -161,6 +164,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
         connectionParams.setTcpNoDelay(true);
+
+        if (log.isTraceEnabled()) {
+            log.trace("Opening HTTP transport to " + httpInfo);
+        }
     }
 
     private void completeHttpProxyInit(Object[] httpProxySettings) {
@@ -313,7 +320,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         try {
             // validate new URI
-            http.getURI();
+            uri = http.getURI().toString();
         } catch (URIException uriex) {
             throw new EsHadoopTransportException("Invalid target URI " + request, uriex);
         }
@@ -332,7 +339,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Tx %s[%s]@[%s][%s] w/ payload [%s]", proxyInfo, request.method().name(), request.uri(), request.path(), request.body()));
+            log.trace(String.format("Tx %s[%s]@[%s][%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.body()));
         }
 
         long start = System.currentTimeMillis();
@@ -353,6 +360,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
     @Override
     public void close() {
+        if (log.isTraceEnabled()) {
+            log.trace("Closing HTTP transport to " + httpInfo);
+        }
+
         HttpConnectionManager manager = client.getHttpConnectionManager();
         if (manager instanceof SimpleHttpConnectionManager) {
             try {

@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 
 
 public class NetworkClient implements StatsAware, Closeable {
@@ -41,14 +43,28 @@ public class NetworkClient implements StatsAware, Closeable {
     private final Map<String, Throwable> failedNodes = new LinkedHashMap<String, Throwable>();
 
     private Transport currentTransport;
-    private String currentUri;
+    private String currentNode;
     private int nextClient = 0;
 
     private final Stats stats = new Stats();
 
-    public NetworkClient(Settings settings, List<String> hostURIs) {
+    public NetworkClient(Settings settings) {
         this.settings = settings.copy();
-        this.nodes = hostURIs;
+        this.nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        // shuffle the list of nodes so in case of failures, the fallback is spread
+        Collections.shuffle(nodes);
+
+        if (SettingsUtils.hasPinnedNode(settings)) {
+            // move pinned node in front to be selected (only once)
+            String pinnedNode = SettingsUtils.getPinnedNode(settings);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Opening (pinned) network client to " + pinnedNode);
+            }
+
+            nodes.remove(pinnedNode);
+            nodes.add(0, pinnedNode);
+        }
 
         selectNextNode();
 
@@ -65,9 +81,10 @@ public class NetworkClient implements StatsAware, Closeable {
         }
 
         closeTransport();
-        currentUri = nodes.get(nextClient++);
-        settings.setHosts(currentUri);
-        currentTransport = new CommonsHttpTransport(settings, currentUri);
+        currentNode = nodes.get(nextClient++);
+        SettingsUtils.pinNode(settings, currentNode);
+        currentTransport = new CommonsHttpTransport(settings, currentNode);
+
         return true;
     }
 
@@ -86,17 +103,21 @@ public class NetworkClient implements StatsAware, Closeable {
                     stats.bytesSent += body.length();
                 }
             } catch (Exception ex) {
-                if (log.isTraceEnabled()) {
-                    log.trace(String.format("Caught exception while performing request [%s][%s] - falling back to the next node in line...", currentUri, request.path()), ex);
-                }
+                log.trace(
+                        String.format(
+                                "Caught exception while performing request [%s][%s] - falling back to the next node in line...",
+                                currentNode, request.path()), ex);
 
-                String failed = currentUri;
+                String failed = currentNode;
 
                 failedNodes.put(failed, ex);
 
                 newNode = selectNextNode();
 
-                log.error(String.format("Node [%s] failed (%s); " + (newNode ? "selected next node [" +  currentUri + "]" : "no other nodes left - aborting..."), ex.getMessage(), failed));
+                log.error(String.format("Node [%s] failed (%s); "
+                        + (newNode ? "selected next node [" + currentNode + "]" : "no other nodes left - aborting..."),
+                        ex.getMessage(), failed));
+
 
                 if (!newNode) {
                     throw new EsHadoopNoNodesLeftException(failedNodes);

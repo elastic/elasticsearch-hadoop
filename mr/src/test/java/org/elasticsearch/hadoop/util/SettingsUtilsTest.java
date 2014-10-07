@@ -37,7 +37,7 @@ public class SettingsUtilsTest {
         props.setProperty("es.port", "9800");
 
         PropertiesSettings settings = new PropertiesSettings(props);
-        List<String> nodes = SettingsUtils.nodes(settings);
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
         assertThat("localhost:9800", equalTo(nodes.get(0)));
     }
@@ -50,7 +50,7 @@ public class SettingsUtilsTest {
         props.setProperty("es.nodes.discovery", "false");
 
         PropertiesSettings settings = new PropertiesSettings(props);
-        List<String> nodes = SettingsUtils.nodes(settings);
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
         assertThat("localhost:9800", equalTo(nodes.get(0)));
     }
@@ -63,7 +63,7 @@ public class SettingsUtilsTest {
         props.setProperty("es.nodes.discovery", "false");
 
         PropertiesSettings settings = new PropertiesSettings(props);
-        List<String> nodes = SettingsUtils.nodes(settings);
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
         assertThat("localhost:9800", equalTo(nodes.get(0)));
     }

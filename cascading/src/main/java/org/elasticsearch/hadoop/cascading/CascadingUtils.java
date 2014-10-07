@@ -153,7 +153,7 @@ public abstract class CascadingUtils {
 
     static Settings init(Settings settings, String nodes, int port, String resource, String query, boolean read) {
         if (StringUtils.hasText(nodes)) {
-            settings.setHosts(nodes);
+            settings.setNodes(nodes);
         }
 
         if (port > 0) {

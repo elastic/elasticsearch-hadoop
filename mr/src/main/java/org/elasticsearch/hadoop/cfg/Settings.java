@@ -274,9 +274,14 @@ public abstract class Settings implements InternalConfigurationOptions {
         return Booleans.parseBoolean(getProperty(ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS, ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT));
     }
 
-    public Settings setHosts(String hosts) {
+    public Settings setNodes(String hosts) {
         setProperty(ES_NODES, hosts);
         return this;
+    }
+
+    @Deprecated
+    public Settings setHosts(String hosts) {
+        return setNodes(hosts);
     }
 
     public Settings setPort(int port) {
@@ -309,11 +314,6 @@ public abstract class Settings implements InternalConfigurationOptions {
 
     public String getResourceWrite() {
         return getProperty(ES_RESOURCE_WRITE, getResource());
-    }
-
-    String getTargetHosts() {
-        String hosts = getProperty(INTERNAL_ES_HOSTS);
-        return (StringUtils.hasText(hosts) ? hosts : getNodes());
     }
 
     public String getQuery() {
