@@ -91,7 +91,8 @@ import org.elasticsearch.storm.EsBolt; <1>
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("spout", new RandomSentenceSpout(), 10);
-builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>).shuffleGrouping("spout");
+builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>)
+                                    .shuffleGrouping("spout");
 ----
 
 <1> {eh} +EsBolt+ package import
@@ -127,7 +128,8 @@ conf.put("es.input.json", "true"); <2>
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("json-spout", new StringSpout<3>(Arrays.asList(json1, json2));
-builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf<4>)).shuffleGrouping("json-spout");
+builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf<4>))
+                                    .shuffleGrouping("json-spout");
 ----
 
 <1> JSON document represented as a +String+
