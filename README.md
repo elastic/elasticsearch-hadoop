@@ -155,9 +155,11 @@ CREATE EXTERNAL TABLE artists (
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists', 'es.query' = '?q=me*');
 ```
-The fields defined in the table are mapped to the JSON when communicating with Elasticsearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table:
-```
-SELECT FROM artists;
+The fields defined in the table are mapped to the JSON when communicating with Elasticsearch. Notice the use of `TBLPROPERTIES` to define the location, that is the query used for reading from this table.
+
+Once defined, the table can be used just like any other:
+```SQL
+SELECT * FROM artists;
 ```
 
 ### Writing
@@ -194,14 +196,14 @@ and use `$ESSTORAGE` for storage definition.
 
 ### Reading
 To read data from ES, use `EsStorage` and specify the query through the `LOAD` function:
-```
+```SQL
 A = LOAD 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?q=me*');
 DUMP A;
 ```
 
 ### Writing
 Use the same `Storage` to write data to Elasticsearch:
-```
+```SQL
 A = LOAD 'src/artists.dat' USING PigStorage() AS (id:long, name, url:chararray, picture: chararray);
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
