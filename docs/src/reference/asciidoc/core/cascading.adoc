@@ -56,7 +56,7 @@ This approach can be used for local and remote/Hadoop flows - simply use the app
 
 [float]
 ==== Per-`Tap` configuration
-If a `flow` contains multiple `{es}` taps, the global approach does not work since the settings will clash with each other.  For these scenario, `{eh}` allows using per-`Tap` configuration:
+If a `flow` contains multiple {es} taps, the global approach does not work since the settings will clash with each other.  For these scenario, {eh} allows using per-`Tap` configuration:
 
 [source,java]
 ----
