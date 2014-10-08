@@ -294,7 +294,7 @@ To read data from ES, use `EsSpout`:
 import org.elasticsearch.storm.EsSpout; 
 
 TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout("es-spout", new EsSpout("storm/docs", "?q=me*), 5);
+builder.setSpout("es-spout", new EsSpout("storm/docs", "?q=me*"), 5);
 builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
 ```
 
@@ -303,7 +303,6 @@ To index data to ES, use `EsBolt`:
 
 ```java
 import org.elasticsearch.storm.EsBolt; 
-
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("spout", new RandomSentenceSpout(), 10);
