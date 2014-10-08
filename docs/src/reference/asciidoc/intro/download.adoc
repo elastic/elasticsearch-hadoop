@@ -8,7 +8,7 @@
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.2</version>
 </dependency>
 ----
 
@@ -28,7 +28,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-mr<1></artifactId>
-  <version>2.0.0</version>
+  <version>2.0.2</version>
 </dependency>
 ----
 
@@ -40,7 +40,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-hive<1></artifactId>
-  <version>2.0.0</version>
+  <version>2.0.2</version>
 </dependency>
 ----
 
@@ -52,7 +52,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-pig<1></artifactId>
-  <version>2.0.0</version>
+  <version>2.0.2</version>
 </dependency>
 ----
 
@@ -64,7 +64,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-cascading<1></artifactId>
-  <version>2.0.0</version>
+  <version>2.0.2</version>
 </dependency>
 ----
 
@@ -82,7 +82,7 @@ Development (or nightly or snapshots) builds are published daily at 'sonatype-os
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.1.BUILD-SNAPSHOT</version> <1>
+  <version>2.0.3.BUILD-SNAPSHOT</version> <1>
 </dependency>
 ----
 
