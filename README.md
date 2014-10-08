@@ -11,7 +11,7 @@ For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/
 
 ## Installation
 
-### Stable Release (currently `2.0.1`)
+### Stable Release (currently `2.0.2`)
 Available through any Maven-compatible tool:
 
 ```xml
@@ -21,7 +21,7 @@ Available through any Maven-compatible tool:
   <version>2.0.1</version>
 </dependency>
 ```
-### Beta Release (currently `2.1.0.Beta1`)
+### Beta Release (currently `2.1.0.Beta2`)
 Available through any Maven-compatible tool:
 
 ```xml
@@ -207,7 +207,7 @@ B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
 ```
 ## [Apache Spark][]
-ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for write methods that work on any `RDD`.
+ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for writing, methods that work on any `RDD`.
 
 ### Scala
 
@@ -250,7 +250,7 @@ import org.elasticsearch.spark.java.api.JavaEsSpark;
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);   
 
-JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
+JavaPairRDD<String, Map<String, Object>> esRDD = JavaEsSpark.esRDD(jsc, "radio/artists");
 ```
 
 ### Writing
@@ -283,6 +283,31 @@ new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
 Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
 Tap out = new EsTap("radio/artists", new Fields("name", "url", "picture"));
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
+```
+
+## [Apache Storm][]
+ES-Hadoop provides native integration with Spark: for reading a dedicated `Spout` and for writing a specialized `Bolt`
+
+### Reading
+To read data from ES, use `EsSpout`:
+```java
+import org.elasticsearch.storm.EsSpout; 
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("es-spout", new EsSpout("storm/docs", "?q=me*), 5);
+builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
+```
+
+### Writing
+To index data to ES, use `EsBolt`:
+
+```java
+import org.elasticsearch.storm.EsBolt; 
+
+
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("spout", new RandomSentenceSpout(), 10);
+builder.setBolt("es-bolt", new EsBolt("storm/docs"), 5).shuffleGrouping("spout");
 ```
 
 ## Building the source
@@ -319,6 +344,7 @@ under the License.
 [Apache Pig]: http://pig.apache.org
 [Apache Hive]: http://hive.apache.org
 [Apache Spark]: http://spark.apache.org
+[Apache Storm]: http://storm.apache.org
 [HiveQL]: http://cwiki.apache.org/confluence/display/Hive/LanguageManual
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0

@@ -32,7 +32,7 @@ Specify what fields +EsSpout+ will declare in its topology and extract from the 
 
 `es.storm.spout.reliable.queue.size` (default 0)::
 Applicable only if +es.storm.spout.reliable+ is +true+. Sets the size of the queue which holds documents in memory to be replayed until they are acknowledged. By default, the queue is _unbounded_ (+0+) however in a production environment
-it is indicated to limit the queue to limit the consumption of memory. If the queue is full, the +Bolt+ drops any incoming +Tuple+s and throws an exception.
+it is indicated to limit the queue to limit the consumption of memory. If the queue is full, the +Bolt+ drops any incoming ++Tuple++s and throws an exception.
 
 `es.storm.spout.reliable.retries.per.tuple` (default 5)::
 Applicable only if +es.storm.spout.reliable+ is +true+. Set the number of retries (replays) of a failed tuple before giving up. Setting it to a negative value will cause the tuple to be replayed until acknowledged.
@@ -83,7 +83,7 @@ builder.setSpout("esSpout", new EsSpout("index/type", conf));
 [[storm-write]]
 === Writing data to {es}
 
-Through {eh}, {es} is exposed to Storm through a native +Bolt+, namely +org.elasticsearch.storm.EsBolt+ that writes the Storm +Tuple+s to {es}:
+Through {eh}, {es} is exposed to Storm through a native +Bolt+, namely +org.elasticsearch.storm.EsBolt+ that writes the Storm ++Tuple++s to {es}:
 
 [source,java]
 ----
