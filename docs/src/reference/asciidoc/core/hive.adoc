@@ -108,6 +108,17 @@ INSERT OVERWRITE TABLE artists
 <1> {es} Hive `StorageHandler`
 <2> {es} resource (index and type) associated with the given storage
 
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +table+ properties:
+
+[source,sql]
+----
+CREATE EXTERNAL TABLE artists (
+    id      BIGINT,
+    ...)
+STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
+TBLPROPERTIES('es.mapping.id' = 'id'...);
+----
+
 [float]
 [[writing-json-hive]]
 ==== Writing existing JSON to {es}

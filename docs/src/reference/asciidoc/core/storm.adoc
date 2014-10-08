@@ -74,7 +74,7 @@ For this reason, typically, one should use the _per-component_ configuration mod
 [source,java]
 ----
 Map conf = new HashMap();
-conf.put("es.index.auto.crate", "true");
+conf.put("es.index.auto.create", "true");
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("esSpout", new EsSpout("index/type", conf));
 ----
@@ -100,6 +100,16 @@ builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>).shuffleGrouping
 <4> The number of +EsBolt+ instances for this topology
 
 IMPORTANT: The number of bolt instances depends highly on your topology and environment. In general a good rule of thumb is to take into account the number of the target index shards as well as the number of spouts sending data to it - a good formula is to take the minimum between the source spouts and the index shards; in this example 5. A high number of ++Bolt++s does not translate to a bigger through-put - make sure the ++Bolt++s are the bottleneck since increasing the number simply translates otherwise to wasted cycles.
+
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Thus assuming the documents contain a field called +sentenceId+ which is unique and is suitable for an identifier, one can update the job configuration as follows:
+
+[source,java]
+----
+Map conf = new HashMap();
+conf.put("es.mapping.id", "sentenceId");
+TopologyBuilder builder = new TopologyBuilder();
+builder.setSpout("esSpout", new EsSpout("index/type", conf));
+----
 
 [float]
 [[storm-write-json]]

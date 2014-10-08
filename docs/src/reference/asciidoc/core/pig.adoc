@@ -140,6 +140,13 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage(<2>
 <1> {es} resource (index and type) associated with the given storage
 <2> additional configuration parameters can be passed here - in this case the defaults are used
 
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Storage+ configuration:
+
+[source,sql]
+----
+STORE B INTO 'radio/artists USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.id=id'...);
+----
+
 [float]
 ==== Writing existing JSON to {es}
 
@@ -228,7 +235,7 @@ DUMP A;
 <1> {es} resource
 <2> search query to execute
 
-IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, +LoadFunc+tions are not aware of any schema associated with them. This means +EsStorage+ is forced to fully the documents 
+IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, +LoadFunctions+ are not aware of any schema associated with them. This means +EsStorage+ is forced to fully the documents 
 from Elasticsearch before passing the data to Pig for projection. In practice, this has little impact as long as a document top-level fields are used; for nested fields consider extracting the values
 yourself in Pig.
 

@@ -102,6 +102,14 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 <1> {eh} resource (index and type)
 <2> Cascading tuple declaration
 
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Tap+ configuration:
+
+[source,java]
+----
+Properties myTapCfg = new Properties();
+myTapCfg.set("es.mapping.id", "id");
+----
+
 [float]
 ==== Writing existing JSON to {es}
 

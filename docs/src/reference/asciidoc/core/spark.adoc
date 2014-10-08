@@ -91,11 +91,19 @@ import org.elasticsearch.spark.rdd.EsSpark       <1>
 
 ...
 val rdd = sc.makeRDD(Seq(numbers, airports))
-EsSpark.saveToEs(sc, "spark/docs")               <2> 
+EsSpark.saveToEs(rdd, "spark/docs")              <2> 
 ----
 
 <1> +EsSpark+ import
-<2> Index the +RDD+ explictely through +EsSpark+
+<2> Index the +RDD+ explicitly through +EsSpark+
+
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +RDD+ configuration (it is also possible to set the property on the +SparkConf+ though due to its global effect it is discouraged):
+
+[source,scala]
+----
+EsSpark.saveToEs(rdd, "spark/docs", Map("es.mapping.id" -> "id"))
+----
+
 
 .Java
 
@@ -103,21 +111,21 @@ Java users have a dedicated class that provides a similar functionality to +EsSp
 
 [source,java]
 ----
-import org.apache.spark.api.java.JavaSparkContext;                               <1>
+import org.apache.spark.api.java.JavaSparkContext;                              <1>
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.SparkConf;
 
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;                         <2>
+import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;                        <2>
 ...
 
 SparkConf conf = ...
-JavaSparkContext jsc = new JavaSparkContext(conf);                               <3>
+JavaSparkContext jsc = new JavaSparkContext(conf);                              <3>
 
-Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);                    <4>
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);                   <4>
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
-JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); <5>
-JavaEsSpark.saveToEs(javaRDD, "spark/docs");                                     <6>
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2));<5>
+JavaEsSpark.saveToEs(javaRDD, "spark/docs");                                    <6>
 ----
 
 <1> Spark Java imports
@@ -138,6 +146,14 @@ saveToEs(javaRDD, "spark/docs"); <2>
 
 <1> statically import +JavaEsSpark+
 <2> call +saveToEs+ method without having to type +JavaEsSpark+ again
+
+
+Setting the document id (or other metadata fields like +ttl+ or +timestamp+) is similar to its Scala counterpart though potentially bit more verbose depending on whether you are using the JDK classes or some other utilities (like Guava):
+
+[source,java]
+----
+JavaEsSpark.saveToEs(javaRDD, "spark/docs", ImmutableMap.of("es.mapping.id", "id"));
+----
 
 [float]
 [[spark-write-json]]
@@ -291,7 +307,7 @@ Let us see how this looks like, but this time around using http://docs.oracle.co
 
 [source,java]
 ----
-import static org.elasticsearch.spark.java.api.JavaEsSpark.*;             <1>
+import static org.elasticsearch.spark.java.api.JavaEsSpark.*;          <1>
 
 ...
 JavaRDD<Map<String, Object>> esRDD = 

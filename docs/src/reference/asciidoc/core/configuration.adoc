@@ -127,6 +127,7 @@ The write operation {eh} should peform - can be any of:
 `upsert`;; known as _merge_ or insert if the data does not exist, updates if the data exists (based on its id).
 
 [float]
+[[cfg-mapping]]
 ==== Mapping
 
 `es.mapping.id` (default none)::
@@ -158,7 +159,6 @@ es.mapping.parent = \<123>
 ----
 
 [float]
-
 ==== Metadata
 
 +es.read.metadata+ (default false)::
@@ -172,6 +172,7 @@ Whether to include the document version in the returned metadata. Applicable onl
 
 
 [float]
+[[cfg-update]]
 ==== Update settings
 
 One using the `update` or `upsert` operation, additional settings (that mirror the http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-update.html[update] API) are available:

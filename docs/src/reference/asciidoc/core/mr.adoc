@@ -90,6 +90,17 @@ public class MyMapper extends MapReduceBase implements Mapper {
  }}
 ----
 
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Thus assuming the documents contain a field called +radioId+ which is unique and is suitable for an identifier, one can update the job configuration as follows:
+
+[source,java]
+----
+JobConf conf = new JobConf();
+conf.set("es.mapping.id", "radioId");
+----
+
+At runtime, {eh} will extract the value from each document and use it accordingly during the bulk call.
+
+
 [float]
 [[writing-json-old-api]]
 ==== Writing existing JSON to {es}
@@ -190,6 +201,14 @@ public class SomeMapper extends Mapper {
    ...
    context.write(NullWritable.get(), doc);
  }}
+----
+
+Specifying the id or other document <<cfg-mapping, metadata>> is just as easy:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.mapping.id", "radioId");
 ----
 
 [float]
@@ -299,7 +318,7 @@ As expected, the `mapreduce` API version is quite similar:
 ----
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists/");            <1>
-conf.set("es.query", "?q=me*");            		      <2>
+conf.set("es.query", "?q=me*");                       <2>
 Job job = new Job(conf);
 job.setInputFormat(EsInputFormat.class);
 job.setMapOutputKeyClass(Text.class);
