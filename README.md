@@ -1,6 +1,6 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop) [![Build Status](http://build-us-1.elasticsearch.org/buildStatus/icon?job=es-hadoop-quick)](http://build-us-1.elasticsearch.org/view/Hadoop/job/es-hadoop-quick/)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.  
-Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig) and [Apache Spark](#apache-spark).
+Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
 See  [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
