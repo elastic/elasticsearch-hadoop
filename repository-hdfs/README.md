@@ -26,13 +26,13 @@ If you do not have Hadoop installed, then select either the default version (for
 _After_ installing the plugin, be sure to restart the node. This applies to _all_ nodes on which the plugins have been installed.
 
 As with any other plugin, simply run:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.0.1`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.0.2`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.0.1-<classifier>`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.0.2-<classifier>`
 
 To install the latest snapshot, please install the plugin manually using:
-`bin/plugin -u <url-path-to-plugin.zip> -i elasticsearch-repository-hdfs-2.0.2-BUILD-SNAPSHOT`
+`bin/plugin -u <url-path-to-plugin.zip> -i elasticsearch-repository-hdfs-2.0.3-BUILD-SNAPSHOT`
 
 ### Development Snapshot
 Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-repository-hdfs/) again through Maven:
