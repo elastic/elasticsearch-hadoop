@@ -20,7 +20,7 @@ Through {eh}, Spark can integrate with Elasticsearch through its dedicated `Inpu
 
 In short, one needs to setup a basic Hadoop +Configuration+ object with the target {es} cluster and index, potentially a query, and she's good to go.
 
-From Spark's perspective, they only thing required is setting up serialization - Spark relies by default on Java serialization which is convenient but fairly inefficient. This is the reason why Hadoop itself introduced its own serialization mechanism and its own types - namely ++Writable++s. As such, +InputFormat+ and ++OutputFormat++s are required to return +Writables+ which, out of the box, Spark does not understand.
+From Spark's perspective, the only thing required is setting up serialization - Spark relies by default on Java serialization which is convenient but fairly inefficient. This is the reason why Hadoop itself introduced its own serialization mechanism and its own types - namely ++Writable++s. As such, +InputFormat+ and ++OutputFormat++s are required to return +Writables+ which, out of the box, Spark does not understand.
 The good news is, one can easily enable a different serialization (https://github.com/EsotericSoftware/kryo[Kryo]) which handles the conversion automatically and also does this quite efficiently.
 
 [source,java]
