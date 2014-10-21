@@ -24,6 +24,7 @@ import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -380,6 +381,9 @@ public abstract class RestService implements Serializable {
 
         Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
         repository.close();
+
+        Assert.isTrue(!targetShards.isEmpty(),
+                String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
 
         List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
         // make sure the order is strict

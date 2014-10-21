@@ -74,6 +74,7 @@ public class Resource {
 
         Assert.hasText(index, "No index found; expecting [index]/[type]");
         Assert.hasText(type, "No type found; expecting [index]/[type]");
+        Assert.isTrue(StringUtils.isLowerCase(index), String.format("Invalid index [%s] - needs to be lowercase", index));
 
         indexAndType = index + "/" + type;
 
