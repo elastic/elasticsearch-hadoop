@@ -69,6 +69,7 @@ public class PrintStreamOutputFormat extends org.apache.hadoop.mapreduce.OutputF
     // New API
     @Override
     public org.apache.hadoop.mapreduce.RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+        stream = Stream.valueOf(context.getConfiguration().get(Stream.class.getName(), Stream.NULL.name()));
         return new PrintStreamRecordWriter();
     }
 
