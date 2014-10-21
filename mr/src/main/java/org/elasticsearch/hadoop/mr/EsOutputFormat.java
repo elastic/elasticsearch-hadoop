@@ -216,6 +216,9 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
             repository.close();
 
+            Assert.isTrue(!targetShards.isEmpty(),
+                    String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
+
             List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
             // make sure the order is strict
             Collections.sort(orderedShards);
