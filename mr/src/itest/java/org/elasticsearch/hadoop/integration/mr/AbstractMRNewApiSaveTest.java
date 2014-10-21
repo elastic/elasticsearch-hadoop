@@ -33,7 +33,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.Stream;
@@ -138,10 +137,10 @@ public class AbstractMRNewApiSaveTest {
 
         MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
         MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
-        MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
+		//MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
 
         PrintStreamOutputFormat.stream(conf, Stream.OUT);
-        conf.set("mapred.output.dir", "foo/bar");
+		//conf.set("mapred.output.dir", "foo/bar");
 
         conf.setClass("mapreduce.outputformat.class", MultiOutputFormat.class, OutputFormat.class);
         runJob(conf);
