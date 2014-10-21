@@ -66,7 +66,8 @@ private[sql] object MappingUtils {
       case DOUBLE  => DoubleType
       case STRING  => StringType
       case DATE    => TimestampType
-      case _       => throw new EsHadoopIllegalStateException("Unknown field type " + field);
+      // fall back to String
+      case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
 
     return new StructField(field.name(), dataType, true)
