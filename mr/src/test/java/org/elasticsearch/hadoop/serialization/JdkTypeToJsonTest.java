@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -34,9 +35,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 public class JdkTypeToJsonTest {
 
@@ -171,20 +171,23 @@ public class JdkTypeToJsonTest {
 
     @Test
     public void testDate() {
-        assertThat(jdkTypeToJson(new Date(0)), containsString("1970-01-01"));
+        Date d = new Date(0);
+		assertThat(jdkTypeToJson(d), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test
     public void testCalendar() {
+		Date d = new Date(0);
         Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date(0));
-        assertThat(jdkTypeToJson(cal), containsString("1970-01-01"));
+		cal.setTime(d);
+		assertThat(jdkTypeToJson(cal), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test
     public void testTimestamp() {
+		Date d = new Date(0);
         Timestamp ts = new Timestamp(0);
-        assertThat(jdkTypeToJson(new Date(0)), containsString("1970-01-01"));
+		assertThat(jdkTypeToJson(ts), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test(expected = EsHadoopSerializationException.class)
