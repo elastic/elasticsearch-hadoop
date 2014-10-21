@@ -157,7 +157,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
 
         @Override
         public boolean needsTaskCommit(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
-            boolean result = true;
+			boolean result = false;
 
             for (OutputCommitter committer : committers) {
                 result |= committer.needsTaskCommit(taskContext);
@@ -253,7 +253,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
         return new MultiNewOutputCommitter(committers);
     }
 
-    public static void addOutputFormat(Configuration cfg, Class<? extends OutputFormat>...formats) {
+	public static void addOutputFormat(Configuration cfg, Class<? extends OutputFormat>... formats) {
         Collection<String> of = cfg.getStringCollection(CFG_FIELD);
         for (Class<? extends OutputFormat> format : formats) {
             of.add(format.getName());
