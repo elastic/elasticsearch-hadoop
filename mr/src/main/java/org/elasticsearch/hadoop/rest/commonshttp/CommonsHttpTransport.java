@@ -24,7 +24,18 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnection;
+import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.SimpleHttpConnectionManager;
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
@@ -148,8 +159,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         HostConfiguration hostConfig = new HostConfiguration();
 
         hostConfig = setupSocksProxy(settings, hostConfig);
-        Object[] httpProxySettings = setupHttpProxy(settings, hostConfig);
-        hostConfig = (HostConfiguration) httpProxySettings[0];
+        Object[] authSettings = setupHttpProxy(settings, hostConfig);
+        hostConfig = (HostConfiguration) authSettings[0];
 
         try {
             hostConfig.setHost(new URI(escapeUri(host), false));
@@ -159,7 +170,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         client = new HttpClient(params, new SocketTrackingConnectionManager());
         client.setHostConfiguration(hostConfig);
 
-        completeHttpProxyInit(httpProxySettings);
+        addHttpAuth(settings, authSettings);
+        completeAuth(authSettings);
 
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
@@ -170,9 +182,20 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private void completeHttpProxyInit(Object[] httpProxySettings) {
-        if (httpProxySettings[1] != null) {
-            client.setState((HttpState) httpProxySettings[1]);
+    private void addHttpAuth(Settings settings, Object[] authSettings) {
+        if (StringUtils.hasText(settings.getNetworkHttpAuthUser())) {
+            HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
+			authSettings[1] = state;
+            state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(), settings.getNetworkHttpAuthPass()));
+			if (log.isDebugEnabled()) {
+				log.info("Using detected HTTP Auth credentials...");
+			}
+        }
+    }
+
+    private void completeAuth(Object[] authSettings) {
+        if (authSettings[1] != null) {
+            client.setState((HttpState) authSettings[1]);
             client.getParams().setAuthenticationPreemptive(true);
         }
     }
@@ -207,7 +230,6 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
-                state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
                 // client is not yet initialized so simply save the object for later
                 results[1] = state;
             }

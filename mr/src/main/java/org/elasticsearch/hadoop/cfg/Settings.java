@@ -243,6 +243,14 @@ public abstract class Settings {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
 
+	public String getNetworkHttpAuthUser() {
+		return getProperty(ES_NET_HTTP_AUTH_USER);
+	}
+
+	public String getNetworkHttpAuthPass() {
+		return getProperty(ES_NET_HTTP_AUTH_PASS);
+	}
+
     public String getNetworkProxyHttpHost() {
         return getProperty(ES_NET_PROXY_HTTP_HOST);
     }
