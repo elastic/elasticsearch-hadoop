@@ -75,6 +75,9 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_RETRY_POLICY_SIMPLE = "simple";
     String ES_BATCH_WRITE_RETRY_POLICY_DEFAULT = ES_BATCH_WRITE_RETRY_POLICY_SIMPLE;
 
+    String ES_BATCH_WRITE_IGNORE_EXISTING = "es.batch.write.ignore.existing";
+    String ES_BATCH_WRITE_IGNORE_EXISTING_DEFAULT = "false";
+
     /** HTTP connection timeout */
     String ES_HTTP_TIMEOUT = "es.http.timeout";
     String ES_HTTP_TIMEOUT_DEFAULT = "1m";
@@ -171,7 +174,6 @@ public interface ConfigurationOptions {
     String ES_UPDATE_SCRIPT_LANG = "es.update.script.lang";
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
-
 
     /** Network options */
     String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";
