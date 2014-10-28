@@ -328,6 +328,8 @@ project(":elasticsearch-hadoop-mr") {
 			// missing dependency in Hadoop 1.0.3/1.0.4
 			testCompile "commons-io:commons-io:2.1"
 		}
+		
+		testCompile "io.netty:netty-all:4.0.23.Final"
 	}
 	
 	def generatedResources = "$buildDir/generated-resources/main"
