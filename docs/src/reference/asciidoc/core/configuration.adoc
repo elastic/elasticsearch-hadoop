@@ -259,6 +259,31 @@ Number of results/items returned by each individual scroll.
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
 
 [float]
+==== Basic Authentication
+
+`es.net.http.auth.user`:: Basic Authentication user name
+`es.net.http.auth.pass`:: Basic Authentication password
+
+[float]
+==== SSL
+
+`es.net.ssl` (default false):: Enable SSL
+
+`es.net.ssl.keystore.location`:: key store (if used) location (typically a URL, without a prefix it is interpreted as a classpath entry)
+
+`es.net.ssl.keystore.pass`:: key store password
+
+`es.net.ssl.keystore.type` (default JKS):: key store type. PK12 is an common, alternative format
+
+`es.net.ssl.truststore.location`:: trust store location (typically a URL, without a prefix it is interpreted as a classpath entry)
+
+`es.net.ssl.truststore.pass`:: trust store password
+
+`es.net.ssl.cert.allow.self.signed` (default false):: Whether or not to allow self signed certificates
+
+`es.net.ssl.protocol`(default TLS):: SSL protocol to be used
+
+[float]
 ==== Proxy
 
 `es.net.proxy.http.host`:: Http proxy host name
