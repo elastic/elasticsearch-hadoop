@@ -1,0 +1,152 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.elasticsearch.hadoop.yarn.am;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
+import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.Priority;
+import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
+import org.apache.hadoop.yarn.client.api.NMTokenCache;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.elasticsearch.hadoop.yarn.cfg.Config;
+import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
+import org.elasticsearch.hadoop.yarn.util.Assert;
+import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
+import org.elasticsearch.hadoop.yarn.util.YarnUtils;
+
+import static org.elasticsearch.hadoop.yarn.EsYarnConstants.*;
+
+public class ApplicationMaster implements AutoCloseable {
+
+    private static final Log log = LogFactory.getLog(ApplicationMaster.class);
+
+    private ApplicationAttemptId appId;
+    private Map<String, String> env;
+    private AppMasterRpc rpc;
+    private Configuration cfg;
+    private EsCluster cluster;
+    private NMTokenCache nmTokenCache;
+	private final Config appConfig;
+
+
+    ApplicationMaster(Map<String, String> env) {
+        this.env = env;
+        cfg = new YarnConfiguration();
+		if (env.containsKey(FS_URI)) {
+			cfg.set(FileSystem.FS_DEFAULT_NAME_KEY, env.get(FS_URI));
+        }
+		appConfig = new Config(PropertiesUtils.propsFromBase64String(env.get(CFG_PROPS)));
+    }
+
+    void run() {
+        log.info("Starting ApplicationMaster...");
+
+        if (nmTokenCache == null) {
+            nmTokenCache = new NMTokenCache();
+        }
+
+        if (rpc == null) {
+            rpc = new AppMasterRpc(cfg, nmTokenCache);
+            rpc.start();
+        }
+
+        // register AM
+        appId = YarnUtils.getApplicationAttemptId(env);
+        Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s" + env);
+        RegisterApplicationMasterResponse amResponse = rpc.registerAM();
+        cluster = allocateCluster();
+
+        try {
+            cluster.start();
+        } finally {
+            close();
+        }
+    }
+
+    private EsCluster allocateCluster() {
+        log.info("AM allocating cluster...");
+
+		Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
+        Priority prio = Priority.newInstance(appConfig.amPriority());
+
+        for (int i = 0; i < appConfig.containersToAllocate(); i++) {
+            // TODO: Add allocation (host/rack rules)
+            ContainerRequest req = new ContainerRequest(capability, null, null, prio);
+            rpc.addContainerRequest(req);
+        }
+
+        // wait for allocations before launching anything
+        int allocated = 0;
+        int retries = appConfig.allocationRetries();
+        boolean shouldEnd = false;
+
+        AllocateResponse alloc;
+
+        do {
+            alloc = rpc.allocate(allocated);
+            allocated += alloc.getAllocatedContainers().size();
+
+            shouldEnd = (allocated >= appConfig.containersToAllocate()) || (--retries == 0);
+
+            if (!shouldEnd) {
+                try {
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+                } catch (Exception ex) {
+                    throw new EsYarnAmException("AM Thread interrupted", ex);
+                }
+            }
+        } while (shouldEnd);
+
+        // cluster allocated
+		return new EsCluster(rpc, appConfig.containersToAllocate());
+    }
+
+    @Override
+    public void close() {
+        if (cluster == null || cluster.hasFailed()) {
+            rpc.failAM();
+        }
+        else {
+            rpc.finishAM();
+        }
+
+        if (cluster != null) {
+            cluster.close();
+            cluster = null;
+        }
+    }
+
+    public static void main(String[] args) {
+        ApplicationMaster am = new ApplicationMaster(System.getenv());
+        try {
+            am.run();
+        } finally {
+            am.close();
+        }
+    }
+}
