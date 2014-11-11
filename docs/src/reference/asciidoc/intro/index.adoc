@@ -8,7 +8,7 @@
 Data flows 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
 {ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster.
 [[project-name-alias]]
-While the official name of the project is {ehtm} throught out the documentation the term {eh} will be used instead to increase readability.
+While the official name of the project is {ehtm} throughout the documentation the term {eh} will be used instead to increase readability.
 
 include::typos.adoc[]
 
