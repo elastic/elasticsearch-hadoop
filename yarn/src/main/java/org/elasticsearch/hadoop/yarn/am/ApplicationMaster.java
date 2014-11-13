@@ -19,22 +19,16 @@
 package org.elasticsearch.hadoop.yarn.am;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.client.api.NMTokenCache;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
-import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.Assert;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
 import org.elasticsearch.hadoop.yarn.util.YarnUtils;
@@ -51,16 +45,16 @@ public class ApplicationMaster implements AutoCloseable {
     private Configuration cfg;
     private EsCluster cluster;
     private NMTokenCache nmTokenCache;
-	private final Config appConfig;
+    private final Config appConfig;
 
 
     ApplicationMaster(Map<String, String> env) {
         this.env = env;
         cfg = new YarnConfiguration();
-		if (env.containsKey(FS_URI)) {
-			cfg.set(FileSystem.FS_DEFAULT_NAME_KEY, env.get(FS_URI));
+        if (env.containsKey(FS_URI)) {
+            cfg.set(FileSystem.FS_DEFAULT_NAME_KEY, env.get(FS_URI));
         }
-		appConfig = new Config(PropertiesUtils.propsFromBase64String(env.get(CFG_PROPS)));
+        appConfig = new Config(PropertiesUtils.propsFromBase64String(env.get(CFG_PROPS)));
     }
 
     void run() {
@@ -79,7 +73,7 @@ public class ApplicationMaster implements AutoCloseable {
         appId = YarnUtils.getApplicationAttemptId(env);
         Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s" + env);
         RegisterApplicationMasterResponse amResponse = rpc.registerAM();
-        cluster = allocateCluster();
+		cluster = new EsCluster(rpc, appConfig);
 
         try {
             cluster.start();
@@ -88,43 +82,6 @@ public class ApplicationMaster implements AutoCloseable {
         }
     }
 
-    private EsCluster allocateCluster() {
-		log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
-
-        Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
-        Priority prio = Priority.newInstance(appConfig.amPriority());
-
-        for (int i = 0; i < appConfig.containersToAllocate(); i++) {
-            // TODO: Add allocation (host/rack rules)
-            ContainerRequest req = new ContainerRequest(capability, null, null, prio);
-            rpc.addContainerRequest(req);
-        }
-
-        // wait for allocations before launching anything
-        int allocated = 0;
-        int retries = appConfig.allocationRetries();
-        boolean shouldEnd = false;
-
-        AllocateResponse alloc;
-
-        do {
-            alloc = rpc.allocate(allocated);
-            allocated += alloc.getAllocatedContainers().size();
-
-            shouldEnd = (allocated >= appConfig.containersToAllocate()) || (--retries == 0);
-
-            if (!shouldEnd) {
-                try {
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-                } catch (Exception ex) {
-					throw new EsYarnAmException("ApplicationManager Thread interrupted", ex);
-                }
-            }
-        } while (shouldEnd);
-
-        // cluster allocated
-        return new EsCluster(rpc, appConfig.containersToAllocate());
-    }
 
     @Override
     public void close() {

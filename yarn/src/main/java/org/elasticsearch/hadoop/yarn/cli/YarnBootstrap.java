@@ -68,7 +68,7 @@ public class YarnBootstrap extends Configured implements Tool {
             System.out.println(message);
         }
         if (HELP == null) {
-            HELP = IOUtils.readFrom(getClass().getResourceAsStream("help-msg.txt"));
+            HELP = IOUtils.readFrom(getClass().getResourceAsStream("help.txt"));
         }
         System.out.println(HELP);
     }
@@ -134,9 +134,9 @@ public class YarnBootstrap extends Configured implements Tool {
         Path target = new Path(dst);
         try {
             FileSystem fs = FileSystem.get(URI.create("hdfs:///"), cfg);
-			if (fs.exists(target)) {
-				fs.delete(target, true);
-			}
+            if (fs.exists(target)) {
+                fs.delete(target, true);
+            }
             FileUtil.copy(src, fs, target, false, cfg);
             FileStatus stats = fs.getFileStatus(target);
             System.out.println(String.format("Uploaded %s to HDFS at %s", src.getAbsolutePath(), stats.getPath()));
@@ -158,14 +158,15 @@ public class YarnBootstrap extends Configured implements Tool {
             client.close();
         }
 
-        System.out.println(String.format("Launched Elasticsearch-YARN cluster [%s@%s] at %tc", id, report.getTrackingUrl(), report.getStartTime()));
+        System.out.println(String.format("Launched a %d %s Elasticsearch-YARN cluster [%s@%s] at %tc",
+                cfg.containersToAllocate(), (cfg.containersToAllocate() > 1 ? "nodes" : "node"), id, report.getTrackingUrl(), report.getStartTime()));
     }
 
     private void stop() {
         ClientRpc client = new ClientRpc(getConf());
         client.start();
         try {
-			List<ApplicationReport> esApps = client.listEsClustersAlive();
+            List<ApplicationReport> esApps = client.listEsClustersAlive();
             for (ApplicationReport report : esApps) {
                 System.out.println(String.format("Stopping Elasticsearch-YARN Cluster with id %s", report.getApplicationId()));
             }
@@ -222,10 +223,10 @@ public class YarnBootstrap extends Configured implements Tool {
             sb.append(box(appReport.getFinalApplicationStatus().toString(), 9));
             sb.append(columnSeparator);
             long date = appReport.getStartTime();
-			sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
+            sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
             sb.append(columnSeparator);
             date = appReport.getFinishTime();
-			sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
+            sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
             sb.append(columnSeparator);
             sb.append(appReport.getTrackingUrl());
             sb.append(columnSeparator);
@@ -235,12 +236,12 @@ public class YarnBootstrap extends Configured implements Tool {
         return sb.toString();
     }
 
-	// add the string to the box and fill it (with spaces) until it reaches its limit
-	private String box(String string, int limit) {
-		StringBuilder sb = new StringBuilder(string);
-		for (int i = sb.length(); i < limit; i++) {
-			sb.append(" ");
-		}
-		return sb.toString();
-	}
+    // add the string to the box and fill it (with spaces) until it reaches its limit
+    private String box(String string, int limit) {
+        StringBuilder sb = new StringBuilder(string);
+        for (int i = sb.length(); i < limit; i++) {
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
 }

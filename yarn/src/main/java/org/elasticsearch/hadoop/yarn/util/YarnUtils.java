@@ -87,13 +87,13 @@ public abstract class YarnUtils {
     }
 
     public static Object minVCores(Configuration cfg, int vCores) {
-        //return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
-        return vCores;
+		return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
+		//return vCores;
     }
 
     public static int minMemory(Configuration cfg, int memory) {
-        //return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
-        return memory;
+		return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
+		//return memory;
     }
 
     private static int yarnAcceptableMin(Configuration cfg, String property, int value) {
@@ -103,7 +103,7 @@ public abstract class YarnUtils {
         }
 
         if (value % acceptedVal != 0) {
-            return acceptedVal * (value % acceptedVal);
+			return acceptedVal * Math.round(value / acceptedVal);
         }
         return value;
     }

@@ -45,62 +45,87 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
+import org.apache.hadoop.yarn.api.records.Priority;
+import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
 import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.StringUtils;
-import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
 /**
  * logical cluster managing the global lifecycle for its multiple containers.
  */
 class EsCluster implements AutoCloseable {
 
-	private static final Log log = LogFactory.getLog(EsCluster.class);
+    private static final Log log = LogFactory.getLog(EsCluster.class);
 
     private final AppMasterRpc amRpc;
     private final NodeMasterRpc nmRpc;
     private final Configuration cfg;
+	private final Config appConfig;
 
     private volatile boolean running = false;
     private volatile boolean clusterHasFailed = false;
 
-    private final Set<ContainerId> completedContainers = Collections.synchronizedSet(new LinkedHashSet<ContainerId>());
-	private final int numberOfContainers;
+	private final Set<ContainerId> allocatedContainers = new LinkedHashSet<ContainerId>();
+	private final Set<ContainerId> completedContainers = new LinkedHashSet<ContainerId>();
 
-	public EsCluster(final AppMasterRpc rpc, int numberOfContainers) {
+	public EsCluster(final AppMasterRpc rpc, Config appConfig) {
         this.amRpc = rpc;
         this.cfg = rpc.getConfiguration();
         this.nmRpc = new NodeMasterRpc(cfg, rpc.getNMToCache());
-		this.numberOfContainers = numberOfContainers;
-    }
+		this.appConfig = appConfig;
+	}
 
 	public void start() {
-        nmRpc.start();
+		running = true;
+		nmRpc.start();
 
-        log.info("Starting container cluster ..");
+		log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
 
-        AllocateResponse response = amRpc.allocate(0);
-        for (Container container : response.getAllocatedContainers()) {
-            // launch container
-            launchContainer(container);
-        }
+		// register requests
+		Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
+		Priority prio = Priority.newInstance(appConfig.amPriority());
 
-        running = true;
+		for (int i = 0; i < appConfig.containersToAllocate(); i++) {
+			// TODO: Add allocation (host/rack rules) - and disable location constraints
+			ContainerRequest req = new ContainerRequest(capability, null, null, prio);
+			amRpc.addContainerRequest(req);
+		}
 
-        log.info("Started container cluster; monitoring completion...");
 
-        // schedule a heart-beat 15 seconds before timing out (just to be on the safe side)
-        //final long heartBeatRate = Math.max(YarnUtils.getAmHeartBeatRate(cfg) - TimeUnit.SECONDS.toMillis(15), TimeUnit.SECONDS.toMillis(5));
+		// update status every 5 sec
+		final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
 
-        // update status every 5 sec
-        final long heartBeatRate = TimeUnit.SECONDS.toMillis(1);
+		// start the allocation loop
+		// when a new container is allocated, launch it right away
 
-        try {
-            do {
-                AllocateResponse allocate = amRpc.allocate(0);
-                List<ContainerStatus> completed = allocate.getCompletedContainersStatuses();
+		int responseId = 0;
+
+		try {
+
+			do {
+				AllocateResponse alloc = amRpc.allocate(responseId++);
+				List<Container> currentlyAllocated = alloc.getAllocatedContainers();
+				for (Container container : currentlyAllocated) {
+					launchContainer(container);
+					allocatedContainers.add(container.getId());
+				}
+
+				if (currentlyAllocated.size() > 0) {
+					int needed = appConfig.containersToAllocate() - allocatedContainers.size();
+					if (needed > 0) {
+						log.info(String.format("%s containers allocated, %s remaining", allocatedContainers.size(),
+								needed));
+					}
+					else {
+						log.info(String.format("Fully allocated %s containers", allocatedContainers.size()));
+					}
+				}
+
+				List<ContainerStatus> completed = alloc.getCompletedContainersStatuses();
                 for (ContainerStatus status : completed) {
                     if (!completedContainers.contains(status.getContainerId())) {
                         ContainerId containerId = status.getContainerId();
@@ -110,17 +135,17 @@ class EsCluster implements AutoCloseable {
 
                         switch (status.getExitStatus()) {
                         case ContainerExitStatus.SUCCESS:
-							log.info(String.format("Container %s finished succesfully...", containerId));
+                            log.info(String.format("Container %s finished succesfully...", containerId));
                             containerSuccesful = true;
                             break;
                         case ContainerExitStatus.ABORTED:
-							log.warn(String.format("Container %s aborted...", containerId));
+                            log.warn(String.format("Container %s aborted...", containerId));
                             break;
                         case ContainerExitStatus.DISKS_FAILED:
-							log.warn(String.format("Container %s ran out of disk...", containerId));
+                            log.warn(String.format("Container %s ran out of disk...", containerId));
                             break;
                         case ContainerExitStatus.PREEMPTED:
-							log.warn(String.format("Container %s preempted...", containerId));
+                            log.warn(String.format("Container %s preempted...", containerId));
                             break;
                         default:
                             log.warn(String.format("Container %s exited with an invalid/unknown exit code...", containerId));
@@ -134,7 +159,7 @@ class EsCluster implements AutoCloseable {
                     }
                 }
 
-				if (completedContainers.size() == numberOfContainers) {
+				if (completedContainers.size() == appConfig.containersToAllocate()) {
                     running = false;
                 }
 
@@ -160,21 +185,20 @@ class EsCluster implements AutoCloseable {
     private void launchContainer(Container container) {
         ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
 
-        Configuration yarnConf = amRpc.getConfiguration();
         Config conf = new Config(null);
 
-        ctx.setEnvironment(YarnUtils.setupEnv(yarnConf));
-		ctx.setLocalResources(setupEsZipResource(conf));
-		ctx.setCommands(setupEsScript(conf));
+        //ctx.setEnvironment(YarnUtils.setupEnv(yarnConf));
+        ctx.setLocalResources(setupEsZipResource(conf));
+        ctx.setCommands(setupEsScript(conf));
 
-		log.info("About to launch container for command: " + ctx.getCommands());
+        log.info("About to launch container for command: " + ctx.getCommands());
 
-		// setup container
-		Map<String, ByteBuffer> startContainer = nmRpc.startContainer(container, ctx);
-		log.info("Started container " + startContainer);
-	}
+        // setup container
+        Map<String, ByteBuffer> startContainer = nmRpc.startContainer(container, ctx);
+		log.info("Started container " + container);
+    }
 
-	private Map<String, LocalResource> setupEsZipResource(Config conf) {
+    private Map<String, LocalResource> setupEsZipResource(Config conf) {
         // elasticsearch.zip
         Map<String, LocalResource> resources = new LinkedHashMap<String, LocalResource>();
 
@@ -196,18 +220,18 @@ class EsCluster implements AutoCloseable {
         esZip.setVisibility(LocalResourceVisibility.PUBLIC);
 
         resources.put(conf.esZipName(), esZip);
-		return resources;
-	}
+        return resources;
+    }
 
-	private List<String> setupEsScript(Config conf) {
-		List<String> cmds = new ArrayList<String>();
-		// don't use -jar since it overrides the classpath
-		cmds.add(YarnCompat.$$(ApplicationConstants.Environment.SHELL));
-		// make sure to include the ES.ZIP archive name used in the local resource setup above (since it's the folder where it got unpacked)
-		cmds.add(conf.esZipName() + "/" + conf.esScript());
-		cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);
-		cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
-		return Collections.singletonList(StringUtils.concatenate(cmds, " "));
+    private List<String> setupEsScript(Config conf) {
+        List<String> cmds = new ArrayList<String>();
+        // don't use -jar since it overrides the classpath
+        cmds.add(YarnCompat.$$(ApplicationConstants.Environment.SHELL));
+        // make sure to include the ES.ZIP archive name used in the local resource setup above (since it's the folder where it got unpacked)
+        cmds.add(conf.esZipName() + "/" + conf.esScript());
+        cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);
+        cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
+        return Collections.singletonList(StringUtils.concatenate(cmds, " "));
     }
 
     public boolean hasFailed() {

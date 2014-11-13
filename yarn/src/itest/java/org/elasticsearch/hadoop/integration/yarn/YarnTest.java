@@ -47,7 +47,8 @@ public class YarnTest {
         testEnv.add("hdfs.es.yarn.jar=" + CLIENT_JAR.getName());
         testEnv.add("internal.es.yarn.file=" + CLIENT_JAR.getAbsolutePath());
 		testEnv.add("download.local.dir=./build/downloads");
-
+		// for tests we don't need gigs
+		testEnv.add("container.mem=512");
     }
 
 	@Test
@@ -72,7 +73,7 @@ public class YarnTest {
 
     @Test
     public void test4Start() throws Exception {
-        bootstrap.run(cmdArgs("-start"));
+		bootstrap.run(cmdArgs("-start"));
         final List<ApplicationReport> apps = YC.listEsClusters();
         System.out.println(apps);
         final ApplicationId appId = apps.get(0).getApplicationId();
@@ -83,10 +84,12 @@ public class YarnTest {
     @Test
 	public void test5List() throws Exception {
 		bootstrap.run(cmdArgs("-status"));
+		//System.in.read();
     }
 
 	@Test
 	public void test6Stop() throws Exception {
+		//System.in.read();
 		bootstrap.run(cmdArgs("-stop"));
     }
 

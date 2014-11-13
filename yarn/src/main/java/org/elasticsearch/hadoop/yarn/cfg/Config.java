@@ -110,11 +110,7 @@ public class Config {
     }
 
     public int containersToAllocate() {
-        return Integer.parseInt(cfg.getProperty("container.number"));
-    }
-
-    public int allocationRetries() {
-        return Integer.parseInt(cfg.getProperty("allocation.retries"));
+		return Integer.parseInt(cfg.getProperty("containers"));
     }
 
     public URL downloadURL() {
