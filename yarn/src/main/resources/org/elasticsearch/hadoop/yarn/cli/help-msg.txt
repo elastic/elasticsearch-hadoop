@@ -1,5 +1,5 @@
 Usage:
-     -download-es  : Downloads Elasticsearch.ZIP from the offical channels
+     -download-es  : Downloads Elasticsearch.zip
      -install      : Installs/Provisions Elasticsearch-YARN into HDFS
      -install-es   : Installs/Provisions Elasticsearch into HDFS
      -start        : Starts provisioned Elasticsearch in YARN

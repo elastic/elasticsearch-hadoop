@@ -48,6 +48,7 @@ import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
+import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.StringUtils;
 import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
@@ -201,7 +202,7 @@ class EsCluster implements AutoCloseable {
 	private List<String> setupEsScript(Config conf) {
 		List<String> cmds = new ArrayList<String>();
 		// don't use -jar since it overrides the classpath
-		cmds.add(ApplicationConstants.Environment.SHELL.$$());
+		cmds.add(YarnCompat.$$(ApplicationConstants.Environment.SHELL));
 		// make sure to include the ES.ZIP archive name used in the local resource setup above (since it's the folder where it got unpacked)
 		cmds.add(conf.esZipName() + "/" + conf.esScript());
 		cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);

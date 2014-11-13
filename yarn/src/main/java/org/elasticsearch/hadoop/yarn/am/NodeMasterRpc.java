@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.client.api.NMClient;
 import org.apache.hadoop.yarn.client.api.NMTokenCache;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 
 class NodeMasterRpc implements AutoCloseable {
 
@@ -48,7 +49,7 @@ class NodeMasterRpc implements AutoCloseable {
 		}
 
 		client = NMClient.createNMClient("Elasticsearch-YARN");
-		client.setNMTokenCache(tokenCache);
+		YarnCompat.setNMTokenCache(client, tokenCache);
 		client.init(cfg);
 		client.start();
 	}

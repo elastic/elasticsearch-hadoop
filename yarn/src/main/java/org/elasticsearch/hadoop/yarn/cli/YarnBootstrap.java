@@ -134,6 +134,9 @@ public class YarnBootstrap extends Configured implements Tool {
         Path target = new Path(dst);
         try {
             FileSystem fs = FileSystem.get(URI.create("hdfs:///"), cfg);
+			if (fs.exists(target)) {
+				fs.delete(target, true);
+			}
             FileUtil.copy(src, fs, target, false, cfg);
             FileStatus stats = fs.getFileStatus(target);
             System.out.println(String.format("Uploaded %s to HDFS at %s", src.getAbsolutePath(), stats.getPath()));
@@ -162,6 +165,10 @@ public class YarnBootstrap extends Configured implements Tool {
         ClientRpc client = new ClientRpc(getConf());
         client.start();
         try {
+			List<ApplicationReport> esApps = client.listEsClustersAlive();
+            for (ApplicationReport report : esApps) {
+                System.out.println(String.format("Stopping Elasticsearch-YARN Cluster with id %s", report.getApplicationId()));
+            }
             List<ApplicationReport> apps = client.killEsApps();
             for (ApplicationReport report : apps) {
                 System.out.println(String.format("Stopped Elasticsearch-YARN cluster with id %s", report.getApplicationId()));
@@ -189,28 +196,51 @@ public class YarnBootstrap extends Configured implements Tool {
                     getConf().get(YarnConfiguration.RM_ADDRESS), WebAppUtils.getRMWebAppURLWithoutScheme(getConf()));
         }
 
+        String columnSeparator = "  ";
         StringBuilder sb = new StringBuilder();
         // header
-        sb.append("Id\t\t\t");
-        sb.append("State\t");
-        sb.append("Status\t");
-        sb.append("Start Time\t");
-        sb.append("Finish Time\t");
-        sb.append("Tracking URL\t");
+        sb.append("Id                            ");
+        sb.append(columnSeparator);
+        sb.append("State     ");
+        sb.append(columnSeparator);
+        sb.append("Status   ");
+        sb.append(columnSeparator);
+        sb.append("Start Time       ");
+        sb.append(columnSeparator);
+        sb.append("Finish Time      ");
+        sb.append(columnSeparator);
+        sb.append("Tracking URL");
         sb.append("\n");
 
         DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
         for (ApplicationReport appReport : esApps) {
             sb.append(appReport.getApplicationId());
-            sb.append(appReport.getYarnApplicationState());
-            sb.append(appReport.getFinalApplicationStatus());
-            sb.append(dateFormat.format(new Date(appReport.getStartTime())));
-            sb.append(dateFormat.format(new Date(appReport.getFinishTime())));
+            sb.append(columnSeparator);
+            sb.append(box(appReport.getYarnApplicationState().toString(), 10));
+            sb.append(columnSeparator);
+            sb.append(box(appReport.getFinalApplicationStatus().toString(), 9));
+            sb.append(columnSeparator);
+            long date = appReport.getStartTime();
+			sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
+            sb.append(columnSeparator);
+            date = appReport.getFinishTime();
+			sb.append(date == 0 ? "N/A              " : box(dateFormat.format(new Date(date)), 17));
+            sb.append(columnSeparator);
             sb.append(appReport.getTrackingUrl());
+            sb.append(columnSeparator);
             sb.append("\n");
         }
 
         return sb.toString();
     }
+
+	// add the string to the box and fill it (with spaces) until it reaches its limit
+	private String box(String string, int limit) {
+		StringBuilder sb = new StringBuilder(string);
+		for (int i = sb.length(); i < limit; i++) {
+			sb.append(" ");
+		}
+		return sb.toString();
+	}
 }

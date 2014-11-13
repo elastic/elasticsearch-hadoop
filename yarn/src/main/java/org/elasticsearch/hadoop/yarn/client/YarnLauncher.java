@@ -32,7 +32,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -41,7 +40,6 @@ import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
-import org.apache.hadoop.yarn.util.Apps;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.elasticsearch.hadoop.yarn.EsYarnConstants;
@@ -50,8 +48,7 @@ import org.elasticsearch.hadoop.yarn.cfg.Config;
 import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
 import org.elasticsearch.hadoop.yarn.util.StringUtils;
-
-import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
+import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
 public class YarnLauncher {
 
@@ -84,7 +81,7 @@ public class YarnLauncher {
         appContext.setPriority(Priority.newInstance(clientCfg.amPriority()));
         appContext.setQueue(clientCfg.amQueue());
         appContext.setApplicationType(clientCfg.appType());
-        appContext.setApplicationTags(clientCfg.appTags());
+        YarnCompat.setApplicationTags(appContext, clientCfg.appTags());
 
         return appContext;
     }
@@ -94,7 +91,7 @@ public class YarnLauncher {
 
         amContainer.setLocalResources(setupEsYarnJar());
         amContainer.setEnvironment(setupEnv());
-		amContainer.setCommands(setupCmd());
+        amContainer.setCommands(setupCmd());
 
         return amContainer;
     }
@@ -122,33 +119,21 @@ public class YarnLauncher {
     }
 
     private Map<String, String> setupEnv() {
-        Map<String, String> env = new LinkedHashMap<String, String>();
         Configuration cfg = client.getConfiguration();
 
-        // add Hadoop Classpath
-        for (String c : cfg.getStrings(YARN_APPLICATION_CLASSPATH, DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
-            Apps.addToEnvironment(env, Environment.CLASSPATH.name(), c.trim(), ApplicationConstants.CLASS_PATH_SEPARATOR);
-        }
-        // add es-hadoop jar / current folder jars
-        Apps.addToEnvironment(env, Environment.CLASSPATH.name(), "./*", ApplicationConstants.CLASS_PATH_SEPARATOR);
-
-        //
-        // some es-yarn constants
-        //
-        Apps.addToEnvironment(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
-        Apps.addToEnvironment(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
+		Map<String, String> env = YarnUtils.setupEnv(cfg);
+        YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()), YarnCompat.CLASS_PATH_SEPARATOR());
 
         return env;
     }
 
-	private List<String> setupCmd() {
-		List<String> cmds = new ArrayList<String>();
-		// don't use -jar since it overrides the classpath
-		cmds.add(ApplicationConstants.Environment.JAVA_HOME.$$() + "/bin/java");
-		cmds.add(ApplicationMaster.class.getName());
-		cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);
-		cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
-		return Collections.singletonList(StringUtils.concatenate(cmds, " "));
-
-	}
+    private List<String> setupCmd() {
+        List<String> cmds = new ArrayList<String>();
+        // don't use -jar since it overrides the classpath
+		cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME) + "/bin/java");
+        cmds.add(ApplicationMaster.class.getName());
+        cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);
+        cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
+        return Collections.singletonList(StringUtils.concatenate(cmds, " "));
+    }
 }

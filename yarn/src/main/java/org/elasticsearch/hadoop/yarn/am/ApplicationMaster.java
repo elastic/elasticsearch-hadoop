@@ -89,9 +89,9 @@ public class ApplicationMaster implements AutoCloseable {
     }
 
     private EsCluster allocateCluster() {
-        log.info("AM allocating cluster...");
+		log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
 
-		Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
+        Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
         Priority prio = Priority.newInstance(appConfig.amPriority());
 
         for (int i = 0; i < appConfig.containersToAllocate(); i++) {
@@ -117,13 +117,13 @@ public class ApplicationMaster implements AutoCloseable {
                 try {
                     Thread.sleep(TimeUnit.SECONDS.toMillis(1));
                 } catch (Exception ex) {
-                    throw new EsYarnAmException("AM Thread interrupted", ex);
+					throw new EsYarnAmException("ApplicationManager Thread interrupted", ex);
                 }
             }
         } while (shouldEnd);
 
         // cluster allocated
-		return new EsCluster(rpc, appConfig.containersToAllocate());
+        return new EsCluster(rpc, appConfig.containersToAllocate());
     }
 
     @Override

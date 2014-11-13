@@ -18,9 +18,11 @@
  */
 package org.elasticsearch.hadoop.yarn;
 
+// NB: don't use . since it won't work on *nix
+// to be consistent use only UPPER CASE vars
 public interface EsYarnConstants {
 
-	String FS_URI = "es.yarn.fs.uri";
+	String FS_URI = "ES_YARN_FS_URI";
 
-	String CFG_PROPS = "es.yarn.cfg.properties";
+	String CFG_PROPS = "ES_YARN_CFG_PROPERTIES";
 }

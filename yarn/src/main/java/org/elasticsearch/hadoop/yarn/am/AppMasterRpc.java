@@ -26,6 +26,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient;
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.client.api.NMTokenCache;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 
 class AppMasterRpc implements AutoCloseable {
 
@@ -44,7 +45,7 @@ class AppMasterRpc implements AutoCloseable {
         }
 
         client = AMRMClient.createAMRMClient();
-		client.setNMTokenCache(nmTokenCache);
+		YarnCompat.setNMTokenCache(client, nmTokenCache);
         client.init(cfg);
         client.start();
     }

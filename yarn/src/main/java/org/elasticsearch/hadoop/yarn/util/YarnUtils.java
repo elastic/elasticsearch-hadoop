@@ -30,23 +30,13 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.util.Apps;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.elasticsearch.hadoop.yarn.EsYarnConstants;
+import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 
 import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 
 public abstract class YarnUtils {
-
-    // missing in Hadoop 2.2
-    public static final String[] DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH = {
-            ApplicationConstants.Environment.HADOOP_CONF_DIR.$$(),
-            ApplicationConstants.Environment.HADOOP_COMMON_HOME.$$() + "/share/hadoop/common/*",
-            ApplicationConstants.Environment.HADOOP_COMMON_HOME.$$() + "/share/hadoop/common/lib/*",
-            ApplicationConstants.Environment.HADOOP_HDFS_HOME.$$() + "/share/hadoop/hdfs/*",
-            ApplicationConstants.Environment.HADOOP_HDFS_HOME.$$() + "/share/hadoop/hdfs/lib/*",
-            ApplicationConstants.Environment.HADOOP_YARN_HOME.$$() + "/share/hadoop/yarn/*",
-            ApplicationConstants.Environment.HADOOP_YARN_HOME.$$() + "/share/hadoop/yarn/lib/*" };
 
     public static ApplicationAttemptId getApplicationAttemptId(Map<String, String> env) {
         if (env == null) {
@@ -71,26 +61,39 @@ public abstract class YarnUtils {
     public static Map<String, String> setupEnv(Configuration cfg) {
         Map<String, String> env = new LinkedHashMap<String, String>(); // System.getenv()
         // add Hadoop Classpath
-        for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
-            Apps.addToEnvironment(env, Environment.CLASSPATH.name(), c.trim(), ApplicationConstants.CLASS_PATH_SEPARATOR);
+        for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, YarnCompat.DEFAULT_PLATFORM_APPLICATION_CLASSPATH())) {
+            addToEnv(env, Environment.CLASSPATH.name(), c.trim(), YarnCompat.CLASS_PATH_SEPARATOR());
         }
         // add es-hadoop jar / current folder jars
-        Apps.addToEnvironment(env, Environment.CLASSPATH.name(), "./*", ApplicationConstants.CLASS_PATH_SEPARATOR);
+        addToEnv(env, Environment.CLASSPATH.name(), "./*", YarnCompat.CLASS_PATH_SEPARATOR());
 
         //
         // some es-yarn constants
         //
-        Apps.addToEnvironment(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
+        addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS), YarnCompat.CLASS_PATH_SEPARATOR());
 
         return env;
     }
 
+	public static void addToEnv(Map<String, String> env, String key, String value, String separator) {
+		String val = env.get(key);
+        if (val == null) {
+            val = value;
+        }
+        else {
+            val = val + separator + value;
+        }
+		env.put(key, val);
+    }
+
     public static Object minVCores(Configuration cfg, int vCores) {
-        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
+        //return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
+        return vCores;
     }
 
     public static int minMemory(Configuration cfg, int memory) {
-        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
+        //return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
+        return memory;
     }
 
     private static int yarnAcceptableMin(Configuration cfg, String property, int value) {

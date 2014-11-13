@@ -130,7 +130,7 @@ public class Config {
     }
 
     public String downloadEsVersion() {
-        return cfg.getProperty("download.es.version");
+		return cfg.getProperty("es.version");
     }
 
     public File downloadedEs() {
@@ -165,7 +165,6 @@ public class Config {
 			} catch (IOException ex) {
 				throw new IllegalStateException("Cannot detect the Es-YARN jar", ex);
 			}
-			jar = null;
 		}
 
 		Assert.hasText(jar, "Es-YARN.jar is not set and could not be detected...");

@@ -124,6 +124,14 @@ public class ClientRpc implements AutoCloseable {
         }
     }
 
+	public List<ApplicationReport> listEsClustersAlive() {
+		try {
+			return client.getApplications(ES_TYPE, ALIVE);
+		} catch (Exception ex) {
+			throw new EsYarnException(ex);
+		}
+	}
+
 	public void waitForApp(ApplicationId appId, long timeout) {
         boolean repeat = false;
 		long start = System.currentTimeMillis();
