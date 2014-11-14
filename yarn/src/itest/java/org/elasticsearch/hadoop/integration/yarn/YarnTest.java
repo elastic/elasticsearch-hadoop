@@ -73,11 +73,11 @@ public class YarnTest {
 
     @Test
     public void test4Start() throws Exception {
-		bootstrap.run(cmdArgs("-start"));
+		bootstrap.run(cmdArgs("-start", "loadConfig=" + getClass().getResource("/extra.properties").toURI().toString()));
         final List<ApplicationReport> apps = YC.listEsClusters();
         System.out.println(apps);
         final ApplicationId appId = apps.get(0).getApplicationId();
-		YC.waitForApp(appId, TimeUnit.SECONDS.toMillis(50));
+        YC.waitForApp(appId, TimeUnit.SECONDS.toMillis(50));
 		//System.in.read();
     }
 

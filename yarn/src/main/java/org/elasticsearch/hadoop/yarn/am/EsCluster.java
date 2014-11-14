@@ -53,6 +53,7 @@ import org.apache.hadoop.yarn.util.Records;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
 import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.StringUtils;
+import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
 /**
  * logical cluster managing the global lifecycle for its multiple containers.
@@ -64,68 +65,69 @@ class EsCluster implements AutoCloseable {
     private final AppMasterRpc amRpc;
     private final NodeMasterRpc nmRpc;
     private final Configuration cfg;
-	private final Config appConfig;
+    private final Config appConfig;
+	private final Map<String, String> masterEnv;
 
     private volatile boolean running = false;
     private volatile boolean clusterHasFailed = false;
 
-	private final Set<ContainerId> allocatedContainers = new LinkedHashSet<ContainerId>();
-	private final Set<ContainerId> completedContainers = new LinkedHashSet<ContainerId>();
+    private final Set<ContainerId> allocatedContainers = new LinkedHashSet<ContainerId>();
+    private final Set<ContainerId> completedContainers = new LinkedHashSet<ContainerId>();
 
-	public EsCluster(final AppMasterRpc rpc, Config appConfig) {
+    public EsCluster(final AppMasterRpc rpc, Config appConfig, Map<String, String> masterEnv) {
         this.amRpc = rpc;
         this.cfg = rpc.getConfiguration();
         this.nmRpc = new NodeMasterRpc(cfg, rpc.getNMToCache());
-		this.appConfig = appConfig;
-	}
+        this.appConfig = appConfig;
+		this.masterEnv = masterEnv;
+    }
 
-	public void start() {
-		running = true;
-		nmRpc.start();
+    public void start() {
+        running = true;
+        nmRpc.start();
 
-		log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
+        log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
 
-		// register requests
-		Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
-		Priority prio = Priority.newInstance(appConfig.amPriority());
+        // register requests
+        Resource capability = YarnCompat.resource(cfg, appConfig.containerMem(), appConfig.containerVCores());
+        Priority prio = Priority.newInstance(appConfig.amPriority());
 
-		for (int i = 0; i < appConfig.containersToAllocate(); i++) {
-			// TODO: Add allocation (host/rack rules) - and disable location constraints
-			ContainerRequest req = new ContainerRequest(capability, null, null, prio);
-			amRpc.addContainerRequest(req);
-		}
+        for (int i = 0; i < appConfig.containersToAllocate(); i++) {
+            // TODO: Add allocation (host/rack rules) - and disable location constraints
+            ContainerRequest req = new ContainerRequest(capability, null, null, prio);
+            amRpc.addContainerRequest(req);
+        }
 
 
-		// update status every 5 sec
-		final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
+        // update status every 5 sec
+        final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
 
-		// start the allocation loop
-		// when a new container is allocated, launch it right away
+        // start the allocation loop
+        // when a new container is allocated, launch it right away
 
-		int responseId = 0;
+        int responseId = 0;
 
-		try {
+        try {
+            do {
+                AllocateResponse alloc = amRpc.allocate(responseId++);
+                List<Container> currentlyAllocated = alloc.getAllocatedContainers();
+                for (Container container : currentlyAllocated) {
+                    launchContainer(container);
+                    allocatedContainers.add(container.getId());
+                }
 
-			do {
-				AllocateResponse alloc = amRpc.allocate(responseId++);
-				List<Container> currentlyAllocated = alloc.getAllocatedContainers();
-				for (Container container : currentlyAllocated) {
-					launchContainer(container);
-					allocatedContainers.add(container.getId());
-				}
+                if (currentlyAllocated.size() > 0) {
+                    int needed = appConfig.containersToAllocate() - allocatedContainers.size();
+                    if (needed > 0) {
+                        log.info(String.format("%s containers allocated, %s remaining", allocatedContainers.size(),
+                                needed));
+                    }
+                    else {
+                        log.info(String.format("Fully allocated %s containers", allocatedContainers.size()));
+                    }
+                }
 
-				if (currentlyAllocated.size() > 0) {
-					int needed = appConfig.containersToAllocate() - allocatedContainers.size();
-					if (needed > 0) {
-						log.info(String.format("%s containers allocated, %s remaining", allocatedContainers.size(),
-								needed));
-					}
-					else {
-						log.info(String.format("Fully allocated %s containers", allocatedContainers.size()));
-					}
-				}
-
-				List<ContainerStatus> completed = alloc.getCompletedContainersStatuses();
+                List<ContainerStatus> completed = alloc.getCompletedContainersStatuses();
                 for (ContainerStatus status : completed) {
                     if (!completedContainers.contains(status.getContainerId())) {
                         ContainerId containerId = status.getContainerId();
@@ -159,7 +161,7 @@ class EsCluster implements AutoCloseable {
                     }
                 }
 
-				if (completedContainers.size() == appConfig.containersToAllocate()) {
+                if (completedContainers.size() == appConfig.containersToAllocate()) {
                     running = false;
                 }
 
@@ -185,18 +187,28 @@ class EsCluster implements AutoCloseable {
     private void launchContainer(Container container) {
         ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
 
-        Config conf = new Config(null);
-
-        //ctx.setEnvironment(YarnUtils.setupEnv(yarnConf));
-        ctx.setLocalResources(setupEsZipResource(conf));
-        ctx.setCommands(setupEsScript(conf));
+        ctx.setEnvironment(setupEnv(appConfig));
+        ctx.setLocalResources(setupEsZipResource(appConfig));
+        ctx.setCommands(setupEsScript(appConfig));
 
         log.info("About to launch container for command: " + ctx.getCommands());
 
         // setup container
         Map<String, ByteBuffer> startContainer = nmRpc.startContainer(container, ctx);
-		log.info("Started container " + container);
+        log.info("Started container " + container);
     }
+
+    private Map<String, String> setupEnv(Config appConfig) {
+        // standard Hadoop env setup
+        Map<String, String> env = YarnUtils.setupEnv(cfg);
+		// copy esYarn Config
+		//env.put(EsYarnConstants.CFG_PROPS, masterEnv.get(EsYarnConstants.CFG_PROPS));
+		// plus expand its vars into the env
+        YarnUtils.addToEnv(env, appConfig.envVars());
+
+		return env;
+    }
+
 
     private Map<String, LocalResource> setupEsZipResource(Config conf) {
         // elasticsearch.zip

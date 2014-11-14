@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.yarn.util;
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -62,28 +63,35 @@ public abstract class YarnUtils {
         Map<String, String> env = new LinkedHashMap<String, String>(); // System.getenv()
         // add Hadoop Classpath
         for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, YarnCompat.DEFAULT_PLATFORM_APPLICATION_CLASSPATH())) {
-            addToEnv(env, Environment.CLASSPATH.name(), c.trim(), YarnCompat.CLASS_PATH_SEPARATOR());
+			addToEnv(env, Environment.CLASSPATH.name(), c.trim());
         }
         // add es-hadoop jar / current folder jars
-        addToEnv(env, Environment.CLASSPATH.name(), "./*", YarnCompat.CLASS_PATH_SEPARATOR());
+		addToEnv(env, Environment.CLASSPATH.name(), "./*");
 
         //
         // some es-yarn constants
         //
-        addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS), YarnCompat.CLASS_PATH_SEPARATOR());
+		addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
 
         return env;
     }
 
-	public static void addToEnv(Map<String, String> env, String key, String value, String separator) {
+	public static void addToEnv(Map<String, String> env, String key, String value) {
 		String val = env.get(key);
         if (val == null) {
             val = value;
         }
         else {
-            val = val + separator + value;
+			val = val + YarnCompat.CLASS_PATH_SEPARATOR() + value;
         }
 		env.put(key, val);
+	}
+
+
+	public static void addToEnv(Map<String, String> env, Map<String, String> envVars) {
+		for (Entry<String, String> entry : envVars.entrySet()) {
+			addToEnv(env, entry.getKey(), entry.getValue());
+		}
     }
 
     public static Object minVCores(Configuration cfg, int vCores) {

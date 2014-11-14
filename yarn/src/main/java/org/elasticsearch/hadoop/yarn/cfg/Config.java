@@ -24,7 +24,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -165,6 +167,18 @@ public class Config {
 
 		Assert.hasText(jar, "Es-YARN.jar is not set and could not be detected...");
 		return new File(jar);
+	}
+
+	public Map<String, String> envVars() {
+		Map<String, String> env = new LinkedHashMap<String, String>();
+		Set<String> keys = cfg.stringPropertyNames();
+		String prefix = "env.";
+		for (String key : keys) {
+			if (key.startsWith("env.")) {
+				env.put(key.substring(prefix.length()), cfg.getProperty(key));
+			}
+		}
+		return env;
 	}
 
 	public Properties asProperties() {
