@@ -5,7 +5,7 @@ Note the project is in Beta status.
 
 ## Requirements
 
-Elasticsearch YARN requires Hadoop 2.4.x or higher (the latest stable release is recommended.
+Elasticsearch YARN requires Hadoop 2.4.x or higher (the latest stable release is recommended).
 
 ## Install
 
@@ -30,14 +30,17 @@ Simply run `hadoop jar elasticsearch-yarn-<version>.jar` to get a list of availa
 
     > hadoop jar elasticsearch-yarn-<version>.jar
     No command specified
-    Usage:
-     -download-es  : Downloads Elasticsearch.ZIP from the offical channels
-     -install      : Installs/Provisions Elasticsearch-YARN into HDFS
-     -install-es   : Installs/Provisions Elasticsearch into HDFS
-     -start        : Starts provisioned Elasticsearch in YARN
-     -status       : Reports status of Elasticsearch in YARN
-     -stop         : Stops Elasticsearch in YARN
-     -help         : Prints this help
+	Usage:
+		 -download-es  : Downloads Elasticsearch.zip
+		 -install      : Installs/Provisions Elasticsearch-YARN into HDFS
+		 -install-es   : Installs/Provisions Elasticsearch into HDFS
+		 -start        : Starts provisioned Elasticsearch in YARN
+		 -status       : Reports status of Elasticsearch in YARN
+		 -stop         : Stops Elasticsearch in YARN
+		 -help         : Prints this help
+
+	Configuration options can be specified _after_ each command; see the documentation for more information.
+
  
 Each command should be self-explanatory. The typical usage scenario is:
 

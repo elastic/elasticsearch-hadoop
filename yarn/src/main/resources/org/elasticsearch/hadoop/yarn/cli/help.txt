@@ -7,4 +7,4 @@ Usage:
      -stop         : Stops Elasticsearch in YARN
      -help         : Prints this help
 
-Configuration options can be specified _after_ each command; see the documentation for more information
+Configuration options can be specified _after_ each command; see the documentation for more information.
