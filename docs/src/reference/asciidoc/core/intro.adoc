@@ -9,7 +9,7 @@
 {ehtm} is a _passive_ component, allowing Hadoop jobs to use it as a library and interact with {es} through {ehtm} APIs.
 
 [[project-name-alias]]
-While the official name of the project is {ehtm} through-out the documentation the term {eh} will be used instead to increase readability.
+While the official name of the project is {ehtm} throughout the documentation the term {eh} will be used instead to increase readability.
 
 include::intro/typos.adoc[]
 
