@@ -20,9 +20,7 @@ package org.elasticsearch.spark.integration;
 
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConversions.propertiesAsScalaMap
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.IntegerType
@@ -46,12 +44,10 @@ import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
-
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-
 import org.junit.Test
-
 import javax.xml.bind.DatatypeConverter
+import org.apache.spark.sql.catalyst.expressions.GenericRow
 
 
 object AbstractScalaEsScalaSparkSQL {
@@ -135,18 +131,56 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       assertTrue(nameRDD.count == 10)
     }
 
+    @Test
+    def testEsSchemaRDD3WriteWithRichMapping() {
+      val input = TestUtils.sampleArtistsDat()
+      val data = sc.textFile(input)
+
+      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+        StructField("name", StringType, false),
+        StructField("url", StringType, true),
+        StructField("pictures", StringType, true),
+        StructField("time", TimestampType, true),
+        StructField("nested", 
+            StructType(Seq(StructField("id", IntegerType, false), 
+		        StructField("name", StringType, false),
+		        StructField("url", StringType, true),
+		        StructField("pictures", StringType, true),
+		        StructField("time", TimestampType, true))), true)))
+    
+      val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()),
+    		  											Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()))))
+      val schemaRDD = sqc.applySchema(rowRDD, schema)
+
+      val target = "sparksql-test/scala-basic-write-rich-mapping-id-mapping"
+      schemaRDD.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
+      assertTrue(RestUtils.exists(target))
+      assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+      assertThat(RestUtils.exists(target + "/1"), is(true))
+    }
+
+    @Test
+    def testEsSchemaRDD4ReadRichMapping() {
+      val target = "sparksql-test/scala-basic-write-rich-mapping-id-mapping"
+        
+      val schemaRDD = sqc.esRDD(target)
+      
+      assertTrue(schemaRDD.count > 300)
+      println(schemaRDD.schemaString)
+    }
+        
     private def artistsAsSchemaRDD = {         
       val input = TestUtils.sampleArtistsDat()
-        val data = sc.textFile(input)
+      val data = sc.textFile(input)
 
-        val schema = StructType(Seq(StructField("id", IntegerType, false), 
-            StructField("name", StringType, false),
-            StructField("url", StringType, true),
-            StructField("pictures", StringType, true),
-            StructField("time", TimestampType, true)))
-        
-        val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis())))
-        val schemaRDD = sqc.applySchema(rowRDD, schema)
-        schemaRDD
+      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+        StructField("name", StringType, false),
+        StructField("url", StringType, true),
+        StructField("pictures", StringType, true),
+        StructField("time", TimestampType, true)))
+    
+      val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis())))
+      val schemaRDD = sqc.applySchema(rowRDD, schema)
+      schemaRDD
     }
 }
