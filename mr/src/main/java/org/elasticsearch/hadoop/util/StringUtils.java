@@ -318,4 +318,13 @@ public abstract class StringUtils {
             throw new EsHadoopIllegalArgumentException("Cannot encode path" + query, ex);
         }
     }
+
+	public static boolean isLowerCase(CharSequence string) {
+		for (int index = 0; index < string.length(); index++) {
+			if (Character.isUpperCase(string.charAt(index))) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

@@ -23,14 +23,14 @@ java version "1.7.0_55"
 [[requirements-es]]
 === {es}
 
-version *0.90* or higher, though we highly recommend using the latest Elasticsearch (currently 1.3.x) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
+version *0.90* or higher, though we *highly* recommend using the latest Elasticsearch (currently 1.4.0) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
 
 The {es} version is shown in its folder name:
 
 [source,bash]
 ----
 $ ls
-elasticsearch-1.3.4
+elasticsearch-1.4.0
 ----
 
 If {es} is running (locally or remotely), one can find out through REST its version:
@@ -42,11 +42,11 @@ $ curl -XGET http://localhost:9200
   "status" : 200,
   "name" : "Dazzler",
   "version" : {
-    "number" : "1.3.4",
-    "build_hash" : "a70f3ccb52200f8f2c87e9c370c6597448eb3e45",
-    "build_timestamp" : "2014-09-30T09:07:17Z",
+    "number" : "1.4.0",
+    "build_hash" : "bc94bd81298f81c656893ab1ddddd30a99356066",
+    "build_timestamp" : "2014-11-05T14:26:12Z",
     "build_snapshot" : false,
-    "lucene_version" : "4.9"
+    "lucene_version" : "4.10.2"
   },
   "tagline" : "You Know, for Search"
 }
@@ -79,12 +79,14 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Amazon EMR		| 3.0.x
 | Amazon EMR		| 2.4.x
 
+| Cloudera CDH		| 5.2.x
 | Cloudera CDH		| 5.1.x
 | Cloudera CDH		| 5.0.x
 | Cloudera CDH		| 4.5.x
 | Cloudera CDH		| 4.4.x
 | Cloudera CDH		| 4.2.x
 
+| Hortonworks HDP   | 2.2.x
 | Hortonworks HDP   | 2.1.x
 | Hortonworks HDP   | 2.0.x
 | Hortonworks HDP   | 1.3.x

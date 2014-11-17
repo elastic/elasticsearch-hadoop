@@ -79,7 +79,7 @@ public abstract class HadoopCfgUtils {
     }
 
     public static String getReduceTasks(Configuration cfg) {
-        return get(cfg, "mapreduce.job.reduces", "mapred.reduce.tasks");
+		return get(cfg, "mapreduce.job.reduces", "mapred.reduce.tasks", "1");
     }
 
     public static boolean getSpeculativeReduce(Configuration cfg) {
@@ -95,7 +95,7 @@ public abstract class HadoopCfgUtils {
     }
 
     public static TimeValue getTaskTimeout(Configuration cfg) {
-        return TimeValue.parseTimeValue(get(cfg, "mapreduce.task.timeout", "mapred.task.timeout"));
+        return TimeValue.parseTimeValue(get(cfg, "mapreduce.task.timeout", "mapred.task.timeout", "600s"));
     }
 
     public static Properties asProperties(Configuration cfg) {
@@ -111,8 +111,12 @@ public abstract class HadoopCfgUtils {
     }
 
     private static String get(Configuration cfg, String hadoop2, String hadoop1) {
+        return get(cfg, hadoop2, hadoop1, null);
+    }
+
+    private static String get(Configuration cfg, String hadoop2, String hadoop1, String defaultValue) {
         String prop = cfg.get(hadoop2);
-        return (prop != null ? prop : (hadoop1 != null ? cfg.get(hadoop1) : null));
+        return (prop != null ? prop : (hadoop1 != null ? cfg.get(hadoop1) : defaultValue));
     }
 
     private static boolean get(Configuration cfg, String hadoop2, String hadoop1, boolean defaultValue) {

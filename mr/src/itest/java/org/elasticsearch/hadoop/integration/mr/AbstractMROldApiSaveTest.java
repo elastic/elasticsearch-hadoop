@@ -40,12 +40,15 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapred.lib.IdentityMapper;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
+import org.apache.hadoop.mapreduce.OutputFormat;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
+import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
@@ -150,6 +153,23 @@ public class AbstractMROldApiSaveTest {
         this.indexPrefix = indexPrefix;
         this.config = config;
     }
+
+	@Test
+	public void testBasicMultiSave() throws Exception {
+		JobConf conf = createJobConf();
+		conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
+
+		MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
+		MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
+		//MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
+
+		PrintStreamOutputFormat.stream(conf, Stream.OUT);
+		//conf.set("mapred.output.dir", "foo/bar");
+		//FileOutputFormat.setOutputPath(conf, new Path("foo/bar"));
+
+		conf.setClass("mapred.output.format.class", MultiOutputFormat.class, OutputFormat.class);
+		runJob(conf);
+	}
 
 
     @Test

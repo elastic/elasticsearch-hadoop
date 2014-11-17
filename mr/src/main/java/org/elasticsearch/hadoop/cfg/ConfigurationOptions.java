@@ -174,6 +174,27 @@ public interface ConfigurationOptions {
 
 
     /** Network options */
+    // SSL
+    String ES_NET_USE_SSL = "es.net.ssl";
+    String ES_NET_USE_SSL_DEFAULT = "false";
+
+	String ES_NET_SSL_PROTOCOL = "es.net.ssl.protocol";
+	String ES_NET_SSL_PROTOCOL_DEFAULT = "TLS"; // SSL as an alternative
+
+	String ES_NET_SSL_KEYSTORE_LOCATION = "es.net.ssl.keystore.location";
+	String ES_NET_SSL_KEYSTORE_TYPE = "es.net.ssl.keystore.type";
+	String ES_NET_SSL_KEYSTORE_TYPE_DEFAULT = "JKS"; // PKCS12 could also be used
+	String ES_NET_SSL_KEYSTORE_PASS = "es.net.ssl.keystore.pass";
+
+	String ES_NET_SSL_TRUST_STORE_LOCATION = "es.net.ssl.truststore.location";
+	String ES_NET_SSL_TRUST_STORE_PASS = "es.net.ssl.truststore.pass";
+
+	String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED = "es.net.ssl.cert.allow.self.signed";
+	String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED_DEFAULT = "false";
+
+    String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
+    String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";
+
     String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";
     String ES_NET_PROXY_HTTP_PORT = "es.net.proxy.http.port";
     String ES_NET_PROXY_HTTP_USER = "es.net.proxy.http.user";

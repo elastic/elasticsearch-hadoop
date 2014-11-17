@@ -19,22 +19,23 @@
 package org.elasticsearch.hadoop.rest.commonshttp;
 
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 
 /**
- * Class used to make sure the SOCKS protocol object is behaving like the original one.
+ * Class used to make sure wrapped protocol object is behaving like the original one.
  * Otherwise this leads to connections not being closed (as they are considered different).
  */
-class SocksProtocol extends Protocol {
+class DelegatedProtocol extends Protocol {
 
     private final Protocol original;
 
-    SocksProtocol(SocksSocketFactory factory, Protocol original) {
-        super("http", factory, 80);
+	DelegatedProtocol(ProtocolSocketFactory factory, Protocol original, String scheme, int port) {
+		super(scheme, factory, port);
         this.original = original;
     }
 
     public boolean equals(Object obj) {
-        return (obj instanceof SocksProtocol ? true : original.equals(obj));
+        return (obj instanceof DelegatedProtocol ? true : original.equals(obj));
     }
 
     public int hashCode() {

@@ -243,6 +243,47 @@ public abstract class Settings {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
 
+    // SSL
+    public boolean getNetworkSSLEnabled() {
+        return Booleans.parseBoolean(getProperty(ES_NET_USE_SSL, ES_NET_USE_SSL_DEFAULT));
+    }
+
+    public String getNetworkSSLKeyStoreLocation() {
+        return getProperty(ES_NET_SSL_KEYSTORE_LOCATION);
+    }
+
+	public String getNetworkSSLProtocol() {
+		return getProperty(ES_NET_SSL_PROTOCOL, ES_NET_SSL_PROTOCOL_DEFAULT);
+	}
+
+    public String getNetworkSSLKeyStoreType() {
+		return getProperty(ES_NET_SSL_KEYSTORE_TYPE, ES_NET_SSL_KEYSTORE_TYPE_DEFAULT);
+    }
+
+    public String getNetworkSSLKeyStorePass() {
+        return getProperty(ES_NET_SSL_KEYSTORE_PASS);
+    }
+
+    public String getNetworkSSLTrustStoreLocation() {
+        return getProperty(ES_NET_SSL_TRUST_STORE_LOCATION);
+    }
+
+    public String getNetworkSSLTrustStorePass() {
+        return getProperty(ES_NET_SSL_TRUST_STORE_PASS);
+    }
+
+    public boolean getNetworkSSLAcceptSelfSignedCert() {
+        return Booleans.parseBoolean(getProperty(ES_NET_SSL_CERT_ALLOW_SELF_SIGNED, ES_NET_SSL_CERT_ALLOW_SELF_SIGNED_DEFAULT));
+    }
+
+    public String getNetworkHttpAuthUser() {
+        return getProperty(ES_NET_HTTP_AUTH_USER);
+    }
+
+    public String getNetworkHttpAuthPass() {
+        return getProperty(ES_NET_HTTP_AUTH_PASS);
+    }
+
     public String getNetworkProxyHttpHost() {
         return getProperty(ES_NET_PROXY_HTTP_HOST);
     }
@@ -400,5 +441,4 @@ public abstract class Settings {
     }
 
     protected abstract Properties asProperties();
-
 }

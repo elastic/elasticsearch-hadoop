@@ -1,4 +1,4 @@
-# Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop) [![Build Status](http://build-us-1.elasticsearch.org/buildStatus/icon?job=es-hadoop-quick)](http://build-us-1.elasticsearch.org/view/Hadoop/job/es-hadoop-quick/)
+# Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elasticsearch/elasticsearch-hadoop.png)](https://travis-ci.org/elasticsearch/elasticsearch-hadoop) [![Build Status](http://build-us-1.elasticsearch.org/view/Hadoop/job/es-hadoop-quick/badge/icon)](http://build-us-1.elasticsearch.org/view/Hadoop/job/es-hadoop-quick/)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.  
 Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
@@ -18,17 +18,17 @@ Available through any Maven-compatible tool:
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
 </dependency>
 ```
-### Beta Release (currently `2.1.0.Beta2`)
+### Beta Release (currently `2.1.0.Beta3`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.Beta1</version>
+  <version>2.1.0.Beta3</version>
 </dependency>
 ```
 

@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
+import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
@@ -66,7 +67,9 @@ private[sql] object MappingUtils {
       case DOUBLE  => DoubleType
       case STRING  => StringType
       case DATE    => TimestampType
-      case _       => throw new EsHadoopIllegalStateException("Unknown field type " + field);
+      case OBJECT  => convertToStruct(field)
+      // fall back to String
+      case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
 
     return new StructField(field.name(), dataType, true)

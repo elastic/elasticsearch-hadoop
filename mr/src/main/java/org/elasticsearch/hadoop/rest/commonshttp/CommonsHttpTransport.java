@@ -24,7 +24,18 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
+import org.apache.commons.httpclient.HostConfiguration;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnection;
+import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.SimpleHttpConnectionManager;
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
@@ -36,6 +47,8 @@ import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
@@ -73,6 +86,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private HttpConnection conn;
     private String proxyInfo = "";
     private final String httpInfo;
+    private final Settings settings;
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
@@ -127,6 +141,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     public CommonsHttpTransport(Settings settings, String host) {
+        this.settings = settings;
         httpInfo = host;
 
         HttpClientParams params = new HttpClientParams();
@@ -147,19 +162,21 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         params.setSoTimeout((int) settings.getHttpTimeout());
         HostConfiguration hostConfig = new HostConfiguration();
 
+        hostConfig = setupSSLIfNeeded(settings, hostConfig);
         hostConfig = setupSocksProxy(settings, hostConfig);
-        Object[] httpProxySettings = setupHttpProxy(settings, hostConfig);
-        hostConfig = (HostConfiguration) httpProxySettings[0];
+        Object[] authSettings = setupHttpProxy(settings, hostConfig);
+        hostConfig = (HostConfiguration) authSettings[0];
 
         try {
-            hostConfig.setHost(new URI(escapeUri(host), false));
+            hostConfig.setHost(new URI(escapeUri(host, settings.getNetworkSSLEnabled()), false));
         } catch (IOException ex) {
             throw new EsHadoopTransportException("Invalid target URI " + host, ex);
         }
         client = new HttpClient(params, new SocketTrackingConnectionManager());
         client.setHostConfiguration(hostConfig);
 
-        completeHttpProxyInit(httpProxySettings);
+        addHttpAuth(settings, authSettings);
+        completeAuth(authSettings);
 
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
@@ -170,9 +187,43 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private void completeHttpProxyInit(Object[] httpProxySettings) {
-        if (httpProxySettings[1] != null) {
-            client.setState((HttpState) httpProxySettings[1]);
+    private HostConfiguration setupSSLIfNeeded(Settings settings, HostConfiguration hostConfig) {
+        if (!settings.getNetworkSSLEnabled()) {
+            return hostConfig;
+        }
+
+        // we actually have a socks proxy, let's start the setup
+        if (log.isDebugEnabled()) {
+            log.debug("SSL Connection enabled");
+        }
+
+        //
+        // switch protocol
+        // due to how HttpCommons work internally this dance is best to be kept as is
+        //
+        String schema = "https";
+        int port = 443;
+        SecureProtocolSocketFactory sslFactory = new SSLSocketFactory(settings);
+
+        replaceProtocol(hostConfig, sslFactory, schema, port);
+
+		return hostConfig;
+    }
+
+    private void addHttpAuth(Settings settings, Object[] authSettings) {
+        if (StringUtils.hasText(settings.getNetworkHttpAuthUser())) {
+            HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
+            authSettings[1] = state;
+            state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(), settings.getNetworkHttpAuthPass()));
+            if (log.isDebugEnabled()) {
+                log.info("Using detected HTTP Auth credentials...");
+            }
+        }
+    }
+
+    private void completeAuth(Object[] authSettings) {
+        if (authSettings[1] != null) {
+            client.setState((HttpState) authSettings[1]);
             client.getParams().setAuthenticationPreemptive(true);
         }
     }
@@ -207,7 +258,6 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
                 HttpState state = new HttpState();
                 state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
-                state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
                 // client is not yet initialized so simply save the object for later
                 results[1] = state;
             }
@@ -270,21 +320,39 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
             }
 
-            // NB: not really needed (see below that the protocol is reseted) but in place just in case
-            hostConfig = new ProtocolAwareHostConfiguration(hostConfig);
-            SocksSocketFactory socksSocksFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
-            Protocol directHttp = Protocol.getProtocol("http");
-            Protocol proxiedHttp = new SocksProtocol(socksSocksFactory, directHttp);
-            hostConfig.setHost(proxyHost, proxyPort, proxiedHttp);
-            // NB: register the new protocol since when using absolute URIs, HttpClient#executeMethod will override the configuration (#387)
-            // NB: hence why the original/direct http protocol is saved - as otherwise the connection is not closed since it is considered different
-            // NB: (as the protocol identities don't match)
-            Protocol.registerProtocol("http", proxiedHttp);
+            //
+            // switch protocol
+            // due to how HttpCommons work internally this dance is best to be kept as is
+            //
+            String schema = settings.getNetworkSSLEnabled() ? "https" : "http";
+            int port = settings.getNetworkSSLEnabled() ? 443 : 80;
+            SocksSocketFactory socketFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
+			replaceProtocol(hostConfig, socketFactory, schema, port);
         }
 
         return hostConfig;
     }
 
+    private void replaceProtocol(HostConfiguration hostConfig, ProtocolSocketFactory socketFactory, String schema, int defaultPort) {
+        //
+        // switch protocol
+        // due to how HttpCommons work internally this dance is best to be kept as is
+        //
+
+        // NB: not really needed (see below that the protocol is reseted) but in place just in case
+        hostConfig = new ProtocolAwareHostConfiguration(hostConfig);
+        Protocol directHttp = Protocol.getProtocol(schema);
+        Protocol proxiedHttp = new DelegatedProtocol(socketFactory, directHttp, schema, defaultPort);
+        // NB: register the new protocol since when using absolute URIs, HttpClient#executeMethod will override the configuration (#387)
+        // NB: hence why the original/direct http protocol is saved - as otherwise the connection is not closed since it is considered different
+        // NB: (as the protocol identities don't match)
+
+		// this is not really needed since it's being replaced later on
+        // hostConfig.setHost(proxyHost, proxyPort, proxiedHttp);
+        Protocol.registerProtocol(schema, proxiedHttp);
+
+        // end dance
+    }
 
     @Override
     public Response execute(Request request) throws IOException {
@@ -313,7 +381,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         CharSequence uri = request.uri();
         if (StringUtils.hasText(uri)) {
-            http.setURI(new URI(escapeUri(uri.toString()), false));
+            http.setURI(new URI(escapeUri(uri.toString(), settings.getNetworkSSLEnabled()), false));
         }
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
         http.setPath(prefixPath(request.path().toString()));
@@ -377,10 +445,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private static String escapeUri(String uri) {
+    private static String escapeUri(String uri, boolean ssl) {
         // escape the uri right away
         String escaped = StringUtils.encodeUri(uri);
-        return escaped.contains("://") ? escaped : "http://" + escaped;
+        return escaped.contains("://") ? escaped : (ssl ? "https://" : "http://") + escaped;
     }
 
     private static String prefixPath(String string) {

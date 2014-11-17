@@ -21,7 +21,17 @@ package org.elasticsearch.hadoop.mr;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 
@@ -116,6 +126,11 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
+	protected Object parseDate(Long value) {
+		return new LongWritable(value);
+	}
+
+	@Override
     protected Object processDouble(Double value) {
         return new DoubleWritable(value);
     }

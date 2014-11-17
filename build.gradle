@@ -137,6 +137,21 @@ def revHash = gitHash()
 
 def nullLog4jConfig = file("$rootDir/mr/src/test/resources/log4jnull.properties").toURI().toURL().toString()
 
+ext.manifestTemplate = manifest {
+		attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+		attributes['Implementation-Title'] = project.name
+		attributes['Implementation-Version'] = project.version
+		attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
+		attributes['Implementation-Vendor'] = "Elasticsearch"
+		attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
+		
+		def build = System.env['ESHDP.BUILD']
+		if (build != null)
+			manifest.attributes['Build'] = build
+		
+		attributes['Repository-Revision'] = revHash
+}
+
 allprojects { project ->
 
 	compileJava {
@@ -217,18 +232,9 @@ allprojects { project ->
 
 	
 	jar {
-		manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-		manifest.attributes['Implementation-Title'] = project.name
-		manifest.attributes['Implementation-Version'] = project.version
-		manifest.attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-		manifest.attributes['Implementation-Vendor'] = "Elasticsearch"
-		manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-		
-		def build = System.env['ESHDP.BUILD']
-		if (build != null)
-			manifest.attributes['Build'] = build
-		
-		manifest.attributes['Repository-Revision'] = revHash
+		manifest {
+			from manifestTemplate
+		}
 		
 		from("$rootDir/docs/src/info") {
 			include "license.txt"
@@ -328,6 +334,8 @@ project(":elasticsearch-hadoop-mr") {
 			// missing dependency in Hadoop 1.0.3/1.0.4
 			testCompile "commons-io:commons-io:2.1"
 		}
+		
+		testCompile "io.netty:netty-all:4.0.23.Final"
 	}
 	
 	def generatedResources = "$buildDir/generated-resources/main"

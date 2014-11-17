@@ -1,9 +1,33 @@
 [[reference]]
-= Reference
+= Elasticsearch for Apache Hadoop
 
 [partintro]
 --
+{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading or new upcoming libraries like {sp} ) to 'interact' with {es}. One can think of it as a _connector_ that allows data to flow 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
+
+{ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. As such,
+{ehtm} is a _passive_ component, allowing Hadoop jobs to use it as a library and interact with {es} through {ehtm} APIs.
+
+[[project-name-alias]]
+While the official name of the project is {ehtm} throughout the documentation the term {eh} will be used instead to increase readability.
+
+include::intro/typos.adoc[]
+
+TIP: If you are looking for {es} HDFS Snapshot/Restore plugin (a separate project), please refer to its https://github.com/elasticsearch/elasticsearch-hadoop/tree/master/repository-hdfs[home page].
+
+TIP: If you are looking for {es} on YARN (a separate project), please refer to its dedicated <<es-yarn,section>>. 
+--
+
+[[doc-sections]]
+== Documentation sections
+The documentation is broken-down in two parts:
+
+=== Setup & Requirements
+This <<features,section>> provides an overview of the project, its requirements (and supported environment and libraries) plus information on how to easily install {eh} in your environment.
+
+=== Reference Documentation
 This part of the documentation explains the core functionality of {eh} starting with the configuration options and architecture and gradually explaining the various major features. At a higher level the reference is broken down into architecture and configuration section which are general, {mr} and the libraries built on top of it, upcoming computation libraries (like {sp}) and finally mapping, metrics and troubleshooting.
+
 We recommend going through the entire documentation even superficially when trying out {eh} for the first time, however those in a rush, can jump directly to the desired sections:
 
 <<arch>>:: overview of the {eh} architecture and how it maps on top of Hadoop
@@ -25,4 +49,7 @@ We recommend going through the entire documentation even superficially when tryi
 <<metrics>>:: Elasticsearch Hadoop metrics
 
 <<troubleshooting>>:: tips on troubleshooting and getting help
---
+
+
+include::intro/intro.adoc[]
+
