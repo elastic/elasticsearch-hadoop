@@ -83,8 +83,8 @@ That's it!
 There are plenty of tools in Hadoop to check running YARN applications; with Elasticsearch YARN try the `-status` command:
 
     > hadoop jar elasticsearch-yarn-<version>.jar -status
-    Id			                    State	  Status	 Start Time	      Finish Time	Tracking URL	
-    application_1415813090693_0001  RUNNING   UNDEFINED  11/12/14 7:24 PM ---           http://hadoop:8088/proxy/application_1415813090693_0001/A
+    Id			                    State	  Status	 Start Time	        Finish Time	  Tracking URL	
+    application_1415813090693_0001  RUNNING   UNDEFINED  11/12/14 7:24 PM   N/A           http://hadoop:8088/proxy/application_1415813090693_0001/A
 
 ### Stop Elasticsearch clusters in YARN
 
