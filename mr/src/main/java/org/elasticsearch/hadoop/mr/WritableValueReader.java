@@ -73,6 +73,7 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = BytesWritable.class;
             break;
         case OBJECT:
+        case NESTED:
             arrayType = LinkedMapWritable.class;
             break;
         // everything else gets translated to String
