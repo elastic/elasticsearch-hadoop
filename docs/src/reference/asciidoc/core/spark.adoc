@@ -78,7 +78,7 @@ val conf = new JobConf()                                <1>
 conf.set("es.resource", "radio/artists")                <2>
 conf.set("es.query", "?q=me*")                          <3>
 val esRDD = sc.hadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
-                               classOf[Text], classOf[MapWritable]))
+                               classOf[Text], classOf[MapWritable])
 val docCount = esRDD.count();
 ----
 
@@ -115,8 +115,8 @@ The Scala version is below:
 val conf = new Configuration()                          <1>
 conf.set("es.resource", "radio/artists")                <2>
 conf.set("es.query", "?q=me*")                          <3>
-val esRDD = sc.newHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
-                                  classOf[Text], classOf[MapWritable]))
+val esRDD = sc.newAPIHadoopRDD(conf, classOf[EsInputFormat[Text, MapWritable]],     <4>
+                                  classOf[Text], classOf[MapWritable])
 val docCount = esRDD.count();
 ----
 
