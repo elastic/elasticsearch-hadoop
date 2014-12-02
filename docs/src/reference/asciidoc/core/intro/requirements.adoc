@@ -190,13 +190,13 @@ Spark SQL 1.1.0 or higher (and thus Spark 1.1.0) is required. Note that Spark SQ
 [[requirements-storm]]
 === Apache Storm
 
-Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently 0.9.2).
+Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently 0.9.3).
 
 One can discover the Storm version by looking at its folder or by invoking the command:
 
 [source, bash]
 ----
 $ bin/storm version
-0.9.2-incubating
+0.9.3
 ----
 

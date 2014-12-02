@@ -278,13 +278,14 @@ allprojects { project ->
 			links = [
 				"http://docs.oracle.com/javase/6/docs/api/",
 				"http://commons.apache.org/proper/commons-logging/apidocs/",
-				"http://hadoop.apache.org/docs/stable1/api/",
+				"http://hadoop.apache.org/docs/stable2/api/",
 				//"http://hbase.apache.org/apidocs/",
-				"http://pig.apache.org/docs/r0.12.1/api/",
+				"http://pig.apache.org/docs/r0.14.0/api/",
+				// r0.13.1 is invalid as it does not provide the package list
 				"http://hive.apache.org/javadocs/r0.12.0/api/",
 				"http://docs.cascading.org/cascading/2.5/javadoc/",
 				"http://spark.apache.org/docs/latest/api/java/",
-				"http://storm.incubator.apache.org/apidocs/"
+				"http://storm.apache.org/apidocs/"
 			]
 
 			excludes = [
@@ -494,7 +495,7 @@ project(":elasticsearch-storm") {
 	dependencies {
 		provided("org.apache.storm:storm-core:$stormVersion")
 		
-		//testRuntime "com.esotericsoftware.kryo:kryo:2.21"
+		itestCompile "com.google.guava:guava:16.0.1"
 		itestRuntime "com.twitter:carbonite:1.4.0"
 	}
 }
