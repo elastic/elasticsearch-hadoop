@@ -24,6 +24,7 @@ allprojects {
   	  // Hive depends on JDO ec2 missing from Maven Central
 	  maven { url "http://www.datanucleus.org/downloads/maven2" }
 	  maven { url "http://oss.sonatype.org/content/groups/public/" }
+  
 	}
 
 	apply plugin: "java"
@@ -211,10 +212,15 @@ allprojects { project ->
 		// to avoid SLF4J warnings, force only one version
 		force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
 		
-		// for slf4j use each dependency since there are so many variants
 		eachDependency { details ->
+
+			// for slf4j use each dependency since there are so many variants
 			if (details.requested.name.contains("slf4j-")) {
 				details.useVersion "1.7.6"
+			}
+			// handle Calcite SNAPSHOT dependency in Hive 0.14
+			if (details.requested.name.contains("calcite") && details.requested.version.contains('SNAPSHOT')) {
+				details.useVersion details.requested.version.replace("-SNAPSHOT","")
 			}
 		}
 	  }

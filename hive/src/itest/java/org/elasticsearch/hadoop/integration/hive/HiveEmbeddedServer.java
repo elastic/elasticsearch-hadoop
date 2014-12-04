@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -42,6 +43,8 @@ import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
 import org.apache.hadoop.hive.service.HiveServer;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.NTFSLocalFileSystem;
+import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 
 /**
@@ -76,7 +79,7 @@ class HiveEmbeddedServer implements HiveInstance {
     private static class InterceptingThreadLocal extends InheritableThreadLocal<SessionState> {
         @Override
         public void set(SessionState value) {
-            value.delete_resource(ResourceType.JAR);
+            deleteResource(value, ResourceType.JAR);
             super.set(value);
         }
     }
@@ -116,10 +119,13 @@ class HiveEmbeddedServer implements HiveInstance {
     }
 
     private HiveConf configure() throws Exception {
-        TestUtils.delete(new File("/tmp/hive"));
+        String scratchDir = NTFSLocalFileSystem.SCRATCH_DIR;
+
+        TestUtils.delete(new File(scratchDir));
 
         Configuration cfg = new Configuration();
         HiveConf conf = new HiveConf(cfg, HiveConf.class);
+		conf.addToRestrictList("columns.comments");
         refreshConfig(conf);
 
         HdpBootstrap.hackHadoopStagingOnWin();
@@ -144,11 +150,11 @@ class HiveEmbeddedServer implements HiveInstance {
 
         int random = new Random().nextInt();
 
-        conf.set("hive.metastore.warehouse.dir", "/tmp/hive/warehouse" + random);
-        conf.set("hive.metastore.metadb.dir", "/tmp/hive/metastore_db" + random);
-        conf.set("hive.exec.scratchdir", "/tmp/hive");
+        conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse" + random);
+        conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db" + random);
+        conf.set("hive.exec.scratchdir", scratchDir);
         conf.set("fs.permissions.umask-mode", "022");
-        conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=/tmp/hive/metastore_db" + random + ";create=true");
+        conf.set("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=" + scratchDir + "/metastore_db" + random + ";create=true");
         conf.set("hive.metastore.local", "true");
         conf.set("hive.aux.jars.path", "");
         conf.set("hive.added.jars.path", "");
@@ -214,6 +220,8 @@ class HiveEmbeddedServer implements HiveInstance {
             System.out.println("Skipping ADD JAR in local/embedded mode");
             return Collections.emptyList();
         }
+		// remove bogus configuration
+		config.set("columns.comments", "");
         server.execute(cmd);
         return server.fetchAll();
     }
@@ -226,5 +234,16 @@ class HiveEmbeddedServer implements HiveInstance {
             server = null;
             config = null;
         }
+    }
+
+    private static void deleteResource(SessionState value, ResourceType type) {
+        // Hive < 0.14
+        Method method = ReflectionUtils.findMethod(SessionState.class, "delete_resource", ResourceType.class);
+        if (method == null) {
+            method = ReflectionUtils.findMethod(SessionState.class, "delete_resources", ResourceType.class);
+        }
+
+        Assert.notNull(method, "Cannot detect delete resource(s) method on SessionState");
+        ReflectionUtils.invoke(method, value, type);
     }
 }
