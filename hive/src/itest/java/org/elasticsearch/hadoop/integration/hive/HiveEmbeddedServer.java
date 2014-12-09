@@ -121,7 +121,9 @@ class HiveEmbeddedServer implements HiveInstance {
     private HiveConf configure() throws Exception {
         String scratchDir = NTFSLocalFileSystem.SCRATCH_DIR;
 
-        TestUtils.delete(new File(scratchDir));
+
+		File scratchDirFile = new File(scratchDir);
+		TestUtils.delete(scratchDirFile);
 
         Configuration cfg = new Configuration();
         HiveConf conf = new HiveConf(cfg, HiveConf.class);
@@ -146,6 +148,9 @@ class HiveEmbeddedServer implements HiveInstance {
         else {
             conf.set("hive.scratch.dir.permission", "777");
             conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
+			scratchDirFile.mkdirs();
+			// also set the permissions manually since Hive doesn't do it...
+			scratchDirFile.setWritable(true, false);
         }
 
         int random = new Random().nextInt();
