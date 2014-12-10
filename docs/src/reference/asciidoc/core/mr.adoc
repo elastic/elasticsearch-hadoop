@@ -166,7 +166,7 @@ conf.setBoolean("mapred.reduce.tasks.speculative.execution", false); <2>
 conf.set("es.nodes", "es-server:9200");
 conf.set("es.resource", "radio/artists");                            <3>
 Job job = new Job(conf);
-job.setOutputFormat(EsOutputFormat.class);
+job.setOutputFormatClass(EsOutputFormat.class);
 job.setMapOutputValueClass(MapWritable.class);                       <4>
 ...
 job.waitForCompletion(true);
@@ -301,7 +301,7 @@ Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists/");            <1>
 conf.set("es.query", "?q=me*");            		      <2>
 Job job = new Job(conf);
-job.setInputFormat(EsInputFormat.class);
+job.setInputFormatClass(EsInputFormat.class);
 job.setMapOutputKeyClass(Text.class);
 job.setMapOutputValueClass(MapWritable.class);        <3>
 ...
