@@ -203,10 +203,12 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             this.client = partitionReader.client;
             this.queryBuilder = partitionReader.queryBuilder;
 
-            // heart-beat
-            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+			this.progressable = progressable;
 
-            this.progressable = progressable;
+			// in Hadoop-like envs (Spark) the progressable might be null and thus the heart-beat is not needed
+			if (progressable != null) {
+				beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+			}
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
@@ -278,7 +280,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean next(K key, V value) throws IOException {
             if (scrollQuery == null) {
-                beat.start();
+				if (beat != null) {
+					beat.start();
+				}
 
                 scrollQuery = queryBuilder.build(client, scrollReader);
                 size = scrollQuery.getSize();
