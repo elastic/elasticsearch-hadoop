@@ -30,7 +30,7 @@ public abstract class AbstractSerDe implements SerDe {
 
 	public void initialize(Configuration configuration, Properties tableProperties, Properties partitionProperties)
 			throws SerDeException {
-		initialize(configuration, SerDeUtils.createOverlayedProperties(tableProperties, partitionProperties));
+		initialize(configuration, createOverlayedProperties(tableProperties, partitionProperties));
 	}
 
 	public abstract void initialize(Configuration conf, Properties tbl) throws SerDeException;
@@ -44,4 +44,14 @@ public abstract class AbstractSerDe implements SerDe {
 	public abstract Object deserialize(Writable blob) throws SerDeException;
 
 	public abstract ObjectInspector getObjectInspector() throws SerDeException;
+
+	// used here to preserve source(not just binary)-compatibility with Hive <0.14
+	private static Properties createOverlayedProperties(Properties tblProps, Properties partProps) {
+		Properties props = new Properties();
+		props.putAll(tblProps);
+		if (partProps != null) {
+			props.putAll(partProps);
+		}
+		return props;
+	}
 }
