@@ -225,7 +225,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             scrollReader = new ScrollReader(reader, mapping);
 
             // heart-beat
-            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+            // in Hadoop-like envs (Spark) the progressable might be null and thus the heart-beat is not needed
+			if (progressable != null) {
+				beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+			}
 
             // initialize REST client
             client = new RestRepository(settings);
@@ -308,7 +311,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean next(K key, V value) throws IOException {
             if (scrollQuery == null) {
-                beat.start();
+				if (beat != null) {
+					beat.start();
+				}
 
                 scrollQuery = queryBuilder.build(client, scrollReader);
                 size = scrollQuery.getSize();

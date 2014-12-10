@@ -184,8 +184,11 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             // select the appropriate nodes first, to spread the load before-hand
             SettingsUtils.pinNode(settings, nodes.get(currentInstance % nodes.size()));
 
-            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
-            beat.start();
+			// in Hadoop-like envs (Spark) the progressable might be null and thus the heart-beat is not needed
+			if (progressable != null) {
+				beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+				beat.start();
+			}
 
             resource = new Resource(settings, false);
 
