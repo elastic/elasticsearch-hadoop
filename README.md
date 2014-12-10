@@ -288,7 +288,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 ```
 
 ## [Apache Storm][]
-ES-Hadoop provides native integration with Spark: for reading a dedicated `Spout` and for writing a specialized `Bolt`
+ES-Hadoop provides native integration with Storm: for reading a dedicated `Spout` and for writing a specialized `Bolt`
 
 ### Reading
 To read data from ES, use `EsSpout`:
