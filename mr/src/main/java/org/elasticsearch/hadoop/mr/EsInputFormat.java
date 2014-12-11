@@ -249,14 +249,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean nextKeyValue() throws IOException {
             // new API call routed to old API
-            if (currentKey == null) {
-                currentKey = createKey();
-            }
-            if (currentValue == null) {
-                currentValue = createValue();
-            }
-
-            // FIXME: does the new API mandate a new instance each time (?)
+			// under the new API always create new objects since consumers can (and sometimes will) modify them
+			currentKey = createKey();
+			currentValue = createValue();
             return next(currentKey, currentValue);
         }
 
@@ -330,8 +325,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             }
 
             Object[] next = scrollQuery.next();
-            currentKey = setCurrentKey(currentKey, key, next[0]);
-            currentValue = setCurrentValue(currentValue, value, next[1]);
+
+			// NB: the left assignment is not needed since method override
+			// the writable content however for consistency, they are below
+			currentKey = setCurrentKey(key, next[0]);
+			currentValue = setCurrentValue(value, next[1]);
 
             // keep on counting
             read++;
@@ -344,9 +342,23 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public abstract V createValue();
 
-        protected abstract K setCurrentKey(K oldApiKey, K newApiKey, Object object);
+		/**
+		 * Sets the current key.
+		 *
+		 * @param hadoopKey hadoop key
+		 * @param object the actual value to read
+		 * @return returns the key to be used; needed in scenario where the key is immutable (like Pig)
+		 */
+		protected abstract K setCurrentKey(K hadoopKey, Object object);
 
-        protected abstract V setCurrentValue(V oldApiValue, V newApiKey, Object object);
+		/**
+		 * Sets the current value.
+		 *
+		 * @param hadoopValue hadoop value
+		 * @param object the actual value to read
+		 * @return returns the value to be used; needed in scenario where the passed value is immutable (like Pig)
+		 */
+		protected abstract V setCurrentValue(V hadoopValue, Object object);
 
         @Override
         public long getPos() {
@@ -385,29 +397,22 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
 
         @Override
-        protected Text setCurrentKey(Text oldApiKey, Text newApiKey, Object object) {
-            String val = object.toString();
-            if (oldApiKey == null) {
-                oldApiKey = new Text();
-                oldApiKey.set(val);
+		protected Text setCurrentKey(Text hadoopKey, Object object) {
+			if (hadoopKey != null) {
+				hadoopKey.set(object.toString());
             }
-
-            // new API might not be used
-            if (newApiKey != null) {
-                newApiKey.set(val);
-            }
-            return oldApiKey;
+			return hadoopKey;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Map<Writable, Writable> setCurrentValue(Map<Writable, Writable> oldApiValue, Map<Writable, Writable> newApiKey, Object object) {
-            Map<Writable, Writable> val = (Map<Writable, Writable>) object;
-            if (newApiKey != null) {
-                newApiKey.clear();
-                newApiKey.putAll(val);
+		protected Map<Writable, Writable> setCurrentValue(Map<Writable, Writable> hadoopValue, Object object) {
+			if (hadoopValue != null) {
+				hadoopValue.clear();
+				Map<Writable, Writable> val = (Map<Writable, Writable>) object;
+				hadoopValue.putAll(val);
             }
-            return val;
+			return hadoopValue;
         }
     }
 

@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("rawtypes")
 public class EsPigInputFormat extends EsInputFormat<String, Map> {
@@ -43,7 +44,7 @@ public class EsPigInputFormat extends EsInputFormat<String, Map> {
 
         @Override
         public String createKey() {
-            return "";
+			return StringUtils.EMPTY;
         }
 
         @Override
@@ -52,25 +53,21 @@ public class EsPigInputFormat extends EsInputFormat<String, Map> {
         }
 
         @Override
-        protected String setCurrentKey(String oldApiKey, String newApiKey, Object object) {
-            //oldApiKey = object.toString();
-            //newApiKey = oldApiKey;
+		protected String setCurrentKey(String hadoopKey, Object object) {
+			// cannot override a String content (recipe for disaster)
+			// in case of Pig, it's okay to return a new object as it's using the new API
             return object.toString();
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        protected Map setCurrentValue(Map oldApiValue, Map newApiKey, Object object) {
+		protected Map setCurrentValue(Map hadoopValue, Object object) {
             Map map = (Map) object;
-            if (oldApiValue != null) {
-                oldApiValue.clear();
-                oldApiValue.putAll(map);
+			if (hadoopValue != null) {
+				hadoopValue.clear();
+				hadoopValue.putAll(map);
             }
-            else {
-                oldApiValue = map;
-            }
-            //newApiKey = map;
-            return oldApiValue;
+			return hadoopValue;
         }
     }
 
