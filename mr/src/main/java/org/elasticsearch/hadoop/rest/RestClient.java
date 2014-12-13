@@ -62,6 +62,7 @@ public class RestClient implements Closeable, StatsAware {
     private TimeValue scrollKeepAlive;
     private boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
+    private boolean ignoreExisting;
 
     {
         mapper = new ObjectMapper();
@@ -90,6 +91,8 @@ public class RestClient implements Closeable, StatsAware {
         else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
             retryPolicyName = NoHttpRetryPolicy.class.getName();
         }
+
+        ignoreExisting = settings.getBatchWriteIgnoreExisting();
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
     }
@@ -190,7 +193,8 @@ public class RestClient implements Closeable, StatsAware {
                 Map map = iterator.next();
                 Map values = (Map) map.values().iterator().next();
                 String error = (String) values.get("error");
-                if (error != null) {
+
+                if (error != null && !canIgnore(error)) {
                     // status - introduced in 1.0.RC1
                     Integer status = (Integer) values.get("status");
                     if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
@@ -214,6 +218,10 @@ public class RestClient implements Closeable, StatsAware {
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
+    }
+
+    private boolean canIgnore(String error) {
+        return ignoreExisting && error.contains("DocumentAlreadyExistsException");
     }
 
     private String prettify(String error) {

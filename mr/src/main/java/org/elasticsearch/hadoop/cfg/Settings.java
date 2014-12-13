@@ -93,6 +93,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_BATCH_FLUSH_MANUAL, ES_BATCH_FLUSH_MANUAL_DEFAULT));
     }
 
+    public boolean getBatchWriteIgnoreExisting() {
+        return Booleans.parseBoolean(getProperty(ES_BATCH_WRITE_IGNORE_EXISTING, ES_BATCH_WRITE_IGNORE_EXISTING_DEFAULT));
+    }
+
     public long getScrollKeepAlive() {
         return TimeValue.parseTimeValue(getProperty(ES_SCROLL_KEEPALIVE, ES_SCROLL_KEEPALIVE_DEFAULT)).getMillis();
     }
