@@ -103,11 +103,11 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
                     throw new EsHadoopIllegalArgumentException(String.format("Cannot find match for %s", pattern));
                 }
                 else {
-                    sb.append(field);
+					sb.append(StringUtils.jsonEncodingAsString(field.toString()));
                 }
             }
             else {
-                sb.append(object.toString());
+				sb.append(StringUtils.jsonEncodingAsString(object.toString()));
             }
         }
     }
@@ -116,7 +116,7 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
     public String field(Object target) {
         StringBuilder sb = new StringBuilder();
         sb.append("\"_index\":\"");
-        append(sb, index, target);
+		append(sb, index, target);
         sb.append("\",");
         sb.append("\"_type\":\"");
         append(sb, type, target);

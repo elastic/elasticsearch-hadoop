@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
@@ -35,9 +34,11 @@ public class JacksonJsonParser implements Parser {
 
     static {
         JSON_FACTORY = new JsonFactory();
-        JSON_FACTORY.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-        JSON_FACTORY.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
-        JSON_FACTORY.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+        //JSON_FACTORY.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
+        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
+        //JSON_FACTORY.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
     }
 
     public JacksonJsonParser(InputStream in) {
@@ -241,7 +242,7 @@ public class JacksonJsonParser implements Parser {
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
-    }
+	}
 
     private NumberType convertNumberType(JsonParser.NumberType numberType) {
         switch (numberType) {

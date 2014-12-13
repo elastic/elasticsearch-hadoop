@@ -71,6 +71,12 @@ public class BytesArray implements ByteSequence {
         return bytes.length - size;
     }
 
+	public void bytes(byte[] array) {
+		this.bytes = array;
+		this.size = array.length;
+		this.offset = 0;
+	}
+
     public void bytes(byte[] array, int size) {
         this.bytes = array;
         this.size = size;

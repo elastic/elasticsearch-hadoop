@@ -98,16 +98,16 @@ abstract class AbstractBulkFactory implements BulkFactory {
                 String val = value.toString();
                 if (lookForQuotes && addQuotesIfNecessary) {
                     if (val.startsWith("[") || val.startsWith("{")) {
-                        pool.get().bytes(val);
+						pool.get().bytes(val);
                     }
                     else {
                         pool.get().bytes(QUOTE);
-                        pool.get().bytes(val);
+						pool.get().bytes(val);
                         pool.get().bytes(QUOTE);
                     }
                 }
                 else {
-                    pool.get().bytes(val);
+					pool.get().bytes(val);
                 }
             }
             else {
@@ -296,7 +296,7 @@ abstract class AbstractBulkFactory implements BulkFactory {
             if (object instanceof FieldExtractor) {
                 hasSeenIndexExtractor = object instanceof IndexExtractor;
                 if (stringAccumulator.length() > 0) {
-                    compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
+					compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
                     stringAccumulator.setLength(0);
                     lastString = null;
                 }
