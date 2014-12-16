@@ -2,6 +2,7 @@
 package org.elasticsearch.spark.rdd
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 object EsRDDUtils {
 
@@ -29,7 +30,7 @@ object EsRDDUtils {
         case _: Seq[Any] => {
           // convert Seq of Any values to comma a separated string
           // compiler needs casting to Seq to allow map
-          val s: Seq[String] = (x.asInstanceOf[Seq[Any]] map (_.toString))
+          val s = Try(x.asInstanceOf[Seq[Any]] map (_.toString)).getOrElse(Nil)
           Some(s.mkString(","))
         }
         // the remaining types, Int, Double, Long all support toString without casting
