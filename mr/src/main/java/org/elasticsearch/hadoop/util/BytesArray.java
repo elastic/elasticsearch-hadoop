@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 /**
  * Wrapper class around a bytes array so that it can be passed as reference even if the underlying array is modified.
@@ -34,16 +35,20 @@ public class BytesArray implements ByteSequence {
     int size = 0;
 
     public BytesArray(int size) {
-        this(new byte[size], 0);
+        this(new byte[size], 0, 0);
     }
 
     public BytesArray(byte[] data) {
-        this.bytes = data;
-        this.size = data.length;
+        this(data, 0, data.length);
     }
 
     public BytesArray(byte[] data, int size) {
+        this(data, 0, size);
+    }
+
+    public BytesArray(byte[] data, int offset, int size) {
         this.bytes = data;
+        this.offset = offset;
         this.size = size;
     }
 
@@ -71,11 +76,11 @@ public class BytesArray implements ByteSequence {
         return bytes.length - size;
     }
 
-	public void bytes(byte[] array) {
-		this.bytes = array;
-		this.size = array.length;
-		this.offset = 0;
-	}
+    public void bytes(byte[] array) {
+        this.bytes = array;
+        this.size = array.length;
+        this.offset = 0;
+    }
 
     public void bytes(byte[] array, int size) {
         this.bytes = array;
@@ -137,8 +142,20 @@ public class BytesArray implements ByteSequence {
         }
         int newcount = size + len;
         checkSize(newcount);
-        System.arraycopy(b, off, bytes, size, len);
+        try {
+            System.arraycopy(b, off, bytes, size, len);
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            System.err.println(String.format("Copying %s, off %d, len %d to bytes with len %d at offset %d", Arrays.toString(b), off, len, bytes.length, size));
+			throw ex;
+        }
         size = newcount;
+    }
+
+    public void add(String string) {
+        if (string == null) {
+            return;
+        }
+        add(string.getBytes(StringUtils.UTF_8));
     }
 
     private void checkSize(int newcount) {

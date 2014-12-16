@@ -23,9 +23,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -39,6 +41,7 @@ import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.integration.mr.AbstractMROldApiSaveTest.SplittableTextInputFormat;
+import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
@@ -54,6 +57,8 @@ import org.junit.runners.Parameterized.Parameters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class AbstractExtraMRTests {
+
+	private final Random random = new Random();
 
 	public static class TabMapper extends MapReduceBase implements Mapper {
 
@@ -84,7 +89,7 @@ public class AbstractExtraMRTests {
 		conf.setNumReduceTasks(0);
 
 
-		JobConf standard = new JobConf(conf);
+        JobConf standard = new JobConf(conf);
 		standard.setMapperClass(TabMapper.class);
 		standard.setMapOutputValueClass(LinkedMapWritable.class);
 		standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
@@ -123,10 +128,46 @@ public class AbstractExtraMRTests {
 		runJob(conf);
 	}
 
+	@Test
+	public void testXLoadDoc() throws Exception {
+		JobConf conf = createReadJobConf();
+
+		conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish");
+		JobClient.runJob(conf);
+	}
+
+	@Test
+	public void testXLoadDocWithMapping() throws Exception {
+		JobConf conf = createReadJobConf();
+
+		conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish-with-mapping");
+		JobClient.runJob(conf);
+	}
+
 	private void runJob(JobConf conf) throws Exception {
 		String string = conf.get(ConfigurationOptions.ES_RESOURCE);
 		string = indexPrefix + (string.startsWith("/") ? string.substring(1) : string);
 		conf.set(ConfigurationOptions.ES_RESOURCE, string);
 		JobClient.runJob(conf);
+	}
+
+	private JobConf createReadJobConf() throws IOException {
+		JobConf conf = HdpBootstrap.hadoopConfig();
+
+		conf.setInputFormat(EsInputFormat.class);
+		conf.setOutputFormat(PrintStreamOutputFormat.class);
+		conf.setOutputKeyClass(Text.class);
+		boolean type = random.nextBoolean();
+		Class<?> mapType = (type ? MapWritable.class : LinkedMapWritable.class);
+		conf.setOutputValueClass(MapWritable.class);
+		HadoopCfgUtils.setGenericOptions(conf);
+		conf.setNumReduceTasks(0);
+
+		conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(random.nextBoolean()));
+		conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
+		conf.set(ConfigurationOptions.ES_OUTPUT_JSON, "true");
+
+		FileInputFormat.setInputPaths(conf, new Path(TestUtils.gibberishDat(conf)));
+		return conf;
 	}
 }

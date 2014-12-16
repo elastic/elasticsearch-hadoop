@@ -31,9 +31,31 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 
 @SuppressWarnings("rawtypes")
-public class EsPigInputFormat extends EsInputFormat<String, Map> {
+public class EsPigInputFormat extends EsInputFormat<String, Object> {
 
-    protected static class PigShardRecordReader extends ShardRecordReader<String, Map> {
+    protected static abstract class AbstractPigShardRecordReader<V> extends ShardRecordReader<String, V> {
+        public AbstractPigShardRecordReader() {
+            super();
+        }
+
+        public AbstractPigShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+            super(split, job, reporter);
+        }
+
+        @Override
+        public String createKey() {
+            return StringUtils.EMPTY;
+        }
+
+        @Override
+        protected String setCurrentKey(String hadoopKey, Object object) {
+            // cannot override a String content (recipe for disaster)
+            // in case of Pig, it's okay to return a new object as it's using the new API
+            return object.toString();
+        }
+    }
+
+    protected static class PigShardRecordReader extends AbstractPigShardRecordReader<Map> {
 
         public PigShardRecordReader() {
             super();
@@ -44,20 +66,8 @@ public class EsPigInputFormat extends EsInputFormat<String, Map> {
         }
 
         @Override
-        public String createKey() {
-            return StringUtils.EMPTY;
-        }
-
-        @Override
         public Map createValue() {
             return new LinkedHashMap();
-        }
-
-        @Override
-        protected String setCurrentKey(String hadoopKey, Object object) {
-			// cannot override a String content (recipe for disaster)
-			// in case of Pig, it's okay to return a new object as it's using the new API
-            return object.toString();
         }
 
         @SuppressWarnings("unchecked")
@@ -72,13 +82,37 @@ public class EsPigInputFormat extends EsInputFormat<String, Map> {
         }
     }
 
-    @Override
-    public PigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return new PigShardRecordReader();
+    protected static class PigJsonShardRecordReader extends AbstractPigShardRecordReader<String> {
+
+        public PigJsonShardRecordReader() {
+            super();
+        }
+
+        public PigJsonShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+            super(split, job, reporter);
+        }
+
+        @Override
+        public String createValue() {
+            return StringUtils.EMPTY;
+        }
+
+        @Override
+        protected String setCurrentValue(String hadoopValue, Object object) {
+            return object.toString();
+        }
     }
 
+
+	@SuppressWarnings("unchecked")
     @Override
-    public PigShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return new PigShardRecordReader(split, job, reporter);
+    public AbstractPigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
+        return isOutputAsJson(context.getConfiguration()) ? new PigJsonShardRecordReader() : new PigShardRecordReader();
+    }
+
+	@SuppressWarnings("unchecked")
+    @Override
+    public AbstractPigShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
+        return isOutputAsJson(job) ? new PigJsonShardRecordReader(split, job, reporter) : new PigShardRecordReader(split, job, reporter);
     }
 }
