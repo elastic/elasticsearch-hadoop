@@ -145,4 +145,20 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertNotNull(messages.take(10))
       assertNotNull(messages)
     }
+    
+    @Test
+    def testEsRDDReadAsJson() {
+      val target = "spark-test/scala-basic-json-read"
+      RestUtils.touch("spark-test")
+      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.refresh("spark-test");
+
+      val esData = EsSpark.esJsonRDD(sc, target)
+      val messages = esData.filter(doc => doc._2.contains("message"))
+
+      assertTrue(messages.count() ==  2)
+      assertNotNull(messages.take(10))
+      assertNotNull(messages)
+    }
 }
