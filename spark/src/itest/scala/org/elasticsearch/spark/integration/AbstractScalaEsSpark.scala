@@ -168,7 +168,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
 
       val target = "spark-test/scala-complex-read"
       RestUtils.touch("spark-test")
-      RestUtils.putData(target, "{\"double_test\" : 1.1, \"long_test\": 10, \"nested\" : {\"string_test\": \"hello\"}}".getBytes())
+      RestUtils.putData(target, "{\"double_test\" : 1.1, \"long_test\": 10, \"nested\" : {\"string_test\": \"hello\"}, \"somelist\":[\"string1\",\"string2\"]}".getBytes())
       RestUtils.refresh("spark-test");
 
       val esData = EsSpark.esRDD(sc, target)
@@ -177,9 +177,10 @@ class AbstractScalaEsScalaSpark extends Serializable {
           val a:Double = (v._2 \ "double_test").asOpt[Double].getOrElse(0.0)
           val b:Long = (v._2 \ "long_test").asOpt[Long].getOrElse(0)
           val c:String = (v._2 \ "nested.string_test").asOpt[String].getOrElse("")
-          val d:Option[String] = (v._2 \ "invalid.location").asOptString
-          // return (Double, Long, String, Option[String] )
-          (a,b,c,d)
+          val d:Option[String] = (v._2 \ "invalid.location").asOpt[String]
+          val e:String = (v._2 \ "somelist").asOptString.getOrElse("")  // test array to string helper
+          // return (Double, Long, String, Option[String], String )
+          (a,b,c,d,e)
         }
       }
       val m = messages.first()
@@ -187,6 +188,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertTrue(m._2 == 10)
       assertTrue(m._3 == "hello")
       assertTrue(m._4 == None)
+      assertTrue(m._5 == "string1,string2")
     }
 
 }
