@@ -161,4 +161,32 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertNotNull(messages.take(10))
       assertNotNull(messages)
     }
+
+    @Test
+    def testEsRDDUtil() {
+      import org.elasticsearch.spark.rdd.EsRDDUtils._
+
+      val target = "spark-test/scala-complex-read"
+      RestUtils.touch("spark-test")
+      RestUtils.putData(target, "{\"double_test\" : 1.1, \"long_test\": 10, \"nested\" : {\"string_test\": \"hello\"}}".getBytes())
+      RestUtils.refresh("spark-test");
+
+      val esData = EsSpark.esRDD(sc, target)
+      val messages = esData map {
+        v => {
+          val a:Double = (v._2 \ "double_test").asOpt[Double].getOrElse(0.0)
+          val b:Long = (v._2 \ "long_test").asOpt[Long].getOrElse(0)
+          val c:String = (v._2 \ "nested.string_test").asOpt[String].getOrElse("")
+          val d:Option[String] = (v._2 \ "invalid.location").asOptString
+          // return (Double, Long, String, Option[String] )
+          (a,b,c,d)
+        }
+      }
+      val m = messages.first()
+      assertTrue(m._1 == 1.1)
+      assertTrue(m._2 == 10)
+      assertTrue(m._3 == "hello")
+      assertTrue(m._4 == None)
+    }
+
 }
