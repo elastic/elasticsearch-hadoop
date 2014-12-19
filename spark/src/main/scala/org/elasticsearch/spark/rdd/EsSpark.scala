@@ -17,26 +17,23 @@ object EsSpark {
   //
   // Load methods
   // 
-  
-  type M = Map[String, Object]
-  type RM = RDD[(String, M)]
 
-  def esRDD(sc: SparkContext): RM = new ScalaEsRDD(sc)
-  def esRDD(sc: SparkContext, cfg: Map[String, String]): RM = new ScalaEsRDD[M](sc, cfg)
-  def esRDD(sc: SparkContext, resource: String): RM = new ScalaEsRDD[M](sc, Map(ES_RESOURCE_READ -> resource))
-  def esRDD(sc: SparkContext, resource: String, query: String): RM = new ScalaEsRDD[M](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+  def esRDD(sc: SparkContext): RDD[(String, Map[String, Object])] = new ScalaEsRDD[Map[String, Object]](sc)
+  def esRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, Map[String, Object])] = 
+    new ScalaEsRDD[Map[String, Object]](sc, cfg)
+  def esRDD(sc: SparkContext, resource: String): RDD[(String, Map[String, Object])] = 
+    new ScalaEsRDD[Map[String, Object]](sc, Map(ES_RESOURCE_READ -> resource))
+  def esRDD(sc: SparkContext, resource: String, query: String): RDD[(String, Map[String, Object])] = 
+    new ScalaEsRDD[Map[String, Object]](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
 
   // load data as JSON
-  type J = String
-  type RJ = RDD[(String, J)]
-  
-  def esJsonRDD(sc: SparkContext): RJ = new ScalaEsRDD[J](sc, Map(ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, cfg: Map[String, String]): RJ = 
-    new ScalaEsRDD[J](sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, resource: String): RJ = 
-    new ScalaEsRDD[J](sc, Map(ES_RESOURCE_READ -> resource, ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, resource: String, query: String): RJ = 
-    new ScalaEsRDD[J](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query, ES_OUTPUT_JSON -> true.toString))
+  def esJsonRDD(sc: SparkContext): RDD[(String, String)] = new ScalaEsRDD[String](sc, Map(ES_OUTPUT_JSON -> true.toString))
+  def esJsonRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, String)] = 
+    new ScalaEsRDD[String](sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_OUTPUT_JSON -> true.toString))
+  def esJsonRDD(sc: SparkContext, resource: String): RDD[(String, String)] = 
+    new ScalaEsRDD[String](sc, Map(ES_RESOURCE_READ -> resource, ES_OUTPUT_JSON -> true.toString))
+  def esJsonRDD(sc: SparkContext, resource: String, query: String): RDD[(String, String)] = 
+    new ScalaEsRDD[String](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query, ES_OUTPUT_JSON -> true.toString))
 
   //
   // Save methods
