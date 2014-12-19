@@ -12,28 +12,28 @@ import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 
-private[spark] class ScalaEsRDD(
+private[spark] class ScalaEsRDD[T](
   @transient sc: SparkContext,
   params: Map[String, String] = Map.empty)
-  extends AbstractEsRDD[(String, Map[String, Any])](sc, params) {
+  extends AbstractEsRDD[(String, T)](sc, params) {
 
-  override def compute(split: Partition, context: TaskContext): ScalaEsRDDIterator = {
+  override def compute(split: Partition, context: TaskContext): ScalaEsRDDIterator[T] = {
     new ScalaEsRDDIterator(context, split.asInstanceOf[EsPartition].esPartition)
   }
 }
 
-private[spark] class ScalaEsRDDIterator(
+private[spark] class ScalaEsRDDIterator[T](
   context: TaskContext,
   partition: PartitionDefinition)
-  extends AbstractEsRDDIterator[(String, Map[String, Any])](context, partition) {
+  extends AbstractEsRDDIterator[(String, T)](context, partition) {
 
-  override def getLogger() = LogFactory.getLog(classOf[ScalaEsRDD])
+  override def getLogger() = LogFactory.getLog(ScalaEsRDD.getClass())
 
   override def initReader(settings: Settings, log: Log) = {
     InitializationUtils.setValueReaderIfNotSet(settings, classOf[ScalaValueReader], log)
   }
 
-  override def createValue(value: Array[Object]): (String, Map[String, Any]) = {
-    (value(0).toString() -> value(1).asInstanceOf[Map[String, Any]])
+  override def createValue(value: Array[Object]): (String, T) = {
+    (value(0).toString() -> value(1).asInstanceOf[T])
   }
 }

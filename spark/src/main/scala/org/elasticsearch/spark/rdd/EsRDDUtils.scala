@@ -7,16 +7,8 @@ import scala.util.Try
 object EsRDDUtils {
 
   implicit class MapWithOpt(a:Option[Any]) {
-    def asOptDouble:Option[Double] = a match {
-          case Some(x) => Some(x.asInstanceOf[Double])
-          case _ => None
-        }
-    def asOptLong:Option[Long] = a match {
-          case Some(x) => Some(x.asInstanceOf[Long])
-          case _ => None
-        }
-    def asOptInt:Option[Int] = a match {
-          case Some(x) => Some(x.asInstanceOf[Int])
+    def asOpt[T]:Option[T] = a match {
+          case Some(x) => Some(x.asInstanceOf[T])
           case _ => None
         }
     def asOptSeq:Option[Seq[Any]] = a match {

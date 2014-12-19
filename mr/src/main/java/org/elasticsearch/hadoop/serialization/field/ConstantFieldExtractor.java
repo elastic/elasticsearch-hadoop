@@ -29,7 +29,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     @Override
     public final Object field(Object target) {
-        return (value != null ? value : extractField(target));
+		return (value != null ? value : extractField(target));
     }
 
     protected Object extractField(Object target) {

@@ -134,4 +134,12 @@ public interface Parser extends Closeable {
     byte[] binaryValue();
 
     void close();
+
+	// Fairly experimental methods
+
+	// method _highly_ dependent on the underlying implementation and given source
+	// returns the current position inside the parsed stream
+	// the returned value is highly dependent on the implementation used - currently Jackson
+	// this is typically used when reading known content such as Elasticsearch response
+	int tokenCharOffset();
 }

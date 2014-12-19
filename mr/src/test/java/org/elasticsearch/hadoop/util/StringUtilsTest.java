@@ -16,32 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization;
+package org.elasticsearch.hadoop.util;
 
-import java.io.InputStream;
-
-import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public class ValueReaderTest {
+import static org.junit.Assert.assertEquals;
 
-    private InputStream in;
+public class StringUtilsTest {
 
-    @Before
-    public void before() throws Exception {
-        in = getClass().getResourceAsStream("scroll-test.json");
-    }
-
-    @After
-    public void after() throws Exception {
-        in.close();
-    }
-
-    @Test
-    public void testSimplePathReader() throws Exception {
-		ScrollReader reader = new ScrollReader(new JdkValueReader(), null, false, "_metadata", false);
-        System.out.println(reader.read(in));
+	@Test
+	public void testJsonEncodingQuote() {
+        String value = "foo\"bar";
+		String jsonEscaped = "foo\\\"bar";
+		assertEquals(jsonEscaped, new String(StringUtils.jsonEncoding(value)));
     }
 }

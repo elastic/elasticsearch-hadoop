@@ -35,42 +35,56 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-public class ScrollReaderTest {
+public class ScrollReaderJsonTest {
 
     private boolean readMetadata = false;
     private String metadataField;
-    private boolean readAsJson = false;
+    private boolean readAsJson = true;
+	private ObjectMapper mapper;
 
-    public ScrollReaderTest(boolean readMetadata, String metadataField) {
+    public ScrollReaderJsonTest(boolean readMetadata, String metadataField) {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
+		this.mapper = new ObjectMapper();
     }
 
-    @Test
+	@Test
     public void testScrollWithFields() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).containsKey("fields"));
+		String doc = objects[1].toString();
+		Map value = mapper.readValue(doc, Map.class);
+		assertTrue(value.containsKey("fields"));
+		if (readMetadata) {
+			assertTrue(value.containsKey(metadataField));
+			assertEquals("23hrGo7VRCyao8lB9Uu5Kw", ((Map) value.get(metadataField)).get("_id"));
+		}
     }
 
-    @Test
+	@Test
     public void testScrollWithMatchedQueries() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("scroll-matched-queries.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
-        Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).containsKey("foo"));
+		Object[] objects = read.get(1);
+		String doc = objects[1].toString();
+
+		Map value = mapper.readValue(doc, Map.class);
+		assertTrue(value.containsKey("links"));
+		if (readMetadata) {
+			assertTrue(value.containsKey(metadataField));
+			assertEquals(Arrays.asList("myquery"), ((Map) value.get(metadataField)).get("matched_queries"));
+		}
     }
 
-    @Test
+	@Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
         Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
@@ -80,51 +94,74 @@ public class ScrollReaderTest {
         List<Object[]> read = reader.read(stream);
 
         assertEquals(3, read.size());
-        Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).containsKey("source"));
-        Map map = (Map) read.get(2)[1];
-        Map number = (Map) map.get("links");
-        Object value = number.get("number");
-        assertNotNull(value);
-        assertTrue(value instanceof Short);
-        assertEquals(Short.valueOf((short) 125), value);
+        Object[] objects = read.get(2);
+        String doc = objects[1].toString();
+
+        Map value = mapper.readValue(doc, Map.class);
+        assertTrue(value.containsKey("links"));
+		// the raw json is returned which ignored mapping
+		assertEquals("125", ((Map) value.get("links")).get("number"));
     }
 
-    @Test
+	@Test
     public void testScrollWithSource() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("scroll-source.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
-        assertTrue(((Map) objects[1]).containsKey("source"));
+
+		String doc = objects[1].toString();
+		Map value = mapper.readValue(doc, Map.class);
+		assertEquals("source", value.get("source"));
+		if (readMetadata) {
+			assertTrue(value.containsKey(metadataField));
+			assertEquals("23hrGo7VRCyao8lB9Uu5Kw", ((Map) value.get(metadataField)).get("_id"));
+		}
     }
 
-    @Test
+	@Test
     public void testScrollWithoutSource() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("empty-source.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(2, read.size());
-        Object[] objects = read.get(0);
-        if (readMetadata) {
-            assertTrue(((Map) objects[1]).containsKey(metadataField));
-        }
-        else {
-            assertTrue(((Map) objects[1]).isEmpty());
-        }
+		Object[] objects = read.get(1);
+		String doc = objects[1].toString();
+
+		Map value = mapper.readValue(doc, Map.class);
+
+		if (!readMetadata) {
+			assertTrue(value.isEmpty());
+		}
+		else {
+			assertTrue(value.containsKey(metadataField));
+			assertEquals("PTi2NxdDRxmXhv6S8DgIeQ", ((Map) value.get(metadataField)).get("_id"));
+		}
     }
 
-    @Test
+	@Test
     public void testScrollMultiValueList() throws IOException {
         ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("list-with-null.json");
         List<Object[]> read = reader.read(stream);
         assertEquals(1, read.size());
         Object[] objects = read.get(0);
-        Map map = (Map) read.get(0)[1];
-        List links = (List) map.get("links");
-        assertTrue(links.contains(null));
+		String doc = objects[1].toString();
+
+		System.out.println(doc);
+
+		Map value = mapper.readValue(doc, Map.class);
+
+		assertTrue(value.containsKey("name"));
+
+		List links = (List) value.get("links");
+		assertTrue(links.contains(null));
+
+		if (readMetadata) {
+			assertTrue(value.containsKey(metadataField));
+			assertEquals("aqOqDwYnTA29J1gfy3m8_Q", ((Map) value.get(metadataField)).get("_id"));
+		}
     }
 
 

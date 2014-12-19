@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -193,7 +194,34 @@ public class AbstractJavaEsSparkTest implements Serializable {
         System.out.println(messages.take(10));
         System.out.println(messages);
     }
+
     
+    @Test
+    public void testEsRDDZReadJson() throws Exception {
+        String target = "spark-test/java-basic-json-read";
+
+        RestUtils.touch("spark-test");
+        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.refresh("spark-test");
+
+        JavaRDD<String> esRDD = JavaEsSpark.esJsonRDD(sc, target).values();
+        System.out.println(esRDD.collect());
+        JavaRDD<String> messages = esRDD.filter(new Function<String, Boolean>() {
+			@Override
+			public Boolean call(String string) throws Exception {
+				return string.contains("message");
+			}
+        });
+        
+        // jdk8
+        //esRDD.filter(m -> m.contains("message")));
+        
+        assertThat((int) messages.count(), is(2));
+        System.out.println(messages.take(10));
+        System.out.println(messages);
+    }
+
     @Test
     public void testEsRDDZReadMultiIndex() throws Exception {
     	String index = "spark-test";

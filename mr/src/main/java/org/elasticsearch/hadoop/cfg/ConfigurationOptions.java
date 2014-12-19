@@ -172,6 +172,9 @@ public interface ConfigurationOptions {
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
 
+	/** Output options **/
+	String ES_OUTPUT_JSON = "es.output.json";
+	String ES_OUTPUT_JSON_DEFAULT = "no";
 
     /** Network options */
     // SSL

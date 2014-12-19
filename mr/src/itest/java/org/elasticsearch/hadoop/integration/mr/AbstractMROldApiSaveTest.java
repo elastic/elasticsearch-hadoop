@@ -59,7 +59,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeFalse;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -172,7 +172,7 @@ public class AbstractMROldApiSaveTest {
 	}
 
 
-    @Test
+	@Test
     public void testNoInput() throws Exception {
         JobConf conf = createJobConf();
 
@@ -184,7 +184,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testBasicIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
@@ -192,7 +192,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testBasicIndexWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -201,7 +201,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testCreateWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
@@ -211,12 +211,12 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test(expected = IOException.class)
+	@Test(expected = IOException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         testCreateWithId();
     }
 
-    @Test(expected = IOException.class)
+	@Test(expected = IOException.class)
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -225,7 +225,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpsertWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -235,7 +235,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test(expected = IOException.class)
+	@Test(expected = IOException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -245,7 +245,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpdateOnlyScript() throws Exception {
         JobConf conf = createJobConf();
         // use an existing id to allow the update to succeed
@@ -261,7 +261,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpdateOnlyParamScript() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
@@ -276,7 +276,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpdateOnlyParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
@@ -291,7 +291,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpdateOnlyParamJsonScriptWithArray() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
@@ -318,7 +318,7 @@ public class AbstractMROldApiSaveTest {
 //        runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpdateOnlyParamJsonScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
         String index = indexPrefix + "mroldapi/createwitharray";
@@ -340,7 +340,7 @@ public class AbstractMROldApiSaveTest {
     }
 
 
-    @Test
+	@Test
     public void testUpsertScript() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script");
@@ -352,7 +352,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpsertParamScript() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-param");
@@ -366,7 +366,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpsertParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-json-param");
@@ -380,7 +380,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
         String index = indexPrefix + "mroldapi/createwitharrayupsert";
@@ -402,7 +402,7 @@ public class AbstractMROldApiSaveTest {
     }
 
 
-    @Test(expected = EsHadoopIllegalArgumentException.class)
+	@Test(expected = EsHadoopIllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
@@ -411,7 +411,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
@@ -449,8 +449,17 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
+	@Test
+	public void testIndexWithEscapedJson() throws Exception {
+		JobConf conf = createJobConf();
+		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/simple-escaped-fields");
+		conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
-    //@Test
+		runJob(conf);
+	}
+
+
+	//@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested");

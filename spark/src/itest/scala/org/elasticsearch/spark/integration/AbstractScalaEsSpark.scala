@@ -39,7 +39,6 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.apache.spark.rdd.PairRDDFunctions
 
-
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
   @transient var cfg: SparkConf = null
@@ -146,31 +145,20 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertNotNull(messages.take(10))
       assertNotNull(messages)
     }
-
+    
     @Test
-    def testEsRDDUtil() {
-      import org.elasticsearch.spark.rdd.EsRDDUtils._
-
-      val target = "spark-test/scala-complex-read"
+    def testEsRDDReadAsJson() {
+      val target = "spark-test/scala-basic-json-read"
       RestUtils.touch("spark-test")
-      RestUtils.putData(target, "{\"double_test\" : 1.1, \"long_test\": 10, \"nested\" : {\"string_test\": \"hello\"}}".getBytes())
+      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
       RestUtils.refresh("spark-test");
 
-      val esData = EsSpark.esRDD(sc, target)
-      val messages = esData map {
-        v => {
-          val a:Double = (v._2 \ "double_test").asOptDouble.getOrElse(0.0)
-          val b:Long = (v._2 \ "long_test").asOptLong.getOrElse(0)
-          val c:String = (v._2 \ "nested.string_test").asOptString.getOrElse("")
-          val d:Option[String] = (v._2 \ "invalid.location").asOptString
-          // return (Double, Long, String, Option[String] )
-          (a,b,c,d)
-        }
-      }
-      val m = messages.first()
-      assertTrue(m._1 == 1.1)
-      assertTrue(m._2 == 10)
-      assertTrue(m._3 == "hello")
-      assertTrue(m._4 == None)
+      val esData = EsSpark.esJsonRDD(sc, target)
+      val messages = esData.filter(doc => doc._2.contains("message"))
+
+      assertTrue(messages.count() ==  2)
+      assertNotNull(messages.take(10))
+      assertNotNull(messages)
     }
 }

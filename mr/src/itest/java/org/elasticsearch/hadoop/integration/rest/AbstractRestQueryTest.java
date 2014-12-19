@@ -38,7 +38,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  */
@@ -75,7 +76,7 @@ public class AbstractRestQueryTest {
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
         QueryBuilder qb = QueryBuilder.query(sets);
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata");
+		ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
 
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
@@ -92,7 +93,7 @@ public class AbstractRestQueryTest {
         Map<Shard, Node> targetShards = client.getReadTargetShards();
 
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata");
+		ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
 
         Settings sets = settings.copy();
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");

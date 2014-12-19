@@ -70,6 +70,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case DATE:
             return date(value, parser);
         case OBJECT:
+		case NESTED:
             // everything else (IP, GEO) gets translated to strings
         default:
             return textValue(value);

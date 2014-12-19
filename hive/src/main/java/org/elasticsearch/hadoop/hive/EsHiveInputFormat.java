@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.hive;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,9 +32,9 @@ import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -48,7 +47,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
 // A quick example would be {@link org.apache.hadoop.hive.ql.io.HiveInputFormat.HiveInputSplit#getPath()} which, in case the actual InputSplit is not a
 // {@link org.apache.hadoop.mapred.FileSplit}, returns an invalid Path.
 
-public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writable>> {
+public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
 
     static class EsHiveSplit extends FileSplit {
         InputSplit delegate;
@@ -119,7 +118,8 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Map<Writable, Writabl
     }
 
     @Override
-    public WritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
-        return new WritableShardRecordReader(((EsHiveSplit) split).delegate, job, reporter);
+    public AbstractWritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
+        InputSplit delegate = ((EsHiveSplit) split).delegate;
+        return isOutputAsJson(job) ? new JsonWritableShardRecordReader(delegate, job, reporter) : new WritableShardRecordReader(delegate, job, reporter);
     }
 }

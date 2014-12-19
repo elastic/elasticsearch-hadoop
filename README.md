@@ -124,7 +124,7 @@ Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists"); 
 conf.set("es.query", "?q=me*");      		// replace this with the relevant query
 Job job = new Job(conf)
-job.setInputFormat(EsInputFormat.class);
+job.setInputFormatClass(EsInputFormat.class);
 ...
 job.waitForCompletion(true);
 ```
@@ -133,7 +133,7 @@ job.waitForCompletion(true);
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists"); // index or indices used for storing data
 Job job = new Job(conf)
-job.setOutputFormat(EsOutputFormat.class);
+job.setOutputFormatClass(EsOutputFormat.class);
 ...
 job.waitForCompletion(true);
 ```
@@ -288,7 +288,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
 ```
 
 ## [Apache Storm][]
-ES-Hadoop provides native integration with Spark: for reading a dedicated `Spout` and for writing a specialized `Bolt`
+ES-Hadoop provides native integration with Storm: for reading a dedicated `Spout` and for writing a specialized `Bolt`
 
 ### Reading
 To read data from ES, use `EsSpout`:

@@ -31,6 +31,7 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
+import org.codehaus.jackson.io.JsonStringEncoder;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 
 
@@ -326,5 +327,13 @@ public abstract class StringUtils {
 			}
 		}
 		return true;
+	}
+
+	public static byte[] jsonEncoding(String rawString) {
+		return JsonStringEncoder.getInstance().quoteAsUTF8(rawString);
+	}
+
+	public static String jsonEncodingAsString(String rawString) {
+		return new String(JsonStringEncoder.getInstance().quoteAsUTF8(rawString), StringUtils.UTF_8);
 	}
 }
