@@ -95,10 +95,6 @@ public class ScrollReader {
             return doc.isValid();
         }
 
-        boolean hasMetadata() {
-            return !fragments.isEmpty();
-        }
-
         int[] asCharPos() {
             int positions = fragments.size() << 1;
             if (doc.isValid()) {
@@ -214,8 +210,8 @@ public class ScrollReader {
             BytesArray doc = new BytesArray(128);
             // replace the fragments with the actual json
 
-			// trimming is currently disabled since it appears mainly within fields and not outside of it
-			// in other words in needs to be treated when the fragments are constructed
+            // trimming is currently disabled since it appears mainly within fields and not outside of it
+            // in other words in needs to be treated when the fragments are constructed
             for (int fragmentIndex = 0; fragmentIndex < fragmentsPos.size(); fragmentIndex++ ) {
 
                 Object[] result = results.get(fragmentIndex);
@@ -232,12 +228,17 @@ public class ScrollReader {
                 // first add the doc
                 if (jsonPointers.hasDoc()) {
                     rangeStart = bytesPosition[bytesPositionIndex];
-					rangeStop = bytesPosition[bytesPositionIndex + 1];
-                    // trim
-					//rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
-					//rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
+                    rangeStop = bytesPosition[bytesPositionIndex + 1];
 
-					doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
+                    if (rangeStop - rangeStart < 0) {
+                        throw new IllegalArgumentException(String.format("Invalid position given=%s %s",rangeStart, rangeStop));
+                    }
+
+                    // trim
+                    //rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
+                    //rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
+
+                    doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
 
                     // consumed doc pointers
                     currentFragmentIndex += 2;
@@ -258,14 +259,17 @@ public class ScrollReader {
                     // consume metadata
                     for (; currentFragmentIndex < fragmentPos.length; currentFragmentIndex += 2) {
                         rangeStart = bytesPosition[bytesPositionIndex];
-						rangeStop = bytesPosition[bytesPositionIndex + 1];
+                        rangeStop = bytesPosition[bytesPositionIndex + 1];
                         // trim
-						//rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
-						//rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
+                        //rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
+                        //rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
 
-						doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
+                        if (rangeStop - rangeStart < 0) {
+                            throw new IllegalArgumentException(String.format("Invalid position given=%s %s",rangeStart, rangeStop));
+                        }
+
+                        doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
                         bytesPositionIndex += 2;
-
                     }
                     doc.add('}');
                 }
@@ -422,7 +426,10 @@ public class ScrollReader {
 
             Assert.notNull(id, "no id found");
             result[0] = id;
-            snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
+
+			if (metadataStartChar >= 0 && metadataStopChar >= 0) {
+				snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
+			}
         }
         // no metadata is needed, fast fwd
         else {
@@ -461,7 +468,9 @@ public class ScrollReader {
         }
 
         if (readMetadata) {
-            snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
+			if (metadataSuffixStartCharPos >= 0 && metadataSuffixStopCharPos >= 0) {
+				snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
+			}
         }
 
         result[1] = snippet;

@@ -145,8 +145,8 @@ public class BytesArray implements ByteSequence {
         try {
             System.arraycopy(b, off, bytes, size, len);
         } catch (ArrayIndexOutOfBoundsException ex) {
-            System.err.println(String.format("Copying %s, off %d, len %d to bytes with len %d at offset %d", Arrays.toString(b), off, len, bytes.length, size));
-			throw ex;
+            System.err.println(String.format("Copying array of size %d, content %s, off %d, len %d to bytes with len %d at offset %d", b.length, new BytesArray(b), off, len, bytes.length, size));
+            throw ex;
         }
         size = newcount;
     }
