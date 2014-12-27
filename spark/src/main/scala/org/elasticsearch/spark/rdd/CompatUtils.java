@@ -25,7 +25,7 @@ abstract class CompatUtils {
 		}
 		
 		static void addOnCompletition(TaskContext taskContext, final Function0<?> function) {
-			taskContext.addOnCompleteCallback(new AbstractFunction0<BoxedUnit>() {
+			taskContext.addOnCompleteCallback(new AbstractFunction0() {
 				@Override
 				public BoxedUnit apply() {
 					function.apply();

@@ -1,17 +1,14 @@
 package org.elasticsearch.spark.sql.api.java
 
 import java.util.{Map => JMap}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
-
 import org.apache.spark.api.java.JavaRDD.fromRDD
 import org.apache.spark.sql.api.java.JavaSQLContext
 import org.apache.spark.sql.api.java.JavaSchemaRDD
 import org.apache.spark.sql.api.java.{StructType => JStructType}
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
-import org.elasticsearch.spark.sql.DataTypeConversions
 import org.elasticsearch.spark.sql.EsSparkSQL
 import org.elasticsearch.spark.sql.JavaEsRowRDD
 import org.elasticsearch.spark.sql.MappingUtils
@@ -26,7 +23,7 @@ object JavaEsSparkSQL {
   
   private def esRDD(jsc: JavaSQLContext, cfg: SMap[String, String]): JavaSchemaRDD = {
     val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, cfg)
-    val schema = DataTypeConversions.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
+    val schema = SQLUtils.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
     jsc.applySchema(rowRDD, schema)
   }
 

@@ -33,7 +33,7 @@ object EsSparkSQL {
   def esRDD(jsc: JavaSQLContext, resource: String, query: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esRDD(jsc: JavaSQLContext, map: Map[String, String]): JavaSchemaRDD = { 
     val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, map)
-    val schema = DataTypeConversions.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
+    val schema = Utils.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
     jsc.applySchema(rowRDD, schema)
   }
   
