@@ -55,7 +55,7 @@ public interface ConfigurationOptions {
     String ES_BATCH_SIZE_ENTRIES = "es.batch.size.entries";
     String ES_BATCH_SIZE_ENTRIES_DEFAULT = "1000";
 
-    /** Elasticsearch batch size given in entries */
+    /** Elasticsearch disable auto-flush on batch overflow */
     String ES_BATCH_FLUSH_MANUAL = "es.batch.flush.manual";
     String ES_BATCH_FLUSH_MANUAL_DEFAULT = "false";
 
