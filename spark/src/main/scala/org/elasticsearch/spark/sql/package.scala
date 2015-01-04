@@ -15,14 +15,14 @@ package object sql {
     def esRDD() = EsSparkSQL.esRDD(sc)
     def esRDD(resource: String) = EsSparkSQL.esRDD(sc, resource)
     def esRDD(resource: String, query: String) = EsSparkSQL.esRDD(sc, resource, query)
-    def esRDD(params: scala.collection.Map[String, String]) = EsSparkSQL.esRDD(sc, params)
+    def esRDD(cfg: scala.collection.Map[String, String]) = EsSparkSQL.esRDD(sc, cfg)
   }
   
   implicit def sparkSchemaRDDFunctions(rdd: SchemaRDD) = new SparkSchemaRDDFunctions(rdd)
 
   class SparkSchemaRDDFunctions(rdd: SchemaRDD) extends Serializable {
     def saveToEs(resource: String) { EsSparkSQL.saveToEs(rdd, resource) }
-    def saveToEs(resource: String, params: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(rdd, resource, params) }
-    def saveToEs(params: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(rdd, params)    }
+    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(rdd, resource, cfg) }
+    def saveToEs(cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(rdd, cfg)    }
   }
 }

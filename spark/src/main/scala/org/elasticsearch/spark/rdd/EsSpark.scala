@@ -53,10 +53,10 @@ object EsSpark {
 
   // JSON variant
   def saveJsonToEs(rdd: RDD[_], resource: String) { saveToEs(rdd, resource, Map(ES_INPUT_JSON -> true.toString)) }
-  def saveJsonToEs(rdd: RDD[_], resource: String, params: Map[String, String]) {
-    saveToEs(rdd, resource, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
+  def saveJsonToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]) {
+    saveToEs(rdd, resource, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
-  def saveJsonToEs(rdd: RDD[_], params: Map[String, String]) {
-    saveToEs(rdd, collection.mutable.Map(params.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
+  def saveJsonToEs(rdd: RDD[_], cfg: Map[String, String]) {
+    saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 }

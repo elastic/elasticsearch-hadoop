@@ -183,4 +183,22 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val schemaRDD = sqc.applySchema(rowRDD, schema)
       schemaRDD
     }
+    
+    @Test
+    def testEsSchemaReadAsDataSource() {
+      val target = "sparksql-test/scala-basic-write"
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicread " + 
+              "USING org.elasticsearch.spark.sql " +
+              "OPTIONS (resource '" + target + "')");
+      
+      
+      val allRDD = sqc.sql("SELECT * FROM sqlbasicread WHERE id >= 1 AND id <=10")
+      println(allRDD.schemaString)
+      
+      val nameRDD = sqc.sql("SELECT name FROM sqlbasicread WHERE id >= 1 AND id <=10")
+      
+      println(nameRDD.schemaString)
+      assertTrue(nameRDD.count == 10)
+      nameRDD.take(7).foreach(println)
+    }
 }

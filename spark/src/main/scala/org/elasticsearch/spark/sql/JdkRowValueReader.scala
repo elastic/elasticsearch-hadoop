@@ -1,16 +1,18 @@
 package org.elasticsearch.spark.sql
 
+import scala.collection.mutable.ArrayBuffer
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
+import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.cfg.Settings
 import scala.collection.mutable.LinkedHashMap
 
-import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
-
-class JdkRowValueReader extends JdkValueReader {
+class JdkRowValueReader extends JdkValueReader with RowValueReader {
 
   override def createMap() = {
-    new JavaEsRow(new ScalaEsRow(new LinkedHashMap()))
+    new JavaEsRow(new ScalaEsRow(createBuffer))
   }
   
   override def addToMap(map: AnyRef, key: AnyRef, value: AnyRef) = {
-    map.asInstanceOf[JavaEsRow].esrow.map.put(key, value)
+    addToBuffer(map.asInstanceOf[JavaEsRow].esrow.values, key, value)
   }
 }

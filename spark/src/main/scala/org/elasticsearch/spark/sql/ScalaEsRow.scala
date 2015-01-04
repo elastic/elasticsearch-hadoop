@@ -3,9 +3,9 @@ package org.elasticsearch.spark.sql
 import org.apache.spark.sql.catalyst.expressions.Row
 import scala.collection.mutable.LinkedHashMap
 import org.apache.spark.sql.catalyst.expressions.GenericRow
+import scala.collection.mutable.ArrayBuffer
 
-private[spark] class ScalaEsRow(private[spark] val map: LinkedHashMap[AnyRef,AnyRef]) extends Row {
-  lazy val values = map.values.toList
+private[spark] class ScalaEsRow(private[spark] val values: ArrayBuffer[AnyRef]) extends Row {
   def iterator = values.iterator
   def length = values.size
 

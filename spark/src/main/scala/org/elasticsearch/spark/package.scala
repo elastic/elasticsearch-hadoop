@@ -20,15 +20,14 @@ package object spark {
     def esJsonRDD() = EsSpark.esJsonRDD(sc)
     def esJsonRDD(resource: String) = EsSpark.esJsonRDD(sc, resource)
     def esJsonRDD(resource: String, query: String) = EsSpark.esJsonRDD(sc, resource, query)
-    def esJsonRDD(params: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, params)
-
+    def esJsonRDD(cfg: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, cfg)
   }
   
   implicit def sparkRDDFunctions[T : ClassTag](rdd: RDD[T]) = new SparkRDDFunctions[T](rdd)
 
   class SparkRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     def saveToEs(resource: String) { EsSpark.saveToEs(rdd, resource) }
-    def saveToEs(resource: String, params: scala.collection.Map[String, String]) { EsSpark.saveToEs(rdd, resource, params) }
+    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSpark.saveToEs(rdd, resource, cfg) }
     def saveToEs(cfg: scala.collection.Map[String, String]) { EsSpark.saveToEs(rdd, cfg)    }
   }
     
@@ -37,7 +36,7 @@ package object spark {
 
   class SparkJsonRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
     def saveJsonToEs(resource: String) { EsSpark.saveJsonToEs(rdd, resource) }
-    def saveJsonToEs(resource: String, params: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, resource, params) }
+    def saveJsonToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, resource, cfg) }
     def saveJsonToEs(cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, cfg) }
   }
 }
