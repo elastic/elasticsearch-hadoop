@@ -183,9 +183,9 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val schemaRDD = sqc.applySchema(rowRDD, schema)
       schemaRDD
     }
-    
+
     @Test
-    def testEsSchemaReadAsDataSource() {
+    def testEsSchemaRDD50ReadAsDataSource() {
       val target = "sparksql-test/scala-basic-write"
       val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicread " + 
               "USING org.elasticsearch.spark.sql " +
@@ -200,5 +200,21 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       println(nameRDD.schemaString)
       assertTrue(nameRDD.count == 10)
       nameRDD.take(7).foreach(println)
+    }
+    
+    //@Test
+    // insert not supported
+    def testEsSchemaRDD51WriteAsDataSource() {
+      val target = "sparksql-test/scala-basic-write"
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " + 
+              "USING org.elasticsearch.spark.sql " +
+              "OPTIONS (resource '" + target + "')");
+      
+      
+      val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+      
+      println(insertRDD.schemaString)
+      assertTrue(insertRDD.count == 1)
+      insertRDD.take(7).foreach(println)
     }
 }

@@ -364,7 +364,7 @@ On top of the core Spark support, {eh} also provides integration with Spark SQL.
 IMPORTANT: Spark SQL works with _structured_ data - in other words, all entries are expected to have the _same_ structure (same number of fields, of the same type and name). Using unstructured data (documents with different
 structures) is _not_ supported and will cause problems. For such cases, use ++PairRDD++s.
 
-IMPORTANT: Spark SQL is an alpha component. As such, the integration of {eh} is marked as alpha. While we strive to maintain compatibility going forward, support may change.
+IMPORTANT: Spark SQL is a young component, going through significant changes between releases. While we strive to maintain compatibility going forward, the functionality between different Spark releases may change.
 
 IMPORTANT: Spark SQL is a _separate_ component from Spark _core_. To use it, make sure to properly add it to your classpath - please see the <<requirements>> page for more details.
 
@@ -374,7 +374,7 @@ Spark SQL support is available under +org.elasticsearch.spark.sql+ package.
 [[spark-sql-write]]
 ==== Writing +SchemaRDD+ to {es}
 
-With {eh}, +SchemaRDD+s can be indexed to {es}.
+With {eh}, ++SchemaRDD++s can be indexed to {es}.
 
 .Scala
 
@@ -451,6 +451,46 @@ IMPORTANT: For maximum control over the mapping of your +SchemaRDD+ in {es}, it 
 When using Spark SQL, if the input data is in JSON format, simply convert it to +SchemaRDD+ (as described in Spark https://spark.apache.org/docs/latest/sql-programming-guide.html#json-datasets[documentation]) through +SQLContext+/+JavaSQLContext+ +jsonFile+ methods.
 
 [[spark-sql-read]]
+[float]
+==== Using pure SQL to read from {es}
+
+IMPORTANT: Available in Apache SparkSQL 1.2 (or higher)
+IMPORTANT: The index and its mapping, have to exist prior to creating the temporary table
+
+SparkSQL 1.2 http://spark.apache.org/releases/spark-release-1-2-0.html[introduced] a new https://github.com/apache/spark/pull/2475[API] for reading from external data sources, which is supported by {eh} 
+simplifying the SQL configured needed for interacting with Elasticsearch. Further more, behind the scenes it understands the operations executed by Spark and thus can optimize the data and queries made (such as filtering or pruning), 
+improving performance.
+
+To use it, declare a Spark temporary table backed by {eh}:
+
+[source,scala]
+----
+sqlContext.sql(
+   "CREATE TEMPORARY TABLE myIndex    " + <1>
+   "USING org.elasticsearch.spark.sql " + <2>
+   "OPTIONS (resource 'spark/index')  " ) <3>
+----
+
+<1> Spark's temporary table name 
+<2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
+<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es.+ prefix or skip it for convenient.
+
+Once defined, the schema is picked up automatically. So one can issue queries, right away:
+
+[source,sql]
+----
+val allRDD = sqlContext.sql("SELECT * FROM myIndex WHERE id <= 10")
+----
+
+As {eh} is aware of the queries being made, it can _optimize_ the requests done to {es}. For example, given the following query:
+
+[source,sql]
+----
+val nameRDD = sqlContext.sql("SELECT name FROM myIndex WHERE id >=1 AND id <= 10")
+----
+
+it knows only the +name+ and +id+ fields are required (the first to be returned to the user, the second for Spark's internal filtering) and thus will ask _only_ for this data, making the queries quite efficient.
+
 [float]
 ==== Reading ++SchemaRDD++s from {es}
 
