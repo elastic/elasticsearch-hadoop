@@ -128,7 +128,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"))
       assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"))
     }
-    
+
     @Test
     def testEsRDDRead() {
       val target = "spark-test/scala-basic-read"
@@ -143,6 +143,24 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertTrue(messages.count() ==  2)
       assertNotNull(messages.take(10))
       assertNotNull(messages)
+    }
+
+    @Test
+    def testEsRDDReadQuery() {
+      val target = "spark-test/scala-basic-query-read"
+      RestUtils.touch("spark-test")
+      RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+      RestUtils.refresh("spark-test");
+
+      val esData = EsSpark.esRDD(sc, target, "?q=message:World")
+      val newData = EsSpark.esRDD(sc, Map(ES_RESOURCE -> target, ES_QUERY -> "?q=message:*World"));
+      
+      assertTrue(esData.count() ==  2)
+      assertTrue(newData.count() ==  2)
+      assertNotNull(esData.take(10))
+      assertNotNull(newData.take(10))
+      assertNotNull(esData)
     }
     
     @Test
