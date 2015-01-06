@@ -4,4 +4,6 @@ jdk:
   - openjdk7
   
 before_install:
- - chmod +x gradlew
+ - "chmod +x gradlew"
+ - "ulimit -u 514029"
+ - "export JAVA_OPTS=-Xmx1g"
