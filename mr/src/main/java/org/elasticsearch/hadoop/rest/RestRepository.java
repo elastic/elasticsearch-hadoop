@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -215,12 +216,22 @@ public class RestRepository implements Closeable, StatsAware {
         return client;
     }
 
+
     public Map<Shard, Node> getReadTargetShards() {
-        Map<String, Node> nodes = client.getNodes();
+        for (int retries = 0; retries < 3; retries++) {
+            Map<Shard, Node> map = doGetReadTargetShards();
+            if (map != null) {
+                return map;
+            }
+        }
+        throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
+    }
 
+	protected Map<Shard, Node> doGetReadTargetShards() {
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
+
+        Map<String, Node> nodes = client.getNodes();
 
         for (List<Map<String, Object>> shardGroup : info) {
             // find the first started shard in each group (round-robin)
@@ -228,8 +239,11 @@ public class RestRepository implements Closeable, StatsAware {
                 Shard shard = new Shard(shardData);
                 if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
-                    Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
-                    shards.put(shard, node);
+                    if (node == null) {
+                        log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
+						return null;
+					}
+					shards.put(shard, node);
                     break;
                 }
             }
@@ -238,10 +252,19 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public Map<Shard, Node> getWriteTargetPrimaryShards() throws IOException {
-        Map<String, Node> nodes = client.getNodes();
+        for (int retries = 0; retries < 3; retries++) {
+            Map<Shard, Node> map = doGetWriteTargetPrimaryShards();
+            if (map != null) {
+                return map;
+            }
+        }
+        throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
+    }
 
+	protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>(info.size());
+        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
+        Map<String, Node> nodes = client.getNodes();
 
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
@@ -249,7 +272,10 @@ public class RestRepository implements Closeable, StatsAware {
                 Shard shard = new Shard(shardData);
                 if (shard.isPrimary()) {
                     Node node = nodes.get(shard.getNode());
-                    Assert.notNull(node, "Cannot find node with id [" + shard.getNode() + "]");
+                    if (node == null) {
+                        log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
+                        return null;
+                    }
                     shards.put(shard, node);
                     break;
                 }
