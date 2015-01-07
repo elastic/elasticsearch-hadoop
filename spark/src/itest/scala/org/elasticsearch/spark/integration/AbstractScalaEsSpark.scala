@@ -153,8 +153,12 @@ class AbstractScalaEsScalaSpark extends Serializable {
       RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
       RestUtils.refresh("spark-test");
 
-      val esData = EsSpark.esRDD(sc, target, "?q=message:World")
-      val newData = EsSpark.esRDD(sc, Map(ES_RESOURCE -> target, ES_QUERY -> "?q=message:*World"));
+      val esData = EsSpark.esRDD(sc, target, "?q=message:Hello World")
+      val newData = EsSpark.esRDD(sc, Map(
+          ES_NODES -> "localhost",
+          ES_RESOURCE -> target,
+          ES_INPUT_JSON -> "true",
+          ES_QUERY -> "?q=message:Hello World"));
       
       assertTrue(esData.count() ==  2)
       assertTrue(newData.count() ==  2)

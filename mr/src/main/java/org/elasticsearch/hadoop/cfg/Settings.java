@@ -40,7 +40,7 @@ import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL
  */
 public abstract class Settings {
 
-    public String getNodes() {
+	public String getNodes() {
         String host = getProperty(ES_HOST);
         if (StringUtils.hasText(host)) {
             throw new EsHadoopIllegalArgumentException(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
@@ -105,6 +105,10 @@ public abstract class Settings {
         String internalFields = getProperty(INTERNAL_ES_TARGET_FIELDS);
         return (StringUtils.hasText(internalFields) ? internalFields : getProperty(ES_SCROLL_FIELDS));
     }
+    
+	public boolean getScrollEscapeUri() {
+		return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
+	}
 
     public String getSerializerValueWriterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);

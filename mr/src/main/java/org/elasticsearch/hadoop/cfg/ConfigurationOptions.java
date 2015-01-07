@@ -93,6 +93,9 @@ public interface ConfigurationOptions {
     /** Scroll fields */
     String ES_SCROLL_FIELDS = "es.scroll.fields";
 
+	String ES_SCROLL_ESCAPE_QUERY_URI = "es.scroll.escape.query.uri";
+    String ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT = "true";
+
     String ES_HEART_BEAT_LEAD = "es.action.heart.beat.lead";
     String ES_HEART_BEAT_LEAD_DEFAULT = "15s";
 

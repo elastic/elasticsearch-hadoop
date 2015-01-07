@@ -50,6 +50,7 @@ public class QueryBuilder {
     private String node;
     private final boolean IS_ES_10;
     private final boolean INCLUDE_VERSION;
+    private final boolean ESCAPE_QUERY_URI;
 
     private String fields;
 
@@ -57,6 +58,7 @@ public class QueryBuilder {
         this.resource = new Resource(settings, true);
         IS_ES_10 = SettingsUtils.isEs10(settings);
         INCLUDE_VERSION = settings.getReadMetadata() && settings.getReadMetadataVersion();
+        ESCAPE_QUERY_URI = settings.getScrollEscapeUri();
         String query = settings.getQuery();
         if (!StringUtils.hasText(query)) {
             query = MATCH_ALL;
@@ -109,7 +111,11 @@ public class QueryBuilder {
         for (String token : query.split("&")) {
             int indexOf = token.indexOf("=");
             Assert.isTrue(indexOf > 0, String.format("Cannot token [%s] in uri query [%s]", token, query));
-            params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+            if (ESCAPE_QUERY_URI) {
+            	params.put(StringUtils.encodePath(token.substring(0, indexOf)), StringUtils.encodePath(token.substring(indexOf + 1)));
+            } else {
+            	params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+            }
         }
         return params;
     }
