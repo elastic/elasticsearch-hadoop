@@ -58,7 +58,7 @@ public class JsonFieldExtractors {
 
         @Override
         public Object field(Object target) {
-			// NB: the values are already escaped for JSON
+            // NB: the values are already escaped for JSON
             String result = results.get(slot);
             if (result == ParsingUtils.NOT_FOUND) {
                 return FieldExtractor.NOT_FOUND;
@@ -76,8 +76,8 @@ public class JsonFieldExtractors {
         private final String value;
 
         public FixedFieldExtractor(String value) {
-			// make sure to escape the user given constant
-			this.value = StringUtils.jsonEncodingAsString(value);
+            // make sure to escape the user given constant
+            this.value = StringUtils.jsonEncodingAsString(value);
         }
 
         @Override
@@ -132,7 +132,7 @@ public class JsonFieldExtractors {
         if (fieldName != null) {
             String constant = initConstant(fieldName);
             if (constant != null) {
-				return new FixedFieldExtractor(constant);
+                return new FixedFieldExtractor(constant);
             }
             else {
                 return createJsonFieldExtractor(fieldName, pathList);
@@ -148,7 +148,7 @@ public class JsonFieldExtractors {
 
     private String initConstant(String field) {
         if (field != null && field.startsWith("<") && field.endsWith(">")) {
-			return field.substring(1, field.length() - 1);
+            return field.substring(1, field.length() - 1);
         }
         return null;
     }
@@ -193,12 +193,18 @@ public class JsonFieldExtractors {
             log.trace(String.format("About to look for paths [%s] in doc [%s]", Arrays.toString(paths), storage));
         }
 
-		List<String> values = ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths);
+        List<String> values = ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths);
 
-		for (String string : values) {
-			// escape the returned values for raw JSON writing
-			results.add(StringUtils.jsonEncodingAsString(string));
-		}
+        for (String string : values) {
+			// pass the NF object as is to preserve the identity check down the pipeline
+			if (string == ParsingUtils.NOT_FOUND) {
+				results.add(string);
+			}
+			else {
+				// escape the returned values for raw JSON writing
+				results.add(StringUtils.jsonEncodingAsString(string));
+			}
+        }
     }
 
     public FieldExtractor params() {

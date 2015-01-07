@@ -20,7 +20,8 @@
 			"hight":"tall",
 			"floors": 10,
 			"flats": 40
-		}
+		},
+        "firstName":"should-not-be-picked"
     },
     "phoneNumbers": [
         {
@@ -29,12 +30,15 @@
         },
         {
             "type": "fax",
-            "number": "646 555-4567"
+            "number": "646 555-4567",
+            "age":-1
         }
     ],
+    "state" : "CA",
     "small-object": {
         "foo": "bar",
         "nested": {
+            "foo":"nested-bar",
             "foo1":"bar1"
         }
     },

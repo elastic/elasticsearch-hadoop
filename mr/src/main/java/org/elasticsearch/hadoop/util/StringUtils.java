@@ -60,6 +60,20 @@ public abstract class StringUtils {
         return false;
     }
 
+	public static int countOccurrences(String string, String substring) {
+		if (string == null || substring == null || string.length() == 0 || substring.length() == 0) {
+			return 0;
+		}
+		int count = 0;
+		int currentPosition = 0;
+		int index;
+		while ((index = string.indexOf(substring, currentPosition)) != -1) {
+			++count;
+			currentPosition = index + substring.length();
+		}
+		return count;
+	}
+
     public static List<String> tokenize(String string) {
         return tokenize(string, ",");
     }
