@@ -16,9 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.field;
+package org.elasticsearch.hadoop.serialization.bulk;
 
-// Marker interface indicating that a field extractor does not handle quotes and thus these need to be added further down the pipe-line
-public interface WithoutQuotes {
+import org.elasticsearch.hadoop.util.StringUtils;
 
+// wrapper class around values already converted to JSON
+// used currently when dealing with script parameters which cause a FieldExtractor to actually create a String template
+// which might contain raw json (constants or JSON extracts) or raw objects (when doing extraction)
+public class RawJson {
+	private final String source;
+
+	public RawJson(String source) {
+		this.source = source;
+	}
+
+	public byte[] json() {
+		return StringUtils.toUTF(source);
+	}
+
+	@Override
+	public String toString() {
+		return source;
+	}
 }

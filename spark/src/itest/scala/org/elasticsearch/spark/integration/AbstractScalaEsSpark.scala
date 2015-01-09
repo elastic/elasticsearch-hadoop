@@ -153,10 +153,10 @@ class AbstractScalaEsScalaSpark extends Serializable {
       RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
       RestUtils.refresh("spark-test");
 
-      val esData = EsSpark.esRDD(sc, target, "?q=message:Hello World")
+      val queryTarget = "*/scala-basic-query-read"
+      val esData = EsSpark.esRDD(sc, queryTarget, "?q=message:Hello World")
       val newData = EsSpark.esRDD(sc, Map(
-          ES_NODES -> "localhost",
-          ES_RESOURCE -> target,
+          ES_RESOURCE -> queryTarget,
           ES_INPUT_JSON -> "true",
           ES_QUERY -> "?q=message:Hello World"));
       
@@ -181,5 +181,27 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertTrue(messages.count() ==  2)
       assertNotNull(messages.take(10))
       assertNotNull(messages)
+    }
+    
+    //@Test
+    def testLoadJsonFile() {
+      val target = "lost/id"
+
+      val createIndex = """
+      |{"settings" : {
+        |"index" : {
+        |    "number_of_shards" : 10,
+        |    "number_of_replicas" : 1
+      	|}
+      |}
+      |}""".stripMargin
+      RestUtils.putData("lost", createIndex.getBytes());
+      
+      val rdd = sc.textFile("some.json")
+      EsSpark.saveJsonToEs(rdd, target, Map(
+          ES_MAPPING_ID -> "id"
+          ))
+      val esRDD = EsSpark.esRDD(sc, target);
+      println(esRDD.count)
     }
 }

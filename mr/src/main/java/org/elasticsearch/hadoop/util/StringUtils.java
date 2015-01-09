@@ -343,11 +343,21 @@ public abstract class StringUtils {
 		return true;
 	}
 
-	public static byte[] jsonEncoding(String rawString) {
-		return JsonStringEncoder.getInstance().quoteAsUTF8(rawString);
+	public static String jsonEncoding(String rawString) {
+		return new String(JsonStringEncoder.getInstance().quoteAsString(rawString));
 	}
 
-	public static String jsonEncodingAsString(String rawString) {
-		return new String(JsonStringEncoder.getInstance().quoteAsUTF8(rawString), StringUtils.UTF_8);
+	// return the value in a JSON friendly way
+	public static String toJsonString(Object value) {
+		if (value == null) {
+			return "null";
+		}
+		else if (value.getClass().equals(String.class)) {
+			return "\"" + StringUtils.jsonEncoding(value.toString()) + "\"";
+		}
+		// else it's a Boolean or Number so no escaping or quotes
+		else {
+			return value.toString();
+		}
 	}
 }

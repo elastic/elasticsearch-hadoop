@@ -119,14 +119,14 @@ public class QueryTestParams {
         return Arrays.asList(new Object[][] {
                 { "", true }, // empty
                 { "?q=m*", true }, // uri
-				{ "?q=name:m*", true }, // uri
+				//{ "?q=@name:m*", true }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
                 { TestUtils.sampleQueryUri(), true }, // nested uri
                 { TestUtils.sampleQueryDsl(), true }, // nested dsl
 
                 { "", false }, // empty
                 { "?q=m*", false }, // uri
-				{ "?q=name:m*", false }, // uri
+				//{ "?q=name:m*", false }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
                 { TestUtils.sampleQueryUri(), false }, // nested uri
                 { TestUtils.sampleQueryDsl(), false } // nested dsl

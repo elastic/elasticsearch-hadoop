@@ -85,7 +85,7 @@ public class AbstractMROldApiSearchTest {
     }
 
 
-    @Test
+	@Test
     public void testBasicSearchWithWildCard() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrold*/save");

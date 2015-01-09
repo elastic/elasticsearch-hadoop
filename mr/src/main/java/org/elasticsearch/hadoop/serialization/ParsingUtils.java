@@ -136,7 +136,7 @@ public abstract class ParsingUtils {
         }
     }
 
-    public static List<String> values(Parser parser, String... paths) {
+	public static List<Object> values(Parser parser, String... paths) {
         List<Matcher> matchers = new ArrayList<Matcher>(paths.length);
         int maxNesting = 0;
         for (String path : paths) {
@@ -147,25 +147,11 @@ public abstract class ParsingUtils {
             }
         }
 
+        doFind(parser, matchers, 0, maxNesting);
 
-        // split the matchers based on their nesting level
-        List<List<Matcher>> nestedMatchers = new ArrayList<List<Matcher>>();
-        for (int nestedLevel = 0; nestedLevel <= maxNesting; nestedLevel++) {
-            List<Matcher> levelMatchers = new ArrayList<Matcher>(matchers.size());
-            nestedMatchers.add(levelMatchers);
-
-            for (Matcher matcher : matchers) {
-                if (matcher.nesting() >= nestedLevel) {
-                    levelMatchers.add(matcher);
-                }
-            }
-        }
-
-        doFind(parser, matchers, 0, nestedMatchers.size());
-
-        List<String> matches = new ArrayList<String>();
+		List<Object> matches = new ArrayList<Object>();
         for (Matcher matcher : matchers) {
-            matches.add(matcher.matched ? (matcher.value != null ? matcher.value.toString() : StringUtils.EMPTY) : NOT_FOUND);
+			matches.add(matcher.matched ? matcher.value : NOT_FOUND);
         }
 
         return matches;
@@ -182,7 +168,7 @@ public abstract class ParsingUtils {
 
         while ((token = parser.nextToken()) != null) {
             if (token == Token.START_OBJECT) {
-                if (level + 1 < maxNesting) {
+				if (level < maxNesting) {
                     if (nextLevel != null) {
                         doFind(parser, nextLevel, level + 1, maxNesting);
                     }
@@ -243,7 +229,7 @@ public abstract class ParsingUtils {
             else if (token == Token.END_OBJECT) {
                 // end current block
             }
-			// arrays are not handled; simply ignore
+            // arrays are not handled; simply ignore
             else if (token == Token.START_ARRAY) {
                 parser.skipChildren();
             }

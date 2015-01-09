@@ -24,6 +24,7 @@ import java.util.List;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -89,8 +90,18 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
         return new FieldExtractor() {
             @Override
             public Object field(Object target) {
+                String string = createFieldExtractor.field(target).toString();
+                // typically a string in JSON so remove the quotes
+                if (string.startsWith("\"")) {
+                    string = string.substring(1);
+                }
+                if (string.endsWith("\"")) {
+                    string = string.substring(0, string.length() - 1);
+                }
+
                 // hack: an index will always be a primitive so just call toString (instead of doing JSON parsing)
-                return iformatter.format(createFieldExtractor.field(target).toString());
+				// the returned value is not formatted as JSON since : 1. there's no need (it will be picked up down the chain), 2: date formatter depends on it
+				return iformatter.format(string);
             }
         };
     }
@@ -103,26 +114,26 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
                     throw new EsHadoopIllegalArgumentException(String.format("Cannot find match for %s", pattern));
                 }
                 else {
-					sb.append(StringUtils.jsonEncodingAsString(field.toString()));
+                    sb.append(StringUtils.jsonEncoding(field.toString()));
                 }
             }
             else {
-				sb.append(StringUtils.jsonEncodingAsString(object.toString()));
+                sb.append(StringUtils.jsonEncoding(object.toString()));
             }
         }
     }
 
     @Override
-    public String field(Object target) {
+	public Object field(Object target) {
         StringBuilder sb = new StringBuilder();
         sb.append("\"_index\":\"");
-		append(sb, index, target);
+        append(sb, index, target);
         sb.append("\",");
         sb.append("\"_type\":\"");
         append(sb, type, target);
         sb.append("\"");
 
-        return sb.toString();
+		return new RawJson(sb.toString());
     }
 
     @Override

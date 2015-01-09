@@ -141,8 +141,8 @@ public class AbstractMROldApiSaveTest {
         FileInputFormat.setInputPaths(json, new Path(TestUtils.sampleArtistsJson(conf)));
 
         return Arrays.asList(new Object[][] {
-                { standard, "" },
-                { json, "json-" }
+             { standard, "" },
+             { json, "json-" }
         });
     }
 
@@ -155,21 +155,21 @@ public class AbstractMROldApiSaveTest {
     }
 
 	@Test
-	public void testBasicMultiSave() throws Exception {
-		JobConf conf = createJobConf();
-		conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
+    public void testBasicMultiSave() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
 
-		MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
-		MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
-		//MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
+        MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
+        MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
+        //MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
 
-		PrintStreamOutputFormat.stream(conf, Stream.OUT);
-		//conf.set("mapred.output.dir", "foo/bar");
-		//FileOutputFormat.setOutputPath(conf, new Path("foo/bar"));
+        PrintStreamOutputFormat.stream(conf, Stream.OUT);
+        //conf.set("mapred.output.dir", "foo/bar");
+        //FileOutputFormat.setOutputPath(conf, new Path("foo/bar"));
 
-		conf.setClass("mapred.output.format.class", MultiOutputFormat.class, OutputFormat.class);
-		runJob(conf);
-	}
+        conf.setClass("mapred.output.format.class", MultiOutputFormat.class, OutputFormat.class);
+        runJob(conf);
+    }
 
 
 	@Test
@@ -361,7 +361,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, "param2:name , param3:number, param1:<1>");
 
         runJob(conf);
     }
@@ -450,13 +450,13 @@ public class AbstractMROldApiSaveTest {
     }
 
 	@Test
-	public void testIndexWithEscapedJson() throws Exception {
-		JobConf conf = createJobConf();
-		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/simple-escaped-fields");
-		conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+    public void testIndexWithEscapedJson() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/simple-escaped-fields");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
-		runJob(conf);
-	}
+        runJob(conf);
+    }
 
 
 	//@Test

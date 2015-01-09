@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization.field;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 
 public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
@@ -51,7 +52,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected Object initValue(String value) {
-        return value;
+		return new RawJson(value);
     }
 
     protected String property(Settings settings) {

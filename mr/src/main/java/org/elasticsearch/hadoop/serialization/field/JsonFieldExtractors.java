@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -39,7 +40,7 @@ public class JsonFieldExtractors {
 
     private static Log log = LogFactory.getLog(JsonFieldExtractors.class);
 
-    private final List<String> results = new ArrayList<String>(6);
+	private final List<Object> results = new ArrayList<Object>(6);
     private String[] paths;
 
     private FieldExtractor id, parent, routing, ttl, version, timestamp;
@@ -50,20 +51,21 @@ public class JsonFieldExtractors {
 
         private final int slot;
         private final String fieldName;
+		private final boolean returnAsJson;
 
-        public PrecomputedFieldExtractor(int slot, String fieldName) {
+		public PrecomputedFieldExtractor(int slot, String fieldName, boolean returnAsJson) {
             this.slot = slot;
             this.fieldName = fieldName;
+			this.returnAsJson = returnAsJson;
         }
 
         @Override
         public Object field(Object target) {
-            // NB: the values are already escaped for JSON
-            String result = results.get(slot);
+			Object result = results.get(slot);
             if (result == ParsingUtils.NOT_FOUND) {
                 return FieldExtractor.NOT_FOUND;
             }
-            return result;
+			return (returnAsJson ? StringUtils.toJsonString(result) : result);
         }
 
         @Override
@@ -73,15 +75,14 @@ public class JsonFieldExtractors {
     }
 
     private static class FixedFieldExtractor implements FieldExtractor {
-        private final String value;
+		private final RawJson value;
 
         public FixedFieldExtractor(String value) {
-            // make sure to escape the user given constant
-            this.value = StringUtils.jsonEncodingAsString(value);
+			this.value = new RawJson(value);
         }
 
         @Override
-        public String field(Object target) {
+		public RawJson field(Object target) {
             return value;
         }
 
@@ -105,7 +106,7 @@ public class JsonFieldExtractors {
         indexExtractor = new AbstractIndexExtractor() {
             @Override
             protected FieldExtractor createFieldExtractor(String fieldName) {
-                return createJsonFieldExtractor(fieldName, jsonPaths);
+				return createJsonFieldExtractor(fieldName, jsonPaths, false);
             }
         };
         indexExtractor.setSettings(settings);
@@ -135,18 +136,19 @@ public class JsonFieldExtractors {
                 return new FixedFieldExtractor(constant);
             }
             else {
-                return createJsonFieldExtractor(fieldName, pathList);
+				return createJsonFieldExtractor(fieldName, pathList, true);
             }
         }
         return null;
     }
 
-    private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList) {
+	private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList, boolean asJson) {
         pathList.add(fieldName);
-        return new PrecomputedFieldExtractor(pathList.size() - 1, fieldName);
+		return new PrecomputedFieldExtractor(pathList.size() - 1, fieldName, asJson);
     }
 
     private String initConstant(String field) {
+		// don't do any escaping and pass the user JSON as is
         if (field != null && field.startsWith("<") && field.endsWith(">")) {
             return field.substring(1, field.length() - 1);
         }
@@ -193,18 +195,7 @@ public class JsonFieldExtractors {
             log.trace(String.format("About to look for paths [%s] in doc [%s]", Arrays.toString(paths), storage));
         }
 
-        List<String> values = ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths);
-
-        for (String string : values) {
-			// pass the NF object as is to preserve the identity check down the pipeline
-			if (string == ParsingUtils.NOT_FOUND) {
-				results.add(string);
-			}
-			else {
-				// escape the returned values for raw JSON writing
-				results.add(StringUtils.jsonEncodingAsString(string));
-			}
-        }
+        results.addAll(ParsingUtils.values(new JacksonJsonParser(storage.bytes(), 0, storage.length()), paths));
     }
 
     public FieldExtractor params() {

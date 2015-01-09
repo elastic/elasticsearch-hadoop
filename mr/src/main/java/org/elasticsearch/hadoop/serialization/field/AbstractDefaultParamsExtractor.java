@@ -26,10 +26,11 @@ import java.util.Map.Entry;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, SettingsAware, FieldExplainer, WithoutQuotes {
+public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, SettingsAware, FieldExplainer {
 
     private Map<String, FieldExtractor> params = new LinkedHashMap<String, FieldExtractor>();
     protected Settings settings;
@@ -39,19 +40,23 @@ public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, 
     @Override
     public Object field(Object target) {
         List<Object> list = new ArrayList<Object>(params.size());
+        int entries = 0;
+		// construct the param list but keep the value exposed to be properly transformed (if it's extracted from the runtime)
         for (Entry<String, FieldExtractor> entry : params.entrySet()) {
-            list.add("\"");
-            list.add(entry.getKey());
-            list.add("\":");
+			String val = StringUtils.toJsonString(entry.getKey()) + ":";
+            if (entries > 0) {
+                val = "," + val;
+            }
+			list.add(new RawJson(val));
             Object field = entry.getValue().field(target);
             if (field == FieldExtractor.NOT_FOUND) {
                 lastFailingFieldExtractor = entry.getValue();
                 return FieldExtractor.NOT_FOUND;
             }
+            // add the param as is - it will be translated to JSON as part of the list later
             list.add(field);
-            list.add(",");
+            entries++;
         }
-        list.remove(list.size() - 1);
         return list;
     }
 

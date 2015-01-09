@@ -70,8 +70,8 @@ class TemplatedBulk implements BulkCommand {
 
     private void writeTemplate(Collection<Object> template, Object object) {
         for (Object item : template) {
-            if (item instanceof byte[]) {
-                ref.add((byte[]) item);
+			if (item instanceof BytesArray) {
+				ref.add((BytesArray) item);
             }
             else {
                 ref.add(((FieldWriter) item).write(object));

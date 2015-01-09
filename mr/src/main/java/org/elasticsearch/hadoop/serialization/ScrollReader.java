@@ -251,7 +251,7 @@ public class ScrollReader {
                         doc.add(',');
                     }
                     doc.add('"');
-                    doc.add(StringUtils.jsonEncodingAsString(metadataField));
+                    doc.add(StringUtils.jsonEncoding(metadataField));
                     doc.add('"');
                     doc.add(':');
                     doc.add('{');

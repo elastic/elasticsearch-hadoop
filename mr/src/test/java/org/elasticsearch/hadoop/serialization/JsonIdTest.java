@@ -16,18 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.util;
+package org.elasticsearch.hadoop.serialization;
 
+import java.io.InputStream;
+import java.util.List;
+
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringUtilsTest {
+public class JsonIdTest {
 
-	@Test
-	public void testJsonEncodingQuote() {
-        String value = "foo\"bar";
-		String jsonEscaped = "foo\\\"bar";
-		assertEquals(jsonEscaped, StringUtils.jsonEncoding(value));
+    private Parser parser;
+
+    @Before
+    public void before() {
+		InputStream in = getClass().getResourceAsStream("tweet.json");
+        parser = new JacksonJsonParser(in);
+    }
+
+    @After
+    public void after() {
+        parser.close();
+    }
+
+    @Test
+	public void testId() throws Exception {
+		List<Object> values = ParsingUtils.values(parser, "id");
+		assertEquals(1, values.size());
     }
 }

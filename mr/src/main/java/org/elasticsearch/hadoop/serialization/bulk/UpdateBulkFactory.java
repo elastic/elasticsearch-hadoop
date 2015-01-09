@@ -71,7 +71,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     protected void writeBeforeObject(List<Object> pieces) {
         super.writeBeforeObject(pieces);
 
-        // when params are specified, they { is already added for readability purpose
+		// when params are specified, the { is already added for readability purpose
         if (!settings.hasUpdateScriptParams() && !settings.hasUpdateScriptParamsJson()) {
             pieces.add("{");
         }
