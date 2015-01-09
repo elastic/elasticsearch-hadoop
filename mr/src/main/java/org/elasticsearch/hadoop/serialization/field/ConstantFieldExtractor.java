@@ -21,12 +21,14 @@ package org.elasticsearch.hadoop.serialization.field;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.bulk.RawJson;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     public static final String PROPERTY = "org.elasticsearch.hadoop.serialization.ConstantFieldExtractor.property";
     private String fieldName;
     private Object value;
+	private boolean autoQuote = true;
 
     @Override
     public final Object field(Object target) {
@@ -39,6 +41,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
+		autoQuote = settings.getMappingConstantAutoQuote();
         fieldName = property(settings);
         if (fieldName.startsWith("<") && fieldName.endsWith(">")) {
             value = initValue(fieldName.substring(1, fieldName.length() - 1));
@@ -52,6 +55,27 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected Object initValue(String value) {
+		// check for quote and automatically add them, if needed for non-numbers
+		if (autoQuote && !value.startsWith("\"") && !value.endsWith("\"")) {
+			// constant values
+			if (!("null".equals(value) || "true".equals(value) || "false".equals(value))) {
+				// try number parsing
+				if (value.startsWith("-")) {
+					value = value.substring(1);
+				}
+				boolean isNumber = true;
+				for (int i = 0; i < value.length(); i++) {
+					if (!Character.isDigit(value.charAt(i))) {
+						isNumber = false;
+						break;
+					}
+				}
+				if (!isNumber) {
+					value = StringUtils.toJsonString(value);
+				}
+
+			}
+		}
 		return new RawJson(value);
     }
 

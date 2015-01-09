@@ -149,6 +149,9 @@ public interface ConfigurationOptions {
     String ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS = DateIndexFormatter.class.getName();
     String ES_MAPPING_PARAMS_EXTRACTOR_CLASS = "es.mapping.params.extractor.class";
     String ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS = DefaultParamsExtractor.class.getName();
+	String ES_MAPPING_CONSTANT_AUTO_QUOTE = "es.mapping.constant.auto.quote";
+	String ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT = "true";
+
 
     /** Read settings */
     String ES_READ_METADATA = "es.read.metadata";

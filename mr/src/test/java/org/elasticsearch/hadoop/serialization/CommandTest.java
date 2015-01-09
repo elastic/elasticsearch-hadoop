@@ -80,13 +80,14 @@ public class CommandTest {
     }
 
     @Test
+	// check user friendliness and escape the string if needed
     public void testConstantId() throws Exception {
         Settings settings = settings();
         noId = true;
-		settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<\"1\">");
+		settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<foobar>");
 
         create(settings).write(map).copyTo(ba);
-		String result = prefix() + "\"_id\":\"1\"}}" + map();
+		String result = prefix() + "\"_id\":\"foobar\"}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -96,7 +97,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
         create(settings).write(map).copyTo(ba);
-		String result = prefix() + "\"_parent\":5}}" + map();
+        String result = prefix() + "\"_parent\":5}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -106,7 +107,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
         create(settings).write(map).copyTo(ba);
-		String result = prefix() + "\"_version\":3}}" + map();
+        String result = prefix() + "\"_version\":3}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -125,7 +126,7 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
         create(settings).write(map).copyTo(ba);
-		String result = prefix() + "\"_timestamp\":3}}" + map();
+        String result = prefix() + "\"_timestamp\":3}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -135,7 +136,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
         create(settings).write(map).copyTo(ba);
-		String result = prefix() + "\"_routing\":4}}" + map();
+        String result = prefix() + "\"_routing\":4}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -148,7 +149,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "s");
 
         create(settings).write(map).copyTo(ba);
-		String result = "{\"" + operation + "\":{\"_id\":1,\"_routing\":\"v\",\"_ttl\":2}}" + map();
+        String result = "{\"" + operation + "\":{\"_id\":1,\"_routing\":\"v\",\"_ttl\":2}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -179,7 +180,7 @@ public class CommandTest {
     private String prefix() {
         StringBuilder sb = new StringBuilder("{\"" + operation + "\":{");
         if (isUpdateOp() && !noId) {
-			sb.append("\"_id\":2,");
+            sb.append("\"_id\":2,");
         }
         return sb.toString();
     }

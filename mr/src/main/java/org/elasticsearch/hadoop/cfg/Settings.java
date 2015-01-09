@@ -105,7 +105,7 @@ public abstract class Settings {
         String internalFields = getProperty(INTERNAL_ES_TARGET_FIELDS);
         return (StringUtils.hasText(internalFields) ? internalFields : getProperty(ES_SCROLL_FIELDS));
     }
-    
+
 	public boolean getScrollEscapeUri() {
 		return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
 	}
@@ -205,6 +205,10 @@ public abstract class Settings {
     public String getMappingParamsExtractorClassName() {
         return getProperty(ES_MAPPING_PARAMS_EXTRACTOR_CLASS, ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS);
     }
+
+	public boolean getMappingConstantAutoQuote() {
+		return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
+	}
 
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
