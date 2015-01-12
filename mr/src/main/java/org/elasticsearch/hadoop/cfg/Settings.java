@@ -40,7 +40,7 @@ import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL
  */
 public abstract class Settings {
 
-	public String getNodes() {
+    public String getNodes() {
         String host = getProperty(ES_HOST);
         if (StringUtils.hasText(host)) {
             throw new EsHadoopIllegalArgumentException(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
@@ -106,9 +106,9 @@ public abstract class Settings {
         return (StringUtils.hasText(internalFields) ? internalFields : getProperty(ES_SCROLL_FIELDS));
     }
 
-	public boolean getScrollEscapeUri() {
-		return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
-	}
+    public boolean getScrollEscapeUri() {
+        return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
+    }
 
     public String getSerializerValueWriterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
@@ -134,9 +134,9 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_INPUT_JSON, ES_INPUT_JSON_DEFAULT));
     }
 
-	public boolean getOutputAsJson() {
-		return Booleans.parseBoolean(getProperty(ES_OUTPUT_JSON, ES_OUTPUT_JSON_DEFAULT));
-	}
+    public boolean getOutputAsJson() {
+        return Booleans.parseBoolean(getProperty(ES_OUTPUT_JSON, ES_OUTPUT_JSON_DEFAULT));
+    }
 
     public String getOperation() {
         return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase(Locale.ENGLISH);
@@ -152,6 +152,20 @@ public abstract class Settings {
 
     public String getMappingVersion() {
         return getProperty(ES_MAPPING_VERSION);
+    }
+
+	public boolean hasMappingVersionType() {
+		String versionType = getMappingVersionType();
+		return (StringUtils.hasText(getMappingVersion()) && StringUtils.hasText(versionType) && !versionType.equals(ES_MAPPING_VERSION_TYPE_INTERNAL));
+	}
+
+	public String getMappingVersionType() {
+        String versionType = getProperty(ES_MAPPING_VERSION_TYPE);
+		// if no version type is specified, fall to defaults
+        if (!StringUtils.hasText(versionType)) {
+			return (StringUtils.hasText(getMappingVersion()) ? ES_MAPPING_VERSION_TYPE_EXTERNAL : "");
+        }
+		return versionType;
     }
 
     public String getMappingRouting() {
@@ -206,9 +220,9 @@ public abstract class Settings {
         return getProperty(ES_MAPPING_PARAMS_EXTRACTOR_CLASS, ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS);
     }
 
-	public boolean getMappingConstantAutoQuote() {
-		return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
-	}
+    public boolean getMappingConstantAutoQuote() {
+        return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
+    }
 
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
@@ -264,12 +278,12 @@ public abstract class Settings {
         return getProperty(ES_NET_SSL_KEYSTORE_LOCATION);
     }
 
-	public String getNetworkSSLProtocol() {
-		return getProperty(ES_NET_SSL_PROTOCOL, ES_NET_SSL_PROTOCOL_DEFAULT);
-	}
+    public String getNetworkSSLProtocol() {
+        return getProperty(ES_NET_SSL_PROTOCOL, ES_NET_SSL_PROTOCOL_DEFAULT);
+    }
 
     public String getNetworkSSLKeyStoreType() {
-		return getProperty(ES_NET_SSL_KEYSTORE_TYPE, ES_NET_SSL_KEYSTORE_TYPE_DEFAULT);
+        return getProperty(ES_NET_SSL_KEYSTORE_TYPE, ES_NET_SSL_KEYSTORE_TYPE_DEFAULT);
     }
 
     public String getNetworkSSLKeyStorePass() {

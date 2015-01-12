@@ -384,6 +384,11 @@ abstract class AbstractBulkFactory implements BulkFactory {
 
     protected boolean version(List<Object> pieces) {
         if (version() != null) {
+			if (settings.hasMappingVersionType()) {
+				pieces.add("\"_version_type\":\"");
+				pieces.add(settings.getMappingVersionType());
+				pieces.add("\"");
+			}
             pieces.add("\"_version\":");
             pieces.add(version());
             return true;

@@ -152,6 +152,13 @@ public interface ConfigurationOptions {
 	String ES_MAPPING_CONSTANT_AUTO_QUOTE = "es.mapping.constant.auto.quote";
 	String ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT = "true";
 
+	String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
+	String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL_GT = "external_gt";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL_GTE = "external_gte";
+	String ES_MAPPING_VERSION_TYPE_FORCE = "force";
+
 
     /** Read settings */
     String ES_READ_METADATA = "es.read.metadata";

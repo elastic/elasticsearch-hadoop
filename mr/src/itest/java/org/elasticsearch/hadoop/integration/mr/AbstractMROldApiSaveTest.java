@@ -412,6 +412,15 @@ public class AbstractMROldApiSaveTest {
     }
 
 	@Test
+	public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
+		JobConf conf = createJobConf();
+		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/external-version-implied");
+		conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
+
+		runJob(conf);
+	}
+
+	@Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
@@ -422,7 +431,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testIndexPattern() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "/mroldapi/pattern-{number}");
@@ -431,7 +440,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testIndexPatternWithFormatting() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}");
@@ -440,7 +449,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test
+	@Test
     public void testIndexPatternWithFormattingAndId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}-with-id");
