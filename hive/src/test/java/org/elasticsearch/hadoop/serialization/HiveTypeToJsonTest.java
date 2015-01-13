@@ -22,7 +22,9 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde2.io.ByteWritable;
@@ -39,15 +41,20 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.hive.HiveType;
 import org.elasticsearch.hadoop.hive.HiveValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.*;
 
@@ -93,83 +100,125 @@ public class HiveTypeToJsonTest {
 
     @Test
     public void testString() {
-        hiveTypeToJson(new MyHiveType(new Text("some string"), stringTypeInfo));
+        assertEquals("\"some string\"", hiveTypeToJson(new MyHiveType(new Text("some string"), stringTypeInfo)));
     }
 
     @Test
     public void testLong() {
-        hiveTypeToJson(new MyHiveType(new LongWritable(Long.MAX_VALUE), longTypeInfo));
+        assertEquals("9223372036854775807", hiveTypeToJson(new MyHiveType(new LongWritable(Long.MAX_VALUE), longTypeInfo)));
     }
 
     @Test
     public void testInteger() {
-        hiveTypeToJson(new MyHiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo));
+		assertEquals("2147483647", hiveTypeToJson(new MyHiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo)));
     }
 
     @Test
     public void testDouble() {
-        hiveTypeToJson(new MyHiveType(new DoubleWritable(Double.MAX_VALUE), doubleTypeInfo));
+        assertEquals("1.7976931348623157E308", hiveTypeToJson(new MyHiveType(new DoubleWritable(Double.MAX_VALUE), doubleTypeInfo)));
     }
 
     @Test
     public void testFloat() {
-        hiveTypeToJson(new MyHiveType(new FloatWritable(Float.MAX_VALUE), floatTypeInfo));
+        assertEquals("3.4028235E38", hiveTypeToJson(new MyHiveType(new FloatWritable(Float.MAX_VALUE), floatTypeInfo)));
     }
 
     @Test
     public void testBoolean() {
-        hiveTypeToJson(new MyHiveType(new BooleanWritable(Boolean.TRUE), booleanTypeInfo));
+        assertEquals("true", hiveTypeToJson(new MyHiveType(new BooleanWritable(Boolean.TRUE), booleanTypeInfo)));
     }
 
     @Test
     public void testByte() {
         // byte is not recognized by the schema
-        hiveTypeToJson(new MyHiveType(new ByteWritable(Byte.MAX_VALUE), byteTypeInfo));
+        assertEquals("127", hiveTypeToJson(new MyHiveType(new ByteWritable(Byte.MAX_VALUE), byteTypeInfo)));
     }
 
     @Test
     public void testShort() {
         // byte is not recognized by the schema
-        hiveTypeToJson(new MyHiveType(new ShortWritable(Short.MAX_VALUE), shortTypeInfo));
+        assertEquals("32767", hiveTypeToJson(new MyHiveType(new ShortWritable(Short.MAX_VALUE), shortTypeInfo)));
     }
 
     @Test
     public void testByteArray() {
-        hiveTypeToJson(new MyHiveType(new BytesWritable("byte array".getBytes()), binaryTypeInfo));
+        assertEquals("\"Ynl0ZSBhcnJheQ==\"", hiveTypeToJson(new MyHiveType(new BytesWritable("byte array".getBytes()), binaryTypeInfo)));
     }
 
     @Test
     public void testTimestamp() {
-        hiveTypeToJson(new MyHiveType(new TimestampWritable(new Timestamp(1407239910771l)), timestampTypeInfo));
+        assertTrue(hiveTypeToJson(
+                new MyHiveType(new TimestampWritable(new Timestamp(1407239910771l)), timestampTypeInfo)).startsWith(
+                "\"2014-08-0"));
     }
 
     @Test
     public void testDecimal() {
-        hiveTypeToJson(new MyHiveType(new HiveDecimalWritable(HiveDecimal.create(BigDecimal.ONE)), decimalTypeInfo));
+        assertEquals("\"1\"", hiveTypeToJson(new MyHiveType(new HiveDecimalWritable(HiveDecimal.create(BigDecimal.ONE)),
+                decimalTypeInfo)));
     }
 
     @Test
     public void testList() {
-        hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("one"), new Text("two") }),
-                getListTypeInfo(stringTypeInfo)));
+        assertEquals("[\"one\",\"two\"]", hiveTypeToJson(new MyHiveType(
+                Arrays.asList(new Object[] { new Text("one"), new Text("two") }), getListTypeInfo(stringTypeInfo))));
     }
 
     @Test
     public void testMap() {
-        hiveTypeToJson(new MyHiveType(Collections.singletonMap(new IntWritable(1), new Text("key")), getMapTypeInfo(
-                intTypeInfo, stringTypeInfo)));
+        assertEquals("{\"1\":\"key\"}", hiveTypeToJson(new MyHiveType(Collections.singletonMap(new IntWritable(1), new Text("key")),
+                getMapTypeInfo(intTypeInfo, stringTypeInfo))));
     }
+
+    @Test
+    public void testMapWithFilterInclude() {
+        TestSettings cfg = new TestSettings();
+        cfg.setProperty("es.mapping.include", "a*");
+
+        Map map = new LinkedHashMap();
+        map.put(new Text("aaa"), new Text("bbb"));
+        map.put(new Text("ccc"), new Text("ddd"));
+        map.put(new Text("axx"), new Text("zzz"));
+
+        HiveType type = new MyHiveType(map, getMapTypeInfo(stringTypeInfo, stringTypeInfo));
+
+        assertEquals("{\"aaa\":\"bbb\",\"axx\":\"zzz\"}", hiveTypeToJson(type, cfg));
+    }
+
+    @Test
+    public void testMapWithFilterExclude() {
+        TestSettings cfg = new TestSettings();
+        cfg.setProperty("es.mapping.exclude", "xxx");
+
+        Map map = new LinkedHashMap();
+        map.put(new Text("aaa"), new Text("bbb"));
+        map.put(new Text("ccc"), new Text("ddd"));
+        map.put(new Text("xxx"), new Text("zzz"));
+
+        HiveType type = new MyHiveType(map, getMapTypeInfo(stringTypeInfo, stringTypeInfo));
+
+        assertEquals("{\"aaa\":\"bbb\",\"ccc\":\"ddd\"}", hiveTypeToJson(type, cfg));
+    }
+
 
     @Test
     public void testStruct() {
         List<String> names = Arrays.asList(new String[] { "one", "two" });
         List<TypeInfo> types = Arrays.asList(new TypeInfo[] { stringTypeInfo, intTypeInfo });
-        hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }),
-                getStructTypeInfo(names, types)));
+		assertEquals("{\"one\":\"first\",\"two\":2}",
+                hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }),
+                        getStructTypeInfo(names, types))));
     }
 
-    private void hiveTypeToJson(HiveType obj) {
+    private String hiveTypeToJson(HiveType obj) {
         ContentBuilder.generate(out, new HiveValueWriter()).value(obj).flush().close();
-        System.out.println(out.bytes());
+        return out.bytes().toString();
+    }
+
+    private String hiveTypeToJson(HiveType obj, Settings cfg) {
+        HiveValueWriter hiveWriter = new HiveValueWriter();
+        hiveWriter.setSettings(cfg);
+        ContentBuilder.generate(out, hiveWriter).value(obj).flush().close();
+        return out.bytes().toString();
     }
 }

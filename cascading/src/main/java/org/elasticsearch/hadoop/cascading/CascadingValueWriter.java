@@ -21,10 +21,11 @@ package org.elasticsearch.hadoop.cascading;
 import java.util.List;
 
 import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.WritableValueWriter;
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
 import cascading.scheme.SinkCall;
 import cascading.tuple.Tuple;
@@ -32,10 +33,10 @@ import cascading.tuple.Tuple;
 /**
  * Basic delegate around {@link JdkValueWriter} that handles the unwraping of {@link SinkCall}
  */
-public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> {
+public class CascadingValueWriter extends FilteringValueWriter<SinkCall<Object[], ?>> {
 
-    private final ValueWriter<Object> jdkWriter;
-    private final ValueWriter<Writable> writableWriter;
+    private final JdkValueWriter jdkWriter;
+    private final WritableValueWriter writableWriter;
 
     public CascadingValueWriter() {
         this(false);
@@ -56,15 +57,25 @@ public class CascadingValueWriter implements ValueWriter<SinkCall<Object[], ?>> 
         generator.writeBeginObject();
         for (int i = 0; i < tuple.size(); i++) {
             String name = (i < names.size() ? names.get(i) : "tuple" + i);
-            generator.writeFieldName(name);
-            Object object = tuple.getObject(i);
-            if (!jdkWriter.write(object, generator)) {
-                if (!(object instanceof Writable) || !writableWriter.write((Writable) object, generator)) {
-                    return false;
+            // filter out fields
+			if (shouldKeep(generator.getParentPath(), name)) {
+                generator.writeFieldName(name);
+                Object object = tuple.getObject(i);
+                if (!jdkWriter.write(object, generator)) {
+                    if (!(object instanceof Writable) || !writableWriter.write((Writable) object, generator)) {
+                        return false;
+                    }
                 }
             }
         }
         generator.writeEndObject();
         return true;
+    }
+
+    @Override
+    public void setSettings(Settings settings) {
+        super.setSettings(settings);
+        jdkWriter.setSettings(settings);
+        writableWriter.setSettings(settings);
     }
 }

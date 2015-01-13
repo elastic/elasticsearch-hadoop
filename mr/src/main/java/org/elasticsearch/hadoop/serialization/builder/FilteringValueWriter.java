@@ -18,21 +18,26 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
-import org.elasticsearch.hadoop.serialization.Generator;
+import java.util.List;
 
-/**
- * Translates a value to its JSON-like structure.
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.util.StringUtils;
 
- * Implementations should handle filtering of field names.
- */
-public interface ValueWriter<T> {
+public abstract class FilteringValueWriter<T> implements ValueWriter<T>, SettingsAware {
 
-    /**
-     * Returns true if the value was written, false otherwise.
-     *
-     * @param object
-     * @param generator
-     * @return true if the value was written, false otherwise
-     */
-    boolean write(T object, Generator generator);
+	private List<String> includes;
+	private List<String> excludes;
+
+	@Override
+	public void setSettings(Settings settings) {
+		includes = StringUtils.tokenize(settings.getMappingIncludes());
+		excludes = StringUtils.tokenize(settings.getMappingExcludes());
+	}
+
+	protected boolean shouldKeep(String parentField, String name) {
+		name = StringUtils.hasText(parentField) ? parentField + "." + name : name;
+		return FieldFilter.filter(name, includes, excludes);
+	}
 }

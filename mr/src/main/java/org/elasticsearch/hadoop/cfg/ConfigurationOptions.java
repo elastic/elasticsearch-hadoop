@@ -159,6 +159,11 @@ public interface ConfigurationOptions {
 	String ES_MAPPING_VERSION_TYPE_EXTERNAL_GTE = "external_gte";
 	String ES_MAPPING_VERSION_TYPE_FORCE = "force";
 
+	String ES_MAPPING_INCLUDE = "es.mapping.include";
+	String ES_MAPPING_INCLUDE_DEFAULT = "";
+	String ES_MAPPING_EXCLUDE = "es.mapping.exclude";
+	String ES_MAPPING_EXCLUDE_DEFAULT = "";
+
 
     /** Read settings */
     String ES_READ_METADATA = "es.read.metadata";

@@ -30,18 +30,17 @@ import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.SettingsAware;
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 import org.elasticsearch.hadoop.util.FieldAlias;
 
 /**
  * Main value writer for hive. However since Hive expects a Writable type to be passed to the record reader,
  * the raw JSON data needs to be wrapped (and unwrapped by {@link HiveBytesArrayWritable}).
  */
-public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
+public class HiveValueWriter extends FilteringValueWriter<HiveType> {
 
     private final boolean writeUnknownTypes;
-    private final ValueWriter<Writable> writableWriter;
+	private final HiveWritableValueWriter writableWriter;
     private FieldAlias alias;
 
     public HiveValueWriter() {
@@ -91,9 +90,15 @@ public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
             for (Map.Entry<?, ?> entry : moi.getMap(data).entrySet()) {
                 //write(entry.getKey(), mapType.getMapKeyTypeInfo(), generator);
                 // TODO: handle non-strings
-                generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                if (!write(entry.getValue(), moi.getMapValueObjectInspector(), generator)) {
-                    return false;
+
+                String fieldName = entry.getKey().toString();
+
+                // filter out fields
+				if (shouldKeep(generator.getParentPath(), fieldName)) {
+                    generator.writeFieldName(alias.toES(entry.getKey().toString()));
+                    if (!write(entry.getValue(), moi.getMapValueObjectInspector(), generator)) {
+                        return false;
+                    }
                 }
             }
             generator.writeEndObject();
@@ -107,9 +112,11 @@ public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
 
             generator.writeBeginObject();
             for (StructField structField : refs) {
-                generator.writeFieldName(alias.toES(structField.getFieldName()));
-                if (!write(soi.getStructFieldData(data, structField), structField.getFieldObjectInspector(), generator)) {
-                    return false;
+				if (shouldKeep(generator.getParentPath(), structField.getFieldName())) {
+                    generator.writeFieldName(alias.toES(structField.getFieldName()));
+                    if (!write(soi.getStructFieldData(data, structField), structField.getFieldObjectInspector(), generator)) {
+                        return false;
+                    }
                 }
             }
             generator.writeEndObject();
@@ -137,6 +144,8 @@ public class HiveValueWriter implements SettingsAware, ValueWriter<HiveType> {
 
     @Override
     public void setSettings(Settings settings) {
+		super.setSettings(settings);
         alias = HiveUtils.alias(settings);
+		writableWriter.setSettings(settings);
     }
 }

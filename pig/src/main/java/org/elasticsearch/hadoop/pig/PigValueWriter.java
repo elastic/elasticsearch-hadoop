@@ -30,13 +30,12 @@ import org.apache.pig.data.Tuple;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.SettingsAware;
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 
-public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
+public class PigValueWriter extends FilteringValueWriter<PigTuple> {
 
     private final boolean writeUnknownTypes;
     private boolean useTupleFieldNames;
@@ -54,6 +53,7 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
+		super.setSettings(settings);
         alias = PigUtils.alias(settings);
         useTupleFieldNames = Booleans.parseBoolean(settings.getProperty(PigUtils.NAMED_TUPLE), PigUtils.NAMED_TUPLE_DEFAULT);
     }
@@ -127,9 +127,12 @@ public class PigValueWriter implements ValueWriter<PigTuple>, SettingsAware {
             generator.writeBeginObject();
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
-                generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                if (!write(entry.getValue(), nestedFields[0], generator)) {
-                    return false;
+				String fieldName = entry.getKey().toString();
+				if (shouldKeep(generator.getParentPath(), fieldName)) {
+					generator.writeFieldName(alias.toES(fieldName));
+                    if (!write(entry.getValue(), nestedFields[0], generator)) {
+                        return false;
+                    }
                 }
             }
             generator.writeEndObject();

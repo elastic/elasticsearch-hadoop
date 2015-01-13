@@ -224,6 +224,14 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
     }
 
+	public String getMappingIncludes() {
+		return getProperty(ES_MAPPING_INCLUDE, ES_MAPPING_INCLUDE_DEFAULT);
+	}
+
+	public String getMappingExcludes() {
+		return getProperty(ES_MAPPING_EXCLUDE, ES_MAPPING_EXCLUDE_DEFAULT);
+	}
+
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
     }

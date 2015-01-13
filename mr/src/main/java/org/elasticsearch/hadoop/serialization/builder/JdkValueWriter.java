@@ -31,7 +31,7 @@ import org.elasticsearch.hadoop.serialization.Generator;
 /**
  * Value writer for JDK types.
  */
-public class JdkValueWriter implements ValueWriter<Object> {
+public class JdkValueWriter extends FilteringValueWriter<Object> {
 
     protected final boolean writeUnknownTypes;
 
@@ -45,6 +45,10 @@ public class JdkValueWriter implements ValueWriter<Object> {
 
     @Override
     public boolean write(Object value, Generator generator) {
+		return doWrite(value, generator, null);
+	}
+
+	protected boolean doWrite(Object value, Generator generator, String parentField) {
         if (value == null) {
             generator.writeNull();
         }
@@ -90,8 +94,8 @@ public class JdkValueWriter implements ValueWriter<Object> {
         else if (value.getClass().isArray()) {
             generator.writeBeginArray();
             for (Object o : (Object[]) value) {
-                if (!write(o, generator)) {
-                	return false;
+				if (!doWrite(o, generator, parentField)) {
+                    return false;
                 }
             }
             generator.writeEndArray();
@@ -99,9 +103,13 @@ public class JdkValueWriter implements ValueWriter<Object> {
         else if (value instanceof Map) {
             generator.writeBeginObject();
             for (Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                generator.writeFieldName(entry.getKey().toString());
-                if (!write(entry.getValue(), generator)) {
-                	return false;
+				String fieldName = entry.getKey().toString();
+				// filter out fields
+				if (shouldKeep(parentField, fieldName)) {
+					generator.writeFieldName(fieldName);
+					if (!doWrite(entry.getValue(), generator, fieldName)) {
+						return false;
+					}
                 }
             }
             generator.writeEndObject();
@@ -109,8 +117,8 @@ public class JdkValueWriter implements ValueWriter<Object> {
         else if (value instanceof Iterable) {
             generator.writeBeginArray();
             for (Object o : (Iterable<?>) value) {
-                if (!write(o, generator)) {
-                	return false;
+				if (!doWrite(o, generator, parentField)) {
+                    return false;
                 }
             }
             generator.writeEndArray();

@@ -28,19 +28,21 @@ import org.apache.pig.data.DefaultDataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.Utils;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.pig.PigTuple;
 import org.elasticsearch.hadoop.pig.PigValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 
 public class PigTypeToJsonTest {
 
@@ -155,6 +157,34 @@ public class PigTypeToJsonTest {
                         createSchema("anontuple: (chararray, chararray, chararray)"))), is(expected));
     }
 
+
+    @Test
+    public void testMapWithFilterInclude() {
+        TestSettings cfg = new TestSettings();
+        cfg.setProperty("es.mapping.include", "map.t*");
+
+        String expected = "{\"map\":{\"two\":2,\"three\":3}}";
+        Map<String, Number> map = new LinkedHashMap<String, Number>();
+        map.put("one", 1);
+        map.put("two", 2);
+        map.put("three", 3);
+		assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
+    }
+
+    @Test
+    public void testMapWithFilterExclude() {
+        TestSettings cfg = new TestSettings();
+		cfg.setProperty("es.mapping.exclude", "o*, map.t*");
+
+		String expected = "{\"map\":{\"one\":1}}";
+		Map<String, Number> map = new LinkedHashMap<String, Number>();
+		map.put("one", 1);
+		map.put("two", 2);
+		map.put("three", 3);
+		assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
+    }
+
+
     @Test
     public void testAnonMap() {
         String expected = "{\"map_0\":{\"one\":1,\"two\":2,\"three\":3}}";
@@ -209,6 +239,13 @@ public class PigTypeToJsonTest {
 
     private String pigTypeToJson(PigTuple obj) {
         ContentBuilder.generate(out, new PigValueWriter(false)).value(obj).flush().close();
+        return out.bytes().toString();
+    }
+
+    private String pigTypeToJson(Object obj, Settings settings) {
+        PigValueWriter writer = new PigValueWriter(false);
+        writer.setSettings(settings);
+        ContentBuilder.generate(out, writer).value(obj).flush().close();
         return out.bytes().toString();
     }
 }

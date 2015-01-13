@@ -21,11 +21,27 @@ package org.elasticsearch.hadoop.mr;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.AbstractMapWritable;
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MD5Hash;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.UTF8;
+import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.VLongWritable;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 import org.elasticsearch.hadoop.serialization.Generator;
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 
-public class WritableValueWriter implements ValueWriter<Writable> {
+public class WritableValueWriter extends FilteringValueWriter<Writable> {
 
     private final boolean writeUnknownTypes;
 
@@ -101,9 +117,12 @@ public class WritableValueWriter implements ValueWriter<Writable> {
             generator.writeBeginObject();
             // ignore handling sets (which are just maps with null values)
             for (Entry<Writable, Writable> entry : map.entrySet()) {
-                generator.writeFieldName(entry.getKey().toString());
-                if (!write(entry.getValue(), generator)) {
-                    return false;
+				String fieldName = entry.getKey().toString();
+				if (shouldKeep(generator.getParentPath(), fieldName)) {
+					generator.writeFieldName(fieldName);
+					if (!write(entry.getValue(), generator)) {
+						return false;
+					}
                 }
             }
             generator.writeEndObject();
