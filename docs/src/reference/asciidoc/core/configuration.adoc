@@ -139,6 +139,10 @@ The document field/property name containing the document parent. To specify a co
 `es.mapping.version` (default none)::
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
+`es.mapping.version.type` (default depends on +es.mapping.version+)::
+Indicates the http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html#_version_types[type of versioning] used. 
+If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
+
 `es.mapping.routing` (default none)::
 The document field/property name containing the document routing. To specify a constant, use the `<CONSTANT>` format.
 
@@ -269,7 +273,7 @@ Whether to discovery the nodes within the {es} cluster or only to use the ones g
 Timeout for HTTP/REST connections to {es}.
 
 `es.http.retries` (default 3)::
-Number of retries for estabilishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
+Number of retries for establishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
 available {es} node (based on the declaration of `es.nodes`, followed by the discovered nodes - if enabled).
 
 `es.scroll.keepalive` (default 10m)::
