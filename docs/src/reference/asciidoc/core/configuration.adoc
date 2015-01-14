@@ -148,6 +148,18 @@ The document field/property name containing the document time-to-live. To specif
 `es.mapping.timestamp` (default none)::
 The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
 
+added[2.1]
+`es.mapping.include` (default none)::
+Field/property to be included in final the document. Useful for _extracting_ the needed data from entities. The syntax is similar
+to that of {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html[include/exclude].
+Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
+
+added[2.1]
+`es.mapping.exclude` (default none)::
+Field/property to be excluded in final the document. Useful for _eliminating_ unneeded data from entities. The syntax is similar
+to that of {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html[include/exclude].
+Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded
+
 For example:
 [source,ini]
 ----
@@ -156,7 +168,18 @@ es.mapping.id = uuid
 
 # specifying a parent with id '123'
 es.mapping.parent = \<123>
+
+# combine include / exclude for complete control
+# include 
+es.mapping.include = u*, foo.*
+# exclude
+es.mapping.include = *.description
 ----
+
+Using the configuration above, each entry will have only its top-level fields, starting with u and nested fields under +foo+ included
+in the document with the exception of any nested field named +descriptor+. Additionally the document parent will be +123+ while the
+document id extracted from field +uuid+.
+
 
 [float]
 ==== Metadata
@@ -258,12 +281,14 @@ Number of results/items returned by each individual scroll.
 `es.action.heart.beat.lead` (default 15s)::
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
 
+added[2.1]
 [float]
 ==== Basic Authentication
 
 `es.net.http.auth.user`:: Basic Authentication user name
 `es.net.http.auth.pass`:: Basic Authentication password
 
+added[2.1]
 [float]
 ==== SSL
 
