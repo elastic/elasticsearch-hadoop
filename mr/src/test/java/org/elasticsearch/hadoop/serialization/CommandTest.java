@@ -105,7 +105,7 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
         create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_version\":\"3\"}}" + map();
+        String result = prefix() + "\"_version_type\":\"external\",\"_version\":\"3\"}}" + map();
         assertEquals(result, ba.toString());
     }
 

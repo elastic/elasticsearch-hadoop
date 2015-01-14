@@ -137,6 +137,20 @@ public abstract class Settings implements InternalConfigurationOptions {
         return getProperty(ES_MAPPING_VERSION);
     }
 
+	public boolean hasMappingVersionType() {
+		String versionType = getMappingVersionType();
+		return (StringUtils.hasText(getMappingVersion()) && StringUtils.hasText(versionType) && !versionType.equals(ES_MAPPING_VERSION_TYPE_INTERNAL));
+	}
+
+	public String getMappingVersionType() {
+        String versionType = getProperty(ES_MAPPING_VERSION_TYPE);
+		// if no version type is specified, fall to defaults
+        if (!StringUtils.hasText(versionType)) {
+			return (StringUtils.hasText(getMappingVersion()) ? ES_MAPPING_VERSION_TYPE_EXTERNAL : "");
+        }
+		return versionType;
+    }
+
     public String getMappingRouting() {
         return getProperty(ES_MAPPING_ROUTING);
     }

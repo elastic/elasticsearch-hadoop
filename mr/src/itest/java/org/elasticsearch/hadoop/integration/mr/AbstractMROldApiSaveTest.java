@@ -391,6 +391,15 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
+	@Test
+	public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
+		JobConf conf = createJobConf();
+		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/external-version-implied");
+		conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
+
+		runJob(conf);
+	}
+
     @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();

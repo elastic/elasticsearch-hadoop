@@ -143,6 +143,13 @@ public interface ConfigurationOptions {
     String ES_MAPPING_PARAMS_EXTRACTOR_CLASS = "es.mapping.params.extractor.class";
     String ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS = DefaultParamsExtractor.class.getName();
 
+	String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
+	String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL_GT = "external_gt";
+	String ES_MAPPING_VERSION_TYPE_EXTERNAL_GTE = "external_gte";
+	String ES_MAPPING_VERSION_TYPE_FORCE = "force";
+
 
     /** Operation types */
     String ES_WRITE_OPERATION = "es.write.operation";
