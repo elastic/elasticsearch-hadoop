@@ -30,13 +30,13 @@ import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.OutputFormat;
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
-import static org.elasticsearch.hadoop.hive.HiveConstants.*;
+import static org.elasticsearch.hadoop.hive.HiveConstants.TABLE_LOCATION;
 
 /**
  * Hive storage for writing data into an ElasticSearch index.
@@ -103,8 +103,12 @@ public class EsStorageHandler extends DefaultStorageHandler {
     }
 
     private void copyToJobProperties(Map<String, String> jobProperties, Properties properties) {
+        // #359, HIVE-8307
+		// exclude hive comments to prevent the XML serialization bug from occurring
         for (String key : properties.stringPropertyNames()) {
-            jobProperties.put(key, properties.getProperty(key));
+			if (!key.startsWith(HiveConstants.COLUMN_COMMENTS)) {
+                jobProperties.put(key, properties.getProperty(key));
+            }
         }
     }
 
