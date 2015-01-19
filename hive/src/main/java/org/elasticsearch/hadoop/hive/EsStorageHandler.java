@@ -36,7 +36,9 @@ import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.Assert;
 
-import static org.elasticsearch.hadoop.hive.HiveConstants.*;
+import static org.elasticsearch.hadoop.hive.HiveConstants.COLUMNS;
+import static org.elasticsearch.hadoop.hive.HiveConstants.COLUMNS_TYPES;
+import static org.elasticsearch.hadoop.hive.HiveConstants.TABLE_LOCATION;
 
 /**
  * Hive storage for writing data into an ElasticSearch index.
@@ -103,8 +105,12 @@ public class EsStorageHandler extends DefaultStorageHandler {
     }
 
     private void copyToJobProperties(Map<String, String> jobProperties, Properties properties) {
+        // #359, HIVE-8307
         for (String key : properties.stringPropertyNames()) {
-            jobProperties.put(key, properties.getProperty(key));
+            // copy only some properties since apparently job properties can contain junk which messes up the XML serialization
+            if (key.startsWith("es.") || key.equals(TABLE_LOCATION) || key.equals(COLUMNS) || key.equals(COLUMNS_TYPES)) {
+                jobProperties.put(key, properties.getProperty(key));
+            }
         }
     }
 
