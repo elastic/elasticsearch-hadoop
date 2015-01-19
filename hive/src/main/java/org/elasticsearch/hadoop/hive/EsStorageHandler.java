@@ -107,8 +107,8 @@ public class EsStorageHandler extends DefaultStorageHandler {
     private void copyToJobProperties(Map<String, String> jobProperties, Properties properties) {
         // #359, HIVE-8307
         for (String key : properties.stringPropertyNames()) {
-			// copy only some properties since apparently job properties can contain junk which messes up the XML serialization
-			if (key.startsWith("es.") || key.equals(TABLE_LOCATION) || key.equals(COLUMNS) || key.equals(COLUMNS_TYPES)) {
+            // copy only some properties since apparently job properties can contain junk which messes up the XML serialization
+            if (key.startsWith("es.") || key.equals(TABLE_LOCATION) || key.equals(COLUMNS) || key.equals(COLUMNS_TYPES)) {
                 jobProperties.put(key, properties.getProperty(key));
             }
         }
