@@ -30,8 +30,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.spark.rdd.Metadata;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,6 +45,7 @@ import com.google.common.collect.ImmutableMap;
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.spark.rdd.Metadata.*;
 
 import static org.hamcrest.Matchers.*;
 
@@ -108,10 +109,11 @@ public class AbstractJavaEsSparkTest implements Serializable {
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
 
         String target = "spark-test/java-dyn-id-write";
-        JavaRDD<Tuple2<Object, Object>> tupleRdd = sc.parallelize(ImmutableList.<Tuple2<Object, Object>> of(new Tuple2(1, doc1), new Tuple2(2, doc2)));
-        JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
+        JavaPairRDD<?, ?> pairRdd = sc.parallelizePairs(ImmutableList.of(new Tuple2<Object,Object>(1, doc1), 
+        		new Tuple2<Object, Object>(2, doc2)));
+        //JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
         // eliminate with static import
-        JavaEsSpark.saveToEsWithMeta(pairRDD, target);
+        JavaEsSpark.saveToEsWithMeta(pairRdd, target);
         
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
@@ -125,8 +127,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
 
         String target = "spark-test/java-dyn-map-id-write";
-        Map<Metadata, Object> header1 = ImmutableMap.<Metadata, Object> of(Metadata.ID, 1, Metadata.TTL, "1d");
-        Map<Metadata, Object> header2 = ImmutableMap.<Metadata, Object> of(Metadata.ID, "2", Metadata.TTL, "2d");
+        Map<Metadata, Object> header1 = ImmutableMap.<Metadata, Object> of(ID, 1, TTL, "1d");
+        Map<Metadata, Object> header2 = ImmutableMap.<Metadata, Object> of(ID, "2", TTL, "2d");
         JavaRDD<Tuple2<Object, Object>> tupleRdd = sc.parallelize(ImmutableList.<Tuple2<Object, Object>> of(new Tuple2(header1, doc1), new Tuple2(header2, doc2)));
         JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
         // eliminate with static import

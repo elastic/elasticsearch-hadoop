@@ -38,7 +38,7 @@ import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
 import org.apache.spark.rdd.PairRDDFunctions
-import org.elasticsearch.spark.rdd.Metadata
+import org.elasticsearch.spark.rdd.Metadata._
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -118,11 +118,11 @@ class AbstractScalaEsScalaSpark extends Serializable {
 
       val target = "spark-test/scala-dyn-id-write";
 
-      val metadata1 = Map(Metadata.ID -> 5, Metadata.TTL -> "1d")
-      val metadata2 = Map(Metadata.ID -> 6, Metadata.TTL -> "2d", Metadata.VERSION -> "23")
+      val metadata1 = Map(ID -> 5, TTL -> "1d")
+      val metadata2 = Map(ID -> 6, TTL -> "2d", VERSION -> "23")
       
-      assertEquals(5, metadata1.getOrElse(Metadata.ID, null))
-      assertEquals(6, metadata2.getOrElse(Metadata.ID, null))
+      assertEquals(5, metadata1.getOrElse(ID, null))
+      assertEquals(6, metadata2.getOrElse(ID, null))
 
       val pairRDD = sc.makeRDD(Seq((metadata1, doc1),(metadata2, doc2)))
       
