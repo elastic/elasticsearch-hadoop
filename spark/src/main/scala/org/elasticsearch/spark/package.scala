@@ -39,4 +39,12 @@ package object spark {
     def saveJsonToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, resource, cfg) }
     def saveJsonToEs(cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, cfg) }
   }
+  
+  implicit def sparkPairRDDFunctions[K : ClassTag, V : ClassTag](rdd: RDD[(K,V)]) = new SparkPairRDDFunctions[K,V](rdd)
+
+  class SparkPairRDDFunctions[K : ClassTag, V : ClassTag](rdd: RDD[(K,V)]) extends Serializable {
+    def saveToEsWithMeta[K,V](resource: String) { EsSpark.saveToEsWithMeta(rdd, resource) }
+    def saveToEsWithMeta[K,V](resource: String, cfg: Map[String, String]) { EsSpark.saveToEsWithMeta(rdd, resource, cfg) }
+    def saveToEsWithMeta[K,V](cfg: Map[String, String]) { EsSpark.saveToEsWithMeta(rdd, cfg) }
+  }
 }

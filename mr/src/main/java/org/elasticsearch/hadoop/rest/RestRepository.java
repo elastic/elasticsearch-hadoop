@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
+import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -73,11 +74,13 @@ public class RestRepository implements Closeable, StatsAware {
     // flag indicating whether to flush the batch at close-time or not
     private boolean hadWriteErrors = false;
 
-
     private RestClient client;
     private Resource resourceR;
     private Resource resourceW;
     private BulkCommand command;
+    // optional extractor passed lazily to BulkCommand
+	private MetadataExtractor metaExtractor;
+
     private final Settings settings;
     private final Stats stats = new Stats();
 
@@ -108,7 +111,7 @@ public class RestRepository implements Closeable, StatsAware {
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-            this.command = BulkCommands.create(settings);
+			this.command = BulkCommands.create(settings, metaExtractor);
         }
     }
 
@@ -124,6 +127,10 @@ public class RestRepository implements Closeable, StatsAware {
         String scrollId = scrollInfo[0];
         long totalSize = Long.parseLong(scrollInfo[1]);
         return new ScrollQuery(this, scrollId, totalSize, reader);
+    }
+
+	public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
+		this.metaExtractor = metaExtractor;
     }
 
     /**

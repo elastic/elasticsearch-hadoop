@@ -26,6 +26,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ AbstractJavaEsSparkTest.class, AbstractHadoopBasicSparkTest.class })
+//@Suite.SuiteClasses({ AbstractJavaEsSparkTest.class })
 public class SparkSuite {
 
     @ClassRule

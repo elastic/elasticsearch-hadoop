@@ -24,6 +24,7 @@ import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.runtime.ScalaRunTime.stringOf
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
@@ -37,6 +38,7 @@ import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
 import org.apache.spark.rdd.PairRDDFunctions
+import org.elasticsearch.spark.rdd.Metadata
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -94,6 +96,44 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
     }
 
+    @Test
+    def testEsRDDWriteWithDynamicMapping() {
+      val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
+      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
+
+      val target = "spark-test/scala-dyn-id-write";
+
+      val pairRDD = sc.makeRDD(Seq((3, doc1),(4, doc2))).saveToEsWithMeta(target)
+      
+      assertTrue(RestUtils.exists(target + "/3"))
+      assertTrue(RestUtils.exists(target + "/4"))
+
+      assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
+    }
+
+    @Test
+    def testEsRDDWriteWithDynamicMapMapping() {
+      val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
+      val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
+
+      val target = "spark-test/scala-dyn-id-write";
+
+      val metadata1 = Map(Metadata.ID -> 5, Metadata.TTL -> "1d")
+      val metadata2 = Map(Metadata.ID -> 6, Metadata.TTL -> "2d", Metadata.VERSION -> "23")
+      
+      assertEquals(5, metadata1.getOrElse(Metadata.ID, null))
+      assertEquals(6, metadata2.getOrElse(Metadata.ID, null))
+
+      val pairRDD = sc.makeRDD(Seq((metadata1, doc1),(metadata2, doc2)))
+      
+      pairRDD.saveToEsWithMeta(target)
+
+      assertTrue(RestUtils.exists(target + "/5"))
+      assertTrue(RestUtils.exists(target + "/6"))
+
+      assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
+    }
+        
     @Test
     def testEsMultiIndexRDDWrite() {
       val trip1 = Map("reason" -> "business", "airport" -> "SFO")

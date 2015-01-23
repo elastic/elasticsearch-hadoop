@@ -30,6 +30,7 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.junit.AfterClass;
@@ -48,6 +49,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.hamcrest.Matchers.*;
 
 import static scala.collection.JavaConversions.*;
+import scala.Tuple2;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkTest implements Serializable {
@@ -100,6 +102,42 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
 
+    @Test
+    public void testEsRDDWriteWithDynamicMapping() throws Exception {
+        Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
+        Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
+
+        String target = "spark-test/java-dyn-id-write";
+        JavaRDD<Tuple2<Object, Object>> tupleRdd = sc.parallelize(ImmutableList.<Tuple2<Object, Object>> of(new Tuple2(1, doc1), new Tuple2(2, doc2)));
+        JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
+        // eliminate with static import
+        JavaEsSpark.saveToEsWithMeta(pairRDD, target);
+        
+        assertTrue(RestUtils.exists(target + "/1"));
+        assertTrue(RestUtils.exists(target + "/2"));
+        String results = RestUtils.get(target + "/_search?");
+        assertThat(results, containsString("SFO"));
+    }
+    
+    @Test
+    public void testEsRDDWriteWithDynamicMappingBasedOnMaps() throws Exception {
+        Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
+        Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
+
+        String target = "spark-test/java-dyn-map-id-write";
+        Map<Metadata, Object> header1 = ImmutableMap.<Metadata, Object> of(Metadata.ID, 1, Metadata.TTL, "1d");
+        Map<Metadata, Object> header2 = ImmutableMap.<Metadata, Object> of(Metadata.ID, "2", Metadata.TTL, "2d");
+        JavaRDD<Tuple2<Object, Object>> tupleRdd = sc.parallelize(ImmutableList.<Tuple2<Object, Object>> of(new Tuple2(header1, doc1), new Tuple2(header2, doc2)));
+        JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
+        // eliminate with static import
+        JavaEsSpark.saveToEsWithMeta(pairRDD, target);
+        
+        assertTrue(RestUtils.exists(target + "/1"));
+        assertTrue(RestUtils.exists(target + "/2"));
+        String results = RestUtils.get(target + "/_search?");
+        assertThat(results, containsString("SFO"));
+    }
+    
     @Test
     public void testEsMultiIndexRDDWrite() throws Exception {
       Map<String, ?> doc1 = ImmutableMap.of("reason", "business", "airport", "SFO");

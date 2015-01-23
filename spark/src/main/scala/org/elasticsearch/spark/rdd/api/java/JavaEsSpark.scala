@@ -1,11 +1,10 @@
 package org.elasticsearch.spark.rdd.api.java
 
 import java.util.{Map => JMap}
-
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-
 import org.apache.spark.api.java.JavaPairRDD
 import org.apache.spark.api.java.JavaPairRDD.fromRDD
+import org.apache.spark.api.java.JavaPairRDD.toRDD
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.JavaSparkContext
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
@@ -13,6 +12,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.JavaEsRDD
+import org.elasticsearch.spark.rdd.Metadata
 
 object JavaEsSpark {
 
@@ -37,6 +37,10 @@ object JavaEsSpark {
   def saveToEs(jrdd: JavaRDD[_], resource: String, cfg: JMap[String, String]) = EsSpark.saveToEs(jrdd.rdd, resource, cfg.asScala)
   def saveToEs(jrdd: JavaRDD[_], cfg: JMap[String, String]) = EsSpark.saveToEs(jrdd.rdd, cfg.asScala)
   
+  def saveToEsWithMeta[K,V](jrdd: JavaPairRDD[K,V], resource: String) = EsSpark.saveToEsWithMeta(jrdd.rdd, resource)
+  def saveToEsWithMeta[K,V](jrdd: JavaPairRDD[K,V], resource: String, cfg: JMap[String, String]) = EsSpark.saveToEsWithMeta(jrdd.rdd, resource, cfg.asScala)
+  def saveToEsWithMeta[K,V](jrdd: JavaPairRDD[K,V], cfg: JMap[String, String]) = EsSpark.saveToEsWithMeta(jrdd.rdd, cfg.asScala)
+
   def saveJsonToEs(jrdd: JavaRDD[String], resource: String) = EsSpark.saveJsonToEs(jrdd.rdd, resource)
   def saveJsonToEs(jrdd: JavaRDD[String], resource: String, cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, resource, cfg.asScala)
   def saveJsonToEs(jrdd: JavaRDD[String], cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, cfg.asScala)

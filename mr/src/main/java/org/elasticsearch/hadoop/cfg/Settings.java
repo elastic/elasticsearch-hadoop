@@ -160,12 +160,7 @@ public abstract class Settings {
 	}
 
 	public String getMappingVersionType() {
-        String versionType = getProperty(ES_MAPPING_VERSION_TYPE);
-		// if no version type is specified, fall to defaults
-        if (!StringUtils.hasText(versionType)) {
-			return (StringUtils.hasText(getMappingVersion()) ? ES_MAPPING_VERSION_TYPE_EXTERNAL : "");
-        }
-		return versionType;
+        return getProperty(ES_MAPPING_VERSION_TYPE, ES_MAPPING_VERSION_TYPE_EXTERNAL);
     }
 
     public String getMappingRouting() {

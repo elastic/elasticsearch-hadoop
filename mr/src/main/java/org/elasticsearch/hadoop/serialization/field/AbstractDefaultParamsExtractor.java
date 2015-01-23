@@ -32,7 +32,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, SettingsAware, FieldExplainer {
 
-    private Map<String, FieldExtractor> params = new LinkedHashMap<String, FieldExtractor>();
+    private final Map<String, FieldExtractor> params = new LinkedHashMap<String, FieldExtractor>();
     protected Settings settings;
     // field explainer saved in case of a failure for diagnostics
     private FieldExtractor lastFailingFieldExtractor;
@@ -41,13 +41,14 @@ public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, 
     public Object field(Object target) {
         List<Object> list = new ArrayList<Object>(params.size());
         int entries = 0;
-		// construct the param list but keep the value exposed to be properly transformed (if it's extracted from the runtime)
+        // construct the param list but keep the value exposed to be properly transformed (if it's extracted from the runtime)
+        list.add(new RawJson("{"));
         for (Entry<String, FieldExtractor> entry : params.entrySet()) {
-			String val = StringUtils.toJsonString(entry.getKey()) + ":";
+            String val = StringUtils.toJsonString(entry.getKey()) + ":";
             if (entries > 0) {
                 val = "," + val;
             }
-			list.add(new RawJson(val));
+            list.add(new RawJson(val));
             Object field = entry.getValue().field(target);
             if (field == FieldExtractor.NOT_FOUND) {
                 lastFailingFieldExtractor = entry.getValue();
@@ -57,6 +58,7 @@ public abstract class AbstractDefaultParamsExtractor implements FieldExtractor, 
             list.add(field);
             entries++;
         }
+        list.add(new RawJson("}"));
         return list;
     }
 

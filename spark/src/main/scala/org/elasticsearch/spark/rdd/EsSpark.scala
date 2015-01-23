@@ -2,7 +2,6 @@ package org.elasticsearch.spark.rdd
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
-
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
@@ -12,6 +11,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import java.util.EnumMap
+import scala.reflect.ClassTag
 
 object EsSpark {
   //
@@ -38,7 +39,6 @@ object EsSpark {
   //
   // Save methods
   //
-    
   def saveToEs(rdd: RDD[_], resource: String) { saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
   def saveToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]) {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
@@ -49,6 +49,19 @@ object EsSpark {
     config.merge(cfg.asJava)
 
     rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save()).write _)
+  }
+
+  // Save with metadata
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String) { saveToEsWithMeta(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String, cfg: Map[String, String]) {
+    saveToEsWithMeta(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
+  }
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
+    val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
+    val config = new PropertiesSettings().load(sparkCfg.save())
+    config.merge(cfg.asJava)
+
+    rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), true).write _)
   }
 
   // JSON variant

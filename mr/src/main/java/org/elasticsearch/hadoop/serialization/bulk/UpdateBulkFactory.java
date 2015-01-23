@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -36,12 +37,12 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     private final boolean HAS_SCRIPT, HAS_LANG, HAS_PARAMS;
     private final boolean UPSERT;
 
-    public UpdateBulkFactory(Settings settings) {
-        this(settings, false);
+    public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
+        this(settings, false, metaExtractor);
     }
 
-    public UpdateBulkFactory(Settings settings, boolean upsert) {
-        super(settings);
+    public UpdateBulkFactory(Settings settings, boolean upsert, MetadataExtractor metaExtractor) {
+        super(settings, metaExtractor);
 
         UPSERT = upsert;
         RETRY_ON_FAILURE = settings.getUpdateRetryOnConflict();
@@ -61,48 +62,57 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     }
 
     @Override
-    protected void otherHeader(List<Object> pieces) {
+    protected void otherHeader(List<Object> list, boolean commaMightBeNeeded) {
         if (RETRY_ON_FAILURE > 0) {
-            pieces.add(RETRY_HEADER);
+            if (commaMightBeNeeded) {
+                list.add(",");
+            }
+            list.add(RETRY_HEADER);
         }
     }
 
     @Override
-    protected void writeBeforeObject(List<Object> pieces) {
-        super.writeBeforeObject(pieces);
+    protected void writeObjectHeader(List<Object> list) {
+        super.writeObjectHeader(list);
 
-		// when params are specified, the { is already added for readability purpose
-        if (!settings.hasUpdateScriptParams() && !settings.hasUpdateScriptParamsJson()) {
-            pieces.add("{");
+        Object paramExtractor = getExtractorOrDynamicValue(Metadata.PARAMS, getParamExtractor());
+
+        if (paramExtractor != null) {
+            list.add("{\"params\":");
+            list.add(paramExtractor);
+            list.add(",");
+        }
+        else {
+            list.add("{");
         }
 
         if (HAS_SCRIPT) {
             if (HAS_LANG) {
-                pieces.add(SCRIPT_LANG);
+                list.add(SCRIPT_LANG);
             }
-            pieces.add(SCRIPT);
+            list.add(SCRIPT);
             if (UPSERT) {
-                pieces.add(",\"upsert\":");
+                list.add(",\"upsert\":");
             }
         }
         else {
             if (UPSERT) {
-                pieces.add("\"doc_as_upsert\":true,");
+                list.add("\"doc_as_upsert\":true,");
             }
-            pieces.add("\"doc\":");
+            list.add("\"doc\":");
         }
     }
 
     @Override
-    protected void writeAfterObject(List<Object> after) {
+    protected void writeObjectEnd(List<Object> after) {
         after.add("}");
-        super.writeAfterObject(after);
+        super.writeObjectEnd(after);
     }
 
     @Override
-    protected FieldExtractor id() {
-        FieldExtractor id = super.id();
-        Assert.notNull(id, String.format("Operation [%s] requires an id but none was given/found", getOperation()));
-        return id;
+    protected boolean id(List<Object> list, boolean commaMightBeNeeded) {
+        boolean added = super.id(list, commaMightBeNeeded);
+        Assert.isTrue(added, String.format("Operation [%s] requires an id but none was given/found", getOperation()));
+        return added;
     }
 }

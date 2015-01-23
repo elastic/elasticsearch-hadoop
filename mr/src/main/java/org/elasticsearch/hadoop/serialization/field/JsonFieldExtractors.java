@@ -27,7 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
-import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -40,7 +39,9 @@ public class JsonFieldExtractors {
 
     private static Log log = LogFactory.getLog(JsonFieldExtractors.class);
 
-	private final List<Object> results = new ArrayList<Object>(6);
+    private final Settings settings;
+
+    private final List<Object> results = new ArrayList<Object>(6);
     private String[] paths;
 
     private FieldExtractor id, parent, routing, ttl, version, timestamp;
@@ -51,21 +52,21 @@ public class JsonFieldExtractors {
 
         private final int slot;
         private final String fieldName;
-		private final boolean returnAsJson;
+        private final boolean returnAsJson;
 
-		public PrecomputedFieldExtractor(int slot, String fieldName, boolean returnAsJson) {
+        public PrecomputedFieldExtractor(int slot, String fieldName, boolean returnAsJson) {
             this.slot = slot;
             this.fieldName = fieldName;
-			this.returnAsJson = returnAsJson;
+            this.returnAsJson = returnAsJson;
         }
 
         @Override
         public Object field(Object target) {
-			Object result = results.get(slot);
+            Object result = results.get(slot);
             if (result == ParsingUtils.NOT_FOUND) {
                 return FieldExtractor.NOT_FOUND;
             }
-			return (returnAsJson ? StringUtils.toJsonString(result) : result);
+            return (returnAsJson ? StringUtils.toJsonString(result) : result);
         }
 
         @Override
@@ -75,14 +76,14 @@ public class JsonFieldExtractors {
     }
 
     private static class FixedFieldExtractor implements FieldExtractor {
-		private final RawJson value;
+        private final Object value;
 
-        public FixedFieldExtractor(String value) {
-			this.value = new RawJson(value);
+        public FixedFieldExtractor(Object value) {
+            this.value = value;
         }
 
         @Override
-		public RawJson field(Object target) {
+        public Object field(Object target) {
             return value;
         }
 
@@ -93,6 +94,8 @@ public class JsonFieldExtractors {
     }
 
     public JsonFieldExtractors(Settings settings) {
+        this.settings = settings;
+
         final List<String> jsonPaths = new ArrayList<String>();
 
         id = init(settings.getMappingId(), jsonPaths);
@@ -106,7 +109,7 @@ public class JsonFieldExtractors {
         indexExtractor = new AbstractIndexExtractor() {
             @Override
             protected FieldExtractor createFieldExtractor(String fieldName) {
-				return createJsonFieldExtractor(fieldName, jsonPaths, false);
+                return createJsonFieldExtractor(fieldName, jsonPaths, false);
             }
         };
         indexExtractor.setSettings(settings);
@@ -131,26 +134,26 @@ public class JsonFieldExtractors {
 
     private FieldExtractor init(String fieldName, List<String> pathList) {
         if (fieldName != null) {
-            String constant = initConstant(fieldName);
+            Object constant = initConstant(fieldName);
             if (constant != null) {
                 return new FixedFieldExtractor(constant);
             }
             else {
-				return createJsonFieldExtractor(fieldName, pathList, true);
+                return createJsonFieldExtractor(fieldName, pathList, true);
             }
         }
         return null;
     }
 
-	private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList, boolean asJson) {
+    private FieldExtractor createJsonFieldExtractor(String fieldName, List<String> pathList, boolean asJson) {
         pathList.add(fieldName);
-		return new PrecomputedFieldExtractor(pathList.size() - 1, fieldName, asJson);
+        return new PrecomputedFieldExtractor(pathList.size() - 1, fieldName, asJson);
     }
 
-    private String initConstant(String field) {
-		// don't do any escaping and pass the user JSON as is
+    private Object initConstant(String field) {
+        // don't do any escaping and pass the user JSON as is
         if (field != null && field.startsWith("<") && field.endsWith(">")) {
-            return field.substring(1, field.length() - 1);
+            return ExtractorUtils.extractConstant(field.substring(1, field.length() - 1), settings.getMappingConstantAutoQuote());
         }
         return null;
     }

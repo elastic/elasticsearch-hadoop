@@ -26,7 +26,7 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
  */
 public interface FieldExtractor {
 
-    public Object NOT_FOUND = new Object();
+    Object NOT_FOUND = new Object();
 
     /**
 	 * Returns the associated JSON representation for the given target.

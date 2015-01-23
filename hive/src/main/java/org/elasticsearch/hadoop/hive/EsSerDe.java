@@ -62,9 +62,9 @@ public class EsSerDe extends AbstractSerDe {
     private StructObjectInspector inspector;
 
     // serialization artifacts
-    private BytesArray scratchPad = new BytesArray(512);
-    private HiveType hiveType = new HiveType(null, null);
-    private HiveBytesArrayWritable result = new HiveBytesArrayWritable();
+    private final BytesArray scratchPad = new BytesArray(512);
+    private final HiveType hiveType = new HiveType(null, null);
+    private final HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
     private BulkCommand command;
@@ -75,16 +75,17 @@ public class EsSerDe extends AbstractSerDe {
     private boolean trace = false;
 
 
-	// introduced in Hive 0.14
-	// implemented to actually get access to the raw properties
-	public void initialize(Configuration conf, Properties tbl, Properties partitionProperties) throws SerDeException {
+    // introduced in Hive 0.14
+    // implemented to actually get access to the raw properties
+    @Override
+    public void initialize(Configuration conf, Properties tbl, Properties partitionProperties) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         cfg = conf;
         settings = (cfg != null ? HadoopSettingsManager.loadFrom(cfg).merge(tbl) : HadoopSettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
 
-		HiveUtils.fixHive13InvalidComments(settings, tbl);
+        HiveUtils.fixHive13InvalidComments(settings, tbl);
         this.tableProperties = tbl;
 
         trace = log.isTraceEnabled();
@@ -155,7 +156,7 @@ public class EsSerDe extends AbstractSerDe {
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
-        this.command = BulkCommands.create(settings);
+        this.command = BulkCommands.create(settings, null);
     }
 
 
