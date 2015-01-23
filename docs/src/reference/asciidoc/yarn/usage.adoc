@@ -52,6 +52,13 @@ Downloading ....................................................................
 
 If you want to use a different version of {es}, you can specify so through the +es.version+ parameter (see the <<yarn-options>> section.
 
+[[yarn-cfg-es]]
+[float]
+=== (Optional) Configuring {es}
+
+If the default {es} is not suitable, for example certain plugins need to be installed or the storage path needs to be defined as mentioned <<ev-setup-storage,here>>, one should do so by modifying the {es} archive as it will serve as the blueprint of _all_ nodes installed within YARN.
+
+
 [[yarn-provision-es]]
 [float]
 === Provision {es} into HDFS
