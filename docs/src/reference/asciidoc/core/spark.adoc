@@ -232,6 +232,131 @@ saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 
 <1> Save each object based on its resource pattern, +media_type+ in this example
 
+[float]
+[[spark-write-meta]]
+==== Handling document metadata
+
+{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ RDDs].
+In other words, for RDDs containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
+
+The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
+Thus an +RDD+ keys can be a +Map+ containing the +Metadata+ for each document and its associated values. If +RDD+ key is not of type +Map+, {esh} will consider the object as representing the document id and use it accordingly.
+This sounds more complicated than it is, so let us see some examples.
+
+.Scala
+
+Pair ++RDD++s, or simply put ++RDD++s with the signature +RDD[(K,V)]+ can take advantage of the +saveToEsWithMeta+ methods that are available either through the _implicit_ import of +org.elasticsearch.spark+ package or +EsSpark+ object.
+To manually specify the id for each document, simply pass in the +Object+ (not of type +Map+) in your +RDD+:
+
+[source,scala]
+----
+val otp = Map("iata" -> "OTP", "name" -> "Otopeni")
+val muc = Map("iata" -> "MUC", "name" -> "Munich")
+val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
+
+// instance of SparkContext
+val sc = ...
+
+val airportsRDD<1> = sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
+pairRDD.saveToEsWithMeta<3>(airportsRDD, "airports/2015")
+----
+
+<1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
+<2> The key of each tuple within the +Seq+ represents the _id_ of its associated value/document; in other words, document +otp+ has id +1+, +muc+ +2+ and +sfo+ +3+
+<3> Since +airportsRDD+ is a pair +RDD+, it has the +saveToEsWithMeta+ method available. This tells {esh} to pay special attention to the +RDD+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {esh} would consider the +RDD+ tuple, that is both the key and the value as part of the document.
+
+When more than just the id needs to be specified, one should use a +scala.collection.Map+ with keys of type +org.elasticsearch.spark.rdd.Metadata+:
+
+[source,scala]
+----
+import org.elasticsearch.spark.rdd.Metadata._          <1>
+
+val otp = Map("iata" -> "OTP", "name" -> "Otopeni")
+val muc = Map("iata" -> "MUC", "name" -> "Munich")
+val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
+
+// metadata for each document
+// note it's not required for them to have the same structure
+val otpMeta = Map(ID -> 1, TTL -> "3h")                <2>
+val mucMeta = Map(ID -> 2, VERSION -> "23")            <3>
+val sfoMeta = Map(ID -> 3)                             <4>
+
+// instance of SparkContext
+val sc = ...
+
+val airportsRDD = sc.makeRDD<5>(Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
+pairRDD.saveToEsWithMeta(airportsRDD, "airports/2015") <6>
+----
+
+<1> Import the +Metadata+ enum
+<2> The metadata used for +otp+ document. In this case, +ID+ with a value of 1 and +TTL+ with a value of +3h+
+<3> The metadata used for +muc+ document. In this case, +ID+ with a value of 2 and +VERSION+ with a value of +23+
+<4> The metadata used for +sfo+ document. In this case, +ID+ with a value of 3
+<5> The metadata and the documents are assembled into a _pair_ +RDD+
+<6> The +RDD+ is saved accordingly using the +saveToEsWithMeta+ method
+
+.Java
+
+In a similar fashion, on the Java side, +JavaEsSpark+ provides +saveToEsWithMeta+ methods that are applied to +JavaPairRDD+ (the equivalent in Java of +RDD[(K,V)]+). Thus to save documents based on their ids one can use:
+
+[source,java]
+----
+import org.elasticsearch.spark.java.api.JavaEsSpark;
+
+// data to be saved
+Map<String, ?> otp = ImmutableMap.of("iata", "OTP", "name", "Otopeni");
+Map<String, ?> jfk = ImmutableMap.of("iata", "JFK", "name", "JFK NYC");
+
+JavaSparkContext jsc = ...
+
+// create a pair rdd between the id and the docs
+JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<1>(ImmutableList.of(
+        new Tuple2<Object, Object>(1, otp),          <2>
+        new Tuple2<Object, Object>(2, jfk)));        <3>
+JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <4>
+----
+
+<1> Create a +JavaPairRDD+ by using Scala +Tuple2+ class wrapped around the document id and the document itself
+<2> Tuple for the first document wrapped around the id (+1+) and the doc (+otp+) itself
+<3> Tuple for the second document wrapped around the id (+2+) and +jfk+
+<4> The +JavaPairRDD+ is saved accordingly using the keys as a id and the values as documents
+
+When more than just the id needs to be specified, one can chose to use a +java.util.Map+ populated with keys of type +org.elasticsearch.spark.rdd.Metadata+:
+
+[source,java]
+----
+import org.elasticsearch.spark.java.api.JavaEsSpark;
+import org.elasticsearch.spark.rdd.Metadata;          <1>
+
+import static org.elasticsearch.spark.rdd.Metadata.*; <2>
+
+// data to be saved
+Map<String, ?> otp = ImmutableMap.of("iata", "OTP", "name", "Otopeni");
+Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
+
+// metadata for each document
+// note it's not required for them to have the same structure
+Map<Metadata, Object> otpMeta<3> = ImmutableMap.<Metadata, Object><4> of(ID, 1, TTL, "1d");
+Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+
+JavaSparkContext jsc = ...
+
+// create a pair rdd between the id and the docs
+JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<(ImmutableList.of(
+        new Tuple2<Object, Object>(otpMeta, otp),    <6>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
+JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <8>
+----
+
+<1> +Metadata+ +enum+ describing the document metadata that can be declared
+<2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
+<3> Metadata for +otp+ document
+<4> Boiler-plate construct for forcing the +of+ method generic signature
+<5> Metadata for +sfo+ document
+<6> Tuple between +otp+ (as the value) and its metadata (as the key)
+<7> Tuple associating +sfo+ and its metadata
+<8> +saveToEsWithMeta+ invoked over the +JavaPairRDD+ containing documents and their respective metadata
+
 [[spark-read]]
 [float]
 ==== Reading data from {es}
