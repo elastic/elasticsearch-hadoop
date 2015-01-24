@@ -45,6 +45,7 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -58,116 +59,142 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class AbstractExtraMRTests {
 
-	private final Random random = new Random();
+    private final Random random = new Random();
 
-	public static class TabMapper extends MapReduceBase implements Mapper {
+    public static class TabMapper extends MapReduceBase implements Mapper {
 
-		@Override
-		public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
-			StringTokenizer st = new StringTokenizer(value.toString(), "\t");
-			Map<String, Object> entry = new LinkedHashMap<String, Object>();
+        @Override
+        public void map(Object key, Object value, OutputCollector output, Reporter reporter) throws IOException {
+            StringTokenizer st = new StringTokenizer(value.toString(), "\t");
+            Map<String, Object> entry = new LinkedHashMap<String, Object>();
 
-			entry.put("@id", st.nextToken());
-			entry.put("@key", st.nextToken());
-			entry.put("@timestamp", st.nextToken());
-			entry.put("@value", st.nextToken());
+            entry.put("@id", st.nextToken());
+            entry.put("@key", st.nextToken());
+            entry.put("@timestamp", st.nextToken());
+            entry.put("@value", st.nextToken());
 
-			output.collect(key, WritableUtils.toWritable(entry));
-		}
-	}
+            output.collect(key, WritableUtils.toWritable(entry));
+        }
+    }
 
-	@Parameters
-	public static Collection<Object[]> configs() throws IOException {
-		JobConf conf = HdpBootstrap.hadoopConfig();
+    @Parameters
+    public static Collection<Object[]> configs() throws IOException {
+        JobConf conf = HdpBootstrap.hadoopConfig();
 
-		conf.setInputFormat(SplittableTextInputFormat.class);
-		conf.setOutputFormat(EsOutputFormat.class);
-		conf.setReducerClass(IdentityReducer.class);
-		HadoopCfgUtils.setGenericOptions(conf);
-		conf.setNumMapTasks(2);
-		conf.setInt("actual.splits", 2);
-		conf.setNumReduceTasks(0);
+        conf.setInputFormat(SplittableTextInputFormat.class);
+        conf.setOutputFormat(EsOutputFormat.class);
+        conf.setReducerClass(IdentityReducer.class);
+        HadoopCfgUtils.setGenericOptions(conf);
+        conf.setNumMapTasks(2);
+        conf.setInt("actual.splits", 2);
+        conf.setNumReduceTasks(0);
 
 
         JobConf standard = new JobConf(conf);
-		standard.setMapperClass(TabMapper.class);
-		standard.setMapOutputValueClass(LinkedMapWritable.class);
-		standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
-		FileInputFormat.setInputPaths(standard, new Path(TestUtils.gibberishDat(conf)));
+        standard.setMapperClass(TabMapper.class);
+        standard.setMapOutputValueClass(LinkedMapWritable.class);
+        standard.set(ConfigurationOptions.ES_INPUT_JSON, "false");
+        FileInputFormat.setInputPaths(standard, new Path(TestUtils.gibberishDat(conf)));
 
-		JobConf json = new JobConf(conf);
-		json.setMapperClass(IdentityMapper.class);
-		json.setMapOutputValueClass(Text.class);
-		json.set(ConfigurationOptions.ES_INPUT_JSON, "true");
-		FileInputFormat.setInputPaths(json, new Path(TestUtils.gibberishJson(conf)));
+        JobConf json = new JobConf(conf);
+        json.setMapperClass(IdentityMapper.class);
+        json.setMapOutputValueClass(Text.class);
+        json.set(ConfigurationOptions.ES_INPUT_JSON, "true");
+        FileInputFormat.setInputPaths(json, new Path(TestUtils.gibberishJson(conf)));
 
-		return Arrays.asList(new Object[][] { { standard, "" }, { json, "json-" } });
-	}
+        return Arrays.asList(new Object[][] { { standard, "" }, { json, "json-" } });
+    }
 
-	private String indexPrefix = "";
-	private JobConf config;
+    private String indexPrefix = "";
+    private final JobConf config;
 
-	public AbstractExtraMRTests(JobConf config, String indexPrefix) {
-		this.indexPrefix = indexPrefix;
-		this.config = config;
-	}
+    public AbstractExtraMRTests(JobConf config, String indexPrefix) {
+        this.indexPrefix = indexPrefix;
+        this.config = config;
+    }
 
 
-	@Test
-	public void testSaveDocWithEscapedChars() throws Exception {
-		JobConf conf = new JobConf(config);
-		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish");
-		runJob(conf);
-	}
+    @Test
+    public void testSaveDocWithEscapedChars() throws Exception {
+        JobConf conf = new JobConf(config);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish");
+        runJob(conf);
+    }
 
-	@Test
-	public void testSaveDocWithEscapedCharsAndMapping() throws Exception {
-		JobConf conf = new JobConf(config);
-		conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish-with-mapping");
-		conf.set(ConfigurationOptions.ES_MAPPING_ID, "@id");
-		runJob(conf);
-	}
+    @Test
+    public void testSaveDocWithEscapedCharsAndMapping() throws Exception {
+        JobConf conf = new JobConf(config);
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish-with-mapping");
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "@id");
+        runJob(conf);
+    }
 
-	@Test
-	public void testXLoadDoc() throws Exception {
-		JobConf conf = createReadJobConf();
+    @Test
+    public void testXLoadDoc() throws Exception {
+        JobConf conf = createReadJobConf();
 
-		conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish");
-		JobClient.runJob(conf);
-	}
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish");
+        JobClient.runJob(conf);
+    }
 
-	@Test
-	public void testXLoadDocWithMapping() throws Exception {
-		JobConf conf = createReadJobConf();
+    @Test
+    public void testXLoadDocWithMapping() throws Exception {
+        JobConf conf = createReadJobConf();
 
-		conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish-with-mapping");
-		JobClient.runJob(conf);
-	}
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish-with-mapping");
+        JobClient.runJob(conf);
+    }
 
-	private void runJob(JobConf conf) throws Exception {
-		String string = conf.get(ConfigurationOptions.ES_RESOURCE);
-		string = indexPrefix + (string.startsWith("/") ? string.substring(1) : string);
-		conf.set(ConfigurationOptions.ES_RESOURCE, string);
-		JobClient.runJob(conf);
-	}
+    @Test
+    public void testIndexAlias() throws Exception {
+        String simpleDoc = "{ \"number\" : 1 , \"list\" : [\"an array\", \"with multiple values\"], \"song\" : \"Three Headed Guardian\" } ";
+        String targetPrefix = indexPrefix + "index";
+        String alias = indexPrefix + "alias";
+        String targetA = targetPrefix + "a/type";
+        String targetB = targetPrefix + "b/type";
+        RestUtils.putData(targetA + "/1", simpleDoc.getBytes());
+        RestUtils.putData(targetB + "/1", simpleDoc.getBytes());
 
-	private JobConf createReadJobConf() throws IOException {
-		JobConf conf = HdpBootstrap.hadoopConfig();
+        // put alias
+        String aliases =
+         "{ \"actions\" : [ " +
+                "{ \"add\":{\"index\":\"" + targetPrefix + "a\",\"alias\":\"" + alias + "\" }} ," +
+                "{ \"add\":{\"index\":\"" + targetPrefix + "b\",\"alias\":\"" + alias + "\" }}  " +
+         "]}";
 
-		conf.setInputFormat(EsInputFormat.class);
-		conf.setOutputFormat(PrintStreamOutputFormat.class);
-		conf.setOutputKeyClass(Text.class);
-		boolean type = random.nextBoolean();
-		Class<?> mapType = (type ? MapWritable.class : LinkedMapWritable.class);
-		conf.setOutputValueClass(MapWritable.class);
-		HadoopCfgUtils.setGenericOptions(conf);
-		conf.setNumReduceTasks(0);
+        RestUtils.putData("_aliases", aliases.getBytes());
+        RestUtils.refresh(alias);
 
-		conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(random.nextBoolean()));
-		conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
-		conf.set(ConfigurationOptions.ES_OUTPUT_JSON, "true");
+        // run MR job
+        JobConf conf = createReadJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "alias/type");
+        JobClient.runJob(conf);
+    }
 
-		FileInputFormat.setInputPaths(conf, new Path(TestUtils.gibberishDat(conf)));
-		return conf;
-	}
+    private void runJob(JobConf conf) throws Exception {
+        String string = conf.get(ConfigurationOptions.ES_RESOURCE);
+        string = indexPrefix + (string.startsWith("/") ? string.substring(1) : string);
+        conf.set(ConfigurationOptions.ES_RESOURCE, string);
+        JobClient.runJob(conf);
+    }
+
+    private JobConf createReadJobConf() throws IOException {
+        JobConf conf = HdpBootstrap.hadoopConfig();
+
+        conf.setInputFormat(EsInputFormat.class);
+        conf.setOutputFormat(PrintStreamOutputFormat.class);
+        conf.setOutputKeyClass(Text.class);
+        boolean type = random.nextBoolean();
+        Class<?> mapType = (type ? MapWritable.class : LinkedMapWritable.class);
+        conf.setOutputValueClass(MapWritable.class);
+        HadoopCfgUtils.setGenericOptions(conf);
+        conf.setNumReduceTasks(0);
+
+        conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(random.nextBoolean()));
+        conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
+        conf.set(ConfigurationOptions.ES_OUTPUT_JSON, "true");
+
+        FileInputFormat.setInputPaths(conf, new Path(TestUtils.gibberishDat(conf)));
+        return conf;
+    }
 }

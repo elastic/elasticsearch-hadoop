@@ -223,6 +223,31 @@ class AbstractScalaEsScalaSpark extends Serializable {
       assertNotNull(messages)
     }
     
+    @Test
+    def testIndexAlias() {
+      val doc = """
+        | { "number" : 1, "list" : [ "an array", "some value"], "song" : "Golden Eyes" }
+        """.stripMargin
+      val indexA = "spark-alias-indexa/type"
+      val indexB = "spark-alias-indexb/type"
+      val alias = "spark-alias-alias"
+      
+      RestUtils.putData(indexA + "/1", doc.getBytes())
+      RestUtils.putData(indexB + "/1", doc.getBytes())
+      
+      val aliases = """
+        |{"actions" : [
+          | {"add":{"index":"spark-alias-indexa","alias":"spark-alias-alias"}},
+          | {"add":{"index":"spark-alias-indexb","alias":"spark-alias-alias"}}
+        |]}
+        """.stripMargin
+      RestUtils.putData("_aliases", aliases.getBytes());
+      RestUtils.refresh(alias)
+      
+      val aliasRDD = EsSpark.esJsonRDD(sc, alias + "/type")
+      assertEquals(2, aliasRDD.count())
+    }
+    
     //@Test
     def testLoadJsonFile() {
       val target = "lost/id"

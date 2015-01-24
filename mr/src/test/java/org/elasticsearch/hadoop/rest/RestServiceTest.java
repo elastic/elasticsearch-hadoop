@@ -50,37 +50,37 @@ public class RestServiceTest {
         info.put("node", "1");
         info.put("primary", "true");
 
-        Shard sh1 = new Shard(info);
+        Shard sh1 = new Shard(info,true);
         Node node1 = new Node("1", info);
 
         info.put("name", "2");
         info.put("shard", 2);
 
-        Shard sh2 = new Shard(info);
+        Shard sh2 = new Shard(info,true);
         Node node2 = new Node("2", info);
 
         info.put("name", "3");
         info.put("shard", 3);
 
-        Shard sh3 = new Shard(info);
+        Shard sh3 = new Shard(info,true);
         Node node3 = new Node("3", info);
 
         info.put("name", "4");
         info.put("shard", 4);
 
-        Shard sh4 = new Shard(info);
+        Shard sh4 = new Shard(info,true);
         Node node4 = new Node("4", info);
 
         info.put("name", "5");
         info.put("shard", 5);
 
-        Shard sh5 = new Shard(info);
+        Shard sh5 = new Shard(info,true);
         Node node5 = new Node("5", info);
 
         info.put("name", "6");
         info.put("shard", 6);
 
-        Shard sh6 = new Shard(info);
+        Shard sh6 = new Shard(info,true);
         Node node6 = new Node("6", info);
 
         pd1 = new PartitionDefinition(sh1, node1, null, null);

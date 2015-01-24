@@ -79,7 +79,7 @@ public class RestRepository implements Closeable, StatsAware {
     private Resource resourceW;
     private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
-	private MetadataExtractor metaExtractor;
+    private MetadataExtractor metaExtractor;
 
     private final Settings settings;
     private final Stats stats = new Stats();
@@ -111,7 +111,7 @@ public class RestRepository implements Closeable, StatsAware {
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-			this.command = BulkCommands.create(settings, metaExtractor);
+            this.command = BulkCommands.create(settings, metaExtractor);
         }
     }
 
@@ -129,8 +129,8 @@ public class RestRepository implements Closeable, StatsAware {
         return new ScrollQuery(this, scrollId, totalSize, reader);
     }
 
-	public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
-		this.metaExtractor = metaExtractor;
+    public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
+        this.metaExtractor = metaExtractor;
     }
 
     /**
@@ -279,7 +279,7 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-	protected Map<Shard, Node> doGetReadTargetShards() {
+    protected Map<Shard, Node> doGetReadTargetShards() {
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
 
@@ -287,8 +287,11 @@ public class RestRepository implements Closeable, StatsAware {
 
         for (List<Map<String, Object>> shardGroup : info) {
             // find the first started shard in each group (round-robin)
+            // NB: the index of the shard is removed as the requests are done per node not per index
+            // and in case of alias or multiple indices specified, all shards on a node are searched
+            // considering the index would result in multiple results
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                Shard shard = new Shard(shardData, false);
                 if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
@@ -303,7 +306,7 @@ public class RestRepository implements Closeable, StatsAware {
         return shards;
     }
 
-	public Map<Shard, Node> getWriteTargetPrimaryShards() {
+    public Map<Shard, Node> getWriteTargetPrimaryShards() {
         for (int retries = 0; retries < 3; retries++) {
             Map<Shard, Node> map = doGetWriteTargetPrimaryShards();
             if (map != null) {
@@ -313,7 +316,7 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-	protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
+    protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         Map<String, Node> nodes = client.getNodes();
@@ -321,7 +324,7 @@ public class RestRepository implements Closeable, StatsAware {
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                Shard shard = new Shard(shardData, true);
                 if (shard.isPrimary()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
@@ -337,7 +340,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public Field getMapping() {
-        return Field.parseField((Map<String, Object>) client.getMapping(resourceR.mapping()));
+        return Field.parseField(client.getMapping(resourceR.mapping()));
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
