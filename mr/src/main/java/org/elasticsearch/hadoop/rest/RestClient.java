@@ -58,8 +58,8 @@ public class RestClient implements Closeable, StatsAware {
 
     private NetworkClient network;
     private final ObjectMapper mapper;
-    private TimeValue scrollKeepAlive;
-    private boolean indexReadMissingAsEmpty;
+    private final TimeValue scrollKeepAlive;
+    private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
 
     {
@@ -363,10 +363,6 @@ public class RestClient implements Closeable, StatsAware {
     public String esVersion() {
         Map<String, String> version = get("", "version");
         return version.get("number");
-    }
-
-    public Map<String, Object> aliases(String index) {
-        return get(index, null);
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) {

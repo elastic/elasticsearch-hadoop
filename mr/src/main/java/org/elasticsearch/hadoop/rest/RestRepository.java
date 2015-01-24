@@ -227,7 +227,7 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-	protected Map<Shard, Node> doGetReadTargetShards() {
+    protected Map<Shard, Node> doGetReadTargetShards() {
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
 
@@ -236,14 +236,14 @@ public class RestRepository implements Closeable, StatsAware {
         for (List<Map<String, Object>> shardGroup : info) {
             // find the first started shard in each group (round-robin)
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                Shard shard = new Shard(shardData, false);
                 if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
                         log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
-						return null;
-					}
-					shards.put(shard, node);
+                        return null;
+                    }
+                    shards.put(shard, node);
                     break;
                 }
             }
@@ -261,7 +261,7 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-	protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
+    protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         Map<String, Node> nodes = client.getNodes();
@@ -269,7 +269,7 @@ public class RestRepository implements Closeable, StatsAware {
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                Shard shard = new Shard(shardData, true);
                 if (shard.isPrimary()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
@@ -285,7 +285,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public Field getMapping() throws IOException {
-        return Field.parseField((Map<String, Object>) client.getMapping(resourceR.mapping()));
+        return Field.parseField(client.getMapping(resourceR.mapping()));
     }
 
     public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {

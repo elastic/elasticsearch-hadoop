@@ -30,14 +30,21 @@ public class Shard implements Comparable<Shard> {
         }
     }
 
-    private State state;
-    private boolean primary;
-    private String node;
-    private String relocatingNode;
-    private Integer id;
-    private String index;
+    private final State state;
+    private final boolean primary;
+    private final String node;
+    private final String relocatingNode;
+    private final Integer id;
+    private final String index;
+    // whether the shard will be used for writing or not
+    // if true, the hashcode/equals will consider the index
+    // if not, the index will be discarded
+    // (so that shards belonging to the same node get 'merged' as the
+    // connections are made per-node not per-index)
+    private final boolean writeShard;
 
-    public Shard(Map<String, Object> data) {
+    public Shard(Map<String, Object> data, boolean usedForWriting) {
+        writeShard = usedForWriting;
         state = State.valueOf((String) data.get("state"));
         id = (Integer) data.get("shard");
         index = (String) data.get("index");
@@ -50,7 +57,9 @@ public class Shard implements Comparable<Shard> {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((index == null) ? 0 : index.hashCode());
+        if (writeShard) {
+            result = prime * result + ((index == null) ? 0 : index.hashCode());
+        }
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         result = prime * result + ((node == null) ? 0 : node.hashCode());
         return result;
@@ -65,12 +74,16 @@ public class Shard implements Comparable<Shard> {
         if (getClass() != obj.getClass())
             return false;
         Shard other = (Shard) obj;
-        if (index == null) {
-            if (other.index != null)
+
+        if (writeShard) {
+            if (index == null) {
+                if (other.index != null)
+                    return false;
+            }
+            else if (!index.equals(other.index))
                 return false;
         }
-        else if (!index.equals(other.index))
-            return false;
+
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -114,8 +127,8 @@ public class Shard implements Comparable<Shard> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Shard[state=").append(state).append(", primary=").append(primary).append(", node=")
-                .append(node).append(", name=")
-                .append(id).append(", index=").append(index).append("]");
+        .append(node).append(", name=")
+        .append(id).append(", index=").append(index).append("]");
         return builder.toString();
     }
 
