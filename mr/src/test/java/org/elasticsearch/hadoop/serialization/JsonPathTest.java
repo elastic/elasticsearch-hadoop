@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.io.InputStream;
+import java.util.Collections;
 
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
@@ -33,16 +34,19 @@ import static org.junit.Assert.assertNull;
 public class JsonPathTest {
 
     private Parser parser;
+    private Parser nestedJsonParser;
 
     @Before
     public void before() {
         InputStream in = getClass().getResourceAsStream("parser-test.json");
         parser = new JacksonJsonParser(in);
+        nestedJsonParser = new JacksonJsonParser(getClass().getResourceAsStream("nested-fields.json"));
     }
 
     @After
     public void after() {
         parser.close();
+        nestedJsonParser.close();
     }
 
     @Test
@@ -74,10 +78,32 @@ public class JsonPathTest {
         assertEquals(Token.VALUE_STRING, parser.currentToken());
         assertEquals("state", parser.currentName());
     }
+
     @Test
     public void testFieldNestedButNotOnFirstLevel() throws Exception {
         assertNull(ParsingUtils.seek("state", parser));
         assertNull(parser.nextToken());
         assertNull(parser.currentToken());
+    }
+
+    @Test
+    public void testNestedFieldSeek() throws Exception {
+        Token seek = ParsingUtils.seek("nested.field", nestedJsonParser);
+        assertNotNull(seek);
+    }
+
+    @Test
+    public void testNestedFieldValue() throws Exception {
+        assertEquals(Collections.singletonList("value"), ParsingUtils.values(nestedJsonParser, "nested.field"));
+    }
+
+    @Test
+    public void testNestedSecondFieldValue() throws Exception {
+        assertEquals(Collections.singletonList(1), ParsingUtils.values(nestedJsonParser, "nested.foo"));
+    }
+
+    @Test
+    public void testNested2FieldValue() throws Exception {
+        assertEquals(Collections.singletonList("halen"), ParsingUtils.values(nestedJsonParser, "nested2.van"));
     }
 }
