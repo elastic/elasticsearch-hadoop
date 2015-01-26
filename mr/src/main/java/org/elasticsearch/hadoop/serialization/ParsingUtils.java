@@ -19,9 +19,7 @@
 package org.elasticsearch.hadoop.serialization;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
@@ -106,66 +104,85 @@ public abstract class ParsingUtils {
 
     private static class Matcher {
         private final List<String> tokens;
-        private int tokenIndex = 0;
+        private final String path;
         private boolean matched = false;
         private Object value;
 
         Matcher(String path) {
+            this.path = path;
             tokens = StringUtils.tokenize(path, ".");
         }
 
-        boolean matches(String value) {
-            boolean match = tokens.get(tokenIndex).equals(value);
-            if (match) {
-                if (tokenIndex < tokens.size() - 1) {
-                    tokenIndex++;
-                }
-                else {
-                    matched = true;
-                    this.value = value;
-                }
+        // number of levels required for the matcher
+        int nesting() {
+            return tokens.size() - 1;
+        }
+
+        boolean matches(String key, int level) {
+            if (level < tokens.size()) {
+                return tokens.get(level).equals(key);
             }
-            return match;
-        };
+            return false;
+        }
+
+        void value(Object value) {
+            matched = true;
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return path;
+        }
     }
 
     public static List<String> values(Parser parser, String... paths) {
         List<Matcher> matchers = new ArrayList<Matcher>(paths.length);
+        int maxNesting = 0;
         for (String path : paths) {
-            matchers.add(new Matcher(path));
+            Matcher matcher = new Matcher(path);
+            matchers.add(matcher);
+            if (matcher.nesting() > maxNesting) {
+                maxNesting = matcher.nesting();
+            }
         }
 
-        List<Matcher> active = new ArrayList<Matcher>(matchers);
-        Set<Matcher> inactive = new LinkedHashSet<Matcher>();
-
-        doFind(parser, new ArrayList<Matcher>(matchers), active, inactive);
+        doFind(parser, matchers, 0, maxNesting);
 
         List<String> matches = new ArrayList<String>();
         for (Matcher matcher : matchers) {
-            matches.add(matcher.matched ? (matcher.value != null ? matcher.value.toString() : StringUtils.EMPTY) : NOT_FOUND);
+            matches.add(matcher.matched ? matcher.value.toString() : NOT_FOUND);
         }
 
         return matches;
     }
 
-    private static void doFind(Parser parser, List<Matcher> current, List<Matcher> active, Set<Matcher> inactive) {
-        Token token = null;
-        List<Matcher> matchingCurrentLevel = null;
-
+    private static void doFind(Parser parser, List<Matcher> currentMatchers, int level, int maxNesting) {
         String currentName;
-        token = parser.currentToken();
+        Token token = parser.currentToken();
+
         if (token == null) {
             token = parser.nextToken();
         }
+        List<Matcher> nextLevel = null;
 
         while ((token = parser.nextToken()) != null) {
             if (token == Token.START_OBJECT) {
-                token = parser.nextToken();
-                if (matchingCurrentLevel == null) {
-                    parser.skipChildren();
+                if (level < maxNesting) {
+                    if (nextLevel != null) {
+                        doFind(parser, nextLevel, level + 1, maxNesting);
+                    }
+                    // first round - a bit exceptional
+                    else if (level == -1) {
+                        doFind(parser, currentMatchers, level + 1, maxNesting);
+                    }
+                    // no need to go deeper, there are no matchers
+                    else {
+                        parser.skipChildren();
+                    }
                 }
                 else {
-                    doFind(parser, matchingCurrentLevel, active, inactive);
+                    parser.skipChildren();
                 }
             }
             else if (token == Token.FIELD_NAME) {
@@ -174,10 +191,10 @@ public abstract class ParsingUtils {
                 Object value = null;
                 boolean valueRead = false;
 
-                for (Matcher matcher : current) {
-                    if (matcher.matches(currentName)) {
-                        if (matcher.matched) {
-                            inactive.add(matcher);
+                for (Matcher matcher : currentMatchers) {
+                    if (matcher.matches(currentName, level)) {
+                        // found a match
+                        if (matcher.nesting() == level) {
                             if (!valueRead) {
                                 valueRead = true;
                                 switch (parser.nextToken()) {
@@ -197,25 +214,24 @@ public abstract class ParsingUtils {
                                     value = readValueAsString(parser);
                                 }
                             }
-                            matcher.value = value;
+                            matcher.value(value);
                         }
+                        // partial match - keep it for the next level
                         else {
-                            if (matchingCurrentLevel == null) {
-                                matchingCurrentLevel = new ArrayList<Matcher>(current.size());
+                            if (nextLevel == null) {
+                                nextLevel = new ArrayList<Matcher>(currentMatchers.size());
                             }
-                            matchingCurrentLevel.add(matcher);
+                            nextLevel.add(matcher);
                         }
                     }
                 }
             }
             else if (token == Token.END_OBJECT) {
-                // once matching, the matcher needs to match all the way - if it's not inactive (since it matched)
-                if (matchingCurrentLevel != null) {
-                    for (Matcher matcher : matchingCurrentLevel) {
-                        active.remove(matcher);
-                        inactive.add(matcher);
-                    }
-                }
+                // end current block
+            }
+            // arrays are not handled; simply ignore
+            else if (token == Token.START_ARRAY) {
+                parser.skipChildren();
             }
             // ignore other tokens
         }
