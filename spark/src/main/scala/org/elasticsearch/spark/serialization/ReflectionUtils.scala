@@ -28,7 +28,8 @@ private[spark] object ReflectionUtils {
   }
 
   def caseClassValues(target: AnyRef, props: Iterable[String]) = {
-    val tuples = for (x <- target.asInstanceOf[Product].productIterator; y <- props) yield (x, y)
+    val product = target.asInstanceOf[Product].productIterator
+    val tuples = for (y <- props) yield (y, product.next)
     tuples.toMap
   }
 }

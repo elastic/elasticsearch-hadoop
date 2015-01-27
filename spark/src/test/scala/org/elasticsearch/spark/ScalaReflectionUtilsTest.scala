@@ -6,7 +6,7 @@ import org.junit.Test
 import org.junit.Assert._
 import org.hamcrest.Matchers._
 
-class ScalaReflectionUtils {
+class ScalaReflectionUtilsTest {
 
   @Test
   def testJavaBean() {
@@ -26,12 +26,19 @@ class ScalaReflectionUtils {
   def testCaseClassValues() {
     val cc = SimpleCaseClass(1, "simpleClass")
     val info = caseClassInfo(cc.getClass())
-    println(caseClassValues(cc, info))
+    assertEquals(Seq("i", "s"), info)
+    val values = caseClassValues(cc, info)
+
+    println(values)
+    assertEquals(Map("i" -> 1, "s" -> "simpleClass"), values)
 
     val ccv = CaseClassWithValue(2, "caseClassWithVal")
     val infoccv = caseClassInfo(ccv.getClass())
-    println(caseClassValues(ccv, infoccv))
+    assertEquals(Seq("first", "second"), infoccv)
+    val valuesccv = caseClassValues(ccv, infoccv)
 
+    println(valuesccv)
+    assertEquals(Map("first" -> 2, "second" -> "caseClassWithVal"), valuesccv)
   }
 }
 
