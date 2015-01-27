@@ -34,7 +34,6 @@ import org.elasticsearch.spark.rdd.EsSpark
 import org.hamcrest.Matchers._
 import org.junit.AfterClass
 import org.junit.Assert._
-import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.Test
 import org.apache.spark.rdd.PairRDDFunctions
@@ -60,6 +59,8 @@ object AbstractScalaEsScalaSpark {
   }
 }
 
+case class Trip(departure: String, arrival: String)
+
 class AbstractScalaEsScalaSpark extends Serializable {
 
 	val sc = AbstractScalaEsScalaSpark.sc
@@ -80,6 +81,16 @@ class AbstractScalaEsScalaSpark extends Serializable {
       sc.makeRDD(Seq(doc1, doc2)).saveToEs("spark-test/scala-basic-write")
       assertTrue(RestUtils.exists("spark-test/scala-basic-write"))
       assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
+    }
+
+    @Test
+    def testEsRDDWriteCaseClass() {
+      val javaBean = new Bean("bar", 1, true)
+      val caseClass = Trip("OTP", "SFO")
+
+      sc.makeRDD(Seq(javaBean, caseClass)).saveToEs("spark-test/scala-basic-write-objects")
+      assertTrue(RestUtils.exists("spark-test/scala-basic-write-objects"))
+      assertThat(RestUtils.get("spark-test/scala-basic-write-objects/_search?"), containsString(""))
     }
 
     @Test
