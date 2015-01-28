@@ -139,8 +139,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("ShardInputSplit [node=[").append(nodeId).append("/").append(nodeName)
-                        .append("|").append(nodeIp).append(":").append(httpPort)
-                        .append("],shard=").append(shardId).append("]");
+            .append("|").append(nodeIp).append(":").append(httpPort)
+            .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
     }
@@ -428,8 +428,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     //
     @Override
     public List<InputSplit> getSplits(JobContext context) throws IOException {
-        org.elasticsearch.hadoop.mr.compat.JobContext compatJobContext = CompatHandler.jobContext(context);
-        JobConf conf = HadoopCfgUtils.asJobConf(compatJobContext.getConfiguration());
+        JobConf conf = HadoopCfgUtils.asJobConf(CompatHandler.jobContext(context).getConfiguration());
         // NOTE: this method expects a ShardInputSplit to be returned (which implements both the old and the new API).
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
@@ -437,7 +436,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     @SuppressWarnings("unchecked")
     @Override
     public ShardRecordReader<K, V> createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return (ShardRecordReader<K, V>) (isOutputAsJson(context.getConfiguration()) ? new JsonWritableShardRecordReader() : new WritableShardRecordReader());
+        return (ShardRecordReader<K, V>) (isOutputAsJson(CompatHandler.taskAttemptContext(context).getConfiguration()) ? new JsonWritableShardRecordReader() : new WritableShardRecordReader());
     }
 
 
@@ -468,7 +467,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         return (ShardRecordReader<K, V>) (isOutputAsJson(job) ? new JsonWritableShardRecordReader(split, job, reporter) : new WritableShardRecordReader(split, job, reporter));
     }
 
-	protected boolean isOutputAsJson(Configuration cfg) {
-		return new HadoopSettings(cfg).getOutputAsJson();
-	}
+    protected boolean isOutputAsJson(Configuration cfg) {
+        return new HadoopSettings(cfg).getOutputAsJson();
+    }
 }
