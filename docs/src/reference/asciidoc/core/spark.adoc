@@ -20,7 +20,7 @@ Just like other libraries, {eh} needs to be available in Spark's classpath. As S
 
 added[2.1]
 
-{eh} provides _native_ integration between {es} and {sp}, in the form of a RDD (Resilient Distributed Dataset) (or _Pair_ RDD to be precise) that can read data from Elasticsearch. The RDD is offered in two 'flavors': one for Scala (which returns the data as +Tuple2+ with Scala collections) and one for Java (which returns the data as +Tuple2+ containing `java.util` collections).
+{eh} provides _native_ integration between {es} and {sp}, in the form of a +RDD+ (Resilient Distributed Dataset) (or _Pair_ +RDD+ to be precise) that can read data from Elasticsearch. The +RDD+ is offered in two 'flavors': one for Scala (which returns the data as +Tuple2+ with Scala collections) and one for Java (which returns the data as +Tuple2+ containing `java.util` collections).
 
 IMPORTANT: Whenever possible, consider using the _native_ integration as it offers the best performance and maximum flexibility.
 
@@ -48,7 +48,7 @@ conf.set("es.index.auto.create", "true");
 [[spark-write]]
 ==== Writing data to {es}
 
-With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. When that is not the case, one can easily _transform_ the data
+With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. In practice this means the +RDD+ type needs to be a +Map+ (whether a Scala or a Java one), a http://docs.oracle.com/javase/tutorial/javabeans/[+JavaBean+] or a Scala http://docs.scala-lang.org/tutorials/tour/case-classes.html[case class]. When that is not the case, one can easily _transform_ the data
 in Spark or plug-in their own customer <<configuration-serialization,+ValueWriter+>>.
 
 .Scala
@@ -68,7 +68,7 @@ val conf = ...
 val sc = new SparkContext(conf)         <3>
 
 val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
-val airports = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+val airports = Map("arrival" -> "Otopeni", "SFO" -> "San Fran")
 
 sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
 ----
@@ -76,26 +76,32 @@ sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
 <1> Spark Scala imports
 <2> {eh} Scala imports
 <3> start Spark through its Scala API
-<4> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other RDD (in Java or Scala) can be passed in
+<4> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other +RDD+ (in Java or Scala) can be passed in
 <5> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
 NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
 
-As an alternative to the _implicit_ import above, one can {eh} Spark support in Scala through +EsSpark+ in +org.elasticsearch.spark.rdd+ package which acts as an utility class allowing explicit method invocations; thus the example 
-above can be rewritten as:
+As an alternative to the _implicit_ import above, one can {eh} Spark support in Scala through +EsSpark+ in +org.elasticsearch.spark.rdd+ package which acts as an utility class allowing explicit method invocations. Additionally instead of ++Map++s (which are convenient but require one mapping per instance due to their difference in structure), use a __case class__ :
 
 [source,scala]
 ----
 import org.apache.spark.SparkContext             
-import org.elasticsearch.spark.rdd.EsSpark       <1>
+import org.elasticsearch.spark.rdd.EsSpark                        <1>
 
-...
-val rdd = sc.makeRDD(Seq(numbers, airports))
-EsSpark.saveToEs(rdd, "spark/docs")              <2> 
+// define a case class
+case class Trip(departure: String, arrival: String)               <2>
+
+val upcomingTrip = Trip("OTP", "SFO")
+val lastWeekTrip = Trip("MUC", "OTP")
+
+val +RDD+ = sc.makeRDD(Seq(upcomingTrip, lastWeekTrip))           <3>
+EsSpark.saveToEs(rdd, "spark/docs")                               <4>
 ----
 
 <1> +EsSpark+ import
-<2> Index the +RDD+ explicitly through +EsSpark+
+<2> Define a case class named +Trip+
+<3> Create an +RDD+ around the +Trip+ instances
+<4> Index the +RDD+ explicitly through +EsSpark+
 
 For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +RDD+ configuration (it is also possible to set the property on the +SparkConf+ though due to its global effect it is discouraged):
 
@@ -103,7 +109,6 @@ For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of t
 ----
 EsSpark.saveToEs(rdd, "spark/docs", Map("es.mapping.id" -> "id"))
 ----
-
 
 .Java
 
@@ -132,20 +137,46 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");                                    
 <2> {eh} Java imports
 <3> start Spark through its Java API
 <4> to simplify the example, use https://code.google.com/p/guava-libraries/[Guava](a dependency of Spark) +Immutable+* methods for simple +Map+, +List+ creation
-<5> create a simple +RDD+ over the two collections; any other RDD (in Java or Scala) can be passed in
+<5> create a simple +RDD+ over the two collections; any other +RDD+ (in Java or Scala) can be passed in
 <6> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
-The code can be further simplifies by using Java 5 _static_ imports, namely:
+The code can be further simplifies by using Java 5 _static_ imports. Additionally, the +Map+ (who's mapping is dynamic due to its _loose_ structure) can be replaced with a +JavaBean+:
 
 [source,java]
 ----
-import static org.elasticsearch.spark.java.api.JavaEsSpark; <1>
+public class TripBean implements Serializable {
+   private String departure, arrival;
+   
+   public TripBean(String departure, String arrival) { 
+       setDeparture(departure);
+       setArrival(arrival);
+   }
+   
+   public TripBean() {}
+   
+   public String getDeparture() { return departure; }
+   public String getArrival() { return arrival; }
+   public void setDeparture(String dep) { departure = dep; }
+   public void setArrival(String arr) { arrival = arr; }
+}
+----
+
+[source,java]
+----
+import static org.elasticsearch.spark.java.api.JavaEsSpark;                <1>
 ...
-saveToEs(javaRDD, "spark/docs"); <2>
+
+TripBean upcoming = new TripBean("OTP", "SFO");
+TripBean lastWeek = new TripBean("MUC", "OTP");
+
+JavaRDD<TripBean> javaRDD = jsc.parallelize(
+                            ImmutableList.of(upcoming, lastWeek));        <2>
+saveToEs(javaRDD, "spark/docs");                                          <3>
 ----
 
 <1> statically import +JavaEsSpark+
-<2> call +saveToEs+ method without having to type +JavaEsSpark+ again
+<2> define an +RDD+ containing +TripBean+ instances (+TripBean+ is a +JavaBean+)
+<3> call +saveToEs+ method without having to type +JavaEsSpark+ again
 
 
 Setting the document id (or other metadata fields like +ttl+ or +timestamp+) is similar to its Scala counterpart though potentially bit more verbose depending on whether you are using the JDK classes or some other utilities (like Guava):
@@ -236,8 +267,8 @@ saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 [[spark-write-meta]]
 ==== Handling document metadata
 
-{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ RDDs].
-In other words, for RDDs containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
+{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+In other words, for ++RDD++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
 Thus an +RDD+ keys can be a +Map+ containing the +Metadata+ for each document and its associated values. If +RDD+ key is not of type +Map+, {esh} will consider the object as representing the document id and use it accordingly.
@@ -309,7 +340,7 @@ Map<String, ?> jfk = ImmutableMap.of("iata", "JFK", "name", "JFK NYC");
 
 JavaSparkContext jsc = ...
 
-// create a pair rdd between the id and the docs
+// create a pair +RDD+ between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<1>(ImmutableList.of(
         new Tuple2<Object, Object>(1, otp),          <2>
         new Tuple2<Object, Object>(2, jfk)));        <3>
@@ -341,7 +372,7 @@ Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", V
 
 JavaSparkContext jsc = ...
 
-// create a pair rdd between the id and the docs
+// create a pair +RDD+ between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<(ImmutableList.of(
         new Tuple2<Object, Object>(otpMeta, otp),    <6>
         new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
@@ -361,7 +392,7 @@ JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <8>
 [float]
 ==== Reading data from {es}
 
-For reading, one should define the {es} RDD that _streams_ data from {es} to Spark.
+For reading, one should define the {es} +RDD+ that _streams_ data from {es} to Spark.
 
 .Scala
 
@@ -379,7 +410,7 @@ import org.elasticsearch.spark._        <2>
 val conf = ...
 val sc = new SparkContext(conf)         <3>
 
-val rdd = sc.esRDD("radio/artists")     <4>
+val +RDD+ = sc.esRDD("radio/artists")     <4>
 ----
 
 <1> Spark Scala imports
@@ -444,11 +475,11 @@ JavaRDD<Map<String, Object>> esRDD =
 <3> return only _values_ of the +PairRDD+ - hence why the result is of type +JavaRDD+ and _not_ +JavaPairRDD+
 
 By using the `JavaEsSpark` API, one gets a hold of Spark's dedicated `JavaPairRDD` which are better suited in Java environments than the base `RDD` (due to its Scala
-signatures). Moreover, the dedicated RDD returns {es} documents as proper Java collections so one does not have to deal with Scala collections (which
+signatures). Moreover, the dedicated +RDD+ returns {es} documents as proper Java collections so one does not have to deal with Scala collections (which
 is typically the case with ++RDD++s). This is particularly powerful when using Java 8, which we strongly recommend as its 
 http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions] make collection processing _extremely_ concise.
 
-To wit, let us assume one wants to filter the documents from the RDD and return only those that contain a value that contain +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
+To wit, let us assume one wants to filter the documents from the +RDD+ and return only those that contain a value that contain +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
 
 In versions prior to Java 8, the code would look something like this:
 [source, java]
@@ -482,7 +513,7 @@ added[2.1]
 
 [quote, Spark website]
 ____
-http://spark.apache.org/sql/[Spark SQL] allows relational queries expressed in SQL, HiveQL, or Scala to be executed using Spark. At the core of this component is a new type of RDD, SchemaRDD. A SchemaRDD is similar to a table in a traditional relational database. [...] Spark SQL is currently an alpha component. 
+http://spark.apache.org/sql/[Spark SQL] allows relational queries expressed in SQL, HiveQL, or Scala to be executed using Spark. At the core of this component is a new type of +RDD+, SchemaRDD. A SchemaRDD is similar to a table in a traditional relational database. [...] Spark SQL is currently an alpha component. 
 ____
 On top of the core Spark support, {eh} also provides integration with Spark SQL. In other words, {es} becomes a _native_ source for Spark SQL so that data can be indexed and queried from Spark SQL _transparently_.
 
@@ -518,9 +549,8 @@ import org.elasticsearch.spark.sql._      <2>
 
 // sc = existing SparkContext
 val sqlContext = new SQLContext(sc)
-val schemaRDD = sqlContext.
 
-// case class used to define the RDD schema
+// case class used to define the +RDD+ schema
 case class Person(name: String, surname: String, age: Int)
 
 //  create SchemaRDD
@@ -529,7 +559,7 @@ val people = sc.textFile("people.txt")    <3>
         .map(p => Person(p(0), p(1), p(2).trim.toInt))
 
 
-people.saveToEs("spark/people")          <4>
+people.saveToEs("spark/people")           <4>
 ----
 
 <1> Spark SQL package import
@@ -747,7 +777,7 @@ long docCount = esRDD.count();
 <1> Create the Hadoop object (use the old API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
 
 The Scala version is below:
 
@@ -765,7 +795,7 @@ val docCount = esRDD.count();
 <1> Create the Hadoop object (use the old API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat`
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat`
 
 [float]
 ===== 'New' (`org.apache.hadoop.mapreduce`) API
@@ -786,7 +816,7 @@ long docCount = esRDD.count();
 <1> Create the Hadoop object (use the new API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
 
 The Scala version is below:
 
@@ -804,5 +834,5 @@ val docCount = esRDD.count();
 <1> Create the Hadoop object (use the new API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat`
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat`
 
