@@ -6,4 +6,4 @@ jdk:
 before_install:
  - "chmod +x gradlew"
  - "ulimit -u 514029"
- - "export JAVA_OPTS=-Xmx2048m"
+ - export JAVA_OPTS="-Xmx2048m -XX:MaxPermSize=386m"
