@@ -66,6 +66,29 @@ For more information, please refer to the dedicated integration section.
 
 IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-search.html[search query].
 
+[[cfg-multi-writes-format]]
+[float]
+===== Formatting dynamic/multi resource writes
+
+When using dynamic/multi writes, one can also specify a formatting of the value returned by the field. Out of the box, {esh} provides formatting for date/timestamp fields which is useful for automatically grouping time-based data (such as logs)
+ within a certain time range under the same index. By using the Java http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] syntax, one can format and parse the date in a locale-sensitive manager.
+
+For example assuming the data contains a +@timestamp+ field, one can group the documents in _daily_ indices using the following configuration:
+
+[source,ini]
+----
+# index the documents based on their date
+es.resource.write = my-collection/{@timestamp:YYYY.MM.dd} <1>
+----
+
+<1> +@timestamp+ field formatting - in this case +YYYY.MM.dd+
+
+The same configuration property is used (+es.resource.write+) however, through the special +:+ characters a formatting pattern is specified. 
+Please refer to the http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] javadocs for more information on the syntax supported.
+In this case +YYYY.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
+
+http://logstash.net/[Logstash] users will find this _pattern_ quite http://logstash.net/docs/latest/filters/date[familiar].
+
 [float]
 === Essential settings
 
