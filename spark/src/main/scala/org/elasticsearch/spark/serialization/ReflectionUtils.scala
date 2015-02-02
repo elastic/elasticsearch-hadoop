@@ -12,7 +12,9 @@ private[spark] object ReflectionUtils {
   protected[spark] object ReflectionLock
 
   def javaBeansInfo(clazz: Class[_]) = {
-    Introspector.getBeanInfo(clazz).getPropertyDescriptors().filterNot(_.getName == "class").map(pd => (pd.getName, pd.getReadMethod)).sortBy(_._1)
+    Introspector.getBeanInfo(clazz).getPropertyDescriptors().collect {
+      case pd if (pd.getName != "class" && pd.getReadMethod() != null) => (pd.getName, pd.getReadMethod)
+    }.sortBy(_._1)
   }
 
   def javaBeansValues(target: AnyRef, info: Array[(String, Method)]) = {

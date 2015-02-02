@@ -44,11 +44,11 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
     }
 
     @Override
-    public boolean write(Object value, Generator generator) {
-		return doWrite(value, generator, null);
-	}
+    public Result write(Object value, Generator generator) {
+        return doWrite(value, generator, null);
+    }
 
-	protected boolean doWrite(Object value, Generator generator, String parentField) {
+    protected Result doWrite(Object value, Generator generator, String parentField) {
         if (value == null) {
             generator.writeNull();
         }
@@ -94,8 +94,9 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         else if (value.getClass().isArray()) {
             generator.writeBeginArray();
             for (Object o : (Object[]) value) {
-				if (!doWrite(o, generator, parentField)) {
-                    return false;
+                Result result = doWrite(o, generator, parentField);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
             generator.writeEndArray();
@@ -103,13 +104,14 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         else if (value instanceof Map) {
             generator.writeBeginObject();
             for (Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-				String fieldName = entry.getKey().toString();
-				// filter out fields
-				if (shouldKeep(parentField, fieldName)) {
-					generator.writeFieldName(fieldName);
-					if (!doWrite(entry.getValue(), generator, fieldName)) {
-						return false;
-					}
+                String fieldName = entry.getKey().toString();
+                // filter out fields
+                if (shouldKeep(parentField, fieldName)) {
+                    generator.writeFieldName(fieldName);
+                    Result result = doWrite(entry.getValue(), generator, fieldName);
+                    if (!result.isSuccesful()) {
+                        return result;
+                    }
                 }
             }
             generator.writeEndObject();
@@ -117,8 +119,9 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         else if (value instanceof Iterable) {
             generator.writeBeginArray();
             for (Object o : (Iterable<?>) value) {
-				if (!doWrite(o, generator, parentField)) {
-                    return false;
+                Result result = doWrite(o, generator, parentField);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
             generator.writeEndArray();
@@ -140,13 +143,13 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
             if (writeUnknownTypes) {
                 return handleUnknown(value, generator);
             }
-            return false;
+            return Result.FAILED(value);
         }
-        return true;
+        return Result.SUCCESFUL();
     }
 
-    protected boolean handleUnknown(Object value, Generator generator) {
+    protected Result handleUnknown(Object value, Generator generator) {
         generator.writeString(value.toString());
-        return true;
+        return Result.SUCCESFUL();
     }
 }

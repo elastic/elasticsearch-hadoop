@@ -46,7 +46,7 @@ public class HiveWritableValueWriter extends WritableValueWriter {
     }
 
     @Override
-    public boolean write(Writable writable, Generator generator) {
+    public Result write(Writable writable, Generator generator) {
         if (writable instanceof ByteWritable) {
             generator.writeNumber(((ByteWritable) writable).get());
         }
@@ -83,7 +83,7 @@ public class HiveWritableValueWriter extends WritableValueWriter {
             return super.write(writable, generator);
         }
 
-        return true;
+        return Result.SUCCESFUL();
     }
 
     // use nested class to efficiently get a hold of the underlying Date object (w/o doing reparsing, etc...)

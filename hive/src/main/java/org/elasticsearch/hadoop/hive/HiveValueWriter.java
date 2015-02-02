@@ -40,7 +40,7 @@ import org.elasticsearch.hadoop.util.FieldAlias;
 public class HiveValueWriter extends FilteringValueWriter<HiveType> {
 
     private final boolean writeUnknownTypes;
-	private final HiveWritableValueWriter writableWriter;
+    private final HiveWritableValueWriter writableWriter;
     private FieldAlias alias;
 
     public HiveValueWriter() {
@@ -50,33 +50,29 @@ public class HiveValueWriter extends FilteringValueWriter<HiveType> {
     }
 
     @Override
-    public boolean write(HiveType type, Generator generator) {
-        boolean result = write(type.getObject(), type.getObjectInspector(), generator);
-        return result;
+    public Result write(HiveType type, Generator generator) {
+        return write(type.getObject(), type.getObjectInspector(), generator);
     }
 
-    private boolean write(Object data, ObjectInspector oi, Generator generator) {
+    private Result write(Object data, ObjectInspector oi, Generator generator) {
         if (data == null) {
             generator.writeNull();
-            return true;
+            return Result.SUCCESFUL();
         }
 
         switch (oi.getCategory()) {
         case PRIMITIVE:
             Writable writable = (Writable) ((PrimitiveObjectInspector) oi).getPrimitiveWritableObject(data);
-
-            if (!writableWriter.write(writable, generator)) {
-                return false;
-            }
-            break;
+            return writableWriter.write(writable, generator);
 
         case LIST: // or ARRAY
             ListObjectInspector loi = (ListObjectInspector) oi;
             generator.writeBeginArray();
 
             for (int i = 0; i < loi.getListLength(data); i++) {
-                if (!write(loi.getListElement(data, i), loi.getListElementObjectInspector(), generator)) {
-                    return false;
+                Result result = write(loi.getListElement(data, i), loi.getListElementObjectInspector(), generator);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
             generator.writeEndArray();
@@ -94,10 +90,11 @@ public class HiveValueWriter extends FilteringValueWriter<HiveType> {
                 String fieldName = entry.getKey().toString();
 
                 // filter out fields
-				if (shouldKeep(generator.getParentPath(), fieldName)) {
+                if (shouldKeep(generator.getParentPath(), fieldName)) {
                     generator.writeFieldName(alias.toES(entry.getKey().toString()));
-                    if (!write(entry.getValue(), moi.getMapValueObjectInspector(), generator)) {
-                        return false;
+                    Result result = write(entry.getValue(), moi.getMapValueObjectInspector(), generator);
+                    if (!result.isSuccesful()) {
+                        return result;
                     }
                 }
             }
@@ -112,10 +109,12 @@ public class HiveValueWriter extends FilteringValueWriter<HiveType> {
 
             generator.writeBeginObject();
             for (StructField structField : refs) {
-				if (shouldKeep(generator.getParentPath(), structField.getFieldName())) {
+                if (shouldKeep(generator.getParentPath(), structField.getFieldName())) {
                     generator.writeFieldName(alias.toES(structField.getFieldName()));
-                    if (!write(soi.getStructFieldData(data, structField), structField.getFieldObjectInspector(), generator)) {
-                        return false;
+                    Result result = write(soi.getStructFieldData(data, structField),
+                            structField.getFieldObjectInspector(), generator);
+                    if (!result.isSuccesful()) {
+                        return result;
                     }
                 }
             }
@@ -131,21 +130,21 @@ public class HiveValueWriter extends FilteringValueWriter<HiveType> {
             if (writeUnknownTypes) {
                 return handleUnknown(data, oi, generator);
             }
-            return false;
+            return Result.FAILED(data);
         }
 
-        return true;
+        return Result.SUCCESFUL();
     }
 
 
-    protected boolean handleUnknown(Object value, ObjectInspector oi, Generator generator) {
-        return false;
+    protected Result handleUnknown(Object value, ObjectInspector oi, Generator generator) {
+        return org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result.FAILED(value);
     }
 
     @Override
     public void setSettings(Settings settings) {
-		super.setSettings(settings);
+        super.setSettings(settings);
         alias = HiveUtils.alias(settings);
-		writableWriter.setSettings(settings);
+        writableWriter.setSettings(settings);
     }
 }

@@ -53,22 +53,22 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
 
     @Override
     public void setSettings(Settings settings) {
-		super.setSettings(settings);
+        super.setSettings(settings);
         alias = PigUtils.alias(settings);
         useTupleFieldNames = Booleans.parseBoolean(settings.getProperty(PigUtils.NAMED_TUPLE), PigUtils.NAMED_TUPLE_DEFAULT);
     }
 
     @Override
-    public boolean write(PigTuple type, Generator generator) {
+    public Result write(PigTuple type, Generator generator) {
         return writeRootTuple(type.getTuple(), type.getSchema(), generator, true);
     }
 
-    private boolean write(Object object, ResourceFieldSchema field, Generator generator) {
+    private Result write(Object object, ResourceFieldSchema field, Generator generator) {
         byte type = (field != null ? field.getType() : DataType.findType(object));
 
         if (object == null) {
             generator.writeNull();
-            return true;
+            return Result.SUCCESFUL();
         }
 
         switch (type) {
@@ -102,14 +102,14 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
         case DataType.BYTEARRAY:
             generator.writeBinary(((DataByteArray) object).get());
             break;
-        // DateTime introduced in Pig 11
+            // DateTime introduced in Pig 11
         case 30: //DataType.DATETIME
             generator.writeString(PigUtils.convertDateToES(object));
             break;
-        // DateTime introduced in Pig 12
+            // DateTime introduced in Pig 12
         case 65: //DataType.BIGINTEGER
             throw new EsHadoopSerializationException("Big integers are not supported by Elasticsearch - consider using a different type (such as string)");
-        // DateTime introduced in Pig 12
+            // DateTime introduced in Pig 12
         case 70: //DataType.BIGDECIMAL
             throw new EsHadoopSerializationException("Big decimals are not supported by Elasticsearch - consider using a different type (such as string)");
         case DataType.MAP:
@@ -127,11 +127,12 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
             generator.writeBeginObject();
             // Pig maps are actually String -> Object association so we can save the key right away
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
-				String fieldName = entry.getKey().toString();
-				if (shouldKeep(generator.getParentPath(), fieldName)) {
-					generator.writeFieldName(alias.toES(fieldName));
-                    if (!write(entry.getValue(), nestedFields[0], generator)) {
-                        return false;
+                String fieldName = entry.getKey().toString();
+                if (shouldKeep(generator.getParentPath(), fieldName)) {
+                    generator.writeFieldName(alias.toES(fieldName));
+                    Result result = write(entry.getValue(), nestedFields[0], generator);
+                    if (!result.isSuccesful()) {
+                        return result;
                     }
                 }
             }
@@ -155,8 +156,9 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
 
             generator.writeBeginArray();
             for (Tuple tuple : (DataBag) object) {
-                if (!write(tuple, bagType, generator)) {
-                    return false;
+                Result result = write(tuple, bagType, generator);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
             generator.writeEndArray();
@@ -165,19 +167,19 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
             if (writeUnknownTypes) {
                 return handleUnknown(object, field, generator);
             }
-            return false;
+            return Result.FAILED(object);
         }
-        return true;
+        return Result.SUCCESFUL();
     }
 
-    private boolean writeRootTuple(Tuple tuple, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames) {
+    private Result writeRootTuple(Tuple tuple, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames) {
         return writeTuple(tuple, field, generator, writeTupleFieldNames, true);
     }
 
-    private boolean writeTuple(Object object, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames, boolean isRoot) {
+    private Result writeTuple(Object object, ResourceFieldSchema field, Generator generator, boolean writeTupleFieldNames, boolean isRoot) {
         ResourceSchema nestedSchema = field.getSchema();
 
-        boolean result = true;
+        Result result = Result.SUCCESFUL();
         boolean writeAsObject = isRoot || writeTupleFieldNames;
 
         boolean isEmpty = (nestedSchema == null);
@@ -226,7 +228,10 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
                 name = (StringUtils.hasText(name) ? alias.toES(name) : Integer.toString(i));
                 generator.writeFieldName(name);
             }
-            result &= write(tuples.get(i), nestedFields[i], generator);
+            Result res = write(tuples.get(i), nestedFields[i], generator);
+            if (!res.isSuccesful()) {
+                return res;
+            }
         }
         if (writeAsObject) {
             generator.writeEndObject();
@@ -239,7 +244,7 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
     }
 
 
-    protected boolean handleUnknown(Object value, ResourceFieldSchema field, Generator generator) {
-        return false;
+    protected Result handleUnknown(Object value, ResourceFieldSchema field, Generator generator) {
+        return Result.FAILED(value);
     }
 }

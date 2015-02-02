@@ -49,7 +49,7 @@ public class CascadingValueWriter extends FilteringValueWriter<SinkCall<Object[]
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean write(SinkCall<Object[], ?> sinkCall, Generator generator) {
+    public Result write(SinkCall<Object[], ?> sinkCall, Generator generator) {
         Tuple tuple = CascadingUtils.coerceToString(sinkCall);
         // consider names (in case of aliases these are already applied)
         List<String> names = (List<String>) sinkCall.getContext()[0];
@@ -58,18 +58,20 @@ public class CascadingValueWriter extends FilteringValueWriter<SinkCall<Object[]
         for (int i = 0; i < tuple.size(); i++) {
             String name = (i < names.size() ? names.get(i) : "tuple" + i);
             // filter out fields
-			if (shouldKeep(generator.getParentPath(), name)) {
+            if (shouldKeep(generator.getParentPath(), name)) {
                 generator.writeFieldName(name);
                 Object object = tuple.getObject(i);
-                if (!jdkWriter.write(object, generator)) {
-                    if (!(object instanceof Writable) || !writableWriter.write((Writable) object, generator)) {
-                        return false;
+                Result result = jdkWriter.write(object, generator);
+                if (!result.isSuccesful()) {
+                    if (object instanceof Writable) {
+                        return writableWriter.write((Writable) object, generator);
                     }
+                    return Result.FAILED(object);
                 }
             }
         }
         generator.writeEndObject();
-        return true;
+        return Result.SUCCESFUL();
     }
 
     @Override

@@ -1,9 +1,9 @@
 package org.elasticsearch.spark.sql
 
 import java.sql.Timestamp
-import java.util.{Map => JMap}
+import java.util.{ Map => JMap }
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-import scala.collection.{Map => SMap}
+import scala.collection.{ Map => SMap }
 import scala.collection.Seq
 import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.catalyst.types.ArrayType
@@ -25,23 +25,24 @@ import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 
 class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWriter[(Row, StructType)] {
 
   def this() {
     this(false)
   }
-    
+
   private val scalaValueWriter = new ScalaValueWriter(writeUnknownTypes)
 
-  override def write(value: (Row, StructType), generator: Generator): Boolean = {
+  override def write(value: (Row, StructType), generator: Generator): Result = {
     val row = value._1
     val schema = value._2
-    
+
     return writeStruct(schema, row, generator)
   }
 
-  private[spark] def write(schema: DataType, value: Any, generator: Generator): Boolean = {
+  private[spark] def write(schema: DataType, value: Any, generator: Generator): Result = {
     schema match {
       case s @ StructType(_)    => writeStruct(s, value, generator)
       case a @ ArrayType(_, _)  => writeArray(a, value, generator)
@@ -50,7 +51,7 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWrit
     }
   }
 
-  private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Boolean = {
+  private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {
     value match {
       case r: Row =>
         generator.writeBeginObject()
@@ -61,67 +62,70 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWrit
             if (r.isNullAt(index)) {
               generator.writeNull()
             } else {
-              if (!write(field.dataType, r(index), generator)) {
+              val result = write(field.dataType, r(index), generator)
+              if (!result.isSuccesful()) {
                 return handleUnknown(value, generator)
               }
             }
         }
         generator.writeEndObject()
-        
-        true
+
+        Result.SUCCESFUL()
     }
   }
 
-  private[spark] def writeArray(schema: ArrayType, value: Any, generator: Generator): Boolean = {
+  private[spark] def writeArray(schema: ArrayType, value: Any, generator: Generator): Result = {
     value match {
       case a: Array[_] => return doWriteSeq(schema.elementType, a, generator)
       case s: Seq[_]   => return doWriteSeq(schema.elementType, s, generator)
       // unknown array type
-      case _ 		   => return handleUnknown(value, generator) 
+      case _           => return handleUnknown(value, generator)
     }
-    true
+    Result.SUCCESFUL()
   }
 
-  private def doWriteSeq(schema: DataType, value: Seq[_], generator: Generator): Boolean = {
+  private def doWriteSeq(schema: DataType, value: Seq[_], generator: Generator): Result = {
     generator.writeBeginArray()
     if (value != null) {
       value.foreach { v =>
-        if (!write(schema, v, generator)) {
+        val result = write(schema, v, generator)
+        if (!result.isSuccesful()) {
           return handleUnknown(value, generator)
         }
       }
     }
     generator.writeEndArray()
-    true
-  }
-  
-  private[spark] def writeMap(schema: MapType, value: Any, generator: Generator): Boolean = {
-    value match {
-      case sm: SMap[_,_] => doWriteMap(schema, sm, generator)
-      case jm: JMap[_,_] => doWriteMap(schema, jm.asScala, generator)
-      // unknown map type
-      case _             => return handleUnknown(value, generator) 
-    }
-    true
+    Result.SUCCESFUL()
   }
 
-  private def doWriteMap(schema: MapType, value: SMap[_, _], generator: Generator): Boolean = {
+  private[spark] def writeMap(schema: MapType, value: Any, generator: Generator): Result = {
+    value match {
+      case sm: SMap[_, _] => doWriteMap(schema, sm, generator)
+      case jm: JMap[_, _] => doWriteMap(schema, jm.asScala, generator)
+      // unknown map type
+      case _              => return handleUnknown(value, generator)
+    }
+    Result.SUCCESFUL()
+  }
+
+  private def doWriteMap(schema: MapType, value: SMap[_, _], generator: Generator): Result = {
     generator.writeBeginObject()
 
     for ((k, v) <- value) {
       generator.writeFieldName(k.toString)
       if (value != null) {
-        if (!write(schema.valueType, v, generator)) {
+        val result = write(schema.valueType, v, generator)
+        if (!result.isSuccesful()) {
           return handleUnknown(value, generator)
         }
       }
     }
 
     generator.writeEndObject()
-    true
+    Result.SUCCESFUL()
   }
 
-  private[spark] def writePrimitive(value: Any, schema: DataType, generator: Generator): Boolean = {
+  private[spark] def writePrimitive(value: Any, schema: DataType, generator: Generator): Result = {
     schema match {
       case BinaryType    => generator.writeBinary(value.asInstanceOf[Array[Byte]])
       case BooleanType   => generator.writeBoolean(value.asInstanceOf[Boolean])
@@ -133,23 +137,23 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWrit
       case FloatType     => generator.writeNumber(value.asInstanceOf[Float])
       case TimestampType => generator.writeNumber(value.asInstanceOf[Timestamp].getTime())
       case StringType    => generator.writeString(value.toString)
-      case _             => return handleUnknown(value, generator) 
+      case _             => return handleUnknown(value, generator)
     }
-    true
+    Result.SUCCESFUL()
   }
 
-  protected def handleUnknown(value: Any, generator: Generator): Boolean = {
+  protected def handleUnknown(value: Any, generator: Generator): Result = {
     // Spark 1.2 broke DecimalType bwc with Spark 1.1 
     // as we don't use it anyway, to keep the code small and efficient (avoid using class names, etc...) we moved the check here
     if (value.getClass() == DecimalType.getClass()) {
       throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")
-    } 
-    
+    }
+
     if (!writeUnknownTypes) {
-      return false
+      return Result.FAILED(value)
     }
 
     generator.writeString(value.toString())
-   	true
+    Result.SUCCESFUL()
   }
 }

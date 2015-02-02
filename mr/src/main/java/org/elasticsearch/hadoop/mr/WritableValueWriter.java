@@ -53,8 +53,9 @@ public class WritableValueWriter extends FilteringValueWriter<Writable> {
         this.writeUnknownTypes = writeUnknownTypes;
     }
 
+    @Override
     @SuppressWarnings({ "unchecked", "deprecation" })
-    public boolean write(Writable writable, Generator generator) {
+    public Result write(Writable writable, Generator generator) {
         if (writable == null || writable instanceof NullWritable) {
             generator.writeNull();
         }
@@ -104,8 +105,9 @@ public class WritableValueWriter extends FilteringValueWriter<Writable> {
         else if (writable instanceof ArrayWritable) {
             generator.writeBeginArray();
             for (Writable wrt : ((ArrayWritable) writable).get()) {
-                if (!write(wrt, generator)) {
-                    return false;
+                Result result = write(wrt, generator);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
             generator.writeEndArray();
@@ -117,12 +119,14 @@ public class WritableValueWriter extends FilteringValueWriter<Writable> {
             generator.writeBeginObject();
             // ignore handling sets (which are just maps with null values)
             for (Entry<Writable, Writable> entry : map.entrySet()) {
-				String fieldName = entry.getKey().toString();
-				if (shouldKeep(generator.getParentPath(), fieldName)) {
-					generator.writeFieldName(fieldName);
-					if (!write(entry.getValue(), generator)) {
-						return false;
-					}
+                String fieldName = entry.getKey().toString();
+                if (shouldKeep(generator.getParentPath(), fieldName)) {
+                    generator.writeFieldName(fieldName);
+                    Result result = write(entry.getValue(), generator);
+
+                    if (!result.isSuccesful()) {
+                        return result;
+                    }
                 }
             }
             generator.writeEndObject();
@@ -131,13 +135,13 @@ public class WritableValueWriter extends FilteringValueWriter<Writable> {
             if (writeUnknownTypes) {
                 return handleUnknown(writable, generator);
             }
-            return false;
+            return Result.FAILED(writable);
         }
-        return true;
+        return Result.SUCCESFUL();
     }
 
-    protected boolean handleUnknown(Writable value, Generator generator) {
+    protected Result handleUnknown(Writable value, Generator generator) {
         generator.writeBinary(WritableUtils.toByteArray(value));
-        return true;
+        return Result.SUCCESFUL();
     }
 }

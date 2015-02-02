@@ -38,7 +38,7 @@ public class StormValueWriter implements ValueWriter<Tuple> {
     }
 
     @Override
-    public boolean write(Tuple tuple, Generator generator) {
+    public Result write(Tuple tuple, Generator generator) {
         Fields fields = tuple.getFields();
 
         generator.writeBeginObject();
@@ -47,16 +47,20 @@ public class StormValueWriter implements ValueWriter<Tuple> {
             Object value = tuple.getValueByField(field);
 
             if (value instanceof Tuple) {
-                if (!write((Tuple) value, generator)) {
-                    return false;
+                Result result = write((Tuple) value, generator);
+                if (!result.isSuccesful()) {
+                    return result;
                 }
             }
 
-            else if (!jdkWriter.write(value, generator)) {
-                return false;
+            else {
+                Result result = jdkWriter.write(value, generator);
+                if (!result.isSuccesful()) {
+                    return result;
+                }
             }
         }
         generator.writeEndObject();
-        return true;
+        return Result.SUCCESFUL();
     }
 }

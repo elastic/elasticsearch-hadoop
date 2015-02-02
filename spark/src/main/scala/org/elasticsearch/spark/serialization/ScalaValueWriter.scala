@@ -1,15 +1,14 @@
 package org.elasticsearch.spark.serialization
 
 import java.lang.reflect.Method
-
 import scala.collection.Map
 import scala.collection.immutable.Nil
 import scala.collection.mutable.HashMap
 import scala.ref.WeakReference
-
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
 
@@ -20,21 +19,26 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
     this(false)
   }
 
-  override def write(value: AnyRef, generator: Generator): Boolean = {
+  override def write(value: AnyRef, generator: Generator): Result = {
+    doWrite(value, generator, true)
+  }
+
+  private def doWrite(value: AnyRef, generator: Generator, acceptsJavaBeans: Boolean): Result = {
     value match {
       case None => generator.writeNull()
       case Unit => generator.writeNull()
       case Nil =>
         generator.writeBeginArray(); generator.writeEndArray()
 
-      case s: Some[AnyRef] => return write(s.get, generator)
+      case s: Some[AnyRef] => return doWrite(s.get, generator, false)
 
       case m: Map[_, AnyRef] => {
         generator.writeBeginObject()
         for ((k, v) <- m) {
           generator.writeFieldName(k.toString())
-          if (!write(v, generator)) {
-            return false
+          val result = doWrite(v, generator, false)
+          if (!result.isSuccesful()) {
+            return result
           }
         }
         generator.writeEndObject()
@@ -43,8 +47,9 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Traversable[AnyRef] => {
         generator.writeBeginArray()
         for (v <- i) {
-          if (!write(v, generator)) {
-            return false
+          val result = doWrite(v, generator, false)
+          if (!result.isSuccesful()) {
+            return result
           }
         }
         generator.writeEndArray()
@@ -53,15 +58,17 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case p: Product => {
         // handle case class
         if (isCaseClass(p)) {
-          if (!write(caseClassValues(p), generator)) {
-            return false
+          val result = doWrite(caseClassValues(p), generator, false)
+          if (!result.isSuccesful()) {
+            return result
           }
         } // normal product - treat it as a list/array
         else {
           generator.writeBeginArray()
           for (t <- p.productIterator) {
-            if (!write(t.asInstanceOf[AnyRef], generator)) {
-              return false
+            val result = doWrite(t.asInstanceOf[AnyRef], generator, false)
+            if (!result.isSuccesful()) {
+              return result
             }
           }
           generator.writeEndArray()
@@ -70,16 +77,17 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
       case _ => {
         // normal JDK types failed, try the JavaBean last
-        if (!super.write(value, generator)) {
-          if (isJavaBean(value)) {
-            return write(javaBeanAsMap(value), generator)
+        val result = super.write(value, generator)
+        if (!result.isSuccesful()) {
+          if (acceptsJavaBeans && isJavaBean(value)) {
+            return doWrite(javaBeanAsMap(value), generator, false)
           } else
-            return false
+            return result
         }
       }
     }
 
-    true
+    Result.SUCCESFUL()
   }
 
   def isCaseClass(p: Product) = {

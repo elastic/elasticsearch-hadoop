@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.serialization.Generator;
 public class NoOpValueWriter implements ValueWriter<Object> {
 
     @Override
-    public boolean write(Object object, Generator generator) {
+    public Result write(Object object, Generator generator) {
         throw new EsHadoopIllegalStateException("Incorrect configuration - NoOpValueWriter should not have been called");
     }
 }

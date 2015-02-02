@@ -27,12 +27,34 @@ import org.elasticsearch.hadoop.serialization.Generator;
  */
 public interface ValueWriter<T> {
 
+    public final class Result {
+        private static final Result SUCCESFUL = new Result(null);
+
+        final Object unknownValue;
+
+        private Result(Object target) {
+            unknownValue = target;
+        }
+
+        public boolean isSuccesful() {
+            return SUCCESFUL == this;
+        }
+
+        public static Result SUCCESFUL() {
+            return SUCCESFUL;
+        }
+
+        public static Result FAILED(Object target) {
+            return new Result(target);
+        }
+    }
+
     /**
      * Returns true if the value was written, false otherwise.
      *
      * @param object
      * @param generator
-     * @return true if the value was written, false otherwise
+     * @return {@link Result#SUCCESFUL()} if completed, {@link Result#FAILED(Object)} otherwise containing the failing target
      */
-    boolean write(T object, Generator generator);
+    Result write(T object, Generator generator);
 }
