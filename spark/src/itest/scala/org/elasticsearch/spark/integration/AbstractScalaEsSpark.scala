@@ -48,6 +48,7 @@ import org.elasticsearch.spark.rdd.EsSpark
 import org.junit.Test
 import org.elasticsearch.spark.Bean
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
+import org.apache.spark.SparkException
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -93,7 +94,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
     assertThat(RestUtils.get("spark-test/scala-basic-write/_search?"), containsString(""))
   }
 
-  @Test(expected = classOf[EsHadoopSerializationException])
+  @Test(expected = classOf[SparkException])
   def testNestedUnknownCharacter() {
     val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())
     sc.makeRDD(Seq(doc)).saveToEs("spark-test/nested-map")
