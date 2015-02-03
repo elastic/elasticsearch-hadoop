@@ -101,7 +101,7 @@ public class AbstractRestQueryTest {
         String nodeId = targetShards.values().iterator().next().getId();
         ScrollQuery query = QueryBuilder.query(sets)
                 .shard("0")
-                .onlyNode(nodeId)
+                .node(nodeId)
                 .build(client, reader);
 
         int count = 0;

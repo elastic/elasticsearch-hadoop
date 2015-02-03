@@ -356,6 +356,11 @@ public class RestClient implements Closeable, StatsAware {
         return (execute(PUT, indexOrType, false).hasSucceeded());
     }
 
+    public boolean isAlias(String query) {
+        Map<String, Object> aliases = (Map<String, Object>) get(query, null);
+        return (aliases.size() > 1);
+    }
+
     public void putMapping(String index, String mapping, byte[] bytes) {
         // create index first (if needed) - it might return 403
         touch(index);

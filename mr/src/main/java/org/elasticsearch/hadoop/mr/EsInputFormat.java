@@ -74,16 +74,19 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private String shardId;
         private String mapping;
         private String settings;
+        private boolean onlyNode;
 
         public ShardInputSplit() {}
 
+        // this long constructor is required to avoid having the serialize PartitionDefinition
         public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, String shard,
-                String mapping, String settings) {
+                boolean onlyNode, String mapping, String settings) {
             this.nodeIp = nodeIp;
             this.httpPort = httpPort;
             this.nodeId = nodeId;
             this.nodeName = nodeName;
             this.shardId = shard;
+            this.onlyNode = onlyNode;
             this.mapping = mapping;
             this.settings = settings;
         }
@@ -107,6 +110,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             out.writeUTF(nodeId);
             out.writeUTF(nodeName);
             out.writeUTF(shardId);
+            out.writeBoolean(onlyNode);
             // avoid using writeUTF since the mapping can be longer than 65K
             byte[] utf = StringUtils.toUTF(mapping);
             out.writeInt(utf.length);
@@ -124,6 +128,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             nodeId = in.readUTF();
             nodeName = in.readUTF();
             shardId = in.readUTF();
+            onlyNode = in.readBoolean();
             int length = in.readInt();
             byte[] utf = new byte[length];
             in.readFully(utf);
@@ -197,7 +202,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             // initialize mapping/ scroll reader
             InitializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
 
-            PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, settings.save(), esSplit.mapping);
+            PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, esSplit.onlyNode, settings.save(), esSplit.mapping);
             PartitionReader partitionReader = RestService.createReader(settings, part, log);
 
             this.scrollReader = partitionReader.scrollReader;
@@ -455,7 +460,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         int index = 0;
         for (PartitionDefinition part : partitions) {
             splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId,
-                    part.serializedMapping, part.serializedSettings);
+                    part.onlyNode, part.serializedMapping, part.serializedSettings);
         }
         log.info(String.format("Created [%d] shard-splits", splits.length));
         return splits;

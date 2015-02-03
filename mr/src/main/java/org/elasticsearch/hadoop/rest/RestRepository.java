@@ -280,18 +280,39 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     protected Map<Shard, Node> doGetReadTargetShards() {
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
-
         Map<String, Node> nodes = client.getNodes();
 
+        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
+
+        boolean globalQuery = false;
+
+        if (!isReadIndexConcrete()) {
+            String message = String.format("Read resource [%s] includes multiple indices or/and aliases; to avoid duplicate results (caused by shard overlapping), parallelism ", resourceR);
+
+            Map<Shard, Node> combination = ShardSorter.find(info, nodes);
+            if (combination.isEmpty()) {
+                message += "was disabled";
+                log.warn(message);
+                globalQuery = true;
+            }
+            else {
+                int initialParallelism = 0;
+                for (List<Map<String, Object>> shardGroup : info) {
+                    initialParallelism += shardGroup.size();
+                }
+
+                if (initialParallelism > combination.size()) {
+                    message += String.format("was reduced from %s to %s", initialParallelism, combination.size());
+                    log.warn(message);
+                }
+                return combination;
+            }
+        }
+
         for (List<Map<String, Object>> shardGroup : info) {
-            // find the first started shard in each group (round-robin)
-            // NB: the index of the shard is removed as the requests are done per node not per index
-            // and in case of alias or multiple indices specified, all shards on a node are searched
-            // considering the index would result in multiple results
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData, false);
+                Shard shard = new Shard(shardData);
                 if (shard.getState().isStarted()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
@@ -299,6 +320,10 @@ public class RestRepository implements Closeable, StatsAware {
                         return null;
                     }
                     shards.put(shard, node);
+                    // if it's a global query, just use the first shard discovered
+                    if (globalQuery) {
+                        return shards;
+                    }
                     break;
                 }
             }
@@ -324,7 +349,7 @@ public class RestRepository implements Closeable, StatsAware {
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData, true);
+                Shard shard = new Shard(shardData);
                 if (shard.isPrimary()) {
                     Node node = nodes.get(shard.getNode());
                     if (node == null) {
@@ -369,6 +394,11 @@ public class RestRepository implements Closeable, StatsAware {
             }
         }
         return exists;
+    }
+
+    private boolean isReadIndexConcrete() {
+		String index = resourceR.index();
+        return !(index.contains(",") || index.contains("*") || client.isAlias(resourceR.aliases()));
     }
 
     public void putMapping(BytesArray mapping) {

@@ -427,9 +427,9 @@ public class ScrollReader {
             Assert.notNull(id, "no id found");
             result[0] = id;
 
-			if (metadataStartChar >= 0 && metadataStopChar >= 0) {
-				snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
-			}
+            if (metadataStartChar >= 0 && metadataStopChar >= 0) {
+                snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
+            }
         }
         // no metadata is needed, fast fwd
         else {
@@ -468,9 +468,9 @@ public class ScrollReader {
         }
 
         if (readMetadata) {
-			if (metadataSuffixStartCharPos >= 0 && metadataSuffixStopCharPos >= 0) {
-				snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
-			}
+            if (metadataSuffixStartCharPos >= 0 && metadataSuffixStopCharPos >= 0) {
+                snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
+            }
         }
 
         result[1] = snippet;

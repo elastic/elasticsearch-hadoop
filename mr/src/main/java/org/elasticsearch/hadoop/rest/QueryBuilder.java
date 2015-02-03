@@ -41,13 +41,14 @@ public class QueryBuilder {
 
     private static String MATCH_ALL = "{\"query\":{\"match_all\":{}}}";
 
-    private Map<String, String> uriQuery = new LinkedHashMap<String, String>();
+    private final Map<String, String> uriQuery = new LinkedHashMap<String, String>();
     private BytesArray bodyQuery;
 
     private TimeValue time = TimeValue.timeValueMinutes(10);
     private long size = 50;
     private String shard;
     private String node;
+    private boolean onlyNode;
     private final boolean IS_ES_10;
     private final boolean INCLUDE_VERSION;
     private final boolean ESCAPE_QUERY_URI;
@@ -68,8 +69,8 @@ public class QueryBuilder {
 
     public static QueryBuilder query(Settings settings) {
         return new QueryBuilder(settings).
-                        time(settings.getScrollKeepAlive()).
-                        size(settings.getScrollSize());
+                time(settings.getScrollKeepAlive()).
+                size(settings.getScrollSize());
     }
 
 
@@ -112,9 +113,10 @@ public class QueryBuilder {
             int indexOf = token.indexOf("=");
             Assert.isTrue(indexOf > 0, String.format("Cannot token [%s] in uri query [%s]", token, query));
             if (ESCAPE_QUERY_URI) {
-            	params.put(StringUtils.encodePath(token.substring(0, indexOf)), StringUtils.encodePath(token.substring(indexOf + 1)));
+                params.put(StringUtils.encodePath(token.substring(0, indexOf)),
+                        StringUtils.encodePath(token.substring(indexOf + 1)));
             } else {
-            	params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+                params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
             }
         }
         return params;
@@ -131,7 +133,7 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder onlyNode(String node) {
+    public QueryBuilder node(String node) {
         Assert.hasText(node, "Invalid node");
         this.node = node;
         return this;
@@ -186,7 +188,7 @@ public class QueryBuilder {
             if (pref.length() > 0) {
                 pref.append(";");
             }
-            pref.append("_only_node:");
+            pref.append(onlyNode ? "_only_node:" : "_prefer_node:");
             pref.append(node);
         }
 
@@ -218,5 +220,10 @@ public class QueryBuilder {
     @Override
     public String toString() {
         return "QueryBuilder [" + assemble() + "]";
+    }
+
+    public QueryBuilder onlyNode(boolean onlyNode) {
+        this.onlyNode = onlyNode;
+        return this;
     }
 }

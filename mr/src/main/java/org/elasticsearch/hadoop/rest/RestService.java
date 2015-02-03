@@ -37,14 +37,15 @@ public abstract class RestService implements Serializable {
         public final String serializedSettings, serializedMapping;
         public final String nodeIp, nodeId, nodeName, shardId;
         public final int nodePort;
+        public final boolean onlyNode;
 
-        PartitionDefinition(Shard shard, Node node, String settings, String mapping) {
+        PartitionDefinition(Shard shard, Node node, String settings, String mapping, boolean onlyNode) {
             this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(),
-                    settings, mapping);
+                    onlyNode, settings, mapping);
         }
 
         public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId,
-                String settings, String mapping) {
+                boolean onlyNode, String settings, String mapping) {
             this.nodeIp = nodeIp;
             this.nodePort = nodePort;
             this.nodeName = nodeName;
@@ -53,14 +54,16 @@ public abstract class RestService implements Serializable {
 
             this.serializedSettings = settings;
             this.serializedMapping = mapping;
+
+            this.onlyNode = onlyNode;
         }
 
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("EsPartition [node=[").append(nodeId).append("/").append(nodeName)
-                        .append("|").append(nodeIp).append(":").append(nodePort)
-                        .append("],shard=").append(shardId).append("]");
+            .append("|").append(nodeIp).append(":").append(nodePort)
+            .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
 
@@ -119,6 +122,7 @@ public abstract class RestService implements Serializable {
             this.total = splitsSize;
         }
 
+        @Override
         public void close() {
             if (!closed) {
                 closed = true;
@@ -266,7 +270,7 @@ public abstract class RestService implements Serializable {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(targetShards.size());
 
         for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping));
+            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping, targetShards.size() > 1));
         }
 
         return partitions;
@@ -294,7 +298,7 @@ public abstract class RestService implements Serializable {
         // initialize REST client
         RestRepository client = new RestRepository(settings);
 
-        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).onlyNode(partition.nodeId);
+        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).onlyNode(partition.onlyNode);
 
         queryBuilder.fields(settings.getScrollFields());
 
