@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -269,32 +271,40 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
 
-    public Map<Shard, Node> getReadTargetShards() {
+    public Object[] getReadTargetShards() {
         for (int retries = 0; retries < 3; retries++) {
-            Map<Shard, Node> map = doGetReadTargetShards();
-            if (map != null) {
-                return map;
+            Object[] result = doGetReadTargetShards();
+            if (result != null) {
+                return result;
             }
         }
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Map<Shard, Node> doGetReadTargetShards() {
+    protected Object[] doGetReadTargetShards() {
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
         Map<String, Node> nodes = client.getNodes();
 
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
 
-        boolean globalQuery = false;
+        boolean overlappingShards = false;
 
+        Object[] result = new Object[2];
+
+        // false by default
+        result[0] = overlappingShards;
+        result[1] = shards;
+
+        // check if multiple indices are hit
         if (!isReadIndexConcrete()) {
             String message = String.format("Read resource [%s] includes multiple indices or/and aliases; to avoid duplicate results (caused by shard overlapping), parallelism ", resourceR);
 
             Map<Shard, Node> combination = ShardSorter.find(info, nodes);
             if (combination.isEmpty()) {
-                message += "was disabled";
+                message += "is minimized";
                 log.warn(message);
-                globalQuery = true;
+                overlappingShards = true;
+                result[0] = overlappingShards;
             }
             else {
                 int initialParallelism = 0;
@@ -303,12 +313,17 @@ public class RestRepository implements Closeable, StatsAware {
                 }
 
                 if (initialParallelism > combination.size()) {
-                    message += String.format("was reduced from %s to %s", initialParallelism, combination.size());
+                    message += String.format("is reduced from %s to %s", initialParallelism, combination.size());
                     log.warn(message);
                 }
-                return combination;
+				result[0] = overlappingShards;
+				result[1] = combination;
+
+                return result;
             }
         }
+
+        Set<Integer> seenShards = new LinkedHashSet<Integer>();
 
         for (List<Map<String, Object>> shardGroup : info) {
             for (Map<String, Object> shardData : shardGroup) {
@@ -319,16 +334,20 @@ public class RestRepository implements Closeable, StatsAware {
                         log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
                         return null;
                     }
-                    shards.put(shard, node);
-                    // if it's a global query, just use the first shard discovered
-                    if (globalQuery) {
-                        return shards;
+                    // when dealing with overlapping shards, simply keep a shard for each id/name (0, 1, ...)
+                    if (overlappingShards) {
+                        if (seenShards.add(shard.getName())) {
+                            shards.put(shard, node);
+                        }
                     }
-                    break;
+                    else {
+                        shards.put(shard, node);
+						break;
+                    }
                 }
             }
         }
-        return shards;
+        return result;
     }
 
     public Map<Shard, Node> getWriteTargetPrimaryShards() {
@@ -397,7 +416,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private boolean isReadIndexConcrete() {
-		String index = resourceR.index();
+        String index = resourceR.index();
         return !(index.contains(",") || index.contains("*") || client.isAlias(resourceR.aliases()));
     }
 

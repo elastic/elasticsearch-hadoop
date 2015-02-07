@@ -219,7 +219,9 @@ public abstract class RestService implements Serializable {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
+        boolean overlappingShards = false;
         Map<Shard, Node> targetShards = null;
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
@@ -242,7 +244,10 @@ public abstract class RestService implements Serializable {
             }
         }
         else {
-            targetShards = client.getReadTargetShards();
+            Object[] result = client.getReadTargetShards();
+            overlappingShards = (Boolean) result[0];
+            targetShards = (Map<Shard, Node>) result[1];
+
             if (log.isTraceEnabled()) {
                 log.trace("Creating splits for shards " + targetShards);
             }
@@ -270,7 +275,7 @@ public abstract class RestService implements Serializable {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(targetShards.size());
 
         for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping, targetShards.size() > 1));
+            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping, !overlappingShards));
         }
 
         return partitions;

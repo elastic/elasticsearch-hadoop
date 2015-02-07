@@ -72,7 +72,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         }
     }
 
-    @Test
+	@Test
     public void testEsRDDWrite() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
@@ -88,7 +88,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
 
-    @Test
+	@Test
     public void testEsRDDWriteWithMappingId() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
@@ -103,7 +103,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
 
-    @Test
+	@Test
     public void testEsRDDWriteWithDynamicMapping() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
@@ -121,7 +121,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
     
-    @Test
+	@Test
     public void testEsRDDWriteWithDynamicMappingBasedOnMaps() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
@@ -140,7 +140,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
     
-    @Test
+	@Test
     public void testEsMultiIndexRDDWrite() throws Exception {
       Map<String, ?> doc1 = ImmutableMap.of("reason", "business", "airport", "SFO");
       Map<String, ?> doc2 = ImmutableMap.of("participants", 2, "airport", "OTP");
@@ -157,7 +157,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
       assertThat(RestUtils.get("spark-test/java-trip-OTP/_search?"), containsString("participants"));
     }
 
-    @Test
+	@Test
     public void testEsRDDWriteAsJsonMultiWrite() throws Exception {
       String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";
       String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
@@ -197,7 +197,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
       assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"));
     }
     
-    @Test
+	@Test
     public void testEsRDDZRead() throws Exception {
         String target = "spark-test/java-basic-read";
 
@@ -236,7 +236,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
     }
 
     
-    @Test
+	@Test
     public void testEsRDDZReadJson() throws Exception {
         String target = "spark-test/java-basic-json-read";
 
@@ -262,7 +262,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         System.out.println(messages);
     }
 
-    @Test
+	@Test
     public void testEsRDDZReadMultiIndex() throws Exception {
     	String index = "spark-test";
     	
@@ -273,11 +273,11 @@ public class AbstractJavaEsSparkTest implements Serializable {
     	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo")).values();
     	
     	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
-    	assertTrue(allRDD.count() == wildRDD.count());
-    	assertTrue(allRDD.count() == 1);
+		assertEquals(wildRDD.count(), allRDD.count());
+		assertEquals(1, allRDD.count());
     }
     
-    @Test(expected = EsHadoopIllegalArgumentException.class)
+	@Test(expected = EsHadoopIllegalArgumentException.class)
     public void testNoResourceSpecified() throws Exception {
     	JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc).values();
     	rdd.count();
