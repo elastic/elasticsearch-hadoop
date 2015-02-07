@@ -21,8 +21,10 @@ package org.elasticsearch.hadoop.integration.hive;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,21 +32,31 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.hadoop.hive.metastore.MetaStoreUtils;
+import org.apache.hadoop.hive.ql.metadata.Hive;
 import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.hadoop.hive.ql.security.HiveAuthenticationProvider;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.hive.ql.session.SessionState.ResourceType;
-import org.apache.hadoop.hive.service.HiveServer;
+import org.apache.hive.service.Service;
+import org.apache.hive.service.cli.CLIService;
+import org.apache.hive.service.cli.OperationHandle;
+import org.apache.hive.service.cli.RowSet;
+import org.apache.hive.service.cli.SessionHandle;
+import org.apache.hive.service.server.HiveServer2;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.mr.NTFSLocalFileSystem;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 
 /**
@@ -53,26 +65,63 @@ import org.elasticsearch.hadoop.util.TestUtils;
  *
  * Additionally it wrangles the Hive internals so it rather executes the jobs locally not within a child JVM (which Hive calls local) or external.
  */
-class HiveEmbeddedServer implements HiveInstance {
-    // Implementation note: For some reason when running inside local mode, Hive spawns a child VM which is not just problematic (win or *nix) but it does not copies the classpath nor creates any jars
-    // As such, the current implementation tricks Hive into thinking it's not local but at the same time sets up Hadoop to run locally and stops Hive from setting any classpath.
+class HiveEmbeddedServer2 implements HiveInstance {
+    private static Log log = LogFactory.getLog(Hive.class);
 
-    private static Log log = LogFactory.getLog(HiveEmbeddedServer.class);
+    private HiveServer2 hiveServer;
 
-    private HiveServer.HiveServerHandler server;
-    private Properties testSettings;
+    private final Properties testSettings;
     private HiveConf config;
+    private int port;
 
-    public HiveEmbeddedServer(Properties settings) {
+    public HiveEmbeddedServer2(Properties settings) {
         this.testSettings = settings;
     }
 
+    @Override
     public void start() throws Exception {
         log.info("Starting Hive Local/Embedded Server...");
-        if (server == null) {
+        if (hiveServer == null) {
             config = configure();
-            server = new HiveServer.HiveServerHandler(config);
+            hiveServer = new HiveServer2();
+            port = MetaStoreUtils.findFreePort();
+            config.setIntVar(ConfVars.HIVE_SERVER2_THRIFT_PORT, port);
+            hiveServer.init(config);
+            hiveServer.start();
+            waitForStartup();
         }
+    }
+
+    private void waitForStartup() throws Exception {
+        long timeout = TimeUnit.MINUTES.toMillis(1);
+        long unitOfWait = TimeUnit.SECONDS.toMillis(1);
+
+        CLIService hs2Client = getServiceClientInternal();
+        SessionHandle sessionHandle = null;
+        for (int interval = 0; interval < timeout / unitOfWait; interval++) {
+            Thread.sleep(unitOfWait);
+            try {
+                Map <String, String> sessionConf = new HashMap<String, String>();
+                sessionHandle = hs2Client.openSession("foo", "bar", sessionConf);
+                return;
+            } catch (Exception e) {
+                // service not started yet
+                continue;
+            }
+            finally {
+                hs2Client.closeSession(sessionHandle);
+            }
+        }
+        throw new TimeoutException("Couldn't get a hold of HiveServer2...");
+    }
+
+    private CLIService getServiceClientInternal() {
+        for (Service service : hiveServer.getServices()) {
+            if (service instanceof CLIService) {
+                return (CLIService) service;
+            }
+        }
+        throw new IllegalStateException("Cannot find CLIService");
     }
 
     // Hive adds automatically the Hive builtin jars - this thread-local cleans that up
@@ -114,6 +163,7 @@ class HiveEmbeddedServer implements HiveInstance {
         }
 
         // introduced in Hive 0.13
+        @Override
         public void setSessionState(SessionState ss) {
         }
     }
@@ -122,12 +172,12 @@ class HiveEmbeddedServer implements HiveInstance {
         String scratchDir = NTFSLocalFileSystem.SCRATCH_DIR;
 
 
-		File scratchDirFile = new File(scratchDir);
-		TestUtils.delete(scratchDirFile);
+        File scratchDirFile = new File(scratchDir);
+        TestUtils.delete(scratchDirFile);
 
         Configuration cfg = new Configuration();
         HiveConf conf = new HiveConf(cfg, HiveConf.class);
-		conf.addToRestrictList("columns.comments");
+        conf.addToRestrictList("columns.comments");
         refreshConfig(conf);
 
         HdpBootstrap.hackHadoopStagingOnWin();
@@ -148,9 +198,9 @@ class HiveEmbeddedServer implements HiveInstance {
         else {
             conf.set("hive.scratch.dir.permission", "777");
             conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
-			scratchDirFile.mkdirs();
-			// also set the permissions manually since Hive doesn't do it...
-			scratchDirFile.setWritable(true, false);
+            scratchDirFile.mkdirs();
+            // also set the permissions manually since Hive doesn't do it...
+            scratchDirFile.setWritable(true, false);
         }
 
         int random = new Random().nextInt();
@@ -219,24 +269,45 @@ class HiveEmbeddedServer implements HiveInstance {
         //        }
     }
 
+    @Override
     public List<String> execute(String cmd) throws Exception {
         if (cmd.toUpperCase().startsWith("ADD JAR")) {
             // skip the jar since we're running in local mode
             System.out.println("Skipping ADD JAR in local/embedded mode");
             return Collections.emptyList();
         }
-		// remove bogus configuration
-		config.set("columns.comments", "");
-        server.execute(cmd);
-        return server.fetchAll();
+        // remove bogus configuration
+        config.set("columns.comments", "");
+        CLIService client = getServiceClientInternal();
+        SessionHandle sh = null;
+        try {
+            Map<String, String> opConf = new HashMap<String, String>();
+            sh = client.openSession("anonymous", "anonymous", opConf);
+            OperationHandle oh = client.executeStatement(sh, cmd, opConf);
+
+            if (oh.hasResultSet()) {
+                RowSet rows = client.fetchResults(oh);
+                List<String> result = new ArrayList<String>(rows.numRows());
+                for (Object[] objects : rows) {
+                    result.add(StringUtils.concatenate(objects, ","));
+                }
+                return result;
+            }
+            return Collections.emptyList();
+
+        } finally {
+            if (sh != null) {
+                client.closeSession(sh);
+            }
+        }
     }
 
+    @Override
     public void stop() {
-        if (server != null) {
+        if (hiveServer != null) {
             log.info("Stopping Hive Local/Embedded Server...");
-            server.clean();
-            server.shutdown();
-            server = null;
+            hiveServer.stop();
+            hiveServer = null;
             config = null;
         }
     }

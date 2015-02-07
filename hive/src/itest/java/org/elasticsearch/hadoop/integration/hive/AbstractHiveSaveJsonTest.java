@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.hadoop.hive.service.HiveServerException;
+import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -158,7 +159,7 @@ public class AbstractHiveSaveJsonTest {
         System.out.println(server.execute(insert));
     }
 
-    @Test(expected = HiveServerException.class)
+    @Test(expected = HiveSQLException.class)
     public void testCreateWithDuplicates() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -221,7 +222,7 @@ public class AbstractHiveSaveJsonTest {
     }
 
 
-    @Test(expected = HiveServerException.class)
+    @Test(expected = HiveSQLException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
