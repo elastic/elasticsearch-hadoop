@@ -225,6 +225,7 @@ public abstract class RestService implements Serializable {
         Map<Shard, Node> targetShards = null;
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         String savedSettings = settings.save();
@@ -284,7 +285,16 @@ public abstract class RestService implements Serializable {
     public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
 
         if (!SettingsUtils.hasPinnedNode(settings)) {
-            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
+            // pin node only if client-routing is disabled; otherwise simply go through them...
+            if (!settings.getNodesClientOnly()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]",
+                            partition, partition.nodeId, partition.nodePort));
+                }
+
+                SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
+            }
+
         }
 
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
@@ -303,8 +313,15 @@ public abstract class RestService implements Serializable {
         // initialize REST client
         RestRepository client = new RestRepository(settings);
 
-        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).onlyNode(partition.onlyNode);
+        if (settings.getNodesClientOnly()) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Client-node routing detected; partition reader instance [%s] assigned to [%s]",
+                        partition, client.getRestClient().getCurrentNode()));
+            }
+        }
 
+        // take into account client node routing
+        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).restrictToNode(partition.onlyNode && !settings.getNodesClientOnly());
         queryBuilder.fields(settings.getScrollFields());
 
         return new PartitionReader(scrollReader, client, queryBuilder);
@@ -354,6 +371,7 @@ public abstract class RestService implements Serializable {
     public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
@@ -388,11 +406,25 @@ public abstract class RestService implements Serializable {
             }
         }
 
-        Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
+        // if client-nodes are used, simply use the underlying
+        if (settings.getNodesClientOnly()) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Client-node routing detected; partition writer instance [%s] assigned to [%s]",
+                        currentInstance, repository.getRestClient().getCurrentNode()));
+            }
+
+            return repository;
+        }
+
+        // no routing necessary; select the relevant target shard/node
+        Map<Shard, Node> targetShards = Collections.emptyMap();
+
+        targetShards = repository.getWriteTargetPrimaryShards();
         repository.close();
 
         Assert.isTrue(!targetShards.isEmpty(),
                 String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
+
 
         List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
         // make sure the order is strict

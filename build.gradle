@@ -231,7 +231,6 @@ allprojects { project ->
             }
         }
     }
-
     
     jar {
         manifest {
@@ -500,6 +499,9 @@ project(":elasticsearch-storm") {
         itestCompile "com.google.guava:guava:16.0.1"
         itestRuntime "com.twitter:carbonite:1.4.0"
     }
+    
+    // add itest to Eclipse
+    eclipse.classpath.plusConfigurations += configurations.itestCompile
 }
 
 configure(rootProject) {

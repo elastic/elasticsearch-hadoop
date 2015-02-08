@@ -269,6 +269,19 @@ public class RestClient implements Closeable, StatsAware {
         return nodes;
     }
 
+    public List<String> getClientNodes() {
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
+        List<String> nodes = new ArrayList<String>();
+
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            Node node = new Node(entry.getKey(), entry.getValue());
+            if (node.isClient() && node.hasHttp()) {
+                nodes.add(node.getInet());
+            }
+        }
+        return nodes;
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> getMapping(String query) {
         return (Map<String, Object>) get(query, null);
@@ -397,5 +410,9 @@ public class RestClient implements Closeable, StatsAware {
         if (content instanceof StatsAware) {
             stats.aggregate(((StatsAware) content).stats());
         }
+    }
+
+    public String getCurrentNode() {
+        return network.currentNode();
     }
 }

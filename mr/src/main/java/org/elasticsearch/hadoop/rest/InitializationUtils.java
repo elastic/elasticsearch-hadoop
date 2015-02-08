@@ -54,18 +54,47 @@ public abstract class InitializationUtils {
         if (settings.getNodesDiscovery()) {
             RestClient bootstrap = new RestClient(settings);
 
-            List<String> discoveredNodes = bootstrap.discoverNodes();
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
+            try {
+                List<String> discoveredNodes = bootstrap.discoverNodes();
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
+                }
+
+                SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
+            } finally {
+                bootstrap.close();
             }
-
-            SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
-            bootstrap.close();
-
             return true;
         }
 
         return false;
+    }
+
+    public static void filterNonClientNodesIfNeeded(Settings settings, Log log) {
+        if (!settings.getNodesClientOnly()) {
+            return;
+        }
+
+        RestClient bootstrap = new RestClient(settings);
+        try {
+            List<String> clientNodes = bootstrap.getClientNodes();
+            if (clientNodes.isEmpty()) {
+                throw new EsHadoopIllegalArgumentException("Client-only routing specified but not client nodes were found in the cluster...");
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found client nodes %s", clientNodes));
+            }
+
+            List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            // remove non-client nodes
+            ddNodes.retainAll(clientNodes);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Filtered discovered only nodes %s to client-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
+            }
+            SettingsUtils.setDiscoveredNodes(settings, ddNodes);
+        } finally {
+            bootstrap.close();
+        }
     }
 
     public static String discoverEsVersion(Settings settings, Log log) {

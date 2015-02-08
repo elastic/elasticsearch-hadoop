@@ -57,6 +57,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY, ES_NODES_DISCOVERY_DEFAULT));
     }
 
+    public boolean getNodesClientOnly() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_CLIENT_ONLY, ES_NODES_CLIENT_ONLY_DEFAULT));
+    }
+
     public long getHttpTimeout() {
         return TimeValue.parseTimeValue(getProperty(ES_HTTP_TIMEOUT, ES_HTTP_TIMEOUT_DEFAULT)).getMillis();
     }
@@ -154,12 +158,12 @@ public abstract class Settings {
         return getProperty(ES_MAPPING_VERSION);
     }
 
-	public boolean hasMappingVersionType() {
-		String versionType = getMappingVersionType();
-		return (StringUtils.hasText(getMappingVersion()) && StringUtils.hasText(versionType) && !versionType.equals(ES_MAPPING_VERSION_TYPE_INTERNAL));
-	}
+    public boolean hasMappingVersionType() {
+        String versionType = getMappingVersionType();
+        return (StringUtils.hasText(getMappingVersion()) && StringUtils.hasText(versionType) && !versionType.equals(ES_MAPPING_VERSION_TYPE_INTERNAL));
+    }
 
-	public String getMappingVersionType() {
+    public String getMappingVersionType() {
         return getProperty(ES_MAPPING_VERSION_TYPE, ES_MAPPING_VERSION_TYPE_EXTERNAL);
     }
 
@@ -219,13 +223,13 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
     }
 
-	public String getMappingIncludes() {
-		return getProperty(ES_MAPPING_INCLUDE, ES_MAPPING_INCLUDE_DEFAULT);
-	}
+    public String getMappingIncludes() {
+        return getProperty(ES_MAPPING_INCLUDE, ES_MAPPING_INCLUDE_DEFAULT);
+    }
 
-	public String getMappingExcludes() {
-		return getProperty(ES_MAPPING_EXCLUDE, ES_MAPPING_EXCLUDE_DEFAULT);
-	}
+    public String getMappingExcludes() {
+        return getProperty(ES_MAPPING_EXCLUDE, ES_MAPPING_EXCLUDE_DEFAULT);
+    }
 
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));

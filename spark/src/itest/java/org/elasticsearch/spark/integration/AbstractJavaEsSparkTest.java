@@ -266,15 +266,18 @@ public class AbstractJavaEsSparkTest implements Serializable {
     public void testEsRDDZReadMultiIndex() throws Exception {
     	String index = "spark-test";
     	
-        RestUtils.putData(index + "/foo", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(index + "/bar", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+    	for (int i = 0; i < 500; i++) {
+	        RestUtils.putData(index + "/foo", ("{\"message\" : \"Hello World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
+	        RestUtils.putData(index + "/bar", ("{\"message\" : \"Goodbye World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
+    	}
+    	
         RestUtils.refresh(index);
 
     	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo")).values();
     	
     	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
 		assertEquals(wildRDD.count(), allRDD.count());
-		assertEquals(1, allRDD.count());
+		assertEquals(500, allRDD.count());
     }
     
 	@Test(expected = EsHadoopIllegalArgumentException.class)

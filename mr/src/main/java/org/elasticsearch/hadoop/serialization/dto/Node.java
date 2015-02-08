@@ -28,6 +28,8 @@ public class Node implements Serializable {
     private boolean hasHttp;
     private String ipAddress;
     private int httpPort;
+    private Map<String, Object> attributes;
+    private boolean isClient = false;
 
     public Node(String id, Map<String, Object> data) {
         this.id = id;
@@ -43,10 +45,19 @@ public class Node implements Serializable {
         int endIndex = httpAddr.indexOf(":");
         ipAddress = httpAddr.substring(startIndex, endIndex);
         httpPort = Integer.valueOf(httpAddr.substring(endIndex + 1, httpAddr.indexOf("]")));
+
+        attributes = (Map<String, Object>) data.get("attributes");
+        if (attributes != null) {
+            isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
+        }
     }
 
     public boolean hasHttp() {
         return hasHttp;
+    }
+
+    public boolean isClient() {
+        return isClient;
     }
 
     public String getId() {
@@ -63,6 +74,10 @@ public class Node implements Serializable {
 
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    public String getInet() {
+        return ipAddress + ":" + httpPort;
     }
 
     @Override
@@ -92,7 +107,7 @@ public class Node implements Serializable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Node[id=").append(id).append(", name=").append(name).append(", ipAddress=").append(ipAddress)
-                .append(", httpPort=").append(httpPort).append("]");
+        .append(", httpPort=").append(httpPort).append("]");
         return builder.toString();
     }
 }

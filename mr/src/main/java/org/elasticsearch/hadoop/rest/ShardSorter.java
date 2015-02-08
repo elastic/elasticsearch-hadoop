@@ -18,19 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
@@ -92,27 +80,31 @@ abstract class ShardSorter {
 
             for (Node node : set) {
                 Set<Shard> associatedShards = shardsPerNode.get(node);
-                for (Shard shard : associatedShards) {
-                    if (!shards.add(SimpleShard.from(shard))) {
-                        overlappingShards = true;
-                        break;
-                    }
-                }
-                if (overlappingShards) {
-                    break;
+				if (associatedShards != null) {
+					for (Shard shard : associatedShards) {
+						if (!shards.add(SimpleShard.from(shard))) {
+							overlappingShards = true;
+							break;
+						}
+					}
+					if (overlappingShards) {
+						break;
+					}
                 }
             }
             // bingo!
             if (!overlappingShards && shards.size() == numberOfShards) {
                 Map<Shard, Node> finalShards = new LinkedHashMap<Shard, Node>();
                 for (Node node : set) {
-                    Set<Shard> shardsInNode = shardsPerNode.get(node);
-                    // to avoid shard overlapping, only add one request for each shard # (regardless of its index) per node
-                    Set<Integer> shardIds = new HashSet<Integer>();
-                    for (Shard potentialShard : shardsInNode) {
-                        if (shardIds.add(potentialShard.getName())) {
-                            finalShards.put(potentialShard, node);
-                        }
+                    Set<Shard> associatedShards = shardsPerNode.get(node);
+                    if (associatedShards != null) {
+	                    // to avoid shard overlapping, only add one request for each shard # (regardless of its index) per node
+	                    Set<Integer> shardIds = new HashSet<Integer>();
+	                    for (Shard potentialShard : associatedShards) {
+	                        if (shardIds.add(potentialShard.getName())) {
+	                            finalShards.put(potentialShard, node);
+	                        }
+	                    }
                     }
                 }
 

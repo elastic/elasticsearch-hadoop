@@ -222,7 +222,7 @@ public class QueryBuilder {
         return "QueryBuilder [" + assemble() + "]";
     }
 
-    public QueryBuilder onlyNode(boolean onlyNode) {
+    public QueryBuilder restrictToNode(boolean onlyNode) {
         this.onlyNode = onlyNode;
         return this;
     }

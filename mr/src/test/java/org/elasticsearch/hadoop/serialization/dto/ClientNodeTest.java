@@ -16,18 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.cfg;
+package org.elasticsearch.hadoop.serialization.dto;
 
-/**
- * Property names for internal framework use. They will show up inside the Hadoop configuration or Cascading properties (which act as a distributing support) but not in the API.
- */
-public interface InternalConfigurationOptions extends ConfigurationOptions {
+import java.util.Map;
+import java.util.Map.Entry;
 
-    String INTERNAL_ES_TARGET_FIELDS = "es.internal.mr.target.fields";
-    // discovered node
-    String INTERNAL_ES_DISCOVERED_NODES = "es.internal.discovered.nodes";
-    // pinned node
-    String INTERNAL_ES_PINNED_NODE = "es.internal.pinned.node";
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.junit.Test;
 
-    String INTERNAL_ES_VERSION = "es.internal.es.version";
+public class ClientNodeTest {
+    @Test
+    public void testClientNode() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(getClass().getResourceAsStream("client-nodes.json"));
+        Map<String, Map<String, Object>> map = (Map<String, Map<String, Object>>) mapper.readValue(jsonParser, Map.class).get("nodes");
+        Entry<String, Map<String, Object>> entry = map.entrySet().iterator().next();
+        Node node = new Node(entry.getKey(), entry.getValue());
+    }
 }
