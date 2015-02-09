@@ -283,7 +283,7 @@ allprojects { project ->
                 //"http://hbase.apache.org/apidocs/",
                 "http://pig.apache.org/docs/r0.14.0/api/",
                 // r0.13.1 is invalid as it does not provide the package list
-                "http://hive.apache.org/javadocs/r1.0.0/api/",
+                "http://hive.apache.org/javadocs/r0.12.0/api/",
                 "http://docs.cascading.org/cascading/2.5/javadoc/",
                 "http://spark.apache.org/docs/latest/api/java/",
                 "http://storm.apache.org/apidocs/"
@@ -454,6 +454,19 @@ project(":elasticsearch-hadoop-hive") {
 }
 
 project(":elasticsearch-spark") {
+    def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
+
+    switch (scalaVer) {
+      case "211":
+        ext.scalaVersion = scala211Version
+        ext.scalaMajorVersion = scala211MajorVersion
+        break;
+
+      default:
+        ext.scalaVersion = scala210Version
+        ext.scalaMajorVersion = scala210MajorVersion
+    }
+    
     archivesBaseName += "_$scalaMajorVersion"
     
     if (java8) {
@@ -463,6 +476,8 @@ project(":elasticsearch-spark") {
     else {
         apply plugin: 'scala'
     }
+    
+    println "Using Scala $scalaMajorVersion [$scalaVersion]"
     
     description = "Elasticsearch Spark"
 
@@ -477,8 +492,6 @@ project(":elasticsearch-spark") {
         provided("javax.servlet:javax.servlet-api:3.0.1")
         compile("org.scala-lang:scala-library:$scalaVersion")
 
-        //testCompile "org.scalatest:scalatest_$scalaMajorVersion:2.2.0"
-        //itestRuntime "com.esotericsoftware.kryo:kryo:2.16"
         itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
     }
     
