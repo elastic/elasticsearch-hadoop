@@ -290,7 +290,10 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
 ==== Network
 
 `es.nodes.discovery` (default true)::
-Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
+Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, {eh} uses the target index shards (and their hosting nodes) unless +es.nodes.client.only+ is enabled.
+
+`es.nodes.client.only` (default false)::
+Whether to use {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-node.html#modules-node[client nodes] (or _load-balancers_). When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _client_ nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default.
 
 `es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
