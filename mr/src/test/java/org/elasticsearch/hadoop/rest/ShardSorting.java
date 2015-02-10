@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.hadoop.serialization.dto.Node;
@@ -118,7 +119,7 @@ public class ShardSorting {
         List<List<Map<String, Object>>> targetShards = new ArrayList<List<Map<String, Object>>>();
         targetShards.addAll(shardGroups.values());
 
-        Map<Shard, Node> find = ShardSorter.find(targetShards, nodes);
+        Map<Shard, Node> find = ShardSorter.find(targetShards, nodes, LogFactory.getLog(ShardSorting.class));
         if (find.isEmpty()) {
             return Collections.emptyMap();
         }

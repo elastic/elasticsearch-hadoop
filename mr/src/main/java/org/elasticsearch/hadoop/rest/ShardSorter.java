@@ -18,8 +18,21 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.*;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
+import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.util.Assert;
@@ -34,7 +47,7 @@ import org.elasticsearch.hadoop.util.Assert;
 
 abstract class ShardSorter {
 
-    public static Map<Shard, Node> find(List<List<Map<String, Object>>> targetShards, Map<String, Node> nodes) {
+    public static Map<Shard, Node> find(List<List<Map<String, Object>>> targetShards, Map<String, Node> httpNodes, Log log) {
         // group the shards per node
         Map<Node, Set<Shard>> shardsPerNode = new LinkedHashMap<Node, Set<Shard>>();
         // nodes for each shard
@@ -44,7 +57,11 @@ abstract class ShardSorter {
         for (List<Map<String, Object>> shardGroup : targetShards) {
             for (Map<String, Object> shardData : shardGroup) {
                 Shard shard = new Shard(shardData);
-                Node node = nodes.get(shard.getNode());
+                Node node = httpNodes.get(shard.getNode());
+                if (node == null) {
+                    log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, httpNodes, targetShards));
+                    return null;
+                }
 
                 // node -> shards
                 Set<Shard> shardSet = shardsPerNode.get(node);
@@ -65,7 +82,7 @@ abstract class ShardSorter {
             }
         }
 
-        return checkCombo(nodes.values(), shardsPerNode, targetShards.size());
+        return checkCombo(httpNodes.values(), shardsPerNode, targetShards.size());
     }
 
     private static Map<Shard, Node> checkCombo(Collection<Node> nodes, Map<Node, Set<Shard>> shardsPerNode, int numberOfShards) {
@@ -80,16 +97,16 @@ abstract class ShardSorter {
 
             for (Node node : set) {
                 Set<Shard> associatedShards = shardsPerNode.get(node);
-				if (associatedShards != null) {
-					for (Shard shard : associatedShards) {
-						if (!shards.add(SimpleShard.from(shard))) {
-							overlappingShards = true;
-							break;
-						}
-					}
-					if (overlappingShards) {
-						break;
-					}
+                if (associatedShards != null) {
+                    for (Shard shard : associatedShards) {
+                        if (!shards.add(SimpleShard.from(shard))) {
+                            overlappingShards = true;
+                            break;
+                        }
+                    }
+                    if (overlappingShards) {
+                        break;
+                    }
                 }
             }
             // bingo!
@@ -98,13 +115,13 @@ abstract class ShardSorter {
                 for (Node node : set) {
                     Set<Shard> associatedShards = shardsPerNode.get(node);
                     if (associatedShards != null) {
-	                    // to avoid shard overlapping, only add one request for each shard # (regardless of its index) per node
-	                    Set<Integer> shardIds = new HashSet<Integer>();
-	                    for (Shard potentialShard : associatedShards) {
-	                        if (shardIds.add(potentialShard.getName())) {
-	                            finalShards.put(potentialShard, node);
-	                        }
-	                    }
+                        // to avoid shard overlapping, only add one request for each shard # (regardless of its index) per node
+                        Set<Integer> shardIds = new HashSet<Integer>();
+                        for (Shard potentialShard : associatedShards) {
+                            if (shardIds.add(potentialShard.getName())) {
+                                finalShards.put(potentialShard, node);
+                            }
+                        }
                     }
                 }
 

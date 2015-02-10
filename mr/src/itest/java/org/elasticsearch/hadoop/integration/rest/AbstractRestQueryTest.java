@@ -65,7 +65,7 @@ public class AbstractRestQueryTest {
 
     @Test
     public void testShardInfo() throws Exception {
-        Map<Shard, Node> shards = (Map<Shard, Node>) client.getReadTargetShards()[1];
+        Map<Shard, Node> shards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
         System.out.println(shards);
         assertNotNull(shards);
     }
@@ -90,7 +90,7 @@ public class AbstractRestQueryTest {
 
     @Test
     public void testQueryShards() throws Exception {
-        Map<Shard, Node> targetShards = (Map<Shard, Node>) client.getReadTargetShards()[1];
+        Map<Shard, Node> targetShards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
 
         Field mapping = client.getMapping();
         ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);

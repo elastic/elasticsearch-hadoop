@@ -256,20 +256,20 @@ public class RestClient implements Closeable, StatsAware {
         return shardsJson;
     }
 
-    public Map<String, Node> getNodes() {
+    public Map<String, Node> getHttpNodes(boolean allowNonHttp) {
         Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
         Map<String, Node> nodes = new LinkedHashMap<String, Node>();
 
         for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
             Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.hasHttp()) {
+            if (allowNonHttp || node.hasHttp()) {
                 nodes.put(entry.getKey(), node);
             }
         }
         return nodes;
     }
 
-    public List<String> getClientNodes() {
+    public List<String> getHttpClientNodes() {
         Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
         List<String> nodes = new ArrayList<String>();
 

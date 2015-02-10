@@ -245,7 +245,7 @@ public abstract class RestService implements Serializable {
             }
         }
         else {
-            Object[] result = client.getReadTargetShards();
+            Object[] result = client.getReadTargetShards(settings.getNodesClientOnly());
             overlappingShards = (Boolean) result[0];
             targetShards = (Map<Shard, Node>) result[1];
 
@@ -406,7 +406,7 @@ public abstract class RestService implements Serializable {
             }
         }
 
-        // if client-nodes are used, simply use the underlying
+        // if client-nodes are used, simply use the underlying nodes
         if (settings.getNodesClientOnly()) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Client-node routing detected; partition writer instance [%s] assigned to [%s]",
@@ -419,7 +419,7 @@ public abstract class RestService implements Serializable {
         // no routing necessary; select the relevant target shard/node
         Map<Shard, Node> targetShards = Collections.emptyMap();
 
-        targetShards = repository.getWriteTargetPrimaryShards();
+        targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
         repository.close();
 
         Assert.isTrue(!targetShards.isEmpty(),

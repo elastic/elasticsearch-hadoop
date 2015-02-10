@@ -271,9 +271,9 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
 
-    public Object[] getReadTargetShards() {
+    public Object[] getReadTargetShards(boolean clientNodesOnly) {
         for (int retries = 0; retries < 3; retries++) {
-            Object[] result = doGetReadTargetShards();
+            Object[] result = doGetReadTargetShards(clientNodesOnly);
             if (result != null) {
                 return result;
             }
@@ -281,9 +281,11 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Object[] doGetReadTargetShards() {
+    protected Object[] doGetReadTargetShards(boolean clientNodesOnly) {
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
-        Map<String, Node> nodes = client.getNodes();
+
+        // if client-nodes routing is used, allow non-http clients
+        Map<String, Node> httpNodes = client.getHttpNodes(clientNodesOnly);
 
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
 
@@ -299,7 +301,7 @@ public class RestRepository implements Closeable, StatsAware {
         if (!isReadIndexConcrete()) {
             String message = String.format("Read resource [%s] includes multiple indices or/and aliases; to avoid duplicate results (caused by shard overlapping), parallelism ", resourceR);
 
-            Map<Shard, Node> combination = ShardSorter.find(info, nodes);
+            Map<Shard, Node> combination = ShardSorter.find(info, httpNodes, log);
             if (combination.isEmpty()) {
                 message += "is minimized";
                 log.warn(message);
@@ -316,8 +318,8 @@ public class RestRepository implements Closeable, StatsAware {
                     message += String.format("is reduced from %s to %s", initialParallelism, combination.size());
                     log.warn(message);
                 }
-				result[0] = overlappingShards;
-				result[1] = combination;
+                result[0] = overlappingShards;
+                result[1] = combination;
 
                 return result;
             }
@@ -329,9 +331,9 @@ public class RestRepository implements Closeable, StatsAware {
             for (Map<String, Object> shardData : shardGroup) {
                 Shard shard = new Shard(shardData);
                 if (shard.getState().isStarted()) {
-                    Node node = nodes.get(shard.getNode());
+                    Node node = httpNodes.get(shard.getNode());
                     if (node == null) {
-                        log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
+                        log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, httpNodes, info));
                         return null;
                     }
                     // when dealing with overlapping shards, simply keep a shard for each id/name (0, 1, ...)
@@ -342,7 +344,7 @@ public class RestRepository implements Closeable, StatsAware {
                     }
                     else {
                         shards.put(shard, node);
-						break;
+                        break;
                     }
                 }
             }
@@ -350,9 +352,9 @@ public class RestRepository implements Closeable, StatsAware {
         return result;
     }
 
-    public Map<Shard, Node> getWriteTargetPrimaryShards() {
+    public Map<Shard, Node> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
         for (int retries = 0; retries < 3; retries++) {
-            Map<Shard, Node> map = doGetWriteTargetPrimaryShards();
+            Map<Shard, Node> map = doGetWriteTargetPrimaryShards(clientNodesOnly);
             if (map != null) {
                 return map;
             }
@@ -360,10 +362,10 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Map<Shard, Node> doGetWriteTargetPrimaryShards() {
+    protected Map<Shard, Node> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-        Map<String, Node> nodes = client.getNodes();
+        Map<String, Node> nodes = client.getHttpNodes(clientNodesOnly);
 
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards

@@ -77,9 +77,9 @@ public abstract class InitializationUtils {
 
         RestClient bootstrap = new RestClient(settings);
         try {
-            List<String> clientNodes = bootstrap.getClientNodes();
+            List<String> clientNodes = bootstrap.getHttpClientNodes();
             if (clientNodes.isEmpty()) {
-                throw new EsHadoopIllegalArgumentException("Client-only routing specified but not client nodes were found in the cluster...");
+                throw new EsHadoopIllegalArgumentException("Client-only routing specified but no client nodes with HTTP-enabled were found in the cluster...");
             }
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found client nodes %s", clientNodes));
@@ -91,6 +91,18 @@ public abstract class InitializationUtils {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Filtered discovered only nodes %s to client-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
             }
+
+            if (ddNodes.isEmpty()) {
+                String message = "Client-only routing specified but no client nodes with HTTP-enabled available; ";
+                if (settings.getNodesDiscovery()) {
+                    message += String.format("looks like the client nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
+                }
+                else {
+                    message += String.format("node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                }
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+
             SettingsUtils.setDiscoveredNodes(settings, ddNodes);
         } finally {
             bootstrap.close();
