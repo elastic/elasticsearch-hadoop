@@ -39,8 +39,7 @@ import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
 import org.junit.AfterClass
-import org.junit.Assert.assertThat
-import org.junit.Assert.assertTrue
+import org.junit.Assert._
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
@@ -48,6 +47,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.junit.Test
 import javax.xml.bind.DatatypeConverter
 import org.apache.spark.sql.catalyst.expressions.GenericRow
+import java.util.Arrays
 
 
 object AbstractScalaEsScalaSparkSQL {
@@ -128,7 +128,7 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       schemaRDD.registerTempTable("basicRead")
       val nameRDD = sqc.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10") 
       nameRDD.take(7).foreach(println)
-      assertTrue(nameRDD.count == 10)
+      assertEquals(10, nameRDD.count)
     }
 
     @Test
@@ -198,9 +198,36 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val nameRDD = sqc.sql("SELECT name FROM sqlbasicread WHERE id >= 1 AND id <=10")
       
       println(nameRDD.schemaString)
-      assertTrue(nameRDD.count == 10)
+      assertEquals(10, nameRDD.count)
       nameRDD.take(7).foreach(println)
     }
+    
+    @Test
+    def testEsSchemaFromDocsWithDifferentProperties() {
+      val target = "spark-test/scala-sql-varcols"
+      
+      val trip1 = Map("reason" -> "business", "airport" -> "SFO")
+      val trip2 = Map("participants" -> 5, "airport" -> "OTP")
+
+      sc.makeRDD(Seq(trip1, trip2)).saveToEs(target)
+      
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlvarcol " + 
+              "USING org.elasticsearch.spark.sql " +
+              "OPTIONS (resource '" + target + "')");
+      
+      val allResults = sqc.sql("SELECT * FROM sqlvarcol")
+      assertEquals(2, allResults.count())
+      println(allResults.schemaString)
+
+      val filter = sqc.sql("SELECT * FROM sqlvarcol WHERE airport = 'OTP'")
+      assertEquals(1, filter.count())
+      
+      val nullColumns = sqc.sql("SELECT reason, airport FROM sqlvarcol ORDER BY airport")
+      val rows = nullColumns.take(2)
+      assertEquals("[null,OTP]", rows(0).toString())
+      assertEquals("[business,SFO]", rows(1).toString())
+    }
+    
     
     //@Test
     // insert not supported
