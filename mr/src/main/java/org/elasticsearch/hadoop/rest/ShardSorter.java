@@ -60,7 +60,7 @@ abstract class ShardSorter {
                 Node node = httpNodes.get(shard.getNode());
                 if (node == null) {
                     log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, httpNodes, targetShards));
-                    return null;
+                    return Collections.emptyMap();
                 }
 
                 // node -> shards

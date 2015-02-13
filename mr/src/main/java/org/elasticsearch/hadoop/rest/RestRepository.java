@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -286,6 +287,14 @@ public class RestRepository implements Closeable, StatsAware {
 
         // if client-nodes routing is used, allow non-http clients
         Map<String, Node> httpNodes = client.getHttpNodes(clientNodesOnly);
+
+        if (httpNodes.isEmpty()) {
+            String msg = "No HTTP-enabled data nodes found";
+            if (!settings.getNodesClientOnly()) {
+                msg += String.format("; if you are using client-only nodes make sure to configure es-hadoop as such through [%s] property", ConfigurationOptions.ES_NODES_CLIENT_ONLY);
+            }
+            new EsHadoopIllegalStateException(msg);
+        }
 
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
 

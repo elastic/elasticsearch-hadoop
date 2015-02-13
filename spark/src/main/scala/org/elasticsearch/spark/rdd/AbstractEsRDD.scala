@@ -33,7 +33,8 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val esSplit = split.asInstanceOf[EsPartition]
-    Seq(esSplit.esPartition.nodeIp)
+    val ip = esSplit.esPartition.nodeIp 
+    if (ip != null) Seq(ip) else Nil 
   }
 
   override def checkpoint() {

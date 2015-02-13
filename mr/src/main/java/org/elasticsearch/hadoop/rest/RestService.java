@@ -285,16 +285,12 @@ public abstract class RestService implements Serializable {
     public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
 
         if (!SettingsUtils.hasPinnedNode(settings)) {
-            // pin node only if client-routing is disabled; otherwise simply go through them...
-            if (!settings.getNodesClientOnly()) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]",
-                            partition, partition.nodeId, partition.nodePort));
-                }
-
-                SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition,
+                        partition.nodeId, partition.nodePort));
             }
 
+            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
         }
 
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
@@ -314,10 +310,12 @@ public abstract class RestService implements Serializable {
         RestRepository client = new RestRepository(settings);
 
         if (settings.getNodesClientOnly()) {
+            String clientNode = client.getRestClient().getCurrentNode();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Client-node routing detected; partition reader instance [%s] assigned to [%s]",
-                        partition, client.getRestClient().getCurrentNode()));
+                        partition, clientNode));
             }
+            SettingsUtils.pinNode(settings, clientNode);
         }
 
         // take into account client node routing
@@ -408,9 +406,10 @@ public abstract class RestService implements Serializable {
 
         // if client-nodes are used, simply use the underlying nodes
         if (settings.getNodesClientOnly()) {
+            String clientNode = repository.getRestClient().getCurrentNode();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Client-node routing detected; partition writer instance [%s] assigned to [%s]",
-                        currentInstance, repository.getRestClient().getCurrentNode()));
+                        currentInstance, clientNode));
             }
 
             return repository;

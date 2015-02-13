@@ -36,6 +36,12 @@ public class Node implements Serializable {
         name = data.get("name").toString();
         Object http = data.get("http_address");
         hasHttp = (http != null);
+
+        attributes = (Map<String, Object>) data.get("attributes");
+        if (attributes != null) {
+            isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
+        }
+
         if (!hasHttp) {
             return;
         }
@@ -45,11 +51,6 @@ public class Node implements Serializable {
         int endIndex = httpAddr.indexOf(":");
         ipAddress = httpAddr.substring(startIndex, endIndex);
         httpPort = Integer.valueOf(httpAddr.substring(endIndex + 1, httpAddr.indexOf("]")));
-
-        attributes = (Map<String, Object>) data.get("attributes");
-        if (attributes != null) {
-            isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
-        }
     }
 
     public boolean hasHttp() {
