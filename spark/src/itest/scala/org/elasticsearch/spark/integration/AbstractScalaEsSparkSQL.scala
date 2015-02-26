@@ -228,6 +228,13 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       assertEquals("[business,SFO]", rows(1).toString())
     }
     
+    @Test
+    def testJsonLoadAndSavedToEs() {
+      val input = sqc.jsonFile(this.getClass.getResource("/simple.json").toURI().toString())
+      input.printSchema
+      println(input.schema)
+      input.saveToEs("spark-test/json-file")
+    }
     
     //@Test
     // insert not supported

@@ -36,6 +36,28 @@ private[spark] object ReflectionUtils {
     }
   }
 
+  def isCaseClassInsideACompanionModule(clazz: Class[_], arity: Int): Boolean = {
+    if (!classOf[Serializable].isAssignableFrom(clazz)) {
+      false
+    }
+
+    // check 'copy' synthetic methods - they are public so go with getMethods
+    val copyMethods = clazz.getMethods.collect {
+      case m: Method if m.getName.startsWith("copy$default$") => m.getName
+    }
+
+    arity == copyMethods.length
+  }
+
+  // TODO: this is a hack since we expect the field declaration order to be according to the source but there's no guarantee
+  def caseClassInfoInsideACompanionModule(clazz: Class[_], arity: Int): Iterable[String] = {
+    // fields are private so use the 'declared' variant
+    var counter: Int = 0
+    clazz.getDeclaredFields.collect {
+      case field if (counter < arity) => counter += 1; field.getName
+    }
+  }
+
   def caseClassValues(target: AnyRef, props: Iterable[String]) = {
     val product = target.asInstanceOf[Product].productIterator
     val tuples = for (y <- props) yield (y, product.next)

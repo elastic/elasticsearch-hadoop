@@ -68,9 +68,15 @@ object AbstractScalaEsScalaSpark {
       Thread.sleep(TimeUnit.SECONDS.toMillis(3))
     }
   }
+  
+  case class ModuleCaseClass(departure: String, var arrival: String) {
+    var l = math.Pi
+  }
 }
 
-case class Trip(departure: String, arrival: String)
+case class Trip(departure: String, arrival: String) {
+  var extra = math.Pi
+}
 
 class AbstractScalaEsScalaSpark extends Serializable {
 
@@ -103,9 +109,11 @@ class AbstractScalaEsScalaSpark extends Serializable {
   @Test
   def testEsRDDWriteCaseClass() {
     val javaBean = new Bean("bar", 1, true)
-    val caseClass = Trip("OTP", "SFO")
+    val caseClass1 = Trip("OTP", "SFO")
+    val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass("OTP", "MUC")
 
-    sc.makeRDD(Seq(javaBean, caseClass)).saveToEs("spark-test/scala-basic-write-objects")
+    sc.makeRDD(Seq(javaBean, caseClass1)).saveToEs("spark-test/scala-basic-write-objects")
+    sc.makeRDD(Seq(javaBean, caseClass2)).saveToEs("spark-test/scala-basic-write-objects")
     assertTrue(RestUtils.exists("spark-test/scala-basic-write-objects"))
     assertThat(RestUtils.get("spark-test/scala-basic-write-objects/_search?"), containsString(""))
   }

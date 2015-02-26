@@ -9,6 +9,7 @@ import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
+import org.apache.commons.logging.LogFactory
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
 
@@ -92,8 +93,19 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
   def isCaseClass(p: Product) = {
     caseClassCache.getOrElseUpdate(p.getClass, {
-      val isCaseClazz = RU.isCaseClass(p.getClass)
-      val info = if (isCaseClazz) RU.caseClassInfo(p.getClass) else null
+      var isCaseClazz = RU.isCaseClass(p.getClass)
+      var info = if (isCaseClazz) RU.caseClassInfo(p.getClass) else null
+      if (!isCaseClazz) {
+        isCaseClazz = RU.isCaseClassInsideACompanionModule(p.getClass, p.productArity)
+        if (isCaseClazz) {
+          LogFactory.getLog(classOf[ScalaValueWriter]).warn(
+              String.format("[%s] is detected as a case class in Java but not in Scala and thus " +
+                  "its properties might be detected incorrectly - make sure the @ScalaSignature is available within the class bytecode " +
+                  "and/or consider moving the case class from its companion object/module", p.getClass))
+        }
+        info = if (isCaseClazz) RU.caseClassInfoInsideACompanionModule(p.getClass(), p.productArity) else null
+      } 
+      
       (isCaseClazz, info)
     })._1
   }
