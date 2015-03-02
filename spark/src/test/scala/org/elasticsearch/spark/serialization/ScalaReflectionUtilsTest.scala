@@ -10,7 +10,7 @@ class ScalaReflectionUtilsTest {
   @Test
   def testJavaBean() {
     val values = javaBeanAsMap(new Bean("1", Integer.valueOf(1), true))
-    assertEquals(Map("bar" -> 1, "bool" -> true, "foo" -> "1"), values)
+    assertEquals(Map("id" -> 1, "bool" -> true, "foo" -> "1"), values)
   }
 
   @Test
