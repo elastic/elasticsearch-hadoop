@@ -46,9 +46,10 @@ import org.junit.BeforeClass
 import java.awt.Polygon
 import org.elasticsearch.spark.rdd.EsSpark
 import org.junit.Test
-import org.elasticsearch.spark.Bean
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.apache.spark.SparkException
+import org.elasticsearch.spark.serialization.ReflectionUtils
+import org.elasticsearch.spark.serialization.Bean
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -69,7 +70,7 @@ object AbstractScalaEsScalaSpark {
     }
   }
   
-  case class ModuleCaseClass(departure: String, var arrival: String) {
+  case class ModuleCaseClass(id: Integer, departure: String, var arrival: String) {
     var l = math.Pi
   }
 }
@@ -110,10 +111,13 @@ class AbstractScalaEsScalaSpark extends Serializable {
   def testEsRDDWriteCaseClass() {
     val javaBean = new Bean("bar", 1, true)
     val caseClass1 = Trip("OTP", "SFO")
-    val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass("OTP", "MUC")
+    val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass(1, "OTP", "MUC")
 
+    val vals = ReflectionUtils.caseClassValues(caseClass2)
+    
     sc.makeRDD(Seq(javaBean, caseClass1)).saveToEs("spark-test/scala-basic-write-objects")
-    sc.makeRDD(Seq(javaBean, caseClass2)).saveToEs("spark-test/scala-basic-write-objects")
+    sc.makeRDD(Seq(javaBean, caseClass2)).saveToEs("spark-test/scala-basic-write-objects", Map("es.mapping.id"->"id"))
+    
     assertTrue(RestUtils.exists("spark-test/scala-basic-write-objects"))
     assertThat(RestUtils.get("spark-test/scala-basic-write-objects/_search?"), containsString(""))
   }

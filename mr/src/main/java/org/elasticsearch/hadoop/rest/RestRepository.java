@@ -207,13 +207,12 @@ public class RestRepository implements Closeable, StatsAware {
             // double check data - it might be a false flush (called on clean-up)
             if (data.length() > 0) {
                 bulkResult = client.bulk(resourceW, data);
+				executedBulkWrite = true;
             }
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
             throw ex;
         }
-
-        executedBulkWrite = true;
 
         // discard the data buffer, only if it was properly sent/processed
         //if (bulkResult.isEmpty()) {

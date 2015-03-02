@@ -1,18 +1,18 @@
-package org.elasticsearch.spark;
+package org.elasticsearch.spark.serialization;
 
 import java.io.Serializable;
 
 public class Bean implements Serializable {
 
 	private String foo;
-	private Number bar;
+	private Number id;
 	private boolean bool;
 
 	public Bean() {}
 	
 	public Bean(String foo, Number bar, boolean bool) {
 		this.foo = foo;
-		this.bar = bar;
+		this.id = bar;
 		this.bool = bool;
 	}
 	public String getFoo() {
@@ -21,11 +21,11 @@ public class Bean implements Serializable {
 	public void setFoo(String foo) {
 		this.foo = foo;
 	}
-	public Number getBar() {
-		return bar;
+	public Number getId() {
+		return id;
 	}
 	public void setBar(Number bar) {
-		this.bar = bar;
+		this.id = bar;
 	}
 	public boolean isBool() {
 		return bool;

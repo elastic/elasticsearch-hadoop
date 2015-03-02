@@ -13,9 +13,6 @@ import org.apache.commons.logging.LogFactory
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
 
-  val caseClassCache = new HashMap[Class[_], (Boolean, Iterable[String])]
-  val javaBeanCache = new HashMap[Class[_], Array[(String, Method)]]
-
   def this() {
     this(false)
   }
@@ -58,8 +55,8 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
       case p: Product => {
         // handle case class
-        if (isCaseClass(p)) {
-          val result = doWrite(caseClassValues(p), generator, false)
+        if (RU.isCaseClass(p)) {
+          val result = doWrite(RU.caseClassValues(p), generator, false)
           if (!result.isSuccesful()) {
             return result
           }
@@ -80,8 +77,8 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         // normal JDK types failed, try the JavaBean last
         val result = super.write(value, generator)
         if (!result.isSuccesful()) {
-          if (acceptsJavaBeans && isJavaBean(value)) {
-            return doWrite(javaBeanAsMap(value), generator, false)
+          if (acceptsJavaBeans && RU.isJavaBean(value)) {
+            return doWrite(RU.javaBeanAsMap(value), generator, false)
           } else
             return result
         }
@@ -89,38 +86,5 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
     }
 
     Result.SUCCESFUL()
-  }
-
-  def isCaseClass(p: Product) = {
-    caseClassCache.getOrElseUpdate(p.getClass, {
-      var isCaseClazz = RU.isCaseClass(p.getClass)
-      var info = if (isCaseClazz) RU.caseClassInfo(p.getClass) else null
-      if (!isCaseClazz) {
-        isCaseClazz = RU.isCaseClassInsideACompanionModule(p.getClass, p.productArity)
-        if (isCaseClazz) {
-          LogFactory.getLog(classOf[ScalaValueWriter]).warn(
-              String.format("[%s] is detected as a case class in Java but not in Scala and thus " +
-                  "its properties might be detected incorrectly - make sure the @ScalaSignature is available within the class bytecode " +
-                  "and/or consider moving the case class from its companion object/module", p.getClass))
-        }
-        info = if (isCaseClazz) RU.caseClassInfoInsideACompanionModule(p.getClass(), p.productArity) else null
-      } 
-      
-      (isCaseClazz, info)
-    })._1
-  }
-
-  def caseClassValues(p: Product) = {
-    RU.caseClassValues(p.asInstanceOf[AnyRef], caseClassCache.get(p.getClass).get._2)
-  }
-
-  def isJavaBean(value: AnyRef) = {
-    !javaBeanCache.getOrElseUpdate(value.getClass, {
-      RU.javaBeansInfo(value.getClass)
-    }).isEmpty
-  }
-
-  def javaBeanAsMap(value: AnyRef) = {
-    RU.javaBeansValues(value, javaBeanCache.get(value.getClass()).get)
   }
 }
