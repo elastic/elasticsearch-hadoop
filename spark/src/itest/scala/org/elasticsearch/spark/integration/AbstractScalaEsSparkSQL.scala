@@ -234,6 +234,12 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       input.printSchema
       println(input.schema)
       input.saveToEs("spark-test/json-file")
+      
+      val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
+      basic.printSchema
+      println(basic.schema)
+      basic.saveToEs("spark-test/json-file")
+     
     }
     
     //@Test
