@@ -382,6 +382,9 @@ public abstract class RestService implements Serializable {
 
         Resource resource = new Resource(settings, false);
 
+        Version.logVersion();
+        log.info(String.format("Writing to [%s]", resource));
+
         // single index vs multi indices
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
         iformat.compile(resource.toString());
