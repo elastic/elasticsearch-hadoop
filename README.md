@@ -2,12 +2,12 @@
 Elasticsearch real-time search and analytics natively integrated with Hadoop.  
 Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
-See  [project page](http://www.elasticsearch.org/overview/hadoop/) and [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
+See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
 ## Requirements
 Elasticsearch (__0.9X__ series or __1.0.0__ or higher (_highly_ recommended)) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
-For a certain library, see the dedicated [chapter](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/requirements.html).
+For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html).
 
 ## Installation
 
@@ -32,7 +32,7 @@ Available through any Maven-compatible tool:
 </dependency>
 ```
 
-or as a stand-alone [ZIP](http://www.elasticsearch.org/overview/hadoop/download/).
+or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
 
 ### Development Snapshot
 Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-hadoop/) again through Maven:
@@ -62,10 +62,10 @@ We do build and test the code on _each_ commit.
 ### Hadoop 2.0/YARN
 
 Already supported - it does not matter if you are using Hadoop 1.x or 2.x, the same jar works across both Hadoop environments.
-More information in this [section](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/install.html).
+More information in this [section](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/install.html).
 
 ## Feedback / Q&A
-We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elasticsearch.org/community/) page.
+We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elastic.co/community) page.
 
 ## Usage
 
@@ -85,13 +85,13 @@ es.nodes=<ES host address> 				       # defaults to localhost
 es.port=<ES REST port>    				       # defaults to 9200
 ```
 
-The full list is available [here](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/configuration.html)
+The full list is available [here](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)
 
 ## [Map/Reduce][]
 
 For basic, low-level or performance-sensitive environments, ES-Hadoop provides dedicated `InputFormat` and `OutputFormat` that read and write data to Elasticsearch. To use them, add the `es-hadoop` jar to your job classpath
 (either by bundling the library along - it's ~300kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
-See the [documentation](http://www.elasticsearch.org/guide/en/elasticsearch/hadoop/current/index.html) for more information.
+See the [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for more information.
 
 Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `EsInputFormat` and `EsOutputFormat` classes.
 
@@ -350,7 +350,7 @@ under the License.
 [external table]: http://cwiki.apache.org/Hive/external-tables.html
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
 [Gradle]: http://www.gradle.org/
-[REST]: http://www.elasticsearch.org/guide/reference/api/
+[REST]: http://www.elastic.co/guide/en/elasticsearch/reference/current/api-conventions.html
 [DistributedCache]: http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/filecache/DistributedCache.html
 [Cascading]: http://www.cascading.org/
 [Tap]: http://docs.cascading.org/cascading/2.1/userguide/html/ch03s05.html
