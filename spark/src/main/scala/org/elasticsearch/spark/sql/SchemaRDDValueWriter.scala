@@ -23,11 +23,11 @@ import org.apache.spark.sql.catalyst.types.StructType
 import org.apache.spark.sql.catalyst.types.TimestampType
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.Generator
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter
+import org.elasticsearch.hadoop.serialization.builder.{FilteringValueWriter, ValueWriter}
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 
-class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWriter[(Row, StructType)] {
+class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[(Row, StructType)] {
 
   def this() {
     this(false)
@@ -58,13 +58,15 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWrit
 
         schema.fields.view.zipWithIndex foreach {
           case (field, index) =>
-            generator.writeFieldName(field.name)
-            if (r.isNullAt(index)) {
-              generator.writeNull()
-            } else {
-              val result = write(field.dataType, r(index), generator)
-              if (!result.isSuccesful()) {
-                return handleUnknown(value, generator)
+            if (shouldKeep(generator.getParentPath(),field.name)) {
+              generator.writeFieldName(field.name)
+              if (r.isNullAt(index)) {
+                generator.writeNull()
+              } else {
+                val result = write(field.dataType, r(index), generator)
+                if (!result.isSuccesful()) {
+                  return handleUnknown(value, generator)
+                }
               }
             }
         }
@@ -112,11 +114,13 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends ValueWrit
     generator.writeBeginObject()
 
     for ((k, v) <- value) {
-      generator.writeFieldName(k.toString)
-      if (value != null) {
-        val result = write(schema.valueType, v, generator)
-        if (!result.isSuccesful()) {
-          return handleUnknown(value, generator)
+      if (shouldKeep(generator.getParentPath(), k.toString())) {
+        generator.writeFieldName(k.toString)
+        if (value != null) {
+          val result = write(schema.valueType, v, generator)
+          if (!result.isSuccesful()) {
+            return handleUnknown(value, generator)
+          }
         }
       }
     }

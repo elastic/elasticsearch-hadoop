@@ -38,6 +38,7 @@ import org.elasticsearch.spark.sql._
 import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
+import org.hamcrest.Matchers.not
 import org.junit.AfterClass
 import org.junit.Assert._
 import org.junit.BeforeClass
@@ -104,10 +105,11 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val schemaRDD = artistsAsSchemaRDD
 
       val target = "sparksql-test/scala-basic-write-id-mapping"
-      schemaRDD.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
+      schemaRDD.saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url"))
       assertTrue(RestUtils.exists(target))
       assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
       assertThat(RestUtils.exists(target + "/1"), is(true))
+      assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")))
     }
 
     @Test
