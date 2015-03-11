@@ -200,11 +200,11 @@ es.mapping.parent = \<123>
 # include 
 es.mapping.include = u*, foo.*
 # exclude
-es.mapping.include = *.description
+es.mapping.exclude = *.description
 ----
 
 Using the configuration above, each entry will have only its top-level fields, starting with u and nested fields under +foo+ included
-in the document with the exception of any nested field named +descriptor+. Additionally the document parent will be +123+ while the
+in the document with the exception of any nested field named +description+. Additionally the document parent will be +123+ while the
 document id extracted from field +uuid+.
 
 
