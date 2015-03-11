@@ -94,6 +94,16 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		assertThat(RestUtils.exists(target + "/1"), is(true));
 	}
 
+    @Test
+    public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
+        JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+
+        String target = "sparksql-test/scala-basic-write-exclude-mapping";
+        JavaEsSparkSQL.saveToEs(schemaRDD, target,ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
+        assertTrue(RestUtils.exists(target));
+        assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")));
+    }
+
 	@Test
 	public void testEsSchemaRDD2Read() throws Exception {
 		String target = "sparksql-test/scala-basic-write";

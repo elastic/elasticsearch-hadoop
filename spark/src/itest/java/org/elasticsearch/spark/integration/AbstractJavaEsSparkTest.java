@@ -139,6 +139,22 @@ public class AbstractJavaEsSparkTest implements Serializable {
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
+
+    @Test
+    public void testEsRDDWriteWithMappingExclude() throws Exception {
+        Map<String, ?> doc1 = ImmutableMap.of("reason", "business", "airport", "SFO");
+        Map<String, ?> doc2 = ImmutableMap.of("participants", 2, "airport", "OTP");
+
+        String target = "spark-test/java-exclude-write";
+
+        JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
+        JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ES_MAPPING_EXCLUDE, "airport"));
+
+        assertTrue(RestUtils.exists(target));
+        assertThat(RestUtils.get(target + "/_search?"), containsString("business"));
+        assertThat(RestUtils.get(target + "/_search?"), containsString("participants"));
+        assertThat(RestUtils.get(target + "/_search?"), not(containsString("airport")));
+    }
     
 	@Test
     public void testEsMultiIndexRDDWrite() throws Exception {

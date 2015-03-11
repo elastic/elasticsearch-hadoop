@@ -23,6 +23,7 @@ import scala.collection.JavaConversions.propertiesAsScalaMap
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
@@ -37,6 +38,7 @@ import org.elasticsearch.spark.sparkPairRDDFunctions
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -172,6 +174,20 @@ class AbstractScalaEsScalaSpark extends Serializable {
     assertTrue(RestUtils.exists(target + "/6"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
+  }
+
+  @Test
+  def testEsRDDWriteWithMappingExclude() {
+    val trip1 = Map("reason" -> "business", "airport" -> "SFO")
+    val trip2 = Map("participants" -> 5, "airport" -> "OTP")
+
+    val target = "spark-test/scala-write-exclude";
+
+    sc.makeRDD(Seq(trip1, trip2)).saveToEs(target, Map(ES_MAPPING_EXCLUDE -> "airport"))
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("business"))
+    assertThat(RestUtils.get(target +  "/_search?"), containsString("participants"))
+    assertThat(RestUtils.get(target +  "/_search?"), not(containsString("airport")))
   }
 
   @Test
