@@ -15,3 +15,4 @@ metastore_db
 /repository-hdfs/data/*
 /mr/src/main/resources/esh-build.properties
 /pig/tmp-pig/*
+/spark/keyvaluerdd.parquet

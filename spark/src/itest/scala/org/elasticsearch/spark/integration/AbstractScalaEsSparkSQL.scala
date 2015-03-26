@@ -18,9 +18,13 @@
  */
 package org.elasticsearch.spark.integration;
 
+import java.io.File
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConversions.propertiesAsScalaMap
+
+import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.IntegerType
@@ -30,25 +34,26 @@ import org.apache.spark.sql.StringType
 import org.apache.spark.sql.StructField
 import org.apache.spark.sql.StructType
 import org.apache.spark.sql.TimestampType
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.elasticsearch.spark._
-import org.elasticsearch.spark.sql._
+import org.elasticsearch.spark.sparkRDDFunctions
+import org.elasticsearch.spark.sql.sparkSchemaRDDFunctions
 import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
 import org.junit.AfterClass
-import org.junit.Assert._
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
-import org.junit.runners.MethodSorters
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.junit.Test
-import javax.xml.bind.DatatypeConverter
-import org.apache.spark.sql.catalyst.expressions.GenericRow
-import java.util.Arrays
 
+import javax.xml.bind.DatatypeConverter
+
+case class KeyValue(key: Int, value: String)
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -184,6 +189,20 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       schemaRDD
     }
 
+    private def artistsAsBasicSchemaRDD = {         
+      val input = TestUtils.sampleArtistsDat()
+      val data = sc.textFile(input)
+
+      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+        StructField("name", StringType, false),
+        StructField("url", StringType, true),
+        StructField("pictures", StringType, true)))
+    
+      val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3)))
+      val schemaRDD = sqc.applySchema(rowRDD, schema)
+      schemaRDD
+    }
+
     @Test
     def testEsSchemaRDD50ReadAsDataSource() {
       val target = "sparksql-test/scala-basic-write"
@@ -242,6 +261,26 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
      
     }
     
+    @Test
+    def testKeyValueParquetFile() {
+      
+      //val items = 128
+      //val rdd = sc.parallelize(1 to items).flatMap(i => Seq.fill(items)(KeyValue(i, i.toString)))
+
+      val outputParquet = "keyvaluerdd.parquet"
+      FileUtils.deleteDirectory(new File(outputParquet))
+      
+      // running into https://issues.apache.org/jira/browse/SPARK-5281
+      //sqc.createSchemaRDD(rdd).saveAsParquetFile(outputParquet)
+      val schemaRDD = artistsAsBasicSchemaRDD
+      schemaRDD.saveAsParquetFile(outputParquet)
+      
+      sqc.parquetFile(outputParquet).registerTempTable("testparquet")
+      val select = sqc.sql("SELECT * FROM testparquet")
+      println(select.schema)
+      select.saveToEs("test/parquet")
+    }
+    
     //@Test
     // insert not supported
     def testEsSchemaRDD51WriteAsDataSource() {
@@ -255,6 +294,6 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       
       println(insertRDD.schemaString)
       assertTrue(insertRDD.count == 1)
-      insertRDD.take(7).foreach(println)
+      insertRDD.take(7).foreach(println))
     }
 }
