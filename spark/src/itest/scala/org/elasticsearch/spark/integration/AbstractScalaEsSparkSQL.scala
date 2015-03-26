@@ -18,13 +18,9 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.io.File
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConversions.propertiesAsScalaMap
-
-import org.apache.commons.io.FileUtils
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.IntegerType
@@ -34,24 +30,27 @@ import org.apache.spark.sql.StringType
 import org.apache.spark.sql.StructField
 import org.apache.spark.sql.StructType
 import org.apache.spark.sql.TimestampType
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.elasticsearch.spark.sparkRDDFunctions
-import org.elasticsearch.spark.sql.sparkSchemaRDDFunctions
+import org.elasticsearch.spark._
+import org.elasticsearch.spark.sql._
 import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
 import org.junit.AfterClass
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThat
-import org.junit.Assert.assertTrue
+import org.junit.Assert._
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
+import org.junit.runners.MethodSorters
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.junit.Test
-
 import javax.xml.bind.DatatypeConverter
+import org.apache.spark.sql.catalyst.expressions.GenericRow
+import java.util.Arrays
+import java.nio.file.Path
+import java.io.File
+import org.apache.commons.io.FileUtils
 
 case class KeyValue(key: Int, value: String)
 
@@ -294,6 +293,6 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       
       println(insertRDD.schemaString)
       assertTrue(insertRDD.count == 1)
-      insertRDD.take(7).foreach(println))
+      insertRDD.take(7).foreach(println)
     }
 }
