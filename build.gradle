@@ -211,6 +211,7 @@ allprojects { project ->
         // force the use of commons-http from Hadoop 1.x
         // to avoid SLF4J warnings, force only one version
         force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
+		force 'com.google.guava:guava:14.0.1' // force guava version for Spark
         
         eachDependency { details ->
 
@@ -486,6 +487,7 @@ project(":elasticsearch-spark") {
     dependencies {
         provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'javax.servlet'
+			exclude module: "hadoop-client"
         }
         
         optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
@@ -493,6 +495,7 @@ project(":elasticsearch-spark") {
         compile("org.scala-lang:scala-library:$scalaVersion")
 
         itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
+		itestRuntime "com.google.guava:guava:14.0.1"
     }
     
     if (!java8) {

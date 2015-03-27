@@ -40,6 +40,7 @@ import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
 import org.junit.AfterClass
 import org.junit.Assert._
+import org.junit.Assume._
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
@@ -51,6 +52,7 @@ import java.util.Arrays
 import java.nio.file.Path
 import java.io.File
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.mapred.JobContext
 
 case class KeyValue(key: Int, value: String)
 
@@ -262,6 +264,8 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
     
     @Test
     def testKeyValueParquetFile() {
+      // Parquet is compiled against Hadoop 2 so check whether that's the case or not
+      assumeTrue(classOf[JobContext].isInterface())
       
       //val items = 128
       //val rdd = sc.parallelize(1 to items).flatMap(i => Seq.fill(items)(KeyValue(i, i.toString)))
