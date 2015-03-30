@@ -50,7 +50,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
   <repository>
     <id>sonatype-oss</id>
     <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-	<snapshots><enabled>true</enabled></snapshots>
+    <snapshots><enabled>true</enabled></snapshots>
   </repository>
 </repositories>
 ```
@@ -80,9 +80,9 @@ es.resource=<ES resource location, relative to the host/port specified above>
 ```
 ### Essential
 ```
-es.query=<uri or query dsl query>			   # defaults to {"query":{"match_all":{}}}
-es.nodes=<ES host address> 				       # defaults to localhost
-es.port=<ES REST port>    				       # defaults to 9200
+es.query=<uri or query dsl query>              # defaults to {"query":{"match_all":{}}}
+es.nodes=<ES host address>                     # defaults to localhost
+es.port=<ES REST port>                         # defaults to 9200
 ```
 
 The full list is available [here](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/configuration.html)
@@ -103,7 +103,7 @@ To read data from ES, configure the `EsInputFormat` on your job configuration al
 JobConf conf = new JobConf();
 conf.setInputFormat(EsInputFormat.class);
 conf.set("es.resource", "radio/artists"); 
-conf.set("es.query", "?q=me*");      		// replace this with the relevant query
+conf.set("es.query", "?q=me*");             // replace this with the relevant query
 ...
 JobClient.runJob(conf);
 ```
@@ -122,7 +122,7 @@ JobClient.runJob(conf);
 ```java
 Configuration conf = new Configuration();
 conf.set("es.resource", "radio/artists"); 
-conf.set("es.query", "?q=me*");      		// replace this with the relevant query
+conf.set("es.query", "?q=me*");             // replace this with the relevant query
 Job job = new Job(conf)
 job.setInputFormatClass(EsInputFormat.class);
 ...
