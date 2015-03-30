@@ -19,7 +19,7 @@ Just like other libraries, {eh} needs to be available in Spark's classpath. As S
 === Native support
 
 added[2.1]
-n
+
 {eh} provides _native_ integration between {es} and {sp}, in the form of a +RDD+ (Resilient Distributed Dataset) (or _Pair_ +RDD+ to be precise) that can read data from Elasticsearch. The +RDD+ is offered in two 'flavors': one for Scala (which returns the data as +Tuple2+ with Scala collections) and one for Java (which returns the data as +Tuple2+ containing `java.util` collections).
 
 IMPORTANT: Whenever possible, consider using the _native_ integration as it offers the best performance and maximum flexibility.
