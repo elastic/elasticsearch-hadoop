@@ -19,13 +19,14 @@
 package org.elasticsearch.storm.serialization;
 
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 
-public class StormValueWriter implements ValueWriter<Tuple> {
+public class StormValueWriter extends FilteringValueWriter<Tuple> {
 
     private final ValueWriter<Object> jdkWriter;
 
@@ -38,25 +39,31 @@ public class StormValueWriter implements ValueWriter<Tuple> {
     }
 
     @Override
-    public Result write(Tuple tuple, Generator generator) {
+    public Result write(Tuple value, Generator generator) {
+        return doWrite(value, generator, null);
+    }
+
+    protected Result doWrite(Tuple tuple, Generator generator, String parentField) {
         Fields fields = tuple.getFields();
 
         generator.writeBeginObject();
         for (String field : fields) {
-            generator.writeFieldName(field);
-            Object value = tuple.getValueByField(field);
+            if (shouldKeep(parentField, field)) {
+                generator.writeFieldName(field);
+                Object value = tuple.getValueByField(field);
 
-            if (value instanceof Tuple) {
-                Result result = write((Tuple) value, generator);
-                if (!result.isSuccesful()) {
-                    return result;
+                if (value instanceof Tuple) {
+                    Result result = write((Tuple) value, generator);
+                    if (!result.isSuccesful()) {
+                        return result;
+                    }
                 }
-            }
 
-            else {
-                Result result = jdkWriter.write(value, generator);
-                if (!result.isSuccesful()) {
-                    return result;
+                else {
+                    Result result = jdkWriter.write(value, generator);
+                    if (!result.isSuccesful()) {
+                        return result;
+                    }
                 }
             }
         }
