@@ -28,30 +28,48 @@ import org.apache.hadoop.io.Writable;
 // the class was introduced in Hive 0.11 and has evolved ever since
 public abstract class AbstractSerDe implements SerDe {
 
-	public void initialize(Configuration configuration, Properties tableProperties, Properties partitionProperties)
-			throws SerDeException {
-		initialize(configuration, createOverlayedProperties(tableProperties, partitionProperties));
-	}
+    protected String configErrors;
 
-	public abstract void initialize(Configuration conf, Properties tbl) throws SerDeException;
+    public void initialize(Configuration configuration, Properties tableProperties, Properties partitionProperties)
+            throws SerDeException {
+        initialize(configuration, createOverlayedProperties(tableProperties, partitionProperties));
+    }
 
-	public abstract Class<? extends Writable> getSerializedClass();
+    @Override
+    public abstract void initialize(Configuration conf, Properties tbl) throws SerDeException;
 
-	public abstract Writable serialize(Object obj, ObjectInspector objInspector) throws SerDeException;
+    @Override
+    public abstract Class<? extends Writable> getSerializedClass();
 
-	public abstract SerDeStats getSerDeStats();
+    @Override
+    public abstract Writable serialize(Object obj, ObjectInspector objInspector) throws SerDeException;
 
-	public abstract Object deserialize(Writable blob) throws SerDeException;
+    @Override
+    public abstract SerDeStats getSerDeStats();
 
-	public abstract ObjectInspector getObjectInspector() throws SerDeException;
+    @Override
+    public abstract Object deserialize(Writable blob) throws SerDeException;
 
-	// used here to preserve source(not just binary)-compatibility with Hive <0.14
-	private static Properties createOverlayedProperties(Properties tblProps, Properties partProps) {
-		Properties props = new Properties();
-		props.putAll(tblProps);
-		if (partProps != null) {
-			props.putAll(partProps);
-		}
-		return props;
-	}
+    @Override
+    public abstract ObjectInspector getObjectInspector() throws SerDeException;
+
+    // introduced in Hive 1.1.0
+    /**
+     * Get the error messages during the Serde configuration
+     *
+     * @return The error messages in the configuration which are empty if no error occurred
+     */
+    public String getConfigurationErrors() {
+        return configErrors == null ? "" : configErrors;
+    }
+
+    // used here to preserve source(not just binary)-compatibility with Hive <0.14
+    private static Properties createOverlayedProperties(Properties tblProps, Properties partProps) {
+        Properties props = new Properties();
+        props.putAll(tblProps);
+        if (partProps != null) {
+            props.putAll(partProps);
+        }
+        return props;
+    }
 }

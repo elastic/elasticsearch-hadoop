@@ -230,6 +230,7 @@ allprojects { project ->
             cp.entries.unique { a, b ->
                 return a.path.compareTo(b.path)
             }
+			cp.entries.removeAll { it.path.endsWith('.pom') }
         }
     }
     

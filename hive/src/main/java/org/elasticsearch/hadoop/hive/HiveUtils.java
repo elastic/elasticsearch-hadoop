@@ -148,7 +148,6 @@ abstract class HiveUtils {
         }
 
         settings.setProperty(HiveConstants.COLUMN_COMMENTS, "");
-        //tbl.remove(HiveConstants.COLUMN_COMMENTS);
-		tbl.setProperty(HiveConstants.COLUMN_COMMENTS, "");
+        tbl.setProperty(HiveConstants.COLUMN_COMMENTS, "");
     }
 }
