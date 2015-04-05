@@ -211,7 +211,7 @@ allprojects { project ->
         // force the use of commons-http from Hadoop 1.x
         // to avoid SLF4J warnings, force only one version
         force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
-		force 'com.google.guava:guava:14.0.1' // force guava version for Spark
+        force 'com.google.guava:guava:14.0.1' // force guava version for Spark
         
         eachDependency { details ->
 
@@ -227,10 +227,10 @@ allprojects { project ->
     // the lib entries with sources seem to be placed first so they 'win' over those w/o sources
     eclipse.classpath.file {
         whenMerged { cp ->
-            cp.entries.unique { a, b ->
+            entries.unique { a, b ->
                 return a.path.compareTo(b.path)
             }
-			cp.entries.removeAll { it.path.endsWith('.pom') }
+            entries.removeAll { it.path.endsWith('.pom') }
         }
     }
     
@@ -455,8 +455,10 @@ project(":elasticsearch-hadoop-hive") {
     }
 }
 
-project(":elasticsearch-spark") {
-    def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
+
+// reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
+def baseSparkProject(target, sparkVersion, java8) {
+   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
 
     switch (scalaVer) {
       case "211":
@@ -469,26 +471,60 @@ project(":elasticsearch-spark") {
         ext.scalaMajorVersion = scala210MajorVersion
     }
     
-    archivesBaseName += "_$scalaMajorVersion"
-    
+    target.archivesBaseName += "_$scalaMajorVersion"
+
     if (java8) {
         println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
         tasks.all { enabled = false }
     }
     else {
-        apply plugin: 'scala'
+        target.apply plugin: 'scala'
     }
     
-    println "Using Scala $scalaMajorVersion [$scalaVersion]"
+    if (sparkVersion != spark12Version)
+        println "Using Scala $scalaMajorVersion [$scalaVersion]"
     
-    description = "Elasticsearch Spark"
+    def coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
+    
+    target.sourceSets {
+        main.scala.srcDirs += "$coreSrc/main/scala"
+        test.scala.srcDirs += "$coreSrc/test/scala"
+        itest.java.srcDirs += "$coreSrc/itest/java"
+		itest.scala.srcDirs += "$coreSrc/itest/scala"
+        itest.resources.srcDirs += "$coreSrc/itest/resources"
+    }
 
-    nestMRProject(project)
+    // currently the outside project folders are transformed into linked resources however
+    // Gradle only supports one so the project will be invalid as not all sources will be in there
+    // as such, they are setup here manually for Eclipse. IntelliJ probably needs a similar approach
+    target.eclipse {
+        project.file.whenMerged { pj ->
+            // eliminated resources created by gradle
+            linkedResources.clear()
+            linkedResources.add name: "core/main/scala", type: "2", location: "$coreSrc/main/scala"
+            linkedResources.add name: "core/test/scala", type: "2", location: "$coreSrc/test/scala"
+            linkedResources.add name: "core/itest/java", type: "2", location: "$coreSrc/itest/java"
+			linkedResources.add name: "core/itest/scala", type: "2", location: "$coreSrc/itest/scala"
+            linkedResources.add name: "core/itest/resources", type: "2", location: "$coreSrc/itest/resources"
+        }
+        classpath.file {
+            whenMerged { cp ->
+                entries.removeAll { entry ->
+                    entry.kind == 'src' && entry.path in ["scala", "java", "resources"]
+                }
+                
+                entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/main/scala", null))
+                entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/test/scala", null))
+                entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/java", null))
+				entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/scala", null))
+                entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/resources", null))
+            }
+        }
+    }
     
-    dependencies {
+    target.dependencies {
         provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'javax.servlet'
-			exclude module: "hadoop-client"
         }
         
         optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
@@ -496,14 +532,27 @@ project(":elasticsearch-spark") {
         compile("org.scala-lang:scala-library:$scalaVersion")
 
         itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
-		itestRuntime "com.google.guava:guava:14.0.1"
     }
+
+    nestMRProject(target)
     
     if (!java8) {
-        scaladoc {
+        target.scaladoc {
             title = "${rootProject.description} ${version} API"
         }
     }
+}
+
+project(":elasticsearch-spark") {
+    description = "Elasticsearch Spark (Spark 1.3+)"
+
+    baseSparkProject(project, spark13Version, java8)
+}
+
+project(":elasticsearch-spark-1.2") {
+    description = "Elasticsearch Spark (Spark 1.0-1.2)"
+
+    baseSparkProject(project, spark12Version, java8)
 }
 
 project(":elasticsearch-storm") {
