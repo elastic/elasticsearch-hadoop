@@ -68,7 +68,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 </dependency>
 ----
 
-<1> 'spark' artifact. Notice the `_2.10` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself
+<1> 'spark' artifact. Notice the `_2.10` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
 
 .Cascading
 [source,xml]

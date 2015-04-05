@@ -150,7 +150,7 @@ Apache Pig version 0.14.0
 [[requirements-spark]]
 === Apache Spark
 
-Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.1.1). As {eh} provides
+Spark 1.0.0 or higher. We recommend using the latest release of Spark (currently 1.3.0). As {eh} provides
 native integration (which is recommended) with {sp} it does not matter what binary one is using. 
 The same applies when using the Hadoop layer to integrate the two as {eh} supports the majority of
 Hadoop distributions out there.
@@ -160,7 +160,7 @@ The Spark version can be typically discovery by looking at its folder name:
 [source, bash]
 ----
 $ pwd
-/libs/spark/spark-1.1.1-bin-XXXXX
+/libs/spark/spark-1.3.0-bin-XXXXX
 ----
 
 or by running its shell:
@@ -173,7 +173,7 @@ Welcome to
       ____              __
      / __/__  ___ _____/ /__
     _\ \/ _ \/ _ `/ __/  '_/
-   /___/ .__/\_,_/_/ /_/\_\   version 1.1.1
+   /___/ .__/\_,_/_/ /_/\_\   version 1.3.0
       /_/
 ...
 ----
@@ -183,20 +183,22 @@ Welcome to
 
 If planning on using Spark SQL make sure to download the appropriate jar. While it is part of the Spark distribution,
 it is _not_ part of Spark core but rather has its own jar. Thus, when constructing the classpath make sure to
-include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-1.1.0-<distro>.jar+
+include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-1.3.0-<distro>.jar+
 
-Spark SQL 1.1.0 or higher (and thus Spark 1.1.0) is required. Note that Spark SQL is currently an _alpha_ component
+{eh} supports Spark SQL 1.3.0 through the main jar. Since Spark SQL 1.3 is _not_ 
+https://spark.apache.org/docs/latest/sql-programming-guide.html#upgrading-from-spark-sql-10-12-to-13[backwards compatible] 
+with Spark SQL 1.2 or 1.1, {eh} provides a dedicated jar. See the Spark chapter for more information.
 
 [[requirements-storm]]
 === Apache Storm
 
-Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently 0.9.3).
+Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently 0.9.4).
 
 One can discover the Storm version by looking at its folder or by invoking the command:
 
 [source, bash]
 ----
 $ bin/storm version
-0.9.3
+0.9.4
 ----
 
