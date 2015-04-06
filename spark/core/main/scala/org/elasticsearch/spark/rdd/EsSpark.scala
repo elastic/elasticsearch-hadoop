@@ -13,6 +13,7 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import java.util.EnumMap
 import scala.reflect.ClassTag
+import org.apache.commons.logging.LogFactory
 
 object EsSpark {
   //
@@ -44,6 +45,8 @@ object EsSpark {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEs(rdd: RDD[_], cfg: Map[String, String]) {
+    CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
+    
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
@@ -57,6 +60,8 @@ object EsSpark {
     saveToEsWithMeta(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
+    CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
+
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
