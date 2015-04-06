@@ -34,7 +34,7 @@ public class JsonIdTest {
 
     @Before
     public void before() {
-		InputStream in = getClass().getResourceAsStream("tweet.json");
+        InputStream in = getClass().getResourceAsStream("tweet.json");
         parser = new JacksonJsonParser(in);
     }
 
@@ -44,8 +44,8 @@ public class JsonIdTest {
     }
 
     @Test
-	public void testId() throws Exception {
-		List<Object> values = ParsingUtils.values(parser, "id");
-		assertEquals(1, values.size());
+    public void testId() throws Exception {
+        List<Object> values = ParsingUtils.values(parser, "id");
+        assertEquals(1, values.size());
     }
 }

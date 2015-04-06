@@ -121,9 +121,9 @@ public class YarnLauncher {
     private Map<String, String> setupEnv() {
         Configuration cfg = client.getConfiguration();
 
-		Map<String, String> env = YarnUtils.setupEnv(cfg);
-		YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
-		YarnUtils.addToEnv(env, clientCfg.envVars());
+        Map<String, String> env = YarnUtils.setupEnv(cfg);
+        YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
+        YarnUtils.addToEnv(env, clientCfg.envVars());
 
         return env;
     }
@@ -131,7 +131,7 @@ public class YarnLauncher {
     private List<String> setupCmd() {
         List<String> cmds = new ArrayList<String>();
         // don't use -jar since it overrides the classpath
-		cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME) + "/bin/java");
+        cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME) + "/bin/java");
         cmds.add(ApplicationMaster.class.getName());
         cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT);
         cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);

@@ -38,9 +38,9 @@ public class JacksonJsonGenerator implements Generator {
     private static final JsonFactory JSON_FACTORY;
     private final JsonGenerator generator;
     private final OutputStream out;
-	private Deque<String> currentPath = new LinkedList<String>();
-	private String currentPathCached;
-	private String currentName;
+    private Deque<String> currentPath = new LinkedList<String>();
+    private String currentPathCached;
+    private String currentName;
 
     static {
         boolean hasMethod = false;
@@ -95,9 +95,9 @@ public class JacksonJsonGenerator implements Generator {
     public void writeBeginObject() {
         try {
             generator.writeStartObject();
-			if (currentName != null) {
-				currentPath.addLast(currentName);
-			}
+            if (currentName != null) {
+                currentPath.addLast(currentName);
+            }
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -107,8 +107,8 @@ public class JacksonJsonGenerator implements Generator {
     public void writeEndObject() {
         try {
             generator.writeEndObject();
-			currentPath.pollLast();
-			currentPathCached = null;
+            currentPath.pollLast();
+            currentPathCached = null;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -118,7 +118,7 @@ public class JacksonJsonGenerator implements Generator {
     public void writeFieldName(String name) {
         try {
             generator.writeFieldName(name);
-			currentName = name;
+            currentName = name;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -254,23 +254,23 @@ public class JacksonJsonGenerator implements Generator {
         return out;
     }
 
-	@Override
-	public String getParentPath() {
-		if (currentPathCached == null) {
-			if (currentPath.isEmpty()) {
-				currentPathCached = StringUtils.EMPTY;
-			}
-			else {
-				StringBuilder sb = new StringBuilder();
-				for (String level : currentPath) {
-					sb.append(level);
-					sb.append(".");
-				}
-				sb.setLength(sb.length() - 1);
-				currentPathCached = sb.toString();
-			}
-		}
+    @Override
+    public String getParentPath() {
+        if (currentPathCached == null) {
+            if (currentPath.isEmpty()) {
+                currentPathCached = StringUtils.EMPTY;
+            }
+            else {
+                StringBuilder sb = new StringBuilder();
+                for (String level : currentPath) {
+                    sb.append(level);
+                    sb.append(".");
+                }
+                sb.setLength(sb.length() - 1);
+                currentPathCached = sb.toString();
+            }
+        }
 
-		return currentPathCached;
-	}
+        return currentPathCached;
+    }
 }

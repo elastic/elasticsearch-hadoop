@@ -127,11 +127,11 @@ public class WritableValueReader extends JdkValueReader {
     }
 
     @Override
-	protected Object parseDate(Long value) {
-		return new LongWritable(value);
-	}
+    protected Object parseDate(Long value) {
+        return new LongWritable(value);
+    }
 
-	@Override
+    @Override
     protected Object processDouble(Double value) {
         return new DoubleWritable(value);
     }

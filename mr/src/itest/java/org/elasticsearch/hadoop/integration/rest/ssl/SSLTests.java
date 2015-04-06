@@ -53,7 +53,7 @@ public class SSLTests {
 
             server = new BasicSSLServer(SSL_PORT);
             server.start();
-		}
+        }
 
         @Override
         protected void after() {
@@ -65,33 +65,33 @@ public class SSLTests {
     };
 
     private PropertiesSettings cfg;
-	private CommonsHttpTransport transport;
+    private CommonsHttpTransport transport;
 
     @Before
     public void setup() {
         cfg = new PropertiesSettings();
         cfg.setPort(SSL_PORT);
-		cfg.setProperty(ES_NET_USE_SSL, "true");
-		cfg.setProperty(ES_NET_SSL_CERT_ALLOW_SELF_SIGNED, "true");
-		cfg.setProperty(ES_NET_SSL_TRUST_STORE_LOCATION, "ssl/client.jks");
-		cfg.setProperty(ES_NET_SSL_TRUST_STORE_PASS, "testpass");
+        cfg.setProperty(ES_NET_USE_SSL, "true");
+        cfg.setProperty(ES_NET_SSL_CERT_ALLOW_SELF_SIGNED, "true");
+        cfg.setProperty(ES_NET_SSL_TRUST_STORE_LOCATION, "ssl/client.jks");
+        cfg.setProperty(ES_NET_SSL_TRUST_STORE_PASS, "testpass");
 
-		transport = new CommonsHttpTransport(cfg.copy(), "localhost");
-	}
+        transport = new CommonsHttpTransport(cfg.copy(), "localhost");
+    }
 
-	@After
-	public void destroy() {
-		transport.close();
+    @After
+    public void destroy() {
+        transport.close();
     }
 
     @Test
     public void testBasicSSLHandshake() throws Exception {
-		String uri = "localhost:" + SSL_PORT;
+        String uri = "localhost:" + SSL_PORT;
         String path = "/basicSSL";
         Request req = new SimpleRequest(Method.GET, uri, path);
 
         Response execute = transport.execute(req);
-		String content = IOUtils.asString(execute.body());
-		assertEquals(path, content);
+        String content = IOUtils.asString(execute.body());
+        assertEquals(path, content);
     }
 }

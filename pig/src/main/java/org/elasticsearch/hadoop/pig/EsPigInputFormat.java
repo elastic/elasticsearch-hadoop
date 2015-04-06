@@ -104,13 +104,13 @@ public class EsPigInputFormat extends EsInputFormat<String, Object> {
     }
 
 
-	@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     @Override
     public AbstractPigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
         return isOutputAsJson(context.getConfiguration()) ? new PigJsonShardRecordReader() : new PigShardRecordReader();
     }
 
-	@SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     @Override
     public AbstractPigShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
         return isOutputAsJson(job) ? new PigJsonShardRecordReader(split, job, reporter) : new PigShardRecordReader(split, job, reporter);

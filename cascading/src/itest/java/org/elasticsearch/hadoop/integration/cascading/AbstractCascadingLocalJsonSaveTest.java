@@ -38,7 +38,7 @@ import cascading.tuple.Fields;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingLocalJsonSaveTest {
 
-	@Test
+    @Test
     public void testWriteToES() throws Exception {
         Properties props = new TestSettings().getProperties();
         props.put(ConfigurationOptions.ES_INPUT_JSON, "true");
@@ -50,7 +50,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(props, in, out, pipe);
     }
 
-	@Test(expected = Exception.class)
+    @Test(expected = Exception.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "false");
@@ -62,7 +62,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testIndexPattern() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
@@ -73,7 +73,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testIndexPatternWithFormat() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
@@ -85,7 +85,7 @@ public class AbstractCascadingLocalJsonSaveTest {
     }
 
 
-	@Test
+    @Test
     public void testUpdate() throws Exception {
         // local file-system source
         Tap in = sourceTap();
@@ -99,7 +99,7 @@ public class AbstractCascadingLocalJsonSaveTest {
     }
 
 
-	@Test
+    @Test
     public void testUpdateOnlyScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -118,7 +118,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testUpdateOnlyParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -138,7 +138,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testUpdateOnlyParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -159,7 +159,7 @@ public class AbstractCascadingLocalJsonSaveTest {
     }
 
 
-	@Test
+    @Test
     public void testUpsert() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -173,7 +173,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testUpsertScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -189,7 +189,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testUpsertParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -207,7 +207,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         build(properties, in, out, pipe);
     }
 
-	@Test
+    @Test
     public void testUpsertParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");

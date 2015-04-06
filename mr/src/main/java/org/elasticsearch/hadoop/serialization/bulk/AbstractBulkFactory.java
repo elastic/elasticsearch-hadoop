@@ -138,16 +138,16 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             return "FieldWriter for " + extractor;
         }
     }
-    
+
     interface DynamicContentRef {
-    	List<Object> getDynamicContent();
+        List<Object> getDynamicContent();
     }
-    
+
     public class DynamicHeaderRef implements DynamicContentRef {
         final List<Object> header = new ArrayList<Object>();
 
         public List<Object> getDynamicContent() {
-        	header.clear();
+            header.clear();
             writeObjectHeader(header);
             return compact(header);
         }
@@ -157,7 +157,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         final List<Object> end = new ArrayList<Object>();
 
         public List<Object> getDynamicContent() {
-        	end.clear();
+            end.clear();
             writeObjectEnd(end);
             return compact(end);
         }
@@ -297,7 +297,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             after.add(new DynamicEndRef());
         }
         else {
-        	writeObjectHeader(before);
+            writeObjectHeader(before);
             before = compact(before);
             writeObjectEnd(after);
             after = compact(after);

@@ -71,41 +71,41 @@ public class FieldFilterTest {
 
     @Test
     public void testOnlyExcludesPartialMatch() {
-		assertTrue(filter("foo.bar", null, Arrays.asList("foo")));
+        assertTrue(filter("foo.bar", null, Arrays.asList("foo")));
     }
 
     @Test
     public void testOnlyExcludesWithExactMatch() {
-		assertFalse(filter("foo.bar", null, Arrays.asList("foo.bar")));
+        assertFalse(filter("foo.bar", null, Arrays.asList("foo.bar")));
     }
 
     @Test
     public void testOnlyExcludesWithTopPatternMatch() {
-		assertFalse(filter("foo.bar", null, Arrays.asList("foo*")));
+        assertFalse(filter("foo.bar", null, Arrays.asList("foo*")));
     }
 
     @Test
     public void testOnlyExcludesWithNestedPatternMatch() {
-		assertFalse(filter("foo.bar", null, Arrays.asList("*.bar")));
+        assertFalse(filter("foo.bar", null, Arrays.asList("*.bar")));
     }
 
     @Test
     public void testOnlyExcludesWithNestedMiddlePatternMatch() {
-		assertFalse(filter("foo.bar.taz", null, Arrays.asList("foo.*.taz")));
+        assertFalse(filter("foo.bar.taz", null, Arrays.asList("foo.*.taz")));
     }
 
     @Test
     public void testIncludeAndExcludeExactMatch() {
-		assertFalse(filter("foo.bar", Arrays.asList("foo", "foo.bar"), Arrays.asList("foo.bar")));
+        assertFalse(filter("foo.bar", Arrays.asList("foo", "foo.bar"), Arrays.asList("foo.bar")));
     }
 
     @Test
     public void testIncludeTopMatchWithExcludeNestedExactMatch() {
-		assertFalse(filter("foo.bar.taz", Arrays.asList("foo.bar.*"), Arrays.asList("foo.*.taz")));
+        assertFalse(filter("foo.bar.taz", Arrays.asList("foo.bar.*"), Arrays.asList("foo.*.taz")));
     }
 
     @Test
     public void testIncludeExactMatchWithExcludePattern() {
-		assertFalse(filter("foo.bar", Arrays.asList("foo.bar"), Arrays.asList("foo.*")));
+        assertFalse(filter("foo.bar", Arrays.asList("foo.bar"), Arrays.asList("foo.*")));
     }
 }

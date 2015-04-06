@@ -53,13 +53,13 @@ public class AbstractMRNewApiSearchTest {
     private final String indexPrefix;
     private final Random random = new Random();
     private boolean readMetadata;
-	private boolean readAsJson;
+    private boolean readAsJson;
 
-	public AbstractMRNewApiSearchTest(String indexPrefix, String query, boolean readMetadata, boolean readAsJson) {
+    public AbstractMRNewApiSearchTest(String indexPrefix, String query, boolean readMetadata, boolean readAsJson) {
         this.indexPrefix = indexPrefix;
         this.query = query;
         this.readMetadata = readMetadata;
-		this.readAsJson = readAsJson;
+        this.readAsJson = readAsJson;
     }
 
     @Before
@@ -166,7 +166,7 @@ public class AbstractMRNewApiSearchTest {
         conf.set(ConfigurationOptions.ES_QUERY, query);
 
         conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(readMetadata));
-		conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
+        conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
 
         QueryTestParams.provisionQueries(conf);
         job.setNumReduceTasks(0);

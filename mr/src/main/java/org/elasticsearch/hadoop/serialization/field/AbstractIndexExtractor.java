@@ -100,8 +100,8 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
                 }
 
                 // hack: an index will always be a primitive so just call toString (instead of doing JSON parsing)
-				// the returned value is not formatted as JSON since : 1. there's no need (it will be picked up down the chain), 2: date formatter depends on it
-				return iformatter.format(string);
+                // the returned value is not formatted as JSON since : 1. there's no need (it will be picked up down the chain), 2: date formatter depends on it
+                return iformatter.format(string);
             }
         };
     }
@@ -124,7 +124,7 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
     }
 
     @Override
-	public Object field(Object target) {
+    public Object field(Object target) {
         StringBuilder sb = new StringBuilder();
         sb.append("\"_index\":\"");
         append(sb, index, target);
@@ -133,7 +133,7 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
         append(sb, type, target);
         sb.append("\"");
 
-		return new RawJson(sb.toString());
+        return new RawJson(sb.toString());
     }
 
     @Override

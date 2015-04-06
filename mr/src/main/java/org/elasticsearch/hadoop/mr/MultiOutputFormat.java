@@ -46,14 +46,14 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
         }
 
         @Override
-		public void write(Object key, Object value) throws IOException, InterruptedException {
+        public void write(Object key, Object value) throws IOException, InterruptedException {
             for (RecordWriter writer : writers) {
                 writer.write(key, value);
             }
         }
 
         @Override
-		public void close(TaskAttemptContext context) throws IOException, InterruptedException {
+        public void close(TaskAttemptContext context) throws IOException, InterruptedException {
             for (RecordWriter writer : writers) {
                 writer.close(context);
             }
@@ -108,7 +108,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
 
         @Override
         public boolean needsTaskCommit(TaskAttemptContext taskContext) throws IOException {
-			boolean result = false;
+            boolean result = false;
 
             for (OutputCommitter committer : committers) {
                 result |= committer.needsTaskCommit(taskContext);
@@ -157,7 +157,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
 
         @Override
         public boolean needsTaskCommit(org.apache.hadoop.mapred.TaskAttemptContext taskContext) throws IOException {
-			boolean result = false;
+            boolean result = false;
 
             for (OutputCommitter committer : committers) {
                 result |= committer.needsTaskCommit(taskContext);
@@ -191,38 +191,38 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
         }
     }
 
-	public static final String CFG_FIELD = "es.hadoop.multi.of";
-	private transient List<OutputFormat> newApiFormat = null;
-	private transient List<org.apache.hadoop.mapred.OutputFormat> oldApiFormat = null;
+    public static final String CFG_FIELD = "es.hadoop.multi.of";
+    private transient List<OutputFormat> newApiFormat = null;
+    private transient List<org.apache.hadoop.mapred.OutputFormat> oldApiFormat = null;
 
 
     //
-	// Old API
-	//
-	@Override
-	public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress)
-			throws IOException {
+    // Old API
+    //
+    @Override
+    public org.apache.hadoop.mapred.RecordWriter getRecordWriter(FileSystem ignored, JobConf job, String name, Progressable progress)
+            throws IOException {
 
-		List<org.apache.hadoop.mapred.OutputFormat> formats = getOldApiFormats(job);
-		List<org.apache.hadoop.mapred.RecordWriter> writers = new ArrayList<org.apache.hadoop.mapred.RecordWriter>();
-		for (org.apache.hadoop.mapred.OutputFormat format : formats) {
-			writers.add(format.getRecordWriter(ignored, job, name, progress));
-		}
+        List<org.apache.hadoop.mapred.OutputFormat> formats = getOldApiFormats(job);
+        List<org.apache.hadoop.mapred.RecordWriter> writers = new ArrayList<org.apache.hadoop.mapred.RecordWriter>();
+        for (org.apache.hadoop.mapred.OutputFormat format : formats) {
+            writers.add(format.getRecordWriter(ignored, job, name, progress));
+        }
 
-		return new MultiOldRecordWriter(writers);
-	}
+        return new MultiOldRecordWriter(writers);
+    }
 
-	@Override
-	public void checkOutputSpecs(FileSystem ignored, JobConf job) throws IOException {
-		List<org.apache.hadoop.mapred.OutputFormat> formats = getOldApiFormats(job);
-		for (org.apache.hadoop.mapred.OutputFormat format : formats) {
-			format.checkOutputSpecs(ignored, job);
-		}
-	}
+    @Override
+    public void checkOutputSpecs(FileSystem ignored, JobConf job) throws IOException {
+        List<org.apache.hadoop.mapred.OutputFormat> formats = getOldApiFormats(job);
+        for (org.apache.hadoop.mapred.OutputFormat format : formats) {
+            format.checkOutputSpecs(ignored, job);
+        }
+    }
 
-	//
-	// new API
-	//
+    //
+    // new API
+    //
     @Override
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         List<OutputFormat> formats = getNewApiFormats(context.getConfiguration());
@@ -253,7 +253,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
         return new MultiNewOutputCommitter(committers);
     }
 
-	public static void addOutputFormat(Configuration cfg, Class<? extends OutputFormat>... formats) {
+    public static void addOutputFormat(Configuration cfg, Class<? extends OutputFormat>... formats) {
         Collection<String> of = cfg.getStringCollection(CFG_FIELD);
         for (Class<? extends OutputFormat> format : formats) {
             of.add(format.getName());
@@ -262,16 +262,16 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
     }
 
     private List<OutputFormat> getNewApiFormats(Configuration cfg) {
-		if (newApiFormat == null) {
-			newApiFormat = cfg.getInstances(CFG_FIELD, OutputFormat.class);
-		}
-		return newApiFormat;
-	}
-
-	private List<org.apache.hadoop.mapred.OutputFormat> getOldApiFormats(Configuration cfg) {
-		if (oldApiFormat == null) {
-			oldApiFormat = cfg.getInstances(CFG_FIELD, org.apache.hadoop.mapred.OutputFormat.class);
+        if (newApiFormat == null) {
+            newApiFormat = cfg.getInstances(CFG_FIELD, OutputFormat.class);
         }
-		return oldApiFormat;
+        return newApiFormat;
+    }
+
+    private List<org.apache.hadoop.mapred.OutputFormat> getOldApiFormats(Configuration cfg) {
+        if (oldApiFormat == null) {
+            oldApiFormat = cfg.getInstances(CFG_FIELD, org.apache.hadoop.mapred.OutputFormat.class);
+        }
+        return oldApiFormat;
     }
 }

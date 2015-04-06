@@ -29,8 +29,8 @@ class DelegatedProtocol extends Protocol {
 
     private final Protocol original;
 
-	DelegatedProtocol(ProtocolSocketFactory factory, Protocol original, String scheme, int port) {
-		super(scheme, factory, port);
+    DelegatedProtocol(ProtocolSocketFactory factory, Protocol original, String scheme, int port) {
+        super(scheme, factory, port);
         this.original = original;
     }
 

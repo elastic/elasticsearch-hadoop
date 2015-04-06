@@ -136,7 +136,7 @@ public abstract class ParsingUtils {
         }
     }
 
-	public static List<Object> values(Parser parser, String... paths) {
+    public static List<Object> values(Parser parser, String... paths) {
         List<Matcher> matchers = new ArrayList<Matcher>(paths.length);
         int maxNesting = 0;
         for (String path : paths) {
@@ -149,9 +149,9 @@ public abstract class ParsingUtils {
 
         doFind(parser, matchers, 0, maxNesting);
 
-		List<Object> matches = new ArrayList<Object>();
+        List<Object> matches = new ArrayList<Object>();
         for (Matcher matcher : matchers) {
-			matches.add(matcher.matched ? matcher.value : NOT_FOUND);
+            matches.add(matcher.matched ? matcher.value : NOT_FOUND);
         }
 
         return matches;
@@ -168,7 +168,7 @@ public abstract class ParsingUtils {
 
         while ((token = parser.nextToken()) != null) {
             if (token == Token.START_OBJECT) {
-				if (level < maxNesting) {
+                if (level < maxNesting) {
                     if (nextLevel != null) {
                         doFind(parser, nextLevel, level + 1, maxNesting);
                     }

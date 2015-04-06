@@ -22,7 +22,7 @@ package org.elasticsearch.hadoop.yarn;
 // to be consistent use only UPPER CASE vars
 public interface EsYarnConstants {
 
-	String FS_URI = "ES_YARN_FS_URI";
+    String FS_URI = "ES_YARN_FS_URI";
 
-	String CFG_PROPS = "ES_YARN_CFG_PROPERTIES";
+    String CFG_PROPS = "ES_YARN_CFG_PROPERTIES";
 }

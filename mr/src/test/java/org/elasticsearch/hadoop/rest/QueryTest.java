@@ -27,17 +27,17 @@ import static org.junit.Assert.assertTrue;
 
 public class QueryTest {
 
-	private Settings cfg = new TestSettings();
+    private Settings cfg = new TestSettings();
 
-	@Before
-	public void setup() {
-		cfg = new TestSettings();
-	}
+    @Before
+    public void setup() {
+        cfg = new TestSettings();
+    }
 
-	@Test
+    @Test
     public void testSimpleQuery() {
         cfg.setResourceRead("foo/bar");
-		cfg.setQuery("?q=name:bucket");
-		assertTrue(QueryBuilder.query(cfg).toString().contains("foo/bar/_search?q=name:bucket&"));
+        cfg.setQuery("?q=name:bucket");
+        assertTrue(QueryBuilder.query(cfg).toString().contains("foo/bar/_search?q=name:bucket&"));
     }
 }

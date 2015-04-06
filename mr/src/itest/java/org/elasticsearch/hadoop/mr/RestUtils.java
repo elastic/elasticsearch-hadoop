@@ -132,7 +132,7 @@ public class RestUtils {
         rc.close();
         return result;
     }
-    
+
     public static boolean flush(String index) throws IOException {
         ExtendedRestClient rc = new ExtendedRestClient();
         boolean result = rc.touch(index);

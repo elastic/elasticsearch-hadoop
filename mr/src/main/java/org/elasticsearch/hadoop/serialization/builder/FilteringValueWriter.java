@@ -27,17 +27,17 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class FilteringValueWriter<T> implements ValueWriter<T>, SettingsAware {
 
-	private List<String> includes;
-	private List<String> excludes;
+    private List<String> includes;
+    private List<String> excludes;
 
-	@Override
-	public void setSettings(Settings settings) {
-		includes = StringUtils.tokenize(settings.getMappingIncludes());
-		excludes = StringUtils.tokenize(settings.getMappingExcludes());
-	}
+    @Override
+    public void setSettings(Settings settings) {
+        includes = StringUtils.tokenize(settings.getMappingIncludes());
+        excludes = StringUtils.tokenize(settings.getMappingExcludes());
+    }
 
-	protected boolean shouldKeep(String parentField, String name) {
-		name = StringUtils.hasText(parentField) ? parentField + "." + name : name;
-		return FieldFilter.filter(name, includes, excludes);
-	}
+    protected boolean shouldKeep(String parentField, String name) {
+        name = StringUtils.hasText(parentField) ? parentField + "." + name : name;
+        return FieldFilter.filter(name, includes, excludes);
+    }
 }

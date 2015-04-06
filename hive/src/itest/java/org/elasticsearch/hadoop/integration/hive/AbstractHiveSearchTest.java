@@ -77,9 +77,9 @@ public class AbstractHiveSearchTest {
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE artistsload" + testInstance + "("
-                + "id 		BIGINT, "
-                + "name 	STRING, "
-                + "links 	STRUCT<url:STRING, picture:STRING>) "
+                + "id         BIGINT, "
+                + "name     STRING, "
+                + "links     STRUCT<url:STRING, picture:STRING>) "
                 + tableProps("hive/artists");
 
         String select = "SELECT * FROM artistsload" + testInstance;

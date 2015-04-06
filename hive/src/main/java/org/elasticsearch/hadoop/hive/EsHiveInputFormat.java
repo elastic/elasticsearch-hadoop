@@ -117,7 +117,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         return wrappers;
     }
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AbstractWritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
         InputSplit delegate = ((EsHiveSplit) split).delegate;

@@ -66,7 +66,7 @@ class EsCluster implements AutoCloseable {
     private final NodeMasterRpc nmRpc;
     private final Configuration cfg;
     private final Config appConfig;
-	private final Map<String, String> masterEnv;
+    private final Map<String, String> masterEnv;
 
     private volatile boolean running = false;
     private volatile boolean clusterHasFailed = false;
@@ -79,7 +79,7 @@ class EsCluster implements AutoCloseable {
         this.cfg = rpc.getConfiguration();
         this.nmRpc = new NodeMasterRpc(cfg, rpc.getNMToCache());
         this.appConfig = appConfig;
-		this.masterEnv = masterEnv;
+        this.masterEnv = masterEnv;
     }
 
     public void start() {
@@ -201,12 +201,12 @@ class EsCluster implements AutoCloseable {
     private Map<String, String> setupEnv(Config appConfig) {
         // standard Hadoop env setup
         Map<String, String> env = YarnUtils.setupEnv(cfg);
-		// copy esYarn Config
-		//env.put(EsYarnConstants.CFG_PROPS, masterEnv.get(EsYarnConstants.CFG_PROPS));
-		// plus expand its vars into the env
+        // copy esYarn Config
+        //env.put(EsYarnConstants.CFG_PROPS, masterEnv.get(EsYarnConstants.CFG_PROPS));
+        // plus expand its vars into the env
         YarnUtils.addToEnv(env, appConfig.envVars());
 
-		return env;
+        return env;
     }
 
 

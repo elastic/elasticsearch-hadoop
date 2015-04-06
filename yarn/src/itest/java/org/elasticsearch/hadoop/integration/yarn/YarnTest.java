@@ -39,7 +39,7 @@ import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.*;
 public class YarnTest {
 
     private YarnBootstrap bootstrap;
-	private List<String> testEnv = new ArrayList<String>();
+    private List<String> testEnv = new ArrayList<String>();
 
     @Before
     public void before() {
@@ -48,12 +48,12 @@ public class YarnTest {
 
         testEnv.add("hdfs.es.yarn.jar=" + CLIENT_JAR.getName());
         testEnv.add("internal.es.yarn.file=" + CLIENT_JAR.getAbsolutePath());
-		testEnv.add("download.local.dir=./build/downloads");
-		// for tests we don't need gigs
-		testEnv.add("container.mem=512");
+        testEnv.add("download.local.dir=./build/downloads");
+        // for tests we don't need gigs
+        testEnv.add("container.mem=512");
     }
 
-	@Test
+    @Test
     public void testStartup() throws Exception {
         System.out.println(YC.listApps());
     }
@@ -63,7 +63,7 @@ public class YarnTest {
         bootstrap.run(cmdArgs("-install"));
     }
 
-	@Test
+    @Test
     public void test2Download() throws Exception {
         bootstrap.run(cmdArgs("-download-es"));
     }
@@ -75,24 +75,24 @@ public class YarnTest {
 
     @Test
     public void test4Start() throws Exception {
-		bootstrap.run(cmdArgs("-start", "loadConfig=" + getClass().getResource("/extra.properties").toURI().toString()));
+        bootstrap.run(cmdArgs("-start", "loadConfig=" + getClass().getResource("/extra.properties").toURI().toString()));
         final List<ApplicationReport> apps = YC.listEsClusters();
         System.out.println(apps);
         final ApplicationId appId = apps.get(0).getApplicationId();
         YC.waitForApp(appId, TimeUnit.SECONDS.toMillis(50));
-		//System.in.read();
+        //System.in.read();
     }
 
     @Test
-	public void test5List() throws Exception {
-		bootstrap.run(cmdArgs("-status"));
-		//System.in.read();
+    public void test5List() throws Exception {
+        bootstrap.run(cmdArgs("-status"));
+        //System.in.read();
     }
 
-	@Test
-	public void test6Stop() throws Exception {
-		//System.in.read();
-		bootstrap.run(cmdArgs("-stop"));
+    @Test
+    public void test6Stop() throws Exception {
+        //System.in.read();
+        bootstrap.run(cmdArgs("-stop"));
     }
 
     private String[] cmdArgs(String... args) {

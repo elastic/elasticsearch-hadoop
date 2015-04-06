@@ -23,8 +23,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 
 public class CreateBulkFactory extends AbstractBulkFactory {
 
-	public CreateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
-		super(settings, metaExtractor);
+    public CreateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
+        super(settings, metaExtractor);
     }
 
     @Override

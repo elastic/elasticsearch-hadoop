@@ -127,8 +127,8 @@ public abstract class YarnCompat {
     }
 
     public static void setApplicationTags(ApplicationSubmissionContext appContext, Set<String> appTags) {
-		if (APP_SUBMISSION_CTX != null) {
-			ReflectionUtils.invoke(APP_SUBMISSION_CTX, appContext, appTags);
-		}
+        if (APP_SUBMISSION_CTX != null) {
+            ReflectionUtils.invoke(APP_SUBMISSION_CTX, appContext, appTags);
+        }
     }
 }

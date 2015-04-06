@@ -110,7 +110,7 @@ public class HiveTypeToJsonTest {
 
     @Test
     public void testInteger() {
-		assertEquals("2147483647", hiveTypeToJson(new MyHiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo)));
+        assertEquals("2147483647", hiveTypeToJson(new MyHiveType(new IntWritable(Integer.MAX_VALUE), intTypeInfo)));
     }
 
     @Test
@@ -205,7 +205,7 @@ public class HiveTypeToJsonTest {
     public void testStruct() {
         List<String> names = Arrays.asList(new String[] { "one", "two" });
         List<TypeInfo> types = Arrays.asList(new TypeInfo[] { stringTypeInfo, intTypeInfo });
-		assertEquals("{\"one\":\"first\",\"two\":2}",
+        assertEquals("{\"one\":\"first\",\"two\":2}",
                 hiveTypeToJson(new MyHiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }),
                         getStructTypeInfo(names, types))));
     }

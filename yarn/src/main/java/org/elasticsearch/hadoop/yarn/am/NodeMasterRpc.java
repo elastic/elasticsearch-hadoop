@@ -34,49 +34,49 @@ import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 
 class NodeMasterRpc implements AutoCloseable {
 
-	private final Configuration cfg;
-	private final NMTokenCache tokenCache;
-	private NMClient client;
+    private final Configuration cfg;
+    private final NMTokenCache tokenCache;
+    private NMClient client;
 
-	public NodeMasterRpc(Configuration cfg, NMTokenCache tokenCache) {
-		this.cfg = new YarnConfiguration(cfg);
-		this.tokenCache = tokenCache;
-	}
+    public NodeMasterRpc(Configuration cfg, NMTokenCache tokenCache) {
+        this.cfg = new YarnConfiguration(cfg);
+        this.tokenCache = tokenCache;
+    }
 
-	public void start() {
-		if (client != null) {
-			return;
-		}
+    public void start() {
+        if (client != null) {
+            return;
+        }
 
-		client = NMClient.createNMClient("Elasticsearch-YARN");
-		YarnCompat.setNMTokenCache(client, tokenCache);
-		client.init(cfg);
-		client.start();
-	}
+        client = NMClient.createNMClient("Elasticsearch-YARN");
+        YarnCompat.setNMTokenCache(client, tokenCache);
+        client.init(cfg);
+        client.start();
+    }
 
-	public Map<String, ByteBuffer> startContainer(Container container, ContainerLaunchContext containerLaunchContext) {
-		try {
-			return client.startContainer(container, containerLaunchContext);
-		} catch (Exception ex) {
-			throw new EsYarnNmException();
-		}
-	}
+    public Map<String, ByteBuffer> startContainer(Container container, ContainerLaunchContext containerLaunchContext) {
+        try {
+            return client.startContainer(container, containerLaunchContext);
+        } catch (Exception ex) {
+            throw new EsYarnNmException();
+        }
+    }
 
-	public ContainerStatus getContainerState(ContainerId containerId, NodeId nodeId) {
-		try {
-			return client.getContainerStatus(containerId, nodeId);
-		} catch (Exception ex) {
-			throw new EsYarnNmException();
-		}
-	}
+    public ContainerStatus getContainerState(ContainerId containerId, NodeId nodeId) {
+        try {
+            return client.getContainerStatus(containerId, nodeId);
+        } catch (Exception ex) {
+            throw new EsYarnNmException();
+        }
+    }
 
     @Override
-	public void close() {
-		if (client == null) {
-			return;
-		}
+    public void close() {
+        if (client == null) {
+            return;
+        }
 
-		client.stop();
-		client = null;
-	}
+        client.stop();
+        client = null;
+    }
 }

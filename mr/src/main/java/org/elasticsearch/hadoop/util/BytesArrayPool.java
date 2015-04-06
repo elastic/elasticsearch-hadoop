@@ -68,13 +68,13 @@ public class BytesArrayPool implements ByteSequence {
         return pool;
     }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		for (BytesArray ba : pool) {
-			sb.append(ba.toString());
-			sb.append(";");
-		}
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (BytesArray ba : pool) {
+            sb.append(ba.toString());
+            sb.append(";");
+        }
+        return sb.toString();
+    }
 }

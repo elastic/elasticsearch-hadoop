@@ -20,19 +20,19 @@ package org.elasticsearch.hadoop.yarn;
 
 public class EsYarnException extends RuntimeException {
 
-	public EsYarnException() {
-		super();
-	}
+    public EsYarnException() {
+        super();
+    }
 
-	public EsYarnException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public EsYarnException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public EsYarnException(String message) {
-		super(message);
-	}
+    public EsYarnException(String message) {
+        super(message);
+    }
 
-	public EsYarnException(Throwable cause) {
-		super(cause);
-	}
+    public EsYarnException(Throwable cause) {
+        super(cause);
+    }
 }

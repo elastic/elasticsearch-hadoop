@@ -27,8 +27,8 @@ public class BytesUtilsTest {
     @Test
     public void testByteCounting() throws Exception {
         // 0 + 1 + 2 + 3 + 4 + 1 + 2 + 1
-		String unicode = "$\u00A2\u20AC\ud800\udc48$\u00A2a";
-		System.out.println(unicode);
+        String unicode = "$\u00A2\u20AC\ud800\udc48$\u00A2a";
+        System.out.println(unicode);
 
         int[] bytePosition = BytesUtils.charToBytePosition(new BytesArray(unicode), 0, 2, 3, 1, 6, 3, 2, 5, 4);
 

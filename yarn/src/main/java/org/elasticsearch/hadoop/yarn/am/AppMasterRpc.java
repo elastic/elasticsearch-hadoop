@@ -30,77 +30,77 @@ import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 
 class AppMasterRpc implements AutoCloseable {
 
-	private final YarnConfiguration cfg;
-	private AMRMClient<ContainerRequest> client;
-	private final NMTokenCache nmTokenCache;
+    private final YarnConfiguration cfg;
+    private AMRMClient<ContainerRequest> client;
+    private final NMTokenCache nmTokenCache;
 
-	public AppMasterRpc(Configuration cfg, NMTokenCache nmTokenCache) {
-		this.cfg = new YarnConfiguration(cfg);
-		this.nmTokenCache = nmTokenCache;
-	}
+    public AppMasterRpc(Configuration cfg, NMTokenCache nmTokenCache) {
+        this.cfg = new YarnConfiguration(cfg);
+        this.nmTokenCache = nmTokenCache;
+    }
 
-	public void start() {
+    public void start() {
         if (client != null) {
             return;
         }
 
         client = AMRMClient.createAMRMClient();
-		YarnCompat.setNMTokenCache(client, nmTokenCache);
+        YarnCompat.setNMTokenCache(client, nmTokenCache);
         client.init(cfg);
         client.start();
     }
 
-	public RegisterApplicationMasterResponse registerAM() {
-		try {
-			return client.registerApplicationMaster("", 0, "");
-		} catch (Exception ex) {
-			throw new EsYarnAmException(ex);
-		}
-	}
-
-	public void failAM() {
-		unregisterAM(FinalApplicationStatus.FAILED);
-	}
-
-	public void finishAM() {
-		unregisterAM(FinalApplicationStatus.SUCCEEDED);
-	}
-
-	private void unregisterAM(FinalApplicationStatus status) {
+    public RegisterApplicationMasterResponse registerAM() {
         try {
-			client.unregisterApplicationMaster(status, "", "");
+            return client.registerApplicationMaster("", 0, "");
         } catch (Exception ex) {
             throw new EsYarnAmException(ex);
         }
     }
 
-	public void addContainerRequest(ContainerRequest req) {
-		client.addContainerRequest(req);
-	}
+    public void failAM() {
+        unregisterAM(FinalApplicationStatus.FAILED);
+    }
 
-	public AllocateResponse allocate(int step) {
-		try {
-			return client.allocate(step);
-		} catch (Exception ex) {
-			throw new EsYarnAmException(ex);
-		}
-	}
+    public void finishAM() {
+        unregisterAM(FinalApplicationStatus.SUCCEEDED);
+    }
 
-	public Configuration getConfiguration() {
-		return cfg;
-	}
+    private void unregisterAM(FinalApplicationStatus status) {
+        try {
+            client.unregisterApplicationMaster(status, "", "");
+        } catch (Exception ex) {
+            throw new EsYarnAmException(ex);
+        }
+    }
 
-	public NMTokenCache getNMToCache() {
-		return nmTokenCache;
-	}
+    public void addContainerRequest(ContainerRequest req) {
+        client.addContainerRequest(req);
+    }
 
-	@Override
-	public void close() {
-		if (client == null) {
-			return;
-		}
+    public AllocateResponse allocate(int step) {
+        try {
+            return client.allocate(step);
+        } catch (Exception ex) {
+            throw new EsYarnAmException(ex);
+        }
+    }
 
-		client.stop();
-		client = null;
-	}
+    public Configuration getConfiguration() {
+        return cfg;
+    }
+
+    public NMTokenCache getNMToCache() {
+        return nmTokenCache;
+    }
+
+    @Override
+    public void close() {
+        if (client == null) {
+            return;
+        }
+
+        client.stop();
+        client = null;
+    }
 }

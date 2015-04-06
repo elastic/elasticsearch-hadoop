@@ -57,7 +57,7 @@ public class JsonValuePathTest {
         assertEquals(3, vals.size());
         assertEquals("John", vals.get(0));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
-		assertEquals(25, vals.get(2));
+        assertEquals(25, vals.get(2));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class JsonValuePathTest {
         assertEquals(4, vals.size());
         assertEquals("NY", vals.get(0));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
-		assertEquals(10, vals.get(2));
+        assertEquals(10, vals.get(2));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(3));
     }
 
@@ -74,34 +74,34 @@ public class JsonValuePathTest {
     public void testRichObject() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "address");
         assertEquals(1, vals.size());
-		assertThat(vals.get(0).toString(), containsString("floors"));
+        assertThat(vals.get(0).toString(), containsString("floors"));
     }
 
     @Test
     public void testMultipleNestedMatches1() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "firstName");
         assertEquals(1, vals.size());
-		assertThat(vals.get(0).toString(), containsString("John"));
+        assertThat(vals.get(0).toString(), containsString("John"));
     }
 
     @Test
     public void testMultipleNestedMatches2() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "age");
         assertEquals(1, vals.size());
-		assertThat((Integer) vals.get(0), is(Integer.valueOf(25)));
+        assertThat((Integer) vals.get(0), is(Integer.valueOf(25)));
     }
 
     @Test
     public void testRichObjectNested() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "address.building");
         assertEquals(1, vals.size());
-		assertThat(vals.get(0).toString(), containsString("floors"));
+        assertThat(vals.get(0).toString(), containsString("floors"));
     }
 
     @Test
     public void testCorrectLevelMatched() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "state");
         assertEquals(1, vals.size());
-		assertThat(vals.get(0).toString(), containsString("CA"));
+        assertThat(vals.get(0).toString(), containsString("CA"));
     }
 }

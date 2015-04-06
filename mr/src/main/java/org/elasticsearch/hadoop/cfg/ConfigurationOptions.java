@@ -48,8 +48,8 @@ public interface ConfigurationOptions {
     String ES_QUERY = "es.query";
 
     /** Clients only */
-	String ES_NODES_CLIENT_ONLY = "es.nodes.client.only";
-	String ES_NODES_CLIENT_ONLY_DEFAULT = "false";
+    String ES_NODES_CLIENT_ONLY = "es.nodes.client.only";
+    String ES_NODES_CLIENT_ONLY_DEFAULT = "false";
 
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";

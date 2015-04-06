@@ -22,19 +22,19 @@ import org.elasticsearch.hadoop.yarn.EsYarnException;
 
 public class EsYarnAmException extends EsYarnException {
 
-	public EsYarnAmException() {
-	}
+    public EsYarnAmException() {
+    }
 
-	public EsYarnAmException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public EsYarnAmException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public EsYarnAmException(String message) {
-		super(message);
-	}
+    public EsYarnAmException(String message) {
+        super(message);
+    }
 
-	public EsYarnAmException(Throwable cause) {
-		super(cause);
-	}
+    public EsYarnAmException(Throwable cause) {
+        super(cause);
+    }
 
 }

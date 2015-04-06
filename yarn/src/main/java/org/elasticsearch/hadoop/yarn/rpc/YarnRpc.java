@@ -47,8 +47,8 @@ public abstract class YarnRpc<P> implements AutoCloseable {
 
     public YarnRpc(Class<P> protocolType, Configuration cfg) {
         this.protocolType = protocolType;
-		// make a copy to avoid the security credentials spilling to the main configuration
-		this.cfg = new YarnConfiguration(cfg);
+        // make a copy to avoid the security credentials spilling to the main configuration
+        this.cfg = new YarnConfiguration(cfg);
     }
 
     public void start() {
@@ -81,9 +81,9 @@ public abstract class YarnRpc<P> implements AutoCloseable {
 
     }
 
-	protected P proxy() {
-		return proxy;
-	}
+    protected P proxy() {
+        return proxy;
+    }
 
     @Override
     public void close() {

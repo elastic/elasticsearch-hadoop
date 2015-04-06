@@ -168,20 +168,20 @@ public class PigTypeToJsonTest {
         map.put("one", 1);
         map.put("two", 2);
         map.put("three", 3);
-		assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
+        assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
     }
 
     @Test
     public void testMapWithFilterExclude() {
         TestSettings cfg = new TestSettings();
-		cfg.setProperty("es.mapping.exclude", "o*, map.t*");
+        cfg.setProperty("es.mapping.exclude", "o*, map.t*");
 
-		String expected = "{\"map\":{\"one\":1}}";
-		Map<String, Number> map = new LinkedHashMap<String, Number>();
-		map.put("one", 1);
-		map.put("two", 2);
-		map.put("three", 3);
-		assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
+        String expected = "{\"map\":{\"one\":1}}";
+        Map<String, Number> map = new LinkedHashMap<String, Number>();
+        map.put("one", 1);
+        map.put("two", 2);
+        map.put("three", 3);
+        assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]")), cfg), is(expected));
     }
 
 

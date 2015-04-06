@@ -37,7 +37,7 @@ public abstract class IOUtils {
                 sb.append(line);
                 sb.append("\n");
             }
-			return sb.toString();
+            return sb.toString();
         } catch (IOException ex) {
             throw new IllegalStateException("Cannot read data stream", ex);
         } finally {
@@ -50,13 +50,13 @@ public abstract class IOUtils {
     }
 
 
-	public static void close(Closeable closable) {
-		if (closable != null) {
-			try {
-				closable.close();
-			} catch (IOException e) {
-				// silently ignore
-			}
-		}
-	}
+    public static void close(Closeable closable) {
+        if (closable != null) {
+            try {
+                closable.close();
+            } catch (IOException e) {
+                // silently ignore
+            }
+        }
+    }
 }

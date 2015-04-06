@@ -315,7 +315,7 @@ public class HttpDownloader {
             progress.beginDownload();
             boolean finished = false;
             try {
-				byte[] buffer = new byte[1024 * 512];
+                byte[] buffer = new byte[1024 * 512];
                 int length;
                 while (!isInterrupted() && (length = is.read(buffer)) >= 0) {
                     os.write(buffer, 0, length);

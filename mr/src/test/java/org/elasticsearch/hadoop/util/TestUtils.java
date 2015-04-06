@@ -89,13 +89,13 @@ public class TestUtils {
         return (HadoopCfgUtils.isLocal(cfg) ? localResource("/artists.dat") : "/artists.dat");
     }
 
-	public static String gibberishDat(Configuration cfg) {
-		return (HadoopCfgUtils.isLocal(cfg) ? localResource("/gibberish.dat") : "/gibberish.dat");
-	}
+    public static String gibberishDat(Configuration cfg) {
+        return (HadoopCfgUtils.isLocal(cfg) ? localResource("/gibberish.dat") : "/gibberish.dat");
+    }
 
-	public static String gibberishJson(Configuration cfg) {
-		return (HadoopCfgUtils.isLocal(cfg) ? localResource("/gibberish.json") : "/gibberish.json");
-	}
+    public static String gibberishJson(Configuration cfg) {
+        return (HadoopCfgUtils.isLocal(cfg) ? localResource("/gibberish.json") : "/gibberish.json");
+    }
 
 
     private static String localResource(String resource) {

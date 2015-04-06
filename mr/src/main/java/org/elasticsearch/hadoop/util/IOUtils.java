@@ -152,12 +152,12 @@ public abstract class IOUtils {
 
     public static String asStringAlways(InputStream in) {
         if (in == null) {
-			return StringUtils.EMPTY;
+            return StringUtils.EMPTY;
         }
         try {
             return asBytes(in).toString();
         } catch (IOException ex) {
-			return StringUtils.EMPTY;
+            return StringUtils.EMPTY;
         }
     }
 

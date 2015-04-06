@@ -80,10 +80,10 @@ public class YarnSuite {
             Assert.isTrue(clientLibs.length == 1, "Check there is exactly one (client) jar " + Arrays.toString(clientLibs));
             CLIENT_JAR = clientLibs[0];
 
-			//TEST_PROPS.setProperty("hdfs.esyarn.jar", CLIENT_JAR.getAbsolutePath());
+            //TEST_PROPS.setProperty("hdfs.esyarn.jar", CLIENT_JAR.getAbsolutePath());
 
             StringWriter sw = new StringWriter();
-			Configuration.dumpConfiguration(CFG, sw);
+            Configuration.dumpConfiguration(CFG, sw);
             System.out.println("Configuration before starting the test " + sw);
         }
     };

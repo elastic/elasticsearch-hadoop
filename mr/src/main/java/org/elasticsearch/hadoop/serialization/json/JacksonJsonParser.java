@@ -32,7 +32,7 @@ public class JacksonJsonParser implements Parser {
 
     private static final JsonFactory JSON_FACTORY;
     private final JsonParser parser;
-	private final JsonParserBase richerParser;
+    private final JsonParserBase richerParser;
 
     static {
         JSON_FACTORY = new JsonFactory();
@@ -46,7 +46,7 @@ public class JacksonJsonParser implements Parser {
     public JacksonJsonParser(InputStream in) {
         try {
             this.parser = JSON_FACTORY.createJsonParser(in);
-			richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
+            richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -59,7 +59,7 @@ public class JacksonJsonParser implements Parser {
     public JacksonJsonParser(byte[] content, int offset, int length) {
         try {
             this.parser = JSON_FACTORY.createJsonParser(content, offset, length);
-			richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
+            richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
@@ -67,7 +67,7 @@ public class JacksonJsonParser implements Parser {
 
     public JacksonJsonParser(JsonParser parser) {
         this.parser = parser;
-		richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
+        richerParser = (parser instanceof JsonParserBase ? (JsonParserBase) parser : null);
     }
 
     @Override
@@ -247,7 +247,7 @@ public class JacksonJsonParser implements Parser {
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
-	}
+    }
 
     private NumberType convertNumberType(JsonParser.NumberType numberType) {
         switch (numberType) {
@@ -267,8 +267,8 @@ public class JacksonJsonParser implements Parser {
         throw new EsHadoopSerializationException("No matching token for number_type [" + numberType + "]");
     }
 
-	@Override
-	public int tokenCharOffset() {
-		return (int) (richerParser != null ? richerParser.getTokenCharacterOffset() : parser.getTokenLocation().getCharOffset());
-	}
+    @Override
+    public int tokenCharOffset() {
+        return (int) (richerParser != null ? richerParser.getTokenCharacterOffset() : parser.getTokenLocation().getCharOffset());
+    }
 }

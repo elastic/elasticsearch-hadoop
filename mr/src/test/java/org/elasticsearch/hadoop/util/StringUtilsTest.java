@@ -24,10 +24,10 @@ import static org.junit.Assert.assertEquals;
 
 public class StringUtilsTest {
 
-	@Test
-	public void testJsonEncodingQuote() {
+    @Test
+    public void testJsonEncodingQuote() {
         String value = "foo\"bar";
-		String jsonEscaped = "foo\\\"bar";
-		assertEquals(jsonEscaped, StringUtils.jsonEncoding(value));
+        String jsonEscaped = "foo\\\"bar";
+        assertEquals(jsonEscaped, StringUtils.jsonEncoding(value));
     }
 }

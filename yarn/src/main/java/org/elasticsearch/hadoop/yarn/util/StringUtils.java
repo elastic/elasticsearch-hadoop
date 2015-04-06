@@ -129,12 +129,12 @@ public abstract class StringUtils {
         return (sb.length() == sequence.length() ? sequence.toString() : sb.toString());
     }
 
-	public static boolean isLowerCase(CharSequence string) {
-		for (int index = 0; index < string.length(); index++) {
-			if (Character.isUpperCase(string.charAt(index))) {
-				return false;
+    public static boolean isLowerCase(CharSequence string) {
+        for (int index = 0; index < string.length(); index++) {
+            if (Character.isUpperCase(string.charAt(index))) {
+                return false;
             }
         }
-		return true;
+        return true;
     }
 }

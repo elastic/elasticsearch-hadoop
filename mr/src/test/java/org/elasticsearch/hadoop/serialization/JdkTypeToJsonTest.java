@@ -205,7 +205,7 @@ public class JdkTypeToJsonTest {
         map.put("key", "value");
         map.put("nested", nested);
 
-		assertEquals("{\"nested\":{\"aaa\":\"bbb\",\"ccc\":\"ddd\"}}", jdkTypeToJson(map, cfg));
+        assertEquals("{\"nested\":{\"aaa\":\"bbb\",\"ccc\":\"ddd\"}}", jdkTypeToJson(map, cfg));
     }
 
     @Test
