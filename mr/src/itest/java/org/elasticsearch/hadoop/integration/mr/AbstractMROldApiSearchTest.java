@@ -61,8 +61,8 @@ public class AbstractMROldApiSearchTest {
     private final String query;
     private final String indexPrefix;
     private final Random random = new Random();
-    private boolean readMetadata;
-    private boolean readAsJson;
+    private final boolean readMetadata;
+    private final boolean readAsJson;
 
     public AbstractMROldApiSearchTest(String indexPrefix, String query, boolean readMetadata, boolean readAsJson) {
         this.query = query;
