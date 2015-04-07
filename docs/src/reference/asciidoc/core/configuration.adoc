@@ -282,7 +282,7 @@ The lead to task timeout before {eh} informs Hadoop the task is still running to
 `es.net.proxy.socks.port`:: Http proxy port
 `es.net.proxy.socks.user`:: Http proxy user name
 `es.net.proxy.socks.pass`:: Http proxy password
-`es.net.proxy.http.use.system.props`(default yes):: Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
+`es.net.proxy.socks.use.system.props`(default yes):: Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
 
 NOTE: {eh} allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
 
