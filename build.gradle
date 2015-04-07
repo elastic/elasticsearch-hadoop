@@ -114,7 +114,7 @@ def File gitBranch() {
     // parse the git files to find out the revision
     File gitHead =  file("$rootDir/.git/HEAD")
 
-    if (gitHead.exists()) {
+    if (gitHead != null && gitHead.exists()) {
         String content = gitHead.text.trim()
         if (content.startsWith("ref:")) {
             return file("$rootDir/.git/" + content.replace('ref: ',''))
@@ -177,7 +177,7 @@ allprojects { project ->
         jacoco {
             enabled = project.hasProperty("enableJacoco")
             destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
-            
+			excludes = ["org.elasticsearch.spark.*"]
             if (enabled) {
                 System.setProperty("log4j.configuration", "$nullLog4jConfig")
             }
@@ -535,6 +535,14 @@ def baseSparkProject(target, sparkVersion, java8) {
     }
 
     nestMRProject(target)
+
+	// disable jacoco as it will fail due to class duplicates
+	target.test {
+		jacoco {
+			enabled = false
+			excludes = ["org.elasticsearch.spark.*"]
+		}
+	}
     
     if (!java8) {
         target.scaladoc {
@@ -617,6 +625,7 @@ allprojects { project ->
             enabled = project.hasProperty("enableJacoco")
             append = true
             destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
+			excludes = ["org.elasticsearch.spark.*"]
             
             if (enabled) {
                 System.setProperty("log4j.configuration", "$nullLog4jConfig")
@@ -775,7 +784,7 @@ allprojects { project ->
     }
 
     jacoco {
-        toolVersion = "0.7.1.201405082137"
+        toolVersion = "0.7.4.201502262128"
     }
 
     if (java8) {
