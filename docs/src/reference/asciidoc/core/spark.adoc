@@ -429,7 +429,7 @@ import org.elasticsearch.spark._
 val conf = ...
 val sc = new SparkContext(conf)
 
-sc.esRDD("radio/artists", "?me*") <1>
+sc.esRDD("radio/artists", "?q=me*") <1>
 ----
 
 <1> create an `RDD` streaming all the documents matching `me*` from index `radio/artists`
@@ -467,7 +467,7 @@ import static org.elasticsearch.spark.java.api.JavaEsSpark.*;          <1>
 
 ...
 JavaRDD<Map<String, Object>> esRDD = 
-                        esRDD(jsc, "radio/artists", "?me*"<2>).values()<3>; 
+                        esRDD(jsc, "radio/artists", "?q=me*"<2>).values()<3>; 
 ----
 
 <1> statically import `JavaEsSpark` class
@@ -485,7 +485,7 @@ In versions prior to Java 8, the code would look something like this:
 [source, java]
 ----
 JavaRDD<Map<String, Object>> esRDD = 
-                        esRDD(jsc, "radio/artists", "?me*").values();
+                        esRDD(jsc, "radio/artists", "?q=me*").values();
 JavaRDD<Map<String, Object>> filtered = esRDD.filter(
     new Function<Map<String, Object>, Boolean>() {
       @Override
@@ -500,7 +500,7 @@ with Java 8, the filtering becomes a one liner:
 [source,java]
 ----
 JavaRDD<Map<String, Object>> esRDD = 
-                        esRDD(jsc, "radio/artists", "?me*").values();
+                        esRDD(jsc, "radio/artists", "?q=me*").values();
 JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc -> 
                                                 doc.contains("mega"));
 ----
@@ -769,7 +769,7 @@ import org.elasticsearch.spark.sql._          <2>
 
 val sql = new SQLContext(sc)
 
-val people = sqlContext.esDF("spark/people") <3>
+val people = sql.esDF("spark/people") <3>
 
 // check the associated schema
 println(people.schema.treeString)             <4>
@@ -806,7 +806,7 @@ import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;   <2>
 ...
 SQLContext sql = new SQLContext(sc);
 
-DataFrame people = JavaEsSpark SQL.esDF(sql, "spark/people");  <3>
+DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people");  <3>
 ----
 
 <1> Spark SQL import
@@ -817,7 +817,7 @@ Better yet, the +DataFrame+ can be backed by a query result:
 
 [source,java]
 ----
-DataFrame people = JavaEsSpark SQL.esDF(sql, "spark/people", "?q=Smith"  <1>); 
+DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"  <1>); 
 ----
 
 <1> {es} query backing the {eh} +DataFrame+
@@ -841,7 +841,7 @@ import org.elasticsearch.spark.sql._          <2>
 
 val sql = new SQLContext(sc)
 
-val people = sqlContext.esRDD("spark/people") <3>
+val people = sql.esRDD("spark/people") <3>
 
 // check the associated schema
 println(people.schema)                        <4>
@@ -876,7 +876,7 @@ import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;        <2>
 ...
 JavaSQLContext jsql = new JavaSQLContext(sc);
 
-JavaSchemaRDD people = JavaEsSpark SQL.esRDD(jsql, "spark/people"); <3>
+JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people"); <3>
 ----
 
 <1> Spark SQL import
@@ -887,7 +887,7 @@ Better yet, the +JavaSchemaRDD+ can be backed by a query result:
 
 [source,java]
 ----
-JavaSchemaRDD people = JavaEsSpark SQL.esRDD(jsql, "spark/people", "?q=Smith" <1>); 
+JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>); 
 ----
 
 <1> {es} query backing the {eh} +SchemaRDD+

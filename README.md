@@ -222,7 +222,7 @@ import org.elasticsearch.spark._
 ..
 val conf = ...
 val sc = new SparkContext(conf)
-sc.esRDD("radio/artists", "?me*")
+sc.esRDD("radio/artists", "?q=me*")
 ```
 ### Writing
 Import the `org.elasticsearch.spark._` package to gain `savetoEs` methods on your `RDD`s:
