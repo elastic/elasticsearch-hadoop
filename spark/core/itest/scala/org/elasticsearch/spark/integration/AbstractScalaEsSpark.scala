@@ -52,6 +52,7 @@ import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.apache.spark.SparkException
 import org.elasticsearch.spark.serialization.ReflectionUtils
 import org.elasticsearch.spark.serialization.Bean
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
@@ -71,7 +72,7 @@ object AbstractScalaEsScalaSpark {
       Thread.sleep(TimeUnit.SECONDS.toMillis(3))
     }
   }
-  
+
   case class ModuleCaseClass(id: Integer, departure: String, var arrival: String) {
     var l = math.Pi
   }
@@ -116,10 +117,10 @@ class AbstractScalaEsScalaSpark extends Serializable {
     val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass(1, "OTP", "MUC")
 
     val vals = ReflectionUtils.caseClassValues(caseClass2)
-    
+
     sc.makeRDD(Seq(javaBean, caseClass1)).saveToEs("spark-test/scala-basic-write-objects")
     sc.makeRDD(Seq(javaBean, caseClass2)).saveToEs("spark-test/scala-basic-write-objects", Map("es.mapping.id"->"id"))
-    
+
     assertTrue(RestUtils.exists("spark-test/scala-basic-write-objects"))
     assertThat(RestUtils.get("spark-test/scala-basic-write-objects/_search?"), containsString(""))
   }
@@ -304,6 +305,19 @@ class AbstractScalaEsScalaSpark extends Serializable {
     assertEquals(2, aliasRDD.count())
   }
 
+  @Test
+  def testNullAsEmpty() {
+    val data = Seq(
+      Map("field1" -> 5.4, "field2" -> "foo"),
+      Map("field2" -> "bar"),
+      Map("field1" -> "", "field2" -> "baz")
+    )
+    val target = "spark-test/nullasempty"
+    sc.makeRDD(data).saveToEs(target)
+
+    assertEquals(3, EsSpark.esRDD(sc, target).count())
+  }
+
   //@Test
   def testLoadJsonFile() {
     val target = "lost/id"
@@ -313,7 +327,7 @@ class AbstractScalaEsScalaSpark extends Serializable {
         |"index" : {
         |    "number_of_shards" : 10,
         |    "number_of_replicas" : 1
-      	|}
+        |}
       |}
       |}""".stripMargin
     RestUtils.putData("lost", createIndex.getBytes());
