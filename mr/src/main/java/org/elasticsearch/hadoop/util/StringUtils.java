@@ -33,6 +33,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.codehaus.jackson.io.JsonStringEncoder;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
 
 
 /**
@@ -43,6 +44,8 @@ public abstract class StringUtils {
     public static final Charset UTF_8 = Charset.forName("UTF-8");
     public static final String EMPTY = "";
     public static final String[] EMPTY_ARRAY = new String[0];
+
+    private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 
     public static boolean hasLength(CharSequence sequence) {
         return (sequence != null && sequence.length() > 0);
@@ -345,7 +348,7 @@ public abstract class StringUtils {
     }
 
     public static String jsonEncoding(String rawString) {
-        return new String(JsonStringEncoder.getInstance().quoteAsString(rawString));
+        return new String(HAS_JACKSON_CLASS ? JacksonStringEncoder.jsonEncoding(rawString) : BackportedJsonStringEncoder.getInstance().quoteAsString(rawString));
     }
 
     // return the value in a JSON friendly way
@@ -359,6 +362,12 @@ public abstract class StringUtils {
         // else it's a Boolean or Number so no escaping or quotes
         else {
             return value.toString();
+        }
+    }
+
+    private static class JacksonStringEncoder {
+        public static char[] jsonEncoding(String rawString) {
+            return JsonStringEncoder.getInstance().quoteAsString(rawString);
         }
     }
 }
