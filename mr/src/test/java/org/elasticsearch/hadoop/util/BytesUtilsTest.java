@@ -113,10 +113,10 @@ public class BytesUtilsTest {
         BytesArray input = IOUtils.asBytes(getClass().getResourceAsStream("/org/elasticsearch/hadoop/rest/scroll-matched-queries.json"));
         int[] chars = new int[] { 555, 558, 1008, 1009, 1649 };
         int[] bytePositions = BytesUtils.charToBytePosition(input, chars);
-        assertEquals(731, bytePositions[0]);
-        assertEquals(559, bytePositions[1]);
-        assertEquals(1009, bytePositions[2]);
-        assertEquals(1011, bytePositions[3]);
+        assertEquals(555, bytePositions[0]);
+        assertEquals(561, bytePositions[1]);
+        assertEquals(1071, bytePositions[2]);
+        assertEquals(1072, bytePositions[3]);
         //assertEquals(1640, bytePositions[1]);
 
     }
