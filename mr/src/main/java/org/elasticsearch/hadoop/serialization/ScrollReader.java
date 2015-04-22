@@ -34,7 +34,6 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.BytesUtils;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -77,7 +76,7 @@ public class ScrollReader {
         private JsonFragment doc = JsonFragment.EMPTY;
 
         // typically only 2 fragments are needed = metadata prefix +
-        private List<JsonFragment> fragments = new ArrayList<JsonFragment>(2);
+        private final List<JsonFragment> fragments = new ArrayList<JsonFragment>(2);
 
         void addMetadata(JsonFragment fragment) {
             if (fragment != null && fragment.isValid()) {
@@ -203,7 +202,8 @@ public class ScrollReader {
                 offset += asCharPos.length;
             }
             // convert them into byte positions
-            int[] bytesPosition = BytesUtils.charToBytePosition(input, pos);
+            //int[] bytesPosition = BytesUtils.charToBytePosition(input, pos);
+            int[] bytesPosition = pos;
 
             int bytesPositionIndex = 0;
 

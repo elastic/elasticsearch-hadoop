@@ -16,6 +16,8 @@
                 "_id" : "aqOqDwYnTA29J1gfy3m8_Q",
                 "_score" : 0.0,
                 "_source" : {
+                    "special" : "لَيسَ كُل مَ آكتُبه حِكَآيةة عَنْ وَٱقِعِي إنَمَآ هِيآ كَلِمآت رَاقَت لِي",
+                    "location" : "Würzburg",
                     "name" : "www.DjFahad.com",
                     "links" : ["http://www.last.fm/music/www.DjFahad.com", null]
                 }
