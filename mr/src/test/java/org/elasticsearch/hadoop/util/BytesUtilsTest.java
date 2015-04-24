@@ -18,14 +18,12 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 
 // see http://unicode-table.com for a graphical representation
-@Ignore
 public class BytesUtilsTest {
 
     @Test
@@ -71,7 +69,7 @@ public class BytesUtilsTest {
     @Test
     public void testAnotherByteCounting() throws Exception {
         // 1 + 2 + 1
-        String utf8 = "Wür";
+        String utf8 = "W\u00FCr";
         int[] bytePosition = BytesUtils.charToBytePosition(new BytesArray(utf8), 0, 1, 2);
         assertEquals(0, bytePosition[0]);
         assertEquals(1, bytePosition[1]);
@@ -106,7 +104,7 @@ public class BytesUtilsTest {
         int[] chars = new int[] { 9, 14, 0 };
         int[] bytePositions = BytesUtils.charToBytePosition(input, chars);
         assertEquals(10, bytePositions[0]);
-        assertEquals(19, bytePositions[1]);
+        assertEquals(20, bytePositions[1]);
         assertEquals(0, bytePositions[2]);
     }
 
@@ -115,11 +113,10 @@ public class BytesUtilsTest {
         BytesArray input = IOUtils.asBytes(getClass().getResourceAsStream("/org/elasticsearch/hadoop/rest/scroll-matched-queries.json"));
         int[] chars = new int[] { 555, 558, 1008, 1009, 1649 };
         int[] bytePositions = BytesUtils.charToBytePosition(input, chars);
-        assertEquals(555, bytePositions[0]);
-        assertEquals(561, bytePositions[1]);
+        assertEquals(570, bytePositions[0]);
+        assertEquals(575, bytePositions[1]);
         assertEquals(1071, bytePositions[2]);
         assertEquals(1072, bytePositions[3]);
         //assertEquals(1640, bytePositions[1]);
-
     }
 }
