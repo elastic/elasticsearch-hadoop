@@ -71,6 +71,7 @@ public class DateIndexFormatter implements IndexFormatter {
         }
 
         Calendar calendar = DatatypeConverter.parseDateTime(value);
+        dateFormat.setCalendar(calendar);
         return dateFormat.format(calendar.getTime());
     }
 }
