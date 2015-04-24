@@ -18,23 +18,23 @@ import org.apache.commons.logging.LogFactory
 object EsSpark {
   //
   // Load methods
-  // 
+  //
 
   def esRDD(sc: SparkContext): RDD[(String, Map[String, AnyRef])] = new ScalaEsRDD[Map[String, AnyRef]](sc)
-  def esRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, Map[String, AnyRef])] = 
+  def esRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, Map[String, AnyRef])] =
     new ScalaEsRDD[Map[String, AnyRef]](sc, cfg)
-  def esRDD(sc: SparkContext, resource: String): RDD[(String, Map[String, AnyRef])] = 
+  def esRDD(sc: SparkContext, resource: String): RDD[(String, Map[String, AnyRef])] =
     new ScalaEsRDD[Map[String, AnyRef]](sc, Map(ES_RESOURCE_READ -> resource))
-  def esRDD(sc: SparkContext, resource: String, query: String): RDD[(String, Map[String, AnyRef])] = 
+  def esRDD(sc: SparkContext, resource: String, query: String): RDD[(String, Map[String, AnyRef])] =
     new ScalaEsRDD[Map[String, AnyRef]](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
 
   // load data as JSON
   def esJsonRDD(sc: SparkContext): RDD[(String, String)] = new ScalaEsRDD[String](sc, Map(ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, String)] = 
+  def esJsonRDD(sc: SparkContext, cfg: Map[String, String]): RDD[(String, String)] =
     new ScalaEsRDD[String](sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, resource: String): RDD[(String, String)] = 
+  def esJsonRDD(sc: SparkContext, resource: String): RDD[(String, String)] =
     new ScalaEsRDD[String](sc, Map(ES_RESOURCE_READ -> resource, ES_OUTPUT_JSON -> true.toString))
-  def esJsonRDD(sc: SparkContext, resource: String, query: String): RDD[(String, String)] = 
+  def esJsonRDD(sc: SparkContext, resource: String, query: String): RDD[(String, String)] =
     new ScalaEsRDD[String](sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query, ES_OUTPUT_JSON -> true.toString))
 
   //
@@ -46,7 +46,11 @@ object EsSpark {
   }
   def saveToEs(rdd: RDD[_], cfg: Map[String, String]) {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
-    
+
+    if (rdd == null || rdd.isEmpty()) {
+      return
+    }
+
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
@@ -61,6 +65,10 @@ object EsSpark {
   }
   def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
+
+    if (rdd == null || rdd.isEmpty()) {
+      return
+    }
 
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())

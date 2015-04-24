@@ -2,7 +2,6 @@ package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
-
 import org.apache.spark.annotation.AlphaComponent
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.api.java.JavaRDD.fromRDD
@@ -13,8 +12,11 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.util.ObjectUtils
 
 object EsSparkSQL {
+
+  private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
   def esDF(sc: SQLContext): DataFrame = esDF(sc, Map.empty[String, String])
   def esDF(sc: SQLContext, resource: String): DataFrame = esDF(sc, Map(ES_RESOURCE_READ -> resource))
@@ -32,11 +34,15 @@ object EsSparkSQL {
     saveToEs(srdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEs(srdd: DataFrame, cfg: Map[String, String]) {
+    if (srdd == null || srdd.count() == 0) {
+      return
+    }
+
     val sparkCtx = srdd.sqlContext.sparkContext
     val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
     esCfg.merge(cfg.asJava)
-    
+
     sparkCtx.runJob(srdd.rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
   }
 }

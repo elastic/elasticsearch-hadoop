@@ -1,8 +1,10 @@
 package org.elasticsearch.spark.rdd;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
 import org.apache.spark.TaskContext;
 import org.apache.spark.util.TaskCompletionListener;
@@ -17,8 +19,6 @@ abstract class CompatUtils {
 
     private static final boolean SPARK_11_AVAILABLE = ObjectUtils.isClassPresent("org.apache.spark.util.TaskCompletionListener", SparkConf.class.getClassLoader());
 
-    //public static final boolean SPARK_12_AVAILABLE = ObjectUtils.isClassPresent("org.apache.spark.sql.catalyst.types.BinaryType", SparkConf.class.getClassLoader());
-
     private static final Class<?> SCHEMA_RDD_LIKE_CLASS;
 
     static {
@@ -29,6 +29,45 @@ abstract class CompatUtils {
             // ignore
         }
         SCHEMA_RDD_LIKE_CLASS = clz;
+
+        // apply the warning when the class is loaded (to cover all access points)
+
+        // check whether the correct es-hadoop is used with the correct Spark version
+        boolean isSpark13 = ObjectUtils.isClassPresent("org.apache.spark.sql.DataFrame", SparkConf.class.getClassLoader());
+        boolean isEshForSpark13 = !ObjectUtils.isClassPresent("org.elasticsearch.spark.sql.EsSchemaRDDWriter", CompatUtils.class.getClassLoader());
+
+        // XOR can be applied as well but != increases readability
+        if (isSpark13 != isEshForSpark13) {
+
+            // need SparkContext which requires context
+            // as such do another reflex dance
+
+            String sparkVersion = null;
+
+            // Spark 1.0 - 1.1: SparkContext$.MODULE$.SPARK_VERSION();
+            // Spark 1.2+     : package$.MODULE$.SPARK_VERSION();
+            Object target = org.apache.spark.SparkContext$.MODULE$;
+            Method sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
+
+            if (sparkVersionMethod == null) {
+                target = org.apache.spark.package$.MODULE$;
+                sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
+            }
+
+            if (sparkVersionMethod == null) {
+                sparkVersion = (isSpark13 ? "1.3+" : "1.0-1.2");
+            }
+            else {
+                sparkVersion = ReflectionUtils.<String> invoke(sparkVersionMethod, target);
+            }
+
+            LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").
+                warn(String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with Spark %s",
+                        (isEshForSpark13 ? "1.3 (or higher)" : "1.0-1.2"),
+                        sparkVersion
+                        ));
+        }
+
     }
 
     private static abstract class Spark10TaskContext {

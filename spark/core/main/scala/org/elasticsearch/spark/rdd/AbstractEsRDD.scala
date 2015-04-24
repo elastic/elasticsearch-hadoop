@@ -4,7 +4,6 @@ import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
@@ -13,11 +12,14 @@ import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.util.ObjectUtils
 
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @transient sc: SparkContext,
   val params: scala.collection.Map[String, String] = Map.empty)
   extends RDD[T](sc, Nil) {
+
+  private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
   protected var logger = LogFactory.getLog(this.getClass())
 
@@ -33,8 +35,8 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val esSplit = split.asInstanceOf[EsPartition]
-    val ip = esSplit.esPartition.nodeIp 
-    if (ip != null) Seq(ip) else Nil 
+    val ip = esSplit.esPartition.nodeIp
+    if (ip != null) Seq(ip) else Nil
   }
 
   override def checkpoint() {
