@@ -28,7 +28,7 @@ IMPORTANT: Whenever possible, consider using the _native_ integration as it offe
 [float]
 ==== Configuration
 
-To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.0.1/programming-guide.html#initializing-spark[`SparkConf`] object:
+To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.3.1/programming-guide.html#initializing-spark[`SparkConf`] object:
 
 [source,scala]
 ----
@@ -43,6 +43,17 @@ conf.set("es.index.auto.create", "true")
 SparkConf conf = new SparkConf().setAppName(appName).setMaster(master);
 conf.set("es.index.auto.create", "true");
 ----
+
+.Command-line
+
+For those that want to set the properties through the command-line (either directly or by loading them from a file), note that Spark _only_ accepts those that start with the "spark." prefix and will _ignore_ the rest (and depending on the version a warning might be thrown). To work-around this limitation, define the {eh} properties by appending the +spark.+ prefix (thus they become +spark.es.+) and {eh} will automatically resolve them:
+
+[source, bash]
+----
+$ ./bin/spark-submit --conf spark.es.resource<1>=index/type ...
+----
+
+<1> Notice the +es.resource+ property which became +spark.es.resource+
 
 [float]
 [[spark-write]]
