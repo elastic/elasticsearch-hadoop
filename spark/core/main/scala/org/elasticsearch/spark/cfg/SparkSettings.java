@@ -52,6 +52,9 @@ public class SparkSettings extends Settings {
     @Override
     public String getProperty(String name) {
         Option<String> op = cfg.getOption(name);
+        if (!op.isDefined()) {
+            op = cfg.getOption("spark." + name);
+        }
         return (op.isDefined() ? op.get() : null);
     }
 
