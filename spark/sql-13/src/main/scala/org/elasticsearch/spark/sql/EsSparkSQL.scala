@@ -34,7 +34,7 @@ object EsSparkSQL {
     saveToEs(srdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEs(srdd: DataFrame, cfg: Map[String, String]) {
-    if (srdd == null || srdd.count() == 0) {
+    if (srdd == null || srdd.take(1).length == 0) {
       return
     }
 
