@@ -67,6 +67,11 @@ More information in this [section](http://www.elastic.co/guide/en/elasticsearch/
 ## Feedback / Q&A
 We're interested in your feedback! You can find us on the User [mailing list](https://groups.google.com/forum/?fromgroups#!forum/elasticsearch) - please append `[Hadoop]` to the post subject to filter it out. For more details, see the [community](http://www.elastic.co/community) page.
 
+
+## Online Documentation
+
+The latest reference documentation is available online on the project [home page](http://www.elastic.co/guide/en/elasticsearch/hadoop/index.html). Below the README contains _basic_ usage instructions at a glance.
+
 ## Usage
 
 ### Configuration Properties
@@ -317,6 +322,8 @@ Elasticsearch Hadoop uses [Gradle][] for its build system and it is not required
 See `gradlew tasks` for more information.
 
 To create a distributable zip, run `gradlew distZip` from the command line; once completed you will find the jar in `build/libs`.
+
+To build the project, JVM 7 (Oracle one is recommended) or higher is required.
 
 ## License
 This project is released under version 2.0 of the [Apache License][]

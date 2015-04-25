@@ -66,7 +66,7 @@ object EsSpark {
   def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
-    if (rdd == null || rdd.partitions.length == 0 || rdd.take(1).length == 0) {
+    if (rdd == null || rdd.partitions.length == 0) {
       return
     }
 
