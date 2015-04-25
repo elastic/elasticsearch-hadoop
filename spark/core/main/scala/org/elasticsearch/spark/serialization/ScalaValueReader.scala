@@ -14,11 +14,13 @@ import scala.collection.JavaConversions
 import scala.Predef
 import java.util.Date
 import org.elasticsearch.hadoop.util.StringUtils
+import javax.xml.bind.DatatypeConverter
 
 
 class ScalaValueReader extends ValueReader with SettingsAware {
 
   var emptyAsNull: Boolean = false
+  var richDate: Boolean = false
 
   def readValue(parser: Parser, value: String, esType: FieldType) = {
     if (esType == null) {
@@ -100,9 +102,20 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   protected def parseBinary(value: Array[Byte]) = { value }
 
   def date(value: String, parser: Parser) = { checkNull(parseDate, value, parser) }
-  protected def parseDate(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) new Date(parser.longValue()) else value }
 
-  def setSettings(settings: Settings) = { emptyAsNull = settings.getFieldReadEmptyAsNull() }
+  protected def parseDate(value: String, parser:Parser) = {
+    if (parser.currentToken()== VALUE_NUMBER) {
+     if (richDate) new Date(parser.longValue()) else parser.longValue()
+    }
+    else {
+     if (richDate) DatatypeConverter.parseDateTime(value).getTime() else value
+    }
+  }
+
+  def setSettings(settings: Settings) = {
+    emptyAsNull = settings.getFieldReadEmptyAsNull
+    richDate = settings.getMappingDateRich
+  }
 
   def createMap(): AnyRef = {
     new LinkedHashMap

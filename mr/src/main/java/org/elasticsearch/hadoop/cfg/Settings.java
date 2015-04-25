@@ -223,6 +223,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_MAPPING_CONSTANT_AUTO_QUOTE, ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT));
     }
 
+    public boolean getMappingDateRich() {
+        return Booleans.parseBoolean(getProperty(ES_MAPPING_DATE_RICH_OBJECT, ES_MAPPING_DATE_RICH_OBJECT_DEFAULT));
+    }
+
     public String getMappingIncludes() {
         return getProperty(ES_MAPPING_INCLUDE, ES_MAPPING_INCLUDE_DEFAULT);
     }

@@ -156,6 +156,10 @@ public interface ConfigurationOptions {
     String ES_MAPPING_CONSTANT_AUTO_QUOTE = "es.mapping.constant.auto.quote";
     String ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT = "true";
 
+    String ES_MAPPING_DATE_RICH_OBJECT = "es.mapping.date.rich";
+    String ES_MAPPING_DATE_RICH_OBJECT_DEFAULT = "true";
+
+
     String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
     String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
     String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";

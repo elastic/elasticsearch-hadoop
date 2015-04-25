@@ -176,6 +176,12 @@ The document field/property name containing the document time-to-live. To specif
 The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
 
 added[2.1]
+`es.mapping.date.rich` (default true)::
+Whether to create a _rich_ +Date+ like object for +Date+ fields in {es} or returned them as primitives (+String+ or +long+). By default this is
+true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in +Date+ object and as such
++LongWritable+ and +Text+ are returned regardless of this setting.
+
+added[2.1]
 `es.mapping.include` (default none)::
 Field/property to be included in final the document. Useful for _extracting_ the needed data from entities. The syntax is similar
 to that of {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html[include/exclude].
