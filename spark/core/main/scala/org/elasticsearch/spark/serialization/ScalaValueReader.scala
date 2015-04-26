@@ -90,10 +90,12 @@ class ScalaValueReader extends ValueReader with SettingsAware {
 
   def binaryValue(value: Array[Byte]) = {
     if (value != null) {
-      if (value.length == 0 && emptyAsNull) {
+      if (emptyAsNull) {
         nullValue()
       }
-      parseBinary(value)
+      else {
+        parseBinary(value)
+      }
     }
     else {
       nullValue()
