@@ -80,8 +80,8 @@ object AbstractScalaEsScalaSparkSQL {
   @Parameters
   def testParams(): ju.Collection[Array[jl.Object]] = {
     val list = new ju.ArrayList[Array[jl.Object]]()
-    list.add(Array("default-", jl.Boolean.FALSE))
-    list.add(Array("with-meta-", jl.Boolean.TRUE))
+    list.add(Array("default_", jl.Boolean.FALSE))
+    list.add(Array("with_meta_", jl.Boolean.TRUE))
     list
   }
 }
