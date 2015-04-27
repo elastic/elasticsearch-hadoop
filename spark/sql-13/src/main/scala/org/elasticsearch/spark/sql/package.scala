@@ -14,8 +14,10 @@ package object sql {
     def esDF(resource: String) = EsSparkSQL.esDF(sc, resource)
     def esDF(resource: String, query: String) = EsSparkSQL.esDF(sc, resource, query)
     def esDF(cfg: scala.collection.Map[String, String]) = EsSparkSQL.esDF(sc, cfg)
+    def esDF(resource: String, cfg: scala.collection.Map[String, String]) = EsSparkSQL.esDF(sc, resource, cfg)
+    def esDF(resource: String, query: String, cfg: scala.collection.Map[String, String]) = EsSparkSQL.esDF(sc, resource, query, cfg)
   }
-  
+
   implicit def sparkDataFrameFunctions(df: DataFrame) = new SparkDataFrameFunctions(df)
 
   class SparkDataFrameFunctions(df: DataFrame) extends Serializable {

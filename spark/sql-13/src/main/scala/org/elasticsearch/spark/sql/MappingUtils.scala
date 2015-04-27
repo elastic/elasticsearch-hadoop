@@ -3,6 +3,7 @@ package org.elasticsearch.spark.sql
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.sql.types.ByteType
+import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.types.DoubleType
 import org.apache.spark.sql.types.FloatType
 import org.apache.spark.sql.types.IntegerType
@@ -32,16 +33,26 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 private[sql] object MappingUtils {
 
   def discoverMapping(cfg: Settings): StructType = {
+
     val repo = new RestRepository(cfg)
     try {
-      return convertToStruct(repo.getMapping().skipHeaders());
+      return convertToStruct(repo.getMapping().skipHeaders(), cfg);
     } finally {
       repo.close()
     }
   }
 
+  private def convertToStruct(rootField: Field, cfg: Settings): StructType = {
+    var fields = for (fl <- rootField.properties()) yield convertField(fl)
+    if (cfg.getReadMetadata) {
+      val metadataMap = DataTypes.createStructField(cfg.getReadMetadataField, DataTypes.createMapType(StringType, StringType, true), true)
+      fields :+= metadataMap
+    }
+    DataTypes.createStructType(fields)
+  }
+
   private def convertToStruct(field: Field): StructType = {
-    new StructType(for (fl <- field.properties()) yield convertField(fl))
+    DataTypes.createStructType(for (fl <- field.properties()) yield convertField(fl))
   }
 
   private def convertField(field: Field): StructField = {
@@ -61,7 +72,7 @@ private[sql] object MappingUtils {
       // fall back to String
       case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
-    
-    StructField(field.name(), dataType, true)
+
+    DataTypes.createStructField(field.name(), dataType, true)
   }
 }

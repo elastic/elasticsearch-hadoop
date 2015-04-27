@@ -27,6 +27,15 @@ object EsSparkSQL {
     sc.createDataFrame(rowRDD, schema)
   }
 
+  def esDF(sc: SQLContext, resource: String, query: String, cfg: Map[String, String]): DataFrame = {
+    esDF(sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+  }
+
+  def esDF(sc: SQLContext, resource: String, cfg: Map[String, String]): DataFrame = {
+    esDF(sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource))
+  }
+
+
   def saveToEs(srdd: DataFrame, resource: String) {
     saveToEs(srdd, Map(ES_RESOURCE_WRITE -> resource))
   }

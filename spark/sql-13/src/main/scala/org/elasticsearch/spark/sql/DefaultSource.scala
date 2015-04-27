@@ -19,8 +19,9 @@ private[sql] class DefaultSource extends RelationProvider {
     @transient sqlContext: SQLContext,
     parameters: Map[String, String]): BaseRelation = {
 
-    val params = parameters map { case (k, v) => 
-      if (k.startsWith("es.")) (k, v) 
+    // . seems to be problematic when specifying the options
+    val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
+      if (k.startsWith("es.")) (k, v)
       else if (k == "path") ("es.resource", v)
       else ("es." + k, v) }
     params.getOrElse("es.resource", sys.error("resource must be specified for Elasticsearch resources."))
@@ -29,7 +30,7 @@ private[sql] class DefaultSource extends RelationProvider {
 }
 
 private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@transient val sqlContext: SQLContext)
-  extends BaseRelation with PrunedScan //with InsertableRelation 
+  extends BaseRelation with PrunedScan //with InsertableRelation
   {
 
   @transient lazy val cfg = {

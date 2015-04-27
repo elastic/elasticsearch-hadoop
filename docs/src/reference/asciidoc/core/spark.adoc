@@ -738,12 +738,13 @@ Available since Spark SQL 1.2, one can also access a data source by declaring it
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (resource 'spark/index')  " ) <3>
+   "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" ) "
 ----
 
 <1> Spark's temporary table name 
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
-<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es.+ prefix or skip it for convenient.
+<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es_+ prefix or skip it for convenient.
+<4> Since using the +.+ can cause syntax exceptions, one should replace it instead with +_+ (underline). Thus, in this example +es.scroll.size+ becomes +scroll_size+ (as the leading +es+ can be removed)
 
 Once defined, the schema is picked up automatically. So one can issue queries, right away:
 
