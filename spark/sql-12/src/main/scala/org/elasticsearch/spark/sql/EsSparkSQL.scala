@@ -28,6 +28,13 @@ object EsSparkSQL {
     sc.applySchema(rowRDD, schema)
   }
 
+  def esRDD(sc: SQLContext, resource: String, query: String, cfg: Map[String, String]): SchemaRDD = {
+    esRDD(sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+  }
+  def esRDD(sc: SQLContext, resource: String, cfg: Map[String, String]): SchemaRDD = {
+    esRDD(sc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource))
+  }
+
   def esRDD(jsc: JavaSQLContext): JavaSchemaRDD = esRDD(jsc, Map.empty[String, String])
   def esRDD(jsc: JavaSQLContext, resource: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource))
   def esRDD(jsc: JavaSQLContext, resource: String, query: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
@@ -35,6 +42,13 @@ object EsSparkSQL {
     val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, cfg)
     val schema = Utils.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
     jsc.applySchema(rowRDD, schema)
+  }
+
+  def esRDD(jsc: JavaSQLContext, resource: String, query: String, cfg: Map[String, String]): JavaSchemaRDD = {
+    esRDD(jsc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+  }
+  def esRDD(jsc: JavaSQLContext, resource: String, cfg: Map[String, String]): JavaSchemaRDD = {
+    esRDD(jsc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource))
   }
 
   def saveToEs(srdd: SchemaRDD, resource: String) {

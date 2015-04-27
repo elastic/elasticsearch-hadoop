@@ -18,6 +18,9 @@
  */
 package org.elasticsearch.spark.integration;
 
+
+import java.{util => ju, lang => jl}
+
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConversions.propertiesAsScalaMap
@@ -45,7 +48,10 @@ import org.junit.Assert._
 import org.junit.Assume._
 import org.junit.BeforeClass
 import org.junit.FixMethodOrder
+import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.junit.Test
 import javax.xml.bind.DatatypeConverter
@@ -69,7 +75,7 @@ object AbstractScalaEsScalaSparkSQL {
     sc = new SparkContext(conf)
     sqc = new SQLContext(sc)
   }
-  
+
   @AfterClass
   def cleanup() {
     if (sc != null) {
@@ -78,14 +84,24 @@ object AbstractScalaEsScalaSparkSQL {
       Thread.sleep(TimeUnit.SECONDS.toMillis(3))
     }
   }
+
+  @Parameters
+  def testParams(): ju.Collection[Array[jl.Object]] = {
+    val list = new ju.ArrayList[Array[jl.Object]]()
+    list.add(Array("default_", jl.Boolean.FALSE))
+    list.add(Array("with_meta_", jl.Boolean.TRUE))
+    list
+  }
 }
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-class AbstractScalaEsScalaSparkSQL extends Serializable {
+@RunWith(classOf[Parameterized])
+class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) extends Serializable {
 
-	val sc = AbstractScalaEsScalaSparkSQL.sc
-	val sqc = AbstractScalaEsScalaSparkSQL.sqc
-	
+  val sc = AbstractScalaEsScalaSparkSQL.sc
+  val sqc = AbstractScalaEsScalaSparkSQL.sqc
+  val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
+
     @Test
     def testBasicRead() {
         val schemaRDD = artistsAsSchemaRDD
@@ -101,8 +117,8 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
     def testEsSchemaRDD1Write() {
       val schemaRDD = artistsAsSchemaRDD
 
-      val target = "sparksql-test/scala-basic-write"
-      schemaRDD.saveToEs(target)
+      val target = wrapIndex("sparksql-test/scala-basic-write")
+      schemaRDD.saveToEs(target, cfg)
       assertTrue(RestUtils.exists(target))
       assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
     }
@@ -111,8 +127,9 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
     def testEsSchemaRDD1WriteWithMapping() {
       val schemaRDD = artistsAsSchemaRDD
 
-      val target = "sparksql-test/scala-basic-write-id-mapping"
-      schemaRDD.saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url"))
+      val target = wrapIndex("sparksql-test/scala-basic-write-id-mapping")
+      val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url")
+      schemaRDD.saveToEs(target, newCfg)
       assertTrue(RestUtils.exists(target))
       assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
       assertThat(RestUtils.exists(target + "/1"), is(true))
@@ -124,13 +141,13 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val schemaRDD = artistsAsSchemaRDD
 
       val target = "sparksql-test/scala-basic-write-id-mapping"
-      EsSpark.saveToEs(schemaRDD, target)
+      EsSpark.saveToEs(schemaRDD, target, cfg)
     }
 
     @Test
     def testEsSchemaRDD2Read() {
-      val target = "sparksql-test/scala-basic-write"
-        
+      val target = wrapIndex("sparksql-test/scala-basic-write")
+
       val schemaRDD = sqc.esRDD(target)
       assertTrue(schemaRDD.count > 300)
       val schema = schemaRDD.schemaString
@@ -139,11 +156,12 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       assertTrue(schema.contains("pictures: string"))
       assertTrue(schema.contains("time: long"))
       assertTrue(schema.contains("url: string"))
-      
+
       //schemaRDD.take(5).foreach(println)
-      
-      schemaRDD.registerTempTable("basicRead")
-      val nameRDD = sqc.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10") 
+
+      val tempTable = wrapIndex("basicRead")
+      schemaRDD.registerTempTable(tempTable)
+      val nameRDD = sqc.sql("SELECT name FROM " + tempTable + " WHERE id >= 1 AND id <=10")
       nameRDD.take(7).foreach(println)
       assertEquals(10, nameRDD.count)
     }
@@ -153,20 +171,20 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
       val input = TestUtils.sampleArtistsDat()
       val data = sc.textFile(input)
 
-      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+      val schema = StructType(Seq(StructField("id", IntegerType, false),
         StructField("name", StringType, false),
         StructField("url", StringType, true),
         StructField("pictures", StringType, true),
         StructField("time", TimestampType, true),
-        StructField("nested", 
-            StructType(Seq(StructField("id", IntegerType, false), 
-		        StructField("name", StringType, false),
-		        StructField("url", StringType, true),
-		        StructField("pictures", StringType, true),
-		        StructField("time", TimestampType, true))), true)))
-    
+        StructField("nested",
+            StructType(Seq(StructField("id", IntegerType, false),
+            StructField("name", StringType, false),
+            StructField("url", StringType, true),
+            StructField("pictures", StringType, true),
+            StructField("time", TimestampType, true))), true)))
+
       val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()),
-    		  											Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()))))
+                                Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()))))
       val schemaRDD = sqc.applySchema(rowRDD, schema)
 
       val target = "sparksql-test/scala-basic-write-rich-mapping-id-mapping"
@@ -179,37 +197,37 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
     @Test
     def testEsSchemaRDD4ReadRichMapping() {
       val target = "sparksql-test/scala-basic-write-rich-mapping-id-mapping"
-        
-      val schemaRDD = sqc.esRDD(target)
-      
+
+      val schemaRDD = sqc.esRDD(target, cfg)
+
       assertTrue(schemaRDD.count > 300)
       println(schemaRDD.schemaString)
     }
-        
-    private def artistsAsSchemaRDD = {         
+
+    private def artistsAsSchemaRDD = {
       val input = TestUtils.sampleArtistsDat()
       val data = sc.textFile(input)
 
-      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+      val schema = StructType(Seq(StructField("id", IntegerType, false),
         StructField("name", StringType, false),
         StructField("url", StringType, true),
         StructField("pictures", StringType, true),
         StructField("time", TimestampType, true)))
-    
+
       val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis())))
       val schemaRDD = sqc.applySchema(rowRDD, schema)
       schemaRDD
     }
 
-    private def artistsAsBasicSchemaRDD = {         
+    private def artistsAsBasicSchemaRDD = {
       val input = TestUtils.sampleArtistsDat()
       val data = sc.textFile(input)
 
-      val schema = StructType(Seq(StructField("id", IntegerType, false), 
+      val schema = StructType(Seq(StructField("id", IntegerType, false),
         StructField("name", StringType, false),
         StructField("url", StringType, true),
         StructField("pictures", StringType, true)))
-    
+
       val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3)))
       val schemaRDD = sqc.applySchema(rowRDD, schema)
       schemaRDD
@@ -217,97 +235,110 @@ class AbstractScalaEsScalaSparkSQL extends Serializable {
 
     @Test
     def testEsSchemaRDD50ReadAsDataSource() {
-      val target = "sparksql-test/scala-basic-write"
-      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicread " + 
-              "USING org.elasticsearch.spark.sql " +
-              "OPTIONS (resource '" + target + "')");
-      
-      
-      val allRDD = sqc.sql("SELECT * FROM sqlbasicread WHERE id >= 1 AND id <=10")
+      val target = wrapIndex("sparksql-test/scala-basic-write")
+      var options = "resource \"" + target + "\""
+      if (readMetadata) {
+        options = options + " ,read_metadata \"true\""
+      }
+      val table = wrapIndex("sqlbasicread1")
+
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE " + table +
+          " USING org.elasticsearch.spark.sql " +
+          " OPTIONS (" + options + ")")
+
+
+      val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+
+      val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
       println(allRDD.schemaString)
-      
-      val nameRDD = sqc.sql("SELECT name FROM sqlbasicread WHERE id >= 1 AND id <=10")
-      
+
+      val nameRDD = sqc.sql("SELECT name FROM " + table + " WHERE id >= 1 AND id <=10")
+
       println(nameRDD.schemaString)
       assertEquals(10, nameRDD.count)
       nameRDD.take(7).foreach(println)
     }
-    
+
     @Test
     def testEsSchemaFromDocsWithDifferentProperties() {
-      val target = "spark-test/scala-sql-varcols"
-      
+      val target = wrapIndex("spark-test/scala-sql-varcols")
+
       val trip1 = Map("reason" -> "business", "airport" -> "SFO")
       val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
-      sc.makeRDD(Seq(trip1, trip2)).saveToEs(target)
-      
-      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlvarcol " + 
-              "USING org.elasticsearch.spark.sql " +
-              "OPTIONS (resource '" + target + "')");
-      
-      val allResults = sqc.sql("SELECT * FROM sqlvarcol")
+      sc.makeRDD(Seq(trip1, trip2)).saveToEs(target, cfg)
+
+      val table = wrapIndex("sqlvarcol")
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE " + table +
+              " USING org.elasticsearch.spark.sql " +
+              " OPTIONS (resource '" + target + "')");
+
+      val allResults = sqc.sql("SELECT * FROM " + table)
       assertEquals(2, allResults.count())
       println(allResults.schemaString)
 
-      val filter = sqc.sql("SELECT * FROM sqlvarcol WHERE airport = 'OTP'")
+      val filter = sqc.sql("SELECT * FROM " + table + " WHERE airport = 'OTP'")
       assertEquals(1, filter.count())
-      
-      val nullColumns = sqc.sql("SELECT reason, airport FROM sqlvarcol ORDER BY airport")
+
+      val nullColumns = sqc.sql("SELECT reason, airport FROM " + table + " ORDER BY airport")
       val rows = nullColumns.take(2)
       assertEquals("[null,OTP]", rows(0).toString())
       assertEquals("[business,SFO]", rows(1).toString())
     }
-    
+
     @Test
     def testJsonLoadAndSavedToEs() {
       val input = sqc.jsonFile(this.getClass.getResource("/simple.json").toURI().toString())
       input.printSchema
       println(input.schema)
       input.saveToEs("spark-test/json-file")
-      
+
       val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
       basic.printSchema
       println(basic.schema)
       basic.saveToEs("spark-test/json-file")
-     
+
     }
-    
+
     @Test
     def testKeyValueParquetFile() {
       // Parquet is compiled against Hadoop 2 so check whether that's the case or not
       assumeTrue(classOf[JobContext].isInterface())
-      
+
       //val items = 128
       //val rdd = sc.parallelize(1 to items).flatMap(i => Seq.fill(items)(KeyValue(i, i.toString)))
 
       val outputParquet = "bin/keyvaluerdd.parquet"
       FileUtils.deleteDirectory(new File(outputParquet))
-      
+
       // running into https://issues.apache.org/jira/browse/SPARK-5281
       //sqc.createSchemaRDD(rdd).saveAsParquetFile(outputParquet)
       val schemaRDD = artistsAsBasicSchemaRDD
       schemaRDD.saveAsParquetFile(outputParquet)
-      
+
       sqc.parquetFile(outputParquet).registerTempTable("testparquet")
       val select = sqc.sql("SELECT * FROM testparquet")
       println(select.schema)
       select.saveToEs("test/parquet")
     }
-    
+
     //@Test
     // insert not supported
     def testEsSchemaRDD51WriteAsDataSource() {
       val target = "sparksql-test/scala-basic-write"
-      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " + 
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " +
               "USING org.elasticsearch.spark.sql " +
               "OPTIONS (resource '" + target + "')");
-      
-      
+
+
       val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
-      
+
       println(insertRDD.schemaString)
       assertTrue(insertRDD.count == 1)
       insertRDD.take(7).foreach(println)
+    }
+
+    def wrapIndex(index: String) = {
+     prefix + index
     }
 }

@@ -9,7 +9,7 @@ private[spark] class ScalaEsRow(private[spark] val values: ArrayBuffer[Any]) ext
   def iterator = values.iterator
   def length = values.size
 
-  def apply(i: Int) = values(i)  
+  def apply(i: Int) = values(i)
 
   def isNullAt(i: Int) = values(i) == null
 
@@ -52,6 +52,6 @@ private[spark] class ScalaEsRow(private[spark] val values: ArrayBuffer[Any]) ext
     if (values(i) == null) sys.error("Failed to check null bit for primitive String value.")
     values(i).asInstanceOf[String]
   }
-  
+
   def copy() = this
 }

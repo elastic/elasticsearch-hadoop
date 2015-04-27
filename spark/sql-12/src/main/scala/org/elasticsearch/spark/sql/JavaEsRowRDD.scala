@@ -1,5 +1,6 @@
 package org.elasticsearch.spark.sql
 
+import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.Map
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -22,8 +23,12 @@ import org.elasticsearch.spark.rdd.AbstractEsRDD
 import org.elasticsearch.spark.rdd.EsPartition
 import org.elasticsearch.spark.rdd.AbstractEsRDDIterator
 import org.apache.spark.sql.api.java.Row
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
+import org.elasticsearch.hadoop.util.StringUtils
+import scala.collection.mutable.ArrayBuffer
+import java.util.LinkedHashMap
 
-// see the comments in ScalaEsRowRDD 
+// see the comments in ScalaEsRowRDD
 private[spark] class JavaEsRowRDD(
   @transient sc: SparkContext,
   params: Map[String, String] = Map.empty)
@@ -37,16 +42,29 @@ private[spark] class JavaEsRowRDD(
 private[spark] class JavaEsRowRDDIterator(
   context: TaskContext,
   partition: PartitionDefinition)
-  extends AbstractEsRDDIterator[Row](context, partition) {
+  extends AbstractEsRowIterator[Row](context, partition) {
 
   override def getLogger() = LogFactory.getLog(classOf[JavaEsRowRDD])
 
   override def initReader(settings: Settings, log: Log) = {
-    InitializationUtils.setValueReaderIfNotSet(settings, classOf[JdkRowValueReader], log)
+    InitializationUtils.setValueReaderIfNotSet(settings, classOf[JdkValueReader], log)
+
+    super.initReader(settings, log)
   }
 
   override def createValue(value: Array[Object]): Row = {
-    value(1).asInstanceOf[Row]
+    // drop the ID and convert the value (the Map) into a Row
+    // convert the map into a Row
+    val struct = value(1).asInstanceOf[LinkedHashMap[AnyRef, Any]]
+
+    val buffer: ArrayBuffer[Any] = if (rowOrder.isEmpty) new ArrayBuffer[Any]() else ArrayBuffer.fill(rowOrder.size)(null)
+
+    val it = struct.entrySet().iterator()
+    while (it.hasNext()) {
+      val entry = it.next()
+      if (rowOrder.isEmpty) buffer.append(entry.getValue) else { rowOrder.get(entry.getKey.toString); buffer.update(rowOrder(entry.getKey.toString), entry.getValue) }
+    }
+
+    new JavaEsRow(new ScalaEsRow(buffer))
   }
 }
-
