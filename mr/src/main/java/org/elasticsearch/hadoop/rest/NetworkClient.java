@@ -152,4 +152,8 @@ public class NetworkClient implements StatsAware, Closeable {
     Stats transportStats() {
         return currentTransport.stats();
     }
+
+    public String currentNode() {
+        return currentNode;
+    }
 }

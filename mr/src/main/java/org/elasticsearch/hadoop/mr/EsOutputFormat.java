@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop.mr;
 
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
-
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
@@ -44,7 +42,8 @@ import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.Version;
+
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
 
 /**
  * ElasticSearch {@link OutputFormat} (old and new API) for adding data to an index inside ElasticSearch.
@@ -63,6 +62,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         public void setupJob(JobContext jobContext) throws IOException {}
 
         // compatibility check with Hadoop 0.20.2
+        @Override
         @Deprecated
         public void cleanupJob(JobContext jobContext) throws IOException {}
 
@@ -135,7 +135,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         private Resource resource;
 
         private HeartBeat beat;
-        private Progressable progressable;
+        private final Progressable progressable;
 
         public EsRecordWriter(Configuration cfg, Progressable progressable) {
             this.cfg = cfg;
@@ -173,9 +173,11 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             PartitionWriter pw = RestService.createWriter(settings, currentInstance, -1, log);
 
             this.repository = pw.repository;
-            
-            this.beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
-            this.beat.start();
+
+            if (progressable != null) {
+                this.beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+                this.beat.start();
+            }
         }
 
         private int detectCurrentInstance(Configuration conf) {
@@ -270,9 +272,6 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
                 log.warn("Speculative execution enabled for mapper - consider disabling it to prevent data corruption");
             }
         }
-
-        Version.logVersion();
-        log.info(String.format("Writing to [%s]", settings.getResourceWrite()));
 
         //log.info(String.format("Starting to write/index to [%s][%s]", settings.getTargetUri(), settings.getTargetResource()));
     }

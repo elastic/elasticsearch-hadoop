@@ -36,6 +36,9 @@ class ErrorUtils {
     private static final Pattern LINE = Pattern.compile("line: (\\d+)");
     private static final Pattern COLUMN = Pattern.compile("column: (\\d+)");
 
+    private static final int CHARS_TO_THE_LEFT = 15;
+    private static final int CHARS_TO_THE_RIGHT = 5;
+
     static String extractInvalidXContent(String errorMessage) {
         if (!StringUtils.hasText(errorMessage)) {
             return null;
@@ -99,8 +102,8 @@ class ErrorUtils {
         position += column;
 
         // found line, return column +/- some chars
-        int from = Math.max(position - 15, 0);
-        int to = Math.min(position + 5, payload.length());
+        int from = Math.max(position - CHARS_TO_THE_LEFT, 0);
+        int to = Math.min(position + CHARS_TO_THE_RIGHT, payload.length());
         return payload.substring(from, to);
     }
 

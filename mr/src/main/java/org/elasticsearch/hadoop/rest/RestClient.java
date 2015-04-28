@@ -59,8 +59,8 @@ public class RestClient implements Closeable, StatsAware {
 
     private NetworkClient network;
     private final ObjectMapper mapper;
-    private TimeValue scrollKeepAlive;
-    private boolean indexReadMissingAsEmpty;
+    private final TimeValue scrollKeepAlive;
+    private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
 
     {
@@ -256,14 +256,27 @@ public class RestClient implements Closeable, StatsAware {
         return shardsJson;
     }
 
-    public Map<String, Node> getNodes() {
+    public Map<String, Node> getHttpNodes(boolean allowNonHttp) {
         Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
         Map<String, Node> nodes = new LinkedHashMap<String, Node>();
 
         for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
             Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.hasHttp()) {
+            if (allowNonHttp || (node.hasHttp() && !node.isClient())) {
                 nodes.put(entry.getKey(), node);
+            }
+        }
+        return nodes;
+    }
+
+    public List<String> getHttpClientNodes() {
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
+        List<String> nodes = new ArrayList<String>();
+
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            Node node = new Node(entry.getKey(), entry.getValue());
+            if (node.isClient() && node.hasHttp()) {
+                nodes.add(node.getInet());
             }
         }
         return nodes;
@@ -356,6 +369,11 @@ public class RestClient implements Closeable, StatsAware {
         return (execute(PUT, indexOrType, false).hasSucceeded());
     }
 
+    public boolean isAlias(String query) {
+        Map<String, Object> aliases = (Map<String, Object>) get(query, null);
+        return (aliases.size() > 1);
+    }
+
     public void putMapping(String index, String mapping, byte[] bytes) {
         // create index first (if needed) - it might return 403
         touch(index);
@@ -366,10 +384,6 @@ public class RestClient implements Closeable, StatsAware {
     public String esVersion() {
         Map<String, String> version = get("", "version");
         return version.get("number");
-    }
-
-    public Map<String, Object> aliases(String index) {
-        return get(index, null);
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) {
@@ -396,5 +410,9 @@ public class RestClient implements Closeable, StatsAware {
         if (content instanceof StatsAware) {
             stats.aggregate(((StatsAware) content).stats());
         }
+    }
+
+    public String getCurrentNode() {
+        return network.currentNode();
     }
 }

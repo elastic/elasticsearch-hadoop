@@ -31,12 +31,12 @@ public class Shard implements Comparable<Shard>, Serializable {
         }
     }
 
-    private State state;
-    private boolean primary;
-    private String node;
-    private String relocatingNode;
-    private Integer id;
-    private String index;
+    private final State state;
+    private final boolean primary;
+    private final String node;
+    private final String relocatingNode;
+    private final Integer id;
+    private final String index;
 
     public Shard(Map<String, Object> data) {
         state = State.valueOf((String) data.get("state"));
@@ -66,12 +66,14 @@ public class Shard implements Comparable<Shard>, Serializable {
         if (getClass() != obj.getClass())
             return false;
         Shard other = (Shard) obj;
+
         if (index == null) {
             if (other.index != null)
                 return false;
         }
         else if (!index.equals(other.index))
             return false;
+
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -115,8 +117,8 @@ public class Shard implements Comparable<Shard>, Serializable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Shard[state=").append(state).append(", primary=").append(primary).append(", node=")
-                .append(node).append(", name=")
-                .append(id).append(", index=").append(index).append("]");
+        .append(node).append(", name=")
+        .append(id).append(", index=").append(index).append("]");
         return builder.toString();
     }
 

@@ -29,9 +29,10 @@ import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 public class RestServiceTest {
 
@@ -83,12 +84,12 @@ public class RestServiceTest {
         Shard sh6 = new Shard(info);
         Node node6 = new Node("6", info);
 
-        pd1 = new PartitionDefinition(sh1, node1, null, null);
-        pd2 = new PartitionDefinition(sh2, node2, null, null);
-        pd3 = new PartitionDefinition(sh3, node3, null, null);
-        pd4 = new PartitionDefinition(sh4, node4, null, null);
-        pd5 = new PartitionDefinition(sh5, node5, null, null);
-        pd6 = new PartitionDefinition(sh6, node6, null, null);
+        pd1 = new PartitionDefinition(sh1, node1, null, null, true);
+        pd2 = new PartitionDefinition(sh2, node2, null, null, true);
+        pd3 = new PartitionDefinition(sh3, node3, null, null, true);
+        pd4 = new PartitionDefinition(sh4, node4, null, null, true);
+        pd5 = new PartitionDefinition(sh5, node5, null, null, true);
+        pd6 = new PartitionDefinition(sh6, node6, null, null, true);
 
         pds = Arrays.asList(pd1, pd2, pd3, pd4, pd5, pd6);
     }

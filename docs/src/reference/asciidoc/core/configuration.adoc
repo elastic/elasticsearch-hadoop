@@ -162,6 +162,10 @@ The document field/property name containing the document parent. To specify a co
 `es.mapping.version` (default none)::
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
+`es.mapping.version.type` (default depends on +es.mapping.version+)::
+Indicates the http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/docs-index_.html#_version_types[type of versioning] used. 
+If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
+
 `es.mapping.routing` (default none)::
 The document field/property name containing the document routing. To specify a constant, use the `<CONSTANT>` format.
 
@@ -171,6 +175,24 @@ The document field/property name containing the document time-to-live. To specif
 `es.mapping.timestamp` (default none)::
 The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
 
+added[2.1]
+`es.mapping.date.rich` (default true)::
+Whether to create a _rich_ +Date+ like object for +Date+ fields in {es} or returned them as primitives (+String+ or +long+). By default this is
+true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in +Date+ object and as such
++LongWritable+ and +Text+ are returned regardless of this setting.
+
+added[2.1]
+`es.mapping.include` (default none)::
+Field/property to be included in final the document. Useful for _extracting_ the needed data from entities. The syntax is similar
+to that of {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html[include/exclude].
+Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
+
+added[2.1]
+`es.mapping.exclude` (default none)::
+Field/property to be excluded in final the document. Useful for _eliminating_ unneeded data from entities. The syntax is similar
+to that of {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/search-request-source-filtering.html[include/exclude].
+Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded
+
 For example:
 [source,ini]
 ----
@@ -179,7 +201,18 @@ es.mapping.id = uuid
 
 # specifying a parent with id '123'
 es.mapping.parent = \<123>
+
+# combine include / exclude for complete control
+# include 
+es.mapping.include = u*, foo.*
+# exclude
+es.mapping.exclude = *.description
 ----
+
+Using the configuration above, each entry will have only its top-level fields, starting with u and nested fields under +foo+ included
+in the document with the exception of any nested field named +description+. Additionally the document parent will be +123+ while the
+document id extracted from field +uuid+.
+
 
 [float]
 ==== Metadata
@@ -213,7 +246,7 @@ For example:
 [source,ini]
 ----
 # specifying 2 parameters, one extracting the value from field 'number', the other containing the value '123':
-es.update.params = param1:number,param2:\<123>
+es.update.script.params = param1:number,param2:\<123>
 ----
 
 `es.update.script.params.json`::
@@ -222,7 +255,7 @@ Script parameters specified in `raw`, JSON format. The specified value is passed
 For example:
 [source,ini]
 ----
-es.update.params.json = {"param1":1, "param2":2}
+es.update.script.params.json = {"param1":1, "param2":2}
 ----
 
 `es.update.retry.on.conflict` (default 0)::
@@ -263,13 +296,16 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
 ==== Network
 
 `es.nodes.discovery` (default true)::
-Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that when reading and writing, {eh} uses the target index shards (and their hosting nodes), regardless of this setting.
+Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, {eh} uses the target index shards (and their hosting nodes) unless +es.nodes.client.only+ is enabled.
+
+`es.nodes.client.only` (default false)::
+Whether to use {es} http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-node.html#modules-node[client nodes] (or _load-balancers_). When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _client_ nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default.
 
 `es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
 
 `es.http.retries` (default 3)::
-Number of retries for estabilishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
+Number of retries for establishing a (broken) http connection. The retries are applied for each _conversation_ with an {es} node. Once the retries are depleted, the connection will automatically be re-reouted to the next
 available {es} node (based on the declaration of `es.nodes`, followed by the discovered nodes - if enabled).
 
 `es.scroll.keepalive` (default 10m)::
@@ -281,12 +317,14 @@ Number of results/items returned by each individual scroll.
 `es.action.heart.beat.lead` (default 15s)::
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
 
+added[2.1]
 [float]
 ==== Basic Authentication
 
 `es.net.http.auth.user`:: Basic Authentication user name
 `es.net.http.auth.pass`:: Basic Authentication password
 
+added[2.1]
 [float]
 ==== SSL
 

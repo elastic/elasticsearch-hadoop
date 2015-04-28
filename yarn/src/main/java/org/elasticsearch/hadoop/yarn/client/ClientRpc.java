@@ -77,7 +77,7 @@ public class ClientRpc implements AutoCloseable {
         }
     }
 
-	public List<ApplicationReport> killEsApps() {
+    public List<ApplicationReport> killEsApps() {
         try {
             List<ApplicationReport> esApps = client.getApplications(ES_TYPE, ALIVE);
 
@@ -85,7 +85,7 @@ public class ClientRpc implements AutoCloseable {
                 client.killApplication(appReport.getApplicationId());
             }
 
-			return esApps;
+            return esApps;
         } catch (Exception ex) {
             throw new EsYarnException(ex);
         }
@@ -124,17 +124,17 @@ public class ClientRpc implements AutoCloseable {
         }
     }
 
-	public List<ApplicationReport> listEsClustersAlive() {
-		try {
-			return client.getApplications(ES_TYPE, ALIVE);
-		} catch (Exception ex) {
-			throw new EsYarnException(ex);
-		}
-	}
+    public List<ApplicationReport> listEsClustersAlive() {
+        try {
+            return client.getApplications(ES_TYPE, ALIVE);
+        } catch (Exception ex) {
+            throw new EsYarnException(ex);
+        }
+    }
 
-	public void waitForApp(ApplicationId appId, long timeout) {
+    public void waitForApp(ApplicationId appId, long timeout) {
         boolean repeat = false;
-		long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         do {
             try {
                 ApplicationReport appReport = client.getApplicationReport(appId);
@@ -146,7 +146,7 @@ public class ClientRpc implements AutoCloseable {
             } catch (Exception ex) {
                 throw new EsYarnException(ex);
             }
-		} while (repeat && (System.currentTimeMillis() - start) < timeout);
+        } while (repeat && (System.currentTimeMillis() - start) < timeout);
     }
 
     @Override

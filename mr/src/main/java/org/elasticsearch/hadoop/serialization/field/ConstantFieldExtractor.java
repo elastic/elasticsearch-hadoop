@@ -26,6 +26,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     public static final String PROPERTY = "org.elasticsearch.hadoop.serialization.ConstantFieldExtractor.property";
     private String fieldName;
     private Object value;
+    private boolean autoQuote = true;
 
     @Override
     public final Object field(Object target) {
@@ -38,6 +39,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
+        autoQuote = settings.getMappingConstantAutoQuote();
         fieldName = property(settings);
         if (fieldName.startsWith("<") && fieldName.endsWith(">")) {
             value = initValue(fieldName.substring(1, fieldName.length() - 1));
@@ -51,7 +53,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     }
 
     protected Object initValue(String value) {
-        return value;
+        return ExtractorUtils.extractConstant(value, autoQuote);
     }
 
     protected String property(Settings settings) {

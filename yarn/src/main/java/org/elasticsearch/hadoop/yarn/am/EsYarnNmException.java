@@ -22,18 +22,18 @@ import org.elasticsearch.hadoop.yarn.EsYarnException;
 
 public class EsYarnNmException extends EsYarnException {
 
-	public EsYarnNmException() {
-	}
+    public EsYarnNmException() {
+    }
 
-	public EsYarnNmException(String message, Throwable cause) {
-		super(message, cause);
-	}
+    public EsYarnNmException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-	public EsYarnNmException(String message) {
-		super(message);
-	}
+    public EsYarnNmException(String message) {
+        super(message);
+    }
 
-	public EsYarnNmException(Throwable cause) {
-		super(cause);
-	}
+    public EsYarnNmException(Throwable cause) {
+        super(cause);
+    }
 }

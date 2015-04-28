@@ -72,31 +72,31 @@ public class Config {
         return new LinkedHashSet<String>(StringUtils.tokenize(cfg.getProperty("app.tags")));
     }
 
-	private String hdfsUploadDir() {
-		String dir = cfg.getProperty("hdfs.upload.dir");
-		return dir.endsWith("/") ? dir : dir + "/";
+    private String hdfsUploadDir() {
+        String dir = cfg.getProperty("hdfs.upload.dir");
+        return dir.endsWith("/") ? dir : dir + "/";
     }
 
     public String jarHdfsPath() {
-		return hdfsUploadDir() + jarName();
+        return hdfsUploadDir() + jarName();
     }
 
     public String jarName() {
-		return cfg.getProperty("hdfs.es.yarn.jar");
-	}
+        return cfg.getProperty("hdfs.es.yarn.jar");
+    }
 
-	public String esZipHdfsPath() {
-		return hdfsUploadDir() + esZipName();
-	}
+    public String esZipHdfsPath() {
+        return hdfsUploadDir() + esZipName();
+    }
 
-	public String esZipName() {
-		return "elasticsearch-" + downloadEsVersion() + ".zip";
-	}
+    public String esZipName() {
+        return "elasticsearch-" + downloadEsVersion() + ".zip";
+    }
 
-	public String esScript() {
-		// the zip contains a folder
-		// include the zip name plus the folder
-		return "elasticsearch-" + downloadEsVersion() + "/bin/elasticsearch";
+    public String esScript() {
+        // the zip contains a folder
+        // include the zip name plus the folder
+        return "elasticsearch-" + downloadEsVersion() + "/bin/elasticsearch";
     }
 
     public int containerPriority() {
@@ -112,12 +112,12 @@ public class Config {
     }
 
     public int containersToAllocate() {
-		return Integer.parseInt(cfg.getProperty("containers"));
+        return Integer.parseInt(cfg.getProperty("containers"));
     }
 
     public URL downloadURL() {
         try {
-			return new URL(cfg.getProperty("download.es.url") + esZipName());
+            return new URL(cfg.getProperty("download.es.url") + esZipName());
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException("Invalid URL", ex);
         }
@@ -128,7 +128,7 @@ public class Config {
     }
 
     public String downloadEsVersion() {
-		return cfg.getProperty("es.version");
+        return cfg.getProperty("es.version");
     }
 
     public File downloadedEs() {
@@ -136,52 +136,52 @@ public class Config {
         if (!dl.endsWith("/")) {
             dl = dl + "/";
         }
-		return new File(dl + esZipName());
+        return new File(dl + esZipName());
     }
 
     public File downloadedEsYarn() {
-		// internal property
-		String jar = cfg.getProperty("internal.es.yarn.file");
+        // internal property
+        String jar = cfg.getProperty("internal.es.yarn.file");
 
-		if (!StringUtils.hasText(jar)) {
-			Class<?> clazz = getClass();
-			// detect jar
-			ClassLoader loader = clazz.getClassLoader();
-			String classFile = clazz.getName().replaceAll("\\.", "/") + ".class";
-			try {
-				for (Enumeration<URL> itr = loader.getResources(classFile); itr.hasMoreElements();) {
-					URL url = itr.nextElement();
-					if ("jar".equals(url.getProtocol())) {
-						String toReturn = url.getPath();
-						if (toReturn.startsWith("file:")) {
-							toReturn = toReturn.substring("file:".length());
-						}
-						toReturn = URLDecoder.decode(toReturn, "UTF-8");
-						jar = toReturn.replaceAll("!.*$", "");
-					}
-				}
-			} catch (IOException ex) {
-				throw new IllegalStateException("Cannot detect the Es-YARN jar", ex);
-			}
-		}
+        if (!StringUtils.hasText(jar)) {
+            Class<?> clazz = getClass();
+            // detect jar
+            ClassLoader loader = clazz.getClassLoader();
+            String classFile = clazz.getName().replaceAll("\\.", "/") + ".class";
+            try {
+                for (Enumeration<URL> itr = loader.getResources(classFile); itr.hasMoreElements();) {
+                    URL url = itr.nextElement();
+                    if ("jar".equals(url.getProtocol())) {
+                        String toReturn = url.getPath();
+                        if (toReturn.startsWith("file:")) {
+                            toReturn = toReturn.substring("file:".length());
+                        }
+                        toReturn = URLDecoder.decode(toReturn, "UTF-8");
+                        jar = toReturn.replaceAll("!.*$", "");
+                    }
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException("Cannot detect the Es-YARN jar", ex);
+            }
+        }
 
-		Assert.hasText(jar, "Es-YARN.jar is not set and could not be detected...");
-		return new File(jar);
-	}
+        Assert.hasText(jar, "Es-YARN.jar is not set and could not be detected...");
+        return new File(jar);
+    }
 
-	public Map<String, String> envVars() {
-		Map<String, String> env = new LinkedHashMap<String, String>();
-		Set<String> keys = cfg.stringPropertyNames();
-		String prefix = "env.";
-		for (String key : keys) {
-			if (key.startsWith("env.")) {
-				env.put(key.substring(prefix.length()), cfg.getProperty(key));
-			}
-		}
-		return env;
-	}
+    public Map<String, String> envVars() {
+        Map<String, String> env = new LinkedHashMap<String, String>();
+        Set<String> keys = cfg.stringPropertyNames();
+        String prefix = "env.";
+        for (String key : keys) {
+            if (key.startsWith("env.")) {
+                env.put(key.substring(prefix.length()), cfg.getProperty(key));
+            }
+        }
+        return env;
+    }
 
-	public Properties asProperties() {
-		return PropertiesUtils.merge(null, cfg);
+    public Properties asProperties() {
+        return PropertiesUtils.merge(null, cfg);
     }
 }

@@ -27,22 +27,22 @@ import org.elasticsearch.hadoop.cfg.Settings;
  */
 public abstract class BulkCommands {
 
-    public static BulkCommand create(Settings settings) {
+    public static BulkCommand create(Settings settings, MetadataExtractor metaExtractor) {
 
         String operation = settings.getOperation();
         BulkFactory factory = null;
 
         if (ConfigurationOptions.ES_OPERATION_CREATE.equals(operation)) {
-            factory = new CreateBulkFactory(settings);
+            factory = new CreateBulkFactory(settings, metaExtractor);
         }
         else if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
-            factory = new IndexBulkFactory(settings);
+            factory = new IndexBulkFactory(settings, metaExtractor);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
-            factory = new UpdateBulkFactory(settings);
+            factory = new UpdateBulkFactory(settings, metaExtractor);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(operation)) {
-            factory = new UpdateBulkFactory(settings, true);
+            factory = new UpdateBulkFactory(settings, true, metaExtractor);
         }
         else {
             throw new EsHadoopIllegalArgumentException("Unknown operation " + operation);

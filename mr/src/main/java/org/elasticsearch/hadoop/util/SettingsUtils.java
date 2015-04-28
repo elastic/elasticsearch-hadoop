@@ -49,7 +49,9 @@ public abstract class SettingsUtils {
     }
 
     public static void pinNode(Settings settings, String node, int port) {
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, qualifyNode(node, port));
+        if (StringUtils.hasText(node) && port > 0) {
+            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, qualifyNode(node, port));
+        }
     }
 
     public static boolean hasPinnedNode(Settings settings) {

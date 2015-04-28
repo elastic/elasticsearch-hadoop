@@ -36,12 +36,91 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
  * Expected to read a _search response.
  */
 public class ScrollReader {
+
+    private static class JsonFragment {
+        static final JsonFragment EMPTY = new JsonFragment(-1, -1) {
+
+            @Override
+            public String toString() {
+                return "Empty";
+            }
+        };
+
+        final int charStart, charStop;
+
+        JsonFragment(int charStart, int charStop) {
+            this.charStart = charStart;
+            this.charStop = charStop;
+        }
+
+        boolean isValid() {
+            return charStart >= 0 && charStop >= 0;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + charStart + "," + charStop + "]";
+        }
+    }
+
+    // a collection of Json Fragments
+    private static class JsonResult {
+
+        private JsonFragment doc = JsonFragment.EMPTY;
+
+        // typically only 2 fragments are needed = metadata prefix +
+        private final List<JsonFragment> fragments = new ArrayList<JsonFragment>(2);
+
+        void addMetadata(JsonFragment fragment) {
+            if (fragment != null && fragment.isValid()) {
+                this.fragments.add(fragment);
+            }
+        }
+
+        void addDoc(JsonFragment fragment) {
+            if (fragment != null && fragment.isValid()) {
+                this.doc = fragment;
+            }
+        }
+
+        boolean hasDoc() {
+            return doc.isValid();
+        }
+
+        int[] asCharPos() {
+            int positions = fragments.size() << 1;
+            if (doc.isValid()) {
+                positions += 2;
+            }
+
+            int[] pos = new int[positions];
+            int index = 0;
+
+            if (doc.isValid()) {
+                pos[index++] = doc.charStart;
+                pos[index++] = doc.charStop;
+            }
+
+            for (JsonFragment fragment : fragments) {
+                pos[index++] = fragment.charStart;
+                pos[index++] = fragment.charStop;
+            }
+
+            return pos;
+        }
+
+        @Override
+        public String toString() {
+            return "doc=" + doc + "metadata=" + fragments;
+        }
+    }
 
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
@@ -51,6 +130,7 @@ public class ScrollReader {
     private final boolean trace = log.isTraceEnabled();
     private final boolean readMetadata;
     private final String metadataField;
+    private final boolean returnRawJson;
 
     private static final String[] HITS = new String[] { "hits" };
     private static final String[] ID = new String[] { "_id" };
@@ -58,19 +138,22 @@ public class ScrollReader {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ValueReader reader, Field rootField, boolean readMetadata, String metadataName) {
+    public ScrollReader(ValueReader reader, Field rootField, boolean readMetadata, String metadataName, boolean returnRawJson) {
         this.reader = reader;
         this.esMapping = Field.toLookupMap(rootField);
         this.readMetadata = readMetadata;
         this.metadataField = metadataName;
+        this.returnRawJson = returnRawJson;
     }
 
     public List<Object[]> read(InputStream content) throws IOException {
         Assert.notNull(content);
 
-        if (log.isTraceEnabled()) {
+        BytesArray copy = null;
+
+        if (log.isTraceEnabled() || returnRawJson) {
             //copy content
-            BytesArray copy = IOUtils.asBytes(content);
+            copy = IOUtils.asBytes(content);
             content = new FastByteArrayInputStream(copy);
             log.trace("About to parse scroll content " + copy);
         }
@@ -78,13 +161,13 @@ public class ScrollReader {
         this.parser = new JacksonJsonParser(content);
 
         try {
-            return read();
+            return read(copy);
         } finally {
             parser.close();
         }
     }
 
-    private List<Object[]> read() {
+    private List<Object[]> read(BytesArray input) {
         // check hits/total
         if (hits() == 0) {
             return null;
@@ -102,17 +185,117 @@ public class ScrollReader {
             results.add(readHit());
         }
 
+        // convert the char positions into actual content
+        if (returnRawJson) {
+            // get all the longs
+            int[] pos = new int[results.size() * 6];
+            int offset = 0;
+
+            List<int[]> fragmentsPos = new ArrayList<int[]>(results.size());
+
+            for (Object[] result : results) {
+                int[] asCharPos = ((JsonResult) result[1]).asCharPos();
+                // remember the positions to easily replace the fragment later on
+                fragmentsPos.add(asCharPos);
+                // copy them into the lookup array
+                System.arraycopy(asCharPos, 0, pos, offset, asCharPos.length);
+                offset += asCharPos.length;
+            }
+            // convert them into byte positions
+            //int[] bytesPosition = BytesUtils.charToBytePosition(input, pos);
+            int[] bytesPosition = pos;
+
+            int bytesPositionIndex = 0;
+
+            BytesArray doc = new BytesArray(128);
+            // replace the fragments with the actual json
+
+            // trimming is currently disabled since it appears mainly within fields and not outside of it
+            // in other words in needs to be treated when the fragments are constructed
+            for (int fragmentIndex = 0; fragmentIndex < fragmentsPos.size(); fragmentIndex++ ) {
+
+                Object[] result = results.get(fragmentIndex);
+                JsonResult jsonPointers = (JsonResult) result[1];
+
+                // current fragment of doc + metadata (prefix + suffix)
+                // used to iterate through the byte array pointers
+                int[] fragmentPos = fragmentsPos.get(fragmentIndex);
+                int currentFragmentIndex = 0;
+
+                int rangeStart, rangeStop;
+
+                doc.add('{');
+                // first add the doc
+                if (jsonPointers.hasDoc()) {
+                    rangeStart = bytesPosition[bytesPositionIndex];
+                    rangeStop = bytesPosition[bytesPositionIndex + 1];
+
+                    if (rangeStop - rangeStart < 0) {
+                        throw new IllegalArgumentException(String.format("Invalid position given=%s %s",rangeStart, rangeStop));
+                    }
+
+                    // trim
+                    //rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
+                    //rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
+
+                    doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
+
+                    // consumed doc pointers
+                    currentFragmentIndex += 2;
+                    bytesPositionIndex += 2;
+
+                }
+                // followed by the metadata under designed field
+                if (readMetadata) {
+                    if (jsonPointers.hasDoc()) {
+                        doc.add(',');
+                    }
+                    doc.add('"');
+                    doc.add(StringUtils.jsonEncoding(metadataField));
+                    doc.add('"');
+                    doc.add(':');
+                    doc.add('{');
+
+                    // consume metadata
+                    for (; currentFragmentIndex < fragmentPos.length; currentFragmentIndex += 2) {
+                        rangeStart = bytesPosition[bytesPositionIndex];
+                        rangeStop = bytesPosition[bytesPositionIndex + 1];
+                        // trim
+                        //rangeStart = BytesUtils.trimLeft(input.bytes(), rangeStart, rangeStop);
+                        //rangeStop = BytesUtils.trimRight(input.bytes(), rangeStart, rangeStop);
+
+                        if (rangeStop - rangeStart < 0) {
+                            throw new IllegalArgumentException(String.format("Invalid position given=%s %s",rangeStart, rangeStop));
+                        }
+
+                        doc.add(input.bytes(), rangeStart, rangeStop - rangeStart);
+                        bytesPositionIndex += 2;
+                    }
+                    doc.add('}');
+                }
+                doc.add('}');
+
+                // replace JsonResult with assembled document
+                result[1] = reader.wrapString(doc.toString());
+                doc.reset();
+            }
+        }
+
         return results;
     }
 
-    @SuppressWarnings("rawtypes")
     private Object[] readHit() {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
+        return (returnRawJson ? readHitAsJson() : readHitAsMap());
+    }
+
+    private Object[] readHitAsMap() {
         Object[] result = new Object[2];
         Object metadata = null;
         Object id = null;
 
+        Token t = parser.currentToken();
         // read everything until SOURCE or FIELDS is encountered
         if (readMetadata) {
             metadata = reader.createMap();
@@ -187,12 +370,148 @@ public class ScrollReader {
         return result;
     }
 
+    private Object[] readHitAsJson() {
+        // return results as raw json
+
+        Object[] result = new Object[2];
+        Object id = null;
+
+        Token t = parser.currentToken();
+
+        JsonResult snippet = new JsonResult();
+
+        // read everything until SOURCE or FIELDS is encountered
+        if (readMetadata) {
+            result[1] = snippet;
+
+            String name;
+
+            t = parser.nextToken();
+            // move parser
+            int metadataStartChar = parser.tokenCharOffset();
+            int metadataStopChar = -1;
+            int endCharOfLastElement = -1;
+
+            while ((t = parser.currentToken()) != null) {
+                name = parser.currentName();
+                if (t == Token.FIELD_NAME) {
+                    if ("_id".equals(name)) {
+                        t = parser.nextToken();
+                        id = reader.wrapString(parser.text());
+                        endCharOfLastElement = parser.tokenCharOffset();
+                        t = parser.nextToken();
+                    }
+                    else if ("fields".equals(name) || "_source".equals(name)) {
+                        metadataStopChar = endCharOfLastElement;
+                        // break meta-parsing
+                        t = parser.nextToken();
+                        break;
+                    }
+                    else {
+                        parser.skipChildren();
+                        parser.nextToken();
+                        t = parser.nextToken();
+                        endCharOfLastElement = parser.tokenCharOffset();
+                    }
+                }
+                else {
+                    // no _source or field found
+                    metadataStopChar = endCharOfLastElement;
+                    //parser.nextToken();
+                    // indicate no data found
+                    t = null;
+                    break;
+                }
+            }
+
+            Assert.notNull(id, "no id found");
+            result[0] = id;
+
+            if (metadataStartChar >= 0 && metadataStopChar >= 0) {
+                snippet.addMetadata(new JsonFragment(metadataStartChar, metadataStopChar));
+            }
+        }
+        // no metadata is needed, fast fwd
+        else {
+            Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
+            result[0] = reader.wrapString(parser.text());
+            t = ParsingUtils.seek(parser, SOURCE, FIELDS);
+        }
+
+        // no fields found
+        if (t != null) {
+            // move past _source or fields field name to get the accurate token location
+            t = parser.nextToken();
+            int charStart = parser.tokenCharOffset();
+            // can't use skipChildren as we are within the object
+            skipCurrentBlock();
+            // make sure to include the ending char
+            int charStop = parser.tokenCharOffset();
+            // move pass end of object
+            t = parser.nextToken();
+            snippet.addDoc(new JsonFragment(charStart, charStop));
+        }
+
+        // should include , plus whatever whitespace there is
+        int metadataSuffixStartCharPos = parser.tokenCharOffset();
+        int metadataSuffixStopCharPos = -1;
+
+        // in case of additional fields (matched_query), add them to the metadata
+        while ((t = parser.currentToken()) == Token.FIELD_NAME) {
+            t = parser.nextToken();
+            skipCurrentBlock();
+            t = parser.nextToken();
+
+            if (readMetadata) {
+                metadataSuffixStopCharPos = parser.tokenCharOffset();
+            }
+        }
+
+        if (readMetadata) {
+            if (metadataSuffixStartCharPos >= 0 && metadataSuffixStopCharPos >= 0) {
+                snippet.addMetadata(new JsonFragment(metadataSuffixStartCharPos, metadataSuffixStopCharPos));
+            }
+        }
+
+        result[1] = snippet;
+
+        if (trace) {
+            log.trace(String.format("Read hit result [%s]", result));
+        }
+
+        return result;
+
+    }
+
+    private void skipCurrentBlock() {
+        int open = 1;
+
+        while (true) {
+            Token t = parser.nextToken();
+            if (t == null) {
+                // handle EOF?
+                return;
+            }
+            switch (t) {
+            case START_OBJECT:
+            case START_ARRAY:
+                ++open;
+                break;
+            case END_OBJECT:
+            case END_ARRAY:
+                if (--open == 0) {
+                    return;
+                }
+                break;
+            }
+        }
+    }
+
     private long hits() {
         ParsingUtils.seek(parser, TOTAL);
         long hits = parser.longValue();
         return hits;
     }
-
 
     protected Object read(Token t, String fieldMapping) {
         // handle nested nodes first

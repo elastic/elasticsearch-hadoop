@@ -33,31 +33,67 @@ public class QueryTestParams {
     public static Collection<Object[]> jsonParams() {
         return Arrays.asList(new Object[][] {
                 // standard
-                { "", "", false }, // empty
-                { "", "?q=m*", false }, // uri
-                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
-                { "", TestUtils.sampleQueryUri(), false }, // nested uri
-                { "", TestUtils.sampleQueryDsl(), false }, // nested dsl
+                { "", "?q=name:mega", false, false },
+                { "", "", false, false }, // empty
+                { "", "?q=m*", false, false }, // uri
+                { "", "?q=name:m*", false, false }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, false }, // query dsl
+                { "", TestUtils.sampleQueryUri(), false, false }, // nested uri
+                { "", TestUtils.sampleQueryDsl(), false, false }, // nested dsl
 
-                { "", "", true }, // empty
-                { "", "?q=m*", true }, // uri
-                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
-                { "", TestUtils.sampleQueryUri(), true }, // nested uri
-                { "", TestUtils.sampleQueryDsl(), true }, // nested dsl
+                { "", "", true, false }, // empty
+                { "", "?q=m*", true, false }, // uri
+                { "", "?q=name:m*", true, false }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, false }, // query dsl
+                { "", TestUtils.sampleQueryUri(), true, false }, // nested uri
+                { "", TestUtils.sampleQueryDsl(), true, false }, // nested dsl
+
+                { "", "", false, true }, // empty
+                { "", "?q=m*", false, true }, // uri
+                { "", "?q=name:m*", false, true }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, true }, // query dsl
+                { "", TestUtils.sampleQueryUri(), false, true }, // nested uri
+                { "", TestUtils.sampleQueryDsl(), false, true }, // nested dsl
+
+                { "", "", true, true }, // empty
+                { "", "?q=m*", true, true }, // uri
+                { "", "?q=name:m*", true, true }, // uri
+                { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, true }, // query dsl
+                { "", TestUtils.sampleQueryUri(), true, true }, // nested uri
+                { "", TestUtils.sampleQueryDsl(), true, true }, // nested dsl
 
                 // json
-                { "json-", "", false }, // empty
-                { "json-", "?q=m*", false }, // uri
-                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
-                { "json-", TestUtils.sampleQueryUri(), false }, // nested uri
-                { "json-", TestUtils.sampleQueryDsl(), false }, // nested dsl
+                { "json-", "", false, false }, // empty
+                { "json-", "?q=m*", false, false }, // uri
+                { "json-", "?q=name:m*", false, false }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, false }, // query dsl
+                { "json-", TestUtils.sampleQueryUri(), false, false }, // nested uri
+                { "json-", TestUtils.sampleQueryDsl(), false, false }, // nested dsl
 
                 // json
-                { "json-", "", true }, // empty
-                { "json-", "?q=m*", true }, // uri
-                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
-                { "json-", TestUtils.sampleQueryUri(), true }, // nested uri
-                { "json-", TestUtils.sampleQueryDsl(), true } // nested dsl
+                { "json-", "", true, false }, // empty
+                { "json-", "?q=m*", true, false }, // uri
+                { "json-", "?q=name:m*", true, false }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, false }, // query dsl
+                { "json-", TestUtils.sampleQueryUri(), true, false }, // nested uri
+                { "json-", TestUtils.sampleQueryDsl(), true, false }, // nested dsl
+
+                // json
+                { "json-", "", false, true }, // empty
+                { "json-", "?q=m*", false, true }, // uri
+                { "json-", "?q=name:m*", false, true }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false, true }, // query dsl
+                { "json-", TestUtils.sampleQueryUri(), false, true }, // nested uri
+                { "json-", TestUtils.sampleQueryDsl(), false, true }, // nested dsl
+
+                // json
+                { "json-", "", true, true }, // empty
+                { "json-", "?q=m*", true, true }, // uri
+                { "json-", "?q=name:m*", true, true }, // uri
+                { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true, true }, // query dsl
+                { "json-", TestUtils.sampleQueryUri(), true, true }, // nested uri
+                { "json-", TestUtils.sampleQueryDsl(), true, true } // nested dsl
+
         });
     }
 
@@ -65,12 +101,14 @@ public class QueryTestParams {
         return Arrays.asList(new Object[][] {
                 { "", "" }, // empty
                 { "", "?q=m*" }, // uri
+                { "", "?q=name:m*" }, // uri
                 { "", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
                 { "", TestUtils.sampleQueryUri() }, // nested uri
                 { "", TestUtils.sampleQueryDsl() }, // nested dsl
 
                 { "json-", "" }, // empty
                 { "json-", "?q=m*" }, // uri
+                { "json-", "?q=name:m*" }, // uri
                 { "json-", "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }" }, // query dsl
                 { "json-", TestUtils.sampleQueryUri() }, // nested uri
                 { "json-", TestUtils.sampleQueryDsl() } // nested dsl
@@ -81,12 +119,14 @@ public class QueryTestParams {
         return Arrays.asList(new Object[][] {
                 { "", true }, // empty
                 { "?q=m*", true }, // uri
+                //{ "?q=@name:m*", true }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
                 { TestUtils.sampleQueryUri(), true }, // nested uri
                 { TestUtils.sampleQueryDsl(), true }, // nested dsl
 
                 { "", false }, // empty
                 { "?q=m*", false }, // uri
+                //{ "?q=name:m*", false }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
                 { TestUtils.sampleQueryUri(), false }, // nested uri
                 { TestUtils.sampleQueryDsl(), false } // nested dsl
@@ -97,12 +137,14 @@ public class QueryTestParams {
         return Arrays.asList(new Object[][] {
                 { "", true }, // empty
                 { "?q=m*", true }, // uri
+                { "?q=name:m*", true }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", true }, // query dsl
                 { TestUtils.sampleQueryUri(), true }, // nested uri
                 { TestUtils.sampleQueryDsl(), true }, // nested dsl
 
                 { "", false }, // empty
                 { "?q=m*", false }, // uri
+                { "?q=name:m*", false }, // uri
                 { "{ \"query\" : { \"query_string\" : { \"query\":\"m*\"} } }", false }, // query dsl
                 { TestUtils.sampleQueryUri(), false }, // nested uri
                 { TestUtils.sampleQueryDsl(), false } // nested dsl

@@ -52,13 +52,13 @@ public class HiveValueReader extends WritableValueReader {
     }
 
     @Override
-    protected Object parseDate(Long value) {
-        return new TimestampWritable(new Timestamp(value));
+    protected Object parseDate(Long value, boolean richDate) {
+        return (richDate ? new TimestampWritable(new Timestamp(value)) : processLong(value));
     }
 
     @Override
-    protected Object parseDate(String value) {
-        return new TimestampWritable(new Timestamp(DatatypeConverter.parseDateTime(value).getTimeInMillis()));
+    protected Object parseDate(String value, boolean richDate) {
+        return (richDate ? new TimestampWritable(new Timestamp(DatatypeConverter.parseDateTime(value).getTimeInMillis())) : parseString(value));
     }
 
     @Override

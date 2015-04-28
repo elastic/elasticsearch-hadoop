@@ -73,7 +73,7 @@ public class ApplicationMaster implements AutoCloseable {
         appId = YarnUtils.getApplicationAttemptId(env);
         Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s" + env);
         RegisterApplicationMasterResponse amResponse = rpc.registerAM();
-		cluster = new EsCluster(rpc, appConfig, env);
+        cluster = new EsCluster(rpc, appConfig, env);
 
         try {
             cluster.start();

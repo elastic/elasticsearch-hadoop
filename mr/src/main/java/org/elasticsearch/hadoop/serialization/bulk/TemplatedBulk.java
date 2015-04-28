@@ -19,9 +19,12 @@
 package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
+import java.util.List;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.bulk.AbstractBulkFactory.DynamicContentRef;
 import org.elasticsearch.hadoop.serialization.bulk.AbstractBulkFactory.FieldWriter;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -70,11 +73,19 @@ class TemplatedBulk implements BulkCommand {
 
     private void writeTemplate(Collection<Object> template, Object object) {
         for (Object item : template) {
-            if (item instanceof byte[]) {
-                ref.add((byte[]) item);
+            if (item instanceof BytesArray) {
+                ref.add((BytesArray) item);
+            }
+            else if (item instanceof FieldWriter) {
+                ref.add(((FieldWriter) item).write(object));
+            }
+            // used in the dynamic case
+            else if (item instanceof DynamicContentRef) {
+                List<Object> dynamicContent = ((DynamicContentRef) item).getDynamicContent();
+                writeTemplate(dynamicContent, object);
             }
             else {
-                ref.add(((FieldWriter) item).write(object));
+                throw new EsHadoopIllegalArgumentException(String.format("Unknown object type received [%s][%s]", item, item.getClass()));
             }
         }
     }

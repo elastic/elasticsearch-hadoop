@@ -59,7 +59,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeFalse;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -147,29 +147,29 @@ public class AbstractMROldApiSaveTest {
     }
 
     private String indexPrefix = "";
-    private JobConf config;
+    private final JobConf config;
 
     public AbstractMROldApiSaveTest(JobConf config, String indexPrefix) {
         this.indexPrefix = indexPrefix;
         this.config = config;
     }
 
-	@Test
-	public void testBasicMultiSave() throws Exception {
-		JobConf conf = createJobConf();
-		conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
+    @Test
+    public void testBasicMultiSave() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
 
-		MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
-		MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
-		//MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
+        MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
+        MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
+        //MultiOutputFormat.addOutputFormat(conf, TextOutputFormat.class);
 
-		PrintStreamOutputFormat.stream(conf, Stream.OUT);
-		//conf.set("mapred.output.dir", "foo/bar");
-		//FileOutputFormat.setOutputPath(conf, new Path("foo/bar"));
+        PrintStreamOutputFormat.stream(conf, Stream.OUT);
+        //conf.set("mapred.output.dir", "foo/bar");
+        //FileOutputFormat.setOutputPath(conf, new Path("foo/bar"));
 
-		conf.setClass("mapred.output.format.class", MultiOutputFormat.class, OutputFormat.class);
-		runJob(conf);
-	}
+        conf.setClass("mapred.output.format.class", MultiOutputFormat.class, OutputFormat.class);
+        runJob(conf);
+    }
 
 
     @Test
@@ -211,7 +211,7 @@ public class AbstractMROldApiSaveTest {
         runJob(conf);
     }
 
-    @Test(expected = IOException.class)
+    //@Test(expected = IOException.class)
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         testCreateWithId();
     }
@@ -305,17 +305,17 @@ public class AbstractMROldApiSaveTest {
 
         runJob(conf);
 
-//        conf = createJobConf();
-//        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
-//        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
-//
-//        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-//        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
+        //        conf = createJobConf();
+        //        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        //        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        //
+        //        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
+        //        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
         //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
-//        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
-//
-//        runJob(conf);
+        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
+        //
+        //        runJob(conf);
     }
 
     @Test
@@ -361,7 +361,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, "param2:name , param3:number, param1:<1>");
 
         runJob(conf);
     }
@@ -412,6 +412,15 @@ public class AbstractMROldApiSaveTest {
     }
 
     @Test
+    public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/external-version-implied");
+        conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
+
+        runJob(conf);
+    }
+
+    @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
@@ -445,6 +454,15 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}-with-id");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testIndexWithEscapedJson() throws Exception {
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/simple-escaped-fields");
+        conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
     }

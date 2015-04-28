@@ -14,17 +14,21 @@
                 "_index" : "pig",
                 "_type" : "tupleartists",
                 "_id" : "23hrGo7VRCyao8lB9Uu5Kw",
-                "_score" : 0.0,
+                "_score" : -12.456,
                 "fields" : {
-                    "foo" : "bar"
+                    "special" : "لَيسَ كُل مَ آكتُبه حِكَآيةة عَنْ وَٱقِعِي إنَمَآ هِيآ كَلِمآت رَاقَت لِي",
+                    "location" : "Würzburg",
+                    "foo" : "bar",
+                    "links":{"url":"http://www.last.fm/music/Paradise+Lost"}
                 },
                 "matched_queries": ["queryA", "queryB"]
             }, {
                 "_index" : "pig",
                 "_type" : "tupleartists",
                 "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
-                "_score" : 0.0,
+                "_score" : 3.4456,
                 "_source" : {
+                    "location" : "Würzburg",
                     "links":{"url":"http://www.last.fm/music/DIR+EN+GREY"}
                 },
                 "matched_queries": ["myquery"]
@@ -32,7 +36,7 @@
                 "_index" : "pig",
                 "_type" : "tupleartists",
                 "_id" : "H2opSUi0RAm_WrHUkSSjIA",
-                "_score" : 0.0,
+                "_score" : -2.45463232,
                 "_source" : {
                     "links":{"url":"http://www.last.fm/music/Limbonic+Art"}
                 }

@@ -75,4 +75,10 @@ public class BytesRef {
         }
         size = 0;
     }
+
+    public String toString() {
+        BytesArray ba = new BytesArray(length());
+        copyTo(ba);
+        return ba.toString();
+    }
 }

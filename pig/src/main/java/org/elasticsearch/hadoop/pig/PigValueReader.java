@@ -37,12 +37,12 @@ public class PigValueReader extends JdkValueReader {
     }
 
     @Override
-    protected Object parseDate(Long value) {
-        return PigUtils.convertDateToES(value);
+    protected Object parseDate(Long value, boolean richDate) {
+        return (richDate ? PigUtils.convertDateToES(value) : value);
     }
 
     @Override
-    protected Object parseDate(String value) {
-        return PigUtils.convertDateFromES(value);
+    protected Object parseDate(String value, boolean richDate) {
+        return (richDate ? PigUtils.convertDateFromES(value) : value);
     }
 }

@@ -63,45 +63,45 @@ public abstract class YarnUtils {
         Map<String, String> env = new LinkedHashMap<String, String>(); // System.getenv()
         // add Hadoop Classpath
         for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, YarnCompat.DEFAULT_PLATFORM_APPLICATION_CLASSPATH())) {
-			addToEnv(env, Environment.CLASSPATH.name(), c.trim());
+            addToEnv(env, Environment.CLASSPATH.name(), c.trim());
         }
         // add es-hadoop jar / current folder jars
-		addToEnv(env, Environment.CLASSPATH.name(), "./*");
+        addToEnv(env, Environment.CLASSPATH.name(), "./*");
 
         //
         // some es-yarn constants
         //
-		addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
+        addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
 
         return env;
     }
 
-	public static void addToEnv(Map<String, String> env, String key, String value) {
-		String val = env.get(key);
+    public static void addToEnv(Map<String, String> env, String key, String value) {
+        String val = env.get(key);
         if (val == null) {
             val = value;
         }
         else {
-			val = val + YarnCompat.CLASS_PATH_SEPARATOR() + value;
+            val = val + YarnCompat.CLASS_PATH_SEPARATOR() + value;
         }
-		env.put(key, val);
-	}
+        env.put(key, val);
+    }
 
 
-	public static void addToEnv(Map<String, String> env, Map<String, String> envVars) {
-		for (Entry<String, String> entry : envVars.entrySet()) {
-			addToEnv(env, entry.getKey(), entry.getValue());
-		}
+    public static void addToEnv(Map<String, String> env, Map<String, String> envVars) {
+        for (Entry<String, String> entry : envVars.entrySet()) {
+            addToEnv(env, entry.getKey(), entry.getValue());
+        }
     }
 
     public static Object minVCores(Configuration cfg, int vCores) {
-		return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
-		//return vCores;
+        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
+        //return vCores;
     }
 
     public static int minMemory(Configuration cfg, int memory) {
-		return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
-		//return memory;
+        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
+        //return memory;
     }
 
     private static int yarnAcceptableMin(Configuration cfg, String property, int value) {
@@ -111,7 +111,7 @@ public abstract class YarnUtils {
         }
 
         if (value % acceptedVal != 0) {
-			return acceptedVal * Math.round(value / acceptedVal);
+            return acceptedVal * Math.round(value / acceptedVal);
         }
         return value;
     }

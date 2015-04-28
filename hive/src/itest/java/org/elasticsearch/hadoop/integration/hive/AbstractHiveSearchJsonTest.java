@@ -143,8 +143,8 @@ public class AbstractHiveSearchJsonTest {
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE jsonartistsload" + testInstance + "("
-                + "number 		STRING, "
-                + "name 	STRING, "
+                + "number         STRING, "
+                + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
                 + tableProps("json-hive/artists");

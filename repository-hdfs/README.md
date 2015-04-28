@@ -9,15 +9,16 @@
 ## Flavors
 The HDFS snapshot/restore plugin comes in three flavors:
 
-* Default / Hadoop 1.x  
+* Default / Hadoop 1.x
 The default version contains the plugin jar alongside Hadoop 1.x (stable) dependencies
-* Yarn / Hadoop 2.x  
+* Yarn / Hadoop 2.x
 The `hadoop2` version contains the plugin jar plus the Hadoop 2.x (Yarn) dependencies.
-* Light  
+* Light
 The `light` version contains just the plugin jar, without any Hadoop dependencies.
 
 ### What version to use?
-It depends on whether you have Hadoop installed on your nodes or not. If you do, then we recommend exposing Hadoop to the Elasticsearch classpath (typically through an environment variable - see the Elasticsearch [reference](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/setup-configuration.html0) for more info) and using the `light` version. This guarantees the existing libraries and configuration are being picked up by the plugin.
+It depends on whether you have Hadoop installed on your nodes or not. If you do, then we recommend exposing Hadoop to the Elasticsearch classpath (typically through an environment variable such as +ES_CLASSPATH+ - see the Elasticsearch [reference](http://www.elasticsearch.org/guide/en/elasticsearch/reference/1.x/setup-configuration.html) for more info) and using the `light` version.
+This guarantees the existing libraries and configuration are being picked up by the plugin.
 If you do not have Hadoop installed, then select either the default version (for Hadoop stable/1.x) or, if you are using Hadoop 2, the `hadoop2` version.
 
 ## Installation
@@ -36,17 +37,16 @@ When looking for `light` or `hadoop2` artifacts use:
 
 ### Beta version
 For the beta version, simply run:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0.Beta3`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0.Beta4`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0.Beta3-<classifier>`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0.Beta4-<classifier>`
 
-### Development snashot
+### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:
 `bin/plugin -u <url-path-to-plugin.zip> -i elasticsearch-repository-hdfs-2.1.0-BUILD-SNAPSHOT`
 
-### Development Snapshot
-Grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-repository-hdfs/) again through Maven:
+Or grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-repository-hdfs/) again through Maven:
 
 ```xml
 <dependency>
@@ -68,7 +68,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 
 ## Configuration Properties
 
-Once installed, define the configuration for the +hdfs+ repository through +elasticsearch.yml+ or the REST API:
+Once installed, define the configuration for the `hdfs` repository through `elasticsearch.yml` or the [REST API](http://www.elastic.co/guide/en/elasticsearch/reference/current/modules-snapshots.html):
 
 ```
 repositories
@@ -105,9 +105,9 @@ ownership. Elasticsearch licenses this file to you under
 the Apache License, Version 2.0 (the "License"); you may
 not use this file except in compliance with the License.
 You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
 "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY

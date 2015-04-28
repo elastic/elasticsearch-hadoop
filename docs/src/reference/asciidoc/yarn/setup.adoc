@@ -35,6 +35,7 @@ enforces a minimum limit of 1 GB (1024 MB) and a maximum of 8 GB (8192 MB). Whil
 Out of the box, {ey} requests _only_ 2 GB of memory per container so that users can easily try it out even within a testing YARN environment (such as pseudo-distributed or VMs); significantly increase this amount once you get
 beyond the YARN `Hello World' stage.
 
+[[ev-setup-storage]]
 === Storage
 
 Each container inside YARN is responsible for saving its state and storage between container restarts. In general, there are two main strategies one can take:

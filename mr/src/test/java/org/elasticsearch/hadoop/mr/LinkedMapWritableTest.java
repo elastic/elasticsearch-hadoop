@@ -15,20 +15,20 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class LinkedMapWritableTest {
 
-	@Test
-	public void testMapWithArrayReadWrite() throws Exception {
-		LinkedMapWritable written = new LinkedMapWritable();
-		ArrayWritable array = new WritableArrayWritable(Text.class);
-		array.set(new Writable[] { new Text("one") , new Text("two"), new Text("three")} );
-		written.put(new Text("foo"), array);
-		FastByteArrayOutputStream out = new FastByteArrayOutputStream();
-		DataOutputStream da = new DataOutputStream(out);
-		written.write(da);
-		da.close();
-		
-		LinkedMapWritable read = new LinkedMapWritable();
-		read.readFields(new DataInputStream(new FastByteArrayInputStream(out.bytes())));
-		assertThat(read.size(), is(written.size()));
-		assertThat(read.toString(), is(written.toString()));
-	}
+    @Test
+    public void testMapWithArrayReadWrite() throws Exception {
+        LinkedMapWritable written = new LinkedMapWritable();
+        ArrayWritable array = new WritableArrayWritable(Text.class);
+        array.set(new Writable[] { new Text("one") , new Text("two"), new Text("three")} );
+        written.put(new Text("foo"), array);
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream();
+        DataOutputStream da = new DataOutputStream(out);
+        written.write(da);
+        da.close();
+
+        LinkedMapWritable read = new LinkedMapWritable();
+        read.readFields(new DataInputStream(new FastByteArrayInputStream(out.bytes())));
+        assertThat(read.size(), is(written.size()));
+        assertThat(read.toString(), is(written.toString()));
+    }
 }

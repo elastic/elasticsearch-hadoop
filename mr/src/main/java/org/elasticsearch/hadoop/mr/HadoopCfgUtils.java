@@ -18,9 +18,11 @@
  */
 package org.elasticsearch.hadoop.mr;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TaskAttemptID;
@@ -79,7 +81,7 @@ public abstract class HadoopCfgUtils {
     }
 
     public static String getReduceTasks(Configuration cfg) {
-		return get(cfg, "mapreduce.job.reduces", "mapred.reduce.tasks", "1");
+        return get(cfg, "mapreduce.job.reduces", "mapred.reduce.tasks", "1");
     }
 
     public static boolean getSpeculativeReduce(Configuration cfg) {
@@ -149,15 +151,43 @@ public abstract class HadoopCfgUtils {
         // first try with the attempt since some Hadoop versions mix the two
         String taskAttemptId = HadoopCfgUtils.getTaskAttemptId(cfg);
         if (StringUtils.hasText(taskAttemptId)) {
-            return TaskAttemptID.forName(taskAttemptId).getTaskID();
-        }
-        else {
-            String taskIdProp = HadoopCfgUtils.getTaskId(cfg);
-            // double-check task id bug in Hadoop 2.5.x
-            if (StringUtils.hasText(taskIdProp) && !taskIdProp.contains("attempt")) {
-                return TaskID.forName(taskIdProp);
+            try {
+                return TaskAttemptID.forName(taskAttemptId).getTaskID();
+            } catch (IllegalArgumentException ex) {
+                // the task attempt is invalid (Tez in particular uses the wrong string - see #346)
+                // try to fallback to task id
+                return parseTaskIdFromTaskAttemptId(taskAttemptId);
             }
         }
+        String taskIdProp = HadoopCfgUtils.getTaskId(cfg);
+        // double-check task id bug in Hadoop 2.5.x
+        if (StringUtils.hasText(taskIdProp) && !taskIdProp.contains("attempt")) {
+            return TaskID.forName(taskIdProp);
+        }
         return null;
+    }
+
+    private static TaskID parseTaskIdFromTaskAttemptId(String taskAttemptId) {
+        // Tez in particular uses an incorrect String task1244XXX instead of task_1244 which makes the parsing fail
+        // this method try to cope with such issues and look at the numbers if possible
+        if (taskAttemptId.startsWith("task")) {
+            taskAttemptId = taskAttemptId.substring(4);
+        }
+        if (taskAttemptId.startsWith("_")) {
+            taskAttemptId = taskAttemptId.substring(1);
+        }
+        List<String> tokenize = StringUtils.tokenize(taskAttemptId, "_");
+        // need at least 4 entries from 123123123123_0001_r_0000_4
+        if (tokenize.size() < 4) {
+            LogFactory.getLog(HadoopCfgUtils.class).warn("Cannot parse task attempt (too little arguments) " + taskAttemptId);
+            return null;
+        }
+        // we parse straight away - in case of an exception we can catch the new format
+        try {
+            return new TaskID(tokenize.get(0), Integer.parseInt(tokenize.get(1)), tokenize.get(2).startsWith("m"), Integer.parseInt(tokenize.get(3)));
+        } catch (Exception ex) {
+            LogFactory.getLog(HadoopCfgUtils.class).warn("Cannot parse task attempt " + taskAttemptId);
+            return null;
+        }
     }
 }

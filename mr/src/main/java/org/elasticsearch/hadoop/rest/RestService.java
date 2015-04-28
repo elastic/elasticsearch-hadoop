@@ -37,14 +37,15 @@ public abstract class RestService implements Serializable {
         public final String serializedSettings, serializedMapping;
         public final String nodeIp, nodeId, nodeName, shardId;
         public final int nodePort;
+        public final boolean onlyNode;
 
-        PartitionDefinition(Shard shard, Node node, String settings, String mapping) {
+        PartitionDefinition(Shard shard, Node node, String settings, String mapping, boolean onlyNode) {
             this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(),
-                    settings, mapping);
+                    onlyNode, settings, mapping);
         }
 
         public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId,
-                String settings, String mapping) {
+                boolean onlyNode, String settings, String mapping) {
             this.nodeIp = nodeIp;
             this.nodePort = nodePort;
             this.nodeName = nodeName;
@@ -53,14 +54,16 @@ public abstract class RestService implements Serializable {
 
             this.serializedSettings = settings;
             this.serializedMapping = mapping;
+
+            this.onlyNode = onlyNode;
         }
 
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("EsPartition [node=[").append(nodeId).append("/").append(nodeName)
-                        .append("|").append(nodeIp).append(":").append(nodePort)
-                        .append("],shard=").append(shardId).append("]");
+            .append("|").append(nodeIp).append(":").append(nodePort)
+            .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
 
@@ -119,6 +122,7 @@ public abstract class RestService implements Serializable {
             this.total = splitsSize;
         }
 
+        @Override
         public void close() {
             if (!closed) {
                 closed = true;
@@ -215,10 +219,13 @@ public abstract class RestService implements Serializable {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
+        boolean overlappingShards = false;
         Map<Shard, Node> targetShards = null;
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         String savedSettings = settings.save();
@@ -238,7 +245,10 @@ public abstract class RestService implements Serializable {
             }
         }
         else {
-            targetShards = client.getReadTargetShards();
+            Object[] result = client.getReadTargetShards(settings.getNodesClientOnly());
+            overlappingShards = (Boolean) result[0];
+            targetShards = (Map<Shard, Node>) result[1];
+
             if (log.isTraceEnabled()) {
                 log.trace("Creating splits for shards " + targetShards);
             }
@@ -266,7 +276,7 @@ public abstract class RestService implements Serializable {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(targetShards.size());
 
         for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping));
+            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping, !overlappingShards));
         }
 
         return partitions;
@@ -275,6 +285,11 @@ public abstract class RestService implements Serializable {
     public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
 
         if (!SettingsUtils.hasPinnedNode(settings)) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition,
+                        partition.nodeId, partition.nodePort));
+            }
+
             SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
         }
 
@@ -289,13 +304,22 @@ public abstract class RestService implements Serializable {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));
         }
 
-        ScrollReader scrollReader = new ScrollReader(reader, fieldMapping, settings.getReadMetadata(), settings.getReadMetadataField());
+        ScrollReader scrollReader = new ScrollReader(reader, fieldMapping, settings.getReadMetadata(), settings.getReadMetadataField(), settings.getOutputAsJson());
 
         // initialize REST client
         RestRepository client = new RestRepository(settings);
 
-        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).onlyNode(partition.nodeId);
+        if (settings.getNodesClientOnly()) {
+            String clientNode = client.getRestClient().getCurrentNode();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Client-node routing detected; partition reader instance [%s] assigned to [%s]",
+                        partition, clientNode));
+            }
+            SettingsUtils.pinNode(settings, clientNode);
+        }
 
+        // take into account client node routing
+        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).restrictToNode(partition.onlyNode && !settings.getNodesClientOnly());
         queryBuilder.fields(settings.getScrollFields());
 
         return new PartitionReader(scrollReader, client, queryBuilder);
@@ -345,6 +369,7 @@ public abstract class RestService implements Serializable {
     public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
@@ -356,6 +381,9 @@ public abstract class RestService implements Serializable {
         SettingsUtils.pinNode(settings, nodes.get(selectedNode));
 
         Resource resource = new Resource(settings, false);
+
+        Version.logVersion();
+        log.info(String.format("Writing to [%s]", resource));
 
         // single index vs multi indices
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
@@ -379,11 +407,26 @@ public abstract class RestService implements Serializable {
             }
         }
 
-        Map<Shard, Node> targetShards = repository.getWriteTargetPrimaryShards();
+        // if client-nodes are used, simply use the underlying nodes
+        if (settings.getNodesClientOnly()) {
+            String clientNode = repository.getRestClient().getCurrentNode();
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Client-node routing detected; partition writer instance [%s] assigned to [%s]",
+                        currentInstance, clientNode));
+            }
+
+            return repository;
+        }
+
+        // no routing necessary; select the relevant target shard/node
+        Map<Shard, Node> targetShards = Collections.emptyMap();
+
+        targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
         repository.close();
 
         Assert.isTrue(!targetShards.isEmpty(),
                 String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
+
 
         List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
         // make sure the order is strict

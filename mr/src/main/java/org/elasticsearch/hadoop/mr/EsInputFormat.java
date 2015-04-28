@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
+import org.elasticsearch.hadoop.cfg.HadoopSettings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
@@ -73,16 +74,19 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         private String shardId;
         private String mapping;
         private String settings;
+        private boolean onlyNode;
 
         public ShardInputSplit() {}
 
+        // this long constructor is required to avoid having the serialize PartitionDefinition
         public ShardInputSplit(String nodeIp, int httpPort, String nodeId, String nodeName, String shard,
-                String mapping, String settings) {
+                boolean onlyNode, String mapping, String settings) {
             this.nodeIp = nodeIp;
             this.httpPort = httpPort;
             this.nodeId = nodeId;
             this.nodeName = nodeName;
             this.shardId = shard;
+            this.onlyNode = onlyNode;
             this.mapping = mapping;
             this.settings = settings;
         }
@@ -106,6 +110,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             out.writeUTF(nodeId);
             out.writeUTF(nodeName);
             out.writeUTF(shardId);
+            out.writeBoolean(onlyNode);
             // avoid using writeUTF since the mapping can be longer than 65K
             byte[] utf = StringUtils.toUTF(mapping);
             out.writeInt(utf.length);
@@ -123,6 +128,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             nodeId = in.readUTF();
             nodeName = in.readUTF();
             shardId = in.readUTF();
+            onlyNode = in.readBoolean();
             int length = in.readInt();
             byte[] utf = new byte[length];
             in.readFully(utf);
@@ -138,8 +144,8 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("ShardInputSplit [node=[").append(nodeId).append("/").append(nodeName)
-                        .append("|").append(nodeIp).append(":").append(httpPort)
-                        .append("],shard=").append(shardId).append("]");
+            .append("|").append(nodeIp).append(":").append(httpPort)
+            .append("],shard=").append(shardId).append("]");
             return builder.toString();
         }
     }
@@ -196,17 +202,19 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             // initialize mapping/ scroll reader
             InitializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
 
-            PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, settings.save(), esSplit.mapping);
+            PartitionDefinition part = new PartitionDefinition(esSplit.nodeIp, esSplit.httpPort, esSplit.nodeName, esSplit.nodeId, esSplit.shardId, esSplit.onlyNode, settings.save(), esSplit.mapping);
             PartitionReader partitionReader = RestService.createReader(settings, part, log);
 
             this.scrollReader = partitionReader.scrollReader;
             this.client = partitionReader.client;
             this.queryBuilder = partitionReader.queryBuilder;
 
-            // heart-beat
-            beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
-
             this.progressable = progressable;
+
+            // in Hadoop-like envs (Spark) the progressable might be null and thus the heart-beat is not needed
+            if (progressable != null) {
+                beat = new HeartBeat(progressable, cfg, settings.getHeartBeatLead(), log);
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Initializing RecordReader for [%s]", esSplit));
@@ -216,14 +224,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean nextKeyValue() throws IOException {
             // new API call routed to old API
-            if (currentKey == null) {
-                currentKey = createKey();
-            }
-            if (currentValue == null) {
-                currentValue = createValue();
-            }
+            // under the new API always create new objects since consumers can (and sometimes will) modify them
 
-            // FIXME: does the new API mandate a new instance each time (?)
+            currentKey = createKey();
+            currentValue = createValue();
+
             return next(currentKey, currentValue);
         }
 
@@ -278,7 +283,9 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public boolean next(K key, V value) throws IOException {
             if (scrollQuery == null) {
-                beat.start();
+                if (beat != null) {
+                    beat.start();
+                }
 
                 scrollQuery = queryBuilder.build(client, scrollReader);
                 size = scrollQuery.getSize();
@@ -295,8 +302,11 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             }
 
             Object[] next = scrollQuery.next();
-            currentKey = setCurrentKey(currentKey, key, next[0]);
-            currentValue = setCurrentValue(currentValue, value, next[1]);
+
+            // NB: the left assignment is not needed since method override
+            // the writable content however for consistency, they are below
+            currentKey = setCurrentKey(key, next[0]);
+            currentValue = setCurrentValue(value, next[1]);
 
             // keep on counting
             read++;
@@ -309,9 +319,23 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         public abstract V createValue();
 
-        protected abstract K setCurrentKey(K oldApiKey, K newApiKey, Object object);
+        /**
+         * Sets the current key.
+         *
+         * @param hadoopKey hadoop key
+         * @param object the actual value to read
+         * @return returns the key to be used; needed in scenario where the key is immutable (like Pig)
+         */
+        protected abstract K setCurrentKey(K hadoopKey, Object object);
 
-        protected abstract V setCurrentValue(V oldApiValue, V newApiKey, Object object);
+        /**
+         * Sets the current value.
+         *
+         * @param hadoopValue hadoop value
+         * @param object the actual value to read
+         * @return returns the value to be used; needed in scenario where the passed value is immutable (like Pig)
+         */
+        protected abstract V setCurrentValue(V hadoopValue, Object object);
 
         @Override
         public long getPos() {
@@ -319,7 +343,31 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         }
     }
 
-    protected static class WritableShardRecordReader extends ShardRecordReader<Text, Map<Writable, Writable>> {
+    protected static abstract class AbstractWritableShardRecordReader<V> extends ShardRecordReader<Text, V> {
+
+        public AbstractWritableShardRecordReader() {
+            super();
+        }
+
+        public AbstractWritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+            super(split, job, reporter);
+        }
+
+        @Override
+        public Text createKey() {
+            return new Text();
+        }
+
+        @Override
+        protected Text setCurrentKey(Text hadoopKey, Object object) {
+            if (hadoopKey != null) {
+                hadoopKey.set(object.toString());
+            }
+            return hadoopKey;
+        }
+    }
+
+    protected static class WritableShardRecordReader extends AbstractWritableShardRecordReader<Map<Writable, Writable>> {
 
         private boolean useLinkedMapWritable = true;
 
@@ -335,13 +383,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         @Override
         void init(ShardInputSplit esSplit, Configuration cfg, Progressable progressable) {
             useLinkedMapWritable = (!MapWritable.class.getName().equals(HadoopCfgUtils.getMapValueClass(cfg)));
-
             super.init(esSplit, cfg, progressable);
-        }
-
-        @Override
-        public Text createKey() {
-            return new Text();
         }
 
         @Override
@@ -349,30 +391,40 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
             return (useLinkedMapWritable ? new LinkedMapWritable() : new MapWritable());
         }
 
-        @Override
-        protected Text setCurrentKey(Text oldApiKey, Text newApiKey, Object object) {
-            String val = object.toString();
-            if (oldApiKey == null) {
-                oldApiKey = new Text();
-                oldApiKey.set(val);
-            }
-
-            // new API might not be used
-            if (newApiKey != null) {
-                newApiKey.set(val);
-            }
-            return oldApiKey;
-        }
-
         @SuppressWarnings("unchecked")
         @Override
-        protected Map<Writable, Writable> setCurrentValue(Map<Writable, Writable> oldApiValue, Map<Writable, Writable> newApiKey, Object object) {
-            Map<Writable, Writable> val = (Map<Writable, Writable>) object;
-            if (newApiKey != null) {
-                newApiKey.clear();
-                newApiKey.putAll(val);
+        protected Map<Writable, Writable> setCurrentValue(Map<Writable, Writable> hadoopValue, Object object) {
+            if (hadoopValue != null) {
+                hadoopValue.clear();
+                Map<Writable, Writable> val = (Map<Writable, Writable>) object;
+                hadoopValue.putAll(val);
             }
-            return val;
+            return hadoopValue;
+        }
+    }
+
+    protected static class JsonWritableShardRecordReader extends AbstractWritableShardRecordReader<Text> {
+
+        public JsonWritableShardRecordReader() {
+            super();
+        }
+
+        public JsonWritableShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job,
+                Reporter reporter) {
+            super(split, job, reporter);
+        }
+
+        @Override
+        public Text createValue() {
+            return new Text();
+        }
+
+        @Override
+        protected Text setCurrentValue(Text hadoopValue, Object object) {
+            if (hadoopValue != null) {
+                hadoopValue.set(object.toString());
+            }
+            return hadoopValue;
         }
     }
 
@@ -381,8 +433,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     //
     @Override
     public List<InputSplit> getSplits(JobContext context) throws IOException {
-        org.elasticsearch.hadoop.mr.compat.JobContext compatJobContext = CompatHandler.jobContext(context);
-        JobConf conf = HadoopCfgUtils.asJobConf(compatJobContext.getConfiguration());
+        JobConf conf = HadoopCfgUtils.asJobConf(CompatHandler.jobContext(context).getConfiguration());
         // NOTE: this method expects a ShardInputSplit to be returned (which implements both the old and the new API).
         return Arrays.asList((InputSplit[]) getSplits(conf, conf.getNumMapTasks()));
     }
@@ -390,7 +441,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     @SuppressWarnings("unchecked")
     @Override
     public ShardRecordReader<K, V> createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return (ShardRecordReader<K, V>) new WritableShardRecordReader();
+        return (ShardRecordReader<K, V>) (isOutputAsJson(CompatHandler.taskAttemptContext(context).getConfiguration()) ? new JsonWritableShardRecordReader() : new WritableShardRecordReader());
     }
 
 
@@ -409,7 +460,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         int index = 0;
         for (PartitionDefinition part : partitions) {
             splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId,
-                    part.serializedMapping, part.serializedSettings);
+                    part.onlyNode, part.serializedMapping, part.serializedSettings);
         }
         log.info(String.format("Created [%d] shard-splits", splits.length));
         return splits;
@@ -418,6 +469,10 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
     @SuppressWarnings("unchecked")
     @Override
     public ShardRecordReader<K, V> getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return (ShardRecordReader<K, V>) new WritableShardRecordReader(split, job, reporter);
+        return (ShardRecordReader<K, V>) (isOutputAsJson(job) ? new JsonWritableShardRecordReader(split, job, reporter) : new WritableShardRecordReader(split, job, reporter));
+    }
+
+    protected boolean isOutputAsJson(Configuration cfg) {
+        return new HadoopSettings(cfg).getOutputAsJson();
     }
 }

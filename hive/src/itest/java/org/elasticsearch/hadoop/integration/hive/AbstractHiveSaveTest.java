@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
-import org.apache.hadoop.hive.service.HiveServerException;
+import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.junit.After;
@@ -28,10 +28,11 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.isLocal;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
+import static org.hamcrest.CoreMatchers.is;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveTest {
@@ -92,7 +93,7 @@ public class AbstractHiveSaveTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "ts       STRING) "
-                + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<5m>'");
+                + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<\"5m\">'");
 
         String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
 
@@ -405,7 +406,7 @@ public class AbstractHiveSaveTest {
                 is("createsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
-    @Test(expected = HiveServerException.class)
+    @Test(expected = HiveSQLException.class)
     public void testCreateWithDuplicates() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -476,7 +477,7 @@ public class AbstractHiveSaveTest {
         assertThat(RestUtils.getMapping("hive/updatesave").skipHeaders().toString(), is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
-    @Test(expected = HiveServerException.class)
+    @Test(expected = HiveSQLException.class)
     public void testUpdateWithoutUpsert() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one

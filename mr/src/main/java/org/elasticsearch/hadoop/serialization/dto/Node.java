@@ -28,12 +28,20 @@ public class Node implements Serializable {
     private boolean hasHttp;
     private String ipAddress;
     private int httpPort;
+    private Map<String, Object> attributes;
+    private boolean isClient = false;
 
     public Node(String id, Map<String, Object> data) {
         this.id = id;
         name = data.get("name").toString();
         Object http = data.get("http_address");
         hasHttp = (http != null);
+
+        attributes = (Map<String, Object>) data.get("attributes");
+        if (attributes != null) {
+            isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
+        }
+
         if (!hasHttp) {
             return;
         }
@@ -47,6 +55,10 @@ public class Node implements Serializable {
 
     public boolean hasHttp() {
         return hasHttp;
+    }
+
+    public boolean isClient() {
+        return isClient;
     }
 
     public String getId() {
@@ -63,6 +75,10 @@ public class Node implements Serializable {
 
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    public String getInet() {
+        return ipAddress + ":" + httpPort;
     }
 
     @Override
@@ -92,7 +108,7 @@ public class Node implements Serializable {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("Node[id=").append(id).append(", name=").append(name).append(", ipAddress=").append(ipAddress)
-                .append(", httpPort=").append(httpPort).append("]");
+        .append(", httpPort=").append(httpPort).append("]");
         return builder.toString();
     }
 }

@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,54 +39,68 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 public class CommandTest {
 
-    private BytesArray ba = new BytesArray(1024);
-    private Map map = new LinkedHashMap();
-    private String operation;
+    private final BytesArray ba = new BytesArray(1024);
+    private Object data;
+    private final String operation;
     private boolean noId = false;
+    private boolean jsonInput = false;
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                { ConfigurationOptions.ES_OPERATION_INDEX },
-                { ConfigurationOptions.ES_OPERATION_CREATE},
-                { ConfigurationOptions.ES_OPERATION_UPDATE }
-                });
+                { ConfigurationOptions.ES_OPERATION_INDEX, false },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false }, { ConfigurationOptions.ES_OPERATION_INDEX, true },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true }, { ConfigurationOptions.ES_OPERATION_UPDATE, true },
+
+        });
     }
 
-    public CommandTest(String operation) {
+    public CommandTest(String operation, boolean jsonInput) {
         this.operation = operation;
+        this.jsonInput = jsonInput;
     }
 
     @Before
     public void prepare() {
         ba.reset();
-        map.put("n", 1);
-        map.put("s", "v");
+        if (!jsonInput) {
+            Map map = new LinkedHashMap();
+            map.put("n", 1);
+            map.put("s", "v");
+            data = map;
+        }
+        else {
+            data = "{\"n\":1,\"s\":\"v\"}";
+        }
     }
 
     @Test
     public void testNoHeader() throws Exception {
         assumeFalse(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
-        create(settings()).write(map).copyTo(ba);
+        create(settings()).write(data).copyTo(ba);
         String result = prefix() + "}}" + map();
         assertEquals(result, ba.toString());
     }
 
     @Test
+    // check user friendliness and escape the string if needed
     public void testConstantId() throws Exception {
         Settings settings = settings();
         noId = true;
-        settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<1>");
+        settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<foobar>");
 
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_id\":\"1\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_id\":\"foobar\"}}" + map();
+
         assertEquals(result, ba.toString());
     }
 
@@ -94,8 +109,8 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_parent\":\"5\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_parent\":5}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -104,8 +119,8 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_version\":\"3\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_version\":3,\"_version_type\":\"external\"}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -114,8 +129,8 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
 
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_ttl\":\"2\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_ttl\":2}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -123,8 +138,8 @@ public class CommandTest {
     public void testTimestamp() throws Exception {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_timestamp\":\"3\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_timestamp\":3}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -133,11 +148,10 @@ public class CommandTest {
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
-        create(settings).write(map).copyTo(ba);
-        String result = prefix() + "\"_routing\":\"4\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = prefix() + "\"_routing\":4}}" + map();
         assertEquals(result, ba.toString());
     }
-
 
     @Test
     public void testAll() throws Exception {
@@ -146,8 +160,18 @@ public class CommandTest {
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "s");
 
-        create(settings).write(map).copyTo(ba);
-        String result = "{\"" + operation + "\":{\"_id\":\"1\",\"_routing\":\"v\",\"_ttl\":\"2\"}}" + map();
+        create(settings).write(data).copyTo(ba);
+        String result = "{\"" + operation + "\":{\"_id\":1,\"_routing\":\"v\",\"_ttl\":2}}" + map();
+        assertEquals(result, ba.toString());
+    }
+
+    @Test
+    public void testIdPattern() throws Exception {
+        Settings settings = settings();
+        settings.setResourceWrite("foo/{n}");
+
+        create(settings).write(data).copyTo(ba);
+        String result = "{\"" + operation + "\":{\"_index\":\"foo\",\"_type\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -156,18 +180,64 @@ public class CommandTest {
         assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
         Settings set = settings();
         set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "");
-        create(set).write(map).copyTo(ba);
+        create(set).write(data).copyTo(ba);
     }
 
+    @Test
+    public void testUpdateOnlyScript() throws Exception {
+        assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        Settings set = settings();
+
+        set.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+
+        create(set).write(data).copyTo(ba);
+        String result =
+                "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
+                        "{\"lang\":\"groovy\",\"script\":\"counter = 3\"}\n";
+        assertEquals(result, ba.toString());
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript() throws Exception {
+        assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        Settings set = settings();
+
+        set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:n ");
+
+        create(set).write(data).copyTo(ba);
+
+        String result =
+                "{\"" + operation + "\":{\"_id\":1}}\n" +
+                        "{\"params\":{\"param1\":1,\"param2\":1},\"lang\":\"groovy\",\"script\":\"counter = param1; anothercounter = param2\"}\n";
+
+        assertEquals(result, ba.toString());
+    }
+
+
     private BulkCommand create(Settings settings) {
-        settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
-        return BulkCommands.create(settings);
+        if (!StringUtils.hasText(settings.getResourceWrite())) {
+            settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
+        }
+        return BulkCommands.create(settings, null);
     }
 
     private Settings settings() {
         Settings set = new TestSettings();
+
+        set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
+
+
         InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
+        InitializationUtils.setBytesConverterIfNeeded(set, JdkBytesConverter.class, null);
+
+        set.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         set.setResourceWrite("foo/bar");
         if (isUpdateOp()) {
             set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<2>");
@@ -178,7 +248,7 @@ public class CommandTest {
     private String prefix() {
         StringBuilder sb = new StringBuilder("{\"" + operation + "\":{");
         if (isUpdateOp() && !noId) {
-            sb.append("\"_id\":\"2\",");
+            sb.append("\"_id\":2,");
         }
         return sb.toString();
     }

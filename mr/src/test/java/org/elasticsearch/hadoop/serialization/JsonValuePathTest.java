@@ -28,9 +28,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+
+import static org.hamcrest.Matchers.is;
 
 public class JsonValuePathTest {
 
@@ -49,34 +53,55 @@ public class JsonValuePathTest {
 
     @Test
     public void testFirstLevel() throws Exception {
-        List<String> vals = ParsingUtils.values(parser, "firstName", "foo", "age");
+        List<Object> vals = ParsingUtils.values(parser, "firstName", "foo", "age");
         assertEquals(3, vals.size());
         assertEquals("John", vals.get(0));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
-        assertEquals("25", vals.get(2));
+        assertEquals(25, vals.get(2));
     }
 
     @Test
     public void testSecondLevel() throws Exception {
-        List<String> vals = ParsingUtils.values(parser, "address.state", "address.foo", "address.building.floors", "address.building.bar");
+        List<Object> vals = ParsingUtils.values(parser, "address.state", "address.foo", "address.building.floors", "address.building.bar");
         assertEquals(4, vals.size());
         assertEquals("NY", vals.get(0));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(1));
-        assertEquals("10", vals.get(2));
+        assertEquals(10, vals.get(2));
         assertSame(ParsingUtils.NOT_FOUND, vals.get(3));
     }
 
     @Test
     public void testRichObject() throws Exception {
-        List<String> vals = ParsingUtils.values(parser, "address");
+        List<Object> vals = ParsingUtils.values(parser, "address");
         assertEquals(1, vals.size());
-        assertThat(vals.get(0), containsString("floors"));
+        assertThat(vals.get(0).toString(), containsString("floors"));
+    }
+
+    @Test
+    public void testMultipleNestedMatches1() throws Exception {
+        List<Object> vals = ParsingUtils.values(parser, "firstName");
+        assertEquals(1, vals.size());
+        assertThat(vals.get(0).toString(), containsString("John"));
+    }
+
+    @Test
+    public void testMultipleNestedMatches2() throws Exception {
+        List<Object> vals = ParsingUtils.values(parser, "age");
+        assertEquals(1, vals.size());
+        assertThat((Integer) vals.get(0), is(Integer.valueOf(25)));
     }
 
     @Test
     public void testRichObjectNested() throws Exception {
-        List<String> vals = ParsingUtils.values(parser, "address.building");
+        List<Object> vals = ParsingUtils.values(parser, "address.building");
         assertEquals(1, vals.size());
-        assertThat(vals.get(0), containsString("floors"));
+        assertThat(vals.get(0).toString(), containsString("floors"));
+    }
+
+    @Test
+    public void testCorrectLevelMatched() throws Exception {
+        List<Object> vals = ParsingUtils.values(parser, "state");
+        assertEquals(1, vals.size());
+        assertThat(vals.get(0).toString(), containsString("CA"));
     }
 }

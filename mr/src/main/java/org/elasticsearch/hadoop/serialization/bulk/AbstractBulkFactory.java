@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,12 +28,12 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
-import org.elasticsearch.hadoop.serialization.field.WithoutQuotes;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesArrayPool;
@@ -40,31 +41,51 @@ import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-
-abstract class AbstractBulkFactory implements BulkFactory {
+public abstract class AbstractBulkFactory implements BulkFactory {
 
     private static Log log = LogFactory.getLog(AbstractBulkFactory.class);
 
-    private boolean jsonInput;
-    private JsonFieldExtractors jsonExtractors;
-
     protected Settings settings;
-    private ValueWriter valueWriter;
+
+    private final boolean jsonInput;
+    private final boolean isStatic;
+
+    private final MetadataExtractor metaExtractor;
     // used when specifying an index pattern
     private IndexExtractor indexExtractor;
-    private FieldExtractor idExtractor, parentExtractor, routingExtractor, versionExtractor, ttlExtractor,
-            timestampExtractor, paramsExtractor;
+    private FieldExtractor idExtractor,
+    typeExtractor,
+    parentExtractor,
+    routingExtractor,
+    versionExtractor,
+    ttlExtractor,
+    timestampExtractor,
+    paramsExtractor;
 
-    static final BytesArray QUOTE = new BytesArray("\"");
+    private final FieldExtractor versionTypeExtractor = new FieldExtractor() {
+
+        private Object value;
+
+        @Override
+        public Object field(Object target) {
+            // lazy init to have the settings in place
+            if (value == null) {
+                value = new RawJson(StringUtils.toJsonString(settings.getMappingVersionType()));
+            }
+            return value;
+        }
+    };
+
+    private JsonFieldExtractors jsonExtractors;
+
+    private final ValueWriter valueWriter;
 
     class FieldWriter {
         final FieldExtractor extractor;
-        final boolean addQuotesIfNecessary;
         final BytesArrayPool pool = new BytesArrayPool();
 
         FieldWriter(FieldExtractor extractor) {
             this.extractor = extractor;
-            addQuotesIfNecessary = (extractor instanceof WithoutQuotes);
         }
 
         BytesArrayPool write(Object object) {
@@ -77,66 +98,83 @@ abstract class AbstractBulkFactory implements BulkFactory {
             }
 
             if (value instanceof List) {
-                List list = (List) value;
-                for (int i = 0; i < list.size() - 1; i++) {
-                    doWrite(list.get(i), false);
+                for (Object val : (List) value) {
+                    doWrite(val);
                 }
-                //
-                doWrite(list.get(list.size() - 1), true);
             }
-            // weird if/else to save one collection/iterator instance
+            // if/else to save one collection/iterator instance
             else {
-                doWrite(value, true);
+                doWrite(value);
             }
 
             return pool;
         }
 
-        void doWrite(Object value, boolean lookForQuotes) {
-            // common-case - constants
-            if (value instanceof String || jsonInput || value instanceof Number) {
-                String val = value.toString();
-                if (lookForQuotes && addQuotesIfNecessary) {
-                    if (val.startsWith("[") || val.startsWith("{")) {
-                        pool.get().bytes(val);
-                    }
-                    else {
-                        pool.get().bytes(QUOTE);
-                        pool.get().bytes(val);
-                        pool.get().bytes(QUOTE);
-                    }
+        void doWrite(Object value) {
+            // common-case - constants or JDK types
+            if (value instanceof String || jsonInput || value instanceof Number || value == null) {
+                String valueString = (value == null ? "null" : value.toString());
+                if (value instanceof String && !jsonInput) {
+                    valueString = StringUtils.toJsonString(valueString);
                 }
-                else {
-                    pool.get().bytes(val);
-                }
+
+                pool.get().bytes(valueString);
             }
+            else if (value instanceof RawJson) {
+                pool.get().bytes(((RawJson) value).json());
+            }
+            // library specific type - use the value writer (a bit overkill but handles collections/arrays properly)
             else {
                 BytesArray ba = pool.get();
                 JacksonJsonGenerator generator = new JacksonJsonGenerator(new FastByteArrayOutputStream(ba));
                 valueWriter.write(value, generator);
                 generator.flush();
                 generator.close();
-
-                // jackson likely will add leading/trailing "" which are added down the pipeline so remove them
-                // however that's not mandatory in case the source is a number (instead of a string)
-                if ((lookForQuotes && !addQuotesIfNecessary) && ba.bytes()[ba.offset()] == '"') {
-                    ba.size(Math.max(0, ba.length() - 2));
-                    ba.offset(1);
-                }
             }
+        }
+
+        @Override
+        public String toString() {
+            return "FieldWriter for " + extractor;
+        }
+    }
+
+    interface DynamicContentRef {
+        List<Object> getDynamicContent();
+    }
+
+    public class DynamicHeaderRef implements DynamicContentRef {
+        final List<Object> header = new ArrayList<Object>();
+
+        public List<Object> getDynamicContent() {
+            header.clear();
+            writeObjectHeader(header);
+            return compact(header);
+        }
+    }
+
+    public class DynamicEndRef implements DynamicContentRef {
+        final List<Object> end = new ArrayList<Object>();
+
+        public List<Object> getDynamicContent() {
+            end.clear();
+            writeObjectEnd(end);
+            return compact(end);
         }
     }
 
 
-    AbstractBulkFactory(Settings settings) {
+    AbstractBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
         this.settings = settings;
         this.valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
-        initFieldExtractors(settings);
+        this.metaExtractor = metaExtractor;
+
+        jsonInput = settings.getInputAsJson();
+        isStatic = metaExtractor == null;
+        initExtractorsFromSettings(settings);
     }
 
-    private void initFieldExtractors(Settings settings) {
-        jsonInput = settings.getInputAsJson();
-
+    private void initExtractorsFromSettings(final Settings settings) {
         if (jsonInput) {
             if (log.isDebugEnabled()) {
                 log.debug("JSON input; using internal field extractor for efficient parsing...");
@@ -157,23 +195,28 @@ abstract class AbstractBulkFactory implements BulkFactory {
             // init extractors (if needed)
             if (settings.getMappingId() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingId());
-                idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(), settings);
+                idExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingIdExtractorClassName(),
+                        settings);
             }
             if (settings.getMappingParent() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingParent());
-                parentExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingParentExtractorClassName(), settings);
+                parentExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                        settings.getMappingParentExtractorClassName(), settings);
             }
             if (settings.getMappingRouting() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingRouting());
-                routingExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingRoutingExtractorClassName(), settings);
+                routingExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                        settings.getMappingRoutingExtractorClassName(), settings);
             }
             if (settings.getMappingTtl() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTtl());
-                ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(), settings);
+                ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(),
+                        settings);
             }
             if (settings.getMappingVersion() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingVersion());
-                versionExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingVersionExtractorClassName(), settings);
+                versionExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                        settings.getMappingVersionExtractorClassName(), settings);
             }
             if (settings.getMappingTimestamp() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTimestamp());
@@ -189,7 +232,6 @@ abstract class AbstractBulkFactory implements BulkFactory {
                 indexExtractor = iformat;
             }
 
-            // param extractor
             if (settings.hasUpdateScriptParams()) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getUpdateScriptParams());
                 paramsExtractor = ObjectUtils.instantiate(settings.getMappingParamsExtractorClassName(), settings);
@@ -220,50 +262,46 @@ abstract class AbstractBulkFactory implements BulkFactory {
                 }
             }
         }
+
+        // json params override other extractors
+        if (settings.hasUpdateScriptParamsJson()) {
+            paramsExtractor = new FieldExtractor() {
+                @Override
+                public Object field(Object target) {
+                    return new RawJson(settings.getUpdateScriptParamsJson().trim());
+                }
+            };
+        }
     }
 
-    protected IndexExtractor index() {
-        return indexExtractor;
-    }
 
-    protected FieldExtractor id() {
-        return idExtractor;
-    }
+    class DynamicFieldExtractor implements FieldExtractor {
 
-    protected FieldExtractor parent() {
-        return parentExtractor;
-    }
+        private final List<Object> before = new ArrayList<Object>();
 
-    protected FieldExtractor routing() {
-        return routingExtractor;
-    }
-
-    protected FieldExtractor ttl() {
-        return ttlExtractor;
-    }
-
-    protected FieldExtractor version() {
-        return versionExtractor;
-    }
-
-    protected FieldExtractor timestamp() {
-        return timestampExtractor;
-    }
-
-    protected FieldExtractor params() {
-        return paramsExtractor;
+        @Override
+        public Object field(Object target) {
+            before.clear();
+            writeObjectHeader(before);
+            return compact(before);
+        }
     }
 
     @Override
     public BulkCommand createBulk() {
         List<Object> before = new ArrayList<Object>();
-        writeBeforeObject(before);
-
         List<Object> after = new ArrayList<Object>();
-        writeAfterObject(after);
 
-        before = compact(before);
-        after = compact(after);
+        if (!isStatic) {
+            before.add(new DynamicHeaderRef());
+            after.add(new DynamicEndRef());
+        }
+        else {
+            writeObjectHeader(before);
+            before = compact(before);
+            writeObjectEnd(after);
+            after = compact(after);
+        }
 
         boolean isScriptUpdate = settings.hasUpdateScript();
         // compress pieces
@@ -279,10 +317,91 @@ abstract class AbstractBulkFactory implements BulkFactory {
         return new TemplatedBulk(before, after, valueWriter);
     }
 
-    protected void writeAfterObject(List<Object> after) {
-        after.add("\n");
+    // write action & metadata header
+    protected void writeObjectHeader(List<Object> list) {
+        // action
+        list.add("{\"" + getOperation() + "\":{");
+
+        // flag indicating whether a comma needs to be added between fields
+        boolean commaMightBeNeeded = false;
+
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.INDEX, indexExtractor), "", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TYPE, typeExtractor), "\"_type\":", commaMightBeNeeded);
+        commaMightBeNeeded = id(list, commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.PARENT, parentExtractor), "\"_parent\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.ROUTING, routingExtractor), "\"_routing\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TTL, ttlExtractor), "\"_ttl\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TIMESTAMP, timestampExtractor), "\"_timestamp\":", commaMightBeNeeded);
+
+        // version & version_type fields
+        Object versionField = getExtractorOrDynamicValue(Metadata.VERSION, versionExtractor);
+        if (versionField != null) {
+            if (commaMightBeNeeded) {
+                list.add(",");
+                commaMightBeNeeded = false;
+            }
+            commaMightBeNeeded = true;
+            list.add("\"_version\":");
+            list.add(versionField);
+
+            // version_type - only needed when a version is specified
+            Object versionTypeField = getExtractorOrDynamicValue(Metadata.VERSION_TYPE, versionTypeExtractor);
+            if (versionTypeField != null) {
+                if (commaMightBeNeeded) {
+                    list.add(",");
+                    commaMightBeNeeded = false;
+                }
+                commaMightBeNeeded = true;
+                list.add("\"_version_type\":");
+                list.add(versionTypeField);
+            }
+        }
+
+        // useful for update command
+        otherHeader(list, commaMightBeNeeded);
+        list.add("}}\n");
     }
 
+    protected boolean id(List<Object> list, boolean commaMightBeNeeded) {
+        return addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.ID, idExtractor), "\"_id\":", commaMightBeNeeded);
+    }
+
+    // trivial utility that adds a comma before the current field alongside but only if the extractor is present
+    private boolean addExtractorOrDynamicValue(List<Object> list, Object extractor, String header, boolean commaMightBeNeeded) {
+        if (extractor != null) {
+            if (commaMightBeNeeded) {
+                list.add(",");
+            }
+            list.add(header);
+            list.add(extractor);
+            return true;
+        }
+        return commaMightBeNeeded;
+    }
+
+    protected void otherHeader(List<Object> list, boolean commaMightBeNeeded) {
+        // no-op
+    }
+
+    // get the extractor for a given field, trying first the dynamic one, with a fallback on the 'static' one
+    protected Object getExtractorOrDynamicValue(Metadata meta, FieldExtractor fallbackExtractor) {
+        if (metaExtractor != null) {
+            FieldExtractor metaFE = metaExtractor.get(meta);
+            if (metaFE != null) {
+                return metaFE;
+            }
+        }
+        return fallbackExtractor;
+    }
+
+    protected abstract String getOperation();
+
+    protected void writeObjectEnd(List<Object> list) {
+        list.add("\n");
+    }
+
+    // optimization method used when dealing with 'static' extractors
+    // concatenates all the strings to minimize the amount of data needed for construction
     private List<Object> compact(List<Object> list) {
         if (list == null || list.isEmpty()) {
             return null;
@@ -290,153 +409,26 @@ abstract class AbstractBulkFactory implements BulkFactory {
 
         List<Object> compacted = new ArrayList<Object>();
         StringBuilder stringAccumulator = new StringBuilder();
-        String lastString = null;
-        boolean hasSeenIndexExtractor = false;
         for (Object object : list) {
             if (object instanceof FieldExtractor) {
-                hasSeenIndexExtractor = object instanceof IndexExtractor;
                 if (stringAccumulator.length() > 0) {
-                    compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
+                    compacted.add(new BytesArray(stringAccumulator.toString()));
                     stringAccumulator.setLength(0);
-                    lastString = null;
                 }
-                compacted.add(createFieldWriter((FieldExtractor) object));
+                compacted.add(new FieldWriter((FieldExtractor) object));
             }
             else {
-                String str = object.toString();
-                if (("\"".equals(lastString) || (lastString == null && hasSeenIndexExtractor)) && str.startsWith("\"")) {
-                    stringAccumulator.append(",");
-                }
-                hasSeenIndexExtractor = false;
-                lastString = str;
-                stringAccumulator.append(str);
+                stringAccumulator.append(object.toString());
             }
         }
 
         if (stringAccumulator.length() > 0) {
-            compacted.add(stringAccumulator.toString().getBytes(StringUtils.UTF_8));
+            compacted.add(new BytesArray(stringAccumulator.toString()));
         }
         return compacted;
     }
 
-    protected Object createFieldWriter(FieldExtractor extractor) {
-        return new FieldWriter(extractor);
-    }
-
-    protected void writeBeforeObject(List<Object> pieces) {
-        startHeader(pieces);
-
-        index(pieces);
-
-        id(pieces);
-        parent(pieces);
-        routing(pieces);
-        ttl(pieces);
-        version(pieces);
-        timestamp(pieces);
-
-        otherHeader(pieces);
-        endHeader(pieces);
-
-        scriptParams(pieces);
-    }
-
-    private void startHeader(List<Object> pieces) {
-        pieces.add("{\"" + getOperation() + "\":{");
-    }
-
-    private void endHeader(List<Object> pieces) {
-        pieces.add("}}\n");
-    }
-
-    protected boolean index(List<Object> pieces) {
-        if (index() != null) {
-            pieces.add(index());
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean id(List<Object> pieces) {
-        if (id() != null) {
-            pieces.add("\"_id\":\"");
-            pieces.add(id());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected abstract String getOperation();
-
-    protected boolean parent(List<Object> pieces) {
-        if (parent() != null) {
-            pieces.add("\"_parent\":\"");
-            pieces.add(parent());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean routing(List<Object> pieces) {
-        if (routing() != null) {
-            pieces.add("\"_routing\":\"");
-            pieces.add(routing());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean ttl(List<Object> pieces) {
-        if (ttl() != null) {
-            pieces.add("\"_ttl\":\"");
-            pieces.add(ttl());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean version(List<Object> pieces) {
-        if (version() != null) {
-            pieces.add("\"_version\":\"");
-            pieces.add(version());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected boolean timestamp(List<Object> pieces) {
-        if (timestamp() != null) {
-            pieces.add("\"_timestamp\":\"");
-            pieces.add(timestamp());
-            pieces.add("\"");
-            return true;
-        }
-        return false;
-    }
-
-    protected void otherHeader(List<Object> pieces) {
-        // no-op
-    }
-
-    private boolean scriptParams(List<Object> pieces) {
-        // handle json params first
-        if (settings.hasUpdateScriptParamsJson()) {
-            pieces.add("{\"params\":");
-            pieces.add(settings.getUpdateScriptParamsJson().trim());
-            pieces.add(",");
-            return true;
-        }
-        if (params() != null) {
-            pieces.add("{\"params\":{");
-            pieces.add(params());
-            pieces.add("},");
-            return true;
-        }
-        return false;
+    protected FieldExtractor getParamExtractor() {
+        return paramsExtractor;
     }
 }

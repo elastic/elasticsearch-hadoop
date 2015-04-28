@@ -15,48 +15,48 @@ import org.elasticsearch.hadoop.util.ReflectionUtils;
 // an array writable implementation that actually is writable
 public class WritableArrayWritable extends ArrayWritable {
 
-	static final Field VALUE_CLASS_FIELD;
-	
-	static {
-		VALUE_CLASS_FIELD = ReflectionUtils.findField(ArrayWritable.class, "valueClass");
-		ReflectionUtils.makeAccessible(VALUE_CLASS_FIELD);
-	}
-	
-	public WritableArrayWritable(Class<? extends Writable> valueClass, Writable[] values) {
-		super(valueClass, values);
-	}
+    static final Field VALUE_CLASS_FIELD;
 
-	public WritableArrayWritable(Class<? extends Writable> valueClass) {
-		super(valueClass);
-	}
+    static {
+        VALUE_CLASS_FIELD = ReflectionUtils.findField(ArrayWritable.class, "valueClass");
+        ReflectionUtils.makeAccessible(VALUE_CLASS_FIELD);
+    }
 
-	public WritableArrayWritable(String[] strings) {
-		super(strings);
-	}
-	
-	// constructor used by serialization only
-	WritableArrayWritable() {
-		super(NullWritable.class);
-	}
-	
-	public void setValueClass(Class<Writable> valueClass) {
-		ReflectionUtils.setField(VALUE_CLASS_FIELD, this, valueClass);
-	}
+    public WritableArrayWritable(Class<? extends Writable> valueClass, Writable[] values) {
+        super(valueClass, values);
+    }
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		String valueClass = in.readUTF();
-		try {
-			ReflectionUtils.setField(VALUE_CLASS_FIELD, this, Class.forName(valueClass, false, getClass().getClassLoader()));
-		} catch (ClassNotFoundException ex) {
-			throw new IOException("Cannot load class " + valueClass, ex);
-		}
-		super.readFields(in);
-	}
+    public WritableArrayWritable(Class<? extends Writable> valueClass) {
+        super(valueClass);
+    }
 
-	@Override
-	public void write(DataOutput out) throws IOException {
-		out.writeUTF(getValueClass().getName());
-		super.write(out);
-	}
+    public WritableArrayWritable(String[] strings) {
+        super(strings);
+    }
+
+    // constructor used by serialization only
+    WritableArrayWritable() {
+        super(NullWritable.class);
+    }
+
+    public void setValueClass(Class<Writable> valueClass) {
+        ReflectionUtils.setField(VALUE_CLASS_FIELD, this, valueClass);
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+        String valueClass = in.readUTF();
+        try {
+            ReflectionUtils.setField(VALUE_CLASS_FIELD, this, Class.forName(valueClass, false, getClass().getClassLoader()));
+        } catch (ClassNotFoundException ex) {
+            throw new IOException("Cannot load class " + valueClass, ex);
+        }
+        super.readFields(in);
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+        out.writeUTF(getValueClass().getName());
+        super.write(out);
+    }
 }

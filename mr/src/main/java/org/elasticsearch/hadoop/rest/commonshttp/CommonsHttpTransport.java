@@ -207,7 +207,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         replaceProtocol(hostConfig, sslFactory, schema, port);
 
-		return hostConfig;
+        return hostConfig;
     }
 
     private void addHttpAuth(Settings settings, Object[] authSettings) {
@@ -327,7 +327,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             String schema = settings.getNetworkSSLEnabled() ? "https" : "http";
             int port = settings.getNetworkSSLEnabled() ? 443 : 80;
             SocksSocketFactory socketFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
-			replaceProtocol(hostConfig, socketFactory, schema, port);
+            replaceProtocol(hostConfig, socketFactory, schema, port);
         }
 
         return hostConfig;
@@ -347,7 +347,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // NB: hence why the original/direct http protocol is saved - as otherwise the connection is not closed since it is considered different
         // NB: (as the protocol identities don't match)
 
-		// this is not really needed since it's being replaced later on
+        // this is not really needed since it's being replaced later on
         // hostConfig.setHost(proxyHost, proxyPort, proxiedHttp);
         Protocol.registerProtocol(schema, proxiedHttp);
 

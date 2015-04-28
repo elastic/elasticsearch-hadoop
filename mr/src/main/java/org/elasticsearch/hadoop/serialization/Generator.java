@@ -64,4 +64,6 @@ public interface Generator extends Closeable {
     void close();
 
     Object getOutputTarget();
+
+    String getParentPath();
 }

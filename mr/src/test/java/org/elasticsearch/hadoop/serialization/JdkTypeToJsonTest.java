@@ -25,18 +25,24 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class JdkTypeToJsonTest {
 
@@ -170,24 +176,57 @@ public class JdkTypeToJsonTest {
     }
 
     @Test
+    public void testMapWithFilterInclude() {
+        TestSettings cfg = new TestSettings();
+        cfg.setProperty("es.mapping.include", "key, nested.a*");
+
+        Map nested = new LinkedHashMap();
+        nested.put("aaa", "bbb");
+        nested.put("ccc", "ddd");
+        nested.put("axx", "zzz");
+
+        Map map = new LinkedHashMap();
+        map.put("key", "value");
+        map.put("nested", nested);
+        assertEquals("{\"key\":\"value\",\"nested\":{\"aaa\":\"bbb\",\"axx\":\"zzz\"}}", jdkTypeToJson(map, cfg));
+    }
+
+    @Test
+    public void testMapWithFilterExclude() {
+        TestSettings cfg = new TestSettings();
+        cfg.setProperty("es.mapping.exclude", "key, nested.xxx");
+
+        Map nested = new LinkedHashMap();
+        nested.put("aaa", "bbb");
+        nested.put("ccc", "ddd");
+        nested.put("xxx", "zzz");
+
+        Map map = new LinkedHashMap();
+        map.put("key", "value");
+        map.put("nested", nested);
+
+        assertEquals("{\"nested\":{\"aaa\":\"bbb\",\"ccc\":\"ddd\"}}", jdkTypeToJson(map, cfg));
+    }
+
+    @Test
     public void testDate() {
         Date d = new Date(0);
-		assertThat(jdkTypeToJson(d), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        assertThat(jdkTypeToJson(d), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test
     public void testCalendar() {
-		Date d = new Date(0);
+        Date d = new Date(0);
         Calendar cal = Calendar.getInstance();
-		cal.setTime(d);
-		assertThat(jdkTypeToJson(cal), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        cal.setTime(d);
+        assertThat(jdkTypeToJson(cal), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test
     public void testTimestamp() {
-		Date d = new Date(0);
+        Date d = new Date(0);
         Timestamp ts = new Timestamp(0);
-		assertThat(jdkTypeToJson(ts), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        assertThat(jdkTypeToJson(ts), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
     }
 
     @Test(expected = EsHadoopSerializationException.class)
@@ -211,6 +250,13 @@ public class JdkTypeToJsonTest {
 
     private String jdkTypeToJson(Object obj) {
         ContentBuilder.generate(out, new JdkValueWriter(false)).value(obj).flush().close();
+        return out.bytes().toString();
+    }
+
+    private String jdkTypeToJson(Object obj, Settings settings) {
+        JdkValueWriter jdkWriter = new JdkValueWriter(false);
+        jdkWriter.setSettings(settings);
+        ContentBuilder.generate(out, jdkWriter).value(obj).flush().close();
         return out.bytes().toString();
     }
 }

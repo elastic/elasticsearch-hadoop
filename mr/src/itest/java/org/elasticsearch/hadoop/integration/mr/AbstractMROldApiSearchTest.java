@@ -44,9 +44,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSearchTest {
@@ -60,12 +61,14 @@ public class AbstractMROldApiSearchTest {
     private final String query;
     private final String indexPrefix;
     private final Random random = new Random();
-    private boolean readMetadata;
+    private final boolean readMetadata;
+    private final boolean readAsJson;
 
-    public AbstractMROldApiSearchTest(String indexPrefix, String query, boolean readMetadata) {
+    public AbstractMROldApiSearchTest(String indexPrefix, String query, boolean readMetadata, boolean readAsJson) {
         this.query = query;
         this.indexPrefix = indexPrefix;
         this.readMetadata = readMetadata;
+        this.readAsJson = readAsJson;
     }
 
     @Before
@@ -190,6 +193,7 @@ public class AbstractMROldApiSearchTest {
 
         conf.set(ConfigurationOptions.ES_READ_METADATA, String.valueOf(readMetadata));
         conf.set(ConfigurationOptions.ES_READ_METADATA_VERSION, String.valueOf(true));
+        conf.set(ConfigurationOptions.ES_OUTPUT_JSON, String.valueOf(readAsJson));
 
         QueryTestParams.provisionQueries(conf);
         FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));

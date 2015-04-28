@@ -47,6 +47,10 @@ public interface ConfigurationOptions {
 
     String ES_QUERY = "es.query";
 
+    /** Clients only */
+    String ES_NODES_CLIENT_ONLY = "es.nodes.client.only";
+    String ES_NODES_CLIENT_ONLY_DEFAULT = "false";
+
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";
@@ -92,6 +96,9 @@ public interface ConfigurationOptions {
 
     /** Scroll fields */
     String ES_SCROLL_FIELDS = "es.scroll.fields";
+
+    String ES_SCROLL_ESCAPE_QUERY_URI = "es.scroll.escape.query.uri";
+    String ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT = "true";
 
     String ES_HEART_BEAT_LEAD = "es.action.heart.beat.lead";
     String ES_HEART_BEAT_LEAD_DEFAULT = "15s";
@@ -146,6 +153,25 @@ public interface ConfigurationOptions {
     String ES_MAPPING_DEFAULT_INDEX_FORMATTER_CLASS = DateIndexFormatter.class.getName();
     String ES_MAPPING_PARAMS_EXTRACTOR_CLASS = "es.mapping.params.extractor.class";
     String ES_MAPPING_PARAMS_DEFAULT_EXTRACTOR_CLASS = DefaultParamsExtractor.class.getName();
+    String ES_MAPPING_CONSTANT_AUTO_QUOTE = "es.mapping.constant.auto.quote";
+    String ES_MAPPING_CONSTANT_AUTO_QUOTE_DEFAULT = "true";
+
+    String ES_MAPPING_DATE_RICH_OBJECT = "es.mapping.date.rich";
+    String ES_MAPPING_DATE_RICH_OBJECT_DEFAULT = "true";
+
+
+    String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
+    String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
+    String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";
+    String ES_MAPPING_VERSION_TYPE_EXTERNAL_GT = "external_gt";
+    String ES_MAPPING_VERSION_TYPE_EXTERNAL_GTE = "external_gte";
+    String ES_MAPPING_VERSION_TYPE_FORCE = "force";
+
+    String ES_MAPPING_INCLUDE = "es.mapping.include";
+    String ES_MAPPING_INCLUDE_DEFAULT = "";
+    String ES_MAPPING_EXCLUDE = "es.mapping.exclude";
+    String ES_MAPPING_EXCLUDE_DEFAULT = "";
+
 
     /** Read settings */
     String ES_READ_METADATA = "es.read.metadata";
@@ -172,25 +198,28 @@ public interface ConfigurationOptions {
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
 
+    /** Output options **/
+    String ES_OUTPUT_JSON = "es.output.json";
+    String ES_OUTPUT_JSON_DEFAULT = "no";
 
     /** Network options */
     // SSL
     String ES_NET_USE_SSL = "es.net.ssl";
     String ES_NET_USE_SSL_DEFAULT = "false";
 
-	String ES_NET_SSL_PROTOCOL = "es.net.ssl.protocol";
-	String ES_NET_SSL_PROTOCOL_DEFAULT = "TLS"; // SSL as an alternative
+    String ES_NET_SSL_PROTOCOL = "es.net.ssl.protocol";
+    String ES_NET_SSL_PROTOCOL_DEFAULT = "TLS"; // SSL as an alternative
 
-	String ES_NET_SSL_KEYSTORE_LOCATION = "es.net.ssl.keystore.location";
-	String ES_NET_SSL_KEYSTORE_TYPE = "es.net.ssl.keystore.type";
-	String ES_NET_SSL_KEYSTORE_TYPE_DEFAULT = "JKS"; // PKCS12 could also be used
-	String ES_NET_SSL_KEYSTORE_PASS = "es.net.ssl.keystore.pass";
+    String ES_NET_SSL_KEYSTORE_LOCATION = "es.net.ssl.keystore.location";
+    String ES_NET_SSL_KEYSTORE_TYPE = "es.net.ssl.keystore.type";
+    String ES_NET_SSL_KEYSTORE_TYPE_DEFAULT = "JKS"; // PKCS12 could also be used
+    String ES_NET_SSL_KEYSTORE_PASS = "es.net.ssl.keystore.pass";
 
-	String ES_NET_SSL_TRUST_STORE_LOCATION = "es.net.ssl.truststore.location";
-	String ES_NET_SSL_TRUST_STORE_PASS = "es.net.ssl.truststore.pass";
+    String ES_NET_SSL_TRUST_STORE_LOCATION = "es.net.ssl.truststore.location";
+    String ES_NET_SSL_TRUST_STORE_PASS = "es.net.ssl.truststore.pass";
 
-	String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED = "es.net.ssl.cert.allow.self.signed";
-	String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED_DEFAULT = "false";
+    String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED = "es.net.ssl.cert.allow.self.signed";
+    String ES_NET_SSL_CERT_ALLOW_SELF_SIGNED_DEFAULT = "false";
 
     String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
     String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";

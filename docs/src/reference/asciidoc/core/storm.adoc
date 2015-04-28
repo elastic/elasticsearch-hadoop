@@ -56,6 +56,12 @@ The number of entries that trigger a _micro-batch_ write to {es}. By default, it
 
 `es.storm.bolt.tick.tuple.flush` (default true)::
 Whether or not to flush the existing data if the +Bolt+ receives a https://storm.incubator.apache.org/apidocs/[Tick] tuple. This _heart-beat_-like mechanism goes hand in hand with the flush limit above to create both a time and size trigger.
+When using Storm's internal ticks, remember to set the tick interval:
+[source,java]
+----
+// tick every 2 seconds
+builder.setBolt(...).addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 2) 
+----
 
 [[storm-cfg-set]]
 [float]

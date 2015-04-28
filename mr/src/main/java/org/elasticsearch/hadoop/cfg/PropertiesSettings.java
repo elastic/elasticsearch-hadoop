@@ -32,9 +32,9 @@ public class PropertiesSettings extends Settings {
     protected final Properties props;
 
     public PropertiesSettings() {
-    	this(new Properties());
+        this(new Properties());
     }
-    
+
     public PropertiesSettings(Properties props) {
         Assert.notNull(props, "Non-null properties expected");
         this.props = props;

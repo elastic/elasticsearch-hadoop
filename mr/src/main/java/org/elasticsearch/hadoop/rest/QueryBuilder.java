@@ -41,15 +41,17 @@ public class QueryBuilder {
 
     private static String MATCH_ALL = "{\"query\":{\"match_all\":{}}}";
 
-    private Map<String, String> uriQuery = new LinkedHashMap<String, String>();
+    private final Map<String, String> uriQuery = new LinkedHashMap<String, String>();
     private BytesArray bodyQuery;
 
     private TimeValue time = TimeValue.timeValueMinutes(10);
     private long size = 50;
     private String shard;
     private String node;
+    private boolean onlyNode;
     private final boolean IS_ES_10;
     private final boolean INCLUDE_VERSION;
+    private final boolean ESCAPE_QUERY_URI;
 
     private String fields;
 
@@ -57,6 +59,7 @@ public class QueryBuilder {
         this.resource = new Resource(settings, true);
         IS_ES_10 = SettingsUtils.isEs10(settings);
         INCLUDE_VERSION = settings.getReadMetadata() && settings.getReadMetadataVersion();
+        ESCAPE_QUERY_URI = settings.getScrollEscapeUri();
         String query = settings.getQuery();
         if (!StringUtils.hasText(query)) {
             query = MATCH_ALL;
@@ -66,8 +69,8 @@ public class QueryBuilder {
 
     public static QueryBuilder query(Settings settings) {
         return new QueryBuilder(settings).
-                        time(settings.getScrollKeepAlive()).
-                        size(settings.getScrollSize());
+                time(settings.getScrollKeepAlive()).
+                size(settings.getScrollSize());
     }
 
 
@@ -109,7 +112,12 @@ public class QueryBuilder {
         for (String token : query.split("&")) {
             int indexOf = token.indexOf("=");
             Assert.isTrue(indexOf > 0, String.format("Cannot token [%s] in uri query [%s]", token, query));
-            params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+            if (ESCAPE_QUERY_URI) {
+                params.put(StringUtils.encodePath(token.substring(0, indexOf)),
+                        StringUtils.encodePath(token.substring(indexOf + 1)));
+            } else {
+                params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
+            }
         }
         return params;
     }
@@ -125,7 +133,7 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder onlyNode(String node) {
+    public QueryBuilder node(String node) {
         Assert.hasText(node, "Invalid node");
         this.node = node;
         return this;
@@ -180,7 +188,7 @@ public class QueryBuilder {
             if (pref.length() > 0) {
                 pref.append(";");
             }
-            pref.append("_only_node:");
+            pref.append(onlyNode ? "_only_node:" : "_prefer_node:");
             pref.append(node);
         }
 
@@ -212,5 +220,10 @@ public class QueryBuilder {
     @Override
     public String toString() {
         return "QueryBuilder [" + assemble() + "]";
+    }
+
+    public QueryBuilder restrictToNode(boolean onlyNode) {
+        this.onlyNode = onlyNode;
+        return this;
     }
 }

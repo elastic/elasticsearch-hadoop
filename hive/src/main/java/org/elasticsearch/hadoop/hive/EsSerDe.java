@@ -28,7 +28,7 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.serde2.SerDe;
+import org.apache.hadoop.hive.serde2.AbstractSerDe;
 import org.apache.hadoop.hive.serde2.SerDeException;
 import org.apache.hadoop.hive.serde2.SerDeStats;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
@@ -52,8 +52,7 @@ import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-@SuppressWarnings("deprecation")
-public class EsSerDe implements SerDe {
+public class EsSerDe extends AbstractSerDe {
 
     private static Log log = LogFactory.getLog(EsSerDe.class);
 
@@ -63,9 +62,9 @@ public class EsSerDe implements SerDe {
     private StructObjectInspector inspector;
 
     // serialization artifacts
-    private BytesArray scratchPad = new BytesArray(512);
-    private HiveType hiveType = new HiveType(null, null);
-    private HiveBytesArrayWritable result = new HiveBytesArrayWritable();
+    private final BytesArray scratchPad = new BytesArray(512);
+    private final HiveType hiveType = new HiveType(null, null);
+    private final HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
     private BulkCommand command;
@@ -76,8 +75,10 @@ public class EsSerDe implements SerDe {
     private boolean trace = false;
 
 
+    // introduced in Hive 0.14
+    // implemented to actually get access to the raw properties
     @Override
-    public void initialize(Configuration conf, Properties tbl) throws SerDeException {
+    public void initialize(Configuration conf, Properties tbl, Properties partitionProperties) throws SerDeException {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         cfg = conf;
@@ -88,6 +89,12 @@ public class EsSerDe implements SerDe {
         this.tableProperties = tbl;
 
         trace = log.isTraceEnabled();
+    }
+
+
+    @Override
+    public void initialize(Configuration conf, Properties tbl) throws SerDeException {
+        initialize(conf, tbl, new Properties());
     }
 
     @Override
@@ -149,7 +156,7 @@ public class EsSerDe implements SerDe {
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
-        this.command = BulkCommands.create(settings);
+        this.command = BulkCommands.create(settings, null);
     }
 
 

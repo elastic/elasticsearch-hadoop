@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.mr;
 
 import java.io.IOException;
 
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
@@ -30,7 +31,10 @@ import org.apache.hadoop.fs.permission.FsPermission;
  */
 public class NTFSLocalFileSystem extends LocalFileSystem {
 
-    private final static FsPermission WIN_PERMS = FsPermission.createImmutable((short) 650);
+    public static final FsPermission WIN_PERMS = FsPermission.createImmutable((short) 650);
+    public static final String SCRATCH_DIR = "/tmp/hive";
+    public static final FsPermission SCRATCH_DIR_PERMS = new FsPermission((short) 00777);
+
     public NTFSLocalFileSystem() {
         super();
     }
@@ -56,5 +60,24 @@ public class NTFSLocalFileSystem extends LocalFileSystem {
     @Override
     public void setPermission(Path p, FsPermission permission) throws IOException {
         // ignore
+    }
+
+    @Override
+    public FileStatus getFileStatus(Path f) throws IOException {
+        // it's the RawFS in place which messes things up as it dynamically returns the permissions...
+        // workaround by doing a copy
+        FileStatus fs = super.getFileStatus(f);
+
+        // work-around for Hive 0.14
+        if (SCRATCH_DIR.equals(f.toString())) {
+            System.out.println("Faking scratch dir permissions on Windows...");
+
+            return new FileStatus(fs.getLen(), fs.isDir(), fs.getReplication(), fs.getBlockSize(),
+                    fs.getModificationTime(), fs.getAccessTime(), SCRATCH_DIR_PERMS, fs.getOwner(), fs.getGroup(),
+                    fs.getPath());
+            // this doesn't work since the RawFS impl has its own algo that does the lookup dynamically
+            //fs.getPermission().fromShort((short) 777);
+        }
+        return fs;
     }
 }

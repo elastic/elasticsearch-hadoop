@@ -92,22 +92,22 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
 
     private final String sslProtocol;
 
-	private final String keyStoreLocation;
+    private final String keyStoreLocation;
     private final String keyStorePass;
     private final String keyStoreType;
 
-	private final String trustStoreLocation;
+    private final String trustStoreLocation;
     private final String trustStorePass;
     private final TrustStrategy trust;
 
     SSLSocketFactory(Settings settings) {
         sslProtocol = settings.getNetworkSSLProtocol();
 
-		keyStoreLocation = settings.getNetworkSSLKeyStoreLocation();
+        keyStoreLocation = settings.getNetworkSSLKeyStoreLocation();
         keyStorePass = settings.getNetworkSSLKeyStorePass();
         keyStoreType = settings.getNetworkSSLKeyStoreType();
 
-		trustStoreLocation = settings.getNetworkSSLTrustStoreLocation();
+        trustStoreLocation = settings.getNetworkSSLTrustStoreLocation();
         trustStorePass = settings.getNetworkSSLTrustStorePass();
 
         trust = (settings.getNetworkSSLAcceptSelfSignedCert() ? new SelfSignedStrategy() : null);
@@ -160,22 +160,22 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         try {
             ctx = SSLContext.getInstance(sslProtocol);
         } catch (NoSuchAlgorithmException ex) {
-			throw new EsHadoopIllegalStateException("Cannot instantiate SSL - " + ex.getMessage(), ex);
+            throw new EsHadoopIllegalStateException("Cannot instantiate SSL - " + ex.getMessage(), ex);
         }
         try {
             ctx.init(loadKeyManagers(), loadTrustManagers(), null);
         } catch (Exception ex) {
-			throw new EsHadoopIllegalStateException("Cannot initialize SSL - " + ex.getMessage(), ex);
+            throw new EsHadoopIllegalStateException("Cannot initialize SSL - " + ex.getMessage(), ex);
         }
 
         return ctx;
     }
 
     private KeyStore loadKeyStore(String location, char[] pass) throws GeneralSecurityException, IOException {
-		KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         InputStream in = null;
         try {
-			in = IOUtils.open(location);
+            in = IOUtils.open(location);
             keyStore.load(in, pass);
         }
         finally {
@@ -185,12 +185,12 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
     }
 
     private KeyManager[] loadKeyManagers() throws GeneralSecurityException, IOException {
-		if (!StringUtils.hasText(keyStoreLocation)) {
+        if (!StringUtils.hasText(keyStoreLocation)) {
             return null;
         }
 
         char[] pass = (StringUtils.hasText(keyStorePass) ? keyStorePass.trim().toCharArray() : null);
-		KeyStore keyStore = loadKeyStore(keyStoreLocation, pass);
+        KeyStore keyStore = loadKeyStore(keyStoreLocation, pass);
         KeyManagerFactory kmFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmFactory.init(keyStore, pass);
         return kmFactory.getKeyManagers();
@@ -205,23 +205,23 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         KeyStore keyStore = loadKeyStore(trustStoreLocation, pass);
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmFactory.init(keyStore);
-		TrustManager[] tms = tmFactory.getTrustManagers();
+        TrustManager[] tms = tmFactory.getTrustManagers();
 
-		if (tms != null && trust != null) {
-			// be defensive since the underlying impl might not give us a copy
-			TrustManager[] clone = new TrustManager[tms.length];
+        if (tms != null && trust != null) {
+            // be defensive since the underlying impl might not give us a copy
+            TrustManager[] clone = new TrustManager[tms.length];
 
-			for (int i = 0; i < tms.length; i++) {
-				TrustManager tm = tms[i];
-				if (tm instanceof X509TrustManager) {
-					tm = new TrustManagerDelegate((X509TrustManager) tm, trust);
-				}
-				clone[i] = tm;
-			}
-			tms = clone;
+            for (int i = 0; i < tms.length; i++) {
+                TrustManager tm = tms[i];
+                if (tm instanceof X509TrustManager) {
+                    tm = new TrustManagerDelegate((X509TrustManager) tm, trust);
+                }
+                clone[i] = tm;
+            }
+            tms = clone;
         }
 
-		return tms;
+        return tms;
     }
 
     public boolean equals(Object obj) {

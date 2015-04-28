@@ -38,7 +38,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  */
@@ -64,7 +65,7 @@ public class AbstractRestQueryTest {
 
     @Test
     public void testShardInfo() throws Exception {
-        Map<Shard, Node> shards = client.getReadTargetShards();
+        Map<Shard, Node> shards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
         System.out.println(shards);
         assertNotNull(shards);
     }
@@ -75,7 +76,7 @@ public class AbstractRestQueryTest {
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
         QueryBuilder qb = QueryBuilder.query(sets);
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata");
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
 
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
@@ -89,10 +90,10 @@ public class AbstractRestQueryTest {
 
     @Test
     public void testQueryShards() throws Exception {
-        Map<Shard, Node> targetShards = client.getReadTargetShards();
+        Map<Shard, Node> targetShards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
 
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata");
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
 
         Settings sets = settings.copy();
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
@@ -100,7 +101,7 @@ public class AbstractRestQueryTest {
         String nodeId = targetShards.values().iterator().next().getId();
         ScrollQuery query = QueryBuilder.query(sets)
                 .shard("0")
-                .onlyNode(nodeId)
+                .node(nodeId)
                 .build(client, reader);
 
         int count = 0;
