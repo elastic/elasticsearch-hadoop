@@ -8,7 +8,7 @@
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -28,7 +28,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-mr<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -40,7 +40,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-hive<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -52,7 +52,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-pig<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -64,7 +64,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-spark_2.10<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -76,7 +76,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-cascading<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 
@@ -101,7 +101,7 @@ in order for the Cascading dependencies to be properly resolved:
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-storm<1></artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>2.1.0.Beta4</version>
 </dependency>
 ----
 

@@ -142,8 +142,8 @@ ext.manifestTemplate = manifest {
         attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
         attributes['Implementation-Title'] = project.name
         attributes['Implementation-Version'] = project.version
-        attributes['Implementation-URL'] = "http://github.com/elasticsearch/elasticsearch-hadoop"
-        attributes['Implementation-Vendor'] = "Elasticsearch"
+        attributes['Implementation-URL'] = "http://github.com/elastic/elasticsearch-hadoop"
+        attributes['Implementation-Vendor'] = "Elastic"
         attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
         
         def build = System.env['ESHDP.BUILD']
@@ -436,7 +436,7 @@ project(":elasticsearch-hadoop-pig") {
     
     dependencies {
         provided("org.apache.pig:pig:$pigVersion:$pigClassifier")
-        optional("joda-time:joda-time:$jodaVersion")
+        testRuntime("joda-time:joda-time:$jodaVersion")
         
         testRuntime "com.google.guava:guava:11.0"
         testRuntime "jline:jline:0.9.94"
@@ -529,9 +529,9 @@ def baseSparkProject(target, sparkVersion, java8) {
         }
         
         optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
-        provided("javax.servlet:javax.servlet-api:3.0.1")
         compile("org.scala-lang:scala-library:$scalaVersion")
 
+		itestCompile("javax.servlet:javax.servlet-api:3.0.1")
         itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
     }
 
@@ -638,7 +638,8 @@ allprojects { project ->
 configure(rootProject) {
     description = "Elasticsearch Hadoop"
     
-    def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
+	// include Spark 1.3+ support in main jar
+    def eshModules = subprojects - project(":elasticsearch-repository-hdfs") - project(":elasticsearch-spark-1.2")
     
     // build root project dependencies
     // extract optional and provided dependencies
@@ -714,7 +715,12 @@ configure(rootProject) {
                 into ("${folderName}/dist")
             }
         }
-        
+		
+		// add Spark-1.2 jar
+		from (project(":elasticsearch-spark-1.2").jar.destinationDir) {
+			into ("${folderName}/dist")
+		}
+		
         // execution phase only
         doLast {
             ant.checksum(file: archivePath, algorithm: 'SHA1', format: 'MD5SUM', fileext: '.sha1.txt')
