@@ -1,7 +1,7 @@
 [[ey-install]]
 == Installation
 
-{ey} binaries can be obtained either by downloading them from the http://elasticsearch.org[elasticsearch.org] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
+{ey} binaries can be obtained either by downloading them from the http://elastic.co[elastic.co] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
 
 [source,xml]
 ----

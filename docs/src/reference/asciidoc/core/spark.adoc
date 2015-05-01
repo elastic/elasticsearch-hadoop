@@ -96,7 +96,7 @@ As an alternative to the _implicit_ import above, one can {eh} Spark support in 
 
 [source,scala]
 ----
-import org.apache.spark.SparkContext             
+import org.apache.spark.SparkContext
 import org.elasticsearch.spark.rdd.EsSpark                        <1>
 
 // define a case class
@@ -157,14 +157,14 @@ The code can be further simplifies by using Java 5 _static_ imports. Additionall
 ----
 public class TripBean implements Serializable {
    private String departure, arrival;
-   
-   public TripBean(String departure, String arrival) { 
+
+   public TripBean(String departure, String arrival) {
        setDeparture(departure);
        setArrival(arrival);
    }
-   
+
    public TripBean() {}
-   
+
    public String getDeparture() { return departure; }
    public String getArrival() { return arrival; }
    public void setDeparture(String dep) { departure = dep; }
@@ -262,12 +262,12 @@ As expected, things in Java are strikingly similar:
 
 [source,java]
 ----
-Map<String, ?> game = 
+Map<String, ?> game =
   ImmutableMap.of("media_type", "game", "title", "FF VI", "year", "1994");
 Map<String, ?> book = ...
 Map<String, ?> cd = ...
 
-JavaRDD<Map<String, ?>> javaRDD = 
+JavaRDD<Map<String, ?>> javaRDD =
                 jsc.parallelize(ImmutableList.of(game, book, cd));
 saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 ----
@@ -278,7 +278,7 @@ saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 [[spark-write-meta]]
 ==== Handling document metadata
 
-{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+{es} allows each document to have its own {ref}/_document_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
 In other words, for ++RDD++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
@@ -460,7 +460,7 @@ import org.elasticsearch.spark.java.api.JavaEsSpark;             <2>
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);               <3>
 
-JavaPairRDD<String, Map<String, Object>> esRDD = 
+JavaPairRDD<String, Map<String, Object>> esRDD =
                         JavaEsSpark.esRDD(jsc, "radio/artists"); <4>
 ----
 
@@ -477,8 +477,8 @@ Let us see how this looks like, but this time around using http://docs.oracle.co
 import static org.elasticsearch.spark.java.api.JavaEsSpark.*;          <1>
 
 ...
-JavaRDD<Map<String, Object>> esRDD = 
-                        esRDD(jsc, "radio/artists", "?q=me*"<2>).values()<3>; 
+JavaRDD<Map<String, Object>> esRDD =
+                        esRDD(jsc, "radio/artists", "?q=me*"<2>).values()<3>;
 ----
 
 <1> statically import `JavaEsSpark` class
@@ -487,7 +487,7 @@ JavaRDD<Map<String, Object>> esRDD =
 
 By using the `JavaEsSpark` API, one gets a hold of Spark's dedicated `JavaPairRDD` which are better suited in Java environments than the base `RDD` (due to its Scala
 signatures). Moreover, the dedicated +RDD+ returns {es} documents as proper Java collections so one does not have to deal with Scala collections (which
-is typically the case with ++RDD++s). This is particularly powerful when using Java 8, which we strongly recommend as its 
+is typically the case with ++RDD++s). This is particularly powerful when using Java 8, which we strongly recommend as its
 http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions] make collection processing _extremely_ concise.
 
 To wit, let us assume one wants to filter the documents from the +RDD+ and return only those that contain a value that contain +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
@@ -495,7 +495,7 @@ To wit, let us assume one wants to filter the documents from the +RDD+ and retur
 In versions prior to Java 8, the code would look something like this:
 [source, java]
 ----
-JavaRDD<Map<String, Object>> esRDD = 
+JavaRDD<Map<String, Object>> esRDD =
                         esRDD(jsc, "radio/artists", "?q=me*").values();
 JavaRDD<Map<String, Object>> filtered = esRDD.filter(
     new Function<Map<String, Object>, Boolean>() {
@@ -510,9 +510,9 @@ with Java 8, the filtering becomes a one liner:
 
 [source,java]
 ----
-JavaRDD<Map<String, Object>> esRDD = 
+JavaRDD<Map<String, Object>> esRDD =
                         esRDD(jsc, "radio/artists", "?q=me*").values();
-JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc -> 
+JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc ->
                                                 doc.contains("mega"));
 ----
 
@@ -564,7 +564,7 @@ In Scala, simply import +org.elasticsearch.spark.sql+ package which enriches the
 // reusing the example from Spark SQL documentation
 
 import org.apache.spark.sql.SQLContext    <1>
-import org.apache.spark.sql.SQLContext._  
+import org.apache.spark.sql.SQLContext._
 
 import org.elasticsearch.spark.sql._      <2>
 
@@ -634,7 +634,7 @@ When dealing with Spark SQL 1.1/1.2 simply interchange +DataFrame+ with +SchemaR
 // reusing the example from Spark SQL documentation
 
 import org.apache.spark.sql.SQLContext    <1>
-import org.apache.spark.sql.SQLContext._  
+import org.apache.spark.sql.SQLContext._
 
 import org.elasticsearch.spark.sql._      <2>
 
@@ -705,8 +705,8 @@ IMPORTANT: Available in Apache Spark SQL 1.2 (or higher)
 
 IMPORTANT: The index and its mapping, have to exist prior to creating the temporary table
 
-Spark SQL 1.2 http://spark.apache.org/releases/spark-release-1-2-0.html[introduced] a new https://github.com/apache/spark/pull/2475[API] for reading from external data sources, which is supported by {eh} 
-simplifying the SQL configured needed for interacting with {es}. Further more, behind the scenes it understands the operations executed by Spark and thus can optimize the data and queries made (such as filtering or pruning), 
+Spark SQL 1.2 http://spark.apache.org/releases/spark-release-1-2-0.html[introduced] a new https://github.com/apache/spark/pull/2475[API] for reading from external data sources, which is supported by {eh}
+simplifying the SQL configured needed for interacting with {es}. Further more, behind the scenes it understands the operations executed by Spark and thus can optimize the data and queries made (such as filtering or pruning),
 improving performance.
 
 [[spark-data-sources]]
@@ -741,7 +741,7 @@ sqlContext.sql(
    "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" ) "
 ----
 
-<1> Spark's temporary table name 
+<1> Spark's temporary table name
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
 <3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es_+ prefix or skip it for convenient.
 <4> Since using the +.+ can cause syntax exceptions, one should replace it instead with +_+ (underline). Thus, in this example +es.scroll.size+ becomes +scroll_size+ (as the leading +es+ can be removed)
@@ -829,7 +829,7 @@ Better yet, the +DataFrame+ can be backed by a query result:
 
 [source,java]
 ----
-DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"  <1>); 
+DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"  <1>);
 ----
 
 <1> {es} query backing the {eh} +DataFrame+
@@ -899,7 +899,7 @@ Better yet, the +JavaSchemaRDD+ can be backed by a query result:
 
 [source,java]
 ----
-JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>); 
+JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>);
 ----
 
 <1> {es} query backing the {eh} +SchemaRDD+
@@ -908,7 +908,7 @@ JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>
 [float]
 === Using the {mr} layer
 
-Another way of using Spark with {es} is through the {mr} layer, that is by leveraging the dedicate +Input/OuputFormat+ in {eh}. However, unless one is stuck on 
+Another way of using Spark with {es} is through the {mr} layer, that is by leveraging the dedicate +Input/OuputFormat+ in {eh}. However, unless one is stuck on
 {eh} 2.0, we _strongly_ recommend using the native integration as it offers significantly better performance and flexibility.
 
 [float]
@@ -958,7 +958,7 @@ JobConf conf = new JobConf();                             <1>
 conf.set("es.resource", "radio/artists");                 <2>
 conf.set("es.query", "?q=me*");                           <3>
 
-JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class, 
+JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class,
                           Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
@@ -975,7 +975,7 @@ The Scala version is below:
 val conf = new JobConf()                                   <1>
 conf.set("es.resource", "radio/artists")                   <2>
 conf.set("es.query", "?q=me*")                             <3>
-val esRDD = sc.hadoopRDD(conf, 
+val esRDD = sc.hadoopRDD(conf,
                 classOf[EsInputFormat[Text, MapWritable]], <4>
                 classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
@@ -997,7 +997,7 @@ Configuration conf = new Configuration();       <1>
 conf.set("es.resource", "radio/artists");       <2>
 conf.set("es.query", "?q=me*");                 <3>
 
-JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class, 
+JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class,
                 Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
@@ -1014,7 +1014,7 @@ The Scala version is below:
 val conf = new Configuration()                             <1>
 conf.set("es.resource", "radio/artists")                   <2>
 conf.set("es.query", "?q=me*")                             <3>
-val esRDD = sc.newAPIHadoopRDD(conf, 
+val esRDD = sc.newAPIHadoopRDD(conf,
                 classOf[EsInputFormat[Text, MapWritable]], <4>
                 classOf[Text], classOf[MapWritable]))
 val docCount = esRDD.count();
