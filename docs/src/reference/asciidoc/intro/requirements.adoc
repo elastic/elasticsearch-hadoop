@@ -10,7 +10,7 @@ TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built o
 [[requirements-jdk]]
 === JDK
 
-JDK level 6.0 (or above) just like Hadoop. We strongly recommend using JDK 6.0 (update 25) or if possible, JDK 7.0 update u55 (required for Elasticsearch 1.2 or higher). See this http://www.elasticsearch.org/blog/java-1-7u55-safe-use-elasticsearch-lucene/[blog post] for more information on why the JVM versions are important (from Lucene point of view) and how some JVM updates (for example anything between JDK 7 update 25 and update 55) can cause index corruption due to some nasty bugs.
+JDK level 6.0 (or above) just like Hadoop. We strongly recommend using JDK 6.0 (update 25) or if possible, JDK 7.0 update u55 (required for Elasticsearch 1.2 or higher). See this http://www.elastic.co/blog/java-1-7u55-safe-use-elasticsearch-lucene/[blog post] for more information on why the JVM versions are important (from Lucene point of view) and how some JVM updates (for example anything between JDK 7 update 25 and update 55) can cause index corruption due to some nasty bugs.
 
 One can check the available JDK version from the command line:
 
@@ -55,7 +55,7 @@ $ curl -XGET http://localhost:9200
 [[requirements-hadoop]]
 === Hadoop
 
-Hadoop 1.x (ideally the latest stable version in the 1.x line, currently 1.2.1) or 2.x (ideally the latest stable version, currently 2.2.0). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine. 
+Hadoop 1.x (ideally the latest stable version in the 1.x line, currently 1.2.1) or 2.x (ideally the latest stable version, currently 2.2.0). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
