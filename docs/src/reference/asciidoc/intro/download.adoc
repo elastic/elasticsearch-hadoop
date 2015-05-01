@@ -1,7 +1,7 @@
 [[install]]
 == Installation
 
-{eh} binaries can be obtained either by downloading them from the http://elasticsearch.org[elasticsearch.org] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
+{eh} binaries can be obtained either by downloading them from the http://elastic.co[elastic.co] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
 
 [source,xml]
 ----
@@ -19,7 +19,7 @@ The jar above contains all the features of {eh} and does not require any other d
 
 === Minimalistic binaries
 
-In addition to the 'uber' jar, {eh} provides minimalistic jars for each integration, tailored for those who use just _one_ module (in all other situations the `uber` jar is recommended); the jars are smaller in size and use a dedicated pom, covering only the needed dependencies. 
+In addition to the 'uber' jar, {eh} provides minimalistic jars for each integration, tailored for those who use just _one_ module (in all other situations the `uber` jar is recommended); the jars are smaller in size and use a dedicated pom, covering only the needed dependencies.
 These are available under the same `groupId`, using an `artifactId` with the pattern `elasticsearch-hadoop-{integration}`:
 
 .Map/Reduce

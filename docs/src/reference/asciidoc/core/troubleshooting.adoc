@@ -28,7 +28,7 @@ Take a close eye at your input and output; this is typically easier to do with E
 [float]
 === Monitor
 
-While logging helps with bugs and errors, for runtime behavior we strongly recommend doing proper monitoring of your Hadoop and {es} cluster. Both are outside the scope of this chapter however there are several popular, free solutions out there that are worth investigating. For {es}, we recommend http://www.elasticsearch.org/overview/marvel/[Marvel], a free monitoring tool (for development) created by the team behind {es}.
+While logging helps with bugs and errors, for runtime behavior we strongly recommend doing proper monitoring of your Hadoop and {es} cluster. Both are outside the scope of this chapter however there are several popular, free solutions out there that are worth investigating. For {es}, we recommend https://www.elastic.co/products/marvel[Marvel], a free monitoring tool (for development) created by the team behind {es}.
 Monitoring gives insight into how the cluster is actually behaving and helps you correlate behavior.
 If a monitoring solution is not possible, use the metrics provided by Hadoop, {es} and {eh} to evaluate the runtime behavior.
 
@@ -50,7 +50,7 @@ Indexing performance depend _heavily_ on the type of data being targeted and its
 [[help]]
 === Getting help
 
-If you need help, there is a strong, helpful community of users on the https://groups.google.com/forum/?fromgroups#!forum/elasticsearch[mailing list] and http://www.elasticsearch.org/community/[IRC] who are happy to help out.
+If you need help, there is a strong, helpful community of users on the https://groups.google.com/forum/?fromgroups#!forum/elasticsearch[mailing list] and http://www.elastic.co/community/[IRC] who are happy to help out.
 
 If something is not working, there are two possibilities:
 
@@ -74,13 +74,13 @@ If you don’t provide all of the information, then it may be difficult for othe
 
 [float]
 === Where do I post my information?
-  
+
 Please don’t paste long lines of code in the mailing list or the IRC – it is difficult to read, and people will be less likely to take the time to help.
 
 Use one of the plethora of ``paste'' sites such as http://pastebin.com/[pastebin] or http://gist.github.com/gists[gist] (which we recommend):
 
 [quote, http://gist.github.com/gists]
 
-    “Gist is a simple way to share snippets and pastes with others. All gists are git repositories, so they are automatically versioned, forkable and usable as a git repository.” 
-	
-Please see the Elasticsearch http://www.elasticsearch.org/help/[help] page for tips on how to create a detailed user report, fast and easy.
+    “Gist is a simple way to share snippets and pastes with others. All gists are git repositories, so they are automatically versioned, forkable and usable as a git repository.”
+
+Please see the Elasticsearch http://www.elastic.co/help/[help] page for tips on how to create a detailed user report, fast and easy.
