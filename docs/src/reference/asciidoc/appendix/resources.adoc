@@ -12,6 +12,6 @@ Mailing list / forum:: https://groups.google.com/forum/?fromgroups#!forum/elasti
 
 Twitter:: http://twitter.com/elasticsearch[Elasticsearch], http://twitter.com/costinl[Costin Leau]
 
-{es} community page:: http://www.elasticsearch.org/community/[community]
+{es} community page:: http://www.elastic.co/community/[community]
 
-{es} resources page:: http://www.elasticsearch.org/resources/[resources]
+{es} resources page:: http://www.elastic.co/learn[documentation]

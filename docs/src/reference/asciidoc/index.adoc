@@ -8,7 +8,7 @@
 :sp:	Apache Spark
 :st:	Apache Storm
 :ey:	Elasticsearch on YARN
-:ref:  	http://www.elasticsearch.org/guide/en/elasticsearch/reference/current
+:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/current
 :description: Reference documentation of {eh}
 
 
