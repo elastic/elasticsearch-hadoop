@@ -64,7 +64,7 @@ es.resource.write = my-collection/{media_type}
 which would result in `Final Fantasy VI` indexed under `my-collection/game`, `Harry Potter` under `my-collection/book` and `Surfing With The Alien` under `my-collection/music`.
 For more information, please refer to the dedicated integration section.
 
-IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate {ref}search-search.html[search query].
+IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate {ref}/search-search.html[search query].
 
 [[cfg-multi-writes-format]]
 [float]
@@ -163,7 +163,7 @@ The document field/property name containing the document parent. To specify a co
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
 `es.mapping.version.type` (default depends on +es.mapping.version+)::
-Indicates the {ref}docs-index_.html#_version_types[type of versioning] used.
+Indicates the {ref}/docs-index_.html#_version_types[type of versioning] used.
 If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
 
 `es.mapping.routing` (default none)::
