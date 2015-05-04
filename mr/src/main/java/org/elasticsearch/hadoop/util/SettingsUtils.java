@@ -74,7 +74,7 @@ public abstract class SettingsUtils {
     }
 
     public static void setDiscoveredNodes(Settings settings, Collection<String> nodes) {
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES, StringUtils.concatenate(nodes, ","));
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES, StringUtils.concatenate(nodes, StringUtils.DEFAULT_DELIMITER));
     }
 
     public static List<String> declaredNodes(Settings settings) {
@@ -88,7 +88,7 @@ public abstract class SettingsUtils {
     }
 
     public static Map<String, String> aliases(String definition) {
-        List<String> aliases = StringUtils.tokenize(definition, ",");
+        List<String> aliases = StringUtils.tokenize(definition);
 
         Map<String, String> aliasMap = new LinkedHashMap<String, String>();
 

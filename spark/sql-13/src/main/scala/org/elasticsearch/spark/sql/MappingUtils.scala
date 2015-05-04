@@ -1,5 +1,6 @@
 package org.elasticsearch.spark.sql
 
+import scala.collection.JavaConverters._
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.sql.types.ByteType
@@ -29,14 +30,28 @@ import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
+import org.elasticsearch.hadoop.util.IOUtils
+import org.elasticsearch.hadoop.util.StringUtils
+import java.util.Properties
+import org.elasticsearch.hadoop.util.Assert
+import scala.collection.mutable.Buffer
 
 private[sql] object MappingUtils {
-
-  def discoverMapping(cfg: Settings): StructType = {
-
+  case class Schema(field: Field, struct: StructType)
+  
+  val ROW_ORDER_PROPERTY = "es.internal.spark.sql.row.order"
+  val ROOT_LEVEL_NAME = "_"
+  
+  def discoverMapping(cfg: Settings): Schema = {
+    val field = discoverMappingAsField(cfg)
+    val struct = convertToStruct(field, cfg)
+    Schema(field, struct)
+  }
+  
+  def discoverMappingAsField(cfg: Settings): Field = {
     val repo = new RestRepository(cfg)
     try {
-      return convertToStruct(repo.getMapping().skipHeaders(), cfg);
+      return repo.getMapping().skipHeaders()
     } finally {
       repo.close()
     }
@@ -74,5 +89,51 @@ private[sql] object MappingUtils {
     }
 
     DataTypes.createStructField(field.name(), dataType, true)
+  }
+
+  def setRowOrder(settings: Settings, struct: StructType) = {
+    val rowOrder = detectRowOrder(settings, struct)
+    // save the field in the settings to pass it to the value reader
+    settings.setProperty(ROW_ORDER_PROPERTY, IOUtils.propsToString(rowOrder))
+  }
+  
+  def getRowOrder(settings: Settings) = {
+    val rowOrderString = settings.getProperty(ROW_ORDER_PROPERTY)
+    Assert.hasText(rowOrderString, "no schema/row order detected...")
+    
+    val rowOrderProps = IOUtils.propsFromString(rowOrderString)
+    
+    val map = new scala.collection.mutable.LinkedHashMap[String, Buffer[String]]
+    
+    for (prop <- rowOrderProps.asScala) {
+      map.put(prop._1, StringUtils.tokenize(prop._2).asScala)
+    }
+    
+    map
+  }
+  
+  private def detectRowOrder(settings: Settings, struct: StructType): Properties = {
+    val rowOrder = new Properties
+
+    doDetectOrder(rowOrder, ROOT_LEVEL_NAME, struct)
+    val csv = settings.getScrollFields()
+    // if a projection is applied, use that instead
+    if (StringUtils.hasText(csv)) {
+      rowOrder.setProperty(ROOT_LEVEL_NAME, csv)
+    }
+    rowOrder
+  }
+  
+  private def doDetectOrder(properties: Properties, level: String, struct: StructType) {
+    val list = new java.util.ArrayList[String] 
+    
+    for (field <- struct) {
+      list.add(field.name)
+      if (field.dataType.isInstanceOf[StructType]) {
+        doDetectOrder(properties, field.name, field.dataType.asInstanceOf[StructType])
+      }
+    }
+    
+    properties.setProperty(level, StringUtils.concatenate(list, StringUtils.DEFAULT_DELIMITER))
   }
 }

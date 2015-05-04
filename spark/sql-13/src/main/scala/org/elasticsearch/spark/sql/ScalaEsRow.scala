@@ -1,11 +1,13 @@
 package org.elasticsearch.spark.sql
 
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.Row
+import scala.collection.mutable.Buffer
 
-private[spark] class ScalaEsRow(private[spark] val values: ArrayBuffer[Any]) extends Row {
-  
+private[spark] class ScalaEsRow(private[spark] val rowOrder: Buffer[String]) extends Row {
+
+  private[spark] val values: ArrayBuffer[Any] = ArrayBuffer.fill(rowOrder.size)(null)
+
   def iterator = values.iterator
   
   def length = values.size

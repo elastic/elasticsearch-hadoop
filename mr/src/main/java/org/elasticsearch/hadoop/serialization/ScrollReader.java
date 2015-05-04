@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
+import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
@@ -126,6 +127,7 @@ public class ScrollReader {
 
     private Parser parser;
     private final ValueReader reader;
+    private final ValueParsingCallback parsingCallback;
     private final Map<String, FieldType> esMapping;
     private final boolean trace = log.isTraceEnabled();
     private final boolean readMetadata;
@@ -140,6 +142,7 @@ public class ScrollReader {
 
     public ScrollReader(ValueReader reader, Field rootField, boolean readMetadata, String metadataName, boolean returnRawJson) {
         this.reader = reader;
+        this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
         this.esMapping = Field.toLookupMap(rootField);
         this.readMetadata = readMetadata;
         this.metadataField = metadataName;
@@ -296,8 +299,16 @@ public class ScrollReader {
         Object id = null;
 
         Token t = parser.currentToken();
+        
+        if (parsingCallback != null) {
+        	parsingCallback.beginDoc();
+        }
         // read everything until SOURCE or FIELDS is encountered
         if (readMetadata) {
+            if (parsingCallback != null) {
+            	parsingCallback.beginLeadMetadata();
+            }
+
             metadata = reader.createMap();
             result[1] = metadata;
             String name;
@@ -322,6 +333,10 @@ public class ScrollReader {
                 }
             }
 
+            if (parsingCallback != null) {
+            	parsingCallback.endLeadMetadata();
+            }
+            
             Assert.notNull(id, "no id found");
             result[0] = id;
         }
@@ -336,7 +351,16 @@ public class ScrollReader {
         Object data = Collections.emptyMap();
 
         if (t != null) {
+        	if (parsingCallback != null) {
+        		parsingCallback.beginSource();
+        	}
+
             data = read(t, null);
+            
+        	if (parsingCallback != null) {
+        		parsingCallback.endSource();
+        	}
+
             if (readMetadata) {
                 reader.addToMap(data, reader.wrapString(metadataField), metadata);
             }
@@ -350,6 +374,12 @@ public class ScrollReader {
 
         result[1] = data;
 
+        if (readMetadata) {
+        	if (parsingCallback != null) {
+        		parsingCallback.beginTrailMetadata();
+        	}
+        }
+        
         // in case of additional fields (matched_query), add them to the metadata
         while (parser.currentToken() == Token.FIELD_NAME) {
             String name = parser.currentName();
@@ -361,6 +391,16 @@ public class ScrollReader {
                 parser.skipChildren();
                 parser.nextToken();
             }
+        }
+
+        if (readMetadata) {
+        	if (parsingCallback != null) {
+        		parsingCallback.endTrailMetadata();
+        	}
+        }
+
+        if (parsingCallback != null) {
+        	parsingCallback.endDoc();
         }
 
         if (trace) {

@@ -71,6 +71,10 @@ public class Field implements Serializable {
     public Field skipHeaders() {
         return skipHeaders(this);
     }
+    
+    public Map<String, FieldType> toLookupMap() {
+    	return toLookupMap(this);
+    }
 
     private static Field skipHeaders(Field field) {
         Field[] props = field.properties();

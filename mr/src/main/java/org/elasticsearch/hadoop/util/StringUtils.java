@@ -44,6 +44,7 @@ public abstract class StringUtils {
     public static final Charset UTF_8 = Charset.forName("UTF-8");
     public static final String EMPTY = "";
     public static final String[] EMPTY_ARRAY = new String[0];
+    public static final String DEFAULT_DELIMITER = ",";
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 

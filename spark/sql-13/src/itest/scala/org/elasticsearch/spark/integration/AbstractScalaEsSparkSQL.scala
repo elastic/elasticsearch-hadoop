@@ -58,7 +58,7 @@ import java.util.Arrays
 
 
 object AbstractScalaEsScalaSparkSQL {
-  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=128m")
+  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
   @transient var sqc: SQLContext = null
@@ -307,6 +307,29 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
       println(basic.schema.simpleString)
       basic.saveToEs(target, cfg)
 
+    }
+
+    @Test
+    def testJsonLoadAndSavedToEsSchema() {
+      assumeFalse(readMetadata)
+      val input = sqc.jsonFile(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
+      println("JSON schema")
+      println(input.schema.treeString)
+      println(input.schema)
+      val sample = input.take(1)(0).toString()
+
+      val target = wrapIndex("spark-test/json-file-schema")
+      input.saveToEs(target, cfg)
+
+      val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+      val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+      println("Reading information from Elastic")
+      println(dfLoad.schema.treeString)
+      println(input.schema)
+      val dfload = dfLoad.take(1)(0).toString()
+      
+      assertEquals(input.schema.treeString, dfLoad.schema.treeString)
+      assertEquals(sample, dfload)
     }
 
     //@Test

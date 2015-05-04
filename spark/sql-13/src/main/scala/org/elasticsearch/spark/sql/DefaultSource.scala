@@ -38,19 +38,27 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@
   }
 
   @transient lazy val lazySchema = {
-    MappingUtils.discoverMapping(cfg).asInstanceOf[StructType]
+    MappingUtils.discoverMapping(cfg)
   }
 
-  override val schema = lazySchema
+  override val schema = lazySchema.struct
 
   // TableScan
-  def buildScan() = new ScalaEsRowRDD(sqlContext.sparkContext, parameters)
+  def buildScan() = new ScalaEsRowRDD(sqlContext.sparkContext, parameters, lazySchema)
 
   // PrunedScan
   def buildScan(requiredColumns: Array[String]) = {
     val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
-    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
-    new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection)
+    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+    
+    if (cfg.getReadMetadata) {
+      val metadata = cfg.getReadMetadataField
+      // if metadata is not selected, don't ask for it
+      if (!requiredColumns.contains(metadata)) {
+        paramWithProjection += (ConfigurationOptions.ES_READ_METADATA -> false.toString())
+      }
+    }
+    new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
   }
 
   def insert(data: DataFrame, overwrite: Boolean) {
