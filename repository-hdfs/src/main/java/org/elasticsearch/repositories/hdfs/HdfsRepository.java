@@ -20,6 +20,8 @@ package org.elasticsearch.repositories.hdfs;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.String;
+import java.lang.System;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -46,6 +48,7 @@ import org.elasticsearch.index.snapshots.IndexShardRepository;
 import org.elasticsearch.repositories.RepositoryName;
 import org.elasticsearch.repositories.RepositorySettings;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.apache.hadoop.security.UserGroupInformation;
 
 public class HdfsRepository extends BlobStoreRepository {
 
@@ -85,6 +88,8 @@ public class HdfsRepository extends BlobStoreRepository {
     private FileSystem initFileSystem(RepositorySettings repositorySettings) throws IOException {
         Configuration cfg = new Configuration(repositorySettings.settings().getAsBoolean("load_defaults", componentSettings.getAsBoolean("load_defaults", true)));
 
+        initAuthorization(repositorySettings, cfg);
+
         String confLocation = repositorySettings.settings().get("conf_location", componentSettings.get("conf_location"));
         if (Strings.hasText(confLocation)) {
             for (String entry : Strings.commaDelimitedListToStringArray(confLocation)) {
@@ -108,7 +113,17 @@ public class HdfsRepository extends BlobStoreRepository {
         }
     }
 
-    private void addConfigLocation(Configuration cfg, String confLocation) {
+  private void initAuthorization(RepositorySettings repositorySettings, Configuration cfg) {
+    String authenticationType = repositorySettings.settings().get("authentication_type");
+    if ("kerberos".equals(authenticationType)) {
+      cfg.addResource(new Path(System.getProperty("hdfs_config")));
+      cfg.addResource(new Path(System.getProperty("hadoop_config")));
+      cfg.set("hadoop.security.authentication", authenticationType);
+      UserGroupInformation.setConfiguration(cfg);
+    }
+  }
+
+  private void addConfigLocation(Configuration cfg, String confLocation) {
         URL cfgURL = null;
         // it's an URL
         if (!confLocation.contains(":")) {
