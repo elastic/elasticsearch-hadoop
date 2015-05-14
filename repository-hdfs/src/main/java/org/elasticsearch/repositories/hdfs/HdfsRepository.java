@@ -88,8 +88,6 @@ public class HdfsRepository extends BlobStoreRepository {
     private FileSystem initFileSystem(RepositorySettings repositorySettings) throws IOException {
         Configuration cfg = new Configuration(repositorySettings.settings().getAsBoolean("load_defaults", componentSettings.getAsBoolean("load_defaults", true)));
 
-        initAuthorization(repositorySettings, cfg);
-
         String confLocation = repositorySettings.settings().get("conf_location", componentSettings.get("conf_location"));
         if (Strings.hasText(confLocation)) {
             for (String entry : Strings.commaDelimitedListToStringArray(confLocation)) {
@@ -101,6 +99,8 @@ public class HdfsRepository extends BlobStoreRepository {
         for (Entry<String, String> entry : map.entrySet()) {
             cfg.set(entry.getKey(), entry.getValue());
         }
+
+        initAuthorization(repositorySettings, cfg);
 
         String uri = repositorySettings.settings().get("uri", componentSettings.get("uri"));
         URI actualUri = (uri != null ? URI.create(uri) : FileSystem.getDefaultUri(cfg));
@@ -116,8 +116,9 @@ public class HdfsRepository extends BlobStoreRepository {
   private void initAuthorization(RepositorySettings repositorySettings, Configuration cfg) {
     String authenticationType = repositorySettings.settings().get("authentication_type");
     if ("kerberos".equals(authenticationType)) {
-      cfg.addResource(new Path(System.getProperty("hdfs_config")));
-      cfg.addResource(new Path(System.getProperty("hadoop_config")));
+      System.setProperty("java.security.krb5.conf", cfg.get("kerberos_config"));
+      cfg.addResource(new Path(cfg.get("hdfs_config")));
+      cfg.addResource(new Path(cfg.get("hadoop_config")));
       cfg.set("hadoop.security.authentication", authenticationType);
       UserGroupInformation.setConfiguration(cfg);
     }
