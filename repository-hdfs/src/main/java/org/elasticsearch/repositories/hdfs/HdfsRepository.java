@@ -113,18 +113,18 @@ public class HdfsRepository extends BlobStoreRepository {
         }
     }
 
-  private void initAuthorization(RepositorySettings repositorySettings, Configuration cfg) {
-    String authenticationType = repositorySettings.settings().get("authentication_type");
-    if ("kerberos".equals(authenticationType)) {
-      System.setProperty("java.security.krb5.conf", cfg.get("kerberos_config"));
-      cfg.addResource(new Path(cfg.get("hdfs_config")));
-      cfg.addResource(new Path(cfg.get("hadoop_config")));
-      cfg.set("hadoop.security.authentication", authenticationType);
-      UserGroupInformation.setConfiguration(cfg);
-    }
-  }
+    private void initAuthorization(RepositorySettings repositorySettings, Configuration cfg) {
+        String authenticationType = repositorySettings.settings().get("authentication_type");
+        if ("kerberos".equals(authenticationType)) {
+            System.setProperty("java.security.krb5.conf", cfg.get("kerberos_config"));
+            cfg.addResource(new Path(cfg.get("hdfs_config")));
+            cfg.addResource(new Path(cfg.get("hadoop_config")));
+            cfg.set("hadoop.security.authentication", authenticationType);
+            UserGroupInformation.setConfiguration(cfg);
+        }
+      }
 
-  private void addConfigLocation(Configuration cfg, String confLocation) {
+    private void addConfigLocation(Configuration cfg, String confLocation) {
         URL cfgURL = null;
         // it's an URL
         if (!confLocation.contains(":")) {
