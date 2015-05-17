@@ -13,6 +13,25 @@ def customizePom(pom, gradleProject) {
 		generatedPom.dependencies.findAll { it.optional == true }.each {
 			it.scope = "provided"
 		}
+		
+		ext.cascading = generatedPom.dependencies.any { it.groupId == 'cascading' }
+		ext.storm = generatedPom.dependencies.any { it.groupId == 'org.apache.storm' }
+		
+		if (cascading || storm)
+			generatedPom.project {
+				repositories {
+					if (cascading)
+						repository {
+							id = 'conjars.org'
+							url = 'http://conjars.org/repo'
+						}
+					if (storm) 
+						repository {
+							id = 'clojars.org'
+							url = 'http://clojars.org/repo'
+						}
+				}
+			}
 
         // add all items necessary for maven central publication
         generatedPom.project {
@@ -25,9 +44,9 @@ def customizePom(pom, gradleProject) {
             }
             licenses {
                 license {
-                    name 'The Apache Software License, Version 2.0'
-                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    distribution 'repo'
+                    name = 'The Apache Software License, Version 2.0'
+                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    distribution = 'repo'
                 }
             }
             scm {
