@@ -6,6 +6,9 @@ import org.apache.spark.sql.catalyst.expressions.GenericRow
 import scala.collection.mutable.ArrayBuffer
 
 private[spark] class ScalaEsRow(private[spark] val values: ArrayBuffer[Any]) extends Row {
+  /** No-arg constructor for Kryo serialization. */
+  def this() = this(null)
+
   def iterator = values.iterator
   def length = values.size
 

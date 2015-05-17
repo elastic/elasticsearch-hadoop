@@ -6,13 +6,16 @@ import scala.collection.mutable.Buffer
 
 private[spark] class ScalaEsRow(private[spark] val rowOrder: Buffer[String]) extends Row {
 
-  private[spark] val values: ArrayBuffer[Any] = ArrayBuffer.fill(rowOrder.size)(null)
+  lazy private[spark] val values: ArrayBuffer[Any] = ArrayBuffer.fill(rowOrder.size)(null)
+
+  /** No-arg constructor for Kryo serialization. */
+  def this() = this(null)
 
   def iterator = values.iterator
-  
+
   def length = values.size
 
-  def apply(i: Int) = values(i)  
+  def apply(i: Int) = values(i)
 
   def isNullAt(i: Int) = values(i) == null
 
@@ -54,7 +57,7 @@ private[spark] class ScalaEsRow(private[spark] val rowOrder: Buffer[String]) ext
   def getString(i: Int): String = {
     values(i).asInstanceOf[String]
   }
-  
+
   // Custom hashCode function that matches the efficient code generated version.
   override def hashCode: Int = {
     var result: Int = 37
@@ -83,8 +86,8 @@ private[spark] class ScalaEsRow(private[spark] val rowOrder: Buffer[String]) ext
     }
     result
   }
-  
+
   def copy() = this
-  
+
   def toSeq = values.toSeq
 }
