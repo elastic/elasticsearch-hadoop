@@ -84,8 +84,8 @@ public class AbstractHiveExtraTests {
         String drop = "DROP TABLE IF EXISTS nixtime";
         String create = "CREATE EXTERNAL TABLE nixtime ("
                 + "type     BIGINT,"
-                + "date     TIMESTAMP)"
-                + HiveSuite.tableProps("hive/date-as-long", null, "'es.mapping.names'='date:&t'");
+                + "dte     TIMESTAMP)"
+                + HiveSuite.tableProps("hive/date-as-long", null, "'es.mapping.names'='dte:&t'");
 
         String query = "SELECT * from nixtime WHERE type = 1";
 

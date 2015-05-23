@@ -180,7 +180,7 @@ public class AbstractHiveSearchJsonTest {
     @Test
     public void testMissingIndex() throws Exception {
         String create = "CREATE EXTERNAL TABLE jsonmissing" + testInstance + " ("
-                + "daTE     TIMESTAMP, "
+                + "dTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
                 + tableProps("foobar/missing", "'es.index.read.missing.as.empty' = 'true'");

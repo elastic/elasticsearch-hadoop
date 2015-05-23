@@ -125,7 +125,11 @@ class HiveEmbeddedServer2 implements HiveInstance {
     }
 
     // Hive adds automatically the Hive builtin jars - this thread-local cleans that up
+    // used in Hive up to 1.2
     private static class InterceptingThreadLocal extends InheritableThreadLocal<SessionState> {
+
+        // changed from Hive 1.2 because ... why not
+        //private static class InterceptingThreadLocal extends InheritableThreadLocal<SessionStates> {
         @Override
         public void set(SessionState value) {
             deleteResource(value, ResourceType.JAR);
@@ -228,7 +232,7 @@ class HiveEmbeddedServer2 implements HiveInstance {
         // intercept SessionState to clean the threadlocal
         Field tss = SessionState.class.getDeclaredField("tss");
         tss.setAccessible(true);
-        tss.set(null, new InterceptingThreadLocal());
+        //tss.set(null, new InterceptingThreadLocal());
 
         return new HiveConf(conf);
     }

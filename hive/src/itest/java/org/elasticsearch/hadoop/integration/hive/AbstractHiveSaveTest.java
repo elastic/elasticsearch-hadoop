@@ -180,7 +180,7 @@ public class AbstractHiveSaveTest {
         String ddl =
                 "CREATE EXTERNAL TABLE artiststimestampsave ("
                 + "id       BIGINT, "
-                + "date     TIMESTAMP, "
+                + "dte     TIMESTAMP, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
                 + tableProps("hive/artiststimestamp");
@@ -203,7 +203,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testTimestampSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/artiststimestamp").skipHeaders().toString(), is("artiststimestamp=[date=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/artiststimestamp").skipHeaders().toString(), is("artiststimestamp=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -214,10 +214,10 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE aliassave ("
-                + "daTE     TIMESTAMP, "
+                + "dTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps("hive/aliassave", "'es.mapping.names' = 'daTE:@timestamp, uRl:url_123'");
+                + tableProps("hive/aliassave", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
