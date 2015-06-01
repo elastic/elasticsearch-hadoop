@@ -170,8 +170,7 @@ STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
 <2> Pig column `date` mapped in {es} to `@timestamp`
 <3> Pig column `url` mapped in {es} to `url_123`
 
-TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Pig column names to lower-case. Because Pig is **case sensitive**, {eh} handles the reverse
-field mapping as well. It is recommended to use the default Pig style and use upper-case names only for commands and avoid mixed-case names.
+TIP: Since {eh} 2.1, the Pig schema case sensitivity is preserved to {es} and back. 
 
 [float]
 === Writing data to {es}

@@ -82,8 +82,8 @@ TBLPROPERTIES('es.resource' = 'radio/artists',
 <2> Hive column `date` mapped in {es} to `@timestamp`
 <3> Hive column `url` mapped in {es} to `url_123`
 
-TIP: {es} accepts only lower-case field name and, as such, {eh} will always convert Hive column names to lower-case. This poses no issue as Hive is **case insensitive**
-however it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
+TIP: Hive is case **insensitive** while {es} is not. The loss of information can create invalid queries (as the column in Hive might not match the one in {es}). To avoid this, {eh} will always convert Hive column names to lower-case. 
+This being said, it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
 
 [float]
 === Writing data to {es}
