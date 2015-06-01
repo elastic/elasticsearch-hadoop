@@ -87,7 +87,7 @@ public abstract class SettingsUtils {
         return (StringUtils.hasText(discoveredNodes) ? StringUtils.tokenize(discoveredNodes) : declaredNodes(settings));
     }
 
-    public static Map<String, String> aliases(String definition) {
+    public static Map<String, String> aliases(String definition, boolean caseInsensitive) {
         List<String> aliases = StringUtils.tokenize(definition);
 
         Map<String, String> aliasMap = new LinkedHashMap<String, String>();
@@ -99,9 +99,8 @@ public abstract class SettingsUtils {
                 int index = string.indexOf(":");
                 if (index > 0) {
                     String key = string.substring(0, index);
-                    // save the lower case version as well since Hive does that for top-level keys
                     aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(key.toLowerCase(Locale.ENGLISH), string.substring(index + 1));
+                    aliasMap.put(caseInsensitive ? key.toLowerCase(Locale.ENGLISH) : key, string.substring(index + 1));
                 }
             }
         }

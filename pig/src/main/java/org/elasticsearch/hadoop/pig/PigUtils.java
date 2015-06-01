@@ -109,7 +109,7 @@ class PigUtils {
     }
 
     static FieldAlias alias(Settings settings) {
-        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES)));
+        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES), false), false);
     }
 
     static String asProjection(Schema schema, Properties props) {

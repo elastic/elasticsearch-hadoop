@@ -137,7 +137,25 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/fieldalias").skipHeaders().toString(), is("fieldalias=[@name=STRING, @timestamp=DATE, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("pig/fieldalias").skipHeaders().toString(), is("fieldalias=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
+    }
+
+    @Test
+    public void testCaseSensitivity() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
+                "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, Name:chararray, uRL:chararray, pIctUre: chararray, timestamp: chararray); " +
+                "B = FOREACH A GENERATE Name, uRL, pIctUre;" +
+                "ILLUSTRATE B;" +
+                "STORE B INTO 'pig/casesensitivity' USING org.elasticsearch.hadoop.pig.EsStorage();";
+
+        pig.executeScript(script);
+    }
+
+    @Test
+    public void testCaseSensitivityMapping() throws Exception {
+        assertThat(RestUtils.getMapping("pig/casesensitivity").skipHeaders().toString(), is("casesensitivity=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
     }
 
     @Test

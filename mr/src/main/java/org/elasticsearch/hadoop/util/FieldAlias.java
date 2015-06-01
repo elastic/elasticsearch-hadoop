@@ -28,20 +28,21 @@ import java.util.Map;
 public class FieldAlias {
 
     private final Map<String, String> fieldToAlias;
+    private final boolean caseInsensitive;
 
-    public FieldAlias() {
-        this.fieldToAlias = new LinkedHashMap<String, String>();
+    public FieldAlias(boolean caseInsensitive) {
+        this(new LinkedHashMap<String, String>(), caseInsensitive);
     }
 
-    public FieldAlias(Map<String, String> alias) {
+    public FieldAlias(Map<String, String> alias, boolean caseInsensitive) {
         this.fieldToAlias = alias;
+        this.caseInsensitive = caseInsensitive;
     }
 
     public String toES(String string) {
         String alias = fieldToAlias.get(string);
         if (alias == null) {
-            // ES fields are all lowercase
-            alias = string.toLowerCase(Locale.ENGLISH);
+            alias = (caseInsensitive ? string.toLowerCase(Locale.ENGLISH) : string);
             fieldToAlias.put(string, alias);
         }
         return alias;

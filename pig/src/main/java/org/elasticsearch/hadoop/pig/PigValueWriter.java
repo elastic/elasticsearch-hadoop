@@ -48,7 +48,7 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
     public PigValueWriter(boolean useTupleFieldNames) {
         writeUnknownTypes = false;
         this.useTupleFieldNames = useTupleFieldNames;
-        alias = new FieldAlias();
+        alias = new FieldAlias(false);
     }
 
     @Override

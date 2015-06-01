@@ -46,7 +46,7 @@ public class HiveValueWriter extends FilteringValueWriter<HiveType> {
     public HiveValueWriter() {
         this.writeUnknownTypes = false;
         this.writableWriter = new HiveWritableValueWriter(false);
-        this.alias = new FieldAlias();
+        this.alias = new FieldAlias(true);
     }
 
     @Override
