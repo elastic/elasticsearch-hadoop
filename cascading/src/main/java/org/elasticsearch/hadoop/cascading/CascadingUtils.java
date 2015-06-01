@@ -109,7 +109,7 @@ public abstract class CascadingUtils {
     }
 
     static FieldAlias alias(Settings settings) {
-        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES)));
+        return new FieldAlias(SettingsUtils.aliases(settings.getProperty(MAPPING_NAMES), false), false);
     }
 
     static List<String> asStrings(Fields fields) {

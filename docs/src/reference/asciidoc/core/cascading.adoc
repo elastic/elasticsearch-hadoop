@@ -83,7 +83,7 @@ Tap myTap = new EsTap(..., myTapCfg);
 
 <1> Maps Cascading field `date` in {es} to `@timestamp`
 
-TIP: {es} accepts only lower-case field names and, as such, {eh} will always convert Cascading column names to lower-case. This can pose issues when dealing with upper-case fields due to case sensitivity.
+TIP: Since {eh} 2.1, the connector preserves the tuple names case sensitivity.
 
 [[cascading-writing]]
 [float]
