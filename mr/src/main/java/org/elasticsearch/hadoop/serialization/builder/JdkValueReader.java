@@ -24,13 +24,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.DatatypeConverter;
-
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.Parser;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 
@@ -349,7 +348,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     }
 
     protected Object parseDate(String value, boolean richDate) {
-        return (richDate ? DatatypeConverter.parseDateTime(value).getTime() : parseString(value));
+        return (richDate ? DateUtils.parseDateJdk(value).getTime() : parseString(value));
     }
 
     protected Object processDate(Object value) {

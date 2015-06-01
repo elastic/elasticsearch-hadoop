@@ -35,6 +35,7 @@ import org.apache.pig.impl.logicalLayer.schema.Schema.FieldSchema;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -83,7 +84,7 @@ class PigUtils {
         }
 
         static Object convertFromES(String esDate) {
-            return DatatypeConverter.parseDateTime(esDate).getTimeInMillis();
+            return DateUtils.parseDateJdk(esDate).getTimeInMillis();
         }
 
         static Object convertFromES(Long esDate) {

@@ -20,10 +20,13 @@ package org.elasticsearch.hadoop.serialization;
 
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
+import org.elasticsearch.hadoop.util.DateUtils;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.nullValue;
 
 
 public class JdkValueReaderTest extends AbstractValueReaderTest {
@@ -76,5 +79,15 @@ public class JdkValueReaderTest extends AbstractValueReaderTest {
     @Override
     public void checkByteArray(Object typeFromJson, String encode) {
         assertEquals(encode, typeFromJson);
+    }
+
+    @Test
+    public void parseJDKRichDateISO() {
+        Object withColon = DateUtils.parseDateJdk("2015-05-25T22:30:00+03:00");
+        Object withoutColon = DateUtils.parseDateJdk("2015-05-25T22:30:00+0300");
+        Object noMinutes = DateUtils.parseDateJdk("2015-05-25T22:30:00+03");
+
+        assertEquals(withColon, withoutColon);
+        assertEquals(withColon, noMinutes);
     }
 }

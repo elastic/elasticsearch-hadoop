@@ -22,13 +22,13 @@ import org.elasticsearch.hadoop.serialization.field.DateIndexFormatter;
 import org.elasticsearch.hadoop.serialization.field.IndexFormatter;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
 public class DateIndexFormatterTest {
 
-    private IndexFormatter formatter = new DateIndexFormatter();
+    private final IndexFormatter formatter = new DateIndexFormatter();
 
     @Test
     public void testTimeYMDFormat() {
