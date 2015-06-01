@@ -221,9 +221,10 @@ As before, when dealing with JSON directly, under the 'new' API the configuratio
 ----
 Configuration conf = new Configuration();
 conf.set("es.input.json", "yes");                 <1>
-conf.setMapOutputValueClass(BytesWritable.class); <2>
+Job job = new Job(conf);
+job.setMapOutputValueClass(BytesWritable.class); <2>
 ...
-JobClient.runJob(conf);
+job.waitForCompletion(true);
 ----
 
 <1> Indicate the input for `EsOutputFormat` is of type JSON.
