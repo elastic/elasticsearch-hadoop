@@ -85,6 +85,8 @@ TBLPROPERTIES('es.resource' = 'radio/artists',
 TIP: Hive is case **insensitive** while {es} is not. The loss of information can create invalid queries (as the column in Hive might not match the one in {es}). To avoid this, {eh} will always convert Hive column names to lower-case. 
 This being said, it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
 
+TIP: Hive treats missing values through a special value `NULL` as indicated here https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-HandlingofNULLValues[here]. This means that when running an incorrect query (with incorrect or non-existing field names) the Hive tables will be populated with `NULL` instead of throwing an exception. Make sure to validate your data and keep a close eye on your schema since updates will otherwise go unnotice due to this lenient behavior.
+
 [float]
 === Writing data to {es}
 
