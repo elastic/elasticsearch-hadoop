@@ -108,11 +108,19 @@ class ScalaValueReader extends ValueReader with SettingsAware {
 
   protected def parseDate(value: String, parser:Parser) = {
     if (parser.currentToken()== VALUE_NUMBER) {
-     if (richDate) new Date(parser.longValue()) else parser.longValue()
+     if (richDate) createDate(parser.longValue()) else parser.longValue()
     }
     else {
-     if (richDate) DateUtils.parseDateJdk(value).getTime() else value
+     if (richDate) createDate(value) else value
     }
+  }
+
+  protected def createDate(value: Long):Any = {
+    new Date(value)
+  }
+
+  protected def createDate(value: String):Any = {
+    createDate(DateUtils.parseDateJdk(value).getTimeInMillis())
   }
 
   def setSettings(settings: Settings) = {
