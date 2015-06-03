@@ -2,25 +2,30 @@
     "firstName": "John",
     "lastName": "Smith",
     "age": 25,
-	"trap": {
-		"bogus":true,
-		"state":"bogus",
-		"building": {
-			"hight":"bogus",
-			"floors": 0,
-			"flats": 0
-		}
-	},
+    "trap": {
+        "bogus":true,
+        "state":"bogus",
+        "building": {
+            "height":"bogus",
+            "floors": 0,
+            "flats": 0
+        }
+    },
     "address": {
         "streetAddress": "21 2nd Street",
         "city": "New York",
         "state": "NY",
         "postalCode": 10021,
-		"building": {
-			"hight":"tall",
-			"floors": 10,
-			"flats": 40
-		}
+        "building": {
+            "height":"tall",
+            "floors": 10,
+            "flats": 40
+        },
+        "decor": {
+            "walls": "white",
+            "floors": "parquet"
+        },
+        "firstName":"should-not-be-picked"
     },
     "phoneNumbers": [
         {
@@ -29,16 +34,20 @@
         },
         {
             "type": "fax",
-            "number": "646 555-4567"
+            "number": "646 555-4567",
+            "age":-1
         }
     ],
+    "state" : "CA",
     "small-object": {
         "foo": "bar",
         "nested": {
+            "foo":"nested-bar",
             "foo1":"bar1"
         }
     },
     "small-array": [
         "foo", "bar"
-    ]
+    ],
+    "zzz": "end"
 }
