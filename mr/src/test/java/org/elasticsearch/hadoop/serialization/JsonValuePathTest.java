@@ -28,9 +28,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class JsonValuePathTest {
 
@@ -81,11 +83,20 @@ public class JsonValuePathTest {
     }
 
     @Test
+    public void testSmallerMixedLevels() throws Exception {
+        List<String> vals = ParsingUtils.values(parser, "firstName", "address.state", "state");
+        assertEquals(3, vals.size());
+        assertEquals("John", vals.get(0));
+        assertEquals("NY", vals.get(1));
+        assertEquals("CA", vals.get(2));
+    }
+
+    @Test
     public void testMixedLevels() throws Exception {
-        List<Object> vals = ParsingUtils.values(parser, "firstName", "address.building.floors", "address.decor.walls", "zzz");
+        List<String> vals = ParsingUtils.values(parser, "firstName", "address.building.floors", "address.decor.walls", "zzz");
         assertEquals(4, vals.size());
         assertEquals("John", vals.get(0));
-        assertEquals(10, vals.get(1));
+        assertEquals("10", vals.get(1));
         assertEquals("white", vals.get(2));
         assertEquals("end", vals.get(3));
     }
