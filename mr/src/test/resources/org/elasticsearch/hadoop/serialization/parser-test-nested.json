@@ -6,7 +6,7 @@
         "bogus":true,
         "state":"bogus",
         "building": {
-            "hight":"bogus",
+            "height":"bogus",
             "floors": 0,
             "flats": 0
         }
@@ -17,9 +17,13 @@
         "state": "NY",
         "postalCode": 10021,
         "building": {
-            "hight":"tall",
+            "height":"tall",
             "floors": 10,
             "flats": 40
+        },
+        "decor": {
+            "walls": "white",
+            "floors": "parquet"
         },
         "firstName":"should-not-be-picked"
     },
@@ -44,5 +48,6 @@
     },
     "small-array": [
         "foo", "bar"
-    ]
+    ],
+    "zzz": "end"
 }
