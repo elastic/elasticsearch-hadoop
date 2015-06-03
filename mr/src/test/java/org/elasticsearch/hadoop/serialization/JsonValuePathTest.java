@@ -104,4 +104,14 @@ public class JsonValuePathTest {
         assertEquals(1, vals.size());
         assertThat(vals.get(0).toString(), containsString("CA"));
     }
+
+    @Test
+    public void testMixedLevels() throws Exception {
+        List<Object> vals = ParsingUtils.values(parser, "firstName", "address.building.floors", "address.decor.walls", "zzz");
+        assertEquals(4, vals.size());
+        assertEquals("John", vals.get(0));
+        assertEquals(10, vals.get(1));
+        assertEquals("white", vals.get(2));
+        assertEquals("end", vals.get(3));
+    }
 }
