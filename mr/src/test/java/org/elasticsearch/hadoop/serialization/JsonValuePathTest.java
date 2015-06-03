@@ -106,6 +106,15 @@ public class JsonValuePathTest {
     }
 
     @Test
+    public void testSmallerMixedLevels() throws Exception {
+        List<Object> vals = ParsingUtils.values(parser, "firstName", "address.state", "state");
+        assertEquals(3, vals.size());
+        assertEquals("John", vals.get(0));
+        assertEquals("NY", vals.get(1));
+        assertEquals("CA", vals.get(2));
+    }
+
+    @Test
     public void testMixedLevels() throws Exception {
         List<Object> vals = ParsingUtils.values(parser, "firstName", "address.building.floors", "address.decor.walls", "zzz");
         assertEquals(4, vals.size());
