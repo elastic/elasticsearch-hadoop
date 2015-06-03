@@ -297,7 +297,36 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
       basic.printSchema
       println(basic.schema)
       basic.saveToEs("spark-test/json-file")
+    }
 
+    @Test
+    def testJsonLoadAndSavedToEsSchema() {
+      assumeFalse(readMetadata)
+      val input = sqc.jsonFile(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
+      println(input.schema.treeString)
+      println(input.schema)
+
+      val table = wrapIndex("json_file_schema")
+      val target = wrapIndex("spark-test/json-file-schema")
+      input.saveToEs(target, cfg)
+
+      val sample = input.take(1)(0).toString()
+
+      val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE " + table +
+        " USING org.elasticsearch.spark.sql " +
+        " OPTIONS (resource '" + target + "')");
+
+      println("Reading information from Elastic")
+      val allResults = sqc.sql("SELECT * FROM " + table)
+
+      println("JSON schema")
+      println(input.schema.treeString)
+      println("Elasticsearch schema")
+      println(allResults.schema.treeString)
+      val dfload = allResults.take(1)(0).toString()
+
+      assertEquals(input.schema.treeString.replace(" integer ", " long "), allResults.schema.treeString)
+      assertEquals(sample, dfload)
     }
 
     @Test

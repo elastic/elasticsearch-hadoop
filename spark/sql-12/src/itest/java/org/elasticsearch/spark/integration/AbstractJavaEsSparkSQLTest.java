@@ -39,60 +39,61 @@ import static scala.collection.JavaConversions.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkSQLTest implements Serializable {
 
-	private static final transient SparkConf conf = new SparkConf()
-			.setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
-			.setMaster("local").setAppName("estest");
-	
-	private static transient JavaSparkContext sc = null;
-	private static transient JavaSQLContext sqc = null;
+    private static final transient SparkConf conf = new SparkConf()
+            .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
+            .setMaster("local").setAppName("estest")
+            .set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m");
 
-	@BeforeClass
-	public static void setup() {
-		sc = new JavaSparkContext(conf);
-		sqc = new JavaSQLContext(sc);
-	}
+    private static transient JavaSparkContext sc = null;
+    private static transient JavaSQLContext sqc = null;
 
-	@AfterClass
-	public static void clean() throws Exception {
-		if (sc != null) {
-			sc.stop();
-			// wait for jetty & spark to properly shutdown
-			Thread.sleep(TimeUnit.SECONDS.toMillis(2));
-		}
-	}
+    @BeforeClass
+    public static void setup() {
+        sc = new JavaSparkContext(conf);
+        sqc = new JavaSQLContext(sc);
+    }
 
-	@Test
-	public void testBasicRead() throws Exception {
-		JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
-		assertTrue(schemaRDD.count() > 300);
-		schemaRDD.registerTempTable("datfile");
-		System.out.println(schemaRDD.schemaString());
-		assertEquals(5, schemaRDD.take(5).size());
-		JavaSchemaRDD results = sqc
-				.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10");
-		assertEquals(10, schemaRDD.take(10).size());
-	}
+    @AfterClass
+    public static void clean() throws Exception {
+        if (sc != null) {
+            sc.stop();
+            // wait for jetty & spark to properly shutdown
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+        }
+    }
 
-	@Test
-	public void testEsSchemaRDD1Write() throws Exception {
-		JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+    @Test
+    public void testBasicRead() throws Exception {
+        JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+        assertTrue(schemaRDD.count() > 300);
+        schemaRDD.registerTempTable("datfile");
+        System.out.println(schemaRDD.schemaString());
+        assertEquals(5, schemaRDD.take(5).size());
+        JavaSchemaRDD results = sqc
+                .sql("SELECT name FROM datfile WHERE id >=1 AND id <=10");
+        assertEquals(10, schemaRDD.take(10).size());
+    }
 
-		String target = "sparksql-test/scala-basic-write";
-		JavaEsSparkSQL.saveToEs(schemaRDD, target);
-		assertTrue(RestUtils.exists(target));
-		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
-	}
+    @Test
+    public void testEsSchemaRDD1Write() throws Exception {
+        JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
 
-	@Test
-	public void testEsSchemaRDD1WriteWithId() throws Exception {
-		JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+        String target = "sparksql-test/scala-basic-write";
+        JavaEsSparkSQL.saveToEs(schemaRDD, target);
+        assertTrue(RestUtils.exists(target));
+        assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
+    }
 
-		String target = "sparksql-test/scala-basic-write-id-mapping";
-		JavaEsSparkSQL.saveToEs(schemaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "id"));
-		assertTrue(RestUtils.exists(target));
-		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
-		assertThat(RestUtils.exists(target + "/1"), is(true));
-	}
+    @Test
+    public void testEsSchemaRDD1WriteWithId() throws Exception {
+        JavaSchemaRDD schemaRDD = artistsAsSchemaRDD();
+
+        String target = "sparksql-test/scala-basic-write-id-mapping";
+        JavaEsSparkSQL.saveToEs(schemaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "id"));
+        assertTrue(RestUtils.exists(target));
+        assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
+        assertThat(RestUtils.exists(target + "/1"), is(true));
+    }
 
     @Test
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
@@ -104,52 +105,52 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
         assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")));
     }
 
-	@Test
-	public void testEsSchemaRDD2Read() throws Exception {
-		String target = "sparksql-test/scala-basic-write";
+    @Test
+    public void testEsSchemaRDD2Read() throws Exception {
+        String target = "sparksql-test/scala-basic-write";
 
-		JavaSchemaRDD schemaRDD = JavaEsSparkSQL.esRDD(sqc, target);
-		assertTrue(schemaRDD.count() > 300);
-		String schema = schemaRDD.schemaString();
-		assertTrue(schema.contains("id: long"));
-		assertTrue(schema.contains("name: string"));
-		assertTrue(schema.contains("pictures: string"));
-		assertTrue(schema.contains("time: long"));
-		assertTrue(schema.contains("url: string"));
+        JavaSchemaRDD schemaRDD = JavaEsSparkSQL.esRDD(sqc, target);
+        assertTrue(schemaRDD.count() > 300);
+        String schema = schemaRDD.schemaString();
+        assertTrue(schema.contains("id: long"));
+        assertTrue(schema.contains("name: string"));
+        assertTrue(schema.contains("pictures: string"));
+        assertTrue(schema.contains("time: long"));
+        assertTrue(schema.contains("url: string"));
 
-		// schemaRDD.take(5).foreach(println)
+        // schemaRDD.take(5).foreach(println)
 
-		schemaRDD.registerTempTable("basicRead");
-		JavaSchemaRDD nameRDD = sqc.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10");
-		assertEquals(10, nameRDD.count());
+        schemaRDD.registerTempTable("basicRead");
+        JavaSchemaRDD nameRDD = sqc.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10");
+        assertEquals(10, nameRDD.count());
 
-	}
+    }
 
-	private JavaSchemaRDD artistsAsSchemaRDD() {
-		String input = TestUtils.sampleArtistsDat();
-		JavaRDD<String> data = sc.textFile(input);
+    private JavaSchemaRDD artistsAsSchemaRDD() {
+        String input = TestUtils.sampleArtistsDat();
+        JavaRDD<String> data = sc.textFile(input);
 
-		StructType schema = DataType
-				.createStructType(new StructField[] {
-						DataType.createStructField("id", DataType.IntegerType, false),
-						DataType.createStructField("name", DataType.StringType, false),
-						DataType.createStructField("url", DataType.StringType, true),
-						DataType.createStructField("pictures", DataType.StringType, true),
-						DataType.createStructField("time", DataType.TimestampType, true) });
+        StructType schema = DataType
+                .createStructType(new StructField[] {
+                        DataType.createStructField("id", DataType.IntegerType, false),
+                        DataType.createStructField("name", DataType.StringType, false),
+                        DataType.createStructField("url", DataType.StringType, true),
+                        DataType.createStructField("pictures", DataType.StringType, true),
+                        DataType.createStructField("time", DataType.TimestampType, true) });
 
-		JavaRDD<Row> rowData = data.map(new Function<String, String[]>() {
-			@Override
-			public String[] call(String line) throws Exception {
-				return line.split("\t");
-			}
-		}).map(new Function<String[], Row>() {
-			@Override
-			public Row call(String[] r) throws Exception {
-				return Row.create(Integer.parseInt(r[0]), r[1], r[2], r[3],
-						new Timestamp(DatatypeConverter.parseDateTime(r[4]).getTimeInMillis()));
-			}
-		});
+        JavaRDD<Row> rowData = data.map(new Function<String, String[]>() {
+            @Override
+            public String[] call(String line) throws Exception {
+                return line.split("\t");
+            }
+        }).map(new Function<String[], Row>() {
+            @Override
+            public Row call(String[] r) throws Exception {
+                return Row.create(Integer.parseInt(r[0]), r[1], r[2], r[3],
+                        new Timestamp(DatatypeConverter.parseDateTime(r[4]).getTimeInMillis()));
+            }
+        });
 
-		return sqc.applySchema(rowData, schema);
-	}
+        return sqc.applySchema(rowData, schema);
+    }
 }

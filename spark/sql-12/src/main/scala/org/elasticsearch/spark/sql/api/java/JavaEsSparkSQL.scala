@@ -1,5 +1,8 @@
 package org.elasticsearch.spark.sql.api.java
 
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.Map
+
 import java.util.{Map => JMap}
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
@@ -12,19 +15,32 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.spark.sql.EsSparkSQL
 import org.elasticsearch.spark.sql.JavaEsRowRDD
 import org.elasticsearch.spark.sql.MappingUtils
+import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.spark.sql.Utils
+import org.elasticsearch.spark.sql.Utils
 
 object JavaEsSparkSQL {
 
-  // specify the return types to make sure the bytecode is generated properly (w/o any scala.collections in it)
   def esRDD(jsc: JavaSQLContext): JavaSchemaRDD = esRDD(jsc, SMap.empty[String, String])
   def esRDD(jsc: JavaSQLContext, resource: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource))
   def esRDD(jsc: JavaSQLContext, resource: String, query: String): JavaSchemaRDD = esRDD(jsc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esRDD(jsc: JavaSQLContext, cfg: JMap[String, String]): JavaSchemaRDD = esRDD(jsc, cfg.asScala)
-  
+
   private def esRDD(jsc: JavaSQLContext, cfg: SMap[String, String]): JavaSchemaRDD = {
-    val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, cfg)
-    val schema = SQLUtils.asJavaDataType(MappingUtils.discoverMapping(rowRDD.esCfg)).asInstanceOf[JStructType]
-    jsc.applySchema(rowRDD, schema)
+    val esConf = new SparkSettingsManager().load(jsc.sqlContext.sparkContext.getConf).copy();
+    esConf.merge(cfg.asJava)
+
+    val schema = MappingUtils.discoverMapping(esConf)
+    val rowRDD = new JavaEsRowRDD(jsc.sqlContext.sparkContext, cfg, schema)
+    val jSchema = SQLUtils.asJavaDataType(schema.struct).asInstanceOf[JStructType]
+    jsc.applySchema(rowRDD, jSchema)
+  }
+
+  def esRDD(jsc: JavaSQLContext, resource: String, query: String, cfg: Map[String, String]): JavaSchemaRDD = {
+    esRDD(jsc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource, ES_QUERY -> query))
+  }
+  def esRDD(jsc: JavaSQLContext, resource: String, cfg: Map[String, String]): JavaSchemaRDD = {
+    esRDD(jsc, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_READ -> resource))
   }
 
   def saveToEs(jrdd: JavaSchemaRDD, resource: String) = EsSparkSQL.saveToEs(SQLUtils.baseSchemaRDD(jrdd) , resource)

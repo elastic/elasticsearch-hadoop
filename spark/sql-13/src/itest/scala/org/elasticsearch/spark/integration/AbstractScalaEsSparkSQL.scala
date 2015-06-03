@@ -306,7 +306,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
       val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
       println(basic.schema.simpleString)
       basic.saveToEs(target, cfg)
-
     }
 
     @Test
@@ -323,11 +322,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
 
       val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
       val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+      println("JSON schema")
+      println(input.schema.treeString)
       println("Reading information from Elastic")
       println(dfLoad.schema.treeString)
-      println(input.schema)
       val dfload = dfLoad.take(1)(0).toString()
-      
+
       assertEquals(input.schema.treeString, dfLoad.schema.treeString)
       assertEquals(sample, dfload)
     }

@@ -4,7 +4,6 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SQLContext
 import org.elasticsearch.spark.sql.EsSparkSQL
 
-
 package object sql {
 
   implicit def sqlContextFunctions(sc: SQLContext)= new SQLContextFunctions(sc)

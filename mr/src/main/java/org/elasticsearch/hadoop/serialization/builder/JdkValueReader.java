@@ -344,11 +344,15 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     }
 
     protected Object parseDate(Long value, boolean richDate) {
-        return (richDate ? new Date(value) : value);
+        return (richDate ? createDate(value) : value);
     }
 
     protected Object parseDate(String value, boolean richDate) {
-        return (richDate ? DateUtils.parseDateJdk(value).getTime() : parseString(value));
+        return (richDate ? createDate(DateUtils.parseDateJdk(value).getTimeInMillis()) : parseString(value));
+    }
+
+    protected Object createDate(long timestamp) {
+        return new Date(timestamp);
     }
 
     protected Object processDate(Object value) {

@@ -1,9 +1,7 @@
 package org.elasticsearch.spark.sql
 
-import scala.collection.JavaConverters._
-import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.Map
-import scala.collection.mutable.LinkedHashMap
+
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
@@ -16,16 +14,9 @@ import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 import org.elasticsearch.spark.rdd.AbstractEsRDD
 import org.elasticsearch.spark.rdd.AbstractEsRDDIterator
 import org.elasticsearch.spark.rdd.EsPartition
-import org.elasticsearch.spark.serialization.ScalaValueReader
-import org.elasticsearch.hadoop.util.StringUtils
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.ListMap
-import org.apache.spark.sql.types.StructType
-
 
 // while we could have just wrapped the ScalaEsRDD and unpack the top-level data into a Row the issue is the underlying Maps are StructTypes
 // and as such need to be mapped as Row resulting in either nested wrapping or using a ValueReader and which point wrapping becomes unyielding since the class signatures clash
-
 private[spark] class ScalaEsRowRDD(
   @transient sc: SparkContext,
   params: Map[String, String] = Map.empty,

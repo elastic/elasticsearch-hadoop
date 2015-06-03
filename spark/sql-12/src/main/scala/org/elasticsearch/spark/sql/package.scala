@@ -6,7 +6,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SchemaRDD
 
-
 package object sql {
 
   implicit def sqlContextFunctions(sc: SQLContext)= new SQLContextFunctions(sc)

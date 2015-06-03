@@ -1,10 +1,12 @@
 package org.elasticsearch.spark.sql
 
 import java.sql.Timestamp
-import java.util.{ Map => JMap }
+import java.util.{Map => JMap}
+
 import scala.collection.JavaConverters.mapAsScalaMapConverter
-import scala.collection.{ Map => SMap }
+import scala.collection.{Map => SMap}
 import scala.collection.Seq
+
 import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.catalyst.types.ArrayType
 import org.apache.spark.sql.catalyst.types.BinaryType
@@ -23,9 +25,9 @@ import org.apache.spark.sql.catalyst.types.StructType
 import org.apache.spark.sql.catalyst.types.TimestampType
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.Generator
-import org.elasticsearch.hadoop.serialization.builder.{FilteringValueWriter, ValueWriter}
-import org.elasticsearch.spark.serialization.ScalaValueWriter
+import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
+import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[(Row, StructType)] {
 
@@ -147,7 +149,7 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   }
 
   protected def handleUnknown(value: Any, generator: Generator): Result = {
-    // Spark 1.2 broke DecimalType bwc with Spark 1.1 
+    // Spark 1.2 broke DecimalType bwc with Spark 1.1
     // as we don't use it anyway, to keep the code small and efficient (avoid using class names, etc...) we moved the check here
     if (value.getClass() == DecimalType.getClass()) {
       throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")

@@ -1,19 +1,16 @@
 package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
-import scala.collection.JavaConverters._
 import scala.collection.Map
-import org.apache.spark.annotation.AlphaComponent
-import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.api.java.JavaRDD.fromRDD
-import org.apache.spark.sql.SQLContext
+
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.SQLContext
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
-import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.spark.cfg.SparkSettingsManager
 
 object EsSparkSQL {
 
@@ -25,7 +22,7 @@ object EsSparkSQL {
   def esDF(sc: SQLContext, cfg: Map[String, String]): DataFrame = {
     val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
     esConf.merge(cfg.asJava)
-    
+
     val schema = MappingUtils.discoverMapping(esConf)
     val rowRDD = new ScalaEsRowRDD(sc.sparkContext, cfg, schema)
     sc.createDataFrame(rowRDD, schema.struct)
