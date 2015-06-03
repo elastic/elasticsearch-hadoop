@@ -50,16 +50,25 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
   def buildScan(requiredColumns: Array[String]) = {
     val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
     paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
+
+    if (cfg.getReadMetadata) {
+      val metadata = cfg.getReadMetadataField
+      // if metadata is not selected, don't ask for it
+      if (!requiredColumns.contains(metadata)) {
+        paramWithProjection += (ConfigurationOptions.ES_READ_METADATA -> false.toString())
+      }
+    }
+
     new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
   }
 
   // PrunedFilteredScan
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
-    val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
-    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
-
-    // build query based on filters
-    new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
-  }
+//  def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
+//    val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
+//    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
+//
+//    // build query based on filters
+//    new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
+//  }
 }
 

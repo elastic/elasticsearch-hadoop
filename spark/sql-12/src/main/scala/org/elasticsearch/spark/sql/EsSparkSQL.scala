@@ -43,10 +43,11 @@ object EsSparkSQL {
       return
     }
 
-    val sparkCfg = new SparkSettingsManager().load(srdd.sparkContext.getConf)
+    val sparkCtx = srdd.sparkContext
+    val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
     esCfg.merge(cfg.asJava)
 
-    srdd.sparkContext.runJob(srdd, new EsSchemaRDDWriter(srdd.schema, esCfg.save()).write _)
+    sparkCtx.runJob(srdd, new EsSchemaRDDWriter(srdd.schema, esCfg.save()).write _)
   }
 }
