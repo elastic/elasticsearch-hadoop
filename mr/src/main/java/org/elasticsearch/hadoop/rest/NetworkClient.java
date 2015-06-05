@@ -26,6 +26,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -102,6 +104,16 @@ public class NetworkClient implements StatsAware, Closeable {
                     stats.bytesSent += body.length();
                 }
             } catch (Exception ex) {
+                // configuration error - including SSL/PKI - bail out
+                if (ex instanceof EsHadoopIllegalStateException) {
+                    throw (EsHadoopException) ex;
+                }
+
+                // issues with the SSL handshake, bail out instead of retry, for security reasons
+                if (ex instanceof javax.net.ssl.SSLException) {
+                    throw new EsHadoopTransportException(ex);
+                }
+
                 if (log.isTraceEnabled()) {
                     log.trace(
                             String.format(
@@ -128,6 +140,7 @@ public class NetworkClient implements StatsAware, Closeable {
         return response;
     }
 
+    @Override
     public void close() {
         closeTransport();
     }
