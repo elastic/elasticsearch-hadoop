@@ -44,7 +44,7 @@ public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
             switch (httpStatus) {
             // ES is busy, allow retries
             case HttpStatus.SERVICE_UNAVAILABLE:
-                if (++retryCount < retryLimit) {
+                if (retryLimit < 0 || ++retryCount < retryLimit) {
                     try {
                         if (log.isDebugEnabled()) {
                             log.debug(String.format("Elasticsearch service unavailable - retrying in %s",

@@ -375,7 +375,7 @@ Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API - (
 Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
 `es.batch.write.retry.count` (default 3)::
-Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performad, the Hadoop job is cancelled (and fails).
+Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performad, the Hadoop job is cancelled (and fails). A negative value indicates infinite retries; be careful in setting this value as it can have unwanted side effects.
 
 `es.batch.write.retry.wait` (default 10s)::
 Time to wait between batch write retries.
