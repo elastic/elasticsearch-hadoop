@@ -3,12 +3,12 @@
 
 {eh} binaries can be obtained either by downloading them from the http://elastic.co[elastic.co] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
 
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
@@ -23,60 +23,60 @@ In addition to the 'uber' jar, {eh} provides minimalistic jars for each integrat
 These are available under the same `groupId`, using an `artifactId` with the pattern `elasticsearch-hadoop-{integration}`:
 
 .Map/Reduce
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-mr<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
 <1> 'mr' artifact
 
 .Apache Hive
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-hive<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
 <1> 'hive' artifact
 
 .Apache Pig
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-pig<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
 <1> 'pig' artifact
 
 .Apache Spark
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-spark_2.10<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
 <1> 'spark' artifact. Notice the `_2.10` suffix which indicates the Scala version compatible with the artifact. Currently it is the same as the version used by Spark itself.
 
 .Cascading
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-cascading<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
@@ -96,12 +96,12 @@ in order for the Cascading dependencies to be properly resolved:
 ----
 
 .Storm
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-storm<1></artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
@@ -114,12 +114,12 @@ Releases are available in the central Maven http://repo1.maven.org/maven[reposit
 
 Development (or nightly or snapshots) builds are published daily at 'sonatype-oss' repository (see below). Make sure to use snapshot versioning:
 
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version> <1>
+  <version>{ver-d}</version> <1>
 </dependency>
 ----
 
