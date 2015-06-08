@@ -3,15 +3,11 @@ package org.elasticsearch.spark.sql
 import java.util.Properties
 
 import scala.Array.fallbackCanBuildFrom
-import scala.collection.JavaConverters._
-import scala.collection.JavaConverters.seqAsJavaListConverter
-import scala.collection.mutable.Buffer
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
+import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.ArrayType
-import org.apache.spark.sql.DataType
-import org.apache.spark.sql.DecimalType
 import org.apache.spark.sql.MapType
-import org.apache.spark.sql.api.java.{StructField => JStructField}
 import org.apache.spark.sql.catalyst.types.BinaryType
 import org.apache.spark.sql.catalyst.types.BooleanType
 import org.apache.spark.sql.catalyst.types.ByteType
@@ -111,10 +107,10 @@ private[sql] object MappingUtils {
 
     val rowOrderProps = IOUtils.propsFromString(rowOrderString)
 
-    val map = new scala.collection.mutable.LinkedHashMap[String, Buffer[String]]
+    val map = new scala.collection.mutable.LinkedHashMap[String, Seq[String]]
 
     for (prop <- rowOrderProps.asScala) {
-      map.put(prop._1, StringUtils.tokenize(prop._2).asScala)
+      map.put(prop._1, new ArrayBuffer ++= (StringUtils.tokenize(prop._2).asScala))
     }
 
     map

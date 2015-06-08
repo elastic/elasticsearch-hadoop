@@ -4,7 +4,7 @@ import java.util.Properties
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
-import scala.collection.mutable.Buffer
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -106,10 +106,10 @@ private[sql] object MappingUtils {
 
     val rowOrderProps = IOUtils.propsFromString(rowOrderString)
 
-    val map = new scala.collection.mutable.LinkedHashMap[String, Buffer[String]]
+    val map = new scala.collection.mutable.LinkedHashMap[String, Seq[String]]
 
     for (prop <- rowOrderProps.asScala) {
-      map.put(prop._1, StringUtils.tokenize(prop._2).asScala)
+      map.put(prop._1, new ArrayBuffer() ++= (StringUtils.tokenize(prop._2).asScala))
     }
 
     map

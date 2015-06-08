@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.{util => ju, lang => jl}
+import java.{ util => ju, lang => jl }
 
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
@@ -55,10 +55,20 @@ import org.junit.Test
 import javax.xml.bind.DatatypeConverter
 import org.apache.spark.sql.catalyst.expressions.GenericRow
 import java.util.Arrays
+import org.apache.spark.storage.StorageLevel._
+import org.elasticsearch.hadoop.Provisioner
+import org.elasticsearch.hadoop.util.StringUtils
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.mutable.ArrayBuffer
 
+import com.esotericsoftware.kryo.io.{ Output => KryoOutput }
+import com.esotericsoftware.kryo.io.{ Input => KryoInput }
 
 object AbstractScalaEsScalaSparkSQL {
-  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
+  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    .setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
+    .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
+  //.setMaster("local")
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
   @transient var sqc: SQLContext = null
@@ -95,264 +105,308 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   val sqc = AbstractScalaEsScalaSparkSQL.sqc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
 
-    @Test
-    def testBasicRead() {
-        val dataFrame = artistsAsDataFrame
-        assertTrue(dataFrame.count > 300)
-        dataFrame.registerTempTable("datfile")
-        println(dataFrame.schema.treeString)
-        //dataFrame.take(5).foreach(println)
-        val results = sqc.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10")
-        //results.take(5).foreach(println)
+  val datInput = TestUtils.sampleArtistsDat()
+
+  @Test
+  def test1KryoScalaEsRow() {
+    val kryo = SparkUtils.sparkSerializer(sc.getConf)
+    val row = new ScalaEsRow(new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala)
+
+    val storage = Array.ofDim[Byte](512)
+    val output = new KryoOutput(storage)
+    val input = new KryoInput(storage)
+
+    kryo.writeClassAndObject(output, row)
+    val serialized = kryo.readClassAndObject(input).asInstanceOf[ScalaEsRow]
+    println(serialized.rowOrder)
+
+  }
+
+  @Test
+  def testBasicRead() {
+    val dataFrame = artistsAsDataFrame
+    assertTrue(dataFrame.count > 300)
+    dataFrame.registerTempTable("datfile")
+    println(dataFrame.schema.treeString)
+    //dataFrame.take(5).foreach(println)
+    val results = sqc.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10")
+    //results.take(5).foreach(println)
+  }
+
+  @Test
+  def testEsDataFrame1Write() {
+    val dataFrame = artistsAsDataFrame
+
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+    dataFrame.saveToEs(target, cfg)
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+  }
+
+  @Test
+  def testEsDataFrame1WriteWithMapping() {
+    val dataFrame = artistsAsDataFrame
+
+    val target = wrapIndex("sparksql-test/scala-basic-write-id-mapping")
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url")
+
+    dataFrame.saveToEs(target, newCfg)
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+    assertThat(RestUtils.exists(target + "/1"), is(true))
+    assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")))
+  }
+
+  @Test
+  def testEsDataFrame2Read() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val dataFrame = sqc.esDF(target, cfg)
+    assertTrue(dataFrame.count > 300)
+    val schema = dataFrame.schema.treeString
+    assertTrue(schema.contains("id: long"))
+    assertTrue(schema.contains("name: string"))
+    assertTrue(schema.contains("pictures: string"))
+    assertTrue(schema.contains("time: long"))
+    assertTrue(schema.contains("url: string"))
+
+    //dataFrame.take(5).foreach(println)
+
+    val tempTable = wrapIndex("basicRead")
+    dataFrame.registerTempTable(tempTable)
+    val nameRDD = sqc.sql("SELECT name FROM " + tempTable + " WHERE id >= 1 AND id <=10")
+    nameRDD.take(7).foreach(println)
+    assertEquals(10, nameRDD.count)
+  }
+
+  @Test
+  def testEsDataFrame3WriteWithRichMapping() {
+    val input = datInput
+    val data = sc.textFile(input)
+
+    val schema = StructType(Seq(StructField("id", IntegerType, false),
+      StructField("name", StringType, false),
+      StructField("url", StringType, true),
+      StructField("pictures", StringType, true),
+      StructField("time", TimestampType, true),
+      StructField("nested",
+        StructType(Seq(StructField("id", IntegerType, false),
+          StructField("name", StringType, false),
+          StructField("url", StringType, true),
+          StructField("pictures", StringType, true),
+          StructField("time", TimestampType, true))), true)))
+
+    val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()),
+      Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()))))
+    val dataFrame = sqc.createDataFrame(rowRDD, schema)
+
+    val target = wrapIndex("sparksql-test/scala-basic-write-rich-mapping-id-mapping")
+    dataFrame.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+    assertThat(RestUtils.exists(target + "/1"), is(true))
+  }
+
+  @Test
+  def testEsDataFrame4ReadRichMapping() {
+    val target = wrapIndex("sparksql-test/scala-basic-write-rich-mapping-id-mapping")
+
+    val dataFrame = sqc.esDF(target, cfg)
+
+    assertTrue(dataFrame.count > 300)
+    dataFrame.printSchema()
+  }
+
+  private def artistsAsDataFrame = {
+    val input = datInput
+    val data = sc.textFile(input)
+
+    val schema = StructType(Seq(StructField("id", IntegerType, false),
+      StructField("name", StringType, false),
+      StructField("url", StringType, true),
+      StructField("pictures", StringType, true),
+      StructField("time", TimestampType, true)))
+
+    val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis())))
+    val dataFrame = sqc.createDataFrame(rowRDD, schema)
+    dataFrame
+  }
+
+  @Test
+  def testEsDataFrame50ReadAsDataSource() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+    var options = "resource \"" + target + "\""
+    if (readMetadata) {
+      options = options + " ,read_metadata \"true\""
+    }
+    val table = wrapIndex("sqlbasicread1")
+
+    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+      " USING org.elasticsearch.spark.sql " +
+      " OPTIONS (" + options + ")")
+
+    val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+    val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+    println("root data frame")
+    dfLoad.printSchema()
+
+    val results = dfLoad.filter(dfLoad("id") >= 1 && dfLoad("id") <= 10)
+    println("results data frame")
+    results.printSchema()
+
+    val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
+    println("select all rdd")
+    allRDD.printSchema()
+
+    val nameRDD = sqc.sql("SELECT name FROM " + table + " WHERE id >= 1 AND id <=10")
+    println("select name rdd")
+    nameRDD.printSchema()
+
+    assertEquals(10, nameRDD.count)
+    nameRDD.take(7).foreach(println)
+  }
+
+  @Test
+  def testEsDataFrameReadAsDataSourceWithMetadata() {
+    assumeTrue(readMetadata)
+
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+    val table = wrapIndex("sqlbasicread2")
+
+    val options = "resource \"" + target + "\", read_metadata \"true\""
+    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+      " USING org.elasticsearch.spark.sql " +
+      " OPTIONS (" + options + ")")
+
+    val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
+    allRDD.printSchema()
+    allRDD.take(7).foreach(println)
+
+    val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+    val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+    dfLoad.show()
+  }
+
+  @Test
+  def testEsSchemaFromDocsWithDifferentProperties() {
+    val target = wrapIndex("spark-test/scala-sql-varcols")
+    val table = wrapIndex("sqlvarcol")
+
+    var options = "resource \"" + target + "\""
+    if (readMetadata) {
+      options = options + " ,read_metadata \"true\""
     }
 
-    @Test
-    def testEsDataFrame1Write() {
-      val dataFrame = artistsAsDataFrame
+    val trip1 = Map("reason" -> "business", "airport" -> "SFO")
+    val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
-      val target = wrapIndex("sparksql-test/scala-basic-write")
-      dataFrame.saveToEs(target, cfg)
-      assertTrue(RestUtils.exists(target))
-      assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+    sc.makeRDD(Seq(trip1, trip2)).saveToEs(target)
+
+    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+      " USING org.elasticsearch.spark.sql " +
+      " OPTIONS (" + options + ")")
+
+    val allResults = sqc.sql("SELECT * FROM " + table)
+    assertEquals(2, allResults.count())
+    allResults.printSchema()
+
+    val filter = sqc.sql("SELECT * FROM " + table + " WHERE airport = 'OTP'")
+    assertEquals(1, filter.count())
+
+    val nullColumns = sqc.sql("SELECT reason, airport FROM " + table + " ORDER BY airport")
+    val rows = nullColumns.take(2)
+    assertEquals("[null,OTP]", rows(0).toString())
+    assertEquals("[business,SFO]", rows(1).toString())
+  }
+
+  @Test
+  def testJsonLoadAndSavedToEs() {
+    val input = sqc.jsonFile(this.getClass.getResource("/simple.json").toURI().toString())
+    println(input.schema.simpleString)
+
+    val target = wrapIndex("spark-test/json-file")
+    input.saveToEs(target, cfg)
+
+    val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
+    println(basic.schema.simpleString)
+    basic.saveToEs(target, cfg)
+  }
+
+  @Test
+  def testJsonLoadAndSavedToEsSchema() {
+    assumeFalse(readMetadata)
+    val input = sqc.jsonFile(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
+    println("JSON schema")
+    println(input.schema.treeString)
+    println(input.schema)
+    val sample = input.take(1)(0).toString()
+
+    val target = wrapIndex("spark-test/json-file-schema")
+    input.saveToEs(target, cfg)
+
+    val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+    val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+    println("JSON schema")
+    println(input.schema.treeString)
+    println("Reading information from Elastic")
+    println(dfLoad.schema.treeString)
+    val item = dfLoad.take(1)(0)
+    println(item.schema)
+    println(item.toSeq)
+    val nested = item.getStruct(1)
+    println(nested.get(0))
+    println(nested.get(0).getClass())
+
+    assertEquals(input.schema.treeString, dfLoad.schema.treeString)
+    assertEquals(sample, item.toString())
+  }
+
+  @Test
+  def testTableJoining() {
+    val index1Name = wrapIndex("sparksql-test/scala-basic-write")
+    val index2Name = wrapIndex("sparksql-test/scala-basic-write-id-mapping")
+
+    val table1 = sqc.load(index1Name, "org.elasticsearch.spark.sql")
+    val table2 = sqc.load(index2Name, "org.elasticsearch.spark.sql")
+
+    table1.persist(DISK_ONLY)
+    table2.persist(DISK_ONLY_2)
+
+    val table1Name = wrapIndex("table1")
+    val table2Name = wrapIndex("table2")
+
+    table1.registerTempTable(table1Name)
+    table1.registerTempTable(table2Name)
+
+    val join = sqc.sql("SELECT t1.name, t2.pictures FROM "
+      + table1Name + " t1, " + table2Name + " t2 "
+      + " WHERE t1.id = t2.id")
+
+    println(join.schema.treeString)
+    println(join.take(1)(0).schema)
+    println(join.take(1)(0)(0))
+  }
+
+  //@Test
+  // insert not supported
+  def testEsDataFrame51WriteAsDataSource() {
+    val target = "sparksql-test/scala-basic-write"
+
+    var options = "resource '" + target + "'"
+    if (readMetadata) {
+      options = options + " ,read_metadata true"
     }
 
-    @Test
-    def testEsDataFrame1WriteWithMapping() {
-      val dataFrame = artistsAsDataFrame
+    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " +
+      "USING org.elasticsearch.spark.sql " +
+      "OPTIONS (" + options + ")");
 
-      val target = wrapIndex("sparksql-test/scala-basic-write-id-mapping")
-      val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url")
+    val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
 
-      dataFrame.saveToEs(target, newCfg)
-      assertTrue(RestUtils.exists(target))
-      assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
-      assertThat(RestUtils.exists(target + "/1"), is(true))
-      assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")))
-    }
-
-    @Test
-    def testEsDataFrame2Read() {
-      val target = wrapIndex("sparksql-test/scala-basic-write")
-
-      val dataFrame = sqc.esDF(target, cfg)
-      assertTrue(dataFrame.count > 300)
-      val schema = dataFrame.schema.treeString
-      assertTrue(schema.contains("id: long"))
-      assertTrue(schema.contains("name: string"))
-      assertTrue(schema.contains("pictures: string"))
-      assertTrue(schema.contains("time: long"))
-      assertTrue(schema.contains("url: string"))
-
-      //dataFrame.take(5).foreach(println)
-
-      val tempTable = wrapIndex("basicRead")
-      dataFrame.registerTempTable(tempTable)
-      val nameRDD = sqc.sql("SELECT name FROM " + tempTable + " WHERE id >= 1 AND id <=10")
-      nameRDD.take(7).foreach(println)
-      assertEquals(10, nameRDD.count)
-    }
-
-    @Test
-    def testEsDataFrame3WriteWithRichMapping() {
-      val input = TestUtils.sampleArtistsDat()
-      val data = sc.textFile(input)
-
-      val schema = StructType(Seq(StructField("id", IntegerType, false),
-        StructField("name", StringType, false),
-        StructField("url", StringType, true),
-        StructField("pictures", StringType, true),
-        StructField("time", TimestampType, true),
-        StructField("nested",
-            StructType(Seq(StructField("id", IntegerType, false),
-            StructField("name", StringType, false),
-            StructField("url", StringType, true),
-            StructField("pictures", StringType, true),
-            StructField("time", TimestampType, true))), true)))
-
-      val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()),
-                                Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis()))))
-      val dataFrame = sqc.createDataFrame(rowRDD, schema)
-
-      val target = wrapIndex("sparksql-test/scala-basic-write-rich-mapping-id-mapping")
-      dataFrame.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
-      assertTrue(RestUtils.exists(target))
-      assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
-      assertThat(RestUtils.exists(target + "/1"), is(true))
-    }
-
-    @Test
-    def testEsDataFrame4ReadRichMapping() {
-      val target = wrapIndex("sparksql-test/scala-basic-write-rich-mapping-id-mapping")
-
-      val dataFrame = sqc.esDF(target, cfg)
-
-      assertTrue(dataFrame.count > 300)
-      dataFrame.printSchema()
-    }
-
-    private def artistsAsDataFrame = {
-      val input = TestUtils.sampleArtistsDat()
-      val data = sc.textFile(input)
-
-      val schema = StructType(Seq(StructField("id", IntegerType, false),
-        StructField("name", StringType, false),
-        StructField("url", StringType, true),
-        StructField("pictures", StringType, true),
-        StructField("time", TimestampType, true)))
-
-      val rowRDD = data.map(_.split("\t")).map(r => Row(r(0).toInt, r(1), r(2), r(3), new Timestamp(DatatypeConverter.parseDateTime(r(4)).getTimeInMillis())))
-      val dataFrame = sqc.createDataFrame(rowRDD, schema)
-      dataFrame
-    }
-
-    @Test
-    def testEsDataFrame50ReadAsDataSource() {
-      val target = wrapIndex("sparksql-test/scala-basic-write")
-      var options = "resource \"" + target + "\""
-      if (readMetadata) {
-        options = options + " ,read_metadata \"true\""
-      }
-      val table = wrapIndex("sqlbasicread1")
-
-
-      val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
-              " USING org.elasticsearch.spark.sql " +
-              " OPTIONS (" + options + ")")
-
-
-      val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-      val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
-      println("root data frame")
-      dfLoad.printSchema()
-
-      val results = dfLoad.filter(dfLoad("id") >= 1 && dfLoad("id") <= 10)
-      println("results data frame")
-      results.printSchema()
-
-      val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
-      println("select all rdd")
-      allRDD.printSchema()
-
-      val nameRDD = sqc.sql("SELECT name FROM " + table + " WHERE id >= 1 AND id <=10")
-      println("select name rdd")
-      nameRDD.printSchema()
-
-      assertEquals(10, nameRDD.count)
-      nameRDD.take(7).foreach(println)
-    }
-
-    @Test
-    def testEsDataFrameReadAsDataSourceWithMetadata() {
-      assumeTrue(readMetadata)
-
-      val target = wrapIndex("sparksql-test/scala-basic-write")
-      val table = wrapIndex("sqlbasicread2")
-
-      val options = "resource \"" + target + "\", read_metadata \"true\""
-      val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
-              " USING org.elasticsearch.spark.sql " +
-              " OPTIONS (" + options + ")")
-
-      val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
-      allRDD.printSchema()
-      allRDD.take(7).foreach(println)
-
-      val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-      val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
-      dfLoad.show()
-    }
-
-    @Test
-    def testEsSchemaFromDocsWithDifferentProperties() {
-      val target = wrapIndex("spark-test/scala-sql-varcols")
-      val table = wrapIndex("sqlvarcol")
-
-      var options = "resource \"" + target + "\""
-      if (readMetadata) {
-        options = options + " ,read_metadata \"true\""
-      }
-
-
-      val trip1 = Map("reason" -> "business", "airport" -> "SFO")
-      val trip2 = Map("participants" -> 5, "airport" -> "OTP")
-
-      sc.makeRDD(Seq(trip1, trip2)).saveToEs(target)
-
-      val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
-              " USING org.elasticsearch.spark.sql " +
-              " OPTIONS (" + options + ")")
-
-      val allResults = sqc.sql("SELECT * FROM " + table)
-      assertEquals(2, allResults.count())
-      allResults.printSchema()
-
-      val filter = sqc.sql("SELECT * FROM " + table + " WHERE airport = 'OTP'")
-      assertEquals(1, filter.count())
-
-      val nullColumns = sqc.sql("SELECT reason, airport FROM " + table + " ORDER BY airport")
-      val rows = nullColumns.take(2)
-      assertEquals("[null,OTP]", rows(0).toString())
-      assertEquals("[business,SFO]", rows(1).toString())
-    }
-
-    @Test
-    def testJsonLoadAndSavedToEs() {
-      val input = sqc.jsonFile(this.getClass.getResource("/simple.json").toURI().toString())
-      println(input.schema.simpleString)
-
-      val target = wrapIndex("spark-test/json-file")
-      input.saveToEs(target, cfg)
-
-      val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
-      println(basic.schema.simpleString)
-      basic.saveToEs(target, cfg)
-    }
-
-    @Test
-    def testJsonLoadAndSavedToEsSchema() {
-      assumeFalse(readMetadata)
-      val input = sqc.jsonFile(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
-      println("JSON schema")
-      println(input.schema.treeString)
-      println(input.schema)
-      val sample = input.take(1)(0).toString()
-
-      val target = wrapIndex("spark-test/json-file-schema")
-      input.saveToEs(target, cfg)
-
-      val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-      val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
-      println("JSON schema")
-      println(input.schema.treeString)
-      println("Reading information from Elastic")
-      println(dfLoad.schema.treeString)
-      val dfload = dfLoad.take(1)(0).toString()
-
-      assertEquals(input.schema.treeString, dfLoad.schema.treeString)
-      assertEquals(sample, dfload)
-    }
-
-    //@Test
-    // insert not supported
-    def testEsDataFrame51WriteAsDataSource() {
-      val target = "sparksql-test/scala-basic-write"
-
-      var options = "resource '" + target + "'"
-      if (readMetadata) {
-        options = options + " ,read_metadata true"
-      }
-
-      val dataFrame = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " +
-              "USING org.elasticsearch.spark.sql " +
-              "OPTIONS (" + options + ")");
-
-
-      val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
-
-      insertRDD.printSchema()
-      assertTrue(insertRDD.count == 1)
-      insertRDD.take(7).foreach(println)
-    }
+    insertRDD.printSchema()
+    assertTrue(insertRDD.count == 1)
+    insertRDD.take(7).foreach(println)
+  }
 
   def wrapIndex(index: String) = {
     prefix + index

@@ -5,7 +5,7 @@ import scala.collection.mutable.Buffer
 
 import org.apache.spark.sql.catalyst.expressions.Row
 
-private[spark] class ScalaEsRow(private[spark] val rowOrder: Buffer[String]) extends Row {
+private[spark] class ScalaEsRow(private[spark] val rowOrder: Seq[String]) extends Row {
 
   lazy private[spark] val values: ArrayBuffer[Any] = ArrayBuffer.fill(rowOrder.size)(null)
 

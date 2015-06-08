@@ -9,7 +9,7 @@ private[sql] trait RowValueReader extends SettingsAware {
 
   protected var readMetadata = false
   var metadataField = ""
-  protected var rowMap: scala.collection.Map[String, Buffer[String]] = Map.empty
+  protected var rowMap: scala.collection.Map[String, Seq[String]] = Map.empty
   protected var currentField = MappingUtils.ROOT_LEVEL_NAME
 
   abstract override def setSettings(settings: Settings) = {
@@ -20,7 +20,7 @@ private[sql] trait RowValueReader extends SettingsAware {
     rowMap = MappingUtils.getRowOrder(settings)
   }
 
-  def rowOrder(currentField: String): Buffer[String] = {
+  def rowOrder(currentField: String): Seq[String] = {
     rowMap.get(currentField).get
   }
 
