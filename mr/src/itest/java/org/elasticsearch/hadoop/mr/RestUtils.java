@@ -33,7 +33,7 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.*;
+import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
 
 public class RestUtils {
 
@@ -43,6 +43,7 @@ public class RestUtils {
             super(new TestSettings());
         }
 
+        @Override
         public Response execute(Request.Method method, String path, ByteSequence buffer) {
             return super.execute(method, path, buffer);
         }
@@ -89,15 +90,21 @@ public class RestUtils {
         putMapping(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
     }
 
-    public static void putData(String index, String location) throws Exception {
+    public static void postData(String index, String location) throws Exception {
         byte[] fromInputStream = TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location));
         System.out.println(StringUtils.asUTFString(fromInputStream));
-        putData(index, fromInputStream);
+        postData(index, fromInputStream);
     }
 
-    public static void putData(String index, byte[] content) throws Exception {
+    public static void postData(String index, byte[] content) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
         rc.post(index, content);
+        rc.close();
+    }
+
+    public static void put(String index, byte[] content) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.put(index, content);
         rc.close();
     }
 

@@ -152,8 +152,8 @@ public class AbstractExtraMRTests {
         String alias = indexPrefix + "alias";
         String targetA = targetPrefix + "a/type";
         String targetB = targetPrefix + "b/type";
-        RestUtils.putData(targetA + "/1", simpleDoc.getBytes());
-        RestUtils.putData(targetB + "/1", simpleDoc.getBytes());
+        RestUtils.postData(targetA + "/1", simpleDoc.getBytes());
+        RestUtils.postData(targetB + "/1", simpleDoc.getBytes());
 
         // put alias
         String aliases =
@@ -162,7 +162,7 @@ public class AbstractExtraMRTests {
                 "{ \"add\":{\"index\":\"" + targetPrefix + "b\",\"alias\":\"" + alias + "\" }}  " +
          "]}";
 
-        RestUtils.putData("_aliases", aliases.getBytes());
+        RestUtils.postData("_aliases", aliases.getBytes());
         RestUtils.refresh(alias);
 
         // run MR job

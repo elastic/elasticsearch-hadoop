@@ -112,8 +112,8 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
         String target = "spark-test/hadoop-basic";
 
         RestUtils.touch("spark-test");
-        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh("spark-test");
 
         JobConf hdpConf = HdpBootstrap.hadoopConfig();

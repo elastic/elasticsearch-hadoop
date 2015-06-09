@@ -322,7 +322,7 @@ public class AbstractMROldApiSaveTest {
     public void testUpdateOnlyParamJsonScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
         String index = indexPrefix + "mroldapi/createwitharray";
-        RestUtils.putData(index + "/1", docWithArray.getBytes());
+        RestUtils.postData(index + "/1", docWithArray.getBytes());
         RestUtils.refresh(indexPrefix + "mroldapi");
         RestUtils.waitForYellow(indexPrefix + "mroldapi");
 
@@ -384,7 +384,7 @@ public class AbstractMROldApiSaveTest {
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
         String index = indexPrefix + "mroldapi/createwitharrayupsert";
-        RestUtils.putData(index + "/1", docWithArray.getBytes());
+        RestUtils.postData(index + "/1", docWithArray.getBytes());
         RestUtils.refresh(indexPrefix + "mroldapi");
         RestUtils.waitForYellow(indexPrefix + "mroldapi");
 

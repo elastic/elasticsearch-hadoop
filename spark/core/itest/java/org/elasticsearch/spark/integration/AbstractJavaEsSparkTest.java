@@ -72,7 +72,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         }
     }
 
-	@Test
+    @Test
     public void testEsRDDWrite() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
@@ -82,13 +82,13 @@ public class AbstractJavaEsSparkTest implements Serializable {
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target);
         JavaEsSpark.saveToEs(javaRDD, ImmutableMap.of(ES_RESOURCE, target + "1"));
-        
+
         assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
 
-	@Test
+    @Test
     public void testEsRDDWriteWithMappingId() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
@@ -103,25 +103,25 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(results, containsString("SFO"));
     }
 
-	@Test
+    @Test
     public void testEsRDDWriteWithDynamicMapping() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
 
         String target = "spark-test/java-dyn-id-write";
-        JavaPairRDD<?, ?> pairRdd = sc.parallelizePairs(ImmutableList.of(new Tuple2<Object,Object>(1, doc1), 
-        		new Tuple2<Object, Object>(2, doc2)));
+        JavaPairRDD<?, ?> pairRdd = sc.parallelizePairs(ImmutableList.of(new Tuple2<Object,Object>(1, doc1),
+                new Tuple2<Object, Object>(2, doc2)));
         //JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
         // eliminate with static import
         JavaEsSpark.saveToEsWithMeta(pairRdd, target);
-        
+
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
     }
-    
-	@Test
+
+    @Test
     public void testEsRDDWriteWithDynamicMappingBasedOnMaps() throws Exception {
         Map<String, ?> doc1 = ImmutableMap.of("one", 1, "two", 2, "number", 1);
         Map<String, ?> doc2 = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
@@ -133,7 +133,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaPairRDD pairRDD = JavaPairRDD.fromJavaRDD(tupleRdd);
         // eliminate with static import
         JavaEsSpark.saveToEsWithMeta(pairRDD, target);
-        
+
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
@@ -155,17 +155,17 @@ public class AbstractJavaEsSparkTest implements Serializable {
         assertThat(RestUtils.get(target + "/_search?"), containsString("participants"));
         assertThat(RestUtils.get(target + "/_search?"), not(containsString("airport")));
     }
-    
-	@Test
+
+    @Test
     public void testEsMultiIndexRDDWrite() throws Exception {
       Map<String, ?> doc1 = ImmutableMap.of("reason", "business", "airport", "SFO");
       Map<String, ?> doc2 = ImmutableMap.of("participants", 2, "airport", "OTP");
 
       String target = "spark-test/java-trip-{airport}";
-      
+
       JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
       JavaEsSpark.saveToEs(javaRDD, target);
-      
+
       assertTrue(RestUtils.exists("spark-test/java-trip-OTP"));
       assertTrue(RestUtils.exists("spark-test/java-trip-SFO"));
 
@@ -173,7 +173,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
       assertThat(RestUtils.get("spark-test/java-trip-OTP/_search?"), containsString("participants"));
     }
 
-	@Test
+    @Test
     public void testEsRDDWriteAsJsonMultiWrite() throws Exception {
       String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";
       String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
@@ -190,7 +190,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
       JavaEsSpark.saveJsonByteArrayToEs(byteRDD, "spark-test/json-ba-{airport}");
       JavaEsSpark.saveJsonByteArrayToEs(byteRDD, "spark-test/json-ba1-{airport}", Collections.<String, String> emptyMap());
       JavaEsSpark.saveJsonByteArrayToEs(byteRDD, ImmutableMap.of(ES_RESOURCE, "spark-test/json-ba2-{airport}"));
-      
+
       assertTrue(RestUtils.exists("spark-test/json-SFO"));
       assertTrue(RestUtils.exists("spark-test/json-OTP"));
 
@@ -212,93 +212,93 @@ public class AbstractJavaEsSparkTest implements Serializable {
       assertThat(RestUtils.get("spark-test/json-SFO/_search?"), containsString("business"));
       assertThat(RestUtils.get("spark-test/json-OTP/_search?"), containsString("participants"));
     }
-    
-	@Test
+
+    @Test
     public void testEsRDDZRead() throws Exception {
         String target = "spark-test/java-basic-read";
 
         RestUtils.touch("spark-test");
-        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh("spark-test");
 
 //        JavaRDD<scala.collection.Map<String, Object>> esRDD = JavaEsSpark.esRDD(sc, target);
 //        JavaRDD messages = esRDD.filter(new Function<scala.collection.Map<String, Object>, Boolean>() {
 //            public Boolean call(scala.collection.Map<String, Object> map) {
-//            	for (Entry<String, Object> entry: JavaConversions.asJavaMap(map).entrySet()) {
-//					if (entry.getValue().toString().contains("message")) {
-//						return Boolean.TRUE;
-//					}
-//				}
-//            	return Boolean.FALSE;
+//                for (Entry<String, Object> entry: JavaConversions.asJavaMap(map).entrySet()) {
+//                    if (entry.getValue().toString().contains("message")) {
+//                        return Boolean.TRUE;
+//                    }
+//                }
+//                return Boolean.FALSE;
 //            }
 //        });
 
         JavaRDD<Map<String, Object>> esRDD = JavaEsSpark.esRDD(sc, target).values();
         System.out.println(esRDD.collect());
         JavaRDD<Map<String, Object>> messages = esRDD.filter(new Function<Map<String, Object>, Boolean>() {
-			@Override
-			public Boolean call(Map<String, Object> map) throws Exception {
-				return map.containsKey("message");
-			}
+            @Override
+            public Boolean call(Map<String, Object> map) throws Exception {
+                return map.containsKey("message");
+            }
         });
-        
+
         // jdk8
         //esRDD.filter(m -> m.stream().filter(v -> v.contains("message")));
-        
+
         assertThat((int) messages.count(), is(2));
         System.out.println(messages.take(10));
         System.out.println(messages);
     }
 
-    
-	@Test
+
+    @Test
     public void testEsRDDZReadJson() throws Exception {
         String target = "spark-test/java-basic-json-read";
 
         RestUtils.touch("spark-test");
-        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh("spark-test");
 
         JavaRDD<String> esRDD = JavaEsSpark.esJsonRDD(sc, target).values();
         System.out.println(esRDD.collect());
         JavaRDD<String> messages = esRDD.filter(new Function<String, Boolean>() {
-			@Override
-			public Boolean call(String string) throws Exception {
-				return string.contains("message");
-			}
+            @Override
+            public Boolean call(String string) throws Exception {
+                return string.contains("message");
+            }
         });
-        
+
         // jdk8
         //esRDD.filter(m -> m.contains("message")));
-        
+
         assertThat((int) messages.count(), is(2));
         System.out.println(messages.take(10));
         System.out.println(messages);
     }
 
-	@Test
+    @Test
     public void testEsRDDZReadMultiIndex() throws Exception {
-    	String index = "spark-test";
-    	
-    	for (int i = 0; i < 500; i++) {
-	        RestUtils.putData(index + "/foo", ("{\"message\" : \"Hello World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
-	        RestUtils.putData(index + "/bar", ("{\"message\" : \"Goodbye World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
-    	}
-    	
+        String index = "spark-test";
+
+        for (int i = 0; i < 500; i++) {
+            RestUtils.postData(index + "/foo", ("{\"message\" : \"Hello World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
+            RestUtils.postData(index + "/bar", ("{\"message\" : \"Goodbye World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
+        }
+
         RestUtils.refresh(index);
 
-    	JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo")).values();
-    	
-    	JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
-		assertEquals(wildRDD.count(), allRDD.count());
-		assertEquals(500, allRDD.count());
+        JavaRDD<Map<String, Object>> wildRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*/foo")).values();
+
+        JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
+        assertEquals(wildRDD.count(), allRDD.count());
+        assertEquals(500, allRDD.count());
     }
-    
-	@Test(expected = EsHadoopIllegalArgumentException.class)
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testNoResourceSpecified() throws Exception {
-    	JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc).values();
-    	rdd.count();
+        JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc).values();
+        rdd.count();
     }
 }
