@@ -49,7 +49,7 @@ Each command should be self-explanatory. The typical usage scenario is:
 This is a _one-time_ action; if you already have Elasticsearch at hand, deploy it under `downloads` folder. To wit:
 
     > hadoop jar elasticsearch-yarn-<version> -download-es
-    Downloading Elasticsearch 1.4.0
+    Downloading Elasticsearch 1.6.0
     Downloading ......................................................................................DONE
 
 ### Provision Elasticsearch into HDFS
