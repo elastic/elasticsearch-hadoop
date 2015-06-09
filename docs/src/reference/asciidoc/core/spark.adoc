@@ -123,7 +123,7 @@ EsSpark.saveToEs(rdd, "spark/docs", Map("es.mapping.id" -> "id"))
 
 .Java
 
-Java users have a dedicated class that provides a similar functionality to +EsSpark+, namely +JavaEsSpark+ in the +org.elasticsearch.hadoop.spark.rdd.api.java+ (a package similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]):
+Java users have a dedicated class that provides a similar functionality to +EsSpark+, namely +JavaEsSpark+ in the +org.elasticsearch.spark.rdd.api.java+ (a package similar to Spark's https://spark.apache.org/docs/1.0.1/api/java/index.html?org/apache/spark/api/java/package-summary.html[Java API]):
 
 [source,java]
 ----
@@ -131,7 +131,7 @@ import org.apache.spark.api.java.JavaSparkContext;                              
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.SparkConf;
 
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;                        <2>
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;                        <2>
 ...
 
 SparkConf conf = ...
