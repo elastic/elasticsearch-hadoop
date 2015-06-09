@@ -36,22 +36,25 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.provisionEsLib;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
 
 @RunWith(Parameterized.class)
 public class AbstractHiveSearchJsonTest {
 
     private static int testInstance = 0;
-    private boolean readMetadata;
+    private final boolean readMetadata;
 
     @Parameters
     public static Collection<Object[]> queries() {
         return QueryTestParams.params();
     }
 
-    private String query;
+    private final String query;
 
     public AbstractHiveSearchJsonTest(String query, boolean readMetadata) {
         this.query = query;
@@ -74,9 +77,9 @@ public class AbstractHiveSearchJsonTest {
     public void loadMultiNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10 20 ] } } }";
-        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
         data = "{ \"data\" : { \"different\" : \"structure\" } } }";
-        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
 
         RestUtils.refresh("json-hive");
 
@@ -110,7 +113,7 @@ public class AbstractHiveSearchJsonTest {
     public void loadSingleNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
         String data = "{ \"data\" : { \"single\" : { \"key\" : [ 10 ] } } }";
-        RestUtils.putData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
 
         RestUtils.refresh("json-hive");
 

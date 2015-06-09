@@ -93,8 +93,8 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     @Test
     public void testIterate() throws Exception {
         RestUtils.touch("pig-test");
-        RestUtils.putData("pig-test/iterate", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData("pig-test/iterate", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData("pig-test/iterate", "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData("pig-test/iterate", "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh("pig-test");
 
         String script =

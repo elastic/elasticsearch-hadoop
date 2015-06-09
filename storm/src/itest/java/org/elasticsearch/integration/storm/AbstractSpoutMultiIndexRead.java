@@ -54,9 +54,9 @@ public class AbstractSpoutMultiIndexRead extends AbstractStormSpoutTests {
 
         counter++;
 
-        RestUtils.putData(index + "/foo",
+        RestUtils.postData(index + "/foo",
                 "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(index + "/bar",
+        RestUtils.postData(index + "/bar",
                 "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh(index);
 

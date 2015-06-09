@@ -254,8 +254,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   def testEsRDDRead() {
     val target = wrapIndex("spark-test/scala-basic-read")
     RestUtils.touch(wrapIndex("spark-test"))
-    RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
     RestUtils.refresh(wrapIndex("spark-test"))
 
     val esData = EsSpark.esRDD(sc, target, cfg)
@@ -270,8 +270,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   def testEsRDDReadQuery() {
     val target = "spark-test/scala-basic-query-read"
     RestUtils.touch("spark-test")
-    RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
     RestUtils.refresh("spark-test");
 
     val queryTarget = "*/scala-basic-query-read"
@@ -294,8 +294,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   def testEsRDDReadAsJson() {
     val target = wrapIndex("spark-test/scala-basic-json-read")
     RestUtils.touch(wrapIndex("spark-test"))
-    RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
     RestUtils.refresh(wrapIndex("spark-test"))
 
     val esData = EsSpark.esJsonRDD(sc, target, cfg)
@@ -315,8 +315,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val indexB = wrapIndex("spark-alias-indexb/type")
     val alias = wrapIndex("spark-alias-alias")
 
-    RestUtils.putData(indexA + "/1", doc.getBytes())
-    RestUtils.putData(indexB + "/1", doc.getBytes())
+    RestUtils.postData(indexA + "/1", doc.getBytes())
+    RestUtils.postData(indexB + "/1", doc.getBytes())
 
     val aliases = """
         |{"actions" : [
@@ -326,7 +326,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         """.stripMargin
 
     println(aliases)
-    RestUtils.putData("_aliases", aliases.getBytes());
+    RestUtils.postData("_aliases", aliases.getBytes());
     RestUtils.refresh(alias)
 
     val aliasRDD = EsSpark.esJsonRDD(sc, alias + "/type", cfg)
@@ -346,6 +346,26 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertEquals(3, EsSpark.esRDD(sc, target, cfg).count())
   }
 
+  @Test
+  def testNewIndexWithTemplate() {
+    val target = wrapIndex("spark-template-index/alias")
+
+    val template = """
+      |{"template" : """".stripMargin + wrapIndex("spark-template-*") + """",
+        |"settings" : {
+        |    "number_of_shards" : 1,
+        |    "number_of_replicas" : 0
+        |},
+        |"aliases" : { "spark-temp-index" : {} }
+      |}""".stripMargin
+    RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
+
+    val rdd = sc.textFile(TestUtils.sampleArtistsJson())
+    EsSpark.saveJsonToEs(rdd, target)
+    val esRDD = EsSpark.esRDD(sc, target, cfg)
+    println(esRDD.count)
+  }
+
   //@Test
   def testLoadJsonFile() {
     val target = "lost/id"
@@ -358,7 +378,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         |}
       |}
       |}""".stripMargin
-    RestUtils.putData("lost", createIndex.getBytes());
+    RestUtils.postData("lost", createIndex.getBytes());
 
     val rdd = sc.textFile("some.json")
     EsSpark.saveJsonToEs(rdd, target, collection.mutable.Map(cfg.toSeq: _*) += (

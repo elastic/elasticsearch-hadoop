@@ -54,8 +54,8 @@ public class AbstractCascadingHadoopSearchTest {
         return QueryTestParams.params();
     }
 
-    private String query;
-    private boolean readMetadata;
+    private final String query;
+    private final boolean readMetadata;
 
     public AbstractCascadingHadoopSearchTest(String query, boolean readMetadata) {
         this.query = query;
@@ -122,7 +122,7 @@ public class AbstractCascadingHadoopSearchTest {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.putData("cascading-hadoop/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("cascading-hadoop/nestedmap", StringUtils.toUTF(data));
         RestUtils.refresh("cascading-hadoop");
 
         Properties cfg = cfg();

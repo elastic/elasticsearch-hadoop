@@ -59,14 +59,14 @@ public class AbstractCascadingLocalJsonSearchTest {
 
     private final String indexPrefix = "json-";
     private final String query;
-    private boolean readMetadata;
+    private final boolean readMetadata;
 
     public AbstractCascadingLocalJsonSearchTest(String query, boolean readMetadata) {
         this.query = query;
         this.readMetadata = readMetadata;
     }
 
-    private OutputStream OUT = Stream.NULL.stream();
+    private final OutputStream OUT = Stream.NULL.stream();
 
     @Before
     public void before() throws Exception {
@@ -93,7 +93,7 @@ public class AbstractCascadingLocalJsonSearchTest {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.putData(indexPrefix + "cascading-local/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData(indexPrefix + "cascading-local/nestedmap", StringUtils.toUTF(data));
 
         RestUtils.refresh(indexPrefix + "cascading-local");
 

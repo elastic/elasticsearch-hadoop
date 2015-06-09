@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.hadoop.hive.service.HiveServerException;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
@@ -33,7 +32,8 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.isLocal;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveJsonTest {
@@ -52,7 +52,7 @@ public class AbstractHiveSaveJsonTest {
     @Test
     public void testNestedFields() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.putData("jsonnestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("jsonnestedmap", StringUtils.toUTF(data));
     }
 
     @Test
@@ -66,13 +66,13 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonartistssave ("
-                + "json     STRING) "
-                + tableProps("json-hive/artists");
+                        + "json     STRING) "
+                        + tableProps("json-hive/artists");
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonartistssave "
-                + "SELECT s.json FROM jsonsource s";
+                        + "SELECT s.json FROM jsonsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -94,12 +94,12 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonexternalserdetest ("
-                + "data     STRING) "
-                + tableProps("json-hive/externalserde");
+                        + "data     STRING) "
+                        + tableProps("json-hive/externalserde");
 
         String insert =
                 "INSERT OVERWRITE TABLE jsonexternalserdetest "
-                + "SELECT s.data FROM jsonexternalserde s";
+                        + "SELECT s.data FROM jsonexternalserde s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -116,13 +116,13 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonvarcharsave ("
-                + "json     VARCHAR(255))"
-                + tableProps("json-hive/varcharsave");
+                        + "json     VARCHAR(255))"
+                        + tableProps("json-hive/varcharsave");
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonvarcharsave "
-                + "SELECT s.json FROM jsonvarcharsource s";
+                        + "SELECT s.json FROM jsonvarcharsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -142,15 +142,15 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsoncreatesave ("
-                + "json     STRING) "
-                + tableProps("json-hive/createsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+                        + "json     STRING) "
+                        + tableProps("json-hive/createsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsoncreatesave "
-                + "SELECT s.json FROM jsoncreatesource s";
+                        + "SELECT s.json FROM jsoncreatesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -170,17 +170,17 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsoncreatesaveduplicate ("
-                + "json     STRING) "
-                + tableProps("json-hive/createsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+                        + "json     STRING) "
+                        + tableProps("json-hive/createsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
         String selectTest = "SELECT s.json FROM jsoncreatesourceduplicate s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsoncreatesaveduplicate "
-                + "SELECT s.json FROM jsoncreatesourceduplicate s";
+                        + "SELECT s.json FROM jsoncreatesourceduplicate s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -201,17 +201,17 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonupdatesave ("
-                + "json     STRING) "
-                + tableProps("json-hive/updatesave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
+                        + "json     STRING) "
+                        + tableProps("json-hive/updatesave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
         String selectTest = "SELECT s.json FROM jsonupdatesource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonupdatesave "
-                + "SELECT s.json FROM jsonupdatesource s";
+                        + "SELECT s.json FROM jsonupdatesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -233,17 +233,17 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonupdatewoupsertsave ("
-                + "json     STRING) "
-                + tableProps("json-hive/updatewoupsertsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
+                        + "json     STRING) "
+                        + tableProps("json-hive/updatewoupsertsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
         String selectTest = "SELECT s.json FROM jsonupdatewoupsertsource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonupdatewoupsertsave "
-                + "SELECT s.json FROM jsonupdatewoupsertsource s";
+                        + "SELECT s.json FROM jsonupdatewoupsertsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -263,17 +263,17 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonchild ("
-                + "json     STRING) "
-                + tableProps("json-hive/child",
-                             "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='number'",
-                             "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
+                        + "json     STRING) "
+                        + tableProps("json-hive/child",
+                                "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='number'",
+                                "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
 
         String selectTest = "SELECT s.json FROM jsonchildsource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonchild "
-                + "SELECT s.json FROM jsonchildsource s";
+                        + "SELECT s.json FROM jsonchildsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -295,15 +295,15 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonpattern ("
-                + "json     STRING) "
-                + tableProps("json-hive/pattern-{number}");
+                        + "json     STRING) "
+                        + tableProps("json-hive/pattern-{number}");
 
         String selectTest = "SELECT s.json FROM jsonsourcepattern s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonpattern "
-                + "SELECT s.json FROM jsonsourcepattern s";
+                        + "SELECT s.json FROM jsonsourcepattern s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -325,15 +325,15 @@ public class AbstractHiveSaveJsonTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE jsonpatternformat ("
-                + "json     STRING) "
-                + tableProps("json-hive/pattern-format-{@timestamp:YYYY-MM-dd}");
+                        + "json     STRING) "
+                        + tableProps("json-hive/pattern-format-{@timestamp:YYYY-MM-dd}");
 
         String selectTest = "SELECT s.json FROM jsonsourcepatternformat s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE jsonpatternformat "
-                + "SELECT s.json FROM jsonsourcepatternformat s";
+                        + "SELECT s.json FROM jsonsourcepatternformat s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -346,7 +346,7 @@ public class AbstractHiveSaveJsonTest {
     private String createTable(String tableName) {
         return String.format("CREATE TABLE %s ("
                 + "json     STRING) "
-        //                + "LINES TERMINATED BY '\n'"
+                //                + "LINES TERMINATED BY '\n'"
                 + "LOCATION '/tmp/hive/warehouse/%s/' "
                 , tableName, tableName);
     }

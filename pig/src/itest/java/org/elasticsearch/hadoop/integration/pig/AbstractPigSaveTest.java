@@ -258,8 +258,8 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testNestedTuple() throws Exception {
-        RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
-        RestUtils.putData("pig/nestedtuple", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.postData("pig/nestedtuple", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.postData("pig/nestedtuple", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
         RestUtils.waitForYellow("pig");
     }
 

@@ -27,10 +27,12 @@ import org.junit.Test;
 
 import backtype.storm.topology.TopologyBuilder;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 
 public class AbstractSpoutSimpleRead extends AbstractStormSpoutTests {
 
@@ -43,8 +45,8 @@ public class AbstractSpoutSimpleRead extends AbstractStormSpoutTests {
         String target = index + "/basic-read";
 
         RestUtils.touch(index);
-        RestUtils.putData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.putData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
+        RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh(index);
 
         TopologyBuilder builder = new TopologyBuilder();
