@@ -128,7 +128,8 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
     @Override
     public Fields retrieveSourceFields(final FlowProcess<JobConf> flowProcess, final Tap tap) {
-        if (getSourceFields() == Fields.UNKNOWN) {
+        Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
+        if (getSourceFields() == Fields.UNKNOWN && settings.getFieldDetection()) {
             log.info("resource: " + index);
             String[] parts = index.split("/");
             if (parts.length == 2) {
@@ -138,7 +139,6 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
 
                 String mappingsUrl = "/" + myIndex + "/_mapping/" + docType;
                 log.info("mapping URL: " + mappingsUrl);
-                Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
                 RestClient client = new RestClient(settings);
                 try {
                     String responseBody = IOUtils.toString(client.getRaw(mappingsUrl));
