@@ -44,7 +44,7 @@ public class HdfsImmutableBlobContainer extends AbstractHdfsBlobContainer implem
 
                 try {
                     file = new Path(path, blobName);
-                    fileStream = blobStore.fileSystem().create(file, true);
+                    fileStream = blobStore.fileSystemFactory().getFileSystem().create(file, true);
                 } catch (Throwable th) {
                     listener.onFailure(th);
                     return;
@@ -64,8 +64,8 @@ public class HdfsImmutableBlobContainer extends AbstractHdfsBlobContainer implem
                 } catch (Throwable th) {
                     // just on the safe size, try and delete it on failure
                     try {
-                        if (blobStore.fileSystem().exists(file)) {
-                            blobStore.fileSystem().delete(file, true);
+                        if (blobStore.fileSystemFactory().getFileSystem().exists(file)) {
+                            blobStore.fileSystemFactory().getFileSystem().delete(file, true);
                         }
                     } catch (Throwable t) {
                         // ignore

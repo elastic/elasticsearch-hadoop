@@ -45,7 +45,7 @@ public class AbstractHdfsBlobContainer extends AbstractBlobContainer {
     @Override
     public boolean blobExists(String blobName) {
         try {
-            return blobStore.fileSystem().exists(new Path(path, blobName));
+            return blobStore.fileSystemFactory().getFileSystem().exists(new Path(path, blobName));
         } catch (Exception e) {
             return false;
         }
@@ -53,7 +53,7 @@ public class AbstractHdfsBlobContainer extends AbstractBlobContainer {
 
     @Override
     public boolean deleteBlob(String blobName) throws IOException {
-        return blobStore.fileSystem().delete(new Path(path, blobName), true);
+        return blobStore.fileSystemFactory().getFileSystem().delete(new Path(path, blobName), true);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class AbstractHdfsBlobContainer extends AbstractBlobContainer {
 
                 FSDataInputStream fileStream;
                 try {
-                    fileStream = blobStore.fileSystem().open(new Path(path, blobName));
+                    fileStream = blobStore.fileSystemFactory().getFileSystem().open(new Path(path, blobName));
                 } catch (Throwable th) {
                     listener.onFailure(th);
                     return;
@@ -90,7 +90,7 @@ public class AbstractHdfsBlobContainer extends AbstractBlobContainer {
 
     @Override
     public ImmutableMap<String, BlobMetaData> listBlobsByPrefix(final @Nullable String blobNamePrefix) throws IOException {
-        FileStatus[] files = blobStore.fileSystem().listStatus(path, new PathFilter() {
+        FileStatus[] files = blobStore.fileSystemFactory().getFileSystem().listStatus(path, new PathFilter() {
             @Override
             public boolean accept(Path path) {
                 return path.getName().startsWith(blobNamePrefix);
@@ -107,7 +107,7 @@ public class AbstractHdfsBlobContainer extends AbstractBlobContainer {
     }
 
     public ImmutableMap<String, BlobMetaData> listBlobs() throws IOException {
-        FileStatus[] files = blobStore.fileSystem().listStatus(path);
+        FileStatus[] files = blobStore.fileSystemFactory().getFileSystem().listStatus(path);
         if (files == null || files.length == 0) {
             return ImmutableMap.of();
         }
