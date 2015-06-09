@@ -52,9 +52,7 @@ public class ClientRpc implements AutoCloseable {
             return;
         }
 
-        if (UserGroupInformation.isSecurityEnabled()) {
-            UserGroupInformation.setConfiguration(cfg);
-        }
+        UserGroupInformation.setConfiguration(cfg);
 
         client = YarnClient.createYarnClient();
         client.init(cfg);

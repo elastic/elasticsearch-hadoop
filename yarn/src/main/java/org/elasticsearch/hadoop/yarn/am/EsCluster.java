@@ -35,6 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
 import org.apache.hadoop.yarn.api.records.Container;
@@ -85,6 +86,8 @@ class EsCluster implements AutoCloseable {
     public void start() {
         running = true;
         nmRpc.start();
+
+        UserGroupInformation.setConfiguration(cfg);
 
         log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
 
