@@ -282,7 +282,7 @@ saveToEs(javaRDD, "my-collection/{media-type}");  <1>
 In other words, for ++RDD++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
-Thus an +RDD+ keys can be a +Map+ containing the +Metadata+ for each document and its associated values. If +RDD+ key is not of type +Map+, {esh} will consider the object as representing the document id and use it accordingly.
+Thus an +RDD+ keys can be a +Map+ containing the +Metadata+ for each document and its associated values. If +RDD+ key is not of type +Map+, {eh} will consider the object as representing the document id and use it accordingly.
 This sounds more complicated than it is, so let us see some examples.
 
 .Scala
@@ -305,7 +305,7 @@ pairRDD.saveToEsWithMeta<3>(airportsRDD, "airports/2015")
 
 <1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
 <2> The key of each tuple within the +Seq+ represents the _id_ of its associated value/document; in other words, document +otp+ has id +1+, +muc+ +2+ and +sfo+ +3+
-<3> Since +airportsRDD+ is a pair +RDD+, it has the +saveToEsWithMeta+ method available. This tells {esh} to pay special attention to the +RDD+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {esh} would consider the +RDD+ tuple, that is both the key and the value as part of the document.
+<3> Since +airportsRDD+ is a pair +RDD+, it has the +saveToEsWithMeta+ method available. This tells {eh} to pay special attention to the +RDD+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {eh} would consider the +RDD+ tuple, that is both the key and the value as part of the document.
 
 When more than just the id needs to be specified, one should use a +scala.collection.Map+ with keys of type +org.elasticsearch.spark.rdd.Metadata+:
 

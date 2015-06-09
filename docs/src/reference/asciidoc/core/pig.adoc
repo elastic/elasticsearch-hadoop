@@ -148,7 +148,7 @@ pig.noSplitCombination=true
 ----
 
 
-Unfortunately {esh} cannot set these properties automatically so the user has to do that manually per script or making them global through the Pig configuration as described above.
+Unfortunately {eh} cannot set these properties automatically so the user has to do that manually per script or making them global through the Pig configuration as described above.
 
 
 [[pig-alias]]
