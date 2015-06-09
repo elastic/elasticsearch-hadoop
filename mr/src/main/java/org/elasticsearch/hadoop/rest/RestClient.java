@@ -118,6 +118,10 @@ public class RestClient implements Closeable, StatsAware {
         return parseContent(execute(GET, q), string);
     }
 
+    public InputStream getRaw(String q) {
+        return execute(GET, q);
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T parseContent(InputStream content, String string) {
         Map<String, Object> map = Collections.emptyMap();
