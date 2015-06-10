@@ -34,6 +34,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
@@ -350,7 +351,22 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public boolean touch(String indexOrType) {
-        return (execute(PUT, indexOrType, false).hasSucceeded());
+        Response response = execute(PUT, indexOrType, false);
+
+        if (response.hasFailed()) {
+            String msg = null;
+            // try to parse the answer
+            try {
+                msg = parseContent(response.body(), "error");
+            } catch (Exception ex) {
+                // can't parse message, move on
+            }
+
+            if (StringUtils.hasText(msg) && !msg.contains("IndexAlreadyExistsException")) {
+                throw new EsHadoopIllegalStateException(msg);
+            }
+        }
+        return response.hasSucceeded();
     }
 
     public void putMapping(String index, String mapping, byte[] bytes) {
