@@ -351,11 +351,20 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = wrapIndex("spark-template-index/alias")
 
     val template = """
-      |{"template" : """".stripMargin + wrapIndex("spark-template-*") + """",
+      |{"template" : """".stripMargin + "*" + """",
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
         |},
+        |"mappings" : {
+        |  "alias" : {
+        |    "properties" : {
+        |      "name" : { "type" : "string" },
+        |      "number" : { "type" : "long" },
+        |      "@ImportDate" : { "type" : "date" }
+        |     }
+        |   }
+        | },
         |"aliases" : { "spark-temp-index" : {} }
       |}""".stripMargin
     RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
@@ -364,6 +373,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     EsSpark.saveJsonToEs(rdd, target)
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)
+    println(RestUtils.getMapping(target))
   }
 
   //@Test

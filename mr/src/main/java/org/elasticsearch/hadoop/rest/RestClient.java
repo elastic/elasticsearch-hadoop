@@ -366,7 +366,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public boolean touch(String indexOrType) {
-        return (execute(PUT, indexOrType, false).hasSucceeded());
+        return (execute(PUT, indexOrType, true).hasSucceeded());
     }
 
     public boolean isAlias(String query) {
