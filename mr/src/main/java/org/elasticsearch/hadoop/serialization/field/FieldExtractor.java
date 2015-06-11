@@ -32,7 +32,7 @@ public interface FieldExtractor {
     * Returns the associated JSON representation for the given target.
     * If the target cannot be handled, {@value #NOT_FOUND} should be returned.
     *
-    * Take into account JSON formatting - either the value is raw and escaped down the stream or already returned in the approapriate format.
+    * Take into account JSON formatting - either the value is raw and escaped down the stream or already returned in the appropriate format.
     * If it is returned as a String, apply escaping otherwise make sure the processor is aware of it.
     *
     * @param target

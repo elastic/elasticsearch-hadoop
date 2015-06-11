@@ -13,7 +13,7 @@ private[spark] object ReflectionUtils {
   val caseClassCache = new HashMap[Class[_], (Boolean, Iterable[String])]
   val javaBeanCache = new HashMap[Class[_], Array[(String, Method)]]
 
-  //SI-6240 
+  //SI-6240
   protected[spark] object ReflectionLock
 
   private def checkCaseClass(clazz: Class[_]): Boolean = {
@@ -58,7 +58,7 @@ private[spark] object ReflectionUtils {
     val tuples = for (y <- props) yield (y, product.next)
     tuples.toMap
   }
- 
+
   private def checkCaseClassCache(p: Product) = {
     caseClassCache.getOrElseUpdate(p.getClass, {
       var isCaseClazz = checkCaseClass(p.getClass)
@@ -72,12 +72,12 @@ private[spark] object ReflectionUtils {
                   "and/or consider moving the case class from its companion object/module", p.getClass))
         }
         info = if (isCaseClazz) caseClassInfoInsideACompanionModule(p.getClass(), p.productArity) else null
-      } 
-      
+      }
+
       (isCaseClazz, info)
     })
-  } 
-    
+  }
+
   def isCaseClass(p: Product) = {
     checkCaseClassCache(p)._1
   }
@@ -86,27 +86,27 @@ private[spark] object ReflectionUtils {
     doGetCaseClassValues(p.asInstanceOf[AnyRef], checkCaseClassCache(p)._2)
   }
 
-  private def checkJavaBeansCache(o: AnyRef) = {
+  private def checkJavaBeansCache(o: Any) = {
     javaBeanCache.getOrElseUpdate(o.getClass, {
-      javaBeansInfo(o.getClass)      
+      javaBeansInfo(o.getClass)
     })
   }
-  
-  def isJavaBean(value: AnyRef) = {
+
+  def isJavaBean(value: Any) = {
     !checkJavaBeansCache(value).isEmpty
   }
 
-  def javaBeanAsMap(value: AnyRef) = {
+  def javaBeanAsMap(value: Any) = {
     javaBeansValues(value, checkJavaBeansCache(value))
   }
-  
+
   private def javaBeansInfo(clazz: Class[_]) = {
     Introspector.getBeanInfo(clazz).getPropertyDescriptors().collect {
       case pd if (pd.getName != "class" && pd.getReadMethod() != null) => (pd.getName, pd.getReadMethod)
     }.sortBy(_._1)
   }
 
-  private def javaBeansValues(target: AnyRef, info: Array[(String, Method)]) = {
+  private def javaBeansValues(target: Any, info: Array[(String, Method)]) = {
     info.map(in => (in._1, in._2.invoke(target))).toMap
   }
 }

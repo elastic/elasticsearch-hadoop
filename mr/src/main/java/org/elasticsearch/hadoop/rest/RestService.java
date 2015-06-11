@@ -321,6 +321,7 @@ public abstract class RestService implements Serializable {
         // take into account client node routing
         QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).restrictToNode(partition.onlyNode && !settings.getNodesClientOnly());
         queryBuilder.fields(settings.getScrollFields());
+        queryBuilder.filter(SettingsUtils.getFilters(settings));
 
         return new PartitionReader(scrollReader, client, queryBuilder);
     }

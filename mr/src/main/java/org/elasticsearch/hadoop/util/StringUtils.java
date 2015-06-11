@@ -323,6 +323,14 @@ public abstract class StringUtils {
         }
     }
 
+    public static String decodePath(String path) {
+        try {
+            return URIUtil.decode(path, "UTF-8");
+        } catch (URIException ex) {
+            throw new EsHadoopIllegalArgumentException("Cannot encode path" + path, ex);
+        }
+    }
+
     public static String encodeQuery(String query) {
         try {
             return URLEncoder.encode(query, "UTF-8");

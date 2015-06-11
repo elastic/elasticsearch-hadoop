@@ -288,35 +288,163 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   }
 
   @Test
-  def testEsSchemaFromDocsWithDifferentProperties() {
+  def testDataSource0Setup() {
     val target = wrapIndex("spark-test/scala-sql-varcols")
     val table = wrapIndex("sqlvarcol")
+
+    val trip1 = Map("reason" -> "business", "airport" -> "SFO", "tag" -> "jan")
+    val trip2 = Map("participants" -> 5, "airport" -> "OTP", "tag" -> "feb")
+    val trip3 = Map("participants" -> 3, "airport" -> "MUC OTP SFO JFK", "tag" -> "long")
+
+    sc.makeRDD(Seq(trip1, trip2, trip3)).saveToEs(target)
+  }
+
+  private def esDataSource(table: String) = {
+    val target = wrapIndex("spark-test/scala-sql-varcols")
 
     var options = "resource \"" + target + "\""
     if (readMetadata) {
       options = options + " ,read_metadata \"true\""
     }
 
-    val trip1 = Map("reason" -> "business", "airport" -> "SFO")
-    val trip2 = Map("participants" -> 5, "airport" -> "OTP")
-
-    sc.makeRDD(Seq(trip1, trip2)).saveToEs(target)
-
-    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+    sqc.sql("CREATE TEMPORARY TABLE " + table +
       " USING org.elasticsearch.spark.sql " +
       " OPTIONS (" + options + ")")
 
+    val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
+    sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+  }
+
+  @Test
+  def testDataSourcePushDown01EqualTo() {
+    val df = esDataSource("pd_equalto")
+    val filter = df.filter(df("airport").equalTo("OTP"))
+    assertEquals(1, filter.count())
+    assertEquals("feb", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown02GT() {
+    val df = esDataSource("pd_gt")
+    val filter = df.filter(df("participants").gt(3))
+    assertEquals(1, filter.count())
+    assertEquals("feb", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown03GTE() {
+    val df = esDataSource("pd_gte")
+    val filter = df.filter(df("participants").geq(3))
+    assertEquals(2, filter.count())
+    assertEquals("long", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown04LT() {
+    val df = esDataSource("pd_lt")
+    val filter = df.filter(df("participants").lt(5))
+    assertEquals(1, filter.count())
+    assertEquals("long", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown05LTE() {
+    val df = esDataSource("pd_lte")
+    val filter = df.filter(df("participants").leq(5))
+    assertEquals(2, filter.count())
+    assertEquals("long", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown06IsNull() {
+    val df = esDataSource("pd_is_null")
+    val filter = df.filter(df("participants").isNull)
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown07IsNotNull() {
+    val df = esDataSource("pd_is_not_null")
+    val filter = df.filter(df("reason").isNotNull)
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown08In() {
+    val df = esDataSource("pd_in")
+    val filter = df.filter("airport IN ('OTP', 'SFO', 'MUC')")
+    filter.show()
+    assertEquals(2, filter.count())
+    assertEquals("jan", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown09StartsWith() {
+    val df = esDataSource("pd_starts_with")
+    val filter = df.filter(df("airport").startsWith("O"))
+    assertEquals(1, filter.count())
+    assertEquals("feb", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown10EndsWith() {
+    val df = esDataSource("pd_ends_with")
+    val filter = df.filter(df("airport").endsWith("O"))
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown11Contains() {
+    val df = esDataSource("pd_contains")
+    val filter = df.filter(df("reason").contains("us"))
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown12And() {
+    val df = esDataSource("pd_and")
+    val filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown13Not() {
+    val df = esDataSource("pd_not")
+    val filter = df.filter(!df("reason").isNull)
+    assertEquals(1, filter.count())
+    assertEquals("jan", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown14OR() {
+    val df = esDataSource("pd_or")
+    val filter = df.filter(df("reason").contains("us").or(df("airport").equalTo("OTP")))
+    assertEquals(2, filter.count())
+    assertEquals("feb", filter.select("tag").sort("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testEsSchemaFromDocsWithDifferentProperties() {
+    val table = wrapIndex("sqlvarcol")
+    esDataSource(table)
+
     val allResults = sqc.sql("SELECT * FROM " + table)
-    assertEquals(2, allResults.count())
+    assertEquals(3, allResults.count())
     allResults.printSchema()
 
     val filter = sqc.sql("SELECT * FROM " + table + " WHERE airport = 'OTP'")
     assertEquals(1, filter.count())
 
     val nullColumns = sqc.sql("SELECT reason, airport FROM " + table + " ORDER BY airport")
-    val rows = nullColumns.take(2)
-    assertEquals("[null,OTP]", rows(0).toString())
-    assertEquals("[business,SFO]", rows(1).toString())
+    val rows = nullColumns.take(3)
+    assertEquals("[null,MUC OTP SFO JFK]", rows(0).toString())
+    assertEquals("[null,OTP]", rows(1).toString())
+    assertEquals("[business,SFO]", rows(2).toString())
   }
 
   @Test

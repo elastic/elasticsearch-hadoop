@@ -108,6 +108,21 @@ public abstract class SettingsUtils {
         return aliasMap;
     }
 
+    public static void setFilters(Settings settings, String... filters) {
+        // clear any filters inside the settings
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, "");
+
+        if (ObjectUtils.isEmpty(filters)) {
+            return;
+        }
+
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, IOUtils.serializeToBase64(filters));
+    }
+
+    public static String[] getFilters(Settings settings) {
+        return IOUtils.deserializeFromBase64(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS));
+    }
+
     /**
      * Whether the settings indicate a ES 1.0RC1 (which introduces breaking changes) or lower (1.0.0.Beta2)
      *

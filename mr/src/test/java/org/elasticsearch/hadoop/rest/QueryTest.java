@@ -38,6 +38,6 @@ public class QueryTest {
     public void testSimpleQuery() {
         cfg.setResourceRead("foo/bar");
         cfg.setQuery("?q=name:bucket");
-        assertTrue(QueryBuilder.query(cfg).toString().contains("foo/bar/_search?q=name:bucket&"));
+        assertTrue(QueryBuilder.query(cfg).toString().contains("foo/bar"));
     }
 }
