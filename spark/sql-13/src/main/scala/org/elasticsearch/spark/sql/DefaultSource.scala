@@ -21,9 +21,6 @@ import org.apache.spark.sql.sources.Or
 import org.apache.spark.sql.sources.PrunedFilteredScan
 import org.apache.spark.sql.sources.PrunedScan
 import org.apache.spark.sql.sources.RelationProvider
-import org.apache.spark.sql.sources.StringContains
-import org.apache.spark.sql.sources.StringEndsWith
-import org.apache.spark.sql.sources.StringStartsWith
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
@@ -112,19 +109,34 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@
       case And(left, right)                     => s"""{"and":{"filters":[${translateFilter(left)}, ${translateFilter(right)}]}}"""
       case Or(left, right)                      => s"""{"or":{"filters":[${translateFilter(left)}, ${translateFilter(right)}]}}"""
       case Not(filterToNeg)                     => s"""{"not":{"filter":${translateFilter(filterToNeg)}}}"""
-      // quite slow (linear to the number of terms in the index) but there's no easy way around them
 
+      // the filter below are available only from Spark 1.3.1 (not 1.3.0)
+
+      //
+      // String Filter notes:
+      //
+      // the DSL will be quite slow (linear to the number of terms in the index) but there's no easy way around them
       // we could use regexp filter however it's a bit overkill and there are plenty of chars to escape
       // s"""{"regexp":{"$attribute":"$value.*"}}"""
       // as an alternative we could use a query string but still, the analyzed / non-analyzed is there as the DSL is slightly more complicated
       // s"""{"query":{"query_string":{"default_field":"$attribute","query":"$value*"}}}"""
-
       // instead wildcard query is used, with the value lowercased (to match analyzed fields)
-      case StringStartsWith(attribute, value)   => s"""{"query":{"wildcard":{"$attribute":"${value.toLowerCase()}*"}}}"""
-      case StringEndsWith(attribute, value)     => s"""{"query":{"wildcard":{"$attribute":"*${value.toLowerCase()}"}}}"""
-      case StringContains(attribute, value)     => s"""{"query":{"wildcard":{"$attribute":"*${value.toLowerCase()}*"}}}"""
-      case _                                    => ""
+
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith")
+                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"${f.productElement(1).toString().toLowerCase()}*"}}}"""
+
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")
+                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"*${f.productElement(1).toString().toLowerCase()}"}}}"""
+
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")
+                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"*${f.productElement(1).toString().toLowerCase()}*"}}}"""
+
+       case _                                   => ""
     }
+  }
+
+  private def isClass(filter: Filter, className: String) = {
+    className.equals(filter.getClass().getName())
   }
 
   private def extract(value: Any):String = {
