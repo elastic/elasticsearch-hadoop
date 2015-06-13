@@ -2,16 +2,21 @@ package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
-
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SaveMode
+import org.apache.spark.sql.SaveMode._
 import org.apache.spark.sql.sources.And
 import org.apache.spark.sql.sources.BaseRelation
+import org.apache.spark.sql.sources.CreatableRelationProvider
 import org.apache.spark.sql.sources.EqualTo
 import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.sources.GreaterThan
 import org.apache.spark.sql.sources.GreaterThanOrEqual
 import org.apache.spark.sql.sources.In
+import org.apache.spark.sql.sources.InsertableRelation
 import org.apache.spark.sql.sources.IsNotNull
 import org.apache.spark.sql.sources.IsNull
 import org.apache.spark.sql.sources.LessThan
@@ -21,6 +26,8 @@ import org.apache.spark.sql.sources.Or
 import org.apache.spark.sql.sources.PrunedFilteredScan
 import org.apache.spark.sql.sources.PrunedScan
 import org.apache.spark.sql.sources.RelationProvider
+import org.apache.spark.sql.sources.SchemaRelationProvider
+import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
@@ -30,23 +37,53 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 
-private[sql] class DefaultSource extends RelationProvider {
-  override def createRelation(
-    @transient sqlContext: SQLContext,
-    parameters: Map[String, String]): BaseRelation = {
 
+
+private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
+
+  override def createRelation(@transient sqlContext: SQLContext, parameters: Map[String, String]): BaseRelation = {
+    ElasticsearchRelation(params(parameters), sqlContext)
+  }
+
+  override def createRelation(@transient sqlContext: SQLContext, parameters: Map[String, String], schema: StructType): BaseRelation = {
+    ElasticsearchRelation(params(parameters), sqlContext, schema)
+  }
+
+  override def createRelation(@transient sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
+    val relation = ElasticsearchRelation(params(parameters), sqlContext, data.schema)
+    mode match {
+      // index
+      case Append         => relation.insert(data, false)
+      // update
+      case Overwrite      => relation.insert(data, true)
+      case ErrorIfExists  => {
+        if (relation.buildScan().isEmpty()) {
+          relation.insert(data, false)
+        } else {
+          val index = parameters.get(ConfigurationOptions.ES_RESOURCE)
+          throw new UnsupportedOperationException(s"Index ${index} already exists")
+        }
+      }
+      
+      // create OPERATION?
+      case Ignore         => if (relation.buildScan().isEmpty()) { relation.insert(data, false) }
+    }
+    relation
+  }
+
+  private def params(parameters: Map[String, String]) = {
     // . seems to be problematic when specifying the options
     val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
       else if (k == "path") ("es.resource", v)
       else ("es." + k, v) }
-    params.getOrElse("es.resource", sys.error("resource must be specified for Elasticsearch resources."))
-    ElasticsearchRelation(params)(sqlContext)
+    params.getOrElse(ConfigurationOptions.ES_RESOURCE, sys.error("resource must be specified for Elasticsearch resources."))
+    params
   }
 }
 
-private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@transient val sqlContext: SQLContext)
-  extends BaseRelation with PrunedScan with PrunedFilteredScan  //with InsertableRelation
+private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @transient val sqlContext: SQLContext, @transient var userSchema: StructType = null)
+  extends BaseRelation with PrunedFilteredScan with InsertableRelation
   {
 
   @transient lazy val cfg = {
@@ -59,15 +96,13 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@
 
   @transient lazy val valueWriter = new ScalaValueWriter
 
-  override val schema = lazySchema.struct
+  override var schema = if (userSchema != null) userSchema else lazySchema.struct
 
   // TableScan
   def buildScan() = new ScalaEsRowRDD(sqlContext.sparkContext, parameters, lazySchema)
 
   // PrunedScan
-  def buildScan(requiredColumns: Array[String]) = {
-    buildScan(requiredColumns, null)
-  }
+  def buildScan(requiredColumns: Array[String]): RDD[Row] = buildScan(requiredColumns, null)
 
   // PrunedFilteredScan
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
@@ -169,6 +204,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String])(@
   }
 
   def insert(data: DataFrame, overwrite: Boolean) {
-    throw new UnsupportedOperationException()
+    val op = if (overwrite) ConfigurationOptions.ES_OPERATION_INDEX else ConfigurationOptions.ES_OPERATION_CREATE
+    val param = LinkedHashMap[String, String]() ++ parameters
+    param += (ConfigurationOptions.ES_WRITE_OPERATION -> op)
+
+    EsSparkSQL.saveToEs(data, param)
   }
 }

@@ -232,8 +232,8 @@ public class RestClient implements Closeable, StatsAware {
         execute(POST, resource.refresh());
     }
 
-    public void deleteIndex(String index) {
-        execute(DELETE, index);
+    public void deleteIndex(Resource resource) {
+        execute(DELETE, resource.index());
     }
 
     public List<List<Map<String, Object>>> targetShards(String index) {

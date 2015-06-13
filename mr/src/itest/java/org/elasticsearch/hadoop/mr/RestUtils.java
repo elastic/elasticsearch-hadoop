@@ -28,12 +28,11 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
+import static org.elasticsearch.hadoop.rest.Request.Method.*;
 
 public class RestUtils {
 
@@ -92,7 +91,6 @@ public class RestUtils {
 
     public static void postData(String index, String location) throws Exception {
         byte[] fromInputStream = TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location));
-        System.out.println(StringUtils.asUTFString(fromInputStream));
         postData(index, fromInputStream);
     }
 
