@@ -39,7 +39,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         // initialize Pig in local mode
         RestClient client = new RestClient(new TestSettings());
         try {
-            client.deleteIndex("json-pig");
+            client.delete("json-pig");
         } catch (Exception ex) {
             // ignore
         }

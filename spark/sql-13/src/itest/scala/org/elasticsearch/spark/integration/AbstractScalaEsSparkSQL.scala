@@ -91,19 +91,25 @@ object AbstractScalaEsScalaSparkSQL {
   @Parameters
   def testParams(): ju.Collection[Array[jl.Object]] = {
     val list = new ju.ArrayList[Array[jl.Object]]()
-    list.add(Array("default_", jl.Boolean.FALSE))
-    list.add(Array("with_meta_", jl.Boolean.TRUE))
+    list.add(Array("default_", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE))
+    list.add(Array("default_strict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE))
+    list.add(Array("default_no_push", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE))
+    list.add(Array("with_meta_", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE))
+    list.add(Array("with_meta_strict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE))
+    list.add(Array("with_meta_no_push", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE))
     list
   }
 }
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(classOf[Parameterized])
-class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) extends Serializable {
+class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pushDown: jl.Boolean, strictPushDown: jl.Boolean) extends Serializable {
 
   val sc = AbstractScalaEsScalaSparkSQL.sc
   val sqc = AbstractScalaEsScalaSparkSQL.sqc
-  val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
+  val cfg = Map(ES_READ_METADATA -> readMetadata.toString(),
+                "es.internal.spark.sql.pushdown" -> pushDown.toString(),
+                "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString() )
 
   val datInput = TestUtils.sampleArtistsDat()
 
@@ -119,7 +125,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     kryo.writeClassAndObject(output, row)
     val serialized = kryo.readClassAndObject(input).asInstanceOf[ScalaEsRow]
     println(serialized.rowOrder)
-
   }
 
   @Test
@@ -174,7 +179,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
 
     val tempTable = wrapIndex("basicRead")
     dataFrame.registerTempTable(tempTable)
-    val nameRDD = sqc.sql("SELECT name FROM " + tempTable + " WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
     nameRDD.take(7).foreach(println)
     assertEquals(10, nameRDD.count)
   }
@@ -235,15 +240,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testEsDataFrame50ReadAsDataSource() {
     val target = wrapIndex("sparksql-test/scala-basic-write")
-    var options = "resource \"" + target + "\""
+    var options = s"""resource "$target" """
     if (readMetadata) {
-      options = options + " ,read_metadata \"true\""
+      options = options + """,read_metadata "true" """
     }
     val table = wrapIndex("sqlbasicread1")
 
-    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table "+
       " USING org.elasticsearch.spark.sql " +
-      " OPTIONS (" + options + ")")
+      s" OPTIONS ($options)")
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
     val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
@@ -254,11 +259,11 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     println("results data frame")
     results.printSchema()
 
-    val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
+    val allRDD = sqc.sql(s"SELECT * FROM $table WHERE id >= 1 AND id <=10")
     println("select all rdd")
     allRDD.printSchema()
 
-    val nameRDD = sqc.sql("SELECT name FROM " + table + " WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM $table WHERE id >= 1 AND id <=10")
     println("select name rdd")
     nameRDD.printSchema()
 
@@ -273,12 +278,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     val target = wrapIndex("sparksql-test/scala-basic-write")
     val table = wrapIndex("sqlbasicread2")
 
-    val options = "resource \"" + target + "\", read_metadata \"true\""
-    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE " + table +
+    val options = s"""resource "$target", read_metadata "true" """
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
       " USING org.elasticsearch.spark.sql " +
-      " OPTIONS (" + options + ")")
+      s" OPTIONS ($options)")
 
-    val allRDD = sqc.sql("SELECT * FROM " + table + " WHERE id >= 1 AND id <=10")
+    val allRDD = sqc.sql(s"SELECT * FROM $table WHERE id >= 1 AND id <=10")
     allRDD.printSchema()
     allRDD.take(7).foreach(println)
 
@@ -302,14 +307,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   private def esDataSource(table: String) = {
     val target = wrapIndex("spark-test/scala-sql-varcols")
 
-    var options = "resource \"" + target + "\""
+    var options = s"""resource "$target" """
     if (readMetadata) {
-      options = options + " ,read_metadata \"true\""
+      options = options + """ ,read_metadata "true" """
     }
 
-    sqc.sql("CREATE TEMPORARY TABLE " + table +
+    sqc.sql(s"CREATE TEMPORARY TABLE $table" +
       " USING org.elasticsearch.spark.sql " +
-      " OPTIONS (" + options + ")")
+      s" OPTIONS ($options)")
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
     sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
@@ -319,6 +324,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   def testDataSourcePushDown01EqualTo() {
     val df = esDataSource("pd_equalto")
     val filter = df.filter(df("airport").equalTo("OTP"))
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      // however if we change the arguments to be lower cased, it will Spark who's going to filter out the data
+      return
+    }
+
     assertEquals(1, filter.count())
     assertEquals("feb", filter.select("tag").take(1)(0)(0))
   }
@@ -374,8 +385,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testDataSourcePushDown08In() {
     val df = esDataSource("pd_in")
-    val filter = df.filter("airport IN ('OTP', 'SFO', 'MUC')")
-    filter.show()
+    var filter = df.filter("airport IN ('OTP', 'SFO', 'MUC')")
+
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      // however if we change the arguments to be lower cased, it will Spark who's going to filter out the data
+      return
+    }
+
     assertEquals(2, filter.count())
     assertEquals("jan", filter.select("tag").sort("tag").take(2)(1)(0))
   }
@@ -383,7 +400,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testDataSourcePushDown09StartsWith() {
     val df = esDataSource("pd_starts_with")
-    val filter = df.filter(df("airport").startsWith("O"))
+    var filter = df.filter(df("airport").startsWith("O"))
+
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      return
+    }
+
     assertEquals(1, filter.count())
     assertEquals("feb", filter.select("tag").take(1)(0)(0))
   }
@@ -391,7 +414,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testDataSourcePushDown10EndsWith() {
     val df = esDataSource("pd_ends_with")
-    val filter = df.filter(df("airport").endsWith("O"))
+    var filter = df.filter(df("airport").endsWith("O"))
+
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      return
+    }
+
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
   }
@@ -407,7 +436,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testDataSourcePushDown12And() {
     val df = esDataSource("pd_and")
-    val filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
+    var filter = df.filter(df("reason").isNotNull.and(df("airport").endsWith("O")))
+
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      return
+    }
+
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
   }
@@ -423,7 +458,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   @Test
   def testDataSourcePushDown14OR() {
     val df = esDataSource("pd_or")
-    val filter = df.filter(df("reason").contains("us").or(df("airport").equalTo("OTP")))
+    var filter = df.filter(df("reason").contains("us").or(df("airport").equalTo("OTP")))
+
+    if (strictPushDown) {
+      // OTP fails due to strict matching/analyzed
+      assertEquals(1, filter.count())
+      return
+    }
+
     assertEquals(2, filter.count())
     assertEquals("feb", filter.select("tag").sort("tag").take(1)(0)(0))
   }
@@ -433,14 +475,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     val table = wrapIndex("sqlvarcol")
     esDataSource(table)
 
-    val allResults = sqc.sql("SELECT * FROM " + table)
+    val allResults = sqc.sql(s"SELECT * FROM $table")
     assertEquals(3, allResults.count())
     allResults.printSchema()
 
-    val filter = sqc.sql("SELECT * FROM " + table + " WHERE airport = 'OTP'")
+    val filter = sqc.sql(s"SELECT * FROM $table WHERE airport = 'OTP'")
     assertEquals(1, filter.count())
 
-    val nullColumns = sqc.sql("SELECT reason, airport FROM " + table + " ORDER BY airport")
+    val nullColumns = sqc.sql(s"SELECT reason, airport FROM $table ORDER BY airport")
     val rows = nullColumns.take(3)
     assertEquals("[null,MUC OTP SFO JFK]", rows(0).toString())
     assertEquals("[null,OTP]", rows(1).toString())
@@ -506,35 +548,96 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     table1.registerTempTable(table1Name)
     table1.registerTempTable(table2Name)
 
-    val join = sqc.sql("SELECT t1.name, t2.pictures FROM "
-      + table1Name + " t1, " + table2Name + " t2 "
-      + " WHERE t1.id = t2.id")
+    val join = sqc.sql(s"SELECT t1.name, t2.pictures FROM $table1Name t1, $table2Name t2 WHERE t1.id = t2.id")
 
     println(join.schema.treeString)
     println(join.take(1)(0).schema)
     println(join.take(1)(0)(0))
   }
 
-  //@Test
-  // insert not supported
-  def testEsDataFrame51WriteAsDataSource() {
-    val target = "sparksql-test/scala-basic-write"
+  @Test
+  def testEsDataFrame51WriteToExistingDataSource() {
+    val index = wrapIndex("sparksql-test/scala-basic-write")
+    val table = wrapIndex("table_insert")
 
-    var options = "resource '" + target + "'"
+    var options = s"resource '$index '"
     if (readMetadata) {
       options = options + " ,read_metadata true"
     }
 
-    val dataFrame = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " +
-      "USING org.elasticsearch.spark.sql " +
-      "OPTIONS (" + options + ")");
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
+      s"USING org.elasticsearch.spark.sql " +
+      s"OPTIONS ($options)");
 
-    val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
-
-    insertRDD.printSchema()
-    assertTrue(insertRDD.count == 1)
-    insertRDD.take(7).foreach(println)
+    val insertRDD = sqc.sql(s"INSERT INTO TABLE $table SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    val df = sqc.table(table)
+    println(df.count)
+    assertTrue(df.count > 100)
   }
+
+  @Test
+  def testEsDataFrame52OverwriteExistingDataSource() {
+    // to keep the select static
+    assumeFalse(readMetadata)
+
+    val srcFrame = artistsAsDataFrame
+
+    val index = wrapIndex("sparksql-test/scala-sql-overwrite")
+    srcFrame.saveToEs(index, cfg)
+
+    val table = wrapIndex("table_overwrite")
+
+    var options = s"resource '$index'"
+
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
+      s"USING org.elasticsearch.spark.sql " +
+      s"OPTIONS ($options)");
+
+    var df = sqc.table(table)
+    assertTrue(df.count > 1)
+    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE $table SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    df = sqc.table(table)
+    assertTrue(df.count == 1)
+  }
+
+  @Test
+  def testEsDataFrame53OverwriteExistingDataSourceFromAnotherDataSource() {
+    // to keep the select static
+    assumeFalse(readMetadata)
+
+    val source = wrapIndex("sparksql-test/scala-basic-write")
+    val index = wrapIndex("sparksql-test/scala-sql-overwrite-from-df")
+
+    val dstFrame = artistsAsDataFrame
+    dstFrame.saveToEs(index, cfg)
+
+    val srcTable = wrapIndex("table_overwrite_src")
+    val dstTable = wrapIndex("table_overwrite_dst")
+
+    var dstOptions = s"resource '$source'"
+    if (readMetadata) {
+      dstOptions = dstOptions + " ,read_metadata 'true'"
+    }
+
+    var srcOptions = s"resource '$index'"
+    if (readMetadata) {
+      srcOptions = srcOptions + " ,read_metadata 'true'"
+    }
+
+     val srcFrame = sqc.sql(s"CREATE TEMPORARY TABLE $srcTable " +
+      s"USING org.elasticsearch.spark.sql " +
+      s"OPTIONS ($srcOptions)");
+
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $dstTable " +
+      s"USING org.elasticsearch.spark.sql " +
+      s"OPTIONS ($dstOptions)");
+
+    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE $dstTable SELECT * FROM $srcTable")
+    val df = sqc.table(dstTable)
+    println(df.count)
+    assertTrue(df.count > 100)
+  }
+
 
   def wrapIndex(index: String) = {
     prefix + index

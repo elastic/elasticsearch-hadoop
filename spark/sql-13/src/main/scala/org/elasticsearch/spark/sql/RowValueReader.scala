@@ -10,7 +10,7 @@ private[sql] trait RowValueReader extends SettingsAware {
   protected var readMetadata = false
   var metadataField = ""
   protected var rowMap: scala.collection.Map[String, Seq[String]] = Map.empty
-  protected var currentField = MappingUtils.ROOT_LEVEL_NAME
+  protected var currentField = Utils.ROOT_LEVEL_NAME
 
   abstract override def setSettings(settings: Settings) = {
     super.setSettings(settings)

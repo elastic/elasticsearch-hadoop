@@ -28,15 +28,19 @@ import org.apache.spark.sql.sources.PrunedScan
 import org.apache.spark.sql.sources.RelationProvider
 import org.apache.spark.sql.sources.SchemaRelationProvider
 import org.apache.spark.sql.types.StructType
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
+import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.spark.cfg.SparkSettings
 
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
@@ -46,27 +50,19 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
   }
 
   override def createRelation(@transient sqlContext: SQLContext, parameters: Map[String, String], schema: StructType): BaseRelation = {
-    ElasticsearchRelation(params(parameters), sqlContext, schema)
+    ElasticsearchRelation(params(parameters), sqlContext, Some(schema))
   }
 
   override def createRelation(@transient sqlContext: SQLContext, mode: SaveMode, parameters: Map[String, String], data: DataFrame): BaseRelation = {
-    val relation = ElasticsearchRelation(params(parameters), sqlContext, data.schema)
+    val relation = ElasticsearchRelation(params(parameters), sqlContext, Some(data.schema))
     mode match {
-      // index
       case Append         => relation.insert(data, false)
-      // update
       case Overwrite      => relation.insert(data, true)
       case ErrorIfExists  => {
-        if (relation.buildScan().isEmpty()) {
-          relation.insert(data, false)
-        } else {
-          val index = parameters.get(ConfigurationOptions.ES_RESOURCE)
-          throw new UnsupportedOperationException(s"Index ${index} already exists")
-        }
+        if (relation.isEmpty()) relation.insert(data, false)
+        else throw new EsHadoopIllegalStateException(s"Index ${relation.cfg.getResourceWrite} already exists")
       }
-      
-      // create OPERATION?
-      case Ignore         => if (relation.buildScan().isEmpty()) { relation.insert(data, false) }
+      case Ignore         => if (relation.isEmpty()) { relation.insert(data, false) }
     }
     relation
   }
@@ -76,33 +72,32 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
     val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
       else if (k == "path") ("es.resource", v)
-      else ("es." + k, v) }
-    params.getOrElse(ConfigurationOptions.ES_RESOURCE, sys.error("resource must be specified for Elasticsearch resources."))
+      else if (k == "pushdown") (Utils.DATA_SOURCE_PUSH_DOWN, v)
+      else if (k == "strict") (Utils.DATA_SOURCE_PUSH_DOWN_STRICT, v)
+      else ("es." + k, v)
+    }
+    params.getOrElse(ConfigurationOptions.ES_RESOURCE, throw new EsHadoopIllegalArgumentException("resource must be specified for Elasticsearch resources."))
     params
   }
 }
 
-private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @transient val sqlContext: SQLContext, @transient var userSchema: StructType = null)
+private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @transient val sqlContext: SQLContext, userSchema: Option[StructType] = None)
   extends BaseRelation with PrunedFilteredScan with InsertableRelation
   {
 
-  @transient lazy val cfg = {
-    new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava)
-  }
+  @transient lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
 
-  @transient lazy val lazySchema = {
-    MappingUtils.discoverMapping(cfg)
-  }
+  @transient lazy val lazySchema = { MappingUtils.discoverMapping(cfg) }
 
-  @transient lazy val valueWriter = new ScalaValueWriter
+  @transient lazy val valueWriter = { new ScalaValueWriter }
 
-  override var schema = if (userSchema != null) userSchema else lazySchema.struct
+  override def schema = userSchema.getOrElse(lazySchema.struct)
 
   // TableScan
-  def buildScan() = new ScalaEsRowRDD(sqlContext.sparkContext, parameters, lazySchema)
+  def buildScan(): RDD[Row] = buildScan(Array.empty)
 
   // PrunedScan
-  def buildScan(requiredColumns: Array[String]): RDD[Row] = buildScan(requiredColumns, null)
+  def buildScan(requiredColumns: Array[String]): RDD[Row] = buildScan(requiredColumns, Array.empty)
 
   // PrunedFilteredScan
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
@@ -117,33 +112,41 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
     }
 
-    if (filters != null && filters.size > 0) {
-      val filterString = createDSLFromFilters(filters)
+    if (filters != null && filters.size > 0 && Utils.isPushDown(cfg)) {
+      val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg))
       paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToBase64(filterString))
     }
 
     new ScalaEsRowRDD(sqlContext.sparkContext, paramWithScan, lazySchema)
   }
 
-  private def createDSLFromFilters(filters: Array[Filter]) = {
-    filters.map(filter => translateFilter(filter)).filter(query => query.trim().length() > 0)
+  private def createDSLFromFilters(filters: Array[Filter], strictPushDown: Boolean) = {
+    filters.map(filter => translateFilter(filter, strictPushDown)).filter(query => query.trim().length() > 0)
   }
 
   // string interpolation FTW
-  private def translateFilter(filter: Filter):String = {
+  private def translateFilter(filter: Filter, strictPushDown: Boolean):String = {
+    // the pushdown can be strict - i.e. use only filters and thus match the value exactly (works with non-analyzed)
+    // or non-strict meaning queries will be used instead that is the filters will be analyzed as well
     filter match {
-      // use match (not term) as we have no control over the analyzer (not-analyzer vs analyzed)
-      case EqualTo(attribute, value)            => s"""{"query":{"match":{"$attribute":${extract(value)}}}}"""
+
+      case EqualTo(attribute, value)            => {
+        if (strictPushDown) s"""{"term":{"$attribute":${extract(value)}}}"""
+        else s"""{"query":{"match":{"$attribute":${extract(value)}}}}"""
+      }
       case GreaterThan(attribute, value)        => s"""{"range":{"$attribute":{"gt" :${extract(value)}}}}"""
       case GreaterThanOrEqual(attribute, value) => s"""{"range":{"$attribute":{"gte":${extract(value)}}}}"""
       case LessThan(attribute, value)           => s"""{"range":{"$attribute":{"lt" :${extract(value)}}}}"""
       case LessThanOrEqual(attribute, value)    => s"""{"range":{"$attribute":{"lte":${extract(value)}}}}"""
-      case In(attribute, values)                => s"""{"query":{"match":{"$attribute":${extract(values)}}}}"""
+      case In(attribute, values)                => {
+        if (strictPushDown) s"""{"terms":{"$attribute":${extractAsJsonArray(values)}}}"""
+        else s"""{"query":{"match":{"$attribute":${extract(values)}}}}"""
+      }
       case IsNull(attribute)                    => s"""{"missing":{"field":"$attribute"}}"""
       case IsNotNull(attribute)                 => s"""{"exists":{"field":"$attribute"}}"""
-      case And(left, right)                     => s"""{"and":{"filters":[${translateFilter(left)}, ${translateFilter(right)}]}}"""
-      case Or(left, right)                      => s"""{"or":{"filters":[${translateFilter(left)}, ${translateFilter(right)}]}}"""
-      case Not(filterToNeg)                     => s"""{"not":{"filter":${translateFilter(filterToNeg)}}}"""
+      case And(left, right)                     => s"""{"and":{"filters":[${translateFilter(left, strictPushDown)}, ${translateFilter(right, strictPushDown)}]}}"""
+      case Or(left, right)                      => s"""{"or":{"filters":[${translateFilter(left, strictPushDown)}, ${translateFilter(right, strictPushDown)}]}}"""
+      case Not(filterToNeg)                     => s"""{"not":{"filter":${translateFilter(filterToNeg, strictPushDown)}}}"""
 
       // the filter below are available only from Spark 1.3.1 (not 1.3.0)
 
@@ -157,16 +160,25 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // s"""{"query":{"query_string":{"default_field":"$attribute","query":"$value*"}}}"""
       // instead wildcard query is used, with the value lowercased (to match analyzed fields)
 
-      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith")
-                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"${f.productElement(1).toString().toLowerCase()}*"}}}"""
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => {
+        var arg = f.productElement(1).toString()
+        if (!strictPushDown) { arg = arg.toLowerCase() }
+        s"""{"query":{"wildcard":{"${f.productElement(0)}":"$arg*"}}}"""
+      }
 
-      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")
-                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"*${f.productElement(1).toString().toLowerCase()}"}}}"""
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => {
+        var arg = f.productElement(1).toString()
+        if (!strictPushDown) { arg =arg.toLowerCase() }
+        s"""{"query":{"wildcard":{"${f.productElement(0)}":"*$arg"}}}"""
+      }
 
-      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")
-                                                => s"""{"query":{"wildcard":{"${f.productElement(0)}":"*${f.productElement(1).toString().toLowerCase()}*"}}}"""
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => {
+        var arg = f.productElement(1).toString()
+        if (!strictPushDown) { arg = arg.toLowerCase() }
+        s"""{"query":{"wildcard":{"${f.productElement(0)}":"*$arg*"}}}"""
+      }
 
-       case _                                   => ""
+      case _                                                                        => ""
     }
   }
 
@@ -175,24 +187,30 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   }
 
   private def extract(value: Any):String = {
-    extract(value, true)
+    extract(value, true, false)
   }
 
-  private def extract(value: Any, inJsonFormat: Boolean):String = {
+  private def extractAsJsonArray(value: Any):String = {
+    extract(value, true, true)
+  }
+
+  private def extract(value: Any, inJsonFormat: Boolean, asJsonArray: Boolean):String = {
     // common-case implies primitives and String so try these before using the full-blown ValueWriter
     value match {
-      case u: Unit       =>  "null"
-      case b: Boolean    =>  b.toString
-      case c: Char       =>  if (inJsonFormat) StringUtils.toJsonString(c) else c.toString()
-      case by: Byte      =>  by.toString
-      case s: Short      =>  s.toString
-      case i: Int        =>  i.toString
-      case l: Long       =>  l.toString
-      case f: Float      =>  f.toString
-      case d: Double     =>  d.toString
-      case s: String     =>  if (inJsonFormat) StringUtils.toJsonString(s) else s.toString()
-      case ar: Array[Any]  => (for (i <- ar) yield extract(i, false)).mkString("\"", " ", "\"")
-      case a: AnyRef     =>  {
+      case u: Unit        => "null"
+      case b: Boolean     => b.toString
+      case c: Char        => if (inJsonFormat) StringUtils.toJsonString(c) else c.toString()
+      case by: Byte       => by.toString
+      case s: Short       => s.toString
+      case i: Int         => i.toString
+      case l: Long        => l.toString
+      case f: Float       => f.toString
+      case d: Double      => d.toString
+      case s: String      => if (inJsonFormat) StringUtils.toJsonString(s) else s.toString()
+      case ar: Array[Any] =>
+        if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).mkString("[", ",", "]")
+        else (for (i <- ar) yield extract(i, false, false)).mkString("\"", " ", "\"")
+      case a: AnyRef      => {
         val storage = new FastByteArrayOutputStream()
         val generator = new JacksonJsonGenerator(storage)
         valueWriter.write(a, generator)
@@ -204,10 +222,18 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   }
 
   def insert(data: DataFrame, overwrite: Boolean) {
-    val op = if (overwrite) ConfigurationOptions.ES_OPERATION_INDEX else ConfigurationOptions.ES_OPERATION_CREATE
-    val param = LinkedHashMap[String, String]() ++ parameters
-    param += (ConfigurationOptions.ES_WRITE_OPERATION -> op)
+    if (overwrite) {
+      val rr = new RestRepository(cfg)
+      rr.delete()
+      rr.close()
+    }
+    EsSparkSQL.saveToEs(data, parameters)
+  }
 
-    EsSparkSQL.saveToEs(data, param)
+  def isEmpty(): Boolean = {
+      val rr = new RestRepository(cfg)
+      val empty = rr.isEmpty(true)
+      rr.close()
+      empty
   }
 }

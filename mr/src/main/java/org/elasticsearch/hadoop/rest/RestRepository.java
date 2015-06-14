@@ -438,6 +438,21 @@ public class RestRepository implements Closeable, StatsAware {
         return client.touch(resourceW.index());
     }
 
+    public void delete() {
+        client.delete(resourceW.indexAndType());
+    }
+
+    public boolean isEmpty(boolean read) {
+        Resource res = (read ? resourceR : resourceW);
+        boolean exists = client.exists(res.indexAndType());
+        return (exists ? count(read) <= 0 : true);
+    }
+
+    public long count(boolean read) {
+        Resource res = (read ? resourceR : resourceW);
+        return client.count(res.indexAndType());
+    }
+
     public boolean waitForYellow() {
         return client.health(resourceW.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
     }

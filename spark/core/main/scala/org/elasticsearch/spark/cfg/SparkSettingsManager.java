@@ -19,13 +19,12 @@
 package org.elasticsearch.spark.cfg;
 
 import org.apache.spark.SparkConf;
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.SettingsManager;
 
 public class SparkSettingsManager implements SettingsManager<SparkConf> {
 
     @Override
-    public Settings load(SparkConf configuration) {
+    public SparkSettings load(SparkConf configuration) {
         return new SparkSettings(configuration);
     }
 }

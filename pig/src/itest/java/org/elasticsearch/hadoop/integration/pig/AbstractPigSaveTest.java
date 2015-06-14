@@ -49,7 +49,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         // initialize Pig in local mode
         RestClient client = new RestClient(new TestSettings());
         try {
-            client.deleteIndex("pig");
+            client.delete("pig");
         } catch (Exception ex) {
             // ignore
         }

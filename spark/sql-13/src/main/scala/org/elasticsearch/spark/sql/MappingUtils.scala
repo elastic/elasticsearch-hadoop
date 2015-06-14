@@ -38,12 +38,11 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.spark.sql.Utils._
 
 private[sql] object MappingUtils {
   case class Schema(field: Field, struct: StructType)
 
-  val ROW_ORDER_PROPERTY = "es.internal.spark.sql.row.order"
-  val ROOT_LEVEL_NAME = "_"
 
   def discoverMapping(cfg: Settings): Schema = {
     val field = discoverMappingAsField(cfg)
