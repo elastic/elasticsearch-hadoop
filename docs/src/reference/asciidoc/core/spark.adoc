@@ -873,7 +873,8 @@ Note the push down operations apply even when one specifies a query - the connec
 
 As a side note, {eh} supports _all_ the `Filter`s available in Spark (1.3.0 to 1.4.0) while retaining backwards binary-compatibility with Spark 1.3.0, pushing down to full extent the SQL operations to {es} without any user interference.
 
-Further more, the pushdown filters 
+Further more, the pushdown filters can work on +analyzed+ terms (the default) or can be configured to be _strict_ and provide +exact+ matches (work only on ++not-analyzed++ fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are. 
+This (and other) topics are discussed at length in the {es} https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html[Reference Documentation].
 
 [[spark-data-sources-12]]
 [float]
