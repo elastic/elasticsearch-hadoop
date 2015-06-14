@@ -233,7 +233,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public void delete(String indexOrType) {
-        execute(DELETE, indexOrType);
+        execute(DELETE, indexOrType, false);
     }
 
     public List<List<Map<String, Object>>> targetShards(String index) {
@@ -386,8 +386,8 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public long count(String indexAndType) {
-        Long count = (Long) get(indexAndType + "/_count", "count");
-        return (count != null ? count : -1);
+        Number count = (Number) get(indexAndType + "/_count", "count");
+        return (count != null ? count.longValue() : -1);
     }
 
     public boolean isAlias(String query) {
