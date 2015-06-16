@@ -13,5 +13,21 @@ abstract class Utils {
     static org.apache.spark.sql.catalyst.types.DataType asScalaDataType(org.apache.spark.sql.api.java.DataType javaDataType) {
         return DataTypeConversions.asScalaDataType(javaDataType);
     }
+
+    static String camelCaseToDotNotation(String string) {
+        StringBuilder sb = new StringBuilder();
+
+        char last = 0;
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            if (Character.isUpperCase(c) && Character.isLowerCase(last)) {
+                sb.append(".");
+            }
+            last = c;
+            sb.append(Character.toLowerCase(c));
+        }
+
+        return sb.toString();
+    }
 }
 

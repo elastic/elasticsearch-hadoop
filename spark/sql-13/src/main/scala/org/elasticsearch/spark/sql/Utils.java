@@ -24,5 +24,21 @@ abstract class Utils {
     static boolean isPushDownStrict(Settings cfg) {
         return Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_PUSH_DOWN_STRICT), false);
     }
+
+    static String camelCaseToDotNotation(String string) {
+        StringBuilder sb = new StringBuilder();
+        
+        char last = 0;
+        for (int i = 0; i < string.length(); i++) {
+            char c = string.charAt(i);
+            if (Character.isUpperCase(c) && Character.isLowerCase(last)) {
+                sb.append(".");
+            }
+            last = c;
+            sb.append(Character.toLowerCase(c));
+        }
+        
+        return sb.toString();
+    }
 }
 

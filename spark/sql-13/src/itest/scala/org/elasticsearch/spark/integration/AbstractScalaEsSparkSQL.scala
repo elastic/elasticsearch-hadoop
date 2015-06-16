@@ -95,30 +95,30 @@ object AbstractScalaEsScalaSparkSQL {
     val list = new ju.ArrayList[Array[jl.Object]]()
     // no query
     val noQuery = ""
-    list.add(Array("default_", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("default_strict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("default_no_push", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("with_meta_", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("with_meta_strict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("with_meta_no_push", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("default", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("defaultstrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("defaultnopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("withmeta", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("withmetastrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("withmetanopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
 
     // uri query
     val uriQuery = "?q=*"
-    list.add(Array("default_uri_query", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("default_uri_query_strict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("default_uri_query_no_push", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("with_meta_uri_query_", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("with_meta_uri_query_strict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("with_meta_uri_query_no_push", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("defaulturiquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("defaulturiquerystrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("defaulturiquerynopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("withmetauri_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("withmetauri_querystrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("withmetauri_querynopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
 
     // dsl query
     val dslQuery = """ {"query" : { "match_all" : { } } } """
-    list.add(Array("default_dsl_query_", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("default_strict_dsl_query", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("default_no_push_dsl_query", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("with_meta_dsl_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("with_meta_strict_dsl_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("with_meta_no_push_dsl_query", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("defaultdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("defaultstrictdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("defaultnopushdslquery", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("withmetadslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("withmetastrictdslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("withmetanopushdslquery", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
 
     list
   }
@@ -264,15 +264,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame50ReadAsDataSource() {
     val target = wrapIndex("sparksql-test/scala-basic-write")
-    var options = s"""resource "$target" """
+    var options = s"""resource '$target' """
     if (readMetadata) {
-      options = options + """,read_metadata "true" """
+      options = options + """,readMetadata "true" """
     }
     val table = wrapIndex("sqlbasicread1")
 
-    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table "+
+    val query = s"CREATE TEMPORARY TABLE $table "+
       " USING org.elasticsearch.spark.sql " +
-      s" OPTIONS ($options)")
+      s" OPTIONS ($options)"
+      
+    println(query)
+    
+    val dataFrame = sqc.sql(query)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
     val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
@@ -302,7 +306,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("sparksql-test/scala-basic-write")
     val table = wrapIndex("sqlbasicread2")
 
-    val options = s"""resource "$target", read_metadata "true" """
+    val options = s"""resource '$target' , readMetadata "true" """
     val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
       " USING org.elasticsearch.spark.sql " +
       s" OPTIONS ($options)")
@@ -333,12 +337,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var options = s"""resource "$target" """
     if (readMetadata) {
-      options = options + """ ,read_metadata "true" """
+      options = options + """ ,readMetadata "true" """
     }
 
-    sqc.sql(s"CREATE TEMPORARY TABLE $table" +
-      " USING org.elasticsearch.spark.sql " +
-      s" OPTIONS ($options)")
+//    sqc.sql(s"CREATE TEMPORARY TABLE $table" +
+//      " USING org.elasticsearch.spark.sql " +
+//      s" OPTIONS ($options)")
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
     sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
@@ -498,7 +502,18 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsSchemaFromDocsWithDifferentProperties() {
     val table = wrapIndex("sqlvarcol")
     esDataSource(table)
+    
+    val target = wrapIndex("spark-test/scala-sql-varcols")
 
+    var options = s"""resource '$target' """
+    if (readMetadata) {
+      options = options + """ , readMetadata 'true' """
+    }
+
+    val s = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
+       " USING org.elasticsearch.spark.sql " +
+       s" OPTIONS ($options)")
+       
     val allResults = sqc.sql(s"SELECT * FROM $table")
     assertEquals(3, allResults.count())
     allResults.printSchema()
@@ -589,7 +604,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var options = s"resource '$index '"
     if (readMetadata) {
-      options = options + " ,read_metadata 'true'"
+      options = options + " ,readMetadata 'true'"
     }
 
     val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
@@ -643,12 +658,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var dstOptions = s"resource '$source'"
     if (readMetadata) {
-      dstOptions = dstOptions + " ,read_metadata 'true'"
+      dstOptions = dstOptions + " ,readMetadata 'true'"
     }
 
     var srcOptions = s"resource '$index'"
     if (readMetadata) {
-      srcOptions = srcOptions + " ,read_metadata 'true'"
+      srcOptions = srcOptions + " ,readMetadata 'true'"
     }
 
     val srcFrame = sqc.sql(s"CREATE TEMPORARY TABLE $srcTable " +

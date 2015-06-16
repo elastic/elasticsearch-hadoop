@@ -19,7 +19,7 @@ private[sql] class DefaultSource extends RelationProvider {
       parameters: Map[String, String]): BaseRelation = {
 
     // . seems to be problematic when specifying the options
-    val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
+    val params = parameters.map { case (k, v) => (Utils.camelCaseToDotNotation(k).replace('_', '.'), v)}. map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
       else if (k == "path") ("es.resource", v)
       else ("es." + k, v) }

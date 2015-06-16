@@ -214,13 +214,20 @@ allprojects { project ->
         force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
         
         eachDependency { details ->
-
             // for slf4j use each dependency since there are so many variants
             if (details.requested.name.contains("slf4j-")) {
                 details.useVersion "1.7.6"
             }
+            // in a similar vein, change all javax.servlet artifacts to the one used by Spark
+            // otherwise these will lead to SecurityException (signer information wrong)
+            if (details.requested.name.contains("servlet")) {
+                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
+            }
         }
       }
+      
+      exclude group: "org.mortbay.jetty"
+        //group: "org.mortbay.jetty", module: "jetty-util"
     }
 
     // adding the M/R project creates duplicates in the Eclipse CP so here we filter them out
@@ -537,15 +544,21 @@ def baseSparkProject(target, sparkVersion, java8) {
     target.dependencies {
         provided("org.apache.spark:spark-core_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'javax.servlet'
+            exclude group: 'org.apache.hadoop'
         }
         
-        optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
+        optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
+            exclude group: 'org.apache.hadoop'
+        }
+        
         compile("org.scala-lang:scala-library:$scalaVersion")
 
-        itestCompile("javax.servlet:javax.servlet-api:3.0.1")
-        itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
+        //itestCompile("javax.servlet:javax.servlet-api:3.0.1")
+        itestCompile ("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
+            exclude group: 'org.apache.hadoop'
+        }
     }
-
+    
     nestMRProject(target)
     
     
