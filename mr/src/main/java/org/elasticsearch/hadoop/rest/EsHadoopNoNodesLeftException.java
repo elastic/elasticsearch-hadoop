@@ -31,7 +31,7 @@ public class EsHadoopNoNodesLeftException extends EsHadoopTransportException {
     private final Map<String, Throwable> nodesUsed;
 
     public EsHadoopNoNodesLeftException() {
-        super(initMessage(null));
+        super(initMessage(Collections.<String, Throwable> emptyMap()));
         nodesUsed = Collections.emptyMap();
     }
 

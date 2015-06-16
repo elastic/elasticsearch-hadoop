@@ -34,7 +34,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * Replacement of {@link BytesWritable} that allows direct access to the underlying byte array without copying.
  * Used to wrap already json serialized hive entities.
  */
-public class HiveBytesArrayWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
+public class HiveBytesArrayWritable extends BinaryComparable implements WritableComparable<BinaryComparable>, Serializable {
 
     private BytesArray ba;
 
