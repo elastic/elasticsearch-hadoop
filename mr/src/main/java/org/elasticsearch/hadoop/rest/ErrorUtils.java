@@ -69,7 +69,7 @@ class ErrorUtils {
             for (int index = 0; index < length; index++) {
                 primitives[index] = bytes.get(index + offset).byteValue();
             }
-            return new String(primitives);
+            return new String(primitives, StringUtils.UTF_8);
         } catch (Exception ex) {
             // can't convert back the byte array - give up
             return null;

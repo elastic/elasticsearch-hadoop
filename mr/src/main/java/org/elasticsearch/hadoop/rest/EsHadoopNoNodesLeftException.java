@@ -31,7 +31,7 @@ public class EsHadoopNoNodesLeftException extends EsHadoopTransportException {
     private final Map<String, Throwable> nodesUsed;
 
     public EsHadoopNoNodesLeftException() {
-        super(initMessage(null));
+        super(initMessage(Collections.<String, Throwable> emptyMap()));
         nodesUsed = Collections.emptyMap();
     }
 
@@ -41,8 +41,7 @@ public class EsHadoopNoNodesLeftException extends EsHadoopTransportException {
     }
 
     private static String initMessage(Map<String, Throwable> nodesUsed) {
-        return String.format("Connection error (check network and/or proxy settings)- all nodes failed; tried [%s] ",
-                nodesUsed.keySet());
+        return String.format("Connection error (check network and/or proxy settings)- all nodes failed; tried [%s] ", nodesUsed.keySet());
     }
 
     public Collection<String> nodesUsed() {

@@ -292,7 +292,7 @@ public class RestRepository implements Closeable, StatsAware {
             if (!settings.getNodesClientOnly()) {
                 msg += String.format("; if you are using client-only nodes make sure to configure es-hadoop as such through [%s] property", ConfigurationOptions.ES_NODES_CLIENT_ONLY);
             }
-            new EsHadoopIllegalStateException(msg);
+            throw new EsHadoopIllegalStateException(msg);
         }
 
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();

@@ -143,7 +143,7 @@ public abstract class Settings {
     }
 
     public String getOperation() {
-        return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase(Locale.ENGLISH);
+        return getProperty(ES_WRITE_OPERATION, ES_WRITE_OPERATION_DEFAULT).toLowerCase(Locale.ROOT);
     }
 
     public String getMappingId() {

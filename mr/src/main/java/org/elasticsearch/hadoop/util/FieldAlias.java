@@ -42,7 +42,7 @@ public class FieldAlias {
     public String toES(String string) {
         String alias = fieldToAlias.get(string);
         if (alias == null) {
-            alias = (caseInsensitive ? string.toLowerCase(Locale.ENGLISH) : string);
+            alias = (caseInsensitive ? string.toLowerCase(Locale.ROOT) : string);
             fieldToAlias.put(string, alias);
         }
         return alias;

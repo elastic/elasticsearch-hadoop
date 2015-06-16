@@ -100,7 +100,7 @@ public abstract class SettingsUtils {
                 if (index > 0) {
                     String key = string.substring(0, index);
                     aliasMap.put(key, string.substring(index + 1));
-                    aliasMap.put(caseInsensitive ? key.toLowerCase(Locale.ENGLISH) : key, string.substring(index + 1));
+                    aliasMap.put(caseInsensitive ? key.toLowerCase(Locale.ROOT) : key, string.substring(index + 1));
                 }
             }
         }

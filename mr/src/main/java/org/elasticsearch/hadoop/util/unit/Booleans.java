@@ -30,7 +30,7 @@ public abstract class Booleans {
         if (value == null) {
             return defaultValue;
         }
-        String val = value.trim().toLowerCase(Locale.ENGLISH);
+        String val = value.trim().toLowerCase(Locale.ROOT);
         return (val.equals("true") || val.equals("1") || val.equals("on") || val.equals("yes"));
     }
 }

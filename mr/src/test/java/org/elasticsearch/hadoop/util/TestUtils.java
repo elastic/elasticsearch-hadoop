@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.Locale;
+
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 
@@ -44,7 +46,7 @@ public class TestUtils {
     }
 
     public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().startsWith("win");
+        return System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("win");
     }
 
     public static byte[] fromInputStream(InputStream in) throws IOException {

@@ -411,7 +411,7 @@ public class RestClient implements Closeable, StatsAware {
         StringBuilder sb = new StringBuilder("/_cluster/health/");
         sb.append(index);
         sb.append("?wait_for_status=");
-        sb.append(health.name().toLowerCase(Locale.ENGLISH));
+        sb.append(health.name().toLowerCase(Locale.ROOT));
         sb.append("&timeout=");
         sb.append(timeout.toString());
 

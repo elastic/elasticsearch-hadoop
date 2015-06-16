@@ -1,13 +1,19 @@
 package org.elasticsearch.spark.sql
 
+import java.util.Locale
+
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SaveMode
-import org.apache.spark.sql.SaveMode._
+import org.apache.spark.sql.SaveMode.Append
+import org.apache.spark.sql.SaveMode.ErrorIfExists
+import org.apache.spark.sql.SaveMode.Ignore
+import org.apache.spark.sql.SaveMode.Overwrite
 import org.apache.spark.sql.sources.And
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.sources.CreatableRelationProvider
@@ -24,14 +30,13 @@ import org.apache.spark.sql.sources.LessThanOrEqual
 import org.apache.spark.sql.sources.Not
 import org.apache.spark.sql.sources.Or
 import org.apache.spark.sql.sources.PrunedFilteredScan
-import org.apache.spark.sql.sources.PrunedScan
 import org.apache.spark.sql.sources.RelationProvider
 import org.apache.spark.sql.sources.SchemaRelationProvider
 import org.apache.spark.sql.types.StructType
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
-import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
@@ -39,8 +44,6 @@ import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import org.elasticsearch.spark.cfg.SparkSettings
 
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
@@ -162,19 +165,19 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => {
         var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg = arg.toLowerCase() }
+        if (!strictPushDown) { arg = arg.toLowerCase(Locale.ROOT) }
         s"""{"query":{"wildcard":{"${f.productElement(0)}":"$arg*"}}}"""
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => {
         var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg =arg.toLowerCase() }
+        if (!strictPushDown) { arg =arg.toLowerCase(Locale.ROOT) }
         s"""{"query":{"wildcard":{"${f.productElement(0)}":"*$arg"}}}"""
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => {
         var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg = arg.toLowerCase() }
+        if (!strictPushDown) { arg = arg.toLowerCase(Locale.ROOT) }
         s"""{"query":{"wildcard":{"${f.productElement(0)}":"*$arg*"}}}"""
       }
 
