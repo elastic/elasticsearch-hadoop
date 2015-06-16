@@ -38,7 +38,6 @@ allprojects {
     apply plugin: 'pmd'
     apply plugin: 'jacoco'
     apply from: "$rootDir/dist.gradle"
-    //apply plugin: 'license'
 }
 
 ext.hadoopClient = []
@@ -177,7 +176,7 @@ allprojects { project ->
         jacoco {
             enabled = project.hasProperty("enableJacoco")
             destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
-			excludes = ["org.elasticsearch.spark.*"]
+            excludes = ["org.elasticsearch.spark.*"]
             if (enabled) {
                 System.setProperty("log4j.configuration", "$nullLog4jConfig")
             }
@@ -212,7 +211,7 @@ allprojects { project ->
         // to avoid SLF4J warnings, force only one version
         force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
         force 'com.google.guava:guava:14.0.1' // force guava version for Spark
-		force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
+        force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
         
         eachDependency { details ->
 
@@ -474,6 +473,7 @@ def baseSparkProject(target, sparkVersion, java8) {
     
     target.archivesBaseName += "_$scalaMajorVersion"
 
+    // Gradle 1.12 does not currently supports JDK 1.8 through the Scala ANT plugin
     if (java8) {
         println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
         tasks.all { enabled = false }
@@ -484,6 +484,16 @@ def baseSparkProject(target, sparkVersion, java8) {
     
     if (sparkVersion != spark12Version)
         println "Using Scala $scalaMajorVersion [$scalaVersion]"
+
+    // when using Scala 2.11 use a different folder to cache the artifacts between builds
+    if (scalaVer == "211") {
+      target.sourceSets.each { 
+        it.output.classesDir = file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.211"))
+      }
+      target.javadoc {
+        destinationDir = file("$project.docsDir/javadoc-211")
+      }
+    }
     
     def coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
     
@@ -491,10 +501,11 @@ def baseSparkProject(target, sparkVersion, java8) {
         main.scala.srcDirs += "$coreSrc/main/scala"
         test.scala.srcDirs += "$coreSrc/test/scala"
         itest.java.srcDirs += "$coreSrc/itest/java"
-		itest.scala.srcDirs += "$coreSrc/itest/scala"
+        itest.scala.srcDirs += "$coreSrc/itest/scala"
         itest.resources.srcDirs += "$coreSrc/itest/resources"
     }
 
+    
     // currently the outside project folders are transformed into linked resources however
     // Gradle only supports one so the project will be invalid as not all sources will be in there
     // as such, they are setup here manually for Eclipse. IntelliJ probably needs a similar approach
@@ -505,7 +516,7 @@ def baseSparkProject(target, sparkVersion, java8) {
             linkedResources.add name: "core/main/scala", type: "2", location: "$coreSrc/main/scala"
             linkedResources.add name: "core/test/scala", type: "2", location: "$coreSrc/test/scala"
             linkedResources.add name: "core/itest/java", type: "2", location: "$coreSrc/itest/java"
-			linkedResources.add name: "core/itest/scala", type: "2", location: "$coreSrc/itest/scala"
+            linkedResources.add name: "core/itest/scala", type: "2", location: "$coreSrc/itest/scala"
             linkedResources.add name: "core/itest/resources", type: "2", location: "$coreSrc/itest/resources"
         }
         classpath.file {
@@ -517,7 +528,7 @@ def baseSparkProject(target, sparkVersion, java8) {
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/main/scala", null))
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/test/scala", null))
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/java", null))
-				entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/scala", null))
+                entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/scala", null))
                 entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder("core/itest/resources", null))
             }
         }
@@ -531,19 +542,19 @@ def baseSparkProject(target, sparkVersion, java8) {
         optional("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion")
         compile("org.scala-lang:scala-library:$scalaVersion")
 
-		itestCompile("javax.servlet:javax.servlet-api:3.0.1")
+        itestCompile("javax.servlet:javax.servlet-api:3.0.1")
         itestCompile "org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion"
     }
 
     nestMRProject(target)
-
-	// disable jacoco as it will fail due to class duplicates
-	target.test {
-		jacoco {
-			enabled = false
-			excludes = ["org.elasticsearch.spark.*"]
-		}
-	}
+    
+    
+    // disable jacoco as it will fail
+    test {
+      jacoco {
+        enabled = false
+      }
+    }
     
     if (!java8) {
         target.scaladoc {
@@ -626,7 +637,7 @@ allprojects { project ->
             enabled = project.hasProperty("enableJacoco")
             append = true
             destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
-			excludes = ["org.elasticsearch.spark.*"]
+            excludes = ["org.elasticsearch.spark.*"]
             
             if (enabled) {
                 System.setProperty("log4j.configuration", "$nullLog4jConfig")
@@ -638,7 +649,7 @@ allprojects { project ->
 configure(rootProject) {
     description = "Elasticsearch Hadoop"
     
-	// include Spark 1.3+ support in main jar
+    // include Spark 1.3+ support in main jar
     def eshModules = subprojects - project(":elasticsearch-repository-hdfs") - project(":elasticsearch-spark-1.2")
     
     // build root project dependencies
@@ -715,12 +726,12 @@ configure(rootProject) {
                 into ("${folderName}/dist")
             }
         }
-		
-		// add Spark-1.2 jar
-		from (project(":elasticsearch-spark-1.2").jar.destinationDir) {
-			into ("${folderName}/dist")
-		}
-		
+        
+        // add Spark-1.2 jar
+        from (project(":elasticsearch-spark-1.2").jar.destinationDir) {
+            into ("${folderName}/dist")
+        }
+        
         // execution phase only
         doLast {
             ant.checksum(file: archivePath, algorithm: 'SHA1', format: 'MD5SUM', fileext: '.sha1.txt')
@@ -742,6 +753,13 @@ configure(rootProject) {
                 enabled = true
                 destination "${buildDir}/jacoco/html"
             }
+        }
+        
+        afterEvaluate {
+            classDirectories = files(classDirectories.files.collect {
+                // We're excluding Spark since the Scala bytecode trips Jacoco over and the plugin can't import yet filters
+                fileTree(dir: it, excludes: [ "org/elasticsearch/hadoop/yarn/**", "org/apache/hadoop/hive/**", "org/elasticsearch/spark/**", "org/elasticsearch/plugin/hadoop/**"])
+            })
         }
     }
     
@@ -791,7 +809,7 @@ allprojects { project ->
     }
 
     jacoco {
-        toolVersion = "0.7.4.201502262128"
+        toolVersion = "0.7.5.201505241946"
     }
 
     if (java8) {
