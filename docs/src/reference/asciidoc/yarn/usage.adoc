@@ -46,7 +46,7 @@ This is a _one-time_ action; if you already have {es} at hand, deploy it under +
 [source,bash]
 ----
 $ hadoop jar elasticsearch-yarn-<version> -download-es
-Downloading Elasticsearch 1.4.0
+Downloading Elasticsearch 1.6.0
 Downloading ...........................................................................DONE
 ----
 
@@ -97,7 +97,7 @@ You can verify the provisioning by interrogating HDFS either through the web con
 ----
 $ hadoop fs -ls /apps/elasticsearch
 Found 2 items
--rw-r--r--   1 hdfs hdfs   30901787 2014-11-13 10:17 /apps/elasticsearch/elasticsearch-1.4.0.zip
+-rw-r--r--   1 hdfs hdfs   30901787 2014-11-13 10:17 /apps/elasticsearch/elasticsearch-<version>.zip
 -rw-r--r--   1 hdfs hdfs      52754 2014-11-13 16:16 /apps/elasticsearch/elasticsearch-yarn-<version>.jar
 ----
 
@@ -177,7 +177,7 @@ Local folder where {ey} downloads remote artifacts (like +{es}.zip+)
 +hdfs.upload.dir+ (default /apps/elasticsearch/)::
 HDFS folder used for provisioning
 
-+es.version+ (default 1.4.0)::
++es.version+ (default 1.6.0)::
 {es} version used for downloading, provisioning HDFS and running on the YARN cluster
 
 +containers+ (default 1)::

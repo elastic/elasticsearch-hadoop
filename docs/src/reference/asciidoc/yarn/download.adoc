@@ -3,12 +3,12 @@
 
 {ey} binaries can be obtained either by downloading them from the http://elastic.co[elastic.co] site as a ZIP (containing project jars, sources and documentation) or by using any http://maven.apache.org/[Maven]-compatible tool with the following dependency:
 
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-yarn</artifactId>
-  <version>2.1.0.Beta3</version>
+  <version>{ver}</version>
 </dependency>
 ----
 
@@ -19,12 +19,12 @@ The jar above contains {ey} and does not require any other dependencies at runti
 
 Development (or nightly or snapshots) builds are published daily at 'sonatype-oss' repository (see below). Make sure to use snapshot versioning:
 
-[source,xml]
+["source","xml",subs="attributes"]
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-yarn</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version> <1>
+  <version>{ver-d}</version> <1>
 </dependency>
 ----
 
