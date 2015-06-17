@@ -21,14 +21,14 @@ Available through any Maven-compatible tool:
   <version>2.0.2</version>
 </dependency>
 ```
-### Beta Release (currently `2.1.0.Beta4`)
+### Beta Release (currently `2.1.0.rc1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.Beta4</version>
+  <version>2.1.0.rc1</version>
 </dependency>
 ```
 
