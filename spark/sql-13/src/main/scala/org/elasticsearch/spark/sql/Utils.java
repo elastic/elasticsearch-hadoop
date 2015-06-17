@@ -1,5 +1,7 @@
 package org.elasticsearch.spark.sql;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -39,6 +41,10 @@ abstract class Utils {
         }
         
         return sb.toString();
+    }
+
+    static Log logger(String name) {
+        return LogFactory.getLog(name);
     }
 }
 

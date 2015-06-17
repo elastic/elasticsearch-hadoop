@@ -5,6 +5,8 @@ import java.util.Locale
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 
+import org.apache.commons.logging.Log
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -44,7 +46,7 @@ import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-
+import org.elasticsearch.spark.sql.Utils._
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
 
@@ -116,7 +118,15 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
 
     if (filters != null && filters.size > 0 && Utils.isPushDown(cfg)) {
+      val log = Utils.logger("org.elasticsearch.spark.sql.DataSource")
+      if (log.isDebugEnabled()) {
+        log.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
+      }
       val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg))
+      
+      if (log.isTraceEnabled()) {
+        log.trace("Transformed filters into DSL $filterString")
+      }
       paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToBase64(filterString))
     }
 
