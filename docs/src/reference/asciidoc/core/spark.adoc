@@ -892,8 +892,8 @@ sqlContext.sql(
 
 <1> Spark's temporary table name
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
-<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es_+ prefix or skip it for convenient.
-<4> Since using the +.+ can cause syntax exceptions, one should replace it instead with camelCase style. Thus, in this example +es.scroll.size+ becomes +scrollSize+ (as the leading +es+ can be removed)
+<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es+ prefix or skip it for convenient.
+<4> Since using +.+ (or +_+ in Spark 1.4) can cause syntax exceptions, one should replace it instead with camelCase style. Thus, in this example +es.scroll.size+ becomes +scrollSize+ (as the leading +es+ can be removed)
 
 Once defined, the schema is picked up automatically. So one can issue queries, right away:
 
