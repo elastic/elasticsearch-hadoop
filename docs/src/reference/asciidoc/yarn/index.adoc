@@ -7,6 +7,13 @@
 Distributed as part of {ehtm}, {ey} is a separate, stand-alone, self-container CLI (command-line interface) that allows {es} to run (and thus be managed) within a http://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html[YARN] environment. 
 
 In other words, {es} can use YARN to allocate its resources and be started and stopped, on said resources, through YARN infrastructure.
+
+IMPORTANT:
+Currently, due to the inherent limitations in YARN, {ehtm} is in *beta*; that is we encourage users to try it out and report feedback however it _might_ not contain all the features needed for production usage (most of which can be addressed outside YARN).
+
+Unfortunately, YARN does not (currently) provide comprehensive support for long-running services; features such as storage/network/host affinity, topology information and broadcasting (in particular in case of restarts) and ip/storage provisioning are missing; while there are solutions for them, these are outside YARN which is far from ideal.
+
+However this topic is addressed within the YARN community - as it progresses, the new functionality will be incorporated into this project and once completed, the project will be promoted out of beta.
 --
 
 include::requirements.adoc[]
