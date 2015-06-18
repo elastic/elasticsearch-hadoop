@@ -226,7 +226,7 @@ allprojects { project ->
         }
       }
       
-      exclude group: "org.mortbay.jetty"
+      //exclude group: "org.mortbay.jetty"
         //group: "org.mortbay.jetty", module: "jetty-util"
     }
 
