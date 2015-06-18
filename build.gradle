@@ -220,7 +220,7 @@ allprojects { project ->
             }
             // in a similar vein, change all javax.servlet artifacts to the one used by Spark
             // otherwise these will lead to SecurityException (signer information wrong)
-            if (details.requested.name.contains("servlet")) {
+            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
                 details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
             }
         }
