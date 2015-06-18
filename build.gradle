@@ -8,7 +8,6 @@ buildscript {
     }
     dependencies {
         classpath('org.springframework.build.gradle:propdeps-plugin:0.0.5')
-        classpath('nl.javadude.gradle.plugins:license-gradle-plugin:0.5.0')
     }
 }
 
@@ -24,7 +23,6 @@ allprojects {
       // Hive depends on JDO ec2 missing from Maven Central
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
-  
     }
 
     apply plugin: "java"
@@ -218,16 +216,12 @@ allprojects { project ->
             if (details.requested.name.contains("slf4j-")) {
                 details.useVersion "1.7.6"
             }
-            // in a similar vein, change all javax.servlet artifacts to the one used by Spark
-            // otherwise these will lead to SecurityException (signer information wrong)
-            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
+            if (details.requested.name.equals("servlet-api")) {
                 details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
             }
+
         }
       }
-      
-      //exclude group: "org.mortbay.jetty"
-        //group: "org.mortbay.jetty", module: "jetty-util"
     }
 
     // adding the M/R project creates duplicates in the Eclipse CP so here we filter them out
@@ -553,8 +547,7 @@ def baseSparkProject(target, sparkVersion, java8) {
         
         compile("org.scala-lang:scala-library:$scalaVersion")
 
-        //itestCompile("javax.servlet:javax.servlet-api:3.0.1")
-        itestCompile ("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
+        itestCompile("org.apache.spark:spark-sql_$scalaMajorVersion:$sparkVersion") {
             exclude group: 'org.apache.hadoop'
         }
     }
@@ -580,6 +573,21 @@ project(":elasticsearch-spark") {
     description = "Elasticsearch Spark (Spark 1.3+)"
 
     baseSparkProject(project, spark13Version, java8)
+    
+    // deal with the messy conflicts out there
+    configurations.all {
+      resolutionStrategy {
+        eachDependency { details ->
+            // in a similar vein, change all javax.servlet artifacts to the one used by Spark
+            // otherwise these will lead to SecurityException (signer information wrong)
+            if (details.requested.name.contains("servlet") && !details.requested.name.contains("guice")) {
+                details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
+            }
+        }
+      }
+      
+      exclude group: "org.mortbay.jetty"
+    }
 }
 
 project(":elasticsearch-spark-1.2") {
