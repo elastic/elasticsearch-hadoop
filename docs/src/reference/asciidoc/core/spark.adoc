@@ -846,10 +846,15 @@ For example:
 [source,scala]
 ----
 val sql = new SQLContext...
-val options = Map("pushdown"<1> -> "true", "nodes"<2> -> "someNode", "esPort"<3> -> "9200")
+// options for Spark 1.3 need to include the target path/resource
+val options13 = Map("path" -> "spark/index", 
+                    "pushdown"<1> -> "true", "nodes"<2> -> "someNode", "esPort"<3> -> "9200")
 
 // Spark 1.3 style
-val spark13DF = sql.load("spark/index", "org.elasticsearch.spark.sql", options<4>)
+val spark13DF = sql.load("org.elasticsearch.spark.sql", options13<4>)
+
+// options for Spark 1.4 - the path/resource is specified separately
+val options = Map("pushdown"<1> -> "true", "nodes"<2> -> "someNode", "esPort"<3> -> "9200")
 
 // Spark 1.4 style
 val spark14DF = sql.read().format("org.elasticsearch.spark.sql").options<4>(options).load("spark/index")
