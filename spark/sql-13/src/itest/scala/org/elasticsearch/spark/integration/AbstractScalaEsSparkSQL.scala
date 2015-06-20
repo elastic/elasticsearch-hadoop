@@ -691,7 +691,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.ErrorIfExists)
       fail()
     } catch {
-      case _ => // swallow
+      case _: Throwable => // swallow
     }
   }
 

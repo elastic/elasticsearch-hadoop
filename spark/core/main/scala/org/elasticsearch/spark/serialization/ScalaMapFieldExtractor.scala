@@ -11,7 +11,7 @@ class ScalaMapFieldExtractor extends MapFieldExtractor {
 
   override protected def extractField(target: AnyRef): AnyRef = {
     target match {
-      case m: Map[AnyRef, AnyRef]          => m.getOrElse(getFieldName, NOT_FOUND)
+      case m: Map[_, _]                    => m.asInstanceOf[Map[AnyRef, AnyRef]].getOrElse(getFieldName, NOT_FOUND)
       case p: Product if RU.isCaseClass(p) => RU.caseClassValues(p).getOrElse(getFieldName, NOT_FOUND).asInstanceOf[AnyRef]
       case _                               => {
         val result = super.extractField(target)
