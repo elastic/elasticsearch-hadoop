@@ -367,19 +367,24 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public boolean touch(String indexOrType) {
-        Response response = execute(PUT, indexOrType, false);
+        // Check whether the index exists
+        Response response = execute(GET, indexOrType, false);
+        // Create if the index does not exist
+        if(response.status() != 200) {
+            response = execute(PUT, indexOrType, false);
 
-        if (response.hasFailed()) {
-            String msg = null;
-            // try to parse the answer
-            try {
-                msg = parseContent(response.body(), "error");
-            } catch (Exception ex) {
-                // can't parse message, move on
-            }
+            if (response.hasFailed()) {
+                String msg = null;
+                // try to parse the answer
+                try {
+                    msg = parseContent(response.body(), "error");
+                } catch (Exception ex) {
+                    // can't parse message, move on
+                }
 
-            if (StringUtils.hasText(msg) && !msg.contains("IndexAlreadyExistsException")) {
-                throw new EsHadoopIllegalStateException(msg);
+                if (StringUtils.hasText(msg) && !msg.contains("IndexAlreadyExistsException")) {
+                    throw new EsHadoopIllegalStateException(msg);
+                }
             }
         }
         return response.hasSucceeded();
