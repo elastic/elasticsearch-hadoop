@@ -1,15 +1,12 @@
 package org.elasticsearch.spark.serialization
 
-import java.lang.reflect.Method
 import scala.collection.Map
 import scala.collection.immutable.Nil
-import scala.collection.mutable.HashMap
-import scala.ref.WeakReference
+
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
-import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
-import org.apache.commons.logging.LogFactory
+import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
 

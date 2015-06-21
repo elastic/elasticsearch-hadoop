@@ -1,5 +1,6 @@
 package org.elasticsearch.spark;
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 import org.apache.spark.rdd.RDD

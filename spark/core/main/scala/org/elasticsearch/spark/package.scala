@@ -1,10 +1,12 @@
 package org.elasticsearch;
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
+
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.spark.rdd.EsSpark
 
 
 package object spark {

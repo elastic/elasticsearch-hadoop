@@ -1,11 +1,9 @@
 package org.elasticsearch.spark.rdd
 
-import java.util.Collections
-import java.util.{ Map => JMap }
-import org.apache.commons.logging.LogFactory
 import org.apache.commons.logging.Log
-import org.apache.spark.SparkContext
+import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
+import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.InitializationUtils

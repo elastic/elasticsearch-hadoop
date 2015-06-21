@@ -2,17 +2,16 @@ package org.elasticsearch.spark.rdd;
 
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
-import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
-import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
-import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.spark.cfg.SparkSettingsManager
 
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @transient sc: SparkContext,

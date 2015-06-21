@@ -1,5 +1,7 @@
 package org.elasticsearch.spark;
 
+import scala.language.implicitConversions
+
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SQLContext
 import org.elasticsearch.spark.sql.EsSparkSQL

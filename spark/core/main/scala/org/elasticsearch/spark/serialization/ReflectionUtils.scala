@@ -2,10 +2,12 @@ package org.elasticsearch.spark.serialization
 
 import java.beans.Introspector
 import java.lang.reflect.Method
-import scala.reflect.runtime.{ universe => ru }
-import scala.reflect.runtime.universe._
-import scala.reflect.ClassTag
+
 import scala.collection.mutable.HashMap
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
+
+
 import org.apache.commons.logging.LogFactory
 
 private[spark] object ReflectionUtils {

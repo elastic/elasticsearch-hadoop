@@ -1,22 +1,33 @@
 package org.elasticsearch.spark.serialization
 
-import scala.collection.JavaConverters._
+import java.util.Date
+
+import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
+
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.FieldType
-import org.elasticsearch.hadoop.serialization.FieldType._
+import org.elasticsearch.hadoop.serialization.FieldType.BINARY
+import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
+import org.elasticsearch.hadoop.serialization.FieldType.BYTE
+import org.elasticsearch.hadoop.serialization.FieldType.DATE
+import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
+import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.LONG
+import org.elasticsearch.hadoop.serialization.FieldType.NULL
+import org.elasticsearch.hadoop.serialization.FieldType.SHORT
+import org.elasticsearch.hadoop.serialization.FieldType.STRING
+import org.elasticsearch.hadoop.serialization.FieldType.TOKEN_COUNT
 import org.elasticsearch.hadoop.serialization.Parser
-import org.elasticsearch.hadoop.serialization.Parser.Token._
+import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_BOOLEAN
+import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NULL
+import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NUMBER
 import org.elasticsearch.hadoop.serialization.SettingsAware
 import org.elasticsearch.hadoop.serialization.builder.ValueReader
-import scala.collection.JavaConversions
-import scala.Predef
-import java.util.Date
 import org.elasticsearch.hadoop.util.DateUtils
 import org.elasticsearch.hadoop.util.StringUtils
-import javax.xml.bind.DatatypeConverter
-
 
 class ScalaValueReader extends ValueReader with SettingsAware {
 

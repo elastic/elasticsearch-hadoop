@@ -18,19 +18,19 @@
  */
 package org.elasticsearch.spark.rdd.api.java
 
-import java.util.{ Map => JMap }
+import java.util.{Map => JMap}
+
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+
 import org.apache.spark.api.java.JavaPairRDD
 import org.apache.spark.api.java.JavaPairRDD.fromRDD
-import org.apache.spark.api.java.JavaPairRDD.toRDD
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.JavaSparkContext
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_JSON
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.JavaEsRDD
-import org.elasticsearch.spark.rdd.Metadata
 
 object JavaEsSpark {
 

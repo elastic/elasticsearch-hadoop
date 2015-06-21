@@ -1,20 +1,22 @@
 package org.elasticsearch.spark.rdd
 
 import scala.reflect.ClassTag
+
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
-import org.elasticsearch.spark.serialization.ScalaValueWriter
 import org.elasticsearch.hadoop.serialization.BytesConverter
-import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
-import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
+import org.elasticsearch.spark.serialization.ScalaValueWriter
+
 
 private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
                                               val runtimeMetadata: Boolean = false)

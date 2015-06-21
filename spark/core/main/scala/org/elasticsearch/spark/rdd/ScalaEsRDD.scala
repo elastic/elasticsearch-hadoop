@@ -4,13 +4,13 @@ import scala.collection.Map
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
+import org.apache.spark.Partition
 import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
-import org.apache.spark.Partition
 import org.elasticsearch.hadoop.cfg.Settings
-import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
+import org.elasticsearch.spark.serialization.ScalaValueReader
 
 private[spark] class ScalaEsRDD[T](
   @transient sc: SparkContext,
