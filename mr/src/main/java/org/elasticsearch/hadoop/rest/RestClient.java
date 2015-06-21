@@ -367,11 +367,8 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public boolean touch(String indexOrType) {
-        // Check whether the index exists
-        Response response = execute(GET, indexOrType, false);
-        // Create if the index does not exist
-        if(response.status() != 200) {
-            response = execute(PUT, indexOrType, false);
+        if (!exists(indexOrType)) {
+            Response response = execute(PUT, indexOrType, false);
 
             if (response.hasFailed()) {
                 String msg = null;
@@ -386,8 +383,9 @@ public class RestClient implements Closeable, StatsAware {
                     throw new EsHadoopIllegalStateException(msg);
                 }
             }
+            return response.hasSucceeded();
         }
-        return response.hasSucceeded();
+        return false;
     }
 
     public long count(String indexAndType) {
