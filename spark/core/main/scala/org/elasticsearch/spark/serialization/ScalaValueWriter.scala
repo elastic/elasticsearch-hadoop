@@ -21,7 +21,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
     doWrite(value, generator, true)
   }
 
-  private def doWrite(value: AnyRef, generator: Generator, acceptsJavaBeans: Boolean): Result = {
+  private def doWrite(value: Any, generator: Generator, acceptsJavaBeans: Boolean): Result = {
     value match {
       case None => generator.writeNull()
       case Unit => generator.writeNull()
@@ -32,7 +32,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
       case m: Map[_, _] => {
         generator.writeBeginObject()
-        for ((k, v) <- m.asInstanceOf[Map[AnyRef, AnyRef]]) {
+        for ((k, v) <- m) {
           if (shouldKeep(generator.getParentPath(), k.toString())) {
             generator.writeFieldName(k.toString())
             val result = doWrite(v, generator, false)
@@ -46,7 +46,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
       case i: Traversable[_] => {
         generator.writeBeginArray()
-        for (v <- i.asInstanceOf[Traversable[AnyRef]]) {
+        for (v <- i) {
           val result = doWrite(v, generator, false)
           if (!result.isSuccesful()) {
             return result
