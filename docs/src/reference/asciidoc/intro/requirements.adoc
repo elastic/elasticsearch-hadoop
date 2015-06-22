@@ -131,7 +131,7 @@ One can find out the Hive version from its folder name or command-line:
 
 [source, bash]
 ----
-$ bin/hive -version
+$ bin/hive --version
 Hive version 0.13.1
 ----
 

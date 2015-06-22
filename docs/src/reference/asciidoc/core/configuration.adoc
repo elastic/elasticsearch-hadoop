@@ -70,7 +70,7 @@ IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-i
 [float]
 ===== Formatting dynamic/multi resource writes
 
-When using dynamic/multi writes, one can also specify a formatting of the value returned by the field. Out of the box, {esh} provides formatting for date/timestamp fields which is useful for automatically grouping time-based data (such as logs)
+When using dynamic/multi writes, one can also specify a formatting of the value returned by the field. Out of the box, {eh} provides formatting for date/timestamp fields which is useful for automatically grouping time-based data (such as logs)
  within a certain time range under the same index. By using the Java http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] syntax, one can format and parse the date in a locale-sensitive manager.
 
 For example assuming the data contains a +@timestamp+ field, one can group the documents in _daily_ indices using the following configuration:

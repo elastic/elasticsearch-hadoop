@@ -6,6 +6,8 @@
 :mr: 	Map/Reduce
 :ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/current
 :description: Reference documentation of {eh}
+:ver:   2.0.3
+:ver-d: 2.0.4.BUILD-SNAPSHOT
 
 include::intro/index.adoc[]
 
