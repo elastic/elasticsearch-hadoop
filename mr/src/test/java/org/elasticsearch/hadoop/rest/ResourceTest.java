@@ -65,6 +65,27 @@ public class ResourceTest {
         assertEquals("foo/bar", res.indexAndType());
     }
 
+    @Test
+    public void testDynamicFieldLowercase() throws Exception {
+        Resource res = createResource("foo/Fbar");
+        res = createResource("foo-{F}/bar");
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testLowercaseNotAllowed() throws Exception {
+        createResource("fooF/bar");
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testLowercaseNotAllowedIfTemplateIsInvalid() throws Exception {
+        createResource("foo{F/bar");
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testLowercaseNotAllowedIfTemplateIsInvalidAgain() throws Exception {
+        createResource("foo}F{/bar");
+    }
+
     private Resource createResource(String target) {
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_RESOURCE, target);
