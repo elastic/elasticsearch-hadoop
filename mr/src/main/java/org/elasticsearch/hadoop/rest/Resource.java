@@ -74,7 +74,23 @@ public class Resource {
 
         Assert.hasText(index, "No index found; expecting [index]/[type]");
         Assert.hasText(type, "No type found; expecting [index]/[type]");
-        Assert.isTrue(StringUtils.isLowerCase(index), String.format("Invalid index [%s] - needs to be lowercase", index));
+
+        StringBuilder fixedIndex = new StringBuilder();
+        if (index.contains("{") && index.contains("}")) {
+            int startPattern = index.indexOf("{");
+            int endPattern = index.indexOf("}");
+            if (endPattern > startPattern) {
+                fixedIndex.append(index.substring(0, startPattern));
+                fixedIndex.append(index.substring(endPattern + 1, index.length()));
+            }
+            else {
+                fixedIndex.append(index);
+            }
+        }
+        else {
+            fixedIndex.append(index);
+        }
+        Assert.isTrue(StringUtils.isLowerCase(fixedIndex), String.format("Invalid index [%s] - needs to be lowercase", index));
 
         indexAndType = index + "/" + type;
 
