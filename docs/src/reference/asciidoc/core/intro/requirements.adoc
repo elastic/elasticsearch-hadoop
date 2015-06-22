@@ -73,6 +73,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Apache Hadoop     | 1.2.x
 | Apache Hadoop     | 1.1.x
 
+| Amazon EMR        | 3.8.x
 | Amazon EMR        | 3.7.x
 | Amazon EMR        | 3.6.x
 | Amazon EMR        | 3.5.x
@@ -137,7 +138,7 @@ One can find out the Hive version from its folder name or command-line:
 
 ["source","bash",subs="attributes"]
 ----
-$ bin/hive -version
+$ bin/hive --version
 Hive version {hv-v}
 ----
 
