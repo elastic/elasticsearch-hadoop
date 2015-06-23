@@ -303,7 +303,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("sparksql-test/scala-basic-write")
     val table = wrapIndex("sqlbasicread2")
 
-    val options = s"""resource '$target' , readMetadata "true" """
+    val options = s"""path '$target' , readMetadata "true" """
     val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
       " USING org.elasticsearch.spark.sql " +
       s" OPTIONS ($options)")
@@ -376,6 +376,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testDataSourcePushDown04LT() {
     val df = esDataSource("pd_lt")
+    df.printSchema()
     val filter = df.filter(df("participants").lt(5))
     assertEquals(1, filter.count())
     assertEquals("long", filter.select("tag").take(1)(0)(0))
