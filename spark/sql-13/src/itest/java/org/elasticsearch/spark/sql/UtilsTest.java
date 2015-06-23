@@ -32,5 +32,6 @@ public class UtilsTest {
         assertEquals("foo", Utils.camelCaseToDotNotation("FOO"));
         assertEquals("foo.bar", Utils.camelCaseToDotNotation("FOO.BAR"));
         assertEquals("foo.bar", Utils.camelCaseToDotNotation("FOO.BAR"));
+        assertEquals("es.port", Utils.camelCaseToDotNotation("esPort"));
     }
 }

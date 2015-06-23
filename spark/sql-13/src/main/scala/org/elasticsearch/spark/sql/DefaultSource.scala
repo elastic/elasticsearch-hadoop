@@ -74,7 +74,7 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
 
   private def params(parameters: Map[String, String]) = {
     // . seems to be problematic when specifying the options
-    val params = parameters.map { case (k, v) => (Utils.camelCaseToDotNotation(k).replace('_', '.'), v)}. map { case (k, v) =>
+    val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
       else if (k == "path") ("es.resource", v)
       else if (k == "pushdown") (Utils.DATA_SOURCE_PUSH_DOWN, v)
@@ -123,7 +123,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         log.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
       }
       val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg))
-      
+
       if (log.isTraceEnabled()) {
         log.trace("Transformed filters into DSL $filterString")
       }
@@ -221,7 +221,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case d: Double      => d.toString
       case s: String      => if (inJsonFormat) StringUtils.toJsonString(s) else s
       // new in Spark 1.4
-      case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String")) 
+      case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String"))
                           => if (inJsonFormat) StringUtils.toJsonString(utf.toString()) else utf.toString()
       case ar: Array[Any] =>
         if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).mkString("[", ",", "]")

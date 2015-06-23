@@ -826,7 +826,7 @@ val df = sql.read()<1>.format("org.elasticsearch.spark.sql"<2>).load("spark/inde
 
 Whatever API is used, once created, the +DataFrame+ can be accessed freely to manipulate the data.
 
-The __Data Sources__ declaration also allows specific options to be passed in, namely:
+The __sources__ declaration also allows specific options to be passed in, namely:
 
 [cols="^,^,^",options="header"]
 |===
@@ -839,7 +839,7 @@ The __Data Sources__ declaration also allows specific options to be passed in, n
 |===
 
 Both options are explained in the next section.
-Do note that one can also specify +es.+ options: simply declare them as such (but do use camelCase style instead of +.+ as otherwise Spark will complain about the syntax); additionally one can simply skip the +es.+ prefix which the connector will add automatically.
+To specify the options (including the generic {eh} ones), one simply passes a +Map+ to the aforementioned methods:
 
 For example:
 
@@ -849,24 +849,38 @@ val sql = new SQLContext...
 // options for Spark 1.3 need to include the target path/resource
 val options13 = Map("path" -> "spark/index", 
                     "pushdown"<1> -> "true", 
-                    "nodes"<2> -> "someNode", "esPort"<3> -> "9200")
+                    "es.nodes"<2> -> "someNode", "es.port" -> "9200")
 
 // Spark 1.3 style
-val spark13DF = sql.load("org.elasticsearch.spark.sql", options13<4>)
+val spark13DF = sql.load("org.elasticsearch.spark.sql", options13<3>)
 
 // options for Spark 1.4 - the path/resource is specified separately
-val options = Map("pushdown"<1> -> "true", "nodes"<2> -> "someNode", "esPort"<3> -> "9200")
+val options = Map("pushdown"<1> -> "true", "es.nodes"<2> -> "someNode", "es.port" -> "9200")
 
 // Spark 1.4 style
 val spark14DF = sql.read().format("org.elasticsearch.spark.sql")
-                          .options<4>(options).load("spark/index")
+                          .options<3>(options).load("spark/index")
 ----
 
 <1> `pushdown` option - specific to Spark data sources
-<2> +es.nodes+ configuration option (specified without the leading +es.+)
-<3> +es.port+ specified in full format - notice the +.+ is indicated through the camel case style
-<4> pass the options when definition/loading the source
+<2> +es.nodes+ configuration option
+<3> pass the options when definition/loading the source
 
+
+[source,scala]
+----
+sqlContext.sql(
+   "CREATE TEMPORARY TABLE myIndex    " + <1>
+   "USING org.elasticsearch.spark.sql " + <2>
+   "OPTIONS (resource 'spark/index'<3>, nodes<4> 'spark/index')" ) "
+----
+
+<1> Spark's temporary table name
+<2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
+<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. The +es.+ prefix is fixed due to the SQL parser
+
+
+Do note that due to the SQL parser, the +.+ (among other common characters used for delimiting) is not allowed; the connector tries to work around it by append the +es.+ prefix automatically however this works only for specifying the configuration options with only one +.+ (like +es.nodes+ above). Because of this, if properties with multiple +.+ are needed, one should use the +SQLContext.load+ or +SQLContext.read+ methods above and pass the properties as a +Map+.
 
 [[spark-pushdown]]
 [float]
@@ -894,13 +908,13 @@ Available since Spark SQL 1.2, one can also access a data source by declaring it
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (resource 'spark/index'<3>, scrollSize<4> '20')" ) "
+   "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" ) "
 ----
 
 <1> Spark's temporary table name
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
 <3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es+ prefix or skip it for convenient.
-<4> Since using +.+ (or +_+ in Spark 1.4) can cause syntax exceptions, one should replace it instead with camelCase style. Thus, in this example +es.scroll.size+ becomes +scrollSize+ (as the leading +es+ can be removed)
+<4> Since using +.+ can cause syntax exceptions, one should replace it instead with +_+ style. Thus, in this example +es.scroll.size+ becomes +scroll_size+ (as the leading +es+ can be removed). Do note this only work in Spark 1.3 as the Spark 1.4 has a stricter parser. See the chapter above for more information.
 
 Once defined, the schema is picked up automatically. So one can issue queries, right away:
 
