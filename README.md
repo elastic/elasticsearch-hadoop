@@ -11,27 +11,16 @@ For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/e
 
 ## Installation
 
-### Stable Release (currently `2.0.2`)
+### Stable Release (currently `2.1.0`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.0.2</version>
+  <version>2.1.0</version>
 </dependency>
 ```
-### Beta Release (currently `2.1.0.rc1`)
-Available through any Maven-compatible tool:
-
-```xml
-<dependency>
-  <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.rc1</version>
-</dependency>
-```
-
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
 
 ### Development Snapshot
@@ -41,7 +30,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version>
+  <version>2.2.0.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
