@@ -107,7 +107,7 @@ case class Trip(departure: String, arrival: String)               <2>
 val upcomingTrip = Trip("OTP", "SFO")
 val lastWeekTrip = Trip("MUC", "OTP")
 
-val rdd = sc.makeRDD(Seq(upcomingTrip, lastWeekTrip))           <3>
+val rdd = sc.makeRDD(Seq(upcomingTrip, lastWeekTrip))             <3>
 EsSpark.saveToEs(rdd, "spark/docs")                               <4>
 ----
 
@@ -367,7 +367,7 @@ Map<String, ?> jfk = ImmutableMap.of("iata", "JFK", "name", "JFK NYC");
 
 JavaSparkContext jsc = ...
 
-// create a pair +RDD+ between the id and the docs
+// create a pair RDD between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<1>(ImmutableList.of(
         new Tuple2<Object, Object>(1, otp),          <2>
         new Tuple2<Object, Object>(2, jfk)));        <3>
@@ -399,7 +399,7 @@ Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", V
 
 JavaSparkContext jsc = ...
 
-// create a pair +RDD+ between the id and the docs
+// create a pair RDD between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<(ImmutableList.of(
         new Tuple2<Object, Object>(otpMeta, otp),    <6>
         new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
@@ -872,13 +872,12 @@ val spark14DF = sql.read().format("org.elasticsearch.spark.sql")
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (resource 'spark/index'<3>, nodes<4> 'spark/index')" ) "
+   "OPTIONS (<3> resource 'spark/index', nodes 'spark/index')" ) "
 ----
 
 <1> Spark's temporary table name
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
 <3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. The +es.+ prefix is fixed due to the SQL parser
-
 
 Do note that due to the SQL parser, the +.+ (among other common characters used for delimiting) is not allowed; the connector tries to work around it by append the +es.+ prefix automatically however this works only for specifying the configuration options with only one +.+ (like +es.nodes+ above). Because of this, if properties with multiple +.+ are needed, one should use the +SQLContext.load+ or +SQLContext.read+ methods above and pass the properties as a +Map+.
 

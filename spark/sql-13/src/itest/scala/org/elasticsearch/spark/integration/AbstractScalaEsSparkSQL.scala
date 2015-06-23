@@ -265,17 +265,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsDataFrame50ReadAsDataSource() {
     val target = wrapIndex("sparksql-test/scala-basic-write")
     var options = s"""resource '$target' """
-    if (readMetadata) {
-      options = options + """,readMetadata "true" """
-    }
     val table = wrapIndex("sqlbasicread1")
 
     val query = s"CREATE TEMPORARY TABLE $table "+
       " USING org.elasticsearch.spark.sql " +
       s" OPTIONS ($options)"
-      
+
     println(query)
-    
+
     val dataFrame = sqc.sql(query)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
@@ -336,9 +333,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("spark-test/scala-sql-varcols")
 
     var options = s"""resource "$target" """
-    if (readMetadata) {
-      options = options + """ ,readMetadata "true" """
-    }
+
 
 //    sqc.sql(s"CREATE TEMPORARY TABLE $table" +
 //      " USING org.elasticsearch.spark.sql " +
@@ -502,18 +497,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsSchemaFromDocsWithDifferentProperties() {
     val table = wrapIndex("sqlvarcol")
     esDataSource(table)
-    
+
     val target = wrapIndex("spark-test/scala-sql-varcols")
 
     var options = s"""resource '$target' """
-    if (readMetadata) {
-      options = options + """ , readMetadata 'true' """
-    }
 
     val s = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
        " USING org.elasticsearch.spark.sql " +
        s" OPTIONS ($options)")
-       
+
     val allResults = sqc.sql(s"SELECT * FROM $table")
     assertEquals(3, allResults.count())
     allResults.printSchema()
@@ -603,9 +595,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val table = wrapIndex("table_insert")
 
     var options = s"resource '$index '"
-    if (readMetadata) {
-      options = options + " ,readMetadata 'true'"
-    }
 
     val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
       s"USING org.elasticsearch.spark.sql " +
@@ -657,14 +646,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dstTable = wrapIndex("table_overwrite_dst")
 
     var dstOptions = s"resource '$source'"
-    if (readMetadata) {
-      dstOptions = dstOptions + " ,readMetadata 'true'"
-    }
 
     var srcOptions = s"resource '$index'"
-    if (readMetadata) {
-      srcOptions = srcOptions + " ,readMetadata 'true'"
-    }
 
     val srcFrame = sqc.sql(s"CREATE TEMPORARY TABLE $srcTable " +
       s"USING org.elasticsearch.spark.sql " +
