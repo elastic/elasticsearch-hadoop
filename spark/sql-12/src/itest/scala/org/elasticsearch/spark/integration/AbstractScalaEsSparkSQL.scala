@@ -19,7 +19,6 @@
 package org.elasticsearch.spark.integration;
 
 import java.{ util => ju, lang => jl }
-
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConversions.propertiesAsScalaMap
@@ -62,9 +61,9 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.mapred.JobContext
 import org.elasticsearch.hadoop.util.StringUtils
 import scala.collection.JavaConverters.asScalaBufferConverter
-
 import com.esotericsoftware.kryo.io.{ Output => KryoOutput }
 import com.esotericsoftware.kryo.io.{ Input => KryoInput }
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
 
 case class KeyValue(key: Int, value: String)
