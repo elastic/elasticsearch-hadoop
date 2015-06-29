@@ -30,6 +30,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
+import org.apache.spark.SparkException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SaveMode
@@ -42,6 +43,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
@@ -163,6 +165,36 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     RestUtils.touch(index)
     val idx = sqc.read.format("org.elasticsearch.spark.sql").load(s"$index/no_such_mapping")
     idx.printSchema()
+  }
+
+  //@Test(expected = classOf[SparkException])
+  def testArrayMapping() {
+//    val mapping = """{ "array-mapping": {
+//      | "properties" : {
+//      |   "arr" : {
+//      |     "properties" : {
+//      |          "one" : { "type" : "string" },
+//      |          "two" : { "type" : "string" }
+//      |     }
+//      |   },
+//      |   "top-level" : { "type" : "string" }
+//      | }
+//      |}
+//      }""".stripMargin
+
+    val index = wrapIndex("sparksql-test")
+    val indexAndType = s"$index/array-mapping"
+//    RestUtils.touch(index)
+//    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    // add some data
+    val doc1 = """{"arr" : [{"one" : "1", "two" : "2"}, {"one" : "unu", "two" : "doi"}], "top-level" : "root" }""".stripMargin
+
+    RestUtils.postData(indexAndType, doc1.getBytes(StringUtils.UTF_8))
+
+    val df = sqc.read.format("org.elasticsearch.spark.sql").load(indexAndType)
+    df.printSchema()
+    println(df.count)
   }
 
   @Test
