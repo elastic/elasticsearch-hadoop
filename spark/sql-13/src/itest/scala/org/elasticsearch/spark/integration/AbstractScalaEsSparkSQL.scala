@@ -22,6 +22,7 @@ import java.{lang => jl}
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
+import javax.xml.bind.DatatypeConverter
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.collection.JavaConverters.asScalaBufferConverter
@@ -39,6 +40,8 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
+
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
@@ -60,11 +63,8 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
-
-import javax.xml.bind.DatatypeConverter
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -137,7 +137,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   val datInput = TestUtils.sampleArtistsDat()
 
-  @Test
+  //@Test
   def test1KryoScalaEsRow() {
     val kryo = SparkUtils.sparkSerializer(sc.getConf)
     val row = new ScalaEsRow(new ArrayBuffer() ++= StringUtils.tokenize("foo,bar,tar").asScala)
@@ -149,6 +149,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     kryo.writeClassAndObject(output, row)
     val serialized = kryo.readClassAndObject(input).asInstanceOf[ScalaEsRow]
     println(serialized.rowOrder)
+  }
+
+  @Test(expected = classOf[EsHadoopIllegalArgumentException])
+  def testNoIndexExists() {
+    val idx = sqc.read.format("org.elasticsearch.spark.sql").load("existing_index/not_existing_mapping")
+    idx.printSchema()
+  }
+
+  @Test(expected = classOf[EsHadoopIllegalArgumentException])
+  def testNoMappingExists() {
+    val index = wrapIndex("spark-index-ex")
+    RestUtils.touch(index)
+    val idx = sqc.read.format("org.elasticsearch.spark.sql").load(s"$index/no_such_mapping")
+    idx.printSchema()
   }
 
   @Test

@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.types.StringType
 import org.apache.spark.sql.catalyst.types.StructField
 import org.apache.spark.sql.catalyst.types.StructType
 import org.apache.spark.sql.catalyst.types.TimestampType
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.FieldType.BINARY
@@ -55,7 +56,12 @@ private[sql] object MappingUtils {
   def discoverMappingAsField(cfg: Settings): Field = {
     val repo = new RestRepository(cfg)
     try {
-      return repo.getMapping().skipHeaders()
+      if (repo.indexExists(true)) {
+        return repo.getMapping.skipHeaders()
+      }
+      else {
+        throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
+      }
     } finally {
       repo.close()
     }
