@@ -1,9 +1,9 @@
 package org.elasticsearch.spark.sql
 
 import scala.collection.mutable.Buffer
-
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.SettingsAware
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 
 private[sql] trait RowValueReader extends SettingsAware {
 
@@ -21,7 +21,10 @@ private[sql] trait RowValueReader extends SettingsAware {
   }
 
   def rowOrder(currentField: String): Seq[String] = {
-    rowMap.get(currentField).get
+     rowMap.get(currentField) match {
+      case Some(v) => v
+      case None => throw new EsHadoopIllegalStateException(s"Field '$currentField' not found; typically this occurs with arrays which are not mapped as single value")
+    }
   }
 
   def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any) {
