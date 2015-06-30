@@ -250,16 +250,16 @@ public class RestRepository implements Closeable, StatsAware {
             }
         }
 
-        if (requiresRefreshAfterBulk && executedBulkWrite) {
-            // refresh batch
-            client.refresh(resourceW);
-
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Refreshing index [%s]", resourceW));
-            }
-        }
-
         if (client != null) {
+            if (requiresRefreshAfterBulk && executedBulkWrite) {
+                // refresh batch
+                client.refresh(resourceW);
+
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Refreshing index [%s]", resourceW));
+                }
+            }
+
             client.close();
             stats.aggregate(client.stats());
             client = null;
