@@ -114,7 +114,7 @@ query dsl;;
 using the form `query_dsl` - note the query dsl needs to start with `{` and end with `}` as mentioned {ref}/search-request-body.html[here]
 
 external resource;;
-if none of the the two above do match, {eh} will try to interpret the parameter as a path within the HDFS file-system. If that is not the case, it will try to load the resource from the classpath or, if that fails, from the Hadoop `DistributedCache`. The resource should contain either a `uri query` or a `query dsl`.
+if none of the two above do match, {eh} will try to interpret the parameter as a path within the HDFS file-system. If that is not the case, it will try to load the resource from the classpath or, if that fails, from the Hadoop `DistributedCache`. The resource should contain either a `uri query` or a `query dsl`.
 
 To wit, here is an example:
 [source,ini]
@@ -448,7 +448,7 @@ As the connector runs as a _library_ within Hadoop or Spark, for the most part i
 [float]
 ==== SSL/TLS configuration
 
-In case of an encrypted transport, the SSL/TLS support needs to be enabled in {eh} in order for the connector to properly communicate with {es}. This is done by setting `es.net.ssl` property to `true` and, depending on your SSL configuration (whether the certificates are signed by a CA or not, whether they are global at JVM level or just local to one application), might require setting up the `keystore` and/or `truststore`, that is where the _credentials_ are stored (`keystore` - which typically stores private keys and certificates) and how to _verify_ the them (`truststore` - which typically stores certificates from third party also known as CA - certificate authorities).
+In case of an encrypted transport, the SSL/TLS support needs to be enabled in {eh} in order for the connector to properly communicate with {es}. This is done by setting `es.net.ssl` property to `true` and, depending on your SSL configuration (whether the certificates are signed by a CA or not, whether they are global at JVM level or just local to one application), might require setting up the `keystore` and/or `truststore`, that is where the _credentials_ are stored (`keystore` - which typically stores private keys and certificates) and how to _verify_ the (`truststore` - which typically stores certificates from third party also known as CA - certificate authorities).
 Typically (and again, do note that your environment might differ significantly), if the SSL setup for {eh} is not already done at the JVM level, one needs to setup the keystore if the {eh} security requires client authentication (PKI - Public Key Infrastructure), and setup `truststore` if SSL is enabled.
 
 [float]
@@ -456,7 +456,7 @@ Typically (and again, do note that your environment might differ significantly),
 
 The authentication support in {eh} is of two types:
 
-Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.auth.path` properties.
+Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.auth.pass` properties.
 PKI/X.509:: Use X.509 certificates to authentication {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
 
