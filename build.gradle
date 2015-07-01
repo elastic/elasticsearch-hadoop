@@ -110,6 +110,16 @@ if (rootProject == project) {
 def File gitBranch() {
     // parse the git files to find out the revision
     File gitHead =  file("$rootDir/.git/HEAD")
+    if (gitHead != null && !gitHead.exists()) {
+      // Try as a sub module
+      subModuleGit = file("$rootDir/.git")
+      if (subModuleGit != null && subModuleGit.exists()) {
+        String content = subModuleGit.text.trim()
+        if (content.startsWith("gitdir:")) {
+            gitHead = file("$rootDir/" + content.replace('gitdir: ','') + "/HEAD")
+        }
+      }
+    }
 
     if (gitHead != null && gitHead.exists()) {
         String content = gitHead.text.trim()
