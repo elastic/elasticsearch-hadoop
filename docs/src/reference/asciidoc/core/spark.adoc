@@ -60,7 +60,7 @@ $ ./bin/spark-submit --conf spark.es.resource<1>=index/type ...
 ==== Writing data to {es}
 
 With {eh}, any +RDD+ can be saved to {es} as long as its content can be translated into documents. In practice this means the +RDD+ type needs to be a +Map+ (whether a Scala or a Java one), a http://docs.oracle.com/javase/tutorial/javabeans/[+JavaBean+] or a Scala http://docs.scala-lang.org/tutorials/tour/case-classes.html[case class]. When that is not the case, one can easily _transform_ the data
-in Spark or plug-in their own customer <<configuration-serialization,+ValueWriter+>>.
+in Spark or plug-in their own custom <<configuration-serialization,+ValueWriter+>>.
 
 [float]
 [[spark-write-scala]]
