@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
+import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 
 public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat {
 
@@ -225,7 +226,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
     //
     @Override
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
-        List<OutputFormat> formats = getNewApiFormats(context.getConfiguration());
+        List<OutputFormat> formats = getNewApiFormats(CompatHandler.taskAttemptContext(context).getConfiguration());
         List<RecordWriter> writers = new ArrayList<RecordWriter>();
         for (OutputFormat format : formats) {
             writers.add(format.getRecordWriter(context));
@@ -236,7 +237,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
 
     @Override
     public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {
-        List<OutputFormat> formats = getNewApiFormats(context.getConfiguration());
+        List<OutputFormat> formats = getNewApiFormats(CompatHandler.jobContext(context).getConfiguration());
         for (OutputFormat format : formats) {
             format.checkOutputSpecs(context);
         }
@@ -244,7 +245,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
 
     @Override
     public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
-        List<OutputFormat> formats = getNewApiFormats(context.getConfiguration());
+        List<OutputFormat> formats = getNewApiFormats(CompatHandler.taskAttemptContext(context).getConfiguration());
         List<OutputCommitter> committers = new ArrayList<OutputCommitter>();
         for (OutputFormat format : formats) {
             committers.add(format.getOutputCommitter(context));
