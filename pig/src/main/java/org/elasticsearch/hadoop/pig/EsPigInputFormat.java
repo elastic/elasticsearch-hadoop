@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.mr.compat.CompatHandler;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 
@@ -107,7 +108,7 @@ public class EsPigInputFormat extends EsInputFormat<String, Object> {
     @SuppressWarnings("unchecked")
     @Override
     public AbstractPigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return isOutputAsJson(context.getConfiguration()) ? new PigJsonShardRecordReader() : new PigShardRecordReader();
+        return isOutputAsJson(CompatHandler.taskAttemptContext(context).getConfiguration()) ? new PigJsonShardRecordReader() : new PigShardRecordReader();
     }
 
     @SuppressWarnings("unchecked")
