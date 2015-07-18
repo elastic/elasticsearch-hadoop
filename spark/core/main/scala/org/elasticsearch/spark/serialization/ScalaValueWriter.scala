@@ -52,6 +52,17 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         generator.writeEndArray()
       }
 
+      case i: Array[_] => {
+        generator.writeBeginArray()
+        for (v <- i) {
+          val result = doWrite(v, generator, false)
+          if (!result.isSuccesful()) {
+            return result
+          }
+        }
+        generator.writeEndArray()
+      }
+
       case p: Product => {
         // handle case class
         if (RU.isCaseClass(p)) {
