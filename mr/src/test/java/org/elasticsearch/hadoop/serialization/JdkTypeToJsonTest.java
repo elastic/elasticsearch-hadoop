@@ -211,7 +211,7 @@ public class JdkTypeToJsonTest {
     @Test
     public void testDate() {
         Date d = new Date(0);
-        assertThat(jdkTypeToJson(d), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        assertThat(jdkTypeToJson(d), containsString(new SimpleDateFormat("yyyy-MM-dd").format(d)));
     }
 
     @Test
@@ -219,14 +219,14 @@ public class JdkTypeToJsonTest {
         Date d = new Date(0);
         Calendar cal = Calendar.getInstance();
         cal.setTime(d);
-        assertThat(jdkTypeToJson(cal), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        assertThat(jdkTypeToJson(cal), containsString(new SimpleDateFormat("yyyy-MM-dd").format(d)));
     }
 
     @Test
     public void testTimestamp() {
         Date d = new Date(0);
         Timestamp ts = new Timestamp(0);
-        assertThat(jdkTypeToJson(ts), containsString(new SimpleDateFormat("YYYY-MM-DD").format(d)));
+        assertThat(jdkTypeToJson(ts), containsString(new SimpleDateFormat("yyyy-MM-dd").format(d)));
     }
 
     @Test(expected = EsHadoopSerializationException.class)
