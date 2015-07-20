@@ -61,6 +61,7 @@ public abstract class CascadingUtils {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);
