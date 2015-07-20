@@ -228,6 +228,7 @@ public abstract class RestService implements Serializable {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         String savedSettings = settings.save();
@@ -373,6 +374,7 @@ public abstract class RestService implements Serializable {
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
         InitializationUtils.discoverEsVersion(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);

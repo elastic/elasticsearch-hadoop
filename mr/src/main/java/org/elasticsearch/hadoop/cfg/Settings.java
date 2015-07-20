@@ -61,6 +61,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_CLIENT_ONLY, ES_NODES_CLIENT_ONLY_DEFAULT));
     }
 
+    public boolean getNodesDataOnly() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY, ES_NODES_DATA_ONLY_DEFAULT));
+    }
+
     public long getHttpTimeout() {
         return TimeValue.parseTimeValue(getProperty(ES_HTTP_TIMEOUT, ES_HTTP_TIMEOUT_DEFAULT)).getMillis();
     }

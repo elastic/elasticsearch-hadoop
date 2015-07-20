@@ -51,6 +51,10 @@ public interface ConfigurationOptions {
     String ES_NODES_CLIENT_ONLY = "es.nodes.client.only";
     String ES_NODES_CLIENT_ONLY_DEFAULT = "false";
 
+    /** Data only */
+    String ES_NODES_DATA_ONLY = "es.nodes.data.only";
+    String ES_NODES_DATA_ONLY_DEFAULT = "true";
+
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";
