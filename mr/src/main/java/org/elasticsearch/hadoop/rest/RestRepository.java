@@ -241,6 +241,11 @@ public class RestRepository implements Closeable, StatsAware {
             log.debug("Closing repository and connection to Elasticsearch ...");
         }
 
+        // bail out if closed before
+        if (client == null) {
+            return;
+        }
+
         if (!hadWriteErrors) {
             flush();
         }
@@ -250,20 +255,18 @@ public class RestRepository implements Closeable, StatsAware {
             }
         }
 
-        if (client != null) {
-            if (requiresRefreshAfterBulk && executedBulkWrite) {
-                // refresh batch
-                client.refresh(resourceW);
+        if (requiresRefreshAfterBulk && executedBulkWrite) {
+            // refresh batch
+            client.refresh(resourceW);
 
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resourceW));
-                }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Refreshing index [%s]", resourceW));
             }
-
-            client.close();
-            stats.aggregate(client.stats());
-            client = null;
         }
+
+        client.close();
+        stats.aggregate(client.stats());
+        client = null;
     }
 
     public RestClient getRestClient() {
