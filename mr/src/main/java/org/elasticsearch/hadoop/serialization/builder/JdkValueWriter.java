@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import javax.xml.bind.DatatypeConverter;
 
 import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 
 /**
  * Value writer for JDK types.
@@ -93,7 +94,7 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         }
         else if (value.getClass().isArray()) {
             generator.writeBeginArray();
-            for (Object o : (Object[]) value) {
+            for (Object o : ObjectUtils.toObjectArray(value)) {
                 Result result = doWrite(o, generator, parentField);
                 if (!result.isSuccesful()) {
                     return result;
