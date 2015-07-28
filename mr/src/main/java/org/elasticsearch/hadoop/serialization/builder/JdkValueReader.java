@@ -348,7 +348,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     }
 
     protected Object parseDate(String value, boolean richDate) {
-        return (richDate ? createDate(DateUtils.parseDateJdk(value).getTimeInMillis()) : parseString(value));
+        return (richDate ? createDate(DateUtils.parseDate(value).getTimeInMillis()) : parseString(value));
     }
 
     protected Object createDate(long timestamp) {

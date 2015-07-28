@@ -69,7 +69,7 @@ public class DateIndexFormatter implements IndexFormatter {
             return null;
         }
 
-        Calendar calendar = DateUtils.parseDateJdk(value);
+        Calendar calendar = DateUtils.parseDate(value);
         dateFormat.setCalendar(calendar);
         return dateFormat.format(calendar.getTime());
     }
