@@ -84,7 +84,7 @@ class PigUtils {
         }
 
         static Object convertFromES(String esDate) {
-            return DateUtils.parseDateJdk(esDate).getTimeInMillis();
+            return DateUtils.parseDate(esDate).getTimeInMillis();
         }
 
         static Object convertFromES(Long esDate) {

@@ -131,7 +131,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   }
 
   protected def createDate(value: String):Any = {
-    createDate(DateUtils.parseDateJdk(value).getTimeInMillis())
+    createDate(DateUtils.parseDate(value).getTimeInMillis())
   }
 
   def setSettings(settings: Settings) = {

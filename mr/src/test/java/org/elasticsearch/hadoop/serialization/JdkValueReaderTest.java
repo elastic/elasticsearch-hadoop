@@ -23,10 +23,9 @@ import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.util.DateUtils;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 
 
 public class JdkValueReaderTest extends AbstractValueReaderTest {
@@ -83,9 +82,9 @@ public class JdkValueReaderTest extends AbstractValueReaderTest {
 
     @Test
     public void parseJDKRichDateISO() {
-        Object withColon = DateUtils.parseDateJdk("2015-05-25T22:30:00+03:00");
-        Object withoutColon = DateUtils.parseDateJdk("2015-05-25T22:30:00+0300");
-        Object noMinutes = DateUtils.parseDateJdk("2015-05-25T22:30:00+03");
+        Object withColon = DateUtils.parseDate("2015-05-25T22:30:00+03:00");
+        Object withoutColon = DateUtils.parseDate("2015-05-25T22:30:00+0300");
+        Object noMinutes = DateUtils.parseDate("2015-05-25T22:30:00+03");
 
         assertEquals(withColon, withoutColon);
         assertEquals(withColon, noMinutes);
