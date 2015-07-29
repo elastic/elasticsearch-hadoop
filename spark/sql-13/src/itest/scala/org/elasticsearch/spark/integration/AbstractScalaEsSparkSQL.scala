@@ -26,6 +26,7 @@ import javax.xml.bind.DatatypeConverter
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkConf
@@ -51,6 +52,7 @@ import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.spark._
 import org.elasticsearch.spark.sql._
+import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL
 import org.elasticsearch.spark.sql.sqlContextFunctions
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.is
@@ -252,6 +254,34 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
     nameRDD.take(7).foreach(println)
     assertEquals(10, nameRDD.count)
+  }
+
+  @Test
+  def testEsDataFrame2ReadWithAndWithoutQuery() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val dfNoQuery = sqc.esDF(target, cfg)
+    val dfWQuery = sqc.esDF(target, "?q=name:me*", cfg)
+
+    println(dfNoQuery.head())
+    println(dfWQuery.head())
+    
+    //assertEquals(dfNoQuery.head().toString(), dfWQuery.head().toString())
+  }
+
+  @Test
+  def testEsDataFrame2ReadWithAndWithoutQueryInJava() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val dfNoQuery = JavaEsSparkSQL.esDF(sqc, target, cfg.asJava)
+    val dfWQuery = JavaEsSparkSQL.esDF(sqc, target, "?q=name:me*", cfg.asJava)
+
+    println(dfNoQuery.head())
+    println(dfWQuery.head())
+    dfNoQuery.show(3)
+    dfWQuery.show(3)
+    
+    //assertEquals(dfNoQuery.head().toString(), dfWQuery.head().toString())
   }
 
   @Test
