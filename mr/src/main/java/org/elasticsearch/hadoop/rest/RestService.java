@@ -221,6 +221,8 @@ public abstract class RestService implements Serializable {
 
     @SuppressWarnings("unchecked")
     public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
+        Version.logVersion();
+
         boolean overlappingShards = false;
         Map<Shard, Node> targetShards = null;
 
@@ -254,7 +256,6 @@ public abstract class RestService implements Serializable {
             }
         }
 
-        Version.logVersion();
         log.info(String.format("Reading from [%s]", settings.getResourceRead()));
 
         String savedMapping = null;
@@ -368,6 +369,7 @@ public abstract class RestService implements Serializable {
     }
 
     public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
+        Version.logVersion();
 
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
@@ -383,7 +385,6 @@ public abstract class RestService implements Serializable {
 
         Resource resource = new Resource(settings, false);
 
-        Version.logVersion();
         log.info(String.format("Writing to [%s]", resource));
 
         // single index vs multi indices
