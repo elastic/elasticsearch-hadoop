@@ -19,6 +19,9 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
+import java.net.BindException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -108,9 +111,13 @@ public class NetworkClient implements StatsAware, Closeable {
                 if (ex instanceof EsHadoopIllegalStateException) {
                     throw (EsHadoopException) ex;
                 }
-
                 // issues with the SSL handshake, bail out instead of retry, for security reasons
                 if (ex instanceof javax.net.ssl.SSLException) {
+                    throw new EsHadoopTransportException(ex);
+                }
+                // check for fatal, non-recoverable network exceptions
+
+                if (ex instanceof BindException || ex instanceof NoRouteToHostException || ex instanceof UnknownHostException) {
                     throw new EsHadoopTransportException(ex);
                 }
 
