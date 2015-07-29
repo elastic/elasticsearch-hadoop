@@ -18,6 +18,11 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +38,40 @@ public abstract class Version {
     public static boolean printed = false;
 
     static {
+        // check classpath
+        String target = Version.class.getName().replace(".", "/").concat(".class");
+        Enumeration<URL> res = null;
+
+        try {
+            res = Version.class.getClassLoader().getResources(target);
+        } catch (IOException ex) {
+            LogFactory.getLog(Version.class).warn("Cannot detect ES-Hadoop jar; it typically indicates a deployment issue...");
+        }
+
+        if (res != null) {
+            List<URL> urls = Collections.list(res);
+
+            int foundJars = 0;
+            if (urls.size() > 1) {
+                StringBuilder sb = new StringBuilder("Multiple ES-Hadoop versions detected in the classpath; please use only one\n");
+                for (URL url : urls) {
+                    String s = url.toString();
+                    if (s.contains("jar:")) {
+                        foundJars ++;
+                        sb.append(s.replace("!/" + target, ""));
+                        sb.append("\n");
+                    }
+                }
+                if (foundJars > 1) {
+                    LogFactory.getLog(Version.class).fatal(sb);
+                    throw new Error(sb.toString());
+                }
+            }
+        }
+
+        //System.out.println(res.nextElement().toURI().toASCIIString());
+
+
         Properties build = new Properties();
         try {
             build = IOUtils.propsFromString(IOUtils.asString(Version.class.getResourceAsStream("/esh-build.properties")));
