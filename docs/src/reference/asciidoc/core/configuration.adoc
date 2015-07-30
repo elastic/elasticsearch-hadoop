@@ -380,10 +380,10 @@ Number of retries for a given batch in case {es} is overloaded and data is rejec
 `es.batch.write.retry.wait` (default 10s)::
 Time to wait between batch write retries.
 
-`es.ser.writer.value.class` (default _depends on the library used_)::
+`es.ser.reader.value.class` (default _depends on the library used_)::
 Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
-`es.ser.reader.value.class` (default _depends on the library used_)::
+`es.ser.writer.value.class` (default _depends on the library used_)::
 Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
 
 [[configuration-runtime]]
