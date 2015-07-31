@@ -4,10 +4,9 @@ buildscript {
     repositories {
         mavenCentral()
         maven { url 'http://repo.spring.io/plugins-release' }
-
     }
     dependencies {
-        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.5')
+        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.7')
     }
 }
 
@@ -208,7 +207,7 @@ allprojects { project ->
         // force the use of commons-http from Hadoop 1.x
         // to avoid SLF4J warnings, force only one version
         force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
-        //force 'com.google.guava:guava:14.0.1' // force guava version for Spark
+        //force 'com.google.guava:guava:15.0' // force guava version for Spark
         force 'joda-time:joda-time:2.8' // force guava version for Spark
         force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
         force "commons-cli:commons-cli:1.2"
@@ -286,9 +285,9 @@ allprojects { project ->
                 "http://commons.apache.org/proper/commons-logging/apidocs/",
                 "http://hadoop.apache.org/docs/stable2/api/",
                 //"http://hbase.apache.org/apidocs/",
-                "http://pig.apache.org/docs/r0.14.0/api/",
+                "http://pig.apache.org/docs/r0.15.0/api/",
                 // r0.13.1 is invalid as it does not provide the package list
-                "http://hive.apache.org/javadocs/r0.12.0/api/",
+                "http://hive.apache.org/javadocs/r1.2.1/api/",
                 "http://docs.cascading.org/cascading/2.6/javadoc/",
                 "http://spark.apache.org/docs/latest/api/java/",
                 "http://storm.apache.org/apidocs/"
@@ -391,7 +390,7 @@ def nestMRProject(target) {
     
     target.dependencies {
         provided(project(":elasticsearch-hadoop-mr"))
-        provided(project(path: ":elasticsearch-hadoop-mr", configuration:"provided"))
+        provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
         
         testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
         itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
@@ -460,7 +459,7 @@ project(":elasticsearch-hadoop-hive") {
 
 
 // reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
-def baseSparkProject(target, sparkVersion, java8) {
+def baseSparkProject(target, sparkVersion) {
    def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
 
     switch (scalaVer) {
@@ -476,18 +475,11 @@ def baseSparkProject(target, sparkVersion, java8) {
     
     target.archivesBaseName += "_$scalaMajorVersion"
 
-    // Gradle 1.12 does not currently supports JDK 1.8 through the Scala ANT plugin
-    if (java8) {
-        println "Elasticsearch Spark project cannot be compiled under JDK 8 - please change to JDK 6 or 7"
-        tasks.all { enabled = false }
-    }
-    else {
-        target.apply plugin: 'scala'
-        
-        target.compileScala {
-            //scalaCompileOptions.additionalParameters = ["-feature"]
-            //scalaCompileOptions.useAnt = false
-        }
+    target.apply plugin: 'scala'
+    
+    target.compileScala {
+        //scalaCompileOptions.additionalParameters = ["-feature"]
+        //scalaCompileOptions.useAnt = false
     }
     
     if (sparkVersion != spark12Version)
@@ -569,17 +561,15 @@ def baseSparkProject(target, sparkVersion, java8) {
       }
     }
     
-    if (!java8) {
-        target.scaladoc {
-            title = "${rootProject.description} ${version} API"
-        }
+    target.scaladoc {
+        title = "${rootProject.description} ${version} API"
     }
 }
 
 project(":elasticsearch-spark") {
     description = "Elasticsearch Spark (Spark 1.3+)"
 
-    baseSparkProject(project, spark13Version, java8)
+    baseSparkProject(project, spark13Version)
     
     // deal with the messy conflicts out there
     configurations.all {
@@ -600,7 +590,7 @@ project(":elasticsearch-spark") {
 project(":elasticsearch-spark-1.2") {
     description = "Elasticsearch Spark (Spark 1.0-1.2)"
 
-    baseSparkProject(project, spark12Version, java8)
+    baseSparkProject(project, spark12Version)
 }
 
 project(":elasticsearch-storm") {
@@ -800,7 +790,7 @@ configure(rootProject) {
     
     task wrapper(type: Wrapper) {
         description = 'Generates gradlew[.bat] scripts'
-        gradleVersion = '1.12'
+        gradleVersion = '2.6'
     }
 }
 
@@ -808,6 +798,7 @@ configure(rootProject) {
 allprojects { project ->
     
     findbugs {
+      toolVersion = "3.0.1"
       ignoreFailures = true
       effort = "max"
       reportLevel = "low"
@@ -826,6 +817,7 @@ allprojects { project ->
     pmd {
       ignoreFailures = true
       sourceSets = [sourceSets.main]
+      toolVersion = "5.3.3"
     }
     
     pmdMain {

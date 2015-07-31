@@ -17,7 +17,7 @@ dependencies {
 }
 
 processResources {
-    expand (version: project.version)
+    expand (version: project.version, esVersion: project.esVersion)
 }
 
 jar {
