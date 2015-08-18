@@ -190,10 +190,20 @@ public class RestClient implements Closeable, StatsAware {
             for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
                 Map map = iterator.next();
                 Map values = (Map) map.values().iterator().next();
-                String error = (String) values.get("error");
-                if (error != null) {
-                    // status - introduced in 1.0.RC1
-                    Integer status = (Integer) values.get("status");
+                Integer status = (Integer) values.get("status");
+                Object err = values.get("error");
+                if (err != null) {
+                    String error = null;
+                    if (err instanceof Map) {
+                        Map m = ((Map) err);
+                        error = m.get("reason").toString();
+                        if (m.containsKey("caused_by")) {
+                            error += ";" + ((Map) m.get("caused_by")).get("reason");
+                        }
+                    }
+                    else {
+                        error = err.toString();
+                    }
                     if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
                     }

@@ -5,8 +5,8 @@ import java.util.Locale
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 
-import org.apache.commons.logging.Log
-
+import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.annotation.Experimental
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -39,14 +39,15 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
+import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestRepository
+import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-import org.elasticsearch.spark.sql.Utils._
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider {
 
@@ -239,7 +240,14 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   def insert(data: DataFrame, overwrite: Boolean) {
     if (overwrite) {
-      val rr = new RestRepository(cfg)
+      Utils.logger("org.elasticsearch.spark.sql.DataSource").info(s"Overwriting data for ${cfg.getResourceWrite}")
+
+      val cfgCopy = cfg.copy()
+      InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
+      cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false")
+      cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
+      cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")
+      val rr = new RestRepository(cfgCopy)
       rr.delete()
       rr.close()
     }

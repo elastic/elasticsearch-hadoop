@@ -30,9 +30,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
@@ -64,7 +64,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private final String nodes;
     private final int port;
     private final Properties props;
-    private boolean IS_ES_10;
+    private boolean IS_ES_20;
 
     private static Log log = LogFactory.getLog(EsHadoopScheme.class);
 
@@ -91,7 +91,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Settings settings = loadSettings(flowProcess.getConfigCopy(), true);
         context[2] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @Override
@@ -110,7 +110,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
@@ -176,24 +176,17 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         if (entry.getFields().isDefined()) {
             // lookup using writables
             Text lookupKey = new Text();
-            // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable<?> field : entry.getFields()) {
-                if (IS_ES_10) {
-                    // check for multi-level alias
-                    Object result = data;
-                    for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
-                        lookupKey.set(level);
-                        result = ((Map) result).get(lookupKey);
-                        if (result == null) {
-                            break;
-                        }
+                // check for multi-level alias (since ES 1.0)
+                Object result = data;
+                for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
+                    lookupKey.set(level);
+                    result = ((Map) result).get(lookupKey);
+                    if (result == null) {
+                        break;
                     }
-                    CascadingUtils.setObject(entry, field, result);
                 }
-                else {
-                    lookupKey.set(alias.toES(field.toString()));
-                    CascadingUtils.setObject(entry, field, data.get(lookupKey));
-                }
+                CascadingUtils.setObject(entry, field, result);
             }
         }
         else {

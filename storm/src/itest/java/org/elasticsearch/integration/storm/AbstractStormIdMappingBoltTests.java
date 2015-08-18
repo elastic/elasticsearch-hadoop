@@ -46,7 +46,7 @@ public class AbstractStormIdMappingBoltTests extends AbstractStormBoltTests {
 
     @Test
     public void test2WriteWithId() throws Exception {
-        List doc1 = ImmutableList.of("one", "f1", "two", "f2", "number", 1);
+        List doc1 = ImmutableList.of("one", "fo1", "two", "fo2", "number", 1);
         List doc2 = ImmutableList.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
 
         Map localCfg = new LinkedHashMap(conf);
@@ -54,8 +54,8 @@ public class AbstractStormIdMappingBoltTests extends AbstractStormBoltTests {
 
         String target = index + "/id-write";
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("test-spout-2", new TestSpout(ImmutableList.of(doc2, doc1), new Fields("key1", "val1", "key2",
-                "val2", "key3", "number")));
+        builder.setSpout("test-spout-2", new TestSpout(ImmutableList.of(doc2, doc1), new Fields("key1", "valo1", "key2",
+                "valo2", "key3", "number")));
         builder.setBolt("es-bolt-2", new TestBolt(new EsBolt(target, localCfg))).shuffleGrouping("test-spout-2");
 
         MultiIndexSpoutStormSuite.run(index + "id-write", builder.createTopology(), COMPONENT_HAS_COMPLETED);

@@ -124,18 +124,18 @@ public abstract class SettingsUtils {
     }
 
     /**
-     * Whether the settings indicate a ES 1.0RC1 (which introduces breaking changes) or lower (1.0.0.Beta2)
+     * Whether the settings indicate a ES 2.x (which introduces breaking changes) or 1.x.
      *
      * @param settings
      * @return
      */
-    public static boolean isEs10(Settings settings) {
+    public static boolean isEs20(Settings settings) {
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
         // assume ES 1.0 by default
         if (!StringUtils.hasText(version)) {
             return true;
         }
 
-        return ("1.0.0.RC".compareTo(version) <= 0 || "1.0.0".equals(version));
+        return version.startsWith("2.");
     }
 }

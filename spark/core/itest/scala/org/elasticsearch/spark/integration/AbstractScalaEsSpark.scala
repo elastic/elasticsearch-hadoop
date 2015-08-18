@@ -338,7 +338,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val data = Seq(
       Map("field1" -> 5.4, "field2" -> "foo"),
       Map("field2" -> "bar"),
-      Map("field1" -> "", "field2" -> "baz")
+      Map("field1" -> 0.0, "field2" -> "baz")
     )
     val target = wrapIndex("spark-test/nullasempty")
     sc.makeRDD(data).saveToEs(target)

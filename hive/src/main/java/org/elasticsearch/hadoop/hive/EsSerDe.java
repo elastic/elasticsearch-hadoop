@@ -71,7 +71,7 @@ public class EsSerDe extends AbstractSerDe {
 
     private boolean writeInitialized = false;
     private boolean readInitialized = false;
-    private boolean IS_ES_10 = true;
+    private boolean IS_ES_20 = true;
     private boolean trace = false;
 
 
@@ -101,13 +101,13 @@ public class EsSerDe extends AbstractSerDe {
     public Object deserialize(Writable blob) throws SerDeException {
         if (!readInitialized) {
             readInitialized = true;
-            IS_ES_10 = SettingsUtils.isEs10(settings);
+            IS_ES_20 = SettingsUtils.isEs20(settings);
         }
 
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
-        Object des = hiveFromWritable(structTypeInfo, blob, alias, IS_ES_10);
+        Object des = hiveFromWritable(structTypeInfo, blob, alias, IS_ES_20);
 
         if (trace) {
             log.trace(String.format("Deserialized [%s] to [%s]", blob, des));
@@ -161,7 +161,7 @@ public class EsSerDe extends AbstractSerDe {
 
 
     @SuppressWarnings("unchecked")
-    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias, boolean IS_ES_10) {
+    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias, boolean IS_ES_20) {
         if (data == null || data instanceof NullWritable) {
             return null;
         }
@@ -175,7 +175,7 @@ public class EsSerDe extends AbstractSerDe {
 
             List<Object> list = new ArrayList<Object>();
             for (Writable writable : aw.get()) {
-                list.add(hiveFromWritable(listElementType, writable, alias, IS_ES_10));
+                list.add(hiveFromWritable(listElementType, writable, alias, IS_ES_20));
             }
 
             return list;
@@ -188,8 +188,8 @@ public class EsSerDe extends AbstractSerDe {
             Map<Object, Object> map = new LinkedHashMap<Object, Object>();
 
             for (Entry<Writable, Writable> entry : mw.entrySet()) {
-                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias, IS_ES_10),
-                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias, IS_ES_10));
+                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias, IS_ES_20),
+                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias, IS_ES_20));
             }
 
             return map;
@@ -206,22 +206,16 @@ public class EsSerDe extends AbstractSerDe {
             Text reuse = new Text();
             for (int index = 0; index < names.size(); index++) {
                 String esAlias = alias.toES(names.get(index));
-                if (IS_ES_10) {
-                    // check for multi-level alias
-                    Writable result = map;
-                    for (String level : StringUtils.tokenize(esAlias, ".")) {
-                        reuse.set(level);
-                        result = ((MapWritable) result).get(reuse);
-                        if (result == null) {
-                            break;
-                        }
+                // check for multi-level alias
+                Writable result = map;
+                for (String level : StringUtils.tokenize(esAlias, ".")) {
+                    reuse.set(level);
+                    result = ((MapWritable) result).get(reuse);
+                    if (result == null) {
+                        break;
                     }
-                    struct.add(hiveFromWritable(info.get(index), result, alias, IS_ES_10));
                 }
-                else {
-                    reuse.set(alias.toES(names.get(index)));
-                    struct.add(hiveFromWritable(info.get(index), map.get(reuse), alias, IS_ES_10));
-                }
+                struct.add(hiveFromWritable(info.get(index), result, alias, IS_ES_20));
             }
             return struct;
         }

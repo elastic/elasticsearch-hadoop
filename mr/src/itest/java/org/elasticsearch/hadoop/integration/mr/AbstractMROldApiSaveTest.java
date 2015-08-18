@@ -50,6 +50,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -59,7 +60,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -422,12 +423,26 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testParentChild() throws Exception {
+        // in ES 2.x, the parent/child relationship needs to be created fresh
+        // hence why we reindex everything again
+
+        String childIndex = indexPrefix + "child";
+        String parentIndex = indexPrefix + "mr_parent";
+
+        //String mapping = "{ \"" + parentIndex + "\" : {}, \"" + childIndex + "\" : { \"_parent\" : { \"type\" : \"" + parentIndex + "\" }}}";
+        //RestUtils.putMapping(indexPrefix + "mroldapi/child", StringUtils.toUTF(mapping));
+        RestUtils.putMapping(indexPrefix + "mroldapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping(indexPrefix + "mroldapi/parent", StringUtils.toUTF("{\"parent\":{}}"));
+
         JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/mr-parent");
+        runJob(conf);
+
+        conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
-        RestUtils.putMapping(indexPrefix + "mroldapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
         runJob(conf);
     }
 

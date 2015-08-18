@@ -25,15 +25,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.provisionEsLib;
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 
 public class AbstractHiveExtraTests {
 
@@ -81,6 +77,7 @@ public class AbstractHiveExtraTests {
         String resource = "hive/date-as-long";
         RestUtils.touch("hive");
         RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date.json");
+
         RestUtils.postData(resource + "/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
 
         RestUtils.refresh("hive");

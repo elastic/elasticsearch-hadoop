@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
@@ -46,6 +47,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -73,7 +75,7 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean writeInitialized = false;
     private boolean autoFlush = true;
 
-    // indicates whether there were writes errorrs or not
+    // indicates whether there were writes errors or not
     // flag indicating whether to flush the batch at close-time or not
     private boolean hadWriteErrors = false;
 
@@ -86,6 +88,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     private final Settings settings;
     private final Stats stats = new Stats();
+
 
     public RestRepository(Settings settings) {
         this.settings = settings;
@@ -166,6 +169,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     private void doWriteToIndex(BytesRef payload) {
         // check space first
+        // ba is the backing array for data
         if (payload.length() > ba.available()) {
             if (autoFlush) {
                 flush();
@@ -197,15 +201,15 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public BitSet tryFlush() {
-        if (log.isDebugEnabled()) {
-            log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
-        }
-
         BitSet bulkResult = EMPTY;
 
         try {
             // double check data - it might be a false flush (called on clean-up)
             if (data.length() > 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
+                }
+
                 bulkResult = client.bulk(resourceW, data);
                 executedBulkWrite = true;
             }
@@ -442,7 +446,49 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void delete() {
-        client.delete(resourceW.indexAndType());
+        boolean isEs20 = SettingsUtils.isEs20(settings);
+        if (!isEs20) {
+            // ES 1.x - delete as usual
+            client.delete(resourceW.indexAndType());
+        }
+        else {
+            // try first a blind delete by query (since the plugin might be installed)
+            client.delete(resourceW.indexAndType() + "/_query?q=*");
+
+            // in ES 2.0 this means scrolling and deleting the docs by hand...
+
+            // do a scroll-scan without source
+
+            // as this is a delete, there's not much value in making this configurable so we just go for some sane/safe defaults
+            // 10m scroll timeout
+            // 250 results
+
+            int batchSize = 250;
+            String scanQuery = resourceW.indexAndType() + "/_search?search_type=scan&scroll=10m&size=" + batchSize + "&_source=false";
+
+            ScrollReader scrollReader = new ScrollReader(new JdkValueReader(), null, false, "_metadata", false);
+
+            // start iterating
+            ScrollQuery sq = scan(scanQuery, null, scrollReader);
+            try {
+                BytesArray entry = new BytesArray(0);
+
+                // delete each retrieved batch
+                String format = "{\"delete\":{\"_id\":\"%s\"}}\n";
+                while (sq.hasNext()) {
+                    entry.reset();
+                    entry.add(StringUtils.toUTF(String.format(format, sq.next()[0])));
+                    writeProcessedToIndex(entry);
+                }
+
+                flush();
+                // once done force a refresh
+                client.refresh(resourceW);
+            } finally {
+                stats.aggregate(sq.stats());
+                sq.close();
+            }
+        }
     }
 
     public boolean isEmpty(boolean read) {

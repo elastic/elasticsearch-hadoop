@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -310,12 +311,25 @@ public class AbstractMRNewApiSaveTest {
 
     @Test
     public void testParentChild() throws Exception {
+        // in ES 2.x, the parent/child relationship needs to be created fresh
+        // hence why we reindex everything again
+
+        String childIndex = indexPrefix + "child";
+        String parentIndex = indexPrefix + "mr_parent";
+
+        //String mapping = "{ \"" + parentIndex + "\" : {}, \"" + childIndex + "\" : { \"_parent\" : { \"type\" : \"" + parentIndex + "\" }}}";
+        //RestUtils.putMapping(indexPrefix + "mroldapi/child", StringUtils.toUTF(mapping));
+        RestUtils.putMapping(indexPrefix + "mrnewapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping(indexPrefix + "mrnewapi/parent", StringUtils.toUTF("{\"parent\":{}}"));
+
         Configuration conf = createConf();
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/mr-parent");
+        runJob(conf);
+
+        conf = createConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
-
-        RestUtils.putMapping(indexPrefix + "mrnewapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         runJob(conf);
     }

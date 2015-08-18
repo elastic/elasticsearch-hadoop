@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 
 import static org.junit.Assert.*;
 
-import static org.elasticsearch.integration.storm.MultiIndexSpoutStormSuite.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class AbstractStormIndexPatternBoltTests extends AbstractStormBoltTests {
@@ -44,7 +44,7 @@ public class AbstractStormIndexPatternBoltTests extends AbstractStormBoltTests {
 
     @Test
     public void test1WriteIndexPattern() throws Exception {
-        List doc1 = ImmutableList.of("one", 1, "two", 2, "number", 1);
+        List doc1 = ImmutableList.of("one", "1", "two", "2", "number", 1);
         List doc2 = ImmutableList.of("OTP", "Otopeni", "SFO", "San Fran", "number", 2);
 
         String target = index + "/write-{number}";

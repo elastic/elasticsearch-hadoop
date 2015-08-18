@@ -2,8 +2,7 @@
     "date-as-long" : {
         "properties" : {
             "&t" : {
-                "type" : "date",
-                "format" : "date"
+                "type" : "date"
             }
         }
     }

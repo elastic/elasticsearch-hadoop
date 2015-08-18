@@ -1,7 +1,7 @@
 {
     "child" : {
         "_parent" : {
-            "type" : "save"
+            "type" : "parent"
         }
     }
 }

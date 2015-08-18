@@ -33,6 +33,7 @@ public class LocalEs extends ExternalResource {
     private static EsEmbeddedServer slave;
 
     public static final String CLUSTER_NAME = "ES-HADOOP-TEST";
+    private static final String ES_HOME_PATH = "build/es.home";
     private static final String ES_DATA_PATH = "build/es.data";
     public static final String DATA_PORTS = "9500-9599";
     public static final String TRANSPORT_PORTS = "9600-9699";
@@ -63,13 +64,13 @@ public class LocalEs extends ExternalResource {
 
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
-            master = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);
+            master = new EsEmbeddedServer(CLUSTER_NAME, ES_HOME_PATH, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);
             master.start();
         }
 
         if (USE_SLAVE && slave == null) {
             System.out.println("Starting Elasticsearch Slave...");
-            slave = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS_SLAVE, TRANSPORT_PORTS_SLAVE, USE_SLAVE);
+            slave = new EsEmbeddedServer(CLUSTER_NAME, ES_HOME_PATH, ES_DATA_PATH, DATA_PORTS_SLAVE, TRANSPORT_PORTS_SLAVE, USE_SLAVE);
             slave.start();
         }
     }

@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.Counter;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -58,7 +58,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final Properties props;
     private transient RestRepository client;
 
-    private boolean IS_ES_10;
+    private boolean IS_ES_20;
 
     EsLocalScheme(String host, int port, String index, String query, Fields fields, Properties props) {
         this.resource = index;
@@ -80,7 +80,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @Override
@@ -158,23 +158,16 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
 
         if (entry.getFields().isDefined()) {
             // lookup using writables
-            // TODO: it's worth benchmarking whether using an index/offset yields significantly better performance
             for (Comparable<?> field : entry.getFields()) {
-                if (IS_ES_10) {
-                    Object result = data;
-                    // check for multi-level alias
-                    for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
-                        result = ((Map) result).get(level);
-                        if (result == null) {
-                            break;
-                        }
+                Object result = data;
+                // check for multi-level alias
+                for (String level : StringUtils.tokenize(alias.toES(field.toString()), ".")) {
+                    result = ((Map) result).get(level);
+                    if (result == null) {
+                        break;
                     }
-                    entry.setObject(field, result);
                 }
-                else {
-                    //NB: coercion should be applied automatically by the TupleEntry
-                    entry.setObject(field, data.get(alias.toES(field.toString())));
-                }
+                entry.setObject(field, result);
             }
         }
         else {

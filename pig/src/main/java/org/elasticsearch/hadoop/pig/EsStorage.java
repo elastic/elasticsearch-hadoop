@@ -92,7 +92,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     private PigTuple pigTuple;
 
     private List<String> aliasesTupleNames;
-    private boolean IS_ES_10;
+    private boolean IS_ES_20;
 
     public EsStorage() {
         this(new String[0]);
@@ -154,7 +154,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         changed |= InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
 
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @SuppressWarnings("unchecked")
@@ -230,7 +230,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         Configuration cfg = job.getConfiguration();
 
         Settings settings = HadoopSettingsManager.loadFrom(cfg);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
 
         if (settings.getScrollFields() != null) {
             return;
@@ -277,23 +277,17 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
             if (!aliasesTupleNames.isEmpty()) {
                 for (int i = 0; i < aliasesTupleNames.size(); i++) {
-                    if (IS_ES_10) {
-                        Object result = dataMap;
-                        // check for multi-level alias
-                        for (String level : StringUtils.tokenize(aliasesTupleNames.get(i), ".")) {
-                            if (result instanceof Map) {
-                                result = ((Map) result).get(level);
-                                if (result == null) {
-                                    break;
-                                }
+                    Object result = dataMap;
+                    // check for multi-level alias
+                    for (String level : StringUtils.tokenize(aliasesTupleNames.get(i), ".")) {
+                        if (result instanceof Map) {
+                            result = ((Map) result).get(level);
+                            if (result == null) {
+                                break;
                             }
                         }
-                        tuple.set(i, result);
                     }
-                    // ES 0.90.x / fields
-                    else {
-                        tuple.set(i, dataMap.get(aliasesTupleNames.get(i)));
-                    }
+                    tuple.set(i, result);
                 }
             }
             else {

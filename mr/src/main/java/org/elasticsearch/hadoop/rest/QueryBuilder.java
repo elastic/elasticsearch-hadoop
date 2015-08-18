@@ -46,14 +46,14 @@ public class QueryBuilder {
     private String node;
     private boolean onlyNode;
     private String[] filters;
-    private final boolean IS_ES_10;
+    private final boolean IS_ES_20;
     private final boolean INCLUDE_VERSION;
 
     private String fields;
 
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings, true);
-        IS_ES_10 = SettingsUtils.isEs10(settings);
+        IS_ES_20 = SettingsUtils.isEs20(settings);
         INCLUDE_VERSION = settings.getReadMetadata() && settings.getReadMetadataVersion();
 
         if (StringUtils.hasText(settings.getProperty(ConfigurationOptions.ES_SCROLL_ESCAPE_QUERY_URI))) {
@@ -113,7 +113,7 @@ public class QueryBuilder {
 
         // override infrastructure params
         uriParams.put("search_type", "scan");
-        uriParams.put("scroll", String.valueOf(time.minutes()));
+        uriParams.put("scroll", String.valueOf(time.toString()));
         uriParams.put("size", String.valueOf(size));
         if (INCLUDE_VERSION) {
             uriParams.put("version", "");
@@ -121,13 +121,9 @@ public class QueryBuilder {
 
         // override fields
         if (StringUtils.hasText(fields)) {
-            if (IS_ES_10) {
-                uriParams.put("_source", fields);
-                uriParams.remove("fields");
-            }
-            else {
-                uriParams.put("fields", fields);
-            }
+            // ES 1.0
+            uriParams.put("_source", fields);
+            uriParams.remove("fields");
         }
         else {
             uriParams.remove("fields");
