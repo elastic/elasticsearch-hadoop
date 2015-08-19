@@ -28,12 +28,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.junit.Test;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.*;
 

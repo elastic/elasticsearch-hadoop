@@ -28,14 +28,12 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.elasticsearch.hadoop.yarn.cli.YarnBootstrap;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore("disabled for now until figuring why the CI env fails...")
 public class YarnTest {
 
     private YarnBootstrap bootstrap;

@@ -187,7 +187,7 @@ allprojects { project ->
 
     dependencies {
         // makes eclipse classpath easier
-        testCompile "org.elasticsearch:elasticsearch:$esVersion"
+        testCompile "org.elasticsearch.distribution:elasticsearch-shaded:$esVersion"
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "log4j:log4j:$log4jVersion"
         testRuntime "org.codehaus.groovy:groovy-all:$groovyVersion"
@@ -605,7 +605,7 @@ project(":elasticsearch-storm") {
     }
     
     // add itest to Eclipse
-    eclipse.classpath.plusConfigurations += configurations.itestCompile
+    //eclipse.classpath.plusConfigurations += [configurations.itestCompile]
 }
 
 configure(rootProject) {
