@@ -144,7 +144,7 @@ ext.manifestTemplate = manifest {
         
         def build = System.env['ESHDP.BUILD']
         if (build != null)
-            manifest.attributes['Build'] = build
+            attributes['Build'] = build
         
         attributes['Repository-Revision'] = revHash
 }
