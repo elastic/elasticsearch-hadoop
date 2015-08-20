@@ -72,7 +72,7 @@ repositories
     conf_location: "extra-cfg.xml"  # optional - Hadoop configuration XML to be loaded (use commas for multi values)
     conf.<key> : "<value>"          # optional - 'inlined' key=value added to the Hadoop configuration
     concurrent_streams: 5           # optional - the number of concurrent streams (defaults to 5)
-    compress: "false"               # optional - whether to compress the data or not (default)
+    compress: "false"               # optional - whether to compress the metadata or not (default)
     chunk_size: "10mb"              # optional - chunk size (disabled by default)
 ```
 
