@@ -17,7 +17,7 @@ dependencies {
 }
 
 processResources {
-    expand (version: project.version, esVersion: project.esVersion)
+    expand (version: project.version, esVersionStable: project.esVersionStable)
 }
 
 jar {
@@ -73,7 +73,7 @@ task distZipNoHadoop(type: Zip, dependsOn: [jar]) { zipTask ->
 
 task distZip(dependsOn : [distZipHadoop2, distZipNoHadoop]) {
     group = "Distribution"
-    description = "Builds all distribution zips for Elasticsearch Repository HDFS"
+    description = "Builds all distribution zips for Elasticseach YARN"
 }
 
 pack() {
