@@ -145,6 +145,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     sc.makeRDD(Seq(javaBean, caseClass2)).saveToEs(target, Map("es.mapping.id"->"id"))
 
     assertTrue(RestUtils.exists(target))
+    assertEquals(3, EsSpark.esRDD(sc, target).count());
     assertThat(RestUtils.get(target + "/_search?"), containsString(""))
   }
 
@@ -156,6 +157,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = "spark-test/scala-id-write"
 
     sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, Map(ES_MAPPING_ID -> "number"))
+    
+    assertEquals(2, EsSpark.esRDD(sc, target).count());
     assertTrue(RestUtils.exists(target + "/1"))
     assertTrue(RestUtils.exists(target + "/2"))
 
@@ -171,6 +174,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     val pairRDD = sc.makeRDD(Seq((3, doc1), (4, doc2))).saveToEsWithMeta(target, cfg)
 
+    assertEquals(2, EsSpark.esRDD(sc, target).count());
     assertTrue(RestUtils.exists(target + "/3"))
     assertTrue(RestUtils.exists(target + "/4"))
 

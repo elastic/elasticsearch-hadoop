@@ -354,7 +354,7 @@ public class RestClient implements Closeable, StatsAware {
         try {
             // use post instead of get to avoid some weird encoding issues (caused by the long URL)
             InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
-                    new BytesArray(scrollId.getBytes(StringUtils.UTF_8))).body();
+                    new BytesArray(scrollId)).body();
             stats.scrollTotal++;
             return is;
         } finally {
@@ -388,8 +388,9 @@ public class RestClient implements Closeable, StatsAware {
         return false;
     }
 
-    public long count(String indexAndType) {
-        Number count = (Number) get(indexAndType + "/_count", "count");
+    public long count(String indexAndType, ByteSequence query) {
+    	Response response = execute(GET, indexAndType + "/_count", query);
+        Number count = (Number) parseContent(response.body(), "count");
         return (count != null ? count.longValue() : -1);
     }
 

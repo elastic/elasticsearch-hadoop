@@ -366,7 +366,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             http = new HeadMethod();
             break;
         case GET:
-            http = new GetMethod();
+            http = (request.body() == null ? new GetMethod() : new GetMethodWithBody());
             break;
         case POST:
             http = new PostMethod();
@@ -400,6 +400,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         ByteSequence ba = request.body();
         if (ba != null && ba.length() > 0) {
+            if (!(http instanceof EntityEnclosingMethod)) {
+                throw new IllegalStateException(String.format("Method %s cannot contain body - implementation bug", request.method().name()));
+            }
             EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) http;
             entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
             entityMethod.setContentChunked(false);

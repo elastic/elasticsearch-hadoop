@@ -3,7 +3,6 @@ package org.elasticsearch.spark.rdd;
 import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.collection.JavaConversions.mapAsJavaMap
 import scala.reflect.ClassTag
-
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
@@ -12,6 +11,8 @@ import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.rest.RestClient
+import org.elasticsearch.hadoop.rest.RestRepository
 
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @transient sc: SparkContext,
@@ -40,6 +41,15 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
 
   override def checkpoint() {
     // Do nothing. Elasticsearch RDD should not be checkpointed.
+  }
+  
+  override def count(): Long = {
+    val repo = new RestRepository(esCfg)
+    try {
+      return repo.count(true)
+    } finally {
+      repo.close()
+    }
   }
 
   @transient private[spark] lazy val esCfg = {
