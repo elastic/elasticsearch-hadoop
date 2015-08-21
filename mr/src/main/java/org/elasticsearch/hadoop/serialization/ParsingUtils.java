@@ -38,7 +38,7 @@ public abstract class ParsingUtils {
      * @param parser
      * @return token associated with the given path or null if not found
      */
-    public static Token seek(String path, Parser parser) {
+    public static Token seek(Parser parser, String path) {
         // return current token if no path is given
         if (!StringUtils.hasText(path)) {
             return null;

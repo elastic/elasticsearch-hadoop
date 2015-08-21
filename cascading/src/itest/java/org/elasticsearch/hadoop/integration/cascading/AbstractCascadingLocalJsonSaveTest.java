@@ -213,7 +213,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "number");
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.counter += param1; ctx._source.anothercounter += param2");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 

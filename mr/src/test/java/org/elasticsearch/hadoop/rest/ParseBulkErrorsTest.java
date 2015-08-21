@@ -39,7 +39,7 @@ public class ParseBulkErrorsTest {
         ObjectMapper mapper = new ObjectMapper();
         InputStream in = getClass().getResourceAsStream("bulk-error.json");
         JsonParser parser = mapper.getJsonFactory().createJsonParser(in);
-        ParsingUtils.seek("items", new JacksonJsonParser(parser));
+        ParsingUtils.seek(new JacksonJsonParser(parser), "itemsb");
 
         BackportedObjectReader r = BackportedObjectReader.create(mapper, Map.class);
 

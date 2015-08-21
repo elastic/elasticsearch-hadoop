@@ -37,7 +37,6 @@ import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.HeadMethod;
@@ -360,7 +359,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         switch (request.method()) {
         case DELETE:
-            http = new DeleteMethod();
+            http = new HttpDeleteWithBody();
             break;
         case HEAD:
             http = new HeadMethod();
@@ -400,6 +399,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         ByteSequence ba = request.body();
         if (ba != null && ba.length() > 0) {
+            if (!(http instanceof EntityEnclosingMethod)) {
+                throw new IllegalStateException(String.format("Method %s cannot contain body - implementation bug", request.method().name()));
+            }
             EntityEnclosingMethod entityMethod = (EntityEnclosingMethod) http;
             entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
             entityMethod.setContentChunked(false);
