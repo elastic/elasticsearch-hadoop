@@ -83,6 +83,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaEsSpark.saveToEs(javaRDD, target);
         JavaEsSpark.saveToEs(javaRDD, ImmutableMap.of(ES_RESOURCE, target + "1"));
 
+        assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
         assertTrue(RestUtils.exists(target));
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("SFO"));
@@ -97,6 +98,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         // eliminate with static import
         JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ES_MAPPING_ID, "number"));
+        
+        assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
@@ -115,6 +118,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         // eliminate with static import
         JavaEsSpark.saveToEsWithMeta(pairRdd, target);
 
+        assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
@@ -134,6 +138,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         // eliminate with static import
         JavaEsSpark.saveToEsWithMeta(pairRDD, target);
 
+        assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
         assertTrue(RestUtils.exists(target + "/1"));
         assertTrue(RestUtils.exists(target + "/2"));
         String results = RestUtils.get(target + "/_search?");
@@ -150,6 +155,7 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaRDD<Map<String, ?>> javaRDD = sc.parallelize(ImmutableList.of(doc1, doc2));
         JavaEsSpark.saveToEs(javaRDD, target, ImmutableMap.of(ES_MAPPING_EXCLUDE, "airport"));
 
+        assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
         assertTrue(RestUtils.exists(target));
         assertThat(RestUtils.get(target + "/_search?"), containsString("business"));
         assertThat(RestUtils.get(target + "/_search?"), containsString("participants"));

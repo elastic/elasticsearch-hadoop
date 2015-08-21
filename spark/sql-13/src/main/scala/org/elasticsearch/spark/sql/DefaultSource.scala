@@ -242,6 +242,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     if (overwrite) {
       Utils.logger("org.elasticsearch.spark.sql.DataSource").info(s"Overwriting data for ${cfg.getResourceWrite}")
 
+      // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
       InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false")

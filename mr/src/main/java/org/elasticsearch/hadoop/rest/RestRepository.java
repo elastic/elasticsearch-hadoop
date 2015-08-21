@@ -500,7 +500,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     public long count(boolean read) {
         Resource res = (read ? resourceR : resourceW);
-        return client.count(res.indexAndType());
+        return client.count(res.indexAndType(), QueryUtils.parseQuery(settings));
     }
 
     public boolean waitForYellow() {

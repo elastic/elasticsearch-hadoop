@@ -20,16 +20,21 @@ package org.elasticsearch.hadoop.rest.commonshttp;
 
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 
-public class HttpDeleteWithBody extends EntityEnclosingMethod {
+public class GetMethodWithBody extends EntityEnclosingMethod {
 
-    public HttpDeleteWithBody() {}
+    public GetMethodWithBody() {
+    	// not supported out of the box for EntityEnclosingMethods
+    	setFollowRedirects(false);
+    }
 
-    public HttpDeleteWithBody(String uri) {
+    public GetMethodWithBody(String uri) {
         super(uri);
+    	// not supported out of the box for EntityEnclosingMethods
+        setFollowRedirects(false);
     }
 
     public String getName() {
-        return "DELETE";
+        return "GET";
     }
 }
 

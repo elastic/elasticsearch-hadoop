@@ -359,13 +359,13 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         switch (request.method()) {
         case DELETE:
-            http = new HttpDeleteWithBody();
+            http = new DeleteMethodWithBody();
             break;
         case HEAD:
             http = new HeadMethod();
             break;
         case GET:
-            http = new GetMethod();
+            http = (request.body() == null ? new GetMethod() : new GetMethodWithBody());
             break;
         case POST:
             http = new PostMethod();
