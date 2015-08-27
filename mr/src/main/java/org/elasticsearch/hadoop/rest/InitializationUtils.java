@@ -109,6 +109,45 @@ public abstract class InitializationUtils {
         }
     }
 
+    public static void filterNonDataNodesIfNeeded(Settings settings, Log log) {
+        if (!settings.getNodesDataOnly()) {
+          return;
+        }
+
+        RestClient bootstrap = new RestClient(settings);
+        try  {
+            List<String> dataNodes = bootstrap.getHttpDataNodes();
+            if (dataNodes.isEmpty()) {
+                throw new EsHadoopIllegalArgumentException("Data node only routing specified but no data nodes with HTTP-enabled were found in the cluster...");
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found data nodes %s", dataNodes));
+            }
+
+            List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            // remove non-data nodes
+            ddNodes.retainAll(dataNodes);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Filtered discovered only nodes %s to data-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
+            }
+
+            if (ddNodes.isEmpty()) {
+                String message = "Data node only routing specified but no data nodes with HTTP-enabled available; ";
+                if (settings.getNodesDiscovery()) {
+                    message += String.format("looks like the data nodes discovered have been removed; is the cluster in a stable state? %s", dataNodes);
+                }
+                else {
+                    message += String.format("node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                }
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+
+            SettingsUtils.setDiscoveredNodes(settings, dataNodes);
+        } finally {
+            bootstrap.close();
+        }
+    }
+
     public static String discoverEsVersion(Settings settings, Log log) {
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
         if (StringUtils.hasText(version)) {

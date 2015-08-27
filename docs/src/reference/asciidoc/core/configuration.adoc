@@ -301,6 +301,10 @@ Whether to discovery the nodes within the {es} cluster or only to use the ones g
 `es.nodes.client.only` (default false)::
 Whether to use {es} {ref}/modules-node.html[client nodes] (or _load-balancers_). When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _client_ nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default.
 
+`es.nodes.data.only` (default true)::
+Whether to use {es} {ref}/modules-node.html[data nodes] only. When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _data_ nodes within the cluster. The purpose of this configuration setting is to avoid overwhelming non-data nodes as these tend to be "smaller" nodes. This is enabled by default.
+
+added[2.2]
 `es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
 

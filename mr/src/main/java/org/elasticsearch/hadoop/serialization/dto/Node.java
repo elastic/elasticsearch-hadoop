@@ -30,6 +30,7 @@ public class Node implements Serializable {
     private int httpPort;
     private Map<String, Object> attributes;
     private boolean isClient = false;
+    private boolean isData = true;
 
     public Node(String id, Map<String, Object> data) {
         this.id = id;
@@ -40,6 +41,10 @@ public class Node implements Serializable {
         attributes = (Map<String, Object>) data.get("attributes");
         if (attributes != null) {
             isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
+        }
+
+        if (attributes != null) {
+            isData = !"false".equals((attributes.get("data")));
         }
 
         if (!hasHttp) {
@@ -63,6 +68,10 @@ public class Node implements Serializable {
 
     public boolean isClient() {
         return isClient;
+    }
+
+    public boolean isData() {
+        return isData;
     }
 
     public String getId() {

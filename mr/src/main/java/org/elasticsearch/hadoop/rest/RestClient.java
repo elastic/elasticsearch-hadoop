@@ -295,6 +295,19 @@ public class RestClient implements Closeable, StatsAware {
         return nodes;
     }
 
+    public List<String> getHttpDataNodes() {
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
+        List<String> nodes = new ArrayList<String>();
+
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            Node node = new Node(entry.getKey(), entry.getValue());
+            if (node.isData() && node.hasHttp()) {
+                nodes.add(node.getInet());
+            }
+        }
+        return nodes;
+    }
+
     @SuppressWarnings("unchecked")
     public Map<String, Object> getMapping(String query) {
         return (Map<String, Object>) get(query, null);
