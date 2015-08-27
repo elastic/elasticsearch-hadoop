@@ -47,10 +47,14 @@ public class Node implements Serializable {
         }
         String httpAddr = http.toString();
         // strip ip address - regex would work but it's overkill
-        int startIndex = httpAddr.indexOf("/") + 1;
-        int endIndex = httpAddr.indexOf(":");
-        ipAddress = httpAddr.substring(startIndex, endIndex);
-        httpPort = Integer.valueOf(httpAddr.substring(endIndex + 1, httpAddr.indexOf("]")));
+        if (httpAddr.contains("/")) {
+            int startIndex = httpAddr.indexOf("/") + 1;
+            int endIndex = httpAddr.indexOf("]");
+            httpAddr = httpAddr.substring(startIndex, endIndex);
+        }
+        int portIndex = httpAddr.indexOf(":");
+        ipAddress = httpAddr.substring(portIndex);
+        httpPort = Integer.valueOf(httpAddr.substring(portIndex + 1));
     }
 
     public boolean hasHttp() {

@@ -105,9 +105,11 @@ public class RestClient implements Closeable, StatsAware {
         for (Map value : nodes.values()) {
             String inet = (String) value.get("http_address");
             if (StringUtils.hasText(inet)) {
-                int startIp = inet.indexOf("/") + 1;
-                int endIp = inet.indexOf("]");
-                inet = inet.substring(startIp, endIp);
+                if (inet.contains("/")) {
+                    int startIp = inet.indexOf("/") + 1;
+                    int endIp = inet.indexOf("]");
+                    inet = inet.substring(startIp, endIp);
+                }
                 hosts.add(inet);
             }
         }
@@ -407,7 +409,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public long count(String indexAndType, ByteSequence query) {
-    	Response response = execute(GET, indexAndType + "/_count", query);
+        Response response = execute(GET, indexAndType + "/_count", query);
         Number count = (Number) parseContent(response.body(), "count");
         return (count != null ? count.longValue() : -1);
     }
