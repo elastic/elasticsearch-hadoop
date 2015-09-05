@@ -2,7 +2,6 @@ package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
-
 import org.apache.spark.annotation.AlphaComponent
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.sources.BaseRelation
@@ -12,6 +11,7 @@ import org.apache.spark.sql.sources.RelationProvider
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 
 private[sql] class DefaultSource extends RelationProvider {
   override def createRelation(
@@ -49,7 +49,8 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
   // PrunedScan
   def buildScan(requiredColumns: Array[String]) = {
     val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
-    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
+    paramWithProjection += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> 
+                            StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
     if (cfg.getReadMetadata) {
       val metadata = cfg.getReadMetadataField
@@ -61,14 +62,4 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
 
     new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
   }
-
-  // PrunedFilteredScan
-//  def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
-//    val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
-//    paramWithProjection += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], ","))
-//
-//    // build query based on filters
-//    new ScalaEsRowRDD(sqlContext.sparkContext, paramWithProjection, lazySchema)
-//  }
 }
-

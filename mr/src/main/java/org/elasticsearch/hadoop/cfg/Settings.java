@@ -33,7 +33,7 @@ import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
-import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS;
+import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
 
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
@@ -110,10 +110,10 @@ public abstract class Settings {
     }
 
     public String getScrollFields() {
-        String internalFields = getProperty(INTERNAL_ES_TARGET_FIELDS);
-        return (StringUtils.hasText(internalFields) ? internalFields : getProperty(ES_SCROLL_FIELDS));
+        return getProperty(INTERNAL_ES_TARGET_FIELDS);
     }
 
+    @Deprecated
     public boolean getScrollEscapeUri() {
         return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
     }
@@ -481,5 +481,5 @@ public abstract class Settings {
         return IOUtils.propsToString(copy);
     }
 
-    protected abstract Properties asProperties();
+    public abstract Properties asProperties();
 }

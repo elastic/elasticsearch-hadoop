@@ -30,11 +30,11 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
-import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("rawtypes")
-public class MappingUtils {
+public abstract class MappingUtils {
 
     private static final Set<String> BUILT_IN_FIELDS = new HashSet<String>();
 
@@ -72,13 +72,13 @@ public class MappingUtils {
 
     // return a tuple for proper messages
     static List[] findTypos(Collection<String> fields, Field mapping) {
-        Map<String, FieldType> map = Field.toLookupMap(mapping);
+        Set<String> keys = Field.toLookupMap(mapping).keySet();
 
         // find missing
         List<String> missing = new ArrayList<String>(fields.size());
 
         for (String field : fields) {
-            if (!map.containsKey(field) && !isBuiltIn(field)) {
+            if (!keys.contains(field) && !isBuiltIn(field)) {
                 missing.add(field);
             }
         }
@@ -87,8 +87,7 @@ public class MappingUtils {
         }
         Map<String, String> unwrapped = new LinkedHashMap<String, String>();
         // find similar
-        for (Map.Entry<String, FieldType> entry : map.entrySet()) {
-            String key = entry.getKey();
+        for (String key : keys) {
             int match = key.lastIndexOf(".");
             if (match > 0) {
                 String leafField = key.substring(match + 1);
@@ -126,5 +125,17 @@ public class MappingUtils {
             return col.get(0).toString();
         }
         return col.toString();
+    }
+    
+    public static Field filter(Field field, Collection<String> includes, Collection<String> excludes) {
+    	List<Field> filtered = new ArrayList<Field>();
+    	
+    	for (Field fl : field.properties()) {
+    		if (FieldFilter.filter(fl.name(), includes, excludes)) {
+    			filtered.add(fl);
+    		}
+		}
+    	
+    	return new Field(field.name(), field.type(), filtered);
     }
 }

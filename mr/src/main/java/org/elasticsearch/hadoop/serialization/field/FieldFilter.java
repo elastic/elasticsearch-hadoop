@@ -18,8 +18,8 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import org.elasticsearch.hadoop.util.regex.Regex;
 
@@ -33,7 +33,7 @@ public abstract class FieldFilter {
      * @param excludes
      * @return
      */
-    public static boolean filter(String path, List<String> includes, List<String> excludes) {
+    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
         includes = (includes == null ? Collections.<String> emptyList() : includes);
         excludes = (excludes == null ? Collections.<String> emptyList() : excludes);
 
@@ -89,6 +89,6 @@ public abstract class FieldFilter {
         else if (exactIncludeMatch) {
             return true;
         }
-        return true;
+        return false;
     }
 }

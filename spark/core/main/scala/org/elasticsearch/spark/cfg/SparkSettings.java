@@ -64,7 +64,7 @@ public class SparkSettings extends Settings {
     }
 
     @Override
-    protected Properties asProperties() {
+    public Properties asProperties() {
         Properties props = new Properties();
 
         if (cfg != null) {

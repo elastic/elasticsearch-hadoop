@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.util.regex;
 
+import java.util.Collection;
 import java.util.List;
 
 // Taken from Elasticsearch core
@@ -86,7 +87,7 @@ public class Regex {
     * @param str      the String to match
     * @return whether the String matches any of the given patterns
     */
-    public static boolean simpleMatch(List<String> patterns, String str) {
+    public static boolean simpleMatch(Collection<String> patterns, String str) {
         if (patterns != null) {
             for (String pattern : patterns) {
                 if (simpleMatch(pattern, str)) {

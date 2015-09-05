@@ -29,6 +29,7 @@ public interface ConfigurationOptions {
 
     /** Elasticsearch host **/
     // deprecated
+    @Deprecated
     String ES_HOST = "es.host";
     String ES_NODES = "es.nodes";
     String ES_NODES_DEFAULT = "localhost";
@@ -99,9 +100,10 @@ public interface ConfigurationOptions {
     String ES_SCROLL_SIZE_DEFAULT = "50";
 
     /** Scroll fields */
-    String ES_SCROLL_FIELDS = "es.scroll.fields";
 
+    @Deprecated
     String ES_SCROLL_ESCAPE_QUERY_URI = "es.scroll.escape.query.uri";
+    @Deprecated
     String ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT = "true";
 
     String ES_HEART_BEAT_LEAD = "es.action.heart.beat.lead";

@@ -17,7 +17,7 @@ private[sql] trait RowValueReader extends SettingsAware {
 
     val csv = settings.getScrollFields
     readMetadata = settings.getReadMetadata
-    rowMap = MappingUtils.getRowOrder(settings)
+    rowMap = SchemaUtils.getRowOrder(settings)
   }
 
   def rowOrder(currentField: String): Seq[String] = {
