@@ -250,7 +250,7 @@ allprojects { project ->
     
     task sourcesJar(type: Jar, dependsOn:classes) {
         classifier = 'sources'
-        from sourceSets.main.allJava
+        from sourceSets.main.allSource
     }
 
     javadoc {
