@@ -61,6 +61,9 @@ public class LocalEs extends ExternalResource {
             return;
         }
 
+        // delete data path to start fresh
+        TestUtils.delete(new File(ES_DATA_PATH));
+        
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
             master = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);

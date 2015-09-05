@@ -257,6 +257,30 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testEsDataFrame2ReadWithIncludeFields() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.read.field.include" -> "id, name, url")
+    
+    val dataFrame = sqc.esDF(target, newCfg)
+    assertTrue(dataFrame.count > 300)
+    val schema = dataFrame.schema.treeString
+    assertTrue(schema.contains("id: long"))
+    assertTrue(schema.contains("name: string"))
+    assertFalse(schema.contains("pictures: string"))
+    assertFalse(schema.contains("time:"))
+    assertTrue(schema.contains("url: string"))
+
+    //dataFrame.take(5).foreach(println)
+
+    val tempTable = wrapIndex("basicRead")
+    dataFrame.registerTempTable(tempTable)
+    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
+    nameRDD.take(7).foreach(println)
+    assertEquals(10, nameRDD.count)
+  }
+
+  @Test
   def testEsDataFrame2ReadWithAndWithoutQuery() {
     val target = wrapIndex("sparksql-test/scala-basic-write")
 
@@ -274,7 +298,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("sparksql-test/scala-basic-write")
 
     val dfNoQuery = JavaEsSparkSQL.esDF(sqc, target, cfg.asJava)
-    val dfWQuery = JavaEsSparkSQL.esDF(sqc, target, "?q=name:me*", cfg.asJava)
+    val query = s"""{ "query" : { "query_string" : { "query" : "name:me*" } } //, "fields" : ["name"] 
+                }"""
+    val dfWQuery = JavaEsSparkSQL.esDF(sqc, target, query, cfg.asJava)
 
     println(dfNoQuery.head())
     println(dfWQuery.head())

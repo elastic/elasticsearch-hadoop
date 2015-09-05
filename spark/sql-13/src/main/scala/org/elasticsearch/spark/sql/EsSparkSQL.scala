@@ -1,6 +1,7 @@
 package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.Map
 
 import org.apache.spark.sql.DataFrame
@@ -23,8 +24,8 @@ object EsSparkSQL {
     val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
     esConf.merge(cfg.asJava)
 
-    val schema = MappingUtils.discoverMapping(esConf)
-    val rowRDD = new ScalaEsRowRDD(sc.sparkContext, cfg, schema)
+    val schema = SchemaUtils.discoverMapping(esConf)
+    val rowRDD = new ScalaEsRowRDD(sc.sparkContext, esConf.asProperties.asScala, schema)
     sc.createDataFrame(rowRDD, schema.struct)
   }
 

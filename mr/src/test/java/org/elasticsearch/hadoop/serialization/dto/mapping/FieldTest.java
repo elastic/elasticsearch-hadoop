@@ -18,6 +18,12 @@
  */
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +32,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 
 
 public class FieldTest {
@@ -146,4 +145,24 @@ public class FieldTest {
         findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), fl);
         assertThat(findFixes, is(nullValue()));
     }
+    
+    @Test
+    public void testFieldInclude() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
+        Field fl = Field.parseField(value);
+
+        Field filtered = MappingUtils.filter(fl, Collections.singleton("*a*e"), Collections.<String> emptyList());
+        System.out.println(fl);
+        System.out.println(filtered);
+        
+        assertThat(fl.name(), is(filtered.name()));
+        assertThat(fl.type(), is(filtered.type()));
+        
+        Field[] props = filtered.properties();
+        
+        assertThat(props.length, is(2));
+        assertThat(props[0].name(), is("date"));
+        assertThat(props[1].name(), is("name"));
+    }
+
 }

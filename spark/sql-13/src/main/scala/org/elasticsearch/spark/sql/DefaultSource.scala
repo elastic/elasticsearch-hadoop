@@ -92,7 +92,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   @transient lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
 
-  @transient lazy val lazySchema = { MappingUtils.discoverMapping(cfg) }
+  @transient lazy val lazySchema = { SchemaUtils.discoverMapping(cfg) }
 
   @transient lazy val valueWriter = { new ScalaValueWriter }
 
@@ -107,8 +107,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   // PrunedFilteredScan
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
-    paramWithScan += (ConfigurationOptions.ES_SCROLL_FIELDS -> StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> 
+                      StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
+    // scroll fields only apply to source fields; handle metadata separately
     if (cfg.getReadMetadata) {
       val metadata = cfg.getReadMetadataField
       // if metadata is not selected, don't ask for it

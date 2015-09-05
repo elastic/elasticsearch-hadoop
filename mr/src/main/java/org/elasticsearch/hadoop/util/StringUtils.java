@@ -80,7 +80,7 @@ public abstract class StringUtils {
     }
 
     public static List<String> tokenize(String string) {
-        return tokenize(string, ",");
+        return tokenize(string, DEFAULT_DELIMITER);
     }
 
     public static List<String> tokenize(String string, String delimiters) {
@@ -116,6 +116,10 @@ public abstract class StringUtils {
         return tokens;
     }
 
+    public static String concatenate(Collection<?> list) {
+    	return concatenate(list, DEFAULT_DELIMITER);
+    }
+    
     public static String concatenate(Collection<?> list, String delimiter) {
         if (list == null || list.isEmpty()) {
             return EMPTY;

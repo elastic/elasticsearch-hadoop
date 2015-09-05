@@ -58,7 +58,7 @@ public class HadoopSettings extends Settings {
     }
 
     @Override
-    protected Properties asProperties() {
+    public Properties asProperties() {
         return HadoopCfgUtils.asProperties(cfg);
     }
 }

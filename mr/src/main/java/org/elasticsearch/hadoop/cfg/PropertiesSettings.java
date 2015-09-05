@@ -61,7 +61,7 @@ public class PropertiesSettings extends Settings {
     }
 
     @Override
-    protected Properties asProperties() {
+    public Properties asProperties() {
         return props;
     }
 }

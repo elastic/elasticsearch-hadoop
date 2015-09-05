@@ -551,13 +551,13 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 | Scala type | {es} type
 
 | `None`            | `null`
-| `Unit` 		    | `null`
-| `Nil` 		    | empty `array`
-| `Some[T]` 		| `T` according to the table
-| `Map`				| `object`
+| `Unit`            | `null`
+| `Nil`             | empty `array`
+| `Some[T]`         | `T` according to the table
+| `Map`             | `object`
 | `Traversable`     | `array`
 | __case class__    | `object` (see `Map`)
-| `Product` 		| `array`
+| `Product`         | `array`
 
 |===
 
@@ -569,24 +569,24 @@ in addition, the following _implied_ conversion applies for Java types:
 |===
 | Java type | {es} type
 
-| `null`            	| `null`
-| `String`    			| `string`
-| `Boolean` 			| `boolean`
-| `Byte`		    	| `byte`
-| `Short`		    	| `short`
-| `Integer`		    	| `int`
-| `Long`    			| `long`
-| `Double`  			| `double`
-| `Float`				| `float`
-| `Number`				| `float` or `double` (depending on size)
-| `java.util.Calendar`	| `date`  (`string` format)
-| `java.util.Date`		| `date`  (`string` format)
-| `java.util.Timestamp`	| `date`  (`string` format)
-| `byte[]` 		    	| `string` (BASE64)
-| `Object[]` 			| `array`
-| `Iterable` 			| `array`
-| `Map` 				| `object`
-| __Java Bean__		    | `object` (see `Map`)
+| `null`                | `null`
+| `String`              | `string`
+| `Boolean`             | `boolean`
+| `Byte`                | `byte`
+| `Short`               | `short`
+| `Integer`             | `int`
+| `Long`                | `long`
+| `Double`              | `double`
+| `Float`               | `float`
+| `Number`              | `float` or `double` (depending on size)
+| `java.util.Calendar`  | `date`  (`string` format)
+| `java.util.Date`      | `date`  (`string` format)
+| `java.util.Timestamp` | `date`  (`string` format)
+| `byte[]`              | `string` (BASE64)
+| `Object[]`            | `array`
+| `Iterable`            | `array`
+| `Map`                 | `object`
+| __Java Bean__         | `object` (see `Map`)
 
 |===
 
@@ -834,7 +834,7 @@ The __sources__ declaration also allows specific options to be passed in, namely
 
 | `path`           | {es} index/type    | _required_
 | `pushdown`       | `true`             | Whether to translate (__push-down__) Spark SQL into {es} Query DSL
-| `strict` 	       | `false`			| Whether to use _exact_ (not analyzed) matching or not (analyzed)
+| `strict`         | `false`            | Whether to use _exact_ (not analyzed) matching or not (analyzed)
 
 |===
 
@@ -1031,6 +1031,24 @@ val smiths = sqlContext.esDF("spark/people","?q=Smith" <1>)
 
 <1> {es} query whose results comprise the +DataFrame+
 
+.Controlling the +DataFrame+ schema
+
+In some cases, especially when the index in {es} contains a lot of fields, it is desireable to create a +DataFrame+ that contains only a _subset_ of them. While one can modify the +DataFrame+ (by working on its backing +RDD+) through the official Spark API or through dedicated queries, {eh} allows the user to specify what fields to include and exclude from {es} when creating the +DataFrame+.
+
+Through +es.read.field.include+ and +es.read.field.exclude+ properties, one can indicate what fields to include or exclude from the index mapping. The syntax is similar to that of {es} {ref}/search-request-source-filtering.html[include/exclude]. Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included and no properties/fields are excluded.
+
+For example:
+[source,ini]
+----
+# include
+es.read.field.include = *name, address.*
+# exclude
+es.read.field.exclude = *.created
+----
+
+IMPORTANT: Due to the way SparkSQL works with a +DataFrame+ schema, {eh} needs to be aware of what fields are returned from {es} _before_ executing the actual queries. While one can restrict the fields manually through the underlying {es} query, {eh} is unaware of this and the results are likely to be different or worse, errors will occur. Use the properties above instead, which {es} will properly use alongside the user query.
+
+
 [float]
 [[spark-sql-read-java]]
 ===== Java
@@ -1152,22 +1170,22 @@ While Spark SQL https://spark.apache.org/docs/latest/sql-programming-guide.html#
 
 | `null`               | `null`
 | `ByteType`           | `byte`
-| `ShortType`    	   | `short`
+| `ShortType`          | `short`
 | `IntegerType`        | `int`
-| `LongType`	       | `long`
-| `FloatType`	       | `float`
-| `DoubleType` 		   | `double`
-| `StringType` 		   | `string`
-| `BinaryType`    	   | `string` (BASE64)
-| `BooleanType` 	   | `boolean`
+| `LongType`           | `long`
+| `FloatType`          | `float`
+| `DoubleType`         | `double`
+| `StringType`         | `string`
+| `BinaryType`         | `string` (BASE64)
+| `BooleanType`        | `boolean`
 | `TimestampType`      | `long` (unix time)
-| `ArrayType` 		   | `array`
-| `MapType` 		   | `object`
-| `StructType` 		   | `object`
+| `ArrayType`          | `array`
+| `MapType`            | `object`
+| `StructType`         | `object`
 
 2+h| Available only in Spark 1.2+
 
-| `DateType` 		   | `date` (`string` format)
+| `DateType`           | `date` (`string` format)
 
 |===
 

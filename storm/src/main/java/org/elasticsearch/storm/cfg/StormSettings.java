@@ -101,7 +101,7 @@ public class StormSettings extends Settings {
     }
 
     @Override
-    protected Properties asProperties() {
+    public Properties asProperties() {
         Properties props = new Properties();
 
         if (cfg != null) {

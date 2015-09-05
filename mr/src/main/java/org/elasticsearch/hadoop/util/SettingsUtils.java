@@ -74,7 +74,7 @@ public abstract class SettingsUtils {
     }
 
     public static void setDiscoveredNodes(Settings settings, Collection<String> nodes) {
-        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES, StringUtils.concatenate(nodes, StringUtils.DEFAULT_DELIMITER));
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_DISCOVERED_NODES, StringUtils.concatenate(nodes));
     }
 
     public static List<String> declaredNodes(Settings settings) {
