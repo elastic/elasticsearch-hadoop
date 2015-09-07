@@ -103,6 +103,8 @@ public class HdfsRepository extends BlobStoreRepository implements FileSystemFac
 
     private FileSystem initFileSystem(RepositorySettings repositorySettings) throws IOException {
         Configuration cfg = new Configuration(repositorySettings.settings().getAsBoolean("load_defaults", settings.getAsBoolean("load_defaults", true)));
+        cfg.setClassLoader(this.getClass().getClassLoader());
+        cfg.reloadConfiguration();
 
         String confLocation = repositorySettings.settings().get("conf_location", settings.get("conf_location"));
         if (Strings.hasText(confLocation)) {
