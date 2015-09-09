@@ -60,8 +60,8 @@ public abstract class FieldFilter {
                         exactIncludeMatch = true;
                         break;
                     }
-                    pathIsPrefixOfAnInclude = true;
-                    continue;
+//                    pathIsPrefixOfAnInclude = true;
+//                    continue;
                 }
                 if (include.startsWith(path)) {
                     if (include.length() == path.length()) {
@@ -81,14 +81,11 @@ public abstract class FieldFilter {
             }
         }
 
-        if (!(pathIsPrefixOfAnInclude || exactIncludeMatch)) {
-            // skip subkeys, not interesting.
-            return false;
-        }
-
-        else if (exactIncludeMatch) {
+        if (pathIsPrefixOfAnInclude || exactIncludeMatch) {
+            // if match or part of the path
             return true;
         }
+        
         return false;
     }
 }

@@ -152,14 +152,12 @@ public class FieldTest {
         Field fl = Field.parseField(value);
 
         Field filtered = MappingUtils.filter(fl, Collections.singleton("*a*e"), Collections.<String> emptyList());
-        System.out.println(fl);
-        System.out.println(filtered);
         
         assertThat(fl.name(), is(filtered.name()));
         assertThat(fl.type(), is(filtered.type()));
         
         Field[] props = filtered.properties();
-        
+
         assertThat(props.length, is(2));
         assertThat(props[0].name(), is("date"));
         assertThat(props[1].name(), is("name"));
