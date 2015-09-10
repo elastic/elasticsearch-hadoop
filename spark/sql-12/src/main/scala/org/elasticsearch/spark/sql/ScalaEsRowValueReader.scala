@@ -18,7 +18,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
     currentField = parser.currentName
     if (currentField == null) {
-      currentField = MappingUtils.ROOT_LEVEL_NAME
+      currentField = Utils.ROOT_LEVEL_NAME
     }
     super.readValue(parser, value, esType)
   }
@@ -50,7 +50,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
 
   def endLeadMetadata() {}
 
-  def beginSource() { rootLevel = true; currentField = MappingUtils.ROOT_LEVEL_NAME }
+  def beginSource() { rootLevel = true; currentField = Utils.ROOT_LEVEL_NAME }
 
   def endSource() {}
 

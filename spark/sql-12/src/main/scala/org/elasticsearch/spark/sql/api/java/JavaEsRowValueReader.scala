@@ -1,13 +1,14 @@
 package org.elasticsearch.spark.sql
 
 import java.sql.Timestamp
+
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
+
 import org.elasticsearch.hadoop.serialization.FieldType
 import org.elasticsearch.hadoop.serialization.Parser
-import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback
-import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
+import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback
 
 class JavaEsRowValueReader extends JdkValueReader with RowValueReader with ValueParsingCallback {
 
@@ -17,7 +18,7 @@ class JavaEsRowValueReader extends JdkValueReader with RowValueReader with Value
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
     currentField = parser.currentName
     if (currentField == null) {
-      currentField = MappingUtils.ROOT_LEVEL_NAME
+      currentField = Utils.ROOT_LEVEL_NAME
     }
     super.readValue(parser, value, esType)
   }
@@ -49,7 +50,7 @@ class JavaEsRowValueReader extends JdkValueReader with RowValueReader with Value
 
   def endLeadMetadata() {}
 
-  def beginSource() { rootLevel = true; currentField = MappingUtils.ROOT_LEVEL_NAME }
+  def beginSource() { rootLevel = true; currentField = Utils.ROOT_LEVEL_NAME }
 
   def endSource() {}
 

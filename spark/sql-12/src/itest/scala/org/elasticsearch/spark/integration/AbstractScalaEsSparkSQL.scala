@@ -69,7 +69,11 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 case class KeyValue(key: Int, value: String)
 
 object AbstractScalaEsScalaSparkSQL {
-  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).setMaster("local").setAppName("estest");
+    @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    .setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
+    .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
+  //.setMaster("local")
+
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
   @transient var sqc: SQLContext = null
