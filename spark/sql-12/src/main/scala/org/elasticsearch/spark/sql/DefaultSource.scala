@@ -38,7 +38,7 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
   }
 
   @transient lazy val lazySchema = {
-    MappingUtils.discoverMapping(cfg)
+    SchemaUtils.discoverMapping(cfg)
   }
 
   override val schema = lazySchema.struct

@@ -21,7 +21,7 @@ import org.elasticsearch.spark.rdd.EsPartition
 private[spark] class ScalaEsRowRDD(
   @transient sc: SparkContext,
   params: Map[String, String] = Map.empty,
-  schema: MappingUtils.Schema)
+  schema: SchemaUtils.Schema)
   extends AbstractEsRDD[Row](sc, params) {
 
   override def compute(split: Partition, context: TaskContext): ScalaEsRowRDDIterator = {
@@ -32,7 +32,7 @@ private[spark] class ScalaEsRowRDD(
 private[spark] class ScalaEsRowRDDIterator(
   context: TaskContext,
   partition: PartitionDefinition,
-  schema: MappingUtils.Schema)
+  schema: SchemaUtils.Schema)
   extends AbstractEsRDDIterator[Row](context, partition) {
 
   override def getLogger() = LogFactory.getLog(classOf[ScalaEsRowRDD])
@@ -42,7 +42,7 @@ private[spark] class ScalaEsRowRDDIterator(
 
     // parse the structure and save the order (requested by Spark) for each Row (root and nested)
     // since the data returned from Elastic is likely to not be in the same order
-    MappingUtils.setRowOrder(settings, schema.struct)
+    SchemaUtils.setRowOrder(settings, schema.struct)
   }
 
    override def createValue(value: Array[Object]): Row = {

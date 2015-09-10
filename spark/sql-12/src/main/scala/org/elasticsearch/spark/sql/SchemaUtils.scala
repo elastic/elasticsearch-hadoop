@@ -1,12 +1,10 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Properties
-
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.MapType
 import org.apache.spark.sql.catalyst.types.BinaryType
 import org.apache.spark.sql.catalyst.types.BooleanType
@@ -40,12 +38,16 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
+import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
+import org.elasticsearch.spark.sql.Utils.ROW_ORDER_PROPERTY
 
-private[sql] object MappingUtils {
+private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
 
-  val ROW_ORDER_PROPERTY = "es.internal.spark.sql.row.order"
-  val ROOT_LEVEL_NAME = "_"
+  val readInclude = "es.read.field.include"
+  val readExclude = "es.read.field.exclude"
 
   def discoverMapping(cfg: Settings): Schema = {
     val field = discoverMappingAsField(cfg)
@@ -57,7 +59,22 @@ private[sql] object MappingUtils {
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
-        return repo.getMapping.skipHeaders()
+        
+        var field = repo.getMapping.skipHeaders()
+        val readIncludeCfg = cfg.getProperty(readInclude)
+        val readExcludeCfg = cfg.getProperty(readExclude)
+        
+        // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
+        if (StringUtils.hasText(readIncludeCfg) || StringUtils.hasText(readExcludeCfg)) {
+          // apply any possible include/exclude that can define restrict the DataFrame to just a number of fields
+          val includes = StringUtils.tokenize(readIncludeCfg);
+          val excludes = StringUtils.tokenize(readExcludeCfg);
+          field = MappingUtils.filter(field, includes, excludes)
+          // NB: metadata field is synthetic so it doesn't have to be filtered
+          // its presence is controller through the dedicated config setting
+          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()));
+        }
+        return field
       }
       else {
         throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
@@ -129,7 +146,12 @@ private[sql] object MappingUtils {
     val csv = settings.getScrollFields()
     // if a projection is applied, use that instead
     if (StringUtils.hasText(csv)) {
-      rowOrder.setProperty(ROOT_LEVEL_NAME, csv)
+      if (settings.getReadMetadata) {
+        rowOrder.setProperty(ROOT_LEVEL_NAME, csv + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
+      }
+      else {
+        rowOrder.setProperty(ROOT_LEVEL_NAME, csv)
+      }
     }
     rowOrder
   }
