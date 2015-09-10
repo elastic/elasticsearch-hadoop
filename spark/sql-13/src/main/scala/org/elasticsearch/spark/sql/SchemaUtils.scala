@@ -1,9 +1,11 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Properties
+
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.sql.types.ByteType
@@ -19,6 +21,7 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.types.TimestampType
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.FieldType.BINARY
@@ -34,14 +37,12 @@ import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_ORDER_PROPERTY
-import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
-import java.util.LinkedHashSet
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)

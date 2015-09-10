@@ -26,7 +26,12 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   override def createMap() = {
     if (readMetadata && metadataMap) {
       metadataMap = false
-      new LinkedHashMap
+      // metadata has schema [String, String] so convert all values (like score) to String
+      new LinkedHashMap[Any, Any] {
+        override def put(key: Any, value: Any): Option[Any] = {
+          super.put(key, value.toString())
+        }
+      }
     }
     else {
       new ScalaEsRow(rowOrder(currentField))

@@ -7,7 +7,7 @@ import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
-import org.apache.spark.sql.catalyst.expressions.Row
+import org.apache.spark.sql.Row
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition

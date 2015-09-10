@@ -7,7 +7,6 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
 
-import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.ArrayType
