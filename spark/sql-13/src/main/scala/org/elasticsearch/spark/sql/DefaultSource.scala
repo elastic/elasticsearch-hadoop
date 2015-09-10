@@ -224,7 +224,9 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case d: Double      => d.toString
       case s: String      => if (inJsonFormat) StringUtils.toJsonString(s) else s
       // new in Spark 1.4
-      case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String"))
+      case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String")
+      // new in Spark 1.5
+                   || isClass(utf, "org.apache.spark.unsafe.types.UTF8String"))
                           => if (inJsonFormat) StringUtils.toJsonString(utf.toString()) else utf.toString()
       case ar: Array[Any] =>
         if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).mkString("[", ",", "]")
