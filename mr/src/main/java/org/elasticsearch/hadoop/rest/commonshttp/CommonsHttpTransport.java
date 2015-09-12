@@ -425,7 +425,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
         }
 
-        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), request.uri());
+        // the request URI is not set (since it is retried across hosts), so use the http info instead for source
+        return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
     }
 
     @Override

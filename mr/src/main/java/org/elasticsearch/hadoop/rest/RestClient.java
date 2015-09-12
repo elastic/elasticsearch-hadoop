@@ -166,14 +166,15 @@ public class RestClient implements Closeable, StatsAware {
 
             isRetry = true;
 
-            httpStatus = (retryFailedEntries(response.body(), data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
+            httpStatus = (retryFailedEntries(response, data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
         } while (data.length() > 0 && retry.retry(httpStatus));
 
         return data.leftoversPosition();
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean retryFailedEntries(InputStream content, TrackingBytesArray data) {
+    private boolean retryFailedEntries(Response response, TrackingBytesArray data) {
+    	InputStream content = response.body();
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
@@ -211,7 +212,7 @@ public class RestClient implements Closeable, StatsAware {
                     }
                     else {
                         String message = (status != null ?
-                                String.format("[%s(%s) - %s]", HttpStatus.getText(status), status, prettify(error)) : prettify(error));
+                                String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
                         throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
                     }
                 }
