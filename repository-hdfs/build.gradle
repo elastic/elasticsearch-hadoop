@@ -21,12 +21,12 @@ dependencies {
         exclude module: "hsqldb"
         exclude group: "org.eclipse.jdt"
         exclude module: "commons-beanutils"
-		exclude module: "commons-beanutils-core"
-		exclude module: "junit"
+        exclude module: "commons-beanutils-core"
+        exclude module: "junit"
     }
 
     hadoop2("org.apache.hadoop:hadoop-client:$hadoop2Version") {
-		exclude module: "commons-cli"
+        exclude module: "commons-cli"
         exclude group: "com.sun.jersey"
         exclude group: "com.sun.jersey.contribs"
         exclude group: "com.sun.jersey.jersey-test-framework"
@@ -37,17 +37,17 @@ dependencies {
         exclude module: "hsqldb"
         exclude group: "org.eclipse.jdt"
         exclude module: "commons-beanutils"
-		exclude module: "commons-beanutils-core"
+        exclude module: "commons-beanutils-core"
         exclude module: "javax.servlet"
-		exclude module: "guava"
+        exclude module: "guava"
+        exclude module: "junit"
     }
-}
-
-processResources {
-    expand (version: project.version, esVersion: project.esVersion,
-            jmvCompatibility: project.targetCompatibility,
-            description: project.description, 
-            name: project.name)
+    
+    hadoop2("org.apache.hadoop:hadoop-hdfs:$hadoop2Version") {
+        exclude module: "guava"
+        exclude module: "log4j"
+        exclude module: "junit"
+    }
 }
 
 tasks.withType(Test) {
@@ -57,9 +57,23 @@ tasks.withType(Test) {
     }
 }
 
+compileJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7 
+}
+
 jar {
     manifest.attributes['Implementation-Title'] = 'elasticsearch-repository-hdfs'
+    include "org/elasticsearch/plugin/hadoop/hdfs/*"
 }
+
+task hadoopLinkedJar(type: Jar, dependsOn:jar) {
+    appendix "internal"
+    from sourceSets.main.output.classesDir
+    // exclude plugin
+    exclude "org/elasticsearch/plugin/hadoop/hdfs/*"
+}
+
 
 def baseZip(Zip zip) {
     zip.group = "Distribution"
@@ -71,11 +85,19 @@ def baseZip(Zip zip) {
             include "NOTICE.txt"
             //expand(yyyy: new Date().format("yyyy"), version: project.version)
         }
+        
     zip.from (".") { include "README.md" }
+    zip.from (".") { 
+        include "plugin-descriptor.properties"
+        expand (version: project.version, esVersion: project.esVersion,
+            jmvCompatibility: project.targetCompatibility,
+            description: project.description, 
+            name: project.name)
+    }
     zip.from jar.archivePath
-
-    // tell Gradle about our output (for incremental build) - disabled for now since the sha1 is created alongside the zip
-    // zip.outputs.file file(zip.archivePath.absolutePath + '.sha1.txt')
+    zip.into ("hadoop-libs") {
+        from hadoopLinkedJar.archivePath
+    }
 
     // execute phase
     zip << {
@@ -83,24 +105,28 @@ def baseZip(Zip zip) {
     }
 }
 
-task distZipHadoop1(type: Zip, dependsOn: [jar]) { zipTask ->
+task distZipHadoop1(type: Zip, dependsOn: [hadoopLinkedJar, jar]) { zipTask ->
     baseZip(zipTask)
     description = "Builds archive (with Hadoop1 dependencies) suitable for download page."
 
-    from configurations.hadoop1.allArtifacts.files
-    from configurations.hadoop1
+    into ("hadoop-libs") {
+        from configurations.hadoop1.allArtifacts.files
+        from configurations.hadoop1
+    }
 }
 
-task distZipHadoop2(type: Zip, dependsOn: [jar]) { zipTask ->
+task distZipHadoop2(type: Zip, dependsOn: [hadoopLinkedJar, jar]) { zipTask ->
     baseZip(zipTask)
     description = "Builds archive (with Hadoop2/YARN dependencies) suitable for download page."
     classifier = "hadoop2"
 
-    from configurations.hadoop2.allArtifacts.files
-    from configurations.hadoop2
+    into ("hadoop-libs") {
+        from configurations.hadoop2.allArtifacts.files
+        from configurations.hadoop2
+    }
 }
 
-task distZipNoHadoop(type: Zip, dependsOn: [jar]) { zipTask ->
+task distZipNoHadoop(type: Zip, dependsOn: [hadoopLinkedJar, jar]) { zipTask ->
     baseZip(zipTask)
     description = "Builds archive (without any Hadoop dependencies) suitable for download page."
     classifier = "light"
@@ -123,5 +149,5 @@ uploadToS3() {
     ext.toDir = "elasticsearch/elasticsearch-repository-hdfs"
 }
 
-assemble.dependsOn = ['jar']
+assemble.dependsOn = ['jar', 'hadoopLinkedJar']
 defaultTasks 'build'

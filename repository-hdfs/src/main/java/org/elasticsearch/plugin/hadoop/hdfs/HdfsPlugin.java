@@ -18,10 +18,22 @@
  */
 package org.elasticsearch.plugin.hadoop.hdfs;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardRepository;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesModule;
-import org.elasticsearch.repositories.hdfs.HdfsRepository;
+import org.elasticsearch.repositories.Repository;
 
 public class HdfsPlugin extends Plugin {
 
@@ -35,9 +47,76 @@ public class HdfsPlugin extends Plugin {
         return "HDFS Snapshot/Restore Plugin";
     }
 
+    @SuppressWarnings("unchecked")
     public void onModule(RepositoriesModule repositoriesModule) {
-        //if (settings.getAsBoolean("hdfs.enabled", true)) {
-        repositoriesModule.registerRepository(HdfsRepository.TYPE, HdfsRepository.class, BlobStoreIndexShardRepository.class);
-        //}
+        URI baseLib = detectLibFolder();
+        Loggers.getLogger(HdfsPlugin.class).info("Loading Hadoop libraries from {}", baseLib);
+
+        List<URL> cp = null;
+        try {
+            Path[] jars = FileSystemUtils.files(Paths.get(baseLib), "*.jar");
+            cp = new ArrayList<>(jars.length);
+
+            for (Path path : jars) {
+                cp.add(path.toUri().toURL());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Cannot compute Hadoop classpath", ex);
+        }
+
+        ClassLoader hadoopCL = URLClassLoader.newInstance(cp.toArray(new URL[cp.size()]), getClass().getClassLoader());
+
+        Class<? extends Repository> repository = null;
+        try {
+            repository = (Class<? extends Repository>) hadoopCL.loadClass("org.elasticsearch.repositories.hdfs.HdfsRepository");
+        } catch (ClassNotFoundException cnfe) {
+            throw new IllegalStateException("Cannot load plugin class; is the plugin class setup correctly?", cnfe);
+        }
+
+        repositoriesModule.registerRepository("hdfs", repository, BlobStoreIndexShardRepository.class);
+    }
+
+    private URI detectLibFolder() {
+        ClassLoader cl = getClass().getClassLoader();
+
+        // we could get the URL from the URLClassloader directly
+        // but that can create issues when running the tests from the IDE
+        // we could detect that by loading resources but that as well relies on the JAR URL
+        String classToLookFor = getClass().getName().replace(".", "/").concat(".class");
+        URL classURL = cl.getResource(classToLookFor);
+        if (classURL == null) {
+            throw new IllegalStateException("Cannot detect itself; something is wrong with this ClassLoader " + cl);
+        }
+
+        String base = classURL.toString();
+
+        // extract root
+        // typically a JAR URL
+        int index = base.indexOf("!/");
+        if (index > 0) {
+            base = base.substring(0, index);
+            // remove its prefix (jar:)
+            base = base.substring(4);
+            // remove the trailing jar
+            index = base.lastIndexOf("/");
+            base = base.substring(0, index + 1);
+        }
+        // not a jar - something else, do a best effort here
+        else {
+            // remove the class searched
+            base = base.substring(0, base.length() - classToLookFor.length());
+        }
+
+        // append hadoop-libs/
+        if (!base.endsWith("/")) {
+            base = base.concat("/");
+        }
+        base = base.concat("hadoop-libs");
+
+        try {
+            return new URI(base);
+        } catch (URISyntaxException ex) {
+            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", base), ex);
+        }
     }
 }

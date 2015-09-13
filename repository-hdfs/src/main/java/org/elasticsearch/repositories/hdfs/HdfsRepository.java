@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.ServiceLoader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -119,6 +120,13 @@ public class HdfsRepository extends BlobStoreRepository implements FileSystemFac
         }
 
         UserGroupInformation.setConfiguration(cfg);
+
+        // Hadoop2 relies on the TCCL to load its file providers :(
+        // so we try and set that up
+        ServiceLoader<FileSystem> serviceLoader = ServiceLoader.load(FileSystem.class, cfg.getClassLoader());
+        for (FileSystem fs : serviceLoader) {
+            cfg.setIfUnset("fs." + fs.getUri().getScheme() + ".impl", fs.getClass().getName());
+        }
 
         String uri = repositorySettings.settings().get("uri", settings.get("uri"));
         URI actualUri = (uri != null ? URI.create(uri) : FileSystem.getDefaultUri(cfg));

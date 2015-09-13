@@ -161,8 +161,8 @@ allprojects { project ->
     ]
     
     compileTestJava {
-            sourceCompatibility = 1.6
-            targetCompatibility = 1.6
+		sourceCompatibility = 1.6
+		targetCompatibility = 1.6
     }
     
     sourceSets.test.resources.srcDirs = ["src/test/resources", "src/test/java"]
