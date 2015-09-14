@@ -25,7 +25,6 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.ServiceLoader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -83,9 +82,10 @@ public class HdfsRepository extends BlobStoreRepository implements FileSystemFac
     @Override
     public FileSystem getFileSystem() throws IOException {
         // check if the fs is still alive
+        // make a cheap call that triggers little to no security checks
         if (fs != null) {
             try {
-                fs.getUsed();
+                fs.isFile(fs.getWorkingDirectory());
             } catch (IOException ex) {
                 if (ex.getMessage().contains("Filesystem closed")) {
                     fs = null;
@@ -121,25 +121,25 @@ public class HdfsRepository extends BlobStoreRepository implements FileSystemFac
 
         UserGroupInformation.setConfiguration(cfg);
 
-        // Hadoop2 relies on the TCCL to load its file providers :(
-        // so we try and set that up
-        ServiceLoader<FileSystem> serviceLoader = ServiceLoader.load(FileSystem.class, cfg.getClassLoader());
-        for (FileSystem fs : serviceLoader) {
-            cfg.setIfUnset("fs." + fs.getUri().getScheme() + ".impl", fs.getClass().getName());
-        }
-
         String uri = repositorySettings.settings().get("uri", settings.get("uri"));
         URI actualUri = (uri != null ? URI.create(uri) : FileSystem.getDefaultUri(cfg));
         String user = repositorySettings.settings().get("user", settings.get("user"));
 
+        Thread th = Thread.currentThread();
+        ClassLoader oldCL = th.getContextClassLoader();
         try {
             // disable FS cache
             String disableFsCache = String.format("fs.%s.impl.disable.cache", actualUri.getScheme());
             cfg.setBoolean(disableFsCache, true);
+
+            th.setContextClassLoader(cfg.getClassLoader());
             return (user != null ? FileSystem.get(actualUri, cfg, user) : FileSystem.get(actualUri, cfg));
         } catch (Exception ex) {
             throw new ElasticsearchGenerationException(String.format("Cannot create Hdfs file-system for uri [%s]", actualUri), ex);
+        } finally {
+            th.setContextClassLoader(oldCL);
         }
+
     }
 
     private void addConfigLocation(Configuration cfg, String confLocation) {

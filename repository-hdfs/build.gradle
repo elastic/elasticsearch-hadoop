@@ -95,7 +95,7 @@ def baseZip(Zip zip) {
             name: project.name)
     }
     zip.from jar.archivePath
-    zip.into ("hadoop-libs") {
+    zip.into ("internal-libs") {
         from hadoopLinkedJar.archivePath
     }
 

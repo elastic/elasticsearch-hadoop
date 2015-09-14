@@ -49,20 +49,14 @@ public class HdfsPlugin extends Plugin {
 
     @SuppressWarnings("unchecked")
     public void onModule(RepositoriesModule repositoriesModule) {
-        URI baseLib = detectLibFolder();
+        String baseLib = detectLibFolder();
         Loggers.getLogger(HdfsPlugin.class).info("Loading Hadoop libraries from {}", baseLib);
 
-        List<URL> cp = null;
-        try {
-            Path[] jars = FileSystemUtils.files(Paths.get(baseLib), "*.jar");
-            cp = new ArrayList<>(jars.length);
-
-            for (Path path : jars) {
-                cp.add(path.toUri().toURL());
-            }
-        } catch (IOException ex) {
-            throw new IllegalStateException("Cannot compute Hadoop classpath", ex);
-        }
+        List<URL> cp = new ArrayList<>();
+        // add plugin internal jar
+        discoverJars(createURI(baseLib, "internal-libs"), cp);
+        // add Hadoop jars
+        discoverJars(createURI(baseLib, "hadoop-libs"), cp);
 
         ClassLoader hadoopCL = URLClassLoader.newInstance(cp.toArray(new URL[cp.size()]), getClass().getClassLoader());
 
@@ -76,7 +70,7 @@ public class HdfsPlugin extends Plugin {
         repositoriesModule.registerRepository("hdfs", repository, BlobStoreIndexShardRepository.class);
     }
 
-    private URI detectLibFolder() {
+    private String detectLibFolder() {
         ClassLoader cl = getClass().getClassLoader();
 
         // we could get the URL from the URLClassloader directly
@@ -111,12 +105,29 @@ public class HdfsPlugin extends Plugin {
         if (!base.endsWith("/")) {
             base = base.concat("/");
         }
-        base = base.concat("hadoop-libs");
 
+        return base;
+    }
+
+    private URI createURI(String base, String suffix) {
+        String location = base + suffix;
         try {
-            return new URI(base);
+            return new URI(location);
         } catch (URISyntaxException ex) {
-            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", base), ex);
+            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", location),
+                    ex);
+        }
+    }
+
+    private void discoverJars(URI libPath, List<URL> cp) {
+        try {
+            Path[] jars = FileSystemUtils.files(Paths.get(libPath), "*.jar");
+
+            for (Path path : jars) {
+                cp.add(path.toUri().toURL());
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException("Cannot compute plugin classpath", ex);
         }
     }
 }
