@@ -10,6 +10,7 @@ private[sql] trait RowValueReader extends SettingsAware {
   protected var readMetadata = false
   var metadataField = ""
   protected var rowMap: scala.collection.Map[String, Seq[String]] = Map.empty
+  protected var arrayMap: scala.collection.Map[String, Seq[String]] = Map.empty
   protected var currentField = Utils.ROOT_LEVEL_NAME
 
   abstract override def setSettings(settings: Settings) = {
@@ -17,10 +18,12 @@ private[sql] trait RowValueReader extends SettingsAware {
 
     val csv = settings.getScrollFields
     readMetadata = settings.getReadMetadata
-    rowMap = SchemaUtils.getRowOrder(settings)
+    val rowInfo = SchemaUtils.getRowInfo(settings)
+    rowMap = rowInfo._1
+    arrayMap = rowInfo._2
   }
 
-  def rowOrder(currentField: String): Seq[String] = {
+  def rowInfo(currentField: String): Seq[String] = {
     rowMap.get(currentField) match {
       case Some(v) => v
       case None => throw new EsHadoopIllegalStateException(s"Field '$currentField' not found; typically this occurs with arrays which are not mapped as single value")

@@ -579,14 +579,14 @@ public class ScrollReader {
     }
 
     protected Object read(Token t, String fieldMapping) {
-        // handle nested nodes first
-        if (t == Token.START_OBJECT) {
-            return map(fieldMapping);
-        }
-        else if (t == Token.START_ARRAY) {
+        if (t == Token.START_ARRAY) {
             return list(fieldMapping);
         }
 
+        // handle nested nodes first
+        else if (t == Token.START_OBJECT) {
+            return map(fieldMapping);
+        }
         FieldType esType = mapping(fieldMapping);
 
         if (t.isValue()) {

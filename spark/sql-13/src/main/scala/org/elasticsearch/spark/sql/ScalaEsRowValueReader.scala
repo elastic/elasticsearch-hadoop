@@ -14,6 +14,8 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
 
   var metadataMap = true
   var rootLevel = true
+  var inArray = false
+  var arrayRowOrder:Seq[String] = null
 
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
     currentField = parser.currentName
@@ -34,14 +36,31 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
       }
     }
     else {
-      new ScalaEsRow(rowOrder(currentField))
+      val rowOrder = if (inArray) arrayRowOrder else rowInfo(currentField)
+      new ScalaEsRow(rowOrder)
     }
+  }
+
+  // start array
+  override def createArray(typ: FieldType) = {
+    if (arrayMap.contains(currentField)) {
+      inArray = true
+      arrayRowOrder = rowInfo(currentField)
+    }
+    super.createArray(typ)
+  }
+
+  // end array
+  override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
+    inArray = false
+    arrayRowOrder = null
+    super.addToArray(array, values)
   }
 
   override def addToMap(map: AnyRef, key: AnyRef, value: Any) = {
     map match {
       case m: Map[_, _]        => super.addToMap(map, key, value)
-      case r: ScalaEsRow       => addToBuffer(map.asInstanceOf[ScalaEsRow], key, value)
+      case r: ScalaEsRow       => addToBuffer(r, key, value)
     }
   }
 

@@ -280,6 +280,14 @@ public abstract class Settings {
         return FieldPresenceValidation.valueOf(getProperty(ES_FIELD_READ_VALIDATE_PRESENCE, ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT).toUpperCase(Locale.ENGLISH));
     }
 
+    public String getFieldReadAsArrayInclude() {
+        return getProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, StringUtils.EMPTY);
+    }
+
+    public String getFieldReadAsArrayExclude() {
+        return getProperty(ES_FIELD_READ_AS_ARRAY_EXCLUDE, StringUtils.EMPTY);
+    }
+
     public TimeValue getHeartBeatLead() {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
