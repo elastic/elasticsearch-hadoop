@@ -71,16 +71,16 @@ import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 
 object AbstractScalaEsScalaSparkSQL {
-  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS).set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+  @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     .setMaster("local").setAppName("estest").set("spark.executor.extraJavaOptions", "-XX:MaxPermSize=256m")
     .setJars(SparkUtils.ES_SPARK_TESTING_JAR)
-  //.setMaster("local")
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
   @transient var sqc: SQLContext = null
 
   @BeforeClass
   def setup() {
+    conf.setAll(TestSettings.TESTING_PROPS);
     sc = new SparkContext(conf)
     sqc = new SQLContext(sc)
   }
@@ -169,34 +169,38 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     idx.printSchema()
   }
 
-  //@Test(expected = classOf[SparkException])
+  @Test
   def testArrayMapping() {
-//    val mapping = """{ "array-mapping": {
-//      | "properties" : {
-//      |   "arr" : {
-//      |     "properties" : {
-//      |          "one" : { "type" : "string" },
-//      |          "two" : { "type" : "string" }
-//      |     }
-//      |   },
-//      |   "top-level" : { "type" : "string" }
-//      | }
-//      |}
-//      }""".stripMargin
+    val mapping = """{ "array-mapping": {
+      | "properties" : {
+      |   "arr" : {
+      |     "properties" : {
+      |          "one" : { "type" : "string" },
+      |          "two" : { "type" : "string" }
+      |     }
+      |   },
+      |   "top-level" : { "type" : "string" }
+      | }
+      |}
+      }""".stripMargin
 
     val index = wrapIndex("sparksql-test")
     val indexAndType = s"$index/array-mapping"
-//    RestUtils.touch(index)
-//    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
 
     // add some data
     val doc1 = """{"arr" : [{"one" : "1", "two" : "2"}, {"one" : "unu", "two" : "doi"}], "top-level" : "root" }""".stripMargin
 
     RestUtils.postData(indexAndType, doc1.getBytes(StringUtils.UTF_8))
+    RestUtils.refresh(index)
 
-    val df = sqc.read.format("org.elasticsearch.spark.sql").load(indexAndType)
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.field.read.as.array.include" -> "arr")
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(indexAndType)
     df.printSchema()
-    println(df.count)
+    df.take(1).foreach(println)
+    assertEquals(1, df.count())
   }
 
   @Test

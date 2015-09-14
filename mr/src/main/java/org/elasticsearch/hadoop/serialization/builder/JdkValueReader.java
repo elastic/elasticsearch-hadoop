@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -40,6 +41,8 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     private boolean emptyAsNull = true;
     private boolean richDate = true;
+    private Collection<String> include = Collections.emptyList();
+    private Collection<String> exclude = Collections.emptyList();
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
@@ -363,5 +366,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     public void setSettings(Settings settings) {
         emptyAsNull = settings.getFieldReadEmptyAsNull();
         richDate = settings.getMappingDateRich();
+        include = StringUtils.tokenize(settings.getFieldReadAsArrayInclude());
+        exclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
     }
 }

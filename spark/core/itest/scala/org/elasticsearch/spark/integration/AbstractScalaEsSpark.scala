@@ -18,26 +18,37 @@
  */
 package org.elasticsearch.spark.integration;
 
-
-import java.{util => ju, lang => jl}
-
+import java.awt.Polygon
+import java.{lang => jl}
+import java.{util => ju}
 import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
+import org.apache.spark.SparkException
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
 import org.elasticsearch.spark.rdd.Metadata.VERSION
+import org.elasticsearch.spark.serialization.Bean
+import org.elasticsearch.spark.serialization.ReflectionUtils
 import org.elasticsearch.spark.sparkByteArrayJsonRDDFunctions
 import org.elasticsearch.spark.sparkPairRDDFunctions
 import org.elasticsearch.spark.sparkRDDFunctions
@@ -50,26 +61,19 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.BeforeClass
-import java.awt.Polygon
-import org.elasticsearch.spark.rdd.EsSpark
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.MethodSorters
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
-import org.apache.spark.SparkException
-import org.elasticsearch.spark.serialization.ReflectionUtils
-import org.elasticsearch.spark.serialization.Bean
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 
 object AbstractScalaEsScalaSpark {
-  @transient val conf = new SparkConf().setAll(TestSettings.TESTING_PROPS.asScala).setMaster("local").setAppName("estest")
+  @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
 
   @BeforeClass
   def setup() {
+    conf.setAll(TestSettings.TESTING_PROPS);
     sc = new SparkContext(conf)
   }
 
@@ -157,7 +161,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = "spark-test/scala-id-write"
 
     sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, Map(ES_MAPPING_ID -> "number"))
-    
+
     assertEquals(2, EsSpark.esRDD(sc, target).count());
     assertTrue(RestUtils.exists(target + "/1"))
     assertTrue(RestUtils.exists(target + "/2"))
