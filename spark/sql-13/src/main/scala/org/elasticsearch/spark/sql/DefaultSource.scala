@@ -1,10 +1,10 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Locale
-
+import scala.None
+import scala.Null
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -46,6 +46,9 @@ import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable.ArrayOps
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -106,7 +109,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   // PrunedFilteredScan
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
-    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> 
+    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
                       StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
     // scroll fields only apply to source fields; handle metadata separately
@@ -153,8 +156,14 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case LessThan(attribute, value)           => s"""{"range":{"$attribute":{"lt" :${extract(value)}}}}"""
       case LessThanOrEqual(attribute, value)    => s"""{"range":{"$attribute":{"lte":${extract(value)}}}}"""
       case In(attribute, values)                => {
-        if (strictPushDown) s"""{"terms":{"$attribute":${extractAsJsonArray(values)}}}"""
-        else s"""{"query":{"match":{"$attribute":${extract(values)}}}}"""
+        // when dealing with mixed types (strings and numbers) Spark converts the Strings to null (gets confused by the type field)
+        // this leads to incorrect query DSL hence why nulls are filtered
+        val filtered = values filter (_ != null)
+        if (filtered.isEmpty) {
+          return ""
+        }
+        if (strictPushDown) s"""{"terms":{"$attribute":${extractAsJsonArray(filtered)}}}"""
+        else s"""{"or":{"filters":[${extractMatchArray(attribute, filtered)}]}}"""
       }
       case IsNull(attribute)                    => s"""{"missing":{"field":"$attribute"}}"""
       case IsNotNull(attribute)                 => s"""{"exists":{"field":"$attribute"}}"""
@@ -208,9 +217,39 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     extract(value, true, true)
   }
 
+  private def extractMatchArray(attribute: String, ar: Array[Any]):String = {
+    // use a set to avoid duplicate values
+    // especially since Spark conversion might turn each user param into null
+    val numbers = LinkedHashSet.empty[AnyRef]
+    val strings = LinkedHashSet.empty[AnyRef]
+
+    // move numbers into a separate list for a terms query combined with a bool
+    for (i <- ar) i.asInstanceOf[AnyRef] match {
+      case null     => // ignore
+      case n:Number => numbers += extract(i, false, false)
+      case _        => strings += extract(i, false, false)
+    }
+
+    if (numbers.isEmpty) {
+     if (strings.isEmpty) {
+       return StringUtils.EMPTY
+     }
+     return s"""{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""
+     //s"""{"query":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
+    }
+    else {
+      // translate the numbers into a terms query
+      val str = s"""{"terms":{"$attribute":${numbers.mkString("[", ",", "]")}}}"""
+      if (strings.isEmpty) return str
+      // if needed, add the strings as a match query
+      else return str + s""",{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""
+    }
+  }
+
   private def extract(value: Any, inJsonFormat: Boolean, asJsonArray: Boolean):String = {
     // common-case implies primitives and String so try these before using the full-blown ValueWriter
     value match {
+      case null           => "null"
       case u: Unit        => "null"
       case b: Boolean     => b.toString
       case c: Char        => if (inJsonFormat) StringUtils.toJsonString(c) else c.toString()
@@ -221,14 +260,14 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       case f: Float       => f.toString
       case d: Double      => d.toString
       case s: String      => if (inJsonFormat) StringUtils.toJsonString(s) else s
+      case ar: Array[Any] =>
+        if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).distinct.mkString("[", ",", "]")
+        else (for (i <- ar) yield extract(i, false, false)).distinct.mkString("\"", " ", "\"")
       // new in Spark 1.4
       case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String")
       // new in Spark 1.5
                    || isClass(utf, "org.apache.spark.unsafe.types.UTF8String"))
                           => if (inJsonFormat) StringUtils.toJsonString(utf.toString()) else utf.toString()
-      case ar: Array[Any] =>
-        if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).mkString("[", ",", "]")
-        else (for (i <- ar) yield extract(i, false, false)).mkString("\"", " ", "\"")
       case a: AnyRef      => {
         val storage = new FastByteArrayOutputStream()
         val generator = new JacksonJsonGenerator(storage)

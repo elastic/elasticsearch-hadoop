@@ -263,7 +263,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("sparksql-test/scala-basic-write")
 
     val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.read.field.include" -> "id, name, url")
-    
+
     val dataFrame = sqc.esDF(target, newCfg)
     assertTrue(dataFrame.count > 300)
     val schema = dataFrame.schema.treeString
@@ -300,7 +300,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("sparksql-test/scala-basic-write")
 
     val dfNoQuery = JavaEsSparkSQL.esDF(sqc, target, cfg.asJava)
-    val query = s"""{ "query" : { "query_string" : { "query" : "name:me*" } } //, "fields" : ["name"] 
+    val query = s"""{ "query" : { "query_string" : { "query" : "name:me*" } } //, "fields" : ["name"]
                 }"""
     val dfWQuery = JavaEsSparkSQL.esDF(sqc, target, query, cfg.asJava)
 
@@ -453,7 +453,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val filter = df.filter(df("airport").equalTo("OTP"))
     if (strictPushDown) {
       assertEquals(0, filter.count())
-      // however if we change the arguments to be lower cased, it will Spark who's going to filter out the data
+      // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
       return
     }
 
@@ -517,12 +517,29 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     if (strictPushDown) {
       assertEquals(0, filter.count())
-      // however if we change the arguments to be lower cased, it will Spark who's going to filter out the data
+      // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
       return
     }
 
     assertEquals(2, filter.count())
     assertEquals("jan", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown08InWithNumber() {
+    val df = esDataSource("pd_in_number")
+    var filter = df.filter("participants IN (1, 2, 3)")
+
+    assertEquals(1, filter.count())
+    assertEquals("long", filter.select("tag").sort("tag").take(1)(0)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown08InWithNumberAndStrings() {
+    val df = esDataSource("pd_in_number")
+    var filter = df.filter("participants IN (2, 'bar', 1, 'foo')")
+
+    assertEquals(0, filter.count())
   }
 
   @Test
