@@ -10,7 +10,6 @@ import scala.collection.Seq
 
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.types.DataTypes.BinaryType
@@ -51,7 +50,7 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
 
   private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {
     value match {
-      case r: GenericRowWithSchema =>
+      case r: Row =>
         generator.writeBeginObject()
 
         schema.fields.view.zipWithIndex foreach {

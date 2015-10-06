@@ -1,11 +1,9 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Properties
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.sql.types.ByteType
@@ -41,8 +39,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
-import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
-import org.elasticsearch.spark.sql.Utils.ROW_ORDER_PROPERTY
+import org.elasticsearch.spark.sql.Utils._
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -60,11 +57,11 @@ private[sql] object SchemaUtils {
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
-        
+
         var field = repo.getMapping.skipHeaders()
         val readIncludeCfg = cfg.getProperty(readInclude)
         val readExcludeCfg = cfg.getProperty(readExclude)
-        
+
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(readIncludeCfg) || StringUtils.hasText(readExcludeCfg)) {
           // apply any possible include/exclude that can define restrict the DataFrame to just a number of fields
