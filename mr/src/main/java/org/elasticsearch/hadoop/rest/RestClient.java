@@ -50,6 +50,7 @@ import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -63,6 +64,8 @@ public class RestClient implements Closeable, StatsAware {
     private final TimeValue scrollKeepAlive;
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
+
+    private final boolean isES20;
 
     {
         mapper = new ObjectMapper();
@@ -93,6 +96,8 @@ public class RestClient implements Closeable, StatsAware {
         }
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
+
+        isES20 = SettingsUtils.isEs20(settings);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -174,7 +179,7 @@ public class RestClient implements Closeable, StatsAware {
 
     @SuppressWarnings("rawtypes")
     private boolean retryFailedEntries(Response response, TrackingBytesArray data) {
-    	InputStream content = response.body();
+        InputStream content = response.body();
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
@@ -194,19 +199,9 @@ public class RestClient implements Closeable, StatsAware {
                 Map map = iterator.next();
                 Map values = (Map) map.values().iterator().next();
                 Integer status = (Integer) values.get("status");
-                Object err = values.get("error");
-                if (err != null) {
-                    String error = null;
-                    if (err instanceof Map) {
-                        Map m = ((Map) err);
-                        error = m.get("reason").toString();
-                        if (m.containsKey("caused_by")) {
-                            error += ";" + ((Map) m.get("caused_by")).get("reason");
-                        }
-                    }
-                    else {
-                        error = err.toString();
-                    }
+
+                String error = extractError(values);
+                if (error != null) {
                     if (status != null && HttpStatus.canRetry(status) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
                     }
@@ -230,13 +225,62 @@ public class RestClient implements Closeable, StatsAware {
         }
     }
 
+    private String extractError(Map jsonMap) {
+        Object err = jsonMap.get("error");
+        String error = null;
+        if (err != null) {
+            // part of ES 2.0
+            if (err instanceof Map) {
+                Map m = ((Map) err);
+                err = m.get("root_cause");
+                if (err == null) {
+                    error = m.get("reason").toString();
+                    if (m.containsKey("caused_by")) {
+                        error += ";" + ((Map) m.get("caused_by")).get("reason");
+                    }
+                }
+                else {
+                    if (err instanceof List) {
+                        Object nested = ((List) err).get(0);
+                        if (nested instanceof Map) {
+                            Map nestedM = (Map) nested;
+                            if (nestedM.containsKey("reason")) {
+                                error = nestedM.get("reason").toString();
+                            }
+                            else {
+                                error = nested.toString();
+                            }
+                        }
+                        else {
+                            error = nested.toString();
+                        }
+                    }
+                    else {
+                        error = err.toString();
+                    }
+                }
+            }
+            else {
+                error = err.toString();
+            }
+        }
+        return error;
+    }
+
     private String prettify(String error) {
+        if (isES20) {
+            return error;
+        }
+
         String invalidFragment = ErrorUtils.extractInvalidXContent(error);
         String header = (invalidFragment != null ? "Invalid JSON fragment received[" + invalidFragment + "]" : "");
         return header + "[" + error + "]";
     }
 
     private String prettify(String error, ByteSequence body) {
+        if (isES20) {
+            return error;
+        }
         String message = ErrorUtils.extractJsonParse(error, body);
         return (message != null ? error + "; fragment[" + message + "]" : error);
     }
@@ -351,8 +395,13 @@ public class RestClient implements Closeable, StatsAware {
             String msg = null;
             // try to parse the answer
             try {
-                msg = parseContent(response.body(), "error");
-                msg = prettify(msg, request.body());
+               msg = extractError(this.<Map> parseContent(response.body(), null));
+               if (response.isClientError()) {
+                    msg = msg + "\n" + request.body().toString();
+               }
+               else {
+                   msg = prettify(msg, request.body());
+               }
             } catch (Exception ex) {
                 // can't parse message, move on
             }
