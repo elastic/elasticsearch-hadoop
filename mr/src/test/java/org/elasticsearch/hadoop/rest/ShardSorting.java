@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -28,11 +29,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.junit.Test;
+
 
 import static org.junit.Assert.*;
 
@@ -48,39 +48,58 @@ public class ShardSorting {
         assertEquals(1023, ShardSorter.powerList(set).size());
     }
 
+    private <K, V> Map<K, V> map(K k1, V v1) {
+        return map(k1, v1, null, null, null, null);
+    }
+
+    private <K, V> Map<K, V> map(K k1, V v1, K k2, V v2) {
+        return map(k1, v1, k2, v2, null, null);
+    }
+
+    private <K, V> Map<K, V> map(K k1, V v1, K k2, V v2, K k3, V v3) {
+        Map<K, V> m = new LinkedHashMap<K, V>();
+        m.put(k1, v1);
+        if (k2 != null && v2 != null) {
+            m.put(k2, v2);
+            if (k3 != null && v3 != null) {
+                m.put(k3, v3);
+            }
+        }
+        return m;
+    }
 
     @Test
     public void testAllShardsOnOneNode() throws Exception {
-        assertEquals(ImmutableMap.of("A", "N").toString(),
-                topology(ImmutableMap.<String, List<String>> of("N", ImmutableList.of("A", "B", "C"))).toString());
+        assertEquals(map("A", "N").toString(),
+                topology(map("N", Arrays.asList("A", "B", "C"))).toString());
     }
 
     @Test
     public void testPrimariesAndReplicas() throws Exception {
-        assertEquals(ImmutableMap.of("A", "M").toString(),
-                topology(ImmutableMap.<String, List<String>> of(
-                        "N", ImmutableList.of("A", "B", "C"),
-                        "M", ImmutableList.of("A", "B", "C")
+        assertEquals(map("A", "M").toString(),
+                topology(map(
+                        "N", Arrays.asList("A", "B", "C"),
+                        "M", Arrays.asList("A", "B", "C")
                         )).toString());
     }
 
     @Test
     public void testDuplicatesOnAllNodes() throws Exception {
         assertEquals(Collections.emptyMap().toString(),
-                topology(ImmutableMap.<String, List<String>> of(
-                        "N", ImmutableList.of("A", "B"),
-                        "M", ImmutableList.of("B", "C"),
-                        "P", ImmutableList.of("A", "C")
+                topology(map(
+                        "N", Arrays.asList("A", "B"),
+                        "M", Arrays.asList("B", "C"),
+                        "P", Arrays.asList("A", "C")
                         )).toString());
     }
 
     @Test
     public void testTwoShardsDuplicatedOnTwoNodesAndOneShardSingular() throws Exception {
-        assertEquals(ImmutableMap.of("A", "M", "C", "P").toString(),
-                topology(ImmutableMap.<String, List<String>> of(
-                        "N", ImmutableList.of("A", "B"),
-                        "M", ImmutableList.of("B", "A"),
-                        "P", ImmutableList.of("C")
+        assertEquals(map("A", "M", "C", "P").toString(),
+                topology(map(
+                        "N", Arrays.asList("A", "B"),
+                        "M", Arrays.asList("B", "A"),
+                        "P", Arrays.asList("C")
                         )).toString());
     }
 

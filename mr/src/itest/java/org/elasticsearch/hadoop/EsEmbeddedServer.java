@@ -35,7 +35,7 @@ public class EsEmbeddedServer {
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
         //props.setProperty("es.index.store.type", "memory");
-        props.setProperty("gateway.type", "none");
+        // props.setProperty("gateway.type", "none");
         if (!hasSlave) {
             props.setProperty("discovery.zen.ping.multicast.enabled", "false");
         }
