@@ -105,10 +105,7 @@ public class RestClient implements Closeable, StatsAware {
         for (Map value : nodes.values()) {
             String inet = (String) value.get("http_address");
             if (StringUtils.hasText(inet)) {
-                int startIp = inet.indexOf("/") + 1;
-                int endIp = inet.indexOf("]");
-                inet = inet.substring(startIp, endIp);
-                hosts.add(inet);
+                hosts.add(StringUtils.parseIpAddress(inet).toString());
             }
         }
 
@@ -172,7 +169,7 @@ public class RestClient implements Closeable, StatsAware {
 
     @SuppressWarnings("rawtypes")
     private boolean retryFailedEntries(Response response, TrackingBytesArray data) {
-    	InputStream content = response.body();
+        InputStream content = response.body();
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
@@ -403,7 +400,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public long count(String indexAndType, ByteSequence query) {
-    	Response response = execute(GET, indexAndType + "/_count", query);
+        Response response = execute(GET, indexAndType + "/_count", query);
         Number count = (Number) parseContent(response.body(), "count");
         return (count != null ? count.longValue() : -1);
     }

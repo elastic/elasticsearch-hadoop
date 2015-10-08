@@ -21,6 +21,9 @@ package org.elasticsearch.hadoop.serialization.dto;
 import java.io.Serializable;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
+
 public class Node implements Serializable {
 
     private String id;
@@ -47,12 +50,9 @@ public class Node implements Serializable {
         if (!hasHttp) {
             return;
         }
-        String httpAddr = http.toString();
-        // strip ip address - regex would work but it's overkill
-        int startIndex = httpAddr.indexOf("/") + 1;
-        int endIndex = httpAddr.indexOf(":");
-        ipAddress = httpAddr.substring(startIndex, endIndex);
-        httpPort = Integer.valueOf(httpAddr.substring(endIndex + 1, httpAddr.indexOf("]")));
+        IpAndPort ip = StringUtils.parseIpAddress(http.toString());
+        ipAddress = ip.ip;
+        httpPort = ip.port;
     }
 
     public boolean hasHttp() {

@@ -33,6 +33,7 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.util.URIUtil;
 import org.codehaus.jackson.io.JsonStringEncoder;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
 
 
@@ -47,6 +48,26 @@ public abstract class StringUtils {
     public static final String DEFAULT_DELIMITER = ",";
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
+
+    public static class IpAndPort {
+        public final String ip;
+        public final int port;
+
+        IpAndPort(String ip, int port) {
+            this.ip = ip;
+            this.port = port;
+        }
+
+        IpAndPort(String ip) {
+            this.ip = ip;
+            this.port = 0;
+        }
+
+        @Override
+        public String toString() {
+            return (port > 0 ? ip + ":" + port : ip);
+        }
+    }
 
     public static boolean hasLength(CharSequence sequence) {
         return (sequence != null && sequence.length() > 0);
@@ -117,9 +138,9 @@ public abstract class StringUtils {
     }
 
     public static String concatenate(Collection<?> list) {
-    	return concatenate(list, DEFAULT_DELIMITER);
+        return concatenate(list, DEFAULT_DELIMITER);
     }
-    
+
     public static String concatenate(Collection<?> list, String delimiter) {
         if (list == null || list.isEmpty()) {
             return EMPTY;
@@ -382,5 +403,24 @@ public abstract class StringUtils {
         public static char[] jsonEncoding(String rawString) {
             return JsonStringEncoder.getInstance().quoteAsString(rawString);
         }
+    }
+
+    public static IpAndPort parseIpAddress(String httpAddr) {
+        // strip ip address - regex would work but it's overkill
+        int startIp = httpAddr.indexOf("/") + 1;
+        int endIp = httpAddr.indexOf("]");
+        if (startIp < 0 || endIp < 0) {
+            throw new EsHadoopIllegalStateException("Cannot parse http address " + httpAddr);
+        }
+        httpAddr = httpAddr.substring(startIp, endIp);
+
+        int portIndex = httpAddr.indexOf(":");
+
+        if (portIndex > 0) {
+            String ip = httpAddr.substring(startIp, portIndex);
+            int port = Integer.valueOf(httpAddr.substring(portIndex + 1));
+            return new IpAndPort(ip, port);
+        }
+        return new IpAndPort(httpAddr);
     }
 }
