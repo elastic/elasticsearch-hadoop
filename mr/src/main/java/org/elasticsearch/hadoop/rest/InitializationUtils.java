@@ -112,7 +112,7 @@ public abstract class InitializationUtils {
 
     public static void filterNonDataNodesIfNeeded(Settings settings, Log log) {
         if (!settings.getNodesDataOnly() || settings.getNodesClientOnly()) {
-          return;
+            return;
         }
 
         RestClient bootstrap = new RestClient(settings);
@@ -165,6 +165,11 @@ public abstract class InitializationUtils {
             String esVersion = bootstrap.esVersion();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
+            }
+            // validate version (make sure it's running against ES 0.9x or 1.x)
+
+            if (!(esVersion.startsWith("0.90") || esVersion.startsWith("1."))) {
+                throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version " + esVersion);
             }
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
             return esVersion;
