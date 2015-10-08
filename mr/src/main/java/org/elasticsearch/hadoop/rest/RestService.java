@@ -226,10 +226,10 @@ public abstract class RestService implements Serializable {
         boolean overlappingShards = false;
         Map<Shard, Node> targetShards = null;
 
+        InitializationUtils.discoverEsVersion(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
-        InitializationUtils.discoverEsVersion(settings, log);
 
         String savedSettings = settings.save();
 
@@ -372,10 +372,10 @@ public abstract class RestService implements Serializable {
     public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
         Version.logVersion();
 
+        InitializationUtils.discoverEsVersion(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
-        InitializationUtils.discoverEsVersion(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
 
