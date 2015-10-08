@@ -110,13 +110,7 @@ public class RestClient implements Closeable, StatsAware {
         for (Map value : nodes.values()) {
             String inet = (String) value.get("http_address");
             if (StringUtils.hasText(inet)) {
-                if (inet.contains("/")) {
-                    int startIp = inet.indexOf("/") + 1;
-                    int endIp = inet.indexOf("]");
-                    inet = inet.substring(startIp, endIp);
-                }
-                hosts.add(inet);
-            }
+				hosts.add(StringUtils.parseIpAddress(inet).toString());            }
         }
 
         return hosts;
