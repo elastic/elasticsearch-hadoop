@@ -23,7 +23,7 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE;
 
 /**
  * Tweaked settings for testing.
@@ -56,6 +56,14 @@ public class TestSettings extends PropertiesSettings {
         if (StringUtils.hasText(jt)) {
             System.out.println("Setting JT to " + jt);
             TESTING_PROPS.put("mapred.job.tracker", jt.trim());
+        }
+    }
+
+    {
+        // pick up dedicated ES port if present
+        String embeddedEsLocalPort = System.getProperty(TestUtils.ES_LOCAL_PORT);
+        if (StringUtils.hasText(System.getProperty(TestUtils.ES_LOCAL_PORT))) {
+            TESTING_PROPS.put("es.port", embeddedEsLocalPort);
         }
     }
 

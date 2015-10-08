@@ -22,13 +22,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.util.Locale;
 
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 
 public class TestUtils {
+
+    public static final String ES_LOCAL_PORT = "es.hadoop.testing.local.es.port";
 
     public static boolean delete(File file) {
         if (file == null || !file.exists()) {

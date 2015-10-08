@@ -22,12 +22,15 @@ import java.util.Properties;
 
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
 public class EsEmbeddedServer {
 
     private final Node node;
+    private IpAndPort ipAndPort;
 
     public EsEmbeddedServer(String clusterName, String dataPath, String httpRange, String transportRange, boolean hasSlave) {
         Properties props = new Properties();
@@ -47,9 +50,18 @@ public class EsEmbeddedServer {
 
     public void start() {
         node.start();
+        // find out port
+        String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
+        String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().iterator().next().getHttp().address().publishAddress().toString();
+
+        ipAndPort = StringUtils.parseIpAddress(value);
     }
 
     public void stop() {
         node.close();
+    }
+
+    public IpAndPort getIpAndPort() {
+        return ipAndPort;
     }
 }

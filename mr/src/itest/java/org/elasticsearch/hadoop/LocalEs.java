@@ -68,6 +68,8 @@ public class LocalEs extends ExternalResource {
             System.out.println("Starting Elasticsearch Master...");
             master = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);
             master.start();
+            System.out.println("Started Elasticsearch Master on port " + master.getIpAndPort().port);
+            System.setProperty(TestUtils.ES_LOCAL_PORT, String.valueOf(master.getIpAndPort().port));
         }
 
         if (USE_SLAVE && slave == null) {
@@ -88,6 +90,7 @@ public class LocalEs extends ExternalResource {
 
             System.out.println("Stopping Elasticsearch Master...");
             try {
+                System.clearProperty(TestUtils.ES_LOCAL_PORT);
                 master.stop();
             } catch (Exception ex) {
                 // ignore
