@@ -34,12 +34,12 @@ public class LocalEs extends ExternalResource {
 
     public static final String CLUSTER_NAME = "ES-HADOOP-TEST";
     private static final String ES_DATA_PATH = "build/es.data";
-    public static final String DATA_PORTS = "9500-9599";
-    public static final String TRANSPORT_PORTS = "9600-9699";
-    public static final String DATA_PORTS_SLAVE = "9700-9799";
-    public static final String TRANSPORT_PORTS_SLAVE = "9800-9899";
+    public static final String DATA_PORTS = "9550-9599";
+    public static final String TRANSPORT_PORTS = "9650-9699";
+    public static final String DATA_PORTS_SLAVE = "9750-9799";
+    public static final String TRANSPORT_PORTS_SLAVE = "9850-9899";
 
-    private boolean USE_SLAVE = false;
+    private final boolean USE_SLAVE = false;
     private boolean disabled = false;
 
     @Override
@@ -63,7 +63,7 @@ public class LocalEs extends ExternalResource {
 
         // delete data path to start fresh
         TestUtils.delete(new File(ES_DATA_PATH));
-        
+
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
             master = new EsEmbeddedServer(CLUSTER_NAME, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);
