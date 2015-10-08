@@ -407,17 +407,23 @@ public abstract class StringUtils {
 
     public static IpAndPort parseIpAddress(String httpAddr) {
         // strip ip address - regex would work but it's overkill
-        int startIp = httpAddr.indexOf("/") + 1;
-        int endIp = httpAddr.indexOf("]");
-        if (startIp < 0 || endIp < 0) {
-            throw new EsHadoopIllegalStateException("Cannot parse http address " + httpAddr);
-        }
-        httpAddr = httpAddr.substring(startIp, endIp);
 
+        // there are two formats - ip:port or [/ip:port]
+        // first the ip is normalized
+        if (httpAddr.contains("/")) {
+            int startIp = httpAddr.indexOf("/") + 1;
+            int endIp = httpAddr.indexOf("]");
+            if (startIp < 0 || endIp < 0) {
+                throw new EsHadoopIllegalStateException("Cannot parse http address " + httpAddr);
+            }
+            httpAddr = httpAddr.substring(startIp, endIp);
+        }
+
+        // then split
         int portIndex = httpAddr.indexOf(":");
 
         if (portIndex > 0) {
-            String ip = httpAddr.substring(startIp, portIndex);
+            String ip = httpAddr.substring(0, portIndex);
             int port = Integer.valueOf(httpAddr.substring(portIndex + 1));
             return new IpAndPort(ip, port);
         }
