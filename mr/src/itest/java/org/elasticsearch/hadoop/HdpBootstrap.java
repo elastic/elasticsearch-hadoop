@@ -79,9 +79,11 @@ public class HdpBootstrap {
         }
     }
 
-    public static JobConf addProperties(JobConf conf, Properties props) {
+    public static <T extends Configuration> T addProperties(T conf, Properties props, boolean override) {
         for (Entry<Object, Object> entry : props.entrySet()) {
-            conf.set(entry.getKey().toString(), entry.getValue().toString());
+            if (override || conf.get(entry.getKey().toString()) == null) {
+                conf.set(entry.getKey().toString(), entry.getValue().toString());
+            }
         }
         return conf;
     }
@@ -97,7 +99,7 @@ public class HdpBootstrap {
             System.setProperty("path.separator", ":");
         }
 
-        JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS);
+        JobConf conf = addProperties(new JobConf(), TestSettings.TESTING_PROPS, true);
         HadoopCfgUtils.setGenericOptions(conf);
 
         // provision if not local

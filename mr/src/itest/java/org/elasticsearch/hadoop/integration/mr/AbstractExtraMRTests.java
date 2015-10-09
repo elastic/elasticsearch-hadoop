@@ -46,6 +46,7 @@ import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -111,6 +112,8 @@ public class AbstractExtraMRTests {
     public AbstractExtraMRTests(JobConf config, String indexPrefix) {
         this.indexPrefix = indexPrefix;
         this.config = config;
+
+        HdpBootstrap.addProperties(config, TestSettings.TESTING_PROPS, false);
     }
 
 
@@ -157,10 +160,10 @@ public class AbstractExtraMRTests {
 
         // put alias
         String aliases =
-         "{ \"actions\" : [ " +
-                "{ \"add\":{\"index\":\"" + targetPrefix + "a\",\"alias\":\"" + alias + "\" }} ," +
-                "{ \"add\":{\"index\":\"" + targetPrefix + "b\",\"alias\":\"" + alias + "\" }}  " +
-         "]}";
+                "{ \"actions\" : [ " +
+                        "{ \"add\":{\"index\":\"" + targetPrefix + "a\",\"alias\":\"" + alias + "\" }} ," +
+                        "{ \"add\":{\"index\":\"" + targetPrefix + "b\",\"alias\":\"" + alias + "\" }}  " +
+                        "]}";
 
         RestUtils.postData("_aliases", aliases.getBytes());
         RestUtils.refresh(alias);

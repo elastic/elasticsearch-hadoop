@@ -34,6 +34,7 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,8 +53,8 @@ public class AbstractMRNewApiSearchTest {
     private final String query;
     private final String indexPrefix;
     private final Random random = new Random();
-    private boolean readMetadata;
-    private boolean readAsJson;
+    private final boolean readMetadata;
+    private final boolean readAsJson;
 
     public AbstractMRNewApiSearchTest(String indexPrefix, String query, boolean readMetadata, boolean readAsJson) {
         this.indexPrefix = indexPrefix;
@@ -171,6 +172,9 @@ public class AbstractMRNewApiSearchTest {
         QueryTestParams.provisionQueries(conf);
         job.setNumReduceTasks(0);
         //PrintStreamOutputFormat.stream(conf, Stream.OUT);
-        return job.getConfiguration();
+
+        Configuration cfg = job.getConfiguration();
+        HdpBootstrap.addProperties(cfg, TestSettings.TESTING_PROPS, false);
+        return cfg;
     }
 }
