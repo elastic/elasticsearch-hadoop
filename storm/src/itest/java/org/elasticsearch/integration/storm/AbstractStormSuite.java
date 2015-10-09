@@ -64,17 +64,13 @@ public abstract class AbstractStormSuite {
         @Override
         protected void before() throws Throwable {
 
-            Properties props = TestSettings.TESTING_PROPS;
+            copyPropertiesIntoCfg(cfg);
 
-            for (String property : TestSettings.TESTING_PROPS.stringPropertyNames()) {
-                cfg.put(property, props.get(property));
-            }
-
-            String stormMode = props.getProperty("storm", "local");
+            String stormMode = TestSettings.TESTING_PROPS.getProperty("storm", "local");
 
             isLocal = "local".equals(stormMode);
             //cfg.setDebug(true);
-            cfg.setNumWorkers(Integer.parseInt(props.getProperty("storm.numworkers", "2")));
+            cfg.setNumWorkers(Integer.parseInt(TestSettings.TESTING_PROPS.getProperty("storm.numworkers", "2")));
 
             stormCluster = new LocalCluster();
         }
@@ -94,6 +90,14 @@ public abstract class AbstractStormSuite {
         }
     };
 
+    private static void copyPropertiesIntoCfg(Config cfg) {
+        Properties props = TestSettings.TESTING_PROPS;
+
+        for (String property : props.stringPropertyNames()) {
+            cfg.put(property, props.get(property));
+        }
+    }
+
     public static void run(final String name, final StormTopology topo, final Counter hasCompleted) throws Exception {
         Thread th = new Thread(new Runnable() {
             @Override
@@ -108,6 +112,8 @@ public abstract class AbstractStormSuite {
             }
         }, "test-storm-runner");
         th.setDaemon(true);
+
+        copyPropertiesIntoCfg(cfg);
         th.start();
     }
 
