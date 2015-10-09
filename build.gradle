@@ -647,7 +647,7 @@ allprojects { project ->
 
         testLogging {
             displayGranularity 0
-            events "started", "failed"//, "standardOut", "standardError"
+            events "started", "failed", "standardOut", "standardError"
             exceptionFormat "full"
             showCauses true
             showExceptions true
