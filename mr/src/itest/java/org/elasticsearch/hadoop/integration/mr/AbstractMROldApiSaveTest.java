@@ -50,6 +50,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.FixMethodOrder;
@@ -152,6 +153,8 @@ public class AbstractMROldApiSaveTest {
     public AbstractMROldApiSaveTest(JobConf config, String indexPrefix) {
         this.indexPrefix = indexPrefix;
         this.config = config;
+
+        HdpBootstrap.addProperties(config, TestSettings.TESTING_PROPS, false);
     }
 
     @Test

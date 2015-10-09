@@ -23,6 +23,7 @@ import java.io.File;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.junit.rules.ExternalResource;
@@ -70,6 +71,9 @@ public class LocalEs extends ExternalResource {
             master.start();
             System.out.println("Started Elasticsearch Master on port " + master.getIpAndPort().port);
             System.setProperty(TestUtils.ES_LOCAL_PORT, String.valueOf(master.getIpAndPort().port));
+
+            // force initialization of test properties
+            new TestSettings();
         }
 
         if (USE_SLAVE && slave == null) {

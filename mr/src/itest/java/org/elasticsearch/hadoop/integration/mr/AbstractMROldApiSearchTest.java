@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -197,6 +198,8 @@ public class AbstractMROldApiSearchTest {
 
         QueryTestParams.provisionQueries(conf);
         FileInputFormat.setInputPaths(conf, new Path(TestUtils.sampleArtistsDat()));
+
+        HdpBootstrap.addProperties(conf, TestSettings.TESTING_PROPS, false);
         return conf;
     }
 }
