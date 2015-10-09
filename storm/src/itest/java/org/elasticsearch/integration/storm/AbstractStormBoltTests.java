@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +36,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.ImmutableMap;
 
-import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -47,6 +48,7 @@ public abstract class AbstractStormBoltTests {
     public AbstractStormBoltTests(Map conf, String index) {
         this.conf = conf;
         this.index = index;
+        conf.putAll(TestSettings.TESTING_PROPS);
     }
 
     @Before

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.elasticsearch.storm.EsBolt;
 import org.junit.Test;
@@ -33,15 +34,17 @@ import backtype.storm.tuple.Fields;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import static org.elasticsearch.integration.storm.MultiIndexSpoutStormSuite.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class AbstractStormSimpleBoltTests extends AbstractStormBoltTests {
 
     public AbstractStormSimpleBoltTests(Map conf, String index) {
         super(conf, index);
+        conf.putAll(TestSettings.TESTING_PROPS);
     }
 
     @Test

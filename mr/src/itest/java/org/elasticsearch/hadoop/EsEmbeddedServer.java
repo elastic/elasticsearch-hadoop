@@ -37,9 +37,12 @@ public class EsEmbeddedServer {
         props.setProperty("path.data", dataPath);
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
+        props.setProperty("cluster.name", "es.hadoop.test");
+        props.setProperty("node.local", "true");
         //props.setProperty("es.index.store.type", "memory");
         // props.setProperty("gateway.type", "none");
         if (!hasSlave) {
+            props.setProperty("discovery.zen.ping.multicast", "false");
             props.setProperty("discovery.zen.ping.multicast.enabled", "false");
         }
         //props.setProperty("script.disable_dynamic", "false");

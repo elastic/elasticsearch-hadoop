@@ -21,8 +21,10 @@ package org.elasticsearch.integration.storm;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;
 import org.junit.Before;
@@ -32,7 +34,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import com.google.common.collect.ImmutableMap;
 
-import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 
 @RunWith(Parameterized.class)
 public abstract class AbstractStormSpoutTests {
@@ -43,6 +45,8 @@ public abstract class AbstractStormSpoutTests {
     public AbstractStormSpoutTests(Map conf, String index) {
         this.conf = conf;
         this.index = index;
+        new TestSettings();
+        conf.putAll(TestSettings.TESTING_PROPS);
     }
 
     @Before
@@ -60,19 +64,19 @@ public abstract class AbstractStormSpoutTests {
     @Parameters
     public static Collection<Object[]> configs() throws IOException {
         // no ack
-        Map noAck = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.FALSE.toString());
+        Map noAck = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.FALSE.toString()));
 
         // read ack
-        Map ack = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString());
+        Map ack = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString()));
 
         // read ack bounded queue
-        Map ackWithSize = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(), StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1");
+        Map ackWithSize = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(), StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1"));
 
         // read ack bounded queue with no retries
-        Map ackWithSizeNoRetries = ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(),
+        Map ackWithSizeNoRetries = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(),
                 StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1",
                 StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_RETRIES_PER_TUPLE, "1",
-                StormConfigurationOptions.ES_STORM_SPOUT_FIELDS, "message");
+                StormConfigurationOptions.ES_STORM_SPOUT_FIELDS, "message"));
 
         return Arrays.asList(new Object[][] {
                 { noAck, "storm-spout" },
