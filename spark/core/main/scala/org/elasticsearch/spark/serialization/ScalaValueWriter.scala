@@ -2,11 +2,12 @@ package org.elasticsearch.spark.serialization
 
 import scala.collection.Map
 import scala.collection.immutable.Nil
-
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
+import org.elasticsearch.spark.rdd.CompatUtils
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
 
@@ -84,6 +85,11 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       }
 
       case _ => {
+        // check if it's called by accident on a DataFrame/SchemaRDD (happens)
+        if (value.getClass().getName().startsWith("org.apache.spark.sql.")) {
+          throw new EsHadoopIllegalArgumentException("Spark SQL types are not handled through basic RDD saveToEs() calls; typically this is a mistake(as the SQL schema will be ignored). Use 'org.elasticsearch.spark.sql' package instead")
+        }
+
         // normal JDK types failed, try the JavaBean last
         val result = super.write(value, generator)
         if (!result.isSuccesful()) {
