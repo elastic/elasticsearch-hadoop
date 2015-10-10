@@ -207,7 +207,7 @@ allprojects { project ->
         // force the use of commons-http from Hadoop 1.x
         // to avoid SLF4J warnings, force only one version
         force 'commons-httpclient:commons-httpclient:3.0.1' //, 'org.slf4j:slf4j-log4j12:1.7.6', 'org.slf4j:slf4j-api:1.7.6'
-        force 'com.google.guava:guava:18.0' // force guava version for Elastic
+        //force 'com.google.guava:guava:18.0' // force guava version for Elastic
         force 'joda-time:joda-time:2.8' // force guava version for Spark
         force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
         // used when using Elastic non-shaded version
