@@ -137,6 +137,19 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             conn = super.getConnectionWithTimeout(hostConfiguration, timeout);
             return conn;
         }
+
+        public void close() {
+            if (httpConnection != null) {
+                if (httpConnection.isOpen()) {
+                    releaseConnection(httpConnection);
+                }
+
+                httpConnection.close();
+            }
+
+            httpConnection = null;
+            conn = null;
+        }
     }
 
     public CommonsHttpTransport(Settings settings, String host) {
@@ -436,9 +449,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
 
         HttpConnectionManager manager = client.getHttpConnectionManager();
-        if (manager instanceof SimpleHttpConnectionManager) {
+        if (manager instanceof SocketTrackingConnectionManager) {
             try {
-                ((SimpleHttpConnectionManager) manager).closeIdleConnections(0);
+                ((SocketTrackingConnectionManager) manager).close();
             } catch (NullPointerException npe) {
                 // ignore
             } catch (Exception ex) {
