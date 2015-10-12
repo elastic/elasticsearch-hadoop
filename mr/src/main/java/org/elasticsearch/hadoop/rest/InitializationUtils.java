@@ -168,7 +168,7 @@ public abstract class InitializationUtils {
             }
             // validate version (make sure it's running against ES 1.x or 2.x)
 
-            if (!(esVersion.startsWith("1.x") || esVersion.startsWith("2."))) {
+            if (!(esVersion.startsWith("1.") || esVersion.startsWith("2."))) {
                 throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version " + esVersion);
             }
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
