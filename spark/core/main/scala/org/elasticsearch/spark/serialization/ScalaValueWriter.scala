@@ -20,8 +20,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
 
   private def doWrite(value: Any, generator: Generator, acceptsJavaBeans: Boolean): Result = {
     value match {
-      case None => generator.writeNull()
-      case Unit => generator.writeNull()
+      case null | None | Unit => generator.writeNull()
       case Nil =>
         generator.writeBeginArray(); generator.writeEndArray()
 
