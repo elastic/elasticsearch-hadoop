@@ -201,6 +201,23 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         s"""{"query":{"wildcard":{"${f.productElement(0)}":"*$arg*"}}}"""
       }
 
+      // the filter below are available only from Spark 1.5.0
+
+      //
+      // [[EqualNullSafe]] Filter notes:
+      //
+      // To work this function clearly alone, null-safety check should be added and
+      // return a query string using "missing" filter (identically with [[IsNull]]).
+      // However, Spark does not pass [[EqualNullSafe]] filter having null value but
+      // instead [[IsNull]]. To make sure, we might have to add null-safety check logic
+      // here as well as String filter. For now, it works identical with [[EqualTo]].
+
+      case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")   => {
+        var arg = extract(f.productElement(1))
+        if (strictPushDown) s"""{"term":{"${f.productElement(0)}":$arg}}"""
+        else s"""{"query":{"match":{"${f.productElement(0)}":$arg}}}"""
+      }
+
       case _                                                                        => ""
     }
   }
