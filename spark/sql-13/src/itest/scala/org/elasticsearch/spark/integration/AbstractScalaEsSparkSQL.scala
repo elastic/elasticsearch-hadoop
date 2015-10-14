@@ -466,6 +466,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testDataSourcePushDown015NullSafeEqualTo() {
+    val df = esDataSource("pd_nullsafeequalto")
+    val filter = df.filter(df("airport").eqNullSafe("OTP"))
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
+      return
+    }
+
+    assertEquals(1, filter.count())
+    assertEquals("feb", filter.select("tag").take(1)(0)(0))
+  }
+
+  @Test
   def testDataSourcePushDown02GT() {
     val df = esDataSource("pd_gt")
     val filter = df.filter(df("participants").gt(3))

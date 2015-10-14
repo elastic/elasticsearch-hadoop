@@ -148,6 +148,11 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     filter match {
 
       case EqualTo(attribute, value)            => {
+        // if we get a null, translate it into a missing query (we're extra careful - Spark should translate the equals into isMissing anyway)
+        if (value == null || value == None || value == Unit) {
+          return s"""{"missing":{"field":"$attribute"}}"""
+        }
+
         if (strictPushDown) s"""{"term":{"$attribute":${extract(value)}}}"""
         else s"""{"query":{"match":{"$attribute":${extract(value)}}}}"""
       }
@@ -205,12 +210,6 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       //
       // [[EqualNullSafe]] Filter notes:
-      //
-      // To work this function clearly alone, null-safety check should be added and
-      // return a query string using "missing" filter (identically with [[IsNull]]).
-      // However, Spark does not pass [[EqualNullSafe]] filter having null value but
-      // instead [[IsNull]]. To make sure, we might have to add null-safety check logic
-      // here as well as String filter. For now, it works identical with [[EqualTo]].
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")   => {
         var arg = extract(f.productElement(1))
