@@ -9,7 +9,7 @@ Read the rest of the chapter to find out more.
 [float]
 === Installation
 
-In order to use {eh}, the <<install,jar>> needs to be available to the job class path. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
+In order to use {eh}, the <<install,jar>> needs to be available to the job classpath. At ~`250kB` and without any dependencies, the jar can be either bundled in the job archive, manually or through CLI http://hadoop.apache.org/docs/r1.2.1/commands_manual.html#Generic`Options[Generic Options] (if your jar implements the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/util/Tool.html[Tool]), be distributed through Hadoop's http://hadoop.apache.org/docs/r1.2.1/mapred_tutorial.html#DistributedCache[DistributedCache] or made available by provisioning the cluster manually.
 
 IMPORTANT: All the options above affect _only_ the code running on the distributed nodes. If your code that launches the Hadoop job refers to {eh}, make sure to include the JAR in the `HADOOP_CLASSPATH`:
 `HADOOP_CLASSPATH="<colon-separated-paths-to-your-jars-including-elasticsearch-hadoop>"`
