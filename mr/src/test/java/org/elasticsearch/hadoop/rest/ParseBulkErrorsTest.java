@@ -37,10 +37,9 @@ public class ParseBulkErrorsTest {
     @Test
     public void testParseItems() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        InputStream in = getClass().getResourceAsStream("bulk-error.json");
+        InputStream in = getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/bulk-error.json");
         JsonParser parser = mapper.getJsonFactory().createJsonParser(in);
-        ParsingUtils.seek("items", new JacksonJsonParser(parser));
-
+        assertNotNull(ParsingUtils.seek("items", new JacksonJsonParser(parser)));
         BackportedObjectReader r = BackportedObjectReader.create(mapper, Map.class);
 
         for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
