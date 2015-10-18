@@ -4,7 +4,9 @@ import java.util.Locale
 import scala.None
 import scala.Null
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.mutable.ArrayOps
 import scala.collection.mutable.LinkedHashMap
+import scala.collection.mutable.LinkedHashSet
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -44,9 +46,7 @@ import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-import scala.collection.mutable.ListBuffer
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.ArrayOps
+import org.apache.commons.logging.LogFactory
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -120,7 +120,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
 
     if (filters != null && filters.size > 0 && Utils.isPushDown(cfg)) {
-      val log = Utils.logger("org.elasticsearch.spark.sql.DataSource")
+      val log = logger
       if (log.isDebugEnabled()) {
         log.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
       }
@@ -308,4 +308,6 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       rr.close()
       empty
   }
+
+  private def logger = LogFactory.getLog("org.elasticsearch.spark.sql.DataSource")
 }

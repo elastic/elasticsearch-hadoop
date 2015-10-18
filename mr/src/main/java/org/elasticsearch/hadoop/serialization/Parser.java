@@ -107,6 +107,8 @@ public interface Parser extends Closeable {
 
     void skipChildren();
 
+    String absoluteName();
+
     String currentName();
 
     Object currentValue();
@@ -133,6 +135,7 @@ public interface Parser extends Closeable {
 
     byte[] binaryValue();
 
+    @Override
     void close();
 
     // Fairly experimental methods
