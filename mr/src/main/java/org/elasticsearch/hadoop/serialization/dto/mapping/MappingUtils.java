@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
+import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -126,16 +127,28 @@ public abstract class MappingUtils {
         }
         return col.toString();
     }
-    
+
     public static Field filter(Field field, Collection<String> includes, Collection<String> excludes) {
-    	List<Field> filtered = new ArrayList<Field>();
-    	
-    	for (Field fl : field.properties()) {
-    		if (FieldFilter.filter(fl.name(), includes, excludes)) {
-    			filtered.add(fl);
-    		}
-		}
-    	
-    	return new Field(field.name(), field.type(), filtered);
+        List<Field> filtered = new ArrayList<Field>();
+
+        for (Field fl : field.skipHeaders().properties()) {
+            processField(fl, null, filtered, includes, excludes);
+        }
+
+        return new Field(field.name(), field.type(), filtered);
+    }
+
+    private static void processField(Field field, String parentName, List<Field> filtered, Collection<String> includes, Collection<String> excludes) {
+        String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
+
+        if (FieldFilter.filter(fieldName, includes, excludes)) {
+            filtered.add(field);
+        }
+
+        if (FieldType.OBJECT == field.type()) {
+            for (Field nestedField : field.properties()) {
+                processField(nestedField, fieldName, filtered, includes, excludes);
+            }
+        }
     }
 }

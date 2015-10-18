@@ -33,7 +33,7 @@ public abstract class FieldFilter {
      * @param excludes
      * @return
      */
-    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
+    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes, boolean allowPartialMatches) {
         includes = (includes == null ? Collections.<String> emptyList() : includes);
         excludes = (excludes == null ? Collections.<String> emptyList() : excludes);
 
@@ -81,11 +81,15 @@ public abstract class FieldFilter {
             }
         }
 
-        if (pathIsPrefixOfAnInclude || exactIncludeMatch) {
-            // if match or part of the path
+        // if match or part of the path (based on the passed param)
+        if (exactIncludeMatch || (allowPartialMatches && pathIsPrefixOfAnInclude)) {
             return true;
         }
-        
+
         return false;
+    }
+
+    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
+        return filter(path, includes, excludes, true);
     }
 }

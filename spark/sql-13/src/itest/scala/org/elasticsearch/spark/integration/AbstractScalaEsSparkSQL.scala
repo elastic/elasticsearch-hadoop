@@ -22,13 +22,11 @@ import java.{lang => jl}
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
-import javax.xml.bind.DatatypeConverter
-
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -42,15 +40,14 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
-
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.spark._
+import org.elasticsearch.spark.cfg._
 import org.elasticsearch.spark.sql._
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL
 import org.elasticsearch.spark.sql.sqlContextFunctions
@@ -64,11 +61,13 @@ import org.junit.BeforeClass
 import org.junit.FixMethodOrder
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.MethodSorters
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+import org.junit.runners.MethodSorters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
+import javax.xml.bind.DatatypeConverter
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -170,8 +169,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
-  def testArrayMapping() {
-    val mapping = """{ "array-mapping": {
+  def testArrayMappingFirstLevel() {
+    val mapping = """{ "array-mapping-top-level": {
       | "properties" : {
       |   "arr" : {
       |     "properties" : {
@@ -185,7 +184,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       }""".stripMargin
 
     val index = wrapIndex("sparksql-test")
-    val indexAndType = s"$index/array-mapping"
+    val indexAndType = s"$index/array-mapping-top-level"
     RestUtils.touch(index)
     RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
 
@@ -202,6 +201,87 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.take(1).foreach(println)
     assertEquals(1, df.count())
   }
+
+  @Test
+  def testMultiFieldsWithSameName {
+    val index = wrapIndex("sparksql-test")
+    val indexAndType = s"$index/array-mapping-nested"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc = """{
+    |  "bar" : {
+    |    "bar" : {
+    |      "bar" : [{
+    |          "bar" : 1
+    |        }, {
+    |          "bar" : 2
+    |        }
+    |      ],
+    |      "level" : 2,
+    |      "level3" : true
+    |    },
+    |    "foo" : 10,
+    |    "level" : 1,
+    |    "level2" : 2
+    |  },
+    |  "foo" : "text",
+    |  "level" : 0,
+    |  "level1" : "string"
+    |}
+    """.stripMargin
+    RestUtils.postData(indexAndType, jsonDoc.getBytes(StringUtils.UTF_8))
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.field.read.as.array.include" -> "bar.bar.bar", "es.resource" -> indexAndType)
+    val cfgSettings = new SparkSettingsManager().load(sc.getConf).copy().merge(newCfg.asJava)
+    val schema = SchemaUtilsTestable.discoverMapping(cfgSettings)
+    val mapping = SchemaUtilsTestable.rowInfo(cfgSettings)
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(indexAndType)
+    df.printSchema()
+    df.take(1).foreach(println)
+    assertEquals(1, df.count())
+  }
+
+  @Test
+  def testNestedFieldArray {
+    val index = wrapIndex("sparksql-test")
+    val indexAndType = s"$index/nested-same-name-fields"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc = """{"foo" : 5, "nested": { "bar" : [{"date":"2015-01-01", "age":20},{"date":"2015-01-01", "age":20}], "what": "now" } }"""
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(indexAndType)
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.field.read.as.array.include" -> "nested.bar")
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(indexAndType)
+    df.printSchema()
+    df.take(1).foreach(println)
+    assertEquals(1, df.count())
+  }
+
+  @Test
+  def testArrayValue {
+    val index = wrapIndex("sparksql-test")
+    val indexAndType = s"$index/array-value"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc = """{"array" : [1, 2, 4, 5] }"""
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(indexAndType)
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += ("es.field.read.as.array.include" -> "array")
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(indexAndType)
+    df.printSchema()
+    df.take(1).foreach(println)
+    assertEquals(1, df.count())
+  }
+
 
   @Test
   def testBasicRead() {
@@ -222,6 +302,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     dataFrame.saveToEs(target, cfg)
     assertTrue(RestUtils.exists(target))
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
+  }
+
+  @Test
+  def testEsDataFrame1WriteCount() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val dataFrame = sqc.esDF(target, cfg)
+    assertEquals(345, dataFrame.count())
   }
 
   @Test

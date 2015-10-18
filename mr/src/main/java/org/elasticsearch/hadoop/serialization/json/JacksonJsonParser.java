@@ -20,9 +20,12 @@ package org.elasticsearch.hadoop.serialization.json;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonStreamContext;
 import org.codehaus.jackson.JsonToken;
 import org.codehaus.jackson.impl.JsonParserBase;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
@@ -133,6 +136,25 @@ public class JacksonJsonParser implements Parser {
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
+    }
+
+    @Override
+    public String absoluteName() {
+        List<String> tree = new ArrayList<String>();
+        for (JsonStreamContext ctx = parser.getParsingContext(); ctx != null; ctx = ctx.getParent()) {
+            if (ctx.inObject()) {
+                tree.add(ctx.getCurrentName());
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int index = tree.size(); index > 0; index--) {
+            sb.append(tree.get(index - 1));
+            sb.append(".");
+        }
+
+        // remove the last .
+        sb.setLength(sb.length() - 1);
+        return sb.toString();
     }
 
     @Override

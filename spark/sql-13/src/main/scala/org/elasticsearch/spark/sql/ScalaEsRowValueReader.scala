@@ -1,28 +1,38 @@
 package org.elasticsearch.spark.sql
 
 import java.sql.Timestamp
-
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
-
 import org.elasticsearch.hadoop.serialization.FieldType
 import org.elasticsearch.hadoop.serialization.Parser
 import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback
 import org.elasticsearch.spark.serialization.ScalaValueReader
+import org.apache.commons.logging.LogFactory
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 
 class ScalaRowValueReader extends ScalaValueReader with RowValueReader with ValueParsingCallback {
 
   var metadataMap = true
   var rootLevel = true
   var inArray = false
-  var arrayRowOrder:Seq[String] = null
+  var currentArrayRowOrder:Seq[String] = null
 
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
-    currentField = parser.currentName
+    currentField = stripSource(parser.absoluteName)
+
     if (currentField == null) {
       currentField = Utils.ROOT_LEVEL_NAME
     }
+
     super.readValue(parser, value, esType)
+  }
+
+  private def stripSource(name: String): String = {
+    val root = "hits.hits._source."
+    if (name != null && name.startsWith(root)) {
+      return name.substring(root.length())
+    }
+    name
   }
 
   override def createMap() = {
@@ -36,16 +46,28 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
       }
     }
     else {
-      val rowOrder = if (inArray) arrayRowOrder else rowInfo(currentField)
-      new ScalaEsRow(rowOrder)
+      val rowOrd = if (inArray) currentArrayRowOrder else rowColumns(currentField)
+      new ScalaEsRow(rowOrd)
     }
   }
 
   // start array
   override def createArray(typ: FieldType) = {
-    if (arrayMap.contains(currentField)) {
+    if (arrayFields.contains(currentField)) {
       inArray = true
-      arrayRowOrder = rowInfo(currentField)
+      // array of objects
+      if (rowColumnsMap.contains(currentField)) {
+        currentArrayRowOrder = rowColumns(currentField)
+      }
+      // array of values
+      else {
+        // ignore
+      }
+    }
+    else {
+      LogFactory.getLog(getClass).warn(
+          s"""Field '$currentField' is backed by an array but the associated Spark Schema does not reflect this;
+              (use ${ConfigurationOptions.ES_FIELD_READ_AS_ARRAY_INCLUDE}/exclude) """.stripMargin)
     }
     super.createArray(typ)
   }
@@ -53,7 +75,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   // end array
   override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
     inArray = false
-    arrayRowOrder = null
+    currentArrayRowOrder = null
     super.addToArray(array, values)
   }
 
