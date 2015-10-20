@@ -20,5 +20,7 @@ include::mapping.adoc[]
 
 include::metrics.adoc[]
 
+include::performance.adoc[]
+
 include::troubleshooting.adoc[]
 
