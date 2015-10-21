@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
@@ -279,7 +280,6 @@ public class RestRepository implements Closeable, StatsAware {
         return client;
     }
 
-
     public Object[] getReadTargetShards(boolean clientNodesOnly) {
         for (int retries = 0; retries < 3; retries++) {
             Object[] result = doGetReadTargetShards(clientNodesOnly);
@@ -292,9 +292,36 @@ public class RestRepository implements Closeable, StatsAware {
 
     protected Object[] doGetReadTargetShards(boolean clientNodesOnly) {
         List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
+        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
+
+        boolean overlappingShards = false;
+        Object[] result = new Object[2];
+        // false by default
+        result[0] = overlappingShards;
+        result[1] = shards;
+
+        if (settings.getNodesWANOnly()) {
+            List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            Random rnd = new Random();
+
+            for (List<Map<String, Object>> shardGroup : info) {
+                for (Map<String, Object> shardData : shardGroup) {
+                    Shard shard = new Shard(shardData);
+                    if (shard.getState().isStarted()) {
+                        int nextInt = rnd.nextInt(nodes.size());
+                        String nodeAddress = nodes.get(nextInt);
+                        // create a fake node
+                        Node node = new Node(shard.getNode(), "wan-only-node-" + nextInt, StringUtils.parseIpAddress(nodeAddress));
+                        shards.put(shard, node);
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
 
         // if client-nodes routing is used, allow non-http clients
-        Map<String, Node> httpNodes = client.getHttpNodes(clientNodesOnly);
+        Map<String, Node> httpNodes = client.getHttpNodes(clientNodesOnly);;
 
         if (httpNodes.isEmpty()) {
             String msg = "No HTTP-enabled data nodes found";
@@ -304,15 +331,6 @@ public class RestRepository implements Closeable, StatsAware {
             throw new EsHadoopIllegalStateException(msg);
         }
 
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-
-        boolean overlappingShards = false;
-
-        Object[] result = new Object[2];
-
-        // false by default
-        result[0] = overlappingShards;
-        result[1] = shards;
 
         // check if multiple indices are hit
         if (!isReadIndexConcrete()) {

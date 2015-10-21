@@ -149,6 +149,18 @@ public abstract class InitializationUtils {
         }
     }
 
+    public static void validateSettings(Settings settings) {
+        // wan means all node restrictions are off the table
+        if (settings.getNodesWANOnly()) {
+            Assert.isTrue(!settings.getNodesDiscovery(), "Discovery cannot be enabled when running in WAN mode");
+            Assert.isTrue(!settings.getNodesClientOnly(), "Client-only nodes cannot be enabled when running in WAN mode");
+            Assert.isTrue(!settings.getNodesDataOnly(), "Data-only nodes cannot be enabled when running in WAN mode");
+        }
+
+        // pick between data or client only nodes
+        Assert.isTrue(!(settings.getNodesClientOnly() && settings.getNodesDataOnly()), "Use either client-only or data-only nodes but not both");
+    }
+
     public static String discoverEsVersion(Settings settings, Log log) {
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
         if (StringUtils.hasText(version)) {

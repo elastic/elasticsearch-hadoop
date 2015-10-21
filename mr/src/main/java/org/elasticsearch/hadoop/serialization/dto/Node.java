@@ -31,9 +31,18 @@ public class Node implements Serializable {
     private boolean hasHttp;
     private String ipAddress;
     private int httpPort;
-    private Map<String, Object> attributes;
     private boolean isClient = false;
     private boolean isData = true;
+
+    public Node(String id, String name, IpAndPort ipAndPort) {
+        this.id = id;
+        this.name = name;
+        this.hasHttp = true;
+        this.ipAddress = ipAndPort.ip;
+        this.httpPort = ipAndPort.port;
+        this.isData = false;
+        this.isClient = false;
+    }
 
     public Node(String id, Map<String, Object> data) {
         this.id = id;
@@ -41,7 +50,7 @@ public class Node implements Serializable {
         Object http = data.get("http_address");
         hasHttp = (http != null);
 
-        attributes = (Map<String, Object>) data.get("attributes");
+        Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
         if (attributes != null) {
             isClient = ("false".equals(attributes.get("data")) && "false".equals(attributes.get("master")));
             isData = !"false".equals(attributes.get("data"));
@@ -51,7 +60,7 @@ public class Node implements Serializable {
             return;
         }
 
-		IpAndPort ip = StringUtils.parseIpAddress(http.toString());
+        IpAndPort ip = StringUtils.parseIpAddress(http.toString());
         ipAddress = ip.ip;
         httpPort = ip.port;
     }

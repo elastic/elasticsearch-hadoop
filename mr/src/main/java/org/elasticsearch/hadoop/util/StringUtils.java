@@ -410,7 +410,7 @@ public abstract class StringUtils {
 
         // there are two formats - ip:port or [/ip:port]
         // first the ip is normalized
-        if (httpAddr.contains("/")) {
+        if (httpAddr.contains("[")) {
             int startIp = httpAddr.indexOf("/") + 1;
             int endIp = httpAddr.indexOf("]");
             if (startIp < 0 || endIp < 0) {
@@ -420,7 +420,7 @@ public abstract class StringUtils {
         }
 
         // then split
-        int portIndex = httpAddr.indexOf(":");
+        int portIndex = httpAddr.lastIndexOf(":");
 
         if (portIndex > 0) {
             String ip = httpAddr.substring(0, portIndex);

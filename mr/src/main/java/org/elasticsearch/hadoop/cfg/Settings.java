@@ -54,15 +54,23 @@ public abstract class Settings {
     }
 
     public boolean getNodesDiscovery() {
-        return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY, ES_NODES_DISCOVERY_DEFAULT));
+        // by default, if not set, return a value compatible with the WAN setting
+        // otherwise return the user value.
+        // this helps validate the configuration
+        return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY), !getNodesWANOnly());
+    }
+
+    public boolean getNodesDataOnly() {
+        // by default, if not set, return a value compatible with the WAN setting (see above)
+        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY), !getNodesWANOnly() && !getNodesClientOnly());
     }
 
     public boolean getNodesClientOnly() {
         return Booleans.parseBoolean(getProperty(ES_NODES_CLIENT_ONLY, ES_NODES_CLIENT_ONLY_DEFAULT));
     }
 
-    public boolean getNodesDataOnly() {
-        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY, ES_NODES_DATA_ONLY_DEFAULT));
+    public boolean getNodesWANOnly() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_WAN_ONLY, ES_NODES_WAN_ONLY_DEFAULT));
     }
 
     public long getHttpTimeout() {

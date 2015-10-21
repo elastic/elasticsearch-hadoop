@@ -226,6 +226,7 @@ public abstract class RestService implements Serializable {
         boolean overlappingShards = false;
         Map<Shard, Node> targetShards = null;
 
+        InitializationUtils.validateSettings(settings);
         InitializationUtils.discoverEsVersion(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
@@ -372,6 +373,7 @@ public abstract class RestService implements Serializable {
     public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
         Version.logVersion();
 
+        InitializationUtils.validateSettings(settings);
         InitializationUtils.discoverEsVersion(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
@@ -409,6 +411,10 @@ public abstract class RestService implements Serializable {
             if (repository.waitForYellow()) {
                 log.warn(String.format("Timed out waiting for index [%s] to reach yellow health", resource));
             }
+        }
+
+        if (settings.getNodesWANOnly()) {
+            return randomNodeWrite(settings, currentInstance, resource, log);
         }
 
         // if client-nodes are used, simply use the underlying nodes
@@ -465,6 +471,10 @@ public abstract class RestService implements Serializable {
             log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
         }
 
+        return randomNodeWrite(settings, currentInstance, resource, log);
+    }
+
+    private static RestRepository randomNodeWrite(Settings settings, int currentInstance, Resource resource, Log log) {
         // multi-index write - since we don't know before hand what index will be used, pick a random node from the given list
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         String node = nodes.get(new Random().nextInt(nodes.size()));
