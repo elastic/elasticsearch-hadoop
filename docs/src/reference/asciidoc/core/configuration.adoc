@@ -232,6 +232,7 @@ Whether to include the document version in the returned metadata. Applicable onl
 ==== Update settings (when writing to {es})
 
 One using the `update` or `upsert` operation, additional settings (that mirror the {ref}/docs-update.html[update] API) are available:
+
 `es.update.script` (default none)::
 Script used for updating the document.
 
