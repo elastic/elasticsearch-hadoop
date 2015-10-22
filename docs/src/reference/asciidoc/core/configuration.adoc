@@ -308,6 +308,11 @@ added[2.1.2]
 Whether to use {es} {ref}/modules-node.html[data nodes] only. When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _data_ nodes within the cluster. The purpose of this configuration setting is to avoid overwhelming non-data nodes as these tend to be "smaller" nodes. This is enabled by default.
 
 added[2.2]
+`es.nodes.wan.only` (default false)::
+Whether the connector is used against an {es} instance in a cloud/restricted environment over the WAN, such as Amazon Web Services. In this mode, the connector disables discovery and _only_ connects through the declared +es.nodes+ during all operations, including reads and writes.
+Note that in this mode, performance is _highly_  affected.
+
+added[2.2]
 `es.http.timeout` (default 1m)::
 Timeout for HTTP/REST connections to {es}.
 
