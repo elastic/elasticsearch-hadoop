@@ -22,6 +22,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -300,7 +301,10 @@ public class RestRepository implements Closeable, StatsAware {
         result[0] = overlappingShards;
         result[1] = shards;
 
+        Map<String, Node> httpNodes = Collections.emptyMap();
+
         if (settings.getNodesWANOnly()) {
+            httpNodes = new LinkedHashMap<String, Node>();
             List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
             Random rnd = new Random();
 
@@ -312,16 +316,16 @@ public class RestRepository implements Closeable, StatsAware {
                         String nodeAddress = nodes.get(nextInt);
                         // create a fake node
                         Node node = new Node(shard.getNode(), "wan-only-node-" + nextInt, StringUtils.parseIpAddress(nodeAddress));
-                        shards.put(shard, node);
-                        break;
+                        httpNodes.put(shard.getNode(), node);
                     }
                 }
             }
-            return result;
         }
 
-        // if client-nodes routing is used, allow non-http clients
-        Map<String, Node> httpNodes = client.getHttpNodes(clientNodesOnly);;
+        else {
+            // if client-nodes routing is used, allow non-http clients
+            httpNodes = client.getHttpNodes(clientNodesOnly);
+        }
 
         if (httpNodes.isEmpty()) {
             String msg = "No HTTP-enabled data nodes found";

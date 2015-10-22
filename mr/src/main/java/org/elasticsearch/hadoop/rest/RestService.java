@@ -322,7 +322,8 @@ public abstract class RestService implements Serializable {
         }
 
         // take into account client node routing
-        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId).node(partition.nodeId).restrictToNode(partition.onlyNode && !settings.getNodesClientOnly());
+        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId)
+                                                .node(partition.nodeId).restrictToNode(partition.onlyNode && (!settings.getNodesClientOnly() && !settings.getNodesWANOnly()));
         queryBuilder.fields(settings.getScrollFields());
         queryBuilder.filter(SettingsUtils.getFilters(settings));
 
