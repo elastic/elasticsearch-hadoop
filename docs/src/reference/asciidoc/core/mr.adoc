@@ -369,7 +369,7 @@ conf.set("es.resource.write", "sink/group");
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-{eh} automatically converts Hadoop built-in `Writable` types to {es} {ref}/mapping-core-types.html[types] (and back) as shown in the table below:
+{eh} automatically converts Hadoop built-in `Writable` types to {es} {ref}/mapping.html#mapping-type[types] (and back) as shown in the table below:
 
 .`Writable` Conversion Table
 
