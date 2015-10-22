@@ -41,7 +41,17 @@ public abstract class SettingsUtils {
     }
 
     private static String qualifyNode(String node, int defaultPort) {
-        return (node.contains(":") ? node : node + ":" + defaultPort);
+        int index = node.lastIndexOf(':');
+        if (index > 0) {
+            if (index + 1 < node.length()) {
+                // the port is already in the node
+                if (Character.isDigit(node.charAt(index + 1))) {
+                    return node;
+                }
+            }
+        }
+
+        return node + ":" + defaultPort;
     }
 
     public static void pinNode(Settings settings, String node) {

@@ -136,7 +136,7 @@ public class NetworkClient implements StatsAware, Closeable {
 
                 log.error(String.format("Node [%s] failed (%s); "
                         + (newNode ? "selected next node [" + currentNode + "]" : "no other nodes left - aborting..."),
-                        ex.getMessage(), failed));
+                        failed, ex.getMessage()));
 
                 if (!newNode) {
                     throw new EsHadoopNoNodesLeftException(failedNodes);
