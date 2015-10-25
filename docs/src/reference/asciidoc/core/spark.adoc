@@ -1311,3 +1311,32 @@ val docCount = esRDD.count();
 <3> Setup the query (optional)
 <4> Create a Spark +RDD+ on top of {es} through `EsInputFormat`
 
+[[spark-python]]
+[float]
+=== Using the connector from PySpark
+
+Thanks to its <<mapreduce, {mr}>> layer, {eh} can be used from PySpark as well to both read and write data to {es}.
+To wit, below is a snippet from the https://spark.apache.org/docs/1.5.1/programming-guide.html#external-datasets[Spark documentation] (make sure to switch to the Python snippet):
+
+[source, python]
+----
+$ SPARK_CLASSPATH=/path/to/elasticsearch-hadoop.jar ./bin/pyspark
+>>> conf = {"es.resource" : "index/type"}   # assume Elasticsearch is running on localhost defaults
+>>> rdd = sc.newAPIHadoopRDD("org.elasticsearch.hadoop.mr.EsInputFormat",\
+    "org.apache.hadoop.io.NullWritable", "org.elasticsearch.hadoop.mr.LinkedMapWritable", conf=conf)
+>>> rdd.first()         # the result is a MapWritable that is converted to a Python dict
+(u'Elasticsearch ID',
+ {u'field1': True,
+  u'field2': u'Some Text',
+  u'field3': 12345})
+----
+
+Also, the SQL loader can be used as well:
+
+[source, python]
+----
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+df = sqlContext.read.format("org.elasticsearch.spark.sql").load("index/type")
+df.printSchema()
+----
