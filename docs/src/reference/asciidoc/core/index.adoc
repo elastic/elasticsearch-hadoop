@@ -22,5 +22,7 @@ include::metrics.adoc[]
 
 include::performance.adoc[]
 
+include::cloud.adoc[]
+
 include::troubleshooting.adoc[]
 
