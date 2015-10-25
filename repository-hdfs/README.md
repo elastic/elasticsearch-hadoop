@@ -5,6 +5,7 @@
 ## Requirements
 - Elasticsearch (version *2.0* or higher).
 - HDFS accessible file-system (from the Elasticsearch classpath)
+- Elasticsearch Java Security Manager *disabled* (due to permission issues with HDFS)
 
 ## Flavors
 The HDFS snapshot/restore plugin comes in three flavors:
@@ -25,15 +26,30 @@ If you do not have Hadoop installed, then select either the default version (for
 
 The HDFS Snapshot/Restore is an Elasticsearch plugin - be sure to familiarize with what these are and how they work by reading the [plugins chapter](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-plugins.html) in the Elasticsearch documentation.
 
+### Disable the Java Security Manager (JSM)
+
+By default, Elasticsearch enforces a Java Security Manager inside its running JVM for security purposes. Unfortunately Hadoop and its HDFS client are quite greedy in terms of the permissions needed, requiring significantly more than Elasticsearch itself.
+Thus, one is required to *disable* the JSM, otherwise the plugin will *not* work correctly; this can be done by adding `security.manager.enabled: false` to the `elasticsearch.yml` configuration on _each_ node where the plugin runs.
+
+One can easily check whether the JSM is disabled or not by looking at the logs for this warning:
+```
+[2015-10-25 23:13:45,478][INFO ][plugin.hadoop.hdfs       ] Loaded Hadoop [1.2.1] libraries from file:/xxx/plugins/repository-hdfs/
+[2015-10-25 23:13:45,478][WARN ][plugin.hadoop.hdfs       ] The Java Security Manager is enabled; unfortunately Hadoop is not compatible with it so it needs to be disabled; see the docs for more information...
+```
+
+If the warning appears, the JSM is enabled. If it does not (after the message indicating the libraries have been loaded) then everything is fine.
+
+Note that we are working towards a solution to have Hadoop running without disabling the JSM. In the meantime unfortunately, this is the only workaround. 
+ 
 ### Node restart
 _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart_ it. This applies to _all_ nodes on which the plugins have been installed - without restarting the nodes, the plugin will not function properly.
 
 ### Stable version
 As with any other plugin, simply run:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.m2`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.1.0-<classifier>`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.m2-<classifier>`
 
 ### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:

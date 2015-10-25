@@ -19,6 +19,7 @@
 package org.elasticsearch.plugin.hadoop.hdfs;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -50,7 +51,6 @@ public class HdfsPlugin extends Plugin {
     @SuppressWarnings("unchecked")
     public void onModule(RepositoriesModule repositoriesModule) {
         String baseLib = detectLibFolder();
-        Loggers.getLogger(HdfsPlugin.class).info("Loading Hadoop libraries from {}", baseLib);
 
         List<URL> cp = new ArrayList<>();
         // add plugin internal jar
@@ -68,6 +68,34 @@ public class HdfsPlugin extends Plugin {
         }
 
         repositoriesModule.registerRepository("hdfs", repository, BlobStoreIndexShardRepository.class);
+
+        Loggers.getLogger(HdfsPlugin.class).info("Loaded Hadoop [{}] libraries from {}", getHadoopVersion(hadoopCL), baseLib);
+
+        if (System.getSecurityManager() != null) {
+            Loggers.getLogger(HdfsPlugin.class).warn("The Java Security Manager is enabled however Hadoop is not compatible with it and thus needs to be disabled; see the docs for more information...");
+        }
+    }
+
+    private String getHadoopVersion(ClassLoader hadoopCL) {
+        String version = "Unknown";
+
+        Class<?> clz = null;
+        try {
+            clz = hadoopCL.loadClass("org.apache.hadoop.util.VersionInfo");
+        } catch (ClassNotFoundException cnfe) {
+            // unknown
+        }
+
+        if (clz != null) {
+            try {
+                Method method = clz.getMethod("getVersion");
+                version = method.invoke(null).toString();
+            } catch (Exception ex) {
+                // class has changed, ignore
+            }
+        }
+
+        return version;
     }
 
     private String detectLibFolder() {
@@ -114,8 +142,7 @@ public class HdfsPlugin extends Plugin {
         try {
             return new URI(location);
         } catch (URISyntaxException ex) {
-            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", location),
-                    ex);
+            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", location), ex);
         }
     }
 
