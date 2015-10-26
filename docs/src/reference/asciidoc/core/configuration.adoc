@@ -505,3 +505,10 @@ log4j.category.org.elasticsearch.hadoop.mr=DEBUG
 ----
 
 TIP: See the log4j https://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PropertyConfigurator.html#doConfigure%28java.lang.String,%20org.apache.log4j.spi.LoggerRepository%29[javadoc] for more information.
+
+=== Configure the 'executing' JVM logging not the client
+
+One thing to note is that in almost all cases, one needs to configure logging in the _executing_ JVM, where the Map/Reduce tasks actually run and not on the client, where the job is assembled or monitored. Depending on your library, platform and version this can done through some dedicated settings.
+In particular {mr}-based libraries like Pig or Hive can be difficult to configure since at runtime, they create {mr} tasks to actually perform the work. Thus, one needs to configure logging and pass the configuration to the {mr} layer for logging to occur.
+In both cases, this can be achieved through the `SET` command. In particular when using Hadoop 2.6, one can use `mapreduce.job.log4j-properties-file` along with an appropriate https://github.com/apache/hadoop/blob/release-2.6.0/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-nodemanager/src/main/resources/container-log4j.properties[`container-log4j.properties`] file. 
+It's worth mentioning that Pig allows jobs to be executed locally and logging to be enabled through `pig -x local -4 myLoggingFile someScript.pig`
