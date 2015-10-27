@@ -33,60 +33,78 @@ public class DelegatingInputStream extends InputStream implements StatsAware {
         this.delegate = delegate;
     }
 
+    @Override
     public int read() throws IOException {
-        return delegate.read();
+        return delegate != null ? delegate.read() : -1;
     }
 
+    @Override
     public int hashCode() {
-        return delegate.hashCode();
+        return delegate != null ? delegate.hashCode() : 0;
     }
 
+    @Override
     public int read(byte[] b) throws IOException {
-        int result = delegate.read(b);
-        if (result > 0) {
-            stats.bytesReceived++;
-        }
-        return result;
-    }
-
-    public boolean equals(Object obj) {
-        return delegate.equals(obj);
-    }
-
-    public int read(byte[] b, int off, int len) throws IOException {
-        int result = delegate.read(b, off, len);
+        int result = (delegate != null ? delegate.read(b) : -1);
         if (result > 0) {
             stats.bytesReceived += result;
         }
         return result;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return delegate != null ? delegate.equals(obj) : (obj == null ? true : false);
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        int result = (delegate != null ? delegate.read(b, off, len) : -1);
+        if (result > 0) {
+            stats.bytesReceived += result;
+        }
+        return result;
+    }
+
+    @Override
     public long skip(long n) throws IOException {
-        return delegate.skip(n);
+        return delegate != null ? delegate.skip(n) : -1;
     }
 
+    @Override
     public int available() throws IOException {
-        return delegate.available();
+        return delegate != null ? delegate.available() : 0;
     }
 
+    @Override
     public String toString() {
-        return delegate.toString();
+        return delegate != null ? delegate.toString() : "null";
     }
 
+    @Override
     public void close() throws IOException {
-        delegate.close();
+        if (delegate != null) {
+            delegate.close();
+        }
     }
 
+    @Override
     public void mark(int readlimit) {
-        delegate.mark(readlimit);
+        if (delegate != null) {
+            delegate.mark(readlimit);
+        }
     }
 
+    @Override
     public void reset() throws IOException {
-        delegate.reset();
+        if (delegate != null) {
+            delegate.reset();
+        }
     }
 
+    @Override
     public boolean markSupported() {
-        return delegate.markSupported();
+        return delegate != null ? delegate.markSupported() : false;
     }
 
     public boolean isNull() {

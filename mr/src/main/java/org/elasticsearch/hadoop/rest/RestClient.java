@@ -283,22 +283,19 @@ public class RestClient implements Closeable, StatsAware {
         execute(POST, resource.refresh());
     }
 
-    public void delete(String indexOrType) {
-        execute(DELETE, indexOrType, false);
-    }
-
     public List<List<Map<String, Object>>> targetShards(String index) {
         List<List<Map<String, Object>>> shardsJson = null;
 
         // https://github.com/elasticsearch/elasticsearch/issues/2726
         String target = index + "/_search_shards";
         if (indexReadMissingAsEmpty) {
-            Response res = execute(GET, target, false);
-            if (res.status() == HttpStatus.NOT_FOUND) {
-                shardsJson = Collections.emptyList();
+            Request req = new SimpleRequest(GET, null, target);
+            Response res = executeNotFoundAllowed(req);
+            if (res.status() == HttpStatus.OK) {
+                shardsJson = parseContent(res.body(), "shards");
             }
             else {
-                shardsJson = parseContent(res.body(), "shards");
+                shardsJson = Collections.emptyList();
             }
         }
         else {
@@ -383,8 +380,28 @@ public class RestClient implements Closeable, StatsAware {
 
     protected Response execute(Request request, boolean checkStatus) {
         Response response = network.execute(request);
+        if (checkStatus) {
+            checkResponse(request, response);
+        }
+        return response;
+    }
 
-        if (checkStatus && response.hasFailed()) {
+    protected Response executeNotFoundAllowed(Request req) {
+        Response res = execute(req, false);
+        switch (res.status()) {
+        case HttpStatus.OK:
+            break;
+        case HttpStatus.NOT_FOUND:
+            break;
+        default:
+            checkResponse(req, res);
+        }
+
+        return res;
+    }
+
+    private void checkResponse(Request request, Response response) {
+        if (response.hasFailed()) {
             // check error first
             String msg = null;
             // try to parse the answer
@@ -408,8 +425,6 @@ public class RestClient implements Closeable, StatsAware {
 
             throw new EsHadoopInvalidRequest(msg);
         }
-
-        return response;
     }
 
     public String[] scan(String query, BytesArray body) {
@@ -435,12 +450,22 @@ public class RestClient implements Closeable, StatsAware {
         }
     }
 
-    public void deleteScroll(String scrollId) {
-        execute(DELETE, "_search/scroll", new BytesArray(scrollId), false);
+    public boolean delete(String indexOrType) {
+        Request req = new SimpleRequest(DELETE, null, indexOrType);
+        Response res = executeNotFoundAllowed(req);
+        return (res.status() == HttpStatus.OK ? true : false);
+    }
+    public boolean deleteScroll(String scrollId) {
+        Request req = new SimpleRequest(DELETE, null, "_search/scroll", new BytesArray(scrollId.getBytes(StringUtils.UTF_8)));
+        Response res = executeNotFoundAllowed(req);
+        return (res.status() == HttpStatus.OK ? true : false);
     }
 
     public boolean exists(String indexOrType) {
-        return (execute(HEAD, indexOrType, false).hasSucceeded());
+        Request req = new SimpleRequest(HEAD, null, indexOrType);
+        Response res = executeNotFoundAllowed(req);
+
+        return (res.status() == HttpStatus.OK ? true : false);
     }
 
     public boolean touch(String indexOrType) {
