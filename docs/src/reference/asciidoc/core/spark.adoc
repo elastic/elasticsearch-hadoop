@@ -542,7 +542,7 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc ->
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-{eh} automatically converts Spark built-in types to {es} {ref}/mapping-core-types.html[types] (and back) as shown in the table below:
+{eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:
 
 .Scala Types Conversion Table
 
@@ -847,8 +847,8 @@ For example:
 ----
 val sql = new SQLContext...
 // options for Spark 1.3 need to include the target path/resource
-val options13 = Map("path" -> "spark/index", 
-                    "pushdown"<1> -> "true", 
+val options13 = Map("path" -> "spark/index",
+                    "pushdown"<1> -> "true",
                     "es.nodes"<2> -> "someNode", "es.port" -> "9200")
 
 // Spark 1.3 style
@@ -926,7 +926,7 @@ The connector translates the query into:
     "filtered" : {
       "query" : {
         "match_all" : {}
- 
+
       },
       "filter" : {
         "and" : [{
