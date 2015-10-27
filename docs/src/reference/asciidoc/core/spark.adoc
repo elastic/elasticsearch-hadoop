@@ -1158,7 +1158,7 @@ JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>
 
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
-{eh} automatically converts Spark built-in types to {es} {ref}/mapping-core-types.html[types] (and back) as shown in the table below:
+{eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:
 
 While Spark SQL https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types[++DataType++s] have an equivalent in both Scala and Java and thus the <<spark-type-conversion, RDD>> conversion can apply, there are slightly different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
 
