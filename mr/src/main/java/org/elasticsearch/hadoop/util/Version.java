@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
 
@@ -50,6 +52,17 @@ public abstract class Version {
 
         if (res != null) {
             List<URL> urls = Collections.list(res);
+            Set<URL> normalized = new LinkedHashSet<URL>();
+
+            for (URL url : urls) {
+                try {
+                    // try normalization first
+                    normalized.add(url.toURI().normalize().toURL());
+                } catch (Exception ex) {
+                    // if it fails, add it as usual
+                    normalized.add(url);
+                }
+            }
 
             int foundJars = 0;
             if (urls.size() > 1) {
@@ -68,9 +81,6 @@ public abstract class Version {
                 }
             }
         }
-
-        //System.out.println(res.nextElement().toURI().toASCIIString());
-
 
         Properties build = new Properties();
         try {
