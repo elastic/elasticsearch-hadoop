@@ -1,6 +1,6 @@
 = Elasticsearch for Apache Hadoop
 
-:icons: 
+:icons:
 :ehtm: 	Elasticsearch for Apache Hadoop
 :eh: 	elasticsearch-hadoop
 :es: 	Elasticsearch
@@ -8,7 +8,7 @@
 :sp:	Apache Spark
 :st:	Apache Storm
 :ey:	Elasticsearch on YARN
-:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/current
+:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/1.7
 :description: Reference documentation of {eh}
 :ver:	2.1.1
 :ver-d: 2.1.2.BUILD-SNAPSHOT
