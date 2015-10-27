@@ -123,6 +123,24 @@ public class ScrollReader {
         }
     }
 
+    public static class Scroll {
+        private final String scrollId;
+        private final List<Object[]> hits;
+
+        private Scroll(String scrollId, List<Object[]> hits) {
+            this.scrollId = scrollId;
+            this.hits = hits;
+        }
+
+        public String getScrollId() {
+            return scrollId;
+        }
+
+        public List<Object[]> getHits() {
+            return hits;
+        }
+    }
+
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
     private Parser parser;
@@ -134,6 +152,7 @@ public class ScrollReader {
     private final String metadataField;
     private final boolean returnRawJson;
 
+    private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
     private static final String[] ID = new String[] { "_id" };
     private static final String[] FIELDS = new String[] { "fields" };
@@ -149,7 +168,7 @@ public class ScrollReader {
         this.returnRawJson = returnRawJson;
     }
 
-    public List<Object[]> read(InputStream content) throws IOException {
+    public Scroll read(InputStream content) throws IOException {
         Assert.notNull(content);
 
         BytesArray copy = null;
@@ -170,14 +189,19 @@ public class ScrollReader {
         }
     }
 
-    private List<Object[]> read(BytesArray input) {
+    private Scroll read(BytesArray input) {
+        // get scroll_id
+        Token token = ParsingUtils.seek(parser, SCROLL_ID);
+        Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
+        String scrollId = parser.text();
+
         // check hits/total
         if (hits() == 0) {
             return null;
         }
 
         // move to hits/hits
-        Token token = ParsingUtils.seek(parser, HITS);
+        token = ParsingUtils.seek(parser, HITS);
 
         // move through the list and for each hit, extract the _id and _source
         Assert.isTrue(token == Token.START_ARRAY, "invalid response");
@@ -284,7 +308,7 @@ public class ScrollReader {
             }
         }
 
-        return results;
+        return new Scroll(scrollId, results);
     }
 
     private Object[] readHit() {
@@ -299,14 +323,14 @@ public class ScrollReader {
         Object id = null;
 
         Token t = parser.currentToken();
-        
+
         if (parsingCallback != null) {
-        	parsingCallback.beginDoc();
+            parsingCallback.beginDoc();
         }
         // read everything until SOURCE or FIELDS is encountered
         if (readMetadata) {
             if (parsingCallback != null) {
-            	parsingCallback.beginLeadMetadata();
+                parsingCallback.beginLeadMetadata();
             }
 
             metadata = reader.createMap();
@@ -334,9 +358,9 @@ public class ScrollReader {
             }
 
             if (parsingCallback != null) {
-            	parsingCallback.endLeadMetadata();
+                parsingCallback.endLeadMetadata();
             }
-            
+
             Assert.notNull(id, "no id found");
             result[0] = id;
         }
@@ -351,15 +375,15 @@ public class ScrollReader {
         Object data = Collections.emptyMap();
 
         if (t != null) {
-        	if (parsingCallback != null) {
-        		parsingCallback.beginSource();
-        	}
+            if (parsingCallback != null) {
+                parsingCallback.beginSource();
+            }
 
             data = read(t, null);
-            
-        	if (parsingCallback != null) {
-        		parsingCallback.endSource();
-        	}
+
+            if (parsingCallback != null) {
+                parsingCallback.endSource();
+            }
 
             if (readMetadata) {
                 reader.addToMap(data, reader.wrapString(metadataField), metadata);
@@ -375,11 +399,11 @@ public class ScrollReader {
         result[1] = data;
 
         if (readMetadata) {
-        	if (parsingCallback != null) {
-        		parsingCallback.beginTrailMetadata();
-        	}
+            if (parsingCallback != null) {
+                parsingCallback.beginTrailMetadata();
+            }
         }
-        
+
         // in case of additional fields (matched_query), add them to the metadata
         while (parser.currentToken() == Token.FIELD_NAME) {
             String name = parser.currentName();
@@ -394,13 +418,13 @@ public class ScrollReader {
         }
 
         if (readMetadata) {
-        	if (parsingCallback != null) {
-        		parsingCallback.endTrailMetadata();
-        	}
+            if (parsingCallback != null) {
+                parsingCallback.endTrailMetadata();
+            }
         }
 
         if (parsingCallback != null) {
-        	parsingCallback.endDoc();
+            parsingCallback.endDoc();
         }
 
         if (trace) {

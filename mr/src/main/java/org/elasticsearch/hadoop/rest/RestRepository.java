@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
@@ -401,7 +402,7 @@ public class RestRepository implements Closeable, StatsAware {
         return Field.parseField(client.getMapping(resourceR.mapping()));
     }
 
-    public List<Object[]> scroll(String scrollId, ScrollReader reader) throws IOException {
+    public Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
         InputStream scroll = client.scroll(scrollId);
         try {
             return reader.read(scroll);

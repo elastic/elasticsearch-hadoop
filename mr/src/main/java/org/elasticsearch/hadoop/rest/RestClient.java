@@ -324,6 +324,10 @@ public class RestClient implements Closeable, StatsAware {
         return execute(new SimpleRequest(method, null, path, null, buffer), true);
     }
 
+    protected Response execute(Method method, String path, ByteSequence buffer, boolean checkStatus) {
+        return execute(new SimpleRequest(method, null, path, null, buffer), checkStatus);
+    }
+
     protected Response execute(Request request, boolean checkStatus) {
         Response response = network.execute(request);
 
@@ -371,6 +375,10 @@ public class RestClient implements Closeable, StatsAware {
         } finally {
             stats.scrollTotalTime += network.transportStats().netTotalTime - start;
         }
+    }
+
+    public void deleteScroll(String scrollId) {
+        execute(DELETE, "_search/scroll", new BytesArray(scrollId.getBytes(StringUtils.UTF_8)), false);
     }
 
     public boolean exists(String indexOrType) {

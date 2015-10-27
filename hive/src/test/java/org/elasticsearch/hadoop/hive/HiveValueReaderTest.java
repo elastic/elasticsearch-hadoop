@@ -28,7 +28,8 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class HiveValueReaderTest {
@@ -37,7 +38,7 @@ public class HiveValueReaderTest {
     public void testDateMapping() throws Exception {
         ScrollReader reader = new ScrollReader(new HiveValueReader(), mapping("hive-date.json"), false, "_mapping", false);
         InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
-        List<Object[]> read = reader.read(stream);
+        List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
         Object[] doc = read.get(0);
         Map map = (Map) doc[1];
