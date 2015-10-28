@@ -52,25 +52,18 @@ public abstract class Version {
 
         if (res != null) {
             List<URL> urls = Collections.list(res);
-            Set<URL> normalized = new LinkedHashSet<URL>();
+            Set<String> normalized = new LinkedHashSet<String>();
 
             for (URL url : urls) {
-                try {
-                    // try normalization first
-                    normalized.add(url.toURI().normalize().toURL());
-                } catch (Exception ex) {
-                    // if it fails, add it as usual
-                    normalized.add(url);
-                }
+                normalized.add(StringUtils.normalize(url.toString()));
             }
 
             int foundJars = 0;
-            if (urls.size() > 1) {
+            if (normalized.size() > 1) {
                 StringBuilder sb = new StringBuilder("Multiple ES-Hadoop versions detected in the classpath; please use only one\n");
-                for (URL url : urls) {
-                    String s = url.toString();
+                for (String s : normalized) {
                     if (s.contains("jar:")) {
-                        foundJars ++;
+                        foundJars++;
                         sb.append(s.replace("!/" + target, ""));
                         sb.append("\n");
                     }
