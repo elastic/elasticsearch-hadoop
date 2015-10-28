@@ -453,6 +453,9 @@ public class RestClient implements Closeable, StatsAware {
 
     public String esVersion() {
         Map<String, String> version = get("", "version");
+        if (version == null || !StringUtils.hasText(version.get("number"))) {
+            return "Unknown";
+        }
         return version.get("number");
     }
 
