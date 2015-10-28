@@ -110,7 +110,8 @@ public class RestClient implements Closeable, StatsAware {
         for (Map value : nodes.values()) {
             String inet = (String) value.get("http_address");
             if (StringUtils.hasText(inet)) {
-				hosts.add(StringUtils.parseIpAddress(inet).toString());            }
+                hosts.add(StringUtils.parseIpAddress(inet).toString());
+            }
         }
 
         return hosts;
@@ -408,7 +409,7 @@ public class RestClient implements Closeable, StatsAware {
             try {
                msg = extractError(this.<Map> parseContent(response.body(), null));
                if (response.isClientError()) {
-                    msg = msg + "\n" + request.body().toString();
+                    msg = msg + "\n" + request.body();
                }
                else {
                    msg = prettify(msg, request.body());
@@ -510,6 +511,9 @@ public class RestClient implements Closeable, StatsAware {
 
     public String esVersion() {
         Map<String, String> version = get("", "version");
+        if (version == null || !StringUtils.hasText(version.get("number"))) {
+            return "Unknown";
+        }
         return version.get("number");
     }
 
