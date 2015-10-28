@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -46,6 +47,9 @@ public abstract class StringUtils {
     public static final String EMPTY = "";
     public static final String[] EMPTY_ARRAY = new String[0];
     public static final String DEFAULT_DELIMITER = ",";
+    public static final String SLASH = "/";
+    public static final String PATH_TOP = "..";
+    public static final String PATH_CURRENT = ".";
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 
@@ -428,5 +432,58 @@ public abstract class StringUtils {
             return new IpAndPort(ip, port);
         }
         return new IpAndPort(httpAddr);
+    }
+
+    public static String normalize(String path) {
+        if (path == null) {
+            return null;
+        }
+        String pathToUse = path.replace("\\", SLASH);
+
+        int prefixIndex = pathToUse.indexOf(":");
+        String prefix = "";
+        if (prefixIndex != -1) {
+            prefix = pathToUse.substring(0, prefixIndex + 1);
+            if (prefix.contains(SLASH)) {
+                prefix = "";
+            }
+            else {
+                pathToUse = pathToUse.substring(prefixIndex + 1);
+            }
+        }
+        if (pathToUse.startsWith(SLASH)) {
+            prefix = prefix + SLASH;
+            pathToUse = pathToUse.substring(1);
+        }
+
+        List<String> pathList = tokenize(pathToUse, SLASH);
+        List<String> pathTokens = new LinkedList<String>();
+        int tops = 0;
+
+        for (int i = pathList.size() - 1; i >= 0; i--) {
+            String element = pathList.get(i);
+            if (PATH_CURRENT.equals(element)) {
+                // current folder, ignore it
+            }
+            else if (PATH_TOP.equals(element)) {
+                // top folder, skip previous element
+                tops++;
+            }
+            else {
+                if (tops > 0) {
+                    // should it be skipped?
+                    tops--;
+                }
+                else {
+                    pathTokens.add(0, element);
+                }
+            }
+        }
+
+        for (int i = 0; i < tops; i++) {
+            pathTokens.add(0, PATH_TOP);
+        }
+
+        return prefix + concatenate(pathTokens, SLASH);
     }
 }
