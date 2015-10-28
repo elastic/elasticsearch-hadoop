@@ -11,24 +11,24 @@ For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/e
 
 ## Installation
 
-### Stable Release (currently `2.1.1`)
+### Stable Release (currently `2.1.2`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.1</version>
+  <version>2.1.2</version>
 </dependency>
 ```
-### Beta Release (currently `2.2.0-m1`)
+### Beta Release (currently `2.2.0-beta1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.2.0-m1</version>
+  <version>2.2.0-beta1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -214,7 +214,7 @@ B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 STORE B INTO 'radio/artists' USING org.elasticsearch.hadoop.pig.EsStorage();
 ```
 ## [Apache Spark][]
-ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for writing, methods that work on any `RDD`.
+ES-Hadoop provides native (Java and Scala) integration with Spark: for reading a dedicated `RDD` and for writing, methods that work on any `RDD`. Spark SQL is also supported
 
 ### Scala
 

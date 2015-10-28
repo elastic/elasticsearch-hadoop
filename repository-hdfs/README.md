@@ -39,17 +39,17 @@ One can easily check whether the JSM is disabled or not by looking at the logs f
 
 If the warning appears, the JSM is enabled. If it does not (after the message indicating the libraries have been loaded) then everything is fine.
 
-Note that we are working towards a solution to have Hadoop running without disabling the JSM. In the meantime unfortunately, this is the only workaround. 
+Note that we are [working](https://github.com/elastic/elasticsearch/pull/14108) towards a solution to have Hadoop running without disabling the JSM. The current ETA is to have this addressed in Elasticsearch 2.2. In the meantime unfortunately, this is the only workaround. 
  
 ### Node restart
 _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart_ it. This applies to _all_ nodes on which the plugins have been installed - without restarting the nodes, the plugin will not function properly.
 
 ### Stable version
 As with any other plugin, simply run:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.m2`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0-beta2`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.m2-<classifier>`
+`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.beta2-<classifier>`
 
 ### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:
