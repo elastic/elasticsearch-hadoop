@@ -57,8 +57,7 @@ public class Resource {
                 // clean resource
                 resource = resource.substring(0, index);
                 index = resource.lastIndexOf("/");
-                Assert.isTrue(index >= 0 && index < resource.length() - 1, errorMessage + resource);
-                resource = resource.substring(0, index);
+                resource = (index > 0 ? resource.substring(0, index) : resource);
 
                 settings.setProperty(ConfigurationOptions.ES_RESOURCE, resource);
                 settings.setQuery(query);
@@ -68,12 +67,17 @@ public class Resource {
         String res = StringUtils.sanitizeResource(resource);
 
         int slash = res.indexOf("/");
-        Assert.isTrue(slash >= 0 && slash < res.length() - 1, errorMessage + res);
-        index = res.substring(0, slash);
-        type = res.substring(slash + 1);
+        if (slash < 0) {
+            index = res;
+            type = StringUtils.EMPTY;
+        }
+        else {
+            index = res.substring(0, slash);
+            type = res.substring(slash + 1);
 
+            Assert.hasText(type, "No type found; expecting [index]/[type]");
+        }
         Assert.hasText(index, "No index found; expecting [index]/[type]");
-        Assert.hasText(type, "No type found; expecting [index]/[type]");
 
         StringBuilder fixedIndex = new StringBuilder();
         if (index.contains("{") && index.contains("}")) {
