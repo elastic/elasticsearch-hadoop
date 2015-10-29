@@ -143,18 +143,18 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
       case FloatType     => generator.writeNumber(value.asInstanceOf[Float])
       case TimestampType => generator.writeNumber(value.asInstanceOf[Timestamp].getTime())
       case StringType    => generator.writeString(value.toString)
-      case _             => return handleUnknown(value, generator)
+      case _             => {
+        val className = schema.getClass().getName()
+        if ("org.apache.spark.sql.types.DecimalType".equals(className) || "org.apache.spark.sql.catalyst.types.DecimalType".equals(className)) {
+          throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")
+        }
+        return handleUnknown(value, generator)
+      }
     }
     Result.SUCCESFUL()
   }
 
   protected def handleUnknown(value: Any, generator: Generator): Result = {
-    // Spark 1.2 broke DecimalType bwc with Spark 1.1
-    // as we don't use it anyway, to keep the code small and efficient (avoid using class names, etc...) we moved the check here
-    if (value.getClass() == DecimalType.getClass()) {
-      throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")
-    }
-
     if (!writeUnknownTypes) {
       return Result.FAILED(value)
     }

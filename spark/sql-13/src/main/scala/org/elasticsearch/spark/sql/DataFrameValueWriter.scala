@@ -148,17 +148,19 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
       case TimestampType => generator.writeNumber(value.asInstanceOf[Timestamp].getTime())
       case DateType      => generator.writeNumber(value.asInstanceOf[Date].getTime())
       case StringType    => generator.writeString(value.toString)
-      case _             => return handleUnknown(value, generator)
+      case _             => {
+        val className = schema.getClass().getName()
+        if ("org.apache.spark.sql.types.DecimalType".equals(className) || "org.apache.spark.sql.catalyst.types.DecimalType".equals(className)) {
+          throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")
+        }
+        return handleUnknown(value, generator)
+      }
     }
+
     Result.SUCCESFUL()
   }
 
   protected def handleUnknown(value: Any, generator: Generator): Result = {
-    // Spark 1.2 broke DecimalType bwc with Spark 1.1 
-    if (value.getClass() == DecimalType.getClass()) {
-      throw new EsHadoopSerializationException("Decimal types are not supported by Elasticsearch - consider using a different type (such as string)")
-    }
-
     if (!writeUnknownTypes) {
       println("can't handle type " + value);
       return Result.FAILED(value)
