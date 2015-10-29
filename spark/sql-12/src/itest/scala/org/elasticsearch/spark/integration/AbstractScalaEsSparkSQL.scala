@@ -20,9 +20,11 @@ package org.elasticsearch.spark.integration;
 
 import java.{ util => ju, lang => jl }
 import java.sql.Timestamp
+import java.math.BigInteger
 import java.util.concurrent.TimeUnit
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import org.apache.spark.SparkConf
+import org.apache.spark.SparkException
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.IntegerType
 import org.apache.spark.sql.Row
@@ -31,6 +33,7 @@ import org.apache.spark.sql.StringType
 import org.apache.spark.sql.StructField
 import org.apache.spark.sql.StructType
 import org.apache.spark.sql.TimestampType
+import org.apache.spark.sql.DecimalType
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
@@ -76,6 +79,7 @@ object AbstractScalaEsScalaSparkSQL {
 
   @BeforeClass
   def setup() {
+    conf.setAll(TestSettings.TESTING_PROPS);
     sc = new SparkContext(conf)
     sqc = new SQLContext(sc)
   }
@@ -211,6 +215,17 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     assertTrue(RestUtils.exists(target))
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
     assertThat(RestUtils.exists(target + "/1"), is(true))
+  }
+
+  @Test(expected = classOf[SparkException])
+  def testEsDataFrame3WriteDecimalType() {
+    val schema = StructType(Seq(StructField("decimal", DecimalType(), false)))
+
+    val rowRDD = sc.makeRDD(Seq(Row(new BigInteger("10"))))
+    val dataFrame = sqc.applySchema(rowRDD, schema)
+
+    val target = wrapIndex("sparksql-test/decimal-exception")
+    dataFrame.saveToEs(target)
   }
 
   @Test

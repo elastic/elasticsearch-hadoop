@@ -34,10 +34,13 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.catalyst.expressions.GenericRow
+import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.Decimal
+import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
@@ -68,6 +71,7 @@ import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -430,6 +434,17 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertTrue(RestUtils.exists(target))
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
     assertThat(RestUtils.exists(target + "/1"), is(true))
+  }
+
+  @Test(expected = classOf[EsHadoopSerializationException])
+  def testEsDataFrame3WriteDecimalType() {
+    val schema = StructType(Seq(StructField("decimal", DecimalType.USER_DEFAULT, false)))
+
+    val rowRDD = sc.makeRDD(Seq(Row(Decimal(10))))
+    val dataFrame = sqc.createDataFrame(rowRDD, schema)
+
+    val target = wrapIndex("sparksql-test/decimal-exception")
+    dataFrame.saveToEs(target)
   }
 
   @Test
