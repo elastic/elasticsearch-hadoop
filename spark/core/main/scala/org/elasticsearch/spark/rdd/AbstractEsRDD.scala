@@ -42,8 +42,8 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   override def checkpoint() {
     // Do nothing. Elasticsearch RDD should not be checkpointed.
   }
-  
-  override def count(): Long = {
+
+  def esCount(): Long = {
     val repo = new RestRepository(esCfg)
     try {
       return repo.count(true)
