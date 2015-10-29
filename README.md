@@ -11,24 +11,24 @@ For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/e
 
 ## Installation
 
-### Stable Release (currently `2.1.2`)
+### Stable Release (currently `2.1.1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.1.2</version>
+  <version>2.1.1</version>
 </dependency>
 ```
-### Beta Release (currently `2.2.0-beta1`)
+### Beta Release (currently `2.2.0-m1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.2.0-beta1</version>
+  <version>2.2.0-m1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
