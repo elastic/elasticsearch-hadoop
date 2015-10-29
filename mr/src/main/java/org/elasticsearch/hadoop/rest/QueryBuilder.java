@@ -42,6 +42,7 @@ public class QueryBuilder {
 
     private TimeValue time = TimeValue.timeValueMinutes(10);
     private long size = 50;
+    private long limit = -1;
     private String shard;
     private String node;
     private boolean onlyNode;
@@ -68,11 +69,17 @@ public class QueryBuilder {
     public static QueryBuilder query(Settings settings) {
         return new QueryBuilder(settings).
                 time(settings.getScrollKeepAlive()).
-                size(settings.getScrollSize());
+                size(settings.getScrollSize()).
+                limit(settings.getScrollLimit());
     }
 
     public QueryBuilder size(long size) {
         this.size = size;
+        return this;
+    }
+
+    public QueryBuilder limit(long limit) {
+        this.limit = limit;
         return this;
     }
 
@@ -105,6 +112,12 @@ public class QueryBuilder {
     }
 
     private String assemble() {
+        if (limit > 0) {
+            if (size > limit) {
+                size = limit;
+            }
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append(StringUtils.encodePath(resource.index()));
         sb.append("/");
@@ -165,7 +178,7 @@ public class QueryBuilder {
     public ScrollQuery build(RestRepository client, ScrollReader reader) {
         String scrollUri = assemble();
         bodyQuery = QueryUtils.applyFilters(bodyQuery, filters);
-        return client.scan(scrollUri, bodyQuery, reader);
+        return client.scanLimit(scrollUri, bodyQuery, limit, reader);
     }
 
     @Override

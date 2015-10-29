@@ -117,6 +117,10 @@ public abstract class Settings {
         return Long.valueOf(getProperty(ES_SCROLL_SIZE, ES_SCROLL_SIZE_DEFAULT));
     }
 
+    public long getScrollLimit() {
+        return Long.valueOf(getProperty(ES_SCROLL_LIMIT, ES_SCROLL_LIMIT_DEFAULT));
+    }
+
     public String getScrollFields() {
         return getProperty(INTERNAL_ES_TARGET_FIELDS);
     }

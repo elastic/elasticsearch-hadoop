@@ -43,6 +43,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
 
     private int batchIndex = 0;
     private long read = 0;
+    // how many docs to read - in most cases, all the docs that match
     private long size;
 
     private final ScrollReader reader;

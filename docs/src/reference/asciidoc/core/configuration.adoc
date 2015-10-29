@@ -328,7 +328,12 @@ available {es} node (based on the declaration of `es.nodes`, followed by the dis
 The maximum duration of result scrolls between query requests.
 
 `es.scroll.size` (default 50)::
-Number of results/items returned by each individual scroll.
+Number of results/items returned by each individual per request.
+
+added[2.2]
+`es.scroll.limit` (default -1)::
+Number of _total_ results/items returned by each individual scroll. A negative value indicates that all documents that match should be returned. Do note that this applies per scroll which is typically bound to one of the job tasks.
+Thus the total number of documents returned is `LIMIT * NUMBER_OF_SCROLLS (OR TASKS)`
 
 `es.action.heart.beat.lead` (default 15s)::
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.

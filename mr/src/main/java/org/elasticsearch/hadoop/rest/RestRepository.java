@@ -124,6 +124,10 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
+    ScrollQuery scanAll(String query, BytesArray body, ScrollReader reader) {
+        return scanLimit(query, body, -1, reader);
+    }
+
     /**
      * Returns a pageable (scan based) result to the given query.
      *
@@ -131,10 +135,10 @@ public class RestRepository implements Closeable, StatsAware {
      * @param reader scroll reader
      * @return a scroll query
      */
-    ScrollQuery scan(String query, BytesArray body, ScrollReader reader) {
+    ScrollQuery scanLimit(String query, BytesArray body, long limit, ScrollReader reader) {
         String[] scrollInfo = client.scan(query, body);
         String scrollId = scrollInfo[0];
-        long totalSize = Long.parseLong(scrollInfo[1]);
+        long totalSize = (limit < 1 ? Long.parseLong(scrollInfo[1]) : limit);
         return new ScrollQuery(this, scrollId, totalSize, reader);
     }
 
@@ -493,7 +497,7 @@ public class RestRepository implements Closeable, StatsAware {
             ScrollReader scrollReader = new ScrollReader(new JdkValueReader(), null, false, "_metadata", false);
 
             // start iterating
-            ScrollQuery sq = scan(scanQuery, null, scrollReader);
+            ScrollQuery sq = scanAll(scanQuery, null, scrollReader);
             try {
                 BytesArray entry = new BytesArray(0);
 
