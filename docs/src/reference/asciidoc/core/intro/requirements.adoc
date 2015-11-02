@@ -200,7 +200,7 @@ with Spark SQL 1.2 or 1.1, {eh} provides a dedicated jar. See the Spark chapter 
 [[requirements-storm]]
 === Apache Storm
 
-Spark 0.9.2 or higher. We recommend using the latest release of Storm (currently {st-v}).
+Storm 0.9.2 or higher. We recommend using the latest release of Storm (currently {st-v}).
 
 One can discover the Storm version by looking at its folder or by invoking the command:
 
