@@ -646,7 +646,7 @@ allprojects { project ->
         minHeapSize = "256m"
         maxHeapSize = "768m"
         if (!java8)
-            jvmArgs '-XX:MaxPermSize=368m'
+            jvmArgs '-XX:MaxPermSize=496m'
 
         testLogging {
             displayGranularity 0
@@ -801,7 +801,7 @@ configure(rootProject) {
     
     task wrapper(type: Wrapper) {
         description = 'Generates gradlew[.bat] scripts'
-        gradleVersion = '2.7'
+        gradleVersion = '2.8'
     }
 }
 
