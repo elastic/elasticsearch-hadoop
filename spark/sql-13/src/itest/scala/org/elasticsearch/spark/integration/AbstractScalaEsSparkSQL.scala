@@ -436,7 +436,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertThat(RestUtils.exists(target + "/1"), is(true))
   }
 
-  @Test(expected = classOf[EsHadoopSerializationException])
+  @Test(expected = classOf[SparkException])
   def testEsDataFrame3WriteDecimalType() {
     val schema = StructType(Seq(StructField("decimal", DecimalType.USER_DEFAULT, false)))
 
