@@ -13,7 +13,7 @@
 :ver:	2.1.2
 :ver-d: 2.1.3.BUILD-SNAPSHOT
 :es-v:	1.7.3
-:sp-v:	1.5.1
+:sp-v:	1.5.2
 :st-v:	0.9.5
 :pg-v:	0.15.0
 :hv-v:	1.2.1
