@@ -5,7 +5,7 @@ Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apach
 See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
 ## Requirements
-Elasticsearch (__0.9X__ series or __1.X__ or higher (_highly_ recommended)) cluster accessible through [REST][]. That's it!
+Elasticsearch (__0.9X__ series or __1.X__ (__2.X__ is not supported - use ES-Hadoop 2.2.x instead) cluster accessible through [REST][]. That's it!
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html).
 
