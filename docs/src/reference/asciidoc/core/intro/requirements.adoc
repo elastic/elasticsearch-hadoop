@@ -23,7 +23,7 @@ java version "1.8.0_45"
 [[requirements-es]]
 === {es}
 
-version *0.90* or higher, though we *highly* recommend using the latest Elasticsearch (currently {es-v}) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 0.90 for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
+version *1.X* or higher, though we *highly* recommend using the latest Elasticsearch (currently {es-v}) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 1.X for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
 
 The {es} version is shown in its folder name:
 
@@ -67,12 +67,15 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 |===
 | Distribution      | Release
 
+| Apache Hadoop     | 2.7.x
 | Apache Hadoop     | 2.6.x
 | Apache Hadoop     | 2.4.x
 | Apache Hadoop     | 2.2.x
 | Apache Hadoop     | 1.2.x
 | Apache Hadoop     | 1.1.x
 
+| Amazon EMR        | 4.1.x
+| Amazon EMR        | 4.0.x
 | Amazon EMR        | 3.8.x
 | Amazon EMR        | 3.7.x
 | Amazon EMR        | 3.6.x
@@ -93,6 +96,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Cloudera CDH      | 4.4.x
 | Cloudera CDH      | 4.2.x
 
+| Hortonworks HDP   | 2.3.x
 | Hortonworks HDP   | 2.2.x
 | Hortonworks HDP   | 2.1.x
 | Hortonworks HDP   | 2.0.x
@@ -102,6 +106,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Pivotal HD        | 2.0.x
 | Pivotal HD        | 1.1.x
 
+| MapR              | 5.0.x
 | MapR              | 4.1.x
 | MapR              | 4.0.x
 | MapR              | 3.1.x
