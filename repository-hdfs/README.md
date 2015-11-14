@@ -46,14 +46,14 @@ _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart
 
 ### Stable version
 As with any other plugin, simply run:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0-beta2`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0-beta1`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin -i elasticsearch/elasticsearch-repository-hdfs/2.2.0.beta2-<classifier>`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0.beta1-<classifier>`
 
 ### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:
-`bin/plugin -u <url-path-to-plugin.zip> -i elasticsearch-repository-hdfs-2.2.0-BUILD-SNAPSHOT`
+`bin/plugin install <url-path-to-plugin.zip>`
 
 Or grab the latest nightly build from the [repository](http://oss.sonatype.org/content/repositories/snapshots/org/elasticsearch/elasticsearch-repository-hdfs/) again through Maven:
 

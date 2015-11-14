@@ -10,6 +10,7 @@ Significant effort has been invested to create a small, dependency-free, self-co
 For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html).
 
 ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ only
+
 ES-Hadoop 2.2.x and higher are compatible with Elasticsearch __1.X__ and __2.X__
 
 ## Installation
