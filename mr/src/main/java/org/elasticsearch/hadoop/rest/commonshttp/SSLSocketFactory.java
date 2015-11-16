@@ -197,12 +197,13 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
     }
 
     private TrustManager[] loadTrustManagers() throws GeneralSecurityException, IOException {
-        if (!StringUtils.hasText(trustStoreLocation)) {
-            return null;
+        KeyStore keyStore = null;
+
+        if (StringUtils.hasText(trustStoreLocation)) {
+            char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
+            keyStore = loadKeyStore(trustStoreLocation, pass);
         }
 
-        char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
-        KeyStore keyStore = loadKeyStore(trustStoreLocation, pass);
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmFactory.init(keyStore);
         TrustManager[] tms = tmFactory.getTrustManagers();
