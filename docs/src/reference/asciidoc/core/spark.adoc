@@ -989,7 +989,7 @@ Available since Spark SQL 1.2, one can also access a data source by declaring it
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" ) "
+   "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" )
 ----
 
 <1> Spark's temporary table name
