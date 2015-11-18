@@ -68,8 +68,19 @@ public class SparkSettings extends Settings {
         Properties props = new Properties();
 
         if (cfg != null) {
+        	String sparkPrefix = "spark.";
             for (Tuple2<String, String> tuple : cfg.getAll()) {
-                props.setProperty(tuple._1, tuple._2);
+                // spark. are special so save them without the prefix as well
+            	// since its unlikely the other implementations will be aware of this convention
+            	String key = tuple._1;
+                props.setProperty(key, tuple._2);
+                if (key.startsWith(sparkPrefix)) {
+                	String simpleKey = key.substring(sparkPrefix.length());
+                	// double check to not override a property defined directly in the config
+                	if (!props.containsKey(simpleKey)) {
+                		props.setProperty(simpleKey, tuple._2);
+                	}
+                }
             }
         }
 
