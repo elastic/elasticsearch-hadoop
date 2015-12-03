@@ -20,7 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class StringUtilsTest {
 
@@ -30,4 +30,25 @@ public class StringUtilsTest {
         String jsonEscaped = "foo\\\"bar";
         assertEquals(jsonEscaped, StringUtils.jsonEncoding(value));
     }
+
+    @Test
+    public void testParseIpInEs1x() {
+        assertEquals("1.2.3.4", StringUtils.parseIpAddress("inet[/1.2.3.4:9200]").ip);
+    }
+
+    @Test
+    public void testParseIpInEs1xWithHostName() {
+        assertEquals("11.22.33.44", StringUtils.parseIpAddress("inet[foobar/11.22.33.44:9200]").ip);
+    }
+
+    @Test
+    public void testParseIpInEs2x() {
+        assertEquals("111.222.333.444", StringUtils.parseIpAddress("111.222.333.444:9200").ip);
+    }
+
+    @Test
+    public void testParseIpInEs2xWithHostName() {
+        assertEquals("11.222.3.4", StringUtils.parseIpAddress("foobar/11.222.3.4:9200").ip);
+    }
+
 }

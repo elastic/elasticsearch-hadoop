@@ -412,12 +412,15 @@ public abstract class StringUtils {
     public static IpAndPort parseIpAddress(String httpAddr) {
         // strip ip address - regex would work but it's overkill
 
-        // there are two formats - ip:port or [/ip:port]
+        // there are four formats - ip:port, hostname/ip:port or [/ip:port] and [hostname/ip:port]
         // first the ip is normalized
-        if (httpAddr.contains("[")) {
+        if (httpAddr.contains("/")) {
             int startIp = httpAddr.indexOf("/") + 1;
             int endIp = httpAddr.indexOf("]");
-            if (startIp < 0 || endIp < 0) {
+            if (endIp < 0) {
+                endIp = httpAddr.length();
+            }
+            if (startIp < 0) {
                 throw new EsHadoopIllegalStateException("Cannot parse http address " + httpAddr);
             }
             httpAddr = httpAddr.substring(startIp, endIp);
