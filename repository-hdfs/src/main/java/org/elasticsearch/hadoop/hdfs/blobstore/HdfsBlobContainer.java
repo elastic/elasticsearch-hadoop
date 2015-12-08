@@ -34,6 +34,8 @@ import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
 import org.elasticsearch.common.blobstore.support.PlainBlobMetaData;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.Streams;
 
 public class HdfsBlobContainer extends AbstractBlobContainer {
 
@@ -67,13 +69,27 @@ public class HdfsBlobContainer extends AbstractBlobContainer {
         }
     }
 
-    @Override
+    public void writeBlob(String blobName, InputStream inputStream, long blobSize) throws IOException {
+        try (OutputStream stream = createOutput(blobName)) {
+            Streams.copy(inputStream, stream);
+        }
+    }
+
+    public void writeBlob(String blobName, BytesReference data) throws IOException {
+        try (OutputStream stream = createOutput(blobName)) {
+            data.writeTo(stream);
+        }
+    }
+
+    public InputStream readBlob(String blobName) throws IOException {
+        return openInput(blobName);
+    }
+
     public InputStream openInput(String blobName) throws IOException {
         // FSDataInputStream does buffering internally
         return blobStore.fileSystemFactory().getFileSystem().open(new Path(path, blobName), blobStore.bufferSizeInBytes());
     }
 
-    @Override
     public OutputStream createOutput(String blobName) throws IOException {
         Path file = new Path(path, blobName);
         // FSDataOutputStream does buffering internally
