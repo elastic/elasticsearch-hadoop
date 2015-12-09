@@ -18,13 +18,16 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.List;
+
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     public static final String PROPERTY = "org.elasticsearch.hadoop.serialization.ConstantFieldExtractor.property";
-    private String fieldName;
+    private List<String> fieldNames;
     private Object value;
     private boolean autoQuote = true;
 
@@ -40,16 +43,17 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
     @Override
     public void setSettings(Settings settings) {
         autoQuote = settings.getMappingConstantAutoQuote();
-        fieldName = property(settings);
-        if (fieldName.startsWith("<") && fieldName.endsWith(">")) {
-            value = initValue(fieldName.substring(1, fieldName.length() - 1));
+        String fldName = property(settings);
+        if (fldName.startsWith("<") && fldName.endsWith(">")) {
+            value = initValue(fldName.substring(1, fldName.length() - 1));
         }
         if (value == null) {
-            processField(settings, fieldName);
+            fieldNames = StringUtils.tokenize(fldName, ".");
+            processField(settings, fieldNames);
         }
     }
 
-    protected void processField(Settings settings, String fieldName) {
+    protected void processField(Settings settings, List<String> fieldNames) {
     }
 
     protected Object initValue(String value) {
@@ -61,12 +65,12 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
         return (value == null ? "" : value.trim());
     }
 
-    protected String getFieldName() {
-        return fieldName;
+    protected List<String> getFieldNames() {
+        return fieldNames;
     }
 
     @Override
     public String toString() {
-        return String.format("%s for field [%s]", getClass().getSimpleName(), fieldName);
+        return String.format("%s for field [%s]", getClass().getSimpleName(), fieldNames);
     }
 }

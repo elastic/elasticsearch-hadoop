@@ -62,7 +62,7 @@ public class HiveTypeToJsonTest {
 
     private static FastByteArrayOutputStream out;
 
-    private static class MyHiveType extends HiveType {
+    public static class MyHiveType extends HiveType {
 
         public MyHiveType(Object object, ObjectInspector info) {
             super(object, info);
@@ -149,7 +149,7 @@ public class HiveTypeToJsonTest {
     public void testTimestamp() {
         assertTrue(hiveTypeToJson(
                 new MyHiveType(new TimestampWritable(new Timestamp(1407239910771l)), timestampTypeInfo)).startsWith(
-                "\"2014-08-0"));
+                        "\"2014-08-0"));
     }
 
     @Test

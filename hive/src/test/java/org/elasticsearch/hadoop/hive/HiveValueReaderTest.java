@@ -28,7 +28,8 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class HiveValueReaderTest {
@@ -41,7 +42,6 @@ public class HiveValueReaderTest {
         assertEquals(1, read.size());
         Object[] doc = read.get(0);
         Map map = (Map) doc[1];
-        System.out.println(map);
         assertTrue(map.containsKey(new Text("type")));
         assertTrue(map.containsKey(new Text("&t")));
         assertTrue(map.get(new Text("&t")).toString().contains("2014-08-05"));

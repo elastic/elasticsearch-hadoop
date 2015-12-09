@@ -18,7 +18,8 @@
  */
 package org.elasticsearch.hadoop.pig;
 
-import org.apache.pig.ResourceSchema;
+import java.util.List;
+
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataType;
@@ -31,35 +32,47 @@ public class PigFieldExtractor extends ConstantFieldExtractor {
 
     @Override
     protected Object extractField(Object target) {
-        if (target instanceof PigTuple) {
-            PigTuple pt = (PigTuple) target;
-            ResourceFieldSchema[] fields = pt.getSchema().getSchema().getFields();
+        List<String> fieldNames = getFieldNames();
+        for (int index = 0; index < fieldNames.size(); index++) {
+            String fieldName = fieldNames.get(index);
+            if (target instanceof PigTuple) {
+                PigTuple pt = (PigTuple) target;
+                ResourceFieldSchema[] fields = pt.getSchema().getSchema().getFields();
 
-            for (int i = 0; i < fields.length; i++) {
-                ResourceFieldSchema field = fields[i];
-                if (getFieldName().equals(field.getName())) {
-                    byte type = field.getType();
-                    try {
-                        Object object = pt.getTuple().get(i);
-                        if (DataType.isAtomic(type)) {
-                            return object.toString();
+                boolean foundField = false;
+                for (int i = 0; i < fields.length && !foundField; i++) {
+                    ResourceFieldSchema field = fields[i];
+                    if (fieldName.equals(field.getName())) {
+                        foundField = true;
+                        byte type = field.getType();
+                        try {
+                            Object object = pt.getTuple().get(i);
+                            if (DataType.isAtomic(type)) {
+                                target = object.toString();
+                            }
+                            else if (type == DataType.TUPLE) {
+                                PigTuple rpt = new PigTuple(field.getSchema());
+                                if (object instanceof PigTuple) {
+                                    rpt.setTuple(((PigTuple) object).getTuple());
+                                }
+                                else {
+                                    rpt.setTuple((Tuple) object);
+                                }
+                                target = rpt;
+                            }
+                            else {
+                                Assert.isTrue(false, String.format("Unsupported data type [%s] for field [%s]; use only 'primitives' or 'tuples'", DataType.findTypeName(type), fieldName));
+                            }
+                        } catch (ExecException ex) {
+                            throw new EsHadoopIllegalStateException(String.format("Cannot retrieve field [%s]", fieldName), ex);
                         }
-                        else if (type == DataType.TUPLE) {
-                            ResourceSchema rs = new ResourceSchema();
-                            rs.setFields(new ResourceFieldSchema[] { field });
-                            PigTuple rpt = new PigTuple(rs);
-                            rpt.setTuple((Tuple) object);
-                        }
-                        else {
-                            Assert.isTrue(false, String.format("Unsupported data type [%s] for field [%s]; use only 'primitives' or 'tuples'", DataType.findTypeName(type), getFieldName()));
-                        }
-                    } catch (ExecException ex) {
-                        throw new EsHadoopIllegalStateException(String.format("Cannot retrieve field [%s]", getFieldName()), ex);
                     }
                 }
             }
+            else {
+                return NOT_FOUND;
+            }
         }
-
-        return NOT_FOUND;
+        return target;
     }
 }

@@ -38,4 +38,27 @@ public class RawJson {
     public String toString() {
         return source;
     }
+
+    @Override
+    public int hashCode() {
+        return (source == null ? 0 : source.hashCode());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        RawJson other = (RawJson) obj;
+        if (source == null) {
+            if (other.source != null)
+                return false;
+        }
+        else if (!source.equals(other.source))
+            return false;
+        return true;
+    }
 }

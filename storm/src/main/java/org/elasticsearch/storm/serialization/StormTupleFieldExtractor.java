@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.storm.serialization;
 
+import java.util.List;
+
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 
@@ -27,13 +29,20 @@ public class StormTupleFieldExtractor extends ConstantFieldExtractor implements 
 
     @Override
     protected Object extractField(Object target) {
-        if (target instanceof Tuple) {
-            Object object = ((Tuple) target).getValueByField(getFieldName());
-            if (object != null) {
-                return object;
+        List<String> fieldNames = getFieldNames();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            String field = fieldNames.get(i);
+            if (target instanceof Tuple) {
+                target = ((Tuple) target).getValueByField(field);
+                if (target == null) {
+                    return NOT_FOUND;
+                }
+            }
+            else {
+                return NOT_FOUND;
             }
         }
-        return NOT_FOUND;
+        return target;
     }
 
     @Override

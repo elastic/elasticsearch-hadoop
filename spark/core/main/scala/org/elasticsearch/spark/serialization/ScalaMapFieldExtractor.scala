@@ -11,18 +11,24 @@ import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
 class ScalaMapFieldExtractor extends MapFieldExtractor {
 
   override protected def extractField(target: AnyRef): AnyRef = {
-    target match {
-      case m: Map[_, _]                    => m.asInstanceOf[Map[AnyRef, AnyRef]].getOrElse(getFieldName, NOT_FOUND)
-      case p: Product if RU.isCaseClass(p) => RU.caseClassValues(p).getOrElse(getFieldName, NOT_FOUND).asInstanceOf[AnyRef]
-      case _                               => {
-        val result = super.extractField(target)
+    var obj = target
+    for (index <- 0 until getFieldNames.size()) {
+      val field = getFieldNames.get(index)
+      obj = obj match {
+        case m: Map[_, _]                    => m.asInstanceOf[Map[AnyRef, AnyRef]].getOrElse(field, NOT_FOUND)
+        case p: Product if RU.isCaseClass(p) => RU.caseClassValues(p).getOrElse(field, NOT_FOUND).asInstanceOf[AnyRef]
+        case _                               => {
+          val result = super.extractField(target)
 
-        if (result == NOT_FOUND && RU.isJavaBean(target)) {
-          return RU.javaBeanAsMap(target).getOrElse(getFieldName, NOT_FOUND)
+          if (result == NOT_FOUND && RU.isJavaBean(target)) {
+            RU.javaBeanAsMap(target).getOrElse(field, NOT_FOUND)
+          }
+          else {
+            result
+          }
         }
-
-        result
       }
     }
+    return obj
   }
 }

@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
@@ -27,12 +28,22 @@ public class MapFieldExtractor extends ConstantFieldExtractor {
     @SuppressWarnings("rawtypes")
     @Override
     protected Object extractField(Object target) {
-        if (target instanceof Map) {
-            Map map = (Map) target;
-            if (map.containsKey(getFieldName())) {
-                return map.get(getFieldName());
+        List<String> fieldNames = getFieldNames();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            String field = fieldNames.get(i);
+            if (target instanceof Map) {
+                Map map = (Map) target;
+                if (map.containsKey(field)) {
+                    target = map.get(field);
+                }
+                else {
+                    return NOT_FOUND;
+                }
+            }
+            else {
+                return NOT_FOUND;
             }
         }
-        return NOT_FOUND;
+        return target;
     }
 }

@@ -18,7 +18,9 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.Text;
@@ -26,23 +28,34 @@ import org.elasticsearch.hadoop.cfg.Settings;
 
 public class MapWritableFieldExtractor extends ConstantFieldExtractor implements FieldExplainer {
 
-    private Text fieldName;
+    private List<Text> fieldNames;
 
     @SuppressWarnings("rawtypes")
     @Override
     protected Object extractField(Object target) {
-        if (target instanceof Map) {
-            Map map = (Map) target;
-            if (map.containsKey(fieldName)) {
-                return map.get(fieldName);
+        for (int i = 0; i < fieldNames.size(); i++) {
+            if (target instanceof Map) {
+                Map map = (Map) target;
+                if (map.containsKey(fieldNames.get(i))) {
+                    target = map.get(fieldNames.get(i));
+                }
+                else {
+                    return NOT_FOUND;
+                }
+            }
+            else {
+                return NOT_FOUND;
             }
         }
-        return NOT_FOUND;
+        return target;
     }
 
     @Override
-    protected void processField(Settings settings, String fieldName) {
-        this.fieldName = new Text(fieldName);
+    protected void processField(Settings settings, List<String> fldNames) {
+        fieldNames = new ArrayList<Text>(fldNames.size());
+        for (String string : fldNames) {
+            fieldNames.add(new Text(string));
+        }
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

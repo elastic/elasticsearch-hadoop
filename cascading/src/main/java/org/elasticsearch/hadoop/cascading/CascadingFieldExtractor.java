@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.cascading;
 
+import java.util.List;
+
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 
@@ -28,13 +30,19 @@ public class CascadingFieldExtractor extends ConstantFieldExtractor implements F
     @SuppressWarnings({ "rawtypes" })
     @Override
     protected Object extractField(Object target) {
-        if (target instanceof SinkCall) {
-            Object object = ((SinkCall) target).getOutgoingEntry().getObject(getFieldName());
-            if (object != null) {
-                return object;
+        List<String> fieldNames = getFieldNames();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            if (target instanceof SinkCall) {
+                target = ((SinkCall) target).getOutgoingEntry().getObject(fieldNames.get(i));
+                if (target == null) {
+                    return NOT_FOUND;
+                }
+            }
+            else {
+                return NOT_FOUND;
             }
         }
-        return NOT_FOUND;
+        return target;
     }
 
     @Override
