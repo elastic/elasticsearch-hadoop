@@ -30,7 +30,7 @@ public class ConstantFieldExtractor implements FieldExtractor, SettingsAware {
 
     @Override
     public final Object field(Object target) {
-        return (value != null ? value : extractField(target));
+        return (value != null ? value : (fieldNames == null || fieldNames.isEmpty() ? NOT_FOUND : extractField(target)));
     }
 
     protected Object extractField(Object target) {
