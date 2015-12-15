@@ -207,7 +207,7 @@ public abstract class StringUtils {
         // return the initial String if no whitespace is found
         return (sb.length() == sequence.length() ? sequence.toString() : sb.toString());
     }
-    
+
     public static String trimWhitespace(String string) {
    		if (!hasLength(string)) {
    			return string;
@@ -399,7 +399,16 @@ public abstract class StringUtils {
         }
         return true;
     }
-    
+
+    public static boolean hasLetter(CharSequence string) {
+        for (int index = 0; index < string.length(); index++) {
+            if (Character.isLetter(string.charAt(index))) {
+                return true;
+            }
+        }
+        return false;   
+    }
+
     public static String jsonEncoding(String rawString) {
         return new String(HAS_JACKSON_CLASS ? JacksonStringEncoder.jsonEncoding(rawString) : BackportedJsonStringEncoder.getInstance().quoteAsString(rawString));
     }
