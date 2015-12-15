@@ -385,6 +385,15 @@ public abstract class StringUtils {
         return true;
     }
 
+    public static boolean hasLetter(CharSequence string) {
+        for (int index = 0; index < string.length(); index++) {
+            if (Character.isLetter(string.charAt(index))) {
+                return true;
+            }
+        }
+        return false;   
+    }
+
     public static String jsonEncoding(String rawString) {
         return new String(HAS_JACKSON_CLASS ? JacksonStringEncoder.jsonEncoding(rawString) : BackportedJsonStringEncoder.getInstance().quoteAsString(rawString));
     }
