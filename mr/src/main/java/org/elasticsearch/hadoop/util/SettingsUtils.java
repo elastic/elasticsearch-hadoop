@@ -25,16 +25,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 
 public abstract class SettingsUtils {
 
     private static List<String> qualifyNodes(String nodes, int defaultPort) {
         List<String> list = StringUtils.tokenize(nodes);
         for (int i = 0; i < list.size(); i++) {
-            String host = list.get(i);
+            String host = resolveHostIp(list.get(i));
             list.set(i, qualifyNode(host, defaultPort));
         }
         return list;
@@ -52,6 +55,20 @@ public abstract class SettingsUtils {
         }
 
         return node + ":" + defaultPort;
+    }
+
+    private static String resolveHostIp(String host) {
+        int index = host.lastIndexOf(':');
+        String name = index > -1 ? host.substring(0, index) : host;
+        String port = index > -1 ? host.substring(index + 1) : "";
+        if (StringUtils.hasLetter(name)) {
+            try {
+                return InetAddress.getByName(name).getHostAddress() + port;
+            } catch (UnknownHostException ex) {
+                throw new EsHadoopIllegalArgumentException("Cannot resolve ip for hostname: " + name);
+            }
+        }
+        return host;      
     }
 
     public static void pinNode(Settings settings, String node) {
