@@ -87,7 +87,6 @@ public abstract class YarnUtils {
         env.put(key, val);
     }
 
-
     public static void addToEnv(Map<String, String> env, Map<String, String> envVars) {
         for (Entry<String, String> entry : envVars.entrySet()) {
             addToEnv(env, entry.getKey(), entry.getValue());
@@ -95,21 +94,23 @@ public abstract class YarnUtils {
     }
 
     public static Object minVCores(Configuration cfg, int vCores) {
-        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
+        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES, vCores);
         //return vCores;
     }
 
     public static int minMemory(Configuration cfg, int memory) {
-        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
+        return yarnAcceptableMin(cfg, RM_SCHEDULER_MINIMUM_ALLOCATION_MB, DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_MB, memory);
         //return memory;
     }
 
-    private static int yarnAcceptableMin(Configuration cfg, String property, int value) {
-        int acceptedVal = Integer.parseInt(cfg.get(property));
+    private static int yarnAcceptableMin(Configuration cfg, String property, int defaultValue, int value) {
+        int acceptedVal = cfg.getInt(property, defaultValue);
+        if (acceptedVal <= 0) {
+            acceptedVal = defaultValue;
+        }
         if (acceptedVal >= value) {
             return acceptedVal;
         }
-
         if (value % acceptedVal != 0) {
             return acceptedVal * Math.round(value / acceptedVal);
         }
