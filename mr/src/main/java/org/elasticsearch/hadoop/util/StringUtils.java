@@ -207,6 +207,21 @@ public abstract class StringUtils {
         // return the initial String if no whitespace is found
         return (sb.length() == sequence.length() ? sequence.toString() : sb.toString());
     }
+    
+    public static String trimWhitespace(String string) {
+   		if (!hasLength(string)) {
+   			return string;
+   		}
+   		StringBuilder sb = new StringBuilder(string);
+   		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(0))) {
+   			sb.deleteCharAt(0);
+   		}
+   		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(sb.length() - 1))) {
+   			sb.deleteCharAt(sb.length() - 1);
+   		}
+   		// try to return the initial string if possible
+   		return (sb.length() == string.length() ? string : sb.toString());
+   	}
 
     public static String asUTFString(byte[] content) {
         return asUTFString(content, 0, content.length);
@@ -384,7 +399,7 @@ public abstract class StringUtils {
         }
         return true;
     }
-
+    
     public static String jsonEncoding(String rawString) {
         return new String(HAS_JACKSON_CLASS ? JacksonStringEncoder.jsonEncoding(rawString) : BackportedJsonStringEncoder.getInstance().quoteAsString(rawString));
     }

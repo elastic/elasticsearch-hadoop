@@ -533,9 +533,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val target = wrapIndex("spark-test/scala-sql-varcols")
     val table = wrapIndex("sqlvarcol")
 
-    val trip1 = Map("reason" -> "business", "airport" -> "SFO", "tag" -> "jan")
-    val trip2 = Map("participants" -> 5, "airport" -> "OTP", "tag" -> "feb")
-    val trip3 = Map("participants" -> 3, "airport" -> "MUC OTP SFO JFK", "tag" -> "long")
+    val trip1 = Map("reason" -> "business", "airport" -> "SFO", "tag" -> "jan", "date" -> "2015-12-28T20:03:10Z")
+    val trip2 = Map("participants" -> 5, "airport" -> "OTP", "tag" -> "feb", "date" -> "2013-12-28T20:03:10Z")
+    val trip3 = Map("participants" -> 3, "airport" -> "MUC OTP SFO JFK", "tag" -> "long", "date" -> "2012-12-28T20:03:10Z")
 
     sc.makeRDD(Seq(trip1, trip2, trip3)).saveToEs(target)
   }
@@ -623,7 +623,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
   }
 
-  @Test
+  //@Test
   def testDataSourcePushDown07IsNotNull() {
     val df = esDataSource("pd_is_not_null")
     val filter = df.filter(df("reason").isNotNull)
@@ -644,6 +644,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     assertEquals(2, filter.count())
     assertEquals("jan", filter.select("tag").sort("tag").take(2)(1)(0))
+  }
+
+  @Test
+  def testDataSourcePushDown08InWithNumbersAsStrings() {
+    val df = esDataSource("pd_in_numbers_strings")
+    var filter = df.filter("date IN ('2015-12-28', '2012-12-28')")
+
+    if (strictPushDown) {
+      assertEquals(0, filter.count())
+      // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
+      return
+    }
+
+    assertEquals(0, filter.count())
   }
 
   @Test
