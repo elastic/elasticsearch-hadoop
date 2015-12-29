@@ -52,6 +52,10 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         generator.writeEndArray()
       }
 
+      case b: Array[Byte] => {
+        generator.writeBinary(b);
+      }
+      
       case i: Array[_] => {
         generator.writeBeginArray()
         for (v <- i) {

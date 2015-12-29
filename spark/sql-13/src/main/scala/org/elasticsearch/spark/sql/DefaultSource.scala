@@ -1,12 +1,12 @@
 package org.elasticsearch.spark.sql
 
+import java.util.Calendar
+import java.util.Date
 import java.util.Locale
-import scala.None
-import scala.Null
 import scala.collection.JavaConverters.mapAsJavaMapConverter
-import scala.collection.mutable.ArrayOps
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
+import org.apache.commons.logging.LogFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -42,13 +42,16 @@ import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-import org.apache.commons.logging.LogFactory
+import javax.xml.bind.DatatypeConverter
+import org.apache.spark.sql.types.DateType
+import org.apache.spark.sql.types.TimestampType
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -129,7 +132,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg))
 
       if (log.isTraceEnabled()) {
-        log.trace("Transformed filters into DSL $filterString")
+        log.trace(s"Transformed filters into DSL $filterString")
       }
       paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToBase64(filterString))
     }
@@ -167,7 +170,21 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         if (filtered.isEmpty) {
           return ""
         }
-        if (strictPushDown) s"""{"terms":{"$attribute":${extractAsJsonArray(filtered)}}}"""
+        
+        // further more, match query only makes sense with String types so for other types apply a terms query (aka strictPushDown)
+        val attrType = lazySchema.struct(attribute).dataType
+        val isStrictType = attrType match {
+          case DateType |    
+               TimestampType => true
+          case _             => false
+        }
+ 
+        if (!strictPushDown && isStrictType) {
+          if (logger.isDebugEnabled()) {
+            logger.debug(s"Attribute $attribute type $attrType not suitable for match query; using terms (strict) instead")
+          }
+        }
+        if (strictPushDown || isStrictType) s"""{"terms":{"$attribute":${extractAsJsonArray(filtered)}}}"""
         else s"""{"or":{"filters":[${extractMatchArray(attribute, filtered)}]}}"""
       }
       case IsNull(attribute)                    => s"""{"missing":{"field":"$attribute"}}"""
@@ -265,26 +282,35 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   private def extract(value: Any, inJsonFormat: Boolean, asJsonArray: Boolean):String = {
     // common-case implies primitives and String so try these before using the full-blown ValueWriter
     value match {
-      case null           => "null"
-      case u: Unit        => "null"
-      case b: Boolean     => b.toString
-      case c: Char        => if (inJsonFormat) StringUtils.toJsonString(c) else c.toString()
-      case by: Byte       => by.toString
-      case s: Short       => s.toString
-      case i: Int         => i.toString
-      case l: Long        => l.toString
-      case f: Float       => f.toString
-      case d: Double      => d.toString
-      case s: String      => if (inJsonFormat) StringUtils.toJsonString(s) else s
-      case ar: Array[Any] =>
+      case null            => "null"
+      case u: Unit         => "null"
+      case b: Boolean      => b.toString
+      case by: Byte        => by.toString
+      case s: Short        => s.toString
+      case i: Int          => i.toString
+      case l: Long         => l.toString
+      case f: Float        => f.toString
+      case d: Double       => d.toString
+      case bd: BigDecimal  => bd.toString
+      case _: Char        |
+           _: String      |
+           _: Array[Byte]  => if (inJsonFormat) StringUtils.toJsonString(value.toString) else value.toString()
+      // handle Timestamp also
+      case dt: Date        => {
+        val cal = Calendar.getInstance()
+        cal.setTime(dt)
+        val str = DatatypeConverter.printDateTime(cal)
+        if (inJsonFormat) StringUtils.toJsonString(str) else str
+      }
+      case ar: Array[Any]  =>
         if (asJsonArray) (for (i <- ar) yield extract(i, true, false)).distinct.mkString("[", ",", "]")
         else (for (i <- ar) yield extract(i, false, false)).distinct.mkString("\"", " ", "\"")
       // new in Spark 1.4
       case utf if (isClass(utf, "org.apache.spark.sql.types.UTF8String")
       // new in Spark 1.5
-                   || isClass(utf, "org.apache.spark.unsafe.types.UTF8String"))
-                          => if (inJsonFormat) StringUtils.toJsonString(utf.toString()) else utf.toString()
-      case a: AnyRef      => {
+                || isClass(utf, "org.apache.spark.unsafe.types.UTF8String"))
+                           => if (inJsonFormat) StringUtils.toJsonString(utf.toString()) else utf.toString()
+      case a: AnyRef       => {
         val storage = new FastByteArrayOutputStream()
         val generator = new JacksonJsonGenerator(storage)
         valueWriter.write(a, generator)

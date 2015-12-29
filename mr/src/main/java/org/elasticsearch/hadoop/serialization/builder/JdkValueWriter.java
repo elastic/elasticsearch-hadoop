@@ -127,6 +127,7 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
             }
             generator.writeEndArray();
         }
+        // handles Timestamp also
         else if (value instanceof Date) {
             Calendar cal = Calendar.getInstance();
             cal.setTime((Date) value);
@@ -134,11 +135,6 @@ public class JdkValueWriter extends FilteringValueWriter<Object> {
         }
         else if (value instanceof Calendar) {
             generator.writeString(DatatypeConverter.printDateTime((Calendar) value));
-        }
-        else if (value instanceof Timestamp) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(((Timestamp) value).getTime());
-            generator.writeString(DatatypeConverter.printDateTime(cal));
         }
         else {
             if (writeUnknownTypes) {
