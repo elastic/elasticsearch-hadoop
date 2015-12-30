@@ -27,6 +27,7 @@ import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.hive.HiveFieldExtractor;
 import org.elasticsearch.hadoop.serialization.HiveTypeToJsonTest.MyHiveType;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
@@ -34,17 +35,23 @@ import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.getStructTypeInfo;
-import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.intTypeInfo;
-import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.stringTypeInfo;
+import static org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory.*;
 
 public class HiveFieldExtractorTests {
 
-    private Object extract(ConstantFieldExtractor extractor, String field, Object target) {
+    private Object extract(String field, Object target) {
         TestSettings cfg = new TestSettings();
         cfg.setProperty(ConstantFieldExtractor.PROPERTY, field);
+
+        ConstantFieldExtractor extractor = new HiveFieldExtractor() {
+
+            @Override
+            public void processField(Settings settings, List<String> fl) {
+                fieldNames = fl;
+            }
+        };
 
         extractor.setSettings(cfg);
         return extractor.field(target);
@@ -52,15 +59,12 @@ public class HiveFieldExtractorTests {
 
     @Test
     public void testHiveFieldExtractorNestedNotFound() throws Exception {
-        ConstantFieldExtractor cfe = new HiveFieldExtractor();
         Map<String, String> m = new LinkedHashMap<String, String>();
-        assertEquals(FieldExtractor.NOT_FOUND, extract(cfe, "key", m));
+        assertEquals(FieldExtractor.NOT_FOUND, extract("key", m));
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testHiveFieldExtractorNested() throws Exception {
-        ConstantFieldExtractor cfe = new HiveFieldExtractor();
-
         List<String> nested = Arrays.asList(new String[] { "bar", "bor" });
         List<TypeInfo> types = Arrays.asList(new TypeInfo[] { stringTypeInfo, intTypeInfo });
         MyHiveType struct = new MyHiveType(Arrays.asList(new Object[] { new Text("found"), new IntWritable(2) }), getStructTypeInfo(nested, types));
@@ -69,17 +73,17 @@ public class HiveFieldExtractorTests {
         List<TypeInfo> topTypes = Arrays.asList(new TypeInfo[] { getStructTypeInfo(nested, types), intTypeInfo });
         MyHiveType topStruct = new MyHiveType(Arrays.asList(new Object[] { struct, new IntWritable(1) }), getStructTypeInfo(topNames, topTypes));
 
-        assertEquals(new Text("found"), extract(cfe, "foo.bar", topStruct));
+        String colDesc = "bar,bor";
+        assertEquals(new Text("found"), extract("foo.bar", topStruct));
     }
 
     @Test
     public void testHiveFieldExtractorTopLevel() throws Exception {
-        ConstantFieldExtractor cfe = new HiveFieldExtractor();
-
         List<String> names = Arrays.asList(new String[] { "one", "two" });
         List<TypeInfo> types = Arrays.asList(new TypeInfo[] { stringTypeInfo, intTypeInfo });
         MyHiveType struct = new MyHiveType(Arrays.asList(new Object[] { new Text("first"), new IntWritable(2) }), getStructTypeInfo(names, types));
 
-        assertEquals("first", extract(cfe, "one", struct));
+        String colDesc = "one,two";
+        assertEquals("first", extract("one", struct));
     }
 }

@@ -36,7 +36,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public class HiveFieldExtractor extends ConstantFieldExtractor {
 
-    private List<String> fieldNames;
+    protected List<String> fieldNames;
 
     @Override
     protected Object extractField(Object target) {

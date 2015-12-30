@@ -28,11 +28,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.isLocal;
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
-import static org.hamcrest.CoreMatchers.is;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+import static org.hamcrest.CoreMatchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveTest {
