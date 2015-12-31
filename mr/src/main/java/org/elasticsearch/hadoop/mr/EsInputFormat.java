@@ -459,7 +459,18 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         int index = 0;
         for (PartitionDefinition part : partitions) {
-            splits[index++] = new ShardInputSplit(part.nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId,
+        	
+        	String nodeIp = part.nodeIp;        	
+        	
+        	// if nodeIp has '/' and the form <host>/<ip>, just return <host>.
+        	if(nodeIp.indexOf("/") != -1)
+        	{
+        		String[] nodeIpTokens = nodeIp.split("/");
+        		
+        		nodeIp = nodeIpTokens[0];        	
+        	}
+        	
+            splits[index++] = new ShardInputSplit(nodeIp, part.nodePort, part.nodeId, part.nodeName, part.shardId,
                     part.onlyNode, part.serializedMapping, part.serializedSettings);
         }
         log.info(String.format("Created [%d] shard-splits", splits.length));
