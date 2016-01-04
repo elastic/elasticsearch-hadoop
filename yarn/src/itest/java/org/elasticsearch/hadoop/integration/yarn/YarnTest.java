@@ -28,18 +28,18 @@ import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.elasticsearch.hadoop.yarn.cli.YarnBootstrap;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.*;
+import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.CFG;
+import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.CLIENT_JAR;
+import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.YC;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore
 public class YarnTest {
 
     private YarnBootstrap bootstrap;
-    private List<String> testEnv = new ArrayList<String>();
+    private final List<String> testEnv = new ArrayList<String>();
 
     @Before
     public void before() {
@@ -51,6 +51,7 @@ public class YarnTest {
         testEnv.add("download.local.dir=./build/downloads");
         // for tests we don't need gigs
         testEnv.add("container.mem=512");
+        testEnv.add("sysProp.es.security.manager.enabled=false");
     }
 
     @Test

@@ -172,7 +172,7 @@ public class YarnBootstrap extends Configured implements Tool {
             }
             List<ApplicationReport> apps = client.killEsApps();
             for (ApplicationReport report : apps) {
-                System.out.println(String.format("Stopped Elasticsearch-YARN cluster with id %s", report.getApplicationId()));
+                System.out.println(String.format("Stopped Elasticsearch-YARN Cluster with id %s", report.getApplicationId()));
             }
         } finally {
             client.close();

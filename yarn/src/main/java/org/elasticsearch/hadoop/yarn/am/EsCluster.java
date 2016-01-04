@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -208,6 +209,16 @@ class EsCluster implements AutoCloseable {
         //env.put(EsYarnConstants.CFG_PROPS, masterEnv.get(EsYarnConstants.CFG_PROPS));
         // plus expand its vars into the env
         YarnUtils.addToEnv(env, appConfig.envVars());
+
+        // add system properties (to JAVA_OPTS for ES to pick them up)
+        Map<String, String> sysProps = appConfig.systemProps();
+        if (!sysProps.isEmpty()) {
+            StringBuilder sb = new StringBuilder(ApplicationConstants.PARAMETER_EXPANSION_LEFT + "JAVA_OPTS" + ApplicationConstants.PARAMETER_EXPANSION_RIGHT);
+            for (Map.Entry<String, String> prop : appConfig.systemProps().entrySet()) {
+                sb.append(String.format(Locale.ROOT, " -D%s=%s", prop.getKey(), prop.getValue()));
+            }
+            YarnUtils.addToEnv(env, "JAVA_OPTS", sb.toString());
+        }
 
         return env;
     }

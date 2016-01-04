@@ -37,7 +37,7 @@ public class YarnTestCluster extends ExternalResource {
 
     private String tempDir;
 
-    private YarnConfiguration cfg;
+    private final YarnConfiguration cfg;
 
     YarnTestCluster(YarnConfiguration cfg) {
         this(cfg, 1);
@@ -79,6 +79,8 @@ public class YarnTestCluster extends ExternalResource {
         // make sure to use IP discovery
         Configuration.addDefaultResource("yarn-test-site.xml");
 
+        // disable am deletion
+        cfg.set(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC, "-1");
         cfg.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, "build/es-yarn/" + CLUSTER_NAME + "-dfs");
 
         dfsCluster = new MiniDFSCluster.Builder(cfg).numDataNodes(nodes).build();

@@ -116,8 +116,10 @@ public class Config {
     }
 
     public URL downloadURL() {
+        String url = cfg.getProperty("download.es.full.url");
+        url = (StringUtils.hasText(url) ? url : cfg.getProperty("download.es.url") + esZipName());
         try {
-            return new URL(cfg.getProperty("download.es.url") + esZipName());
+            return new URL(url);
         } catch (MalformedURLException ex) {
             throw new IllegalArgumentException("Invalid URL", ex);
         }
@@ -161,7 +163,7 @@ public class Config {
                     }
                 }
             } catch (IOException ex) {
-                throw new IllegalStateException("Cannot detect the Es-YARN jar", ex);
+                throw new IllegalStateException("Cannot detect the ES-YARN jar", ex);
             }
         }
 
@@ -174,11 +176,23 @@ public class Config {
         Set<String> keys = cfg.stringPropertyNames();
         String prefix = "env.";
         for (String key : keys) {
-            if (key.startsWith("env.")) {
+            if (key.startsWith(prefix)) {
                 env.put(key.substring(prefix.length()), cfg.getProperty(key));
             }
         }
         return env;
+    }
+
+    public Map<String, String> systemProps() {
+        Map<String, String> sysProp = new LinkedHashMap<String, String>();
+        Set<String> keys = cfg.stringPropertyNames();
+        String prefix = "sysProp.";
+        for (String key : keys) {
+            if (key.startsWith(prefix)) {
+                sysProp.put(key.substring(prefix.length()), cfg.getProperty(key));
+            }
+        }
+        return sysProp;
     }
 
     public Properties asProperties() {
