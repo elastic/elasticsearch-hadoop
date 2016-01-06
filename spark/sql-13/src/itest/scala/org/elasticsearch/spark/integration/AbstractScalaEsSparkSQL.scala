@@ -102,30 +102,54 @@ object AbstractScalaEsScalaSparkSQL {
     val list = new ju.ArrayList[Array[jl.Object]]()
     // no query
     val noQuery = ""
-    list.add(Array("default", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("defaultstrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("defaultnopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("withmeta", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("withmetastrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("withmetanopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("default", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("defaultstrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("defaultnopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("withmeta", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("withmetastrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
+    list.add(Array("withmetanopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
+
+    // disable double filtering
+    list.add(Array("default_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("defaultstrict_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("defaultnopush_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("withmeta_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("withmetastrict_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
+    list.add(Array("withmetanopush_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
 
     // uri query
     val uriQuery = "?q=*"
-    list.add(Array("defaulturiquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("defaulturiquerystrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("defaulturiquerynopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("withmetauri_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("withmetauri_querystrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("withmetauri_querynopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("defaulturiquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("defaulturiquerystrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("defaulturiquerynopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("withmetauri_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("withmetauri_querystrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
+    list.add(Array("withmetauri_querynopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
+
+    // disable double filtering
+    list.add(Array("defaulturiquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("defaulturiquerystrict_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("defaulturiquerynopush_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("withmetauri_query_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("withmetauri_querystrict_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
+    list.add(Array("withmetauri_querynopush_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
 
     // dsl query
     val dslQuery = """ {"query" : { "match_all" : { } } } """
-    list.add(Array("defaultdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("defaultstrictdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("defaultnopushdslquery", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("withmetadslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("withmetastrictdslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("withmetanopushdslquery", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("defaultdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("defaultstrictdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("defaultnopushdslquery", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("withmetadslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("withmetastrictdslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
+    list.add(Array("withmetanopushdslquery", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
+
+    // disable double filtering
+    list.add(Array("defaultdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("defaultstrictdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("defaultnopushdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("withmetadslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("withmetastrictdslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
+    list.add(Array("withmetanopushdslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
 
     list
   }
@@ -133,14 +157,15 @@ object AbstractScalaEsScalaSparkSQL {
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(classOf[Parameterized])
-class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pushDown: jl.Boolean, strictPushDown: jl.Boolean, query: String = "") extends Serializable {
+class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pushDown: jl.Boolean, strictPushDown: jl.Boolean, doubleFiltering: jl.Boolean, query: String = "") extends Serializable {
 
   val sc = AbstractScalaEsScalaSparkSQL.sc
   val sqc = AbstractScalaEsScalaSparkSQL.sqc
   val cfg = Map(ES_QUERY -> query,
                 ES_READ_METADATA -> readMetadata.toString(),
                 "es.internal.spark.sql.pushdown" -> pushDown.toString(),
-                "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString() )
+                "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString(),
+                "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
   val datInput = TestUtils.sampleArtistsDat()
 
@@ -558,9 +583,17 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown01EqualTo() {
     val df = esDataSource("pd_equalto")
     val filter = df.filter(df("airport").equalTo("OTP"))
+
+    filter.show
+
     if (strictPushDown) {
       assertEquals(0, filter.count())
       // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
+      return
+    }
+    else if (!keepHandledFilters) {
+      // term query pick field with multi values
+      assertEquals(2, filter.count())
       return
     }
 
@@ -572,9 +605,17 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown015NullSafeEqualTo() {
     val df = esDataSource("pd_nullsafeequalto")
     val filter = df.filter(df("airport").eqNullSafe("OTP"))
+
+    filter.show
+
     if (strictPushDown) {
       assertEquals(0, filter.count())
       // however if we change the arguments to be lower cased, it will be Spark who's going to filter out the data
+      return
+    }
+    else if (!keepHandledFilters) {
+      // term query pick field with multi values
+      assertEquals(2, filter.count())
       return
     }
 
@@ -687,6 +728,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       return
     }
 
+    if (!keepHandledFilters) {
+      // term query pick field with multi values
+      assertEquals(2, filter.count())
+      return
+    }
+
+    filter.show
     assertEquals(1, filter.count())
     assertEquals("feb", filter.select("tag").take(1)(0)(0))
   }
@@ -701,6 +749,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       return
     }
 
+    if (!keepHandledFilters) {
+      // term query pick field with multi values
+      assertEquals(2, filter.count())
+      return
+    }
+
+    filter.show
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
   }
@@ -731,6 +786,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testDataSourcePushDown13Not() {
     val df = esDataSource("pd_not")
     val filter = df.filter(!df("reason").isNull)
+
     assertEquals(1, filter.count())
     assertEquals("jan", filter.select("tag").take(1)(0)(0))
   }
@@ -743,6 +799,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     if (strictPushDown) {
       // OTP fails due to strict matching/analyzed
       assertEquals(1, filter.count())
+      return
+    }
+
+    if (!keepHandledFilters) {
+      // term query pick field with multi values
+      assertEquals(3, filter.count())
       return
     }
 
@@ -980,5 +1042,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   def wrapIndex(index: String) = {
     prefix + index
+  }
+
+  private def keepHandledFilters = {
+    !pushDown || (pushDown && doubleFiltering)
   }
 }

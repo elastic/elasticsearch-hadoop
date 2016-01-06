@@ -19,6 +19,8 @@ abstract class Utils {
 
     static final String DATA_SOURCE_PUSH_DOWN = "es.internal.spark.sql.pushdown";
     static final String DATA_SOURCE_PUSH_DOWN_STRICT = "es.internal.spark.sql.pushdown.strict";
+    // double filtering (run Spark filters) or not
+    static final String DATA_SOURCE_KEEP_HANDLED_FILTERS = "es.internal.spark.sql.pushdown.keep.handled.filters";
 
     static boolean isPushDown(Settings cfg) {
         return Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_PUSH_DOWN), true);
@@ -26,6 +28,10 @@ abstract class Utils {
 
     static boolean isPushDownStrict(Settings cfg) {
         return Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_PUSH_DOWN_STRICT), false);
+    }
+
+    static boolean isKeepHandledFilters(Settings cfg) {
+        return Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_KEEP_HANDLED_FILTERS), true) || !isPushDown(cfg);
     }
 
     static String camelCaseToDotNotation(String string) {
