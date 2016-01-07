@@ -22,10 +22,9 @@ import java.util.Arrays;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
-import static org.elasticsearch.hadoop.serialization.field.FieldFilter.filter;
+import static org.elasticsearch.hadoop.serialization.field.FieldFilter.*;
 
 public class FieldFilterTest {
 
@@ -107,5 +106,10 @@ public class FieldFilterTest {
     @Test
     public void testIncludeExactMatchWithExcludePattern() {
         assertFalse(filter("foo.bar", Arrays.asList("foo.bar"), Arrays.asList("foo.*")));
+    }
+
+    @Test
+    public void testMatchNonExisting() {
+        assertFalse(filter("nested.what", Arrays.asList("nested.bar"), null));
     }
 }
