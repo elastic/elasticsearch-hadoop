@@ -26,7 +26,13 @@ When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wi
 
 It is important to note that JSON objects (delimited by `{}` and typically associated with maps) are *unordered*, in other words, they do *not* maintain order. JSON
 arrays (typically associated with lists or sequences) are *ordered*, that is, they *do* preserve the initial insertion order. This impacts the way objects are read from {es} as one might find the insertion structure to be different than the extraction one.
-It is however easy to circuvent this problem - as JSON objects (maps) contain fields, use the field names (or keys) instead of their position inside the document to reliably get their values (in Java terms think of a JSON object as a +HashMap+ as oppose to a +LinkedHashMap+).
+It is however easy to circumvent this problem - as JSON objects (maps) contain fields, use the field names (or keys) instead of their position inside the document to reliably get their values (in Java terms think of a JSON object as a +HashMap+ as oppose to a +LinkedHashMap+).
+
+[float]
+[[mapping-multi-values]]
+=== Handling array/multi-values fields
+
+{es} treats fields with single or multi-values the same; in fact the mapping provides no information about this. As a client though, it means one cannot tell whether a field is single-valued or not until is actually being read. In most cases this is not an issue and {eh} automatically creates the necessary list/array on the fly. However in environments with strict schema such as Spark SQL, changing a field actual value from its declared type is not allowed worse yet, this information needs to be available even before reading the data. And since the mapping is not conclusive enough, {eh} allows the user to specify the extra information through <<cfg-field-info, field information>> specifically +es.field.read.as.array.include+ and +es.field.read.as.array.include+.
 
 [float]
 === Automatic mapping

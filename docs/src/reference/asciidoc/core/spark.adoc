@@ -540,6 +540,7 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc ->
 [float]
 ==== Type conversion
 
+IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration option.
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 {eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:
@@ -1173,6 +1174,7 @@ JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>
 [float]
 ==== Spark SQL Type conversion
 
+IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration option.
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 {eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:

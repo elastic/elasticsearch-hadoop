@@ -180,12 +180,6 @@ The document field/property name containing the document time-to-live. To specif
 The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
 
 added[2.1]
-`es.mapping.date.rich` (default true)::
-Whether to create a _rich_ +Date+ like object for +Date+ fields in {es} or returned them as primitives (+String+ or +long+). By default this is
-true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in +Date+ object and as such
-+LongWritable+ and +Text+ are returned regardless of this setting.
-
-added[2.1]
 `es.mapping.include` (default none)::
 Field/property to be included in the document sent to {es}. Useful for _extracting_ the needed data from entities. The syntax is similar
 to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
@@ -217,6 +211,36 @@ Using the configuration above, each entry will have only its top-level fields, s
 in the document with the exception of any nested field named +description+. Additionally the document parent will be +123+ while the
 document id extracted from field +uuid+.
 
+
+[float]
+[[cfg-field-info]]
+==== Field information (when reading from {es})
+
+added[2.1]
+`es.mapping.date.rich` (default true)::
+Whether to create a _rich_ +Date+ like object for +Date+ fields in {es} or returned them as primitives (+String+ or +long+). By default this is
+true. The actual object type is based on the library used; noteable exception being Map/Reduce which provides no built-in +Date+ object and as such
++LongWritable+ and +Text+ are returned regardless of this setting.
+
+added[2.2]
+`es.field.read.as.array.include` (default empty)::
+Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
+whether to instantiate one value or a array type (depending on the library type). When encountering multiple values, {eh} will automatically use 
+the array/list type but in strict mapping scenarios (like Spark SQL) this might lead to an unexpected schema change.
+The syntax is similar to that of {es} {ref}/search-request-source-filtering.html[include/exclude]. 
+Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are included.
+
+For example:
+[source,ini]
+----
+# mapping nested.bar as an array
+es.field.read.as.array.include = nested.bar
+----
+
+`es.field.read.as.array.exclude` (default empty)::
+Fields/properties that should be considered as arrays/lists. Similar to `es.field.read.as.array.include` above. Multiple values can be specified by using a comma. 
+By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
+before-hand.
 
 [float]
 ==== Metadata (when reading from {es})
