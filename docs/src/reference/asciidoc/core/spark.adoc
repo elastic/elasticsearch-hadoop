@@ -817,12 +817,23 @@ In Spark 1.4, one would use the following similar API calls:
 [source,scala]
 ----
 // Spark 1.4 style
-val df = sql.read()<1>.format("org.elasticsearch.spark.sql"<2>).load("spark/index"<3>)
+val df = sql.read<1>.format("org.elasticsearch.spark.sql"<2>).load("spark/index"<3>)
 ----
 
 <1> +SQLContext+ _experimental_ +read+ method for arbitrary data sources
 <2> the data source provider - +org.elasticsearch.spark.sql+
 <3> path or resource to load - in this case the index/type in {es}
+
+In Spark 1.5, this can be further simplified to:
+
+[source,scala]
+----
+// Spark 1.5 s
+val df = sql.read.format("es"<1>).load("spark/index")
+----
+
+<1> Use +es+ as an alias instead of the full package name for the +DataSource+ provider
+
 
 Whatever API is used, once created, the +DataFrame+ can be accessed freely to manipulate the data.
 
@@ -832,9 +843,13 @@ The __sources__ declaration also allows specific options to be passed in, namely
 |===
 | Name | Default value| Description
 
-| `path`           | {es} index/type    | _required_
-| `pushdown`       | `true`             | Whether to translate (__push-down__) Spark SQL into {es} Query DSL
-| `strict`         | `false`            | Whether to use _exact_ (not analyzed) matching or not (analyzed)
+| `path`             | {es} index/type    | _required_
+| `pushdown`         | `true`             | Whether to translate (__push-down__) Spark SQL into {es} Query DSL
+| `strict`           | `false`            | Whether to use _exact_ (not analyzed) matching or not (analyzed)
+
+3+h| Usable in Spark 1.6 or higher
+
+| `double.filtering` | `true`             | Whether to tell Spark apply its own filtering on the fitlers pushed down 
 
 |===
 
@@ -858,8 +873,8 @@ val spark13DF = sql.load("org.elasticsearch.spark.sql", options13<3>)
 val options = Map("pushdown"<1> -> "true", "es.nodes"<2> -> "someNode", "es.port" -> "9200")
 
 // Spark 1.4 style
-val spark14DF = sql.read().format("org.elasticsearch.spark.sql")
-                          .options<3>(options).load("spark/index")
+val spark14DF = sql.read.format("org.elasticsearch.spark.sql")
+                        .options<3>(options).load("spark/index")
 ----
 
 <1> `pushdown` option - specific to Spark data sources
@@ -891,7 +906,7 @@ An important _hidden_ feature of using {eh} as a Spark `source` is that the conn
 This significantly increases the queries performance and minimizes the CPU, memory and I/O on both Spark and {es} clusters as only the needed data is returned (as oppose to returning the data in bulk only to be processed and discarded by Spark).
 Note the push down operations apply even when one specifies a query - the connector will _enhance_ it according to the specified SQL.
 
-As a side note, {eh} supports _all_ the `Filter`s available in Spark (1.3.0 to 1.4.0) while retaining backwards binary-compatibility with Spark 1.3.0, pushing down to full extent the SQL operations to {es} without any user interference.
+As a side note, {eh} supports _all_ the `Filter`s available in Spark (1.3.0 and higher) while retaining backwards binary-compatibility with Spark 1.3.0, pushing down to full extent the SQL operations to {es} without any user interference.
 
 To wit, consider the following Spark SQL:
 
@@ -948,6 +963,8 @@ The connector translates the query into:
 ----
 
 Further more, the pushdown filters can work on +analyzed+ terms (the default) or can be configured to be _strict_ and provide +exact+ matches (work only on ++not-analyzed++ fields). Unless one manually specifies the mapping, it is highly recommended to leave the defaults as they are.  This and other topics are discussed at length in the {es} https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html[Reference Documentation].
+
+Note that `double.filtering`, available since {eh} 2.2 for Spark 1.6 or higher, allows filters that are already pushed down to {es} to be processed/evaluated by Spark as well (default) or not. Turning this feature off, especially when dealing with large data sizes speed things up. However one should pay attention to the semantics as turning this off, might return different results (depending on how the data is indexed, +analyzed+ vs ++not_analyzed++). In general, when turning _strict_ on, one can disable `double.filtering` as well.
 
 [[spark-data-sources-12]]
 [float]
