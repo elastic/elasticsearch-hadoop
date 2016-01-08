@@ -36,6 +36,9 @@ private[sql] trait RowValueReader extends SettingsAware {
 
   def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any) {
     val pos = esRow.rowOrder.indexOf(key.toString())
+    if (pos < 0 || pos >= esRow.values.size) {
+      throw new EsHadoopIllegalStateException(s"Position for '$currentField' not found in row; typically this is caused by a mapping inconsistency")
+    }
     esRow.values.update(pos, value)
   }
 }
