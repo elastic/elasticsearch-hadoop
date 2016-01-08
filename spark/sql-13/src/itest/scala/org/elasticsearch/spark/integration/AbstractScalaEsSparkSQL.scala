@@ -1040,6 +1040,40 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(3, df.count())
   }
 
+  //@Test
+  def testNestedEmptyArray() {
+    val json = """{"foo" : 5, "nested": { "bar" : [], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/empty-nested-array")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.read.format("es").option("es.field.read.as.array.include", "nested.bar").load(index)
+    println(df.schema)
+    df.explain
+    df.show
+  }
+
+  @Test
+  def testDoubleNestedArray() {
+    val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/double-nested-array")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.read.format("es").option("es.field.read.as.array.include", "nested.bar,foo,nested.bar.scores").load(index)
+    println(df.schema)
+    df.explain
+    df.show
+  }
+
+  //@Test
+  def testArrayExcludes() {
+    val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/nested-array-exclude")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.read.format("es").option("es.read.field.exclude", "nested.bar").load(index)
+    println(df.schema.treeString)
+    df.explain
+    df.show
+  }
+
+
   def wrapIndex(index: String) = {
     prefix + index
   }

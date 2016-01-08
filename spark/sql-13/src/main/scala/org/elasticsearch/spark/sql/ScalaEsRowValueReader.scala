@@ -52,7 +52,8 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   }
 
   // start array
-  override def createArray(typ: FieldType) = {
+  override def createArray(typ: FieldType): AnyRef = {
+    val previousLevel = (inArray, currentArrayRowOrder)
     if (arrayFields.contains(currentField)) {
       inArray = true
       // array of objects
@@ -69,13 +70,17 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
           s"""Field '$currentField' is backed by an array but the associated Spark Schema does not reflect this;
               (use ${ConfigurationOptions.ES_FIELD_READ_AS_ARRAY_INCLUDE}/exclude) """.stripMargin)
     }
-    super.createArray(typ)
+    // since the list is not actually, return the parent field information usable for nested arrays
+    previousLevel
   }
 
   // end array
   override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
-    inArray = false
-    currentArrayRowOrder = null
+    // restore previous state
+    array match {
+      case (pastInArray: Boolean, pastRowOrder: Seq[String]) => { inArray = pastInArray; currentArrayRowOrder = pastRowOrder }
+      case _                                                 => { inArray = false; currentArrayRowOrder = null}
+    }
     super.addToArray(array, values)
   }
 

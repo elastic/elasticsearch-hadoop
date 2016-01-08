@@ -151,7 +151,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
     value
   }
 
-  def createArray(typ: FieldType) = {
+  def createArray(typ: FieldType): AnyRef = {
     List.empty;
   }
 
