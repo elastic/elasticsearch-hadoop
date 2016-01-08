@@ -1051,7 +1051,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.show
   }
 
-  @Test
+  //@Test
   def testDoubleNestedArray() {
     val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/double-nested-array")
@@ -1073,6 +1073,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.show
   }
 
+  //@Test
+  def testGeoShape() {
+    val json = """{"rect":{"type":"multipoint","coordinates":[[[50,32],[69,32],[69,50],[50,50],[50,32]]]}}"""
+    val index = wrapIndex("sparksql-test/geoshape")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.read.format("es").load(index)
+    println(df.schema.treeString)
+    df.show
+  }
 
   def wrapIndex(index: String) = {
     prefix + index
