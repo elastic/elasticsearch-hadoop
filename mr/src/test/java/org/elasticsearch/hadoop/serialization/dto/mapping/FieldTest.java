@@ -18,12 +18,6 @@
  */
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +26,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
 
 
 public class FieldTest {
@@ -145,17 +143,17 @@ public class FieldTest {
         findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), fl);
         assertThat(findFixes, is(nullValue()));
     }
-    
+
     @Test
     public void testFieldInclude() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested.json"), Map.class);
         Field fl = Field.parseField(value);
 
         Field filtered = MappingUtils.filter(fl, Collections.singleton("*a*e"), Collections.<String> emptyList());
-        
+
         assertThat(fl.name(), is(filtered.name()));
         assertThat(fl.type(), is(filtered.type()));
-        
+
         Field[] props = filtered.properties();
 
         assertThat(props.length, is(2));
@@ -163,4 +161,22 @@ public class FieldTest {
         assertThat(props[1].name(), is("name"));
     }
 
+    @Test
+    public void testFieldExclude() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested_arrays_mapping.json"), Map.class);
+        Field fl = Field.parseField(value);
+
+        Field filtered = MappingUtils.filter(fl, Collections.<String> emptyList(), Collections.singleton("nested.bar"));
+
+        assertThat(fl.name(), is(filtered.name()));
+        assertThat(fl.type(), is(filtered.type()));
+
+        Field[] props = filtered.properties();
+
+        assertThat(props.length, is(2));
+        assertThat(props[0].name(), is("foo"));
+        assertThat(props[1].name(), is("nested"));
+        assertThat(props[1].properties().length, is(1));
+        assertThat(props[1].properties()[0].name(), is("what"));
+    }
 }

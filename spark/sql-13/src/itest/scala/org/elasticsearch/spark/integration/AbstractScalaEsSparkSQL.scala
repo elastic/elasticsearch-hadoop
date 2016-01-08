@@ -231,7 +231,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(1, df.count())
   }
 
-  @Test
+  //@Test
   def testMultiFieldsWithSameName {
     val index = wrapIndex("sparksql-test")
     val indexAndType = s"$index/array-mapping-nested"

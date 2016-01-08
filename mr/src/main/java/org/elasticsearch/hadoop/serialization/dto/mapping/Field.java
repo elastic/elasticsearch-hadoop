@@ -76,7 +76,7 @@ public class Field implements Serializable {
         Field[] props = field.properties();
 
         // handle the common case of mapping by removing the first field (mapping.)
-        if (props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
+        if (props.length > 0 && props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
             // followed by <type> (index/type) removal
             return props[0].properties()[0];
         }

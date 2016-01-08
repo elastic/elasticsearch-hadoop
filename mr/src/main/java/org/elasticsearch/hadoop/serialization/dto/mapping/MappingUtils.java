@@ -142,12 +142,15 @@ public abstract class MappingUtils {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
 
         if (FieldFilter.filter(fieldName, includes, excludes)) {
-            filtered.add(field);
-        }
-
-        if (FieldType.OBJECT == field.type()) {
-            for (Field nestedField : field.properties()) {
-                processField(nestedField, fieldName, filtered, includes, excludes);
+            if (FieldType.OBJECT == field.type()) {
+                List<Field> nested = new ArrayList<Field>();
+                for (Field nestedField : field.properties()) {
+                    processField(nestedField, field.name(), nested, includes, excludes);
+                }
+                filtered.add(new Field(field.name(), field.type(), nested));
+            }
+            else {
+                filtered.add(field);
             }
         }
     }

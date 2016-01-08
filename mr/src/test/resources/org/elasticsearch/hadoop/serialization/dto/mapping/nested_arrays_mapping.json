@@ -1,0 +1,27 @@
+{
+  "nested-array-exclude" : {
+    "properties" : {
+      "foo" : {
+        "type" : "long"
+      },
+      "nested" : {
+        "properties" : {
+          "bar" : {
+            "properties" : {
+              "date" : {
+                "type" : "date",
+                "format" : "strict_date_optional_time||epoch_millis"
+              },
+              "scores" : {
+                "type" : "long"
+              }
+            }
+          },
+          "what" : {
+            "type" : "string"
+          }
+        }
+      }
+    }
+  }
+}
