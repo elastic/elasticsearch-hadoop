@@ -231,7 +231,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(1, df.count())
   }
 
-  //@Test
+  @Test
   def testMultiFieldsWithSameName {
     val index = wrapIndex("sparksql-test")
     val indexAndType = s"$index/array-mapping-nested"
@@ -250,11 +250,11 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     |      "level" : 2,
     |      "level3" : true
     |    },
-    |    "foo" : 10,
+    |    "foo2" : 10,
     |    "level" : 1,
     |    "level2" : 2
     |  },
-    |  "foo" : "text",
+    |  "foo1" : "text",
     |  "level" : 0,
     |  "level1" : "string"
     |}
