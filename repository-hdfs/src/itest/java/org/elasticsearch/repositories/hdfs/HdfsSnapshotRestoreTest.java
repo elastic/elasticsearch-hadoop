@@ -18,21 +18,17 @@
  */
 package org.elasticsearch.repositories.hdfs;
 
-import java.io.IOException;
+import java.util.Collection;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.plugin.hadoop.hdfs.HdfsPlugin;
+import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryMissingException;
-import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
@@ -41,24 +37,37 @@ import org.elasticsearch.test.store.MockFSDirectoryService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 
-@ClusterScope(scope = Scope.TEST, numDataNodes = 2)
 @Ignore("Guava classpath madness")
+@ClusterScope(scope = Scope.SUITE, numDataNodes = 1, transportClientRatio = 0.0)
 public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
 
     @Override
-    protected Settings nodeSettings(int ordinal) {
-        // During restore we frequently restore index to exactly the same state it was before, that might cause the same
-        // checksum file to be written twice during restore operation
-        return Settings.builder().put(super.nodeSettings(ordinal))
-                .put("path.home", createTempDir())
+    public Settings indexSettings() {
+        return Settings.builder()
+                .put(super.indexSettings())
                 .put(MockFSDirectoryService.RANDOM_PREVENT_DOUBLE_WRITE, false)
                 .put(MockFSDirectoryService.RANDOM_NO_DELETE_OPEN_FILE, false)
-                .put("plugin.types", HdfsPlugin.class.getName())
                 .build();
+    }
+
+    @Override
+    protected Settings nodeSettings(int ordinal) {
+        Settings.Builder settings = Settings.builder()
+                .put(super.nodeSettings(ordinal))
+                .put("path.home", createTempDir())
+                .put("path.repo", "")
+                .put(MockFSDirectoryService.RANDOM_PREVENT_DOUBLE_WRITE, false)
+                .put(MockFSDirectoryService.RANDOM_NO_DELETE_OPEN_FILE, false);
+        return settings.build();
+    }
+
+    @Override
+    protected Collection<Class<? extends Plugin>> nodePlugins() {
+        return pluginList(HdfsTestPlugin.class);
     }
 
     private String path;
@@ -67,16 +76,13 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
     public final void wipeBefore() throws Exception {
         wipeRepositories();
         path = "build/data/repo-" + randomInt();
-        cleanRepositoryFiles(path);
     }
 
     @After
     public final void wipeAfter() throws Exception {
         wipeRepositories();
-        cleanRepositoryFiles(path);
     }
 
-    @Test
     public void testSimpleWorkflow() {
         Client client = client();
         logger.info("-->  creating hdfs repository with path [{}]", path);
@@ -84,7 +90,9 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
         PutRepositoryResponse putRepositoryResponse = client.admin().cluster().preparePutRepository("test-repo")
                 .setType("hdfs")
                 .setSettings(Settings.settingsBuilder()
-                        .put("uri", "file://./")
+                        //.put("uri", "hdfs://127.0.0.1:51227")
+                        .put("conf.fs.es-hdfs.impl", "org.elasticsearch.repositories.hdfs.TestingFs")
+                        .put("uri", "es-hdfs://./build/")
                         .put("path", path)
                         .put("conf", "additional-cfg.xml, conf-2.xml")
                         .put("chunk_size", randomIntBetween(100, 1000) + "k")
@@ -102,9 +110,9 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
             index("test-idx-3", "doc", Integer.toString(i), "foo", "baz" + i);
         }
         refresh();
-        assertThat(client.prepareCount("test-idx-1").get().getCount(), equalTo(100L));
-        assertThat(client.prepareCount("test-idx-2").get().getCount(), equalTo(100L));
-        assertThat(client.prepareCount("test-idx-3").get().getCount(), equalTo(100L));
+        assertThat(count(client, "test-idx-1"), equalTo(100L));
+        assertThat(count(client, "test-idx-2"), equalTo(100L));
+        assertThat(count(client, "test-idx-3"), equalTo(100L));
 
         logger.info("--> snapshot");
         CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap").setWaitForCompletion(true).setIndices("test-idx-*", "-test-idx-3").get();
@@ -124,9 +132,9 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
             client.prepareDelete("test-idx-3", "doc", Integer.toString(i)).get();
         }
         refresh();
-        assertThat(client.prepareCount("test-idx-1").get().getCount(), equalTo(50L));
-        assertThat(client.prepareCount("test-idx-2").get().getCount(), equalTo(50L));
-        assertThat(client.prepareCount("test-idx-3").get().getCount(), equalTo(50L));
+        assertThat(count(client, "test-idx-1"), equalTo(50L));
+        assertThat(count(client, "test-idx-2"), equalTo(50L));
+        assertThat(count(client, "test-idx-3"), equalTo(50L));
 
         logger.info("--> close indices");
         client.admin().indices().prepareClose("test-idx-1", "test-idx-2").get();
@@ -136,9 +144,9 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
         assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
 
         ensureGreen();
-        assertThat(client.prepareCount("test-idx-1").get().getCount(), equalTo(100L));
-        assertThat(client.prepareCount("test-idx-2").get().getCount(), equalTo(100L));
-        assertThat(client.prepareCount("test-idx-3").get().getCount(), equalTo(50L));
+        assertThat(count(client, "test-idx-1"), equalTo(100L));
+        assertThat(count(client, "test-idx-2"), equalTo(100L));
+        assertThat(count(client, "test-idx-3"), equalTo(50L));
 
         // Test restore after index deletion
         logger.info("--> delete indices");
@@ -147,7 +155,7 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
         restoreSnapshotResponse = client.admin().cluster().prepareRestoreSnapshot("test-repo", "test-snap").setWaitForCompletion(true).setIndices("test-idx-*", "-test-idx-2").execute().actionGet();
         assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
         ensureGreen();
-        assertThat(client.prepareCount("test-idx-1").get().getCount(), equalTo(100L));
+        assertThat(count(client, "test-idx-1"), equalTo(100L));
         ClusterState clusterState = client.admin().cluster().prepareState().get().getState();
         assertThat(clusterState.getMetaData().hasIndex("test-idx-1"), equalTo(true));
         assertThat(clusterState.getMetaData().hasIndex("test-idx-2"), equalTo(false));
@@ -157,24 +165,30 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
         cluster().wipeIndices(indices);
     }
 
-    @Test(expected = RepositoryVerificationException.class)
-    @Ignore
+    // RepositoryVerificationException.class
     public void testWrongPath() {
         Client client = client();
         logger.info("-->  creating hdfs repository with path [{}]", path);
 
-        PutRepositoryResponse putRepositoryResponse = client.admin().cluster().preparePutRepository("test-repo")
-                .setType("hdfs")
-                .setSettings(Settings.settingsBuilder()
-                        .put("uri", "file://./")
-                        .put("path", path + "a@b$c#11:22")
-                        .put("chunk_size", randomIntBetween(100, 1000) + "k")
-                        .put("compress", randomBoolean())
-                        ).get();
-        assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+        try {
+            PutRepositoryResponse putRepositoryResponse = client.admin().cluster().preparePutRepository("test-repo")
+                    .setType("hdfs")
+                    .setSettings(Settings.settingsBuilder()
+                            // .put("uri", "hdfs://127.0.0.1:51227/")
+                            .put("conf.fs.es-hdfs.impl", "org.elasticsearch.repositories.hdfs.TestingFs")
+                            .put("uri", "es-hdfs:///")
+                            .put("path", path + "a@b$c#11:22")
+                            .put("chunk_size", randomIntBetween(100, 1000) + "k")
+                            .put("compress", randomBoolean()))
+                            .get();
+            assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
 
-        createIndex("test-idx-1", "test-idx-2", "test-idx-3");
-        ensureGreen();
+            createIndex("test-idx-1", "test-idx-2", "test-idx-3");
+            ensureGreen();
+            fail("Path name is invalid");
+        } catch (RepositoryException re) {
+            // expected
+        }
     }
 
     /**
@@ -194,12 +208,7 @@ public class HdfsSnapshotRestoreTest extends ESIntegTestCase {
         }
     }
 
-    /**
-     * Deletes content of the repository files in the bucket
-     */
-    public void cleanRepositoryFiles(String basePath) throws IOException {
-        LocalFileSystem fs = FileSystem.getLocal(new Configuration());
-        Path p = new Path(path);
-        fs.delete(p.makeQualified(fs), true);
+    private long count(Client client, String index) {
+        return client.prepareSearch(index).setSize(0).get().getHits().totalHits();
     }
 }

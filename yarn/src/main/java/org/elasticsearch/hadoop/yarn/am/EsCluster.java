@@ -210,14 +210,14 @@ class EsCluster implements AutoCloseable {
         // plus expand its vars into the env
         YarnUtils.addToEnv(env, appConfig.envVars());
 
-        // add system properties (to JAVA_OPTS for ES to pick them up)
+        // add system properties (to ES_JAVA_OPTS for ES to pick them up)
         Map<String, String> sysProps = appConfig.systemProps();
         if (!sysProps.isEmpty()) {
-            StringBuilder sb = new StringBuilder(ApplicationConstants.PARAMETER_EXPANSION_LEFT + "JAVA_OPTS" + ApplicationConstants.PARAMETER_EXPANSION_RIGHT);
+            StringBuilder sb = new StringBuilder();
             for (Map.Entry<String, String> prop : appConfig.systemProps().entrySet()) {
                 sb.append(String.format(Locale.ROOT, " -D%s=%s", prop.getKey(), prop.getValue()));
             }
-            YarnUtils.addToEnv(env, "JAVA_OPTS", sb.toString());
+            YarnUtils.addToEnv(env, "ES_JAVA_OPTS", sb.toString());
         }
 
         return env;
