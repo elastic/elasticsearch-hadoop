@@ -24,9 +24,9 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.core.IsEqual.*;
+import static org.hamcrest.core.IsEqual.equalTo;
 
 public class SettingsUtilsTest {
 
@@ -39,7 +39,7 @@ public class SettingsUtilsTest {
         PropertiesSettings settings = new PropertiesSettings(props);
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
-        assertThat("localhost:9800", equalTo(nodes.get(0)));
+        assertThat("127.0.0.1:9800", equalTo(nodes.get(0)));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class SettingsUtilsTest {
         PropertiesSettings settings = new PropertiesSettings(props);
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
-        assertThat("localhost:9800", equalTo(nodes.get(0)));
+        assertThat("127.0.0.1:9800", equalTo(nodes.get(0)));
     }
 
     @Test
@@ -65,6 +65,6 @@ public class SettingsUtilsTest {
         PropertiesSettings settings = new PropertiesSettings(props);
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
-        assertThat("localhost:9800", equalTo(nodes.get(0)));
+        assertThat("127.0.0.1:9800", equalTo(nodes.get(0)));
     }
 }
