@@ -89,6 +89,7 @@ def baseZip(Zip zip) {
     zip.from (".") { include "README.md" }
     zip.from (".") { 
         include "plugin-descriptor.properties"
+        include "plugin-security.policy"
         expand (version: project.version, esVersion: project.esVersion,
             jmvCompatibility: project.targetCompatibility,
             description: project.description, 
