@@ -18,6 +18,15 @@
  */
 package org.elasticsearch.plugin.hadoop.hdfs;
 
+import org.elasticsearch.common.SuppressForbidden;
+import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.io.PathUtils;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardRepository;
+import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoriesModule;
+import org.elasticsearch.repositories.Repository;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -25,16 +34,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.DomainCombiner;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.elasticsearch.common.io.FileSystemUtils;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardRepository;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.repositories.RepositoriesModule;
-import org.elasticsearch.repositories.Repository;
+import java.util.Locale;
 
 public class HdfsPlugin extends Plugin {
 
@@ -45,19 +52,14 @@ public class HdfsPlugin extends Plugin {
 
     @Override
     public String description() {
-        return "HDFS Snapshot/Restore Plugin";
+        return "HDFS Repository Plugin";
     }
 
     @SuppressWarnings("unchecked")
     public void onModule(RepositoriesModule repositoriesModule) {
         String baseLib = detectLibFolder();
-
-        List<URL> cp = new ArrayList<>();
-        // add plugin internal jar
-        discoverJars(createURI(baseLib, "internal-libs"), cp);
-        // add Hadoop jars
-        discoverJars(createURI(baseLib, "hadoop-libs"), cp);
-
+        List<URL> cp = getHadoopClassLoaderPath(baseLib);
+        
         ClassLoader hadoopCL = URLClassLoader.newInstance(cp.toArray(new URL[cp.size()]), getClass().getClassLoader());
 
         Class<? extends Repository> repository = null;
@@ -68,12 +70,41 @@ public class HdfsPlugin extends Plugin {
         }
 
         repositoriesModule.registerRepository("hdfs", repository, BlobStoreIndexShardRepository.class);
-
         Loggers.getLogger(HdfsPlugin.class).info("Loaded Hadoop [{}] libraries from {}", getHadoopVersion(hadoopCL), baseLib);
+    }
 
-        if (System.getSecurityManager() != null) {
-            Loggers.getLogger(HdfsPlugin.class).warn("The Java Security Manager is enabled however Hadoop is not compatible with it and thus needs to be disabled; see the docs for more information...");
+    public static AccessControlContext hadoopACC() {
+        return AccessController.doPrivileged(new PrivilegedAction<AccessControlContext>() {
+            @Override
+            public AccessControlContext run() {
+                return new AccessControlContext(AccessController.getContext(), new HadoopDomainCombiner());
+            }
+        });
+    }
+
+    private static class HadoopDomainCombiner implements DomainCombiner {
+
+        private static String BASE_LIB = detectLibFolder();
+        
+        @Override
+        public ProtectionDomain[] combine(ProtectionDomain[] currentDomains, ProtectionDomain[] assignedDomains) {
+            for (ProtectionDomain pd : assignedDomains) {
+                if (pd.getCodeSource().getLocation().toString().startsWith(BASE_LIB)) {
+                    return assignedDomains;
+                }
+            }
+
+            return currentDomains;
         }
+    }
+
+    protected List<URL> getHadoopClassLoaderPath(String baseLib) {
+        List<URL> cp = new ArrayList<>();
+        // add plugin internal jar
+        discoverJars(createURI(baseLib, "internal-libs"), cp, false);
+        // add Hadoop jars
+        discoverJars(createURI(baseLib, "hadoop-libs"), cp, true);
+        return cp;
     }
 
     private String getHadoopVersion(ClassLoader hadoopCL) {
@@ -98,13 +129,14 @@ public class HdfsPlugin extends Plugin {
         return version;
     }
 
-    private String detectLibFolder() {
-        ClassLoader cl = getClass().getClassLoader();
+    private static String detectLibFolder() {
+        ClassLoader cl = HdfsPlugin.class.getClassLoader();
 
         // we could get the URL from the URLClassloader directly
         // but that can create issues when running the tests from the IDE
-        // we could detect that by loading resources but that as well relies on the JAR URL
-        String classToLookFor = getClass().getName().replace(".", "/").concat(".class");
+        // we could detect that by loading resources but that as well relies on
+        // the JAR URL
+        String classToLookFor = HdfsPlugin.class.getName().replace(".", "/").concat(".class");
         URL classURL = cl.getResource(classToLookFor);
         if (classURL == null) {
             throw new IllegalStateException("Cannot detect itself; something is wrong with this ClassLoader " + cl);
@@ -129,7 +161,7 @@ public class HdfsPlugin extends Plugin {
             base = base.substring(0, base.length() - classToLookFor.length());
         }
 
-        // append hadoop-libs/
+        // append /
         if (!base.endsWith("/")) {
             base = base.concat("/");
         }
@@ -142,19 +174,22 @@ public class HdfsPlugin extends Plugin {
         try {
             return new URI(location);
         } catch (URISyntaxException ex) {
-            throw new IllegalStateException(String.format("Cannot detect plugin folder; [%s] seems invalid", location), ex);
+            throw new IllegalStateException(String.format(Locale.ROOT, "Cannot detect plugin folder; [%s] seems invalid", location), ex);
         }
     }
 
-    private void discoverJars(URI libPath, List<URL> cp) {
+    @SuppressForbidden(reason = "discover nested jar")
+    private void discoverJars(URI libPath, List<URL> cp, boolean optional) {
         try {
-            Path[] jars = FileSystemUtils.files(Paths.get(libPath), "*.jar");
+            Path[] jars = FileSystemUtils.files(PathUtils.get(libPath), "*.jar");
 
             for (Path path : jars) {
                 cp.add(path.toUri().toURL());
             }
         } catch (IOException ex) {
-            throw new IllegalStateException("Cannot compute plugin classpath", ex);
+            if (!optional) {
+                throw new IllegalStateException("Cannot compute plugin classpath", ex);
+            }
         }
     }
 }
