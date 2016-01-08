@@ -46,10 +46,10 @@ _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart
 
 ### Stable version
 As with any other plugin, simply run:
-`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0-beta1`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0-rc1`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0.beta1-<classifier>`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0.rc1-<classifier>`
 
 ### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:

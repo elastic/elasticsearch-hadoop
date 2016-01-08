@@ -25,14 +25,14 @@ Available through any Maven-compatible tool:
   <version>2.1.2</version>
 </dependency>
 ```
-### Beta Release (currently `2.2.0-beta1`)
+### Beta Release (currently `2.2.0-rc1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.2.0-beta1</version>
+  <version>2.2.0-rc1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
