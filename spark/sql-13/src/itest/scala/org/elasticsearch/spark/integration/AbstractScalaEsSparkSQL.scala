@@ -1051,7 +1051,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.show
   }
 
-  //@Test
+  @Test
   def testDoubleNestedArray() {
     val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/double-nested-array")
@@ -1081,6 +1081,23 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = sqc.read.format("es").load(index)
     println(df.schema.treeString)
     df.show
+  }
+
+  @Test
+  def testMultiIndexes() {
+    // add some data
+    val jsonDoc = """{"artist" : "buckethead", "album": "mirror realms" }"""
+    val index1 = wrapIndex("sparksql-multi-index-1/doc")
+    val index2 = wrapIndex("sparksql-multi-index-2/doc")
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(index1)
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(index2)
+    RestUtils.refresh(wrapIndex("sparksql-multi-index-1"))
+    RestUtils.refresh(wrapIndex("sparksql-multi-index-2"))
+    val multiIndex = wrapIndex("sparksql-multi-index-1,") + index2
+    val df = sqc.read.format("es").load(multiIndex)
+    df.show
+    println(df.selectExpr("count(*)").show(5))
+    assertEquals(2, df.count())
   }
 
   def wrapIndex(index: String) = {

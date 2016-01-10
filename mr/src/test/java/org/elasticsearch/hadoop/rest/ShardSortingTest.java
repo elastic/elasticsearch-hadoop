@@ -36,7 +36,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class ShardSorting {
+public class ShardSortingTest {
 
     @Test
     public void testPowerSet() {
@@ -138,7 +138,7 @@ public class ShardSorting {
         List<List<Map<String, Object>>> targetShards = new ArrayList<List<Map<String, Object>>>();
         targetShards.addAll(shardGroups.values());
 
-        Map<Shard, Node> find = ShardSorter.find(targetShards, nodes, LogFactory.getLog(ShardSorting.class));
+        Map<Shard, Node> find = ShardSorter.find(targetShards, nodes, LogFactory.getLog(ShardSortingTest.class));
         if (find.isEmpty()) {
             return Collections.emptyMap();
         }
