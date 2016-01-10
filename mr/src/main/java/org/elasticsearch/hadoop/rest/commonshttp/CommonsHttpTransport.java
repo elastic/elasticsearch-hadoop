@@ -85,6 +85,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private HttpConnection conn;
     private String proxyInfo = "";
     private final String httpInfo;
+    private final boolean sslEnabled;
+    private final String pathPrefix;
     private final Settings settings;
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
@@ -155,6 +157,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     public CommonsHttpTransport(Settings settings, String host) {
         this.settings = settings;
         httpInfo = host;
+        sslEnabled = settings.getNetworkSSLEnabled();
+
+        String pathPref = settings.getNodesPathPrefix();
+        pathPrefix = (StringUtils.hasText(pathPref) ? addLeadingSlashIfNeeded(StringUtils.trimWhitespace(pathPref)) : StringUtils.trimWhitespace(pathPref));
 
         HttpClientParams params = new HttpClientParams();
         params.setParameter(HttpMethodParams.RETRY_HANDLER, new DefaultHttpMethodRetryHandler(
@@ -180,7 +186,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         hostConfig = (HostConfiguration) authSettings[0];
 
         try {
-            hostConfig.setHost(new URI(escapeUri(host, settings.getNetworkSSLEnabled()), false));
+            hostConfig.setHost(new URI(escapeUri(host, sslEnabled), false));
         } catch (IOException ex) {
             throw new EsHadoopTransportException("Invalid target URI " + host, ex);
         }
@@ -200,7 +206,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     private HostConfiguration setupSSLIfNeeded(Settings settings, HostConfiguration hostConfig) {
-        if (!settings.getNetworkSSLEnabled()) {
+        if (!sslEnabled) {
             return hostConfig;
         }
 
@@ -336,8 +342,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             // switch protocol
             // due to how HttpCommons work internally this dance is best to be kept as is
             //
-            String schema = settings.getNetworkSSLEnabled() ? "https" : "http";
-            int port = settings.getNetworkSSLEnabled() ? 443 : 80;
+            String schema = sslEnabled ? "https" : "http";
+            int port = sslEnabled ? 443 : 80;
             SocksSocketFactory socketFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
             replaceProtocol(hostConfig, socketFactory, schema, port);
         }
@@ -393,10 +399,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         CharSequence uri = request.uri();
         if (StringUtils.hasText(uri)) {
-            http.setURI(new URI(escapeUri(uri.toString(), settings.getNetworkSSLEnabled()), false));
+            http.setURI(new URI(escapeUri(uri.toString(), sslEnabled), false));
         }
+
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
-        http.setPath(prefixPath(request.path().toString()));
+        // add node prefix (if specified)
+        http.setPath(pathPrefix + addLeadingSlashIfNeeded(request.path().toString()));
 
         try {
             // validate new URI
@@ -467,7 +475,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         return escaped.contains("://") ? escaped : (ssl ? "https://" : "http://") + escaped;
     }
 
-    private static String prefixPath(String string) {
+    private static String addLeadingSlashIfNeeded(String string) {
         return string.startsWith("/") ? string : "/" + string;
     }
 

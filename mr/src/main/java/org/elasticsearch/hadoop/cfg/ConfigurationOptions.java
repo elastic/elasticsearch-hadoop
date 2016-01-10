@@ -41,6 +41,10 @@ public interface ConfigurationOptions {
     String ES_PORT = "es.port";
     String ES_PORT_DEFAULT = "9200";
 
+    /** Elasticsearch prefix **/
+    String ES_NODES_PATH_PREFIX = "es.nodes.path.prefix";
+    String ES_NODES_PATH_PREFIX_DEFAULT = "";
+
     /** Elasticsearch index */
     String ES_RESOURCE = "es.resource";
     String ES_RESOURCE_READ = "es.resource.read";

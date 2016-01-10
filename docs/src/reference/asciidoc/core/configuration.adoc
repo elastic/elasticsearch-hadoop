@@ -105,6 +105,10 @@ List of {es} nodes to connect to. When using {es} remotely, _do_ set this option
 `es.port` (default 9200)::
 Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
 
+added[2.2]
+`es.nodes.path.prefix` (default empty)::
+Prefix to add to _all_ requests made to {es}. Useful in environments where the cluster is proxied/routed under a certain path. For example, if the cluster is located at +someaddress:someport/custom/path/prefix+, one would set +es.nodes.path.prefix+ to +/custom/path/prefix+.
+
 [float]
 ==== Querying
 `es.query` (default none)::

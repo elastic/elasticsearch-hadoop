@@ -33,7 +33,7 @@ import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
-import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
+import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS;
 
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
@@ -58,6 +58,10 @@ public abstract class Settings {
         // otherwise return the user value.
         // this helps validate the configuration
         return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY), !getNodesWANOnly());
+    }
+
+    public String getNodesPathPrefix() {
+        return getProperty(ES_NODES_PATH_PREFIX, ES_NODES_PATH_PREFIX_DEFAULT);
     }
 
     public boolean getNodesDataOnly() {
