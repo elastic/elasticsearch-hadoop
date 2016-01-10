@@ -1,4 +1,4 @@
-[[spark]]
+[[spark]]
 == Apache Spark support
 
 [quote, Spark website]
@@ -829,7 +829,7 @@ In Spark 1.5, this can be further simplified to:
 
 [source,scala]
 ----
-// Spark 1.5 s
+// Spark 1.5 style
 val df = sql.read.format("es"<1>).load("spark/index")
 ----
 
@@ -850,7 +850,7 @@ The __sources__ declaration also allows specific options to be passed in, namely
 
 3+h| Usable in Spark 1.6 or higher
 
-| `double.filtering` | `true`             | Whether to tell Spark apply its own filtering on the fitlers pushed down 
+| `double.filtering` | `true`             | Whether to tell Spark apply its own filtering on the filters pushed down 
 
 |===
 
