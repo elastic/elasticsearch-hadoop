@@ -1,4 +1,4 @@
-[[spark]]
+[[spark]]
 == Apache Spark support
 
 [quote, Spark website]
@@ -823,6 +823,17 @@ val df = sql.read()<1>.format("org.elasticsearch.spark.sql"<2>).load("spark/inde
 <1> +SQLContext+ _experimental_ +read+ method for arbitrary data sources
 <2> the data source provider - +org.elasticsearch.spark.sql+
 <3> path or resource to load - in this case the index/type in {es}
+
+In Spark 1.5, this can be further simplified to:
+
+[source,scala]
+----
+// Spark 1.5 style
+val df = sql.read.format("es"<1>).load("spark/index")
+----
+
+<1> Use +es+ as an alias instead of the full package name for the +DataSource+ provider
+
 
 Whatever API is used, once created, the +DataFrame+ can be accessed freely to manipulate the data.
 
