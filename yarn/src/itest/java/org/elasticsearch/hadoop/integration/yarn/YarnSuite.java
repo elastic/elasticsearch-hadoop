@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.yarn.client.ClientRpc;
 import org.elasticsearch.hadoop.yarn.util.Assert;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.rules.ChainedExternalResource;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -38,7 +39,7 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ YarnTest.class })
-//@Ignore("Classpath madness")
+@Ignore("Classpath madness")
 public class YarnSuite {
 
     public static ClientRpc YC;
