@@ -30,6 +30,8 @@ import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.*;
 
+import static org.hamcrest.Matchers.containsString;
+
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -618,6 +620,41 @@ public class AbstractHiveSaveTest {
     public void testIndexPatternFormatMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").skipHeaders().toString(),
                 is("pattern-format-2012-10-06=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
+    }
+
+    @Test
+    public void testMappingExclude() throws Exception {
+        String localTable = createTable("sourcefieldexclude");
+        String load = loadData("sourcefieldexclude");
+
+        // create external table
+        String ddl =
+                "CREATE EXTERNAL TABLE fieldexclude ("
+                + "id       BIGINT, "
+                + "name     STRING)"
+                + tableProps("hive/fieldexclude", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
+
+        String selectTest = "SELECT s.id, s.name FROM sourcefieldexclude s";
+
+        // transfer data
+        String insert =
+                "INSERT OVERWRITE TABLE fieldexclude "
+                + "SELECT id, name FROM sourcefieldexclude ";
+
+        System.out.println(ddl);
+        System.out.println(server.execute(ddl));
+        System.out.println(server.execute(localTable));
+        System.out.println(server.execute(load));
+        System.out.println(server.execute(selectTest));
+        System.out.println(server.execute(insert));
+
+        String string = RestUtils.get("hive/fieldexclude/1");
+        assertThat(string, containsString("MALICE"));
+
+        string = RestUtils.get("hive/fieldexclude/7");
+        assertThat(string, containsString("Manson"));
+
+        assertFalse(RestUtils.getMapping("hive/fieldexclude").skipHeaders().toString().contains("id="));
     }
 
     private String createTable(String tableName) {

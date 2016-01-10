@@ -25,11 +25,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.provisionEsLib;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 
 public class AbstractHiveExtraTests {
 
