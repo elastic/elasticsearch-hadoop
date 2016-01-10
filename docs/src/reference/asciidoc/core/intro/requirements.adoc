@@ -74,6 +74,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Apache Hadoop     | 1.2.x
 | Apache Hadoop     | 1.1.x
 
+| Amazon EMR        | 4.2.x
 | Amazon EMR        | 4.1.x
 | Amazon EMR        | 4.0.x
 | Amazon EMR        | 3.8.x
@@ -87,6 +88,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Amazon EMR        | 3.0.x
 | Amazon EMR        | 2.4.x
 
+| Cloudera CDH      | 5.5.x
 | Cloudera CDH      | 5.4.x
 | Cloudera CDH      | 5.3.x
 | Cloudera CDH      | 5.2.x
@@ -106,7 +108,7 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Pivotal HD        | 2.0.x
 | Pivotal HD        | 1.1.x
 
-| MapR              | 5.0.x
+| MapR              | 5.x
 | MapR              | 4.1.x
 | MapR              | 4.0.x
 | MapR              | 3.1.x
