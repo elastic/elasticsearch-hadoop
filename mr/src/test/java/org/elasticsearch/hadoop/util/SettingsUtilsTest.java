@@ -24,9 +24,9 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.junit.Test;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
-import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsEqual.*;
 
 public class SettingsUtilsTest {
 
@@ -66,5 +66,31 @@ public class SettingsUtilsTest {
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
         assertThat("127.0.0.1:9800", equalTo(nodes.get(0)));
+    }
+
+    @Test
+    public void testHostWithoutAPortFallingBackToDefaultAndNoDiscoveryWithSchema() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("es.nodes", "http://localhost");
+        props.setProperty("es.port", "9800");
+        props.setProperty("es.nodes.discovery", "false");
+
+        PropertiesSettings settings = new PropertiesSettings(props);
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        assertThat(nodes.size(), equalTo(1));
+        assertThat("http://127.0.0.1:9800", equalTo(nodes.get(0)));
+    }
+
+    @Test
+    public void testHostWithAPortAndFallBackWithSchema() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("es.nodes", "http://localhost:9800");
+        props.setProperty("es.port", "9300");
+        props.setProperty("es.nodes.discovery", "false");
+
+        PropertiesSettings settings = new PropertiesSettings(props);
+        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        assertThat(nodes.size(), equalTo(1));
+        assertThat("http://127.0.0.1:9800", equalTo(nodes.get(0)));
     }
 }

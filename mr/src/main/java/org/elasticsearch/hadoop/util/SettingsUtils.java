@@ -58,13 +58,22 @@ public abstract class SettingsUtils {
     }
 
     private static String resolveHostToIpIfNecessary(String host) {
+        String schemaDelimiter = "://";
+        String schema = StringUtils.EMPTY;
+
+        if (host.contains(schemaDelimiter)) {
+            int index = host.indexOf(schemaDelimiter);
+            schema = host.substring(0, index);
+            host = host.substring(index + schemaDelimiter.length());
+        }
         int index = host.lastIndexOf(':');
         String name = index > 0 ? host.substring(0, index) : host;
         // if the port is specified, include the ":"
         String port = index > 0 ? host.substring(index) : "";
         if (StringUtils.hasLetter(name)) {
             try {
-                return InetAddress.getByName(name).getHostAddress() + port;
+                String hostAddress = InetAddress.getByName(name).getHostAddress() + port;
+                return StringUtils.hasText(schema) ? schema + schemaDelimiter + hostAddress : hostAddress;
             } catch (UnknownHostException ex) {
                 throw new EsHadoopIllegalArgumentException("Cannot resolve ip for hostname: " + name);
             }

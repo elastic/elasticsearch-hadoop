@@ -34,7 +34,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
@@ -89,6 +89,17 @@ public class SSLTests {
     @Test
     public void testBasicSSLHandshake() throws Exception {
         String uri = "localhost:" + SSL_PORT;
+        String path = "/basicSSL";
+        Request req = new SimpleRequest(Method.GET, uri, path);
+
+        Response execute = transport.execute(req);
+        String content = IOUtils.asString(execute.body());
+        assertEquals("/" + PREFIX + path, content);
+    }
+
+    @Test
+    public void testBasicSSLHandshakeWithSchema() throws Exception {
+        String uri = "https://localhost:" + SSL_PORT;
         String path = "/basicSSL";
         Request req = new SimpleRequest(Method.GET, uri, path);
 
