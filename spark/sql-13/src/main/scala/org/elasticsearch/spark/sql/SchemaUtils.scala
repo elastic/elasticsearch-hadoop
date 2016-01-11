@@ -3,11 +3,9 @@ package org.elasticsearch.spark.sql
 import java.util.{LinkedHashSet => JHashSet}
 import java.util.{List => JList}
 import java.util.Properties
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
@@ -49,6 +47,9 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
+import org.elasticsearch.hadoop.util.SettingsUtils
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
+import org.apache.spark.sql.types.DataType
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -91,8 +92,8 @@ private[sql] object SchemaUtils {
     }
   }
 
-  private def convertToStruct(rootField: Field, cfg: Settings): StructType = {
-    val arrayIncludes = StringUtils.tokenize(cfg.getFieldReadAsArrayInclude)
+  def convertToStruct(rootField: Field, cfg: Settings): StructType = {
+    val arrayIncludes = SettingsUtils.getFieldArrayFilterInclude(cfg)
     val arrayExcludes = StringUtils.tokenize(cfg.getFieldReadAsArrayExclude)
 
     var fields = for (fl <- rootField.properties()) yield convertField(fl, null, arrayIncludes, arrayExcludes)
@@ -105,15 +106,16 @@ private[sql] object SchemaUtils {
     DataTypes.createStructType(fields)
   }
 
-  private def convertToStruct(field: Field, parentName: String, arrayIncludes: JList[String], arrayExcludes: JList[String]): StructType = {
+  private def convertToStruct(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructType = {
     DataTypes.createStructType(for (fl <- field.properties()) yield convertField(fl, parentName, arrayIncludes, arrayExcludes))
   }
 
-  private def convertField(field: Field, parentName: String, arrayIncludes: JList[String], arrayExcludes: JList[String]): StructField = {
+  private def convertField(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructField = {
     val absoluteName = if (parentName != null) parentName + "." + field.name() else field.name()
-    val createArray = if (!arrayIncludes.isEmpty()) FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false) else false
+    val matched = FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false)
+    val createArray = !arrayIncludes.isEmpty() && matched.matched
 
-    val dataType = Utils.extractType(field) match {
+    var dataType = Utils.extractType(field) match {
       case NULL    => NullType
       case BINARY  => BinaryType
       case BOOLEAN => BooleanType
@@ -130,7 +132,13 @@ private[sql] object SchemaUtils {
       case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
 
-    DataTypes.createStructField(field.name(), if (createArray) DataTypes.createArrayType(dataType) else dataType, true)
+    if (createArray) {
+      var currentDepth = 0;
+      for (currentDepth <- 0 until matched.depth) {
+        dataType = DataTypes.createArrayType(dataType)
+      }
+    }
+    DataTypes.createStructField(field.name(), dataType, true)
   }
 
   def setRowInfo(settings: Settings, struct: StructType) = {
@@ -167,7 +175,7 @@ private[sql] object SchemaUtils {
     (order,needToBeArray)
   }
 
-  private def detectRowInfo(settings: Settings, struct: StructType): (Properties, Properties) = {
+  def detectRowInfo(settings: Settings, struct: StructType): (Properties, Properties) = {
     // tuple - 1 = columns (in simple names) for each row, 2 - what fields (in absolute names) are arrays
     val rowInfo = (new Properties, new Properties)
 
@@ -185,25 +193,28 @@ private[sql] object SchemaUtils {
     rowInfo
   }
 
-  private def doDetectInfo(info: (Properties, Properties), level: String, struct: StructType) {
-    val fields = new java.util.ArrayList[String]
-
-    for (field <- struct) {
-      fields.add(field.name)
-      field.dataType match {
-        case s: StructType => doDetectInfo(info, if (level != ROOT_LEVEL_NAME) level + "." + field.name else field.name, s)
-        case a: ArrayType  => {
-          val absoluteName = if (level != ROOT_LEVEL_NAME) level + "." + field.name else field.name
-          info._2.setProperty(absoluteName, "")
-          a.elementType match {
-            case s: StructType => doDetectInfo(info, absoluteName, s)
-            case _             => // ignore
-          }
+  private def doDetectInfo(info: (Properties, Properties), level: String, dataType: DataType) {
+    dataType match {
+      case s: StructType => {
+        val fields = new java.util.ArrayList[String]
+        for (field <- s) {
+          fields.add(field.name)
+          doDetectInfo(info, if (level != ROOT_LEVEL_NAME) level + "." + field.name else field.name, field.dataType)
         }
-        case _             => // ignore
+        info._1.setProperty(level, StringUtils.concatenate(fields, StringUtils.DEFAULT_DELIMITER))
       }
+      case a: ArrayType => {
+        val prop = info._2.getProperty(level)
+        var depth = 0
+        if (StringUtils.hasText(prop)) {
+          depth = Integer.parseInt(prop)
+        }
+        depth += 1
+        info._2.setProperty(level, String.valueOf(depth))
+        doDetectInfo(info, level, a.elementType)
+      }
+      // ignore primitives
+      case _ => // ignore
     }
-
-    info._1.setProperty(level, StringUtils.concatenate(fields, StringUtils.DEFAULT_DELIMITER))
   }
 }

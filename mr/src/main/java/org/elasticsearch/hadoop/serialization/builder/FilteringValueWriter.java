@@ -18,26 +18,33 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class FilteringValueWriter<T> implements ValueWriter<T>, SettingsAware {
 
-    private List<String> includes;
+    private List<NumberedInclude> includes;
     private List<String> excludes;
 
     @Override
     public void setSettings(Settings settings) {
-        includes = StringUtils.tokenize(settings.getMappingIncludes());
+        List<String> includeAsStrings = StringUtils.tokenize(settings.getMappingIncludes());
+        includes = (includeAsStrings.isEmpty() ? Collections.<NumberedInclude> emptyList() : new ArrayList<NumberedInclude>(includeAsStrings.size()));
+        for (String include : includeAsStrings) {
+            includes.add(new NumberedInclude(include));
+        }
         excludes = StringUtils.tokenize(settings.getMappingExcludes());
     }
 
     protected boolean shouldKeep(String parentField, String name) {
         name = StringUtils.hasText(parentField) ? parentField + "." + name : name;
-        return FieldFilter.filter(name, includes, excludes);
+        return FieldFilter.filter(name, includes, excludes).matched;
     }
 }

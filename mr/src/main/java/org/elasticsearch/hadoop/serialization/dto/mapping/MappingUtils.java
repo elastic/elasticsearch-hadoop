@@ -32,6 +32,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("rawtypes")
@@ -131,17 +132,19 @@ public abstract class MappingUtils {
     public static Field filter(Field field, Collection<String> includes, Collection<String> excludes) {
         List<Field> filtered = new ArrayList<Field>();
 
+        List<NumberedInclude> convertedIncludes = FieldFilter.toNumberedFilter(includes);
+
         for (Field fl : field.skipHeaders().properties()) {
-            processField(fl, null, filtered, includes, excludes);
+            processField(fl, null, filtered, convertedIncludes, excludes);
         }
 
         return new Field(field.name(), field.type(), filtered);
     }
 
-    private static void processField(Field field, String parentName, List<Field> filtered, Collection<String> includes, Collection<String> excludes) {
+    private static void processField(Field field, String parentName, List<Field> filtered, Collection<NumberedInclude> includes, Collection<String> excludes) {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
 
-        if (FieldFilter.filter(fieldName, includes, excludes)) {
+        if (FieldFilter.filter(fieldName, includes, excludes).matched) {
             if (FieldType.OBJECT == field.type()) {
                 List<Field> nested = new ArrayList<Field>();
                 for (Field nestedField : field.properties()) {

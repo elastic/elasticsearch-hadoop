@@ -9,6 +9,7 @@ import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback
 import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.apache.commons.logging.LogFactory
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.util.StringUtils
 
 class ScalaRowValueReader extends ScalaValueReader with RowValueReader with ValueParsingCallback {
 
@@ -18,21 +19,13 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   var currentArrayRowOrder:Seq[String] = null
 
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
-    currentField = stripSource(parser.absoluteName)
+    sparkRowField = currentFieldName
 
-    if (currentField == null) {
-      currentField = Utils.ROOT_LEVEL_NAME
+    if (sparkRowField == null) {
+      sparkRowField = Utils.ROOT_LEVEL_NAME
     }
 
     super.readValue(parser, value, esType)
-  }
-
-  private def stripSource(name: String): String = {
-    val root = "hits.hits._source."
-    if (name != null && name.startsWith(root)) {
-      return name.substring(root.length())
-    }
-    name
   }
 
   override def createMap() = {
@@ -46,19 +39,20 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
       }
     }
     else {
-      val rowOrd = if (inArray) currentArrayRowOrder else rowColumns(currentField)
+      val rowOrd = if (inArray) currentArrayRowOrder else rowColumns(sparkRowField)
       new ScalaEsRow(rowOrd)
     }
   }
 
   // start array
   override def createArray(typ: FieldType): AnyRef = {
+
     val previousLevel = (inArray, currentArrayRowOrder)
-    if (arrayFields.contains(currentField)) {
+    if (arrayFields.contains(sparkRowField)) {
       inArray = true
       // array of objects
-      if (rowColumnsMap.contains(currentField)) {
-        currentArrayRowOrder = rowColumns(currentField)
+      if (rowColumnsMap.contains(sparkRowField)) {
+        currentArrayRowOrder = rowColumns(sparkRowField)
       }
       // array of values
       else {
@@ -67,10 +61,10 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
     }
     else {
       LogFactory.getLog(getClass).warn(
-          s"""Field '$currentField' is backed by an array but the associated Spark Schema does not reflect this;
+          s"""Field '$sparkRowField' is backed by an array but the associated Spark Schema does not reflect this;
               (use ${ConfigurationOptions.ES_FIELD_READ_AS_ARRAY_INCLUDE}/exclude) """.stripMargin)
     }
-    // since the list is not actually, return the parent field information usable for nested arrays
+    // since the list is not used actually, return the parent field information usable for nested arrays
     previousLevel
   }
 
@@ -101,7 +95,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
 
   def endLeadMetadata() {}
 
-  def beginSource() { rootLevel = true; currentField = Utils.ROOT_LEVEL_NAME }
+  def beginSource() { rootLevel = true; sparkRowField = Utils.ROOT_LEVEL_NAME }
 
   def endSource() {}
 

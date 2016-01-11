@@ -1,7 +1,10 @@
 package org.elasticsearch.spark.serialization
 
+import java.util.Collections
 import java.util.Date
+import java.util.{List => JList}
 
+import scala.collection.Seq
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
@@ -26,13 +29,21 @@ import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NULL
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_NUMBER
 import org.elasticsearch.hadoop.serialization.SettingsAware
 import org.elasticsearch.hadoop.serialization.builder.ValueReader
+import org.elasticsearch.hadoop.serialization.field.FieldFilter
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.DateUtils
+import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
 
 class ScalaValueReader extends ValueReader with SettingsAware {
 
   var emptyAsNull: Boolean = false
   var richDate: Boolean = false
+  var arrayInclude: JList[NumberedInclude] = Collections.emptyList()
+  var arrayExclude: JList[String] = Collections.emptyList()
+
+  var nestedArrayLevel: Integer = 0
+  var currentFieldName: String = StringUtils.EMPTY
 
   def readValue(parser: Parser, value: String, esType: FieldType) = {
     if (esType == null) {
@@ -137,6 +148,8 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   def setSettings(settings: Settings) = {
     emptyAsNull = settings.getFieldReadEmptyAsNull
     richDate = settings.getMappingDateRich
+    arrayInclude = SettingsUtils.getFieldArrayFilterInclude(settings);
+    arrayExclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
   }
 
   def createMap(): AnyRef = {
@@ -152,10 +165,66 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   }
 
   def createArray(typ: FieldType): AnyRef = {
+    nestedArrayLevel += 1
+
     List.empty;
   }
 
-  def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
-    values.asScala
+  override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
+      nestedArrayLevel -= 1
+
+      var arr: AnyRef = values.asScala
+      // outer most array (a multi level array might be defined)
+      if (nestedArrayLevel == 0) {
+          val result = FieldFilter.filter(currentFieldName, arrayInclude, arrayExclude);
+          if (result.matched && result.depth > 1) {
+              val extraDepth = result.depth - arrayDepth(arr);
+              if (extraDepth > 0) {
+                  arr = wrapArray(arr, extraDepth)
+              }
+          }
+      }
+      return arr
+  }
+
+  def arrayDepth(potentialArray: AnyRef): Int = {
+    var depth = 0
+    var potentialArr = potentialArray
+
+    var keepOnGoing = true
+
+    while (keepOnGoing) {
+      potentialArr match {
+        case col: Seq[AnyRef] => {
+          depth += 1
+          keepOnGoing = !col.isEmpty
+          if (keepOnGoing) {
+            potentialArr = col(0)
+          }
+        }
+        case _ => {
+          keepOnGoing = false
+        }
+      }
+    }
+
+    return depth
+  }
+
+  def wrapArray(array: AnyRef, extraDepth: Int): AnyRef = {
+      var arr = array
+      var i = 0
+      for (i <- 0 until extraDepth) {
+          arr = List(array)
+      }
+      return arr
+  }
+
+  def beginField(fieldName: String) {
+       currentFieldName = fieldName
+  }
+
+  def endField(fieldName: String) {
+       currentFieldName = null
   }
 }

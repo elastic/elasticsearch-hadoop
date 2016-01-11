@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -30,7 +31,11 @@ import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.Parser;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.Result;
 import org.elasticsearch.hadoop.util.DateUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 
@@ -41,8 +46,11 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     private boolean emptyAsNull = true;
     private boolean richDate = true;
-    private Collection<String> include = Collections.emptyList();
-    private Collection<String> exclude = Collections.emptyList();
+    protected Collection<NumberedInclude> arrayInclude = Collections.<NumberedInclude> emptyList();
+    protected Collection<String> arrayExclude = Collections.emptyList();
+
+    protected String currentFieldName;
+    protected int nestedArrayLevel = 0;
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
@@ -95,18 +103,63 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     @Override
     public Object createArray(FieldType type) {
+        nestedArrayLevel++;
+
         // no need to create a collection, we'll just reuse the one passed to #addToArray
         return Collections.emptyList();
     }
 
     @Override
     public Object addToArray(Object array, List<Object> value) {
-        return value;
+        nestedArrayLevel--;
+
+        array = value;
+        // outer most array (a multi level array might be defined)
+        if (nestedArrayLevel == 0) {
+            Result result = FieldFilter.filter(currentFieldName, arrayInclude, arrayExclude);
+            if (result.matched && result.depth > 1) {
+                int actualDepth = arrayDepth(value);
+                int extraDepth = result.depth - actualDepth;
+                if (extraDepth > 0) {
+                    array = wrapArray(array, extraDepth);
+                }
+            }
+        }
+        return array;
+    }
+
+    protected int arrayDepth(Object potentialArray) {
+        int depth = 0;
+        for (; potentialArray instanceof List; ) {
+            depth++;
+            List col = (List) potentialArray;
+            if (col.size() > 0) {
+                potentialArray = col.get(0);
+            }
+        }
+        return depth;
+    }
+
+    protected Object wrapArray(Object array, int extraDepth) {
+        for (int i = 0; i < extraDepth; i++) {
+            array = Arrays.asList(array);
+        }
+        return array;
     }
 
     @Override
     public Object wrapString(String value) {
         return textValue(value);
+    }
+
+    @Override
+    public void beginField(String fieldName) {
+        currentFieldName = fieldName;
+    }
+
+    @Override
+    public void endField(String fieldName) {
+        currentFieldName = null;
     }
 
     private boolean isEmpty(String value) {
@@ -366,7 +419,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     public void setSettings(Settings settings) {
         emptyAsNull = settings.getFieldReadEmptyAsNull();
         richDate = settings.getMappingDateRich();
-        include = StringUtils.tokenize(settings.getFieldReadAsArrayInclude());
-        exclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
+        arrayInclude = SettingsUtils.getFieldArrayFilterInclude(settings);
+        arrayExclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
     }
 }

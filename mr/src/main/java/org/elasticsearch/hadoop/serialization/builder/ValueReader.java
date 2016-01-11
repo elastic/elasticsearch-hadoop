@@ -40,4 +40,8 @@ public interface ValueReader {
     Object createArray(FieldType type);
 
     Object addToArray(Object array, List<Object> values);
+
+    void beginField(String fieldName);
+
+    void endField(String fieldName);
 }

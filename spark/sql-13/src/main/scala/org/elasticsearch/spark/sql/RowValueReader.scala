@@ -15,7 +15,7 @@ private[sql] trait RowValueReader extends SettingsAware {
   protected var rowColumnsMap: scala.collection.Map[String, Seq[String]] = Map.empty
   // fields that need to be handled as arrays (in absolute name format)
   protected var arrayFields: JSet[String] = Collections.emptySet()
-  protected var currentField = Utils.ROOT_LEVEL_NAME
+  protected var sparkRowField = Utils.ROOT_LEVEL_NAME
 
   abstract override def setSettings(settings: Settings) = {
     super.setSettings(settings)
@@ -37,7 +37,7 @@ private[sql] trait RowValueReader extends SettingsAware {
   def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any) {
     val pos = esRow.rowOrder.indexOf(key.toString())
     if (pos < 0 || pos >= esRow.values.size) {
-      throw new EsHadoopIllegalStateException(s"Position for '$currentField' not found in row; typically this is caused by a mapping inconsistency")
+      throw new EsHadoopIllegalStateException(s"Position for '$sparkRowField' not found in row; typically this is caused by a mapping inconsistency")
     }
     esRow.values.update(pos, value)
   }

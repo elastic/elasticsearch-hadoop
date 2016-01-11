@@ -21,17 +21,7 @@ package org.elasticsearch.hadoop.mr;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.BooleanWritable;
-import org.apache.hadoop.io.ByteWritable;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.FloatWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.*;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 
@@ -98,6 +88,28 @@ public class WritableValueReader extends JdkValueReader {
     public Object addToArray(Object array, List<Object> value) {
         ((ArrayWritable) array).set(value.toArray(new Writable[value.size()]));
         return array;
+    }
+
+    @Override
+    protected int arrayDepth(Object potentialArray) {
+        int depth = 0;
+        for (; potentialArray instanceof ArrayWritable;) {
+            depth++;
+            Writable[] array = ((ArrayWritable) potentialArray).get();
+            if (array.length > 0) {
+                potentialArray = array[0];
+            }
+        }
+        return depth;
+    }
+
+    @Override
+    protected Object wrapArray(Object array, int extraDepth) {
+        Writable wrapper = (Writable) array;
+        for (int i = 0; i < extraDepth; i++) {
+            wrapper = new ArrayWritable(ArrayWritable.class, new Writable[] { wrapper });
+        }
+        return wrapper;
     }
 
     protected Class<? extends Writable> dateType() {

@@ -19,12 +19,11 @@
 package org.elasticsearch.hadoop.serialization.field;
 
 import java.util.Arrays;
+import java.util.Collection;
 
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-
-import static org.elasticsearch.hadoop.serialization.field.FieldFilter.*;
 
 public class FieldFilterTest {
 
@@ -111,5 +110,9 @@ public class FieldFilterTest {
     @Test
     public void testMatchNonExisting() {
         assertFalse(filter("nested.what", Arrays.asList("nested.bar"), null));
+    }
+
+    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
+        return FieldFilter.filter(path, FieldFilter.toNumberedFilter(includes), excludes, true).matched;
     }
 }

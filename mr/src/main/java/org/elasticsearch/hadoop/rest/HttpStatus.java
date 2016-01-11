@@ -188,7 +188,7 @@ public abstract class HttpStatus {
     }
 
     public static boolean canRetry(int status) {
-        return SERVICE_UNAVAILABLE == status;
+        return SERVICE_UNAVAILABLE == status || TOO_MANY_REQUESTS == status;
     }
 
     public static boolean isServerError(int status) {

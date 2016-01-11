@@ -18,12 +18,45 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import org.elasticsearch.hadoop.util.regex.Regex;
 
 public abstract class FieldFilter {
+
+    public static class Result {
+        public final boolean matched;
+        public final int depth;
+
+        public Result(boolean matched) {
+            this(matched, 1);
+        }
+
+        public Result(boolean matched, int depth) {
+            this.matched = matched;
+            this.depth = depth;
+        }
+    }
+
+    public static final Result INCLUDED = new Result(true);
+    public static final Result EXCLUDED = new Result(false);
+
+    public static class NumberedInclude {
+        public final String filter;
+        public final int depth;
+
+        public NumberedInclude(String filter) {
+            this(filter, 1);
+        }
+
+        public NumberedInclude(String filter, int depth) {
+            this.filter = filter;
+            this.depth = depth;
+        }
+    }
 
     /**
      * Returns true if the key should be kept or false if it needs to be skipped/dropped.
@@ -33,26 +66,32 @@ public abstract class FieldFilter {
      * @param excludes
      * @return
      */
-    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes, boolean allowPartialMatches) {
-        includes = (includes == null ? Collections.<String> emptyList() : includes);
+    public static Result filter(String path, Collection<NumberedInclude> includes, Collection<String> excludes, boolean allowPartialMatches) {
+        includes = (includes == null ? Collections.<NumberedInclude> emptyList() : includes);
         excludes = (excludes == null ? Collections.<String> emptyList() : excludes);
 
         if (includes.isEmpty() && excludes.isEmpty()) {
-            return true;
+            return INCLUDED;
         }
 
         if (Regex.simpleMatch(excludes, path)) {
-            return false;
+            return EXCLUDED;
         }
 
         boolean exactIncludeMatch = false; // true if the current position was specifically mentioned
         boolean pathIsPrefixOfAnInclude = false; // true if potentially a sub scope can be included
+
+        NumberedInclude matchedInclude = null;
+
         if (includes.isEmpty()) {
             // implied match anything
             exactIncludeMatch = true;
         }
         else {
-            for (String include : includes) {
+            for (NumberedInclude filter : includes) {
+                matchedInclude = filter;
+                String include = filter.filter;
+
                 // check for prefix matches as well to see if we need to zero in, something like: obj1.arr1.* or *.field
                 // note, this does not work well with middle matches, like obj1.*.obj3
                 if (include.charAt(0) == '*') {
@@ -83,13 +122,27 @@ public abstract class FieldFilter {
 
         // if match or part of the path (based on the passed param)
         if (exactIncludeMatch || (allowPartialMatches && pathIsPrefixOfAnInclude)) {
-            return true;
+            return (matchedInclude != null ? new Result(true, matchedInclude.depth) : INCLUDED);
         }
 
-        return false;
+        return EXCLUDED;
     }
 
-    public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
+    public static Result filter(String path, Collection<NumberedInclude> includes, Collection<String> excludes) {
         return filter(path, includes, excludes, true);
+    }
+
+    public static List<NumberedInclude> toNumberedFilter(Collection<String> includeAsStrings){
+        if (includeAsStrings == null || includeAsStrings.isEmpty()) {
+            return Collections.<NumberedInclude> emptyList();
+        }
+
+        List<NumberedInclude> newFilter = new ArrayList<NumberedInclude>(includeAsStrings.size());
+
+        for (String include : includeAsStrings) {
+            newFilter.add(new NumberedInclude(include));
+        }
+
+        return newFilter;
     }
 }

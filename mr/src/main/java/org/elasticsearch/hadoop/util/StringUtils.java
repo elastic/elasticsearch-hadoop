@@ -50,6 +50,7 @@ public abstract class StringUtils {
     public static final String SLASH = "/";
     public static final String PATH_TOP = "..";
     public static final String PATH_CURRENT = ".";
+    public static final String SOURCE_ROOT = "hits.hits._source.";
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 
@@ -124,7 +125,7 @@ public abstract class StringUtils {
     }
 
     public static List<String> tokenize(String string, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
-        if (string == null) {
+        if (!StringUtils.hasText(string)) {
             return Collections.emptyList();
         }
         StringTokenizer st = new StringTokenizer(string, delimiters);
@@ -209,19 +210,20 @@ public abstract class StringUtils {
     }
 
     public static String trimWhitespace(String string) {
-   		if (!hasLength(string)) {
-   			return string;
-   		}
-   		StringBuilder sb = new StringBuilder(string);
-   		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(0))) {
-   			sb.deleteCharAt(0);
-   		}
-   		while (sb.length() > 0 && Character.isWhitespace(sb.charAt(sb.length() - 1))) {
-   			sb.deleteCharAt(sb.length() - 1);
-   		}
-   		// try to return the initial string if possible
-   		return (sb.length() == string.length() ? string : sb.toString());
-   	}
+        if (!hasLength(string)) {
+            return string;
+        }
+        StringBuilder sb = new StringBuilder(string);
+        while (sb.length() > 0 && Character.isWhitespace(sb.charAt(0))) {
+            sb.deleteCharAt(0);
+        }
+        while (sb.length() > 0
+                && Character.isWhitespace(sb.charAt(sb.length() - 1))) {
+            sb.deleteCharAt(sb.length() - 1);
+        }
+        // try to return the initial string if possible
+        return (sb.length() == string.length() ? string : sb.toString());
+    }
 
     public static String asUTFString(byte[] content) {
         return asUTFString(content, 0, content.length);
@@ -406,7 +408,7 @@ public abstract class StringUtils {
                 return true;
             }
         }
-        return false;   
+        return false;
     }
 
     public static String jsonEncoding(String rawString) {
@@ -512,5 +514,12 @@ public abstract class StringUtils {
         }
 
         return prefix + concatenate(pathTokens, SLASH);
+    }
+
+    public static String stripFieldNameSourcePrefix(String fieldName) {
+        if (fieldName != null && fieldName.startsWith(SOURCE_ROOT)) {
+            return fieldName.substring(SOURCE_ROOT.length());
+        }
+        return fieldName;
     }
 }

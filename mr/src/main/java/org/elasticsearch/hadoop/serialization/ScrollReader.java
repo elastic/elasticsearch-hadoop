@@ -154,7 +154,8 @@ public class ScrollReader {
 
     private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
-    private static final String[] ID = new String[] { "_id" };
+    private static final String ID_FIELD = "_id";
+    private static final String[] ID = new String[] { ID_FIELD };
     private static final String[] FIELDS = new String[] { "fields" };
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
@@ -336,20 +337,25 @@ public class ScrollReader {
 
             metadata = reader.createMap();
             result[1] = metadata;
-            String name;
+            String absoluteName;
 
             // move parser
             t = parser.nextToken();
             while ((t = parser.currentToken()) != null) {
-                name = parser.currentName();
+                String name = parser.currentName();
+                absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
                 Object value = null;
+
                 if (t == Token.FIELD_NAME && !("fields".equals(name) || "_source".equals(name))) {
+
+                    reader.beginField(absoluteName);
                     value = read(parser.nextToken(), null);
-                    if ("_id".equals(name)) {
+                    if (ID_FIELD.equals(name)) {
                         id = value;
                     }
 
                     reader.addToMap(metadata, reader.wrapString(name), value);
+                    reader.endField(absoluteName);
                 }
                 else {
                     // if = no _source or field found, else select START_OBJECT
@@ -450,6 +456,7 @@ public class ScrollReader {
             result[1] = snippet;
 
             String name;
+            String absoluteName;
 
             t = parser.nextToken();
             // move parser
@@ -459,11 +466,18 @@ public class ScrollReader {
 
             while ((t = parser.currentToken()) != null) {
                 name = parser.currentName();
+                absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
+
                 if (t == Token.FIELD_NAME) {
-                    if ("_id".equals(name)) {
+                    if (ID_FIELD.equals(name)) {
+
+                        reader.beginField(absoluteName);
+
                         t = parser.nextToken();
                         id = reader.wrapString(parser.text());
                         endCharOfLastElement = parser.tokenCharOffset();
+
+                        reader.endField(absoluteName);
                         t = parser.nextToken();
                     }
                     else if ("fields".equals(name) || "_source".equals(name)) {
@@ -499,7 +513,12 @@ public class ScrollReader {
         // no metadata is needed, fast fwd
         else {
             Assert.notNull(ParsingUtils.seek(parser, ID), "no id found");
+
+            String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
+            reader.beginField(absoluteName);
             result[0] = reader.wrapString(parser.text());
+            reader.endField(absoluteName);
+
             t = ParsingUtils.seek(parser, SOURCE, FIELDS);
         }
 
@@ -655,10 +674,16 @@ public class ScrollReader {
                 nodeMapping = currentName;
             }
 
+            String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser
+                    .absoluteName());
+            reader.beginField(absoluteName);
+
             // Must point to field name
             Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
             // And then the value...
             reader.addToMap(map, fieldName, read(parser.nextToken(), nodeMapping));
+
+            reader.endField(absoluteName);
         }
 
         // eliminate END_OBJECT
