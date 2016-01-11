@@ -1,4 +1,4 @@
-[[spark]]
+[[spark]]
 == Apache Spark support
 
 [quote, Spark website]
