@@ -491,7 +491,7 @@ def baseSparkProject(target, sparkVersion, java8) {
     }
     else {
         target.apply plugin: 'scala'
-        
+
         target.compileScala {
             //scalaCompileOptions.additionalParameters = ["-feature"]
             //scalaCompileOptions.useAnt = false
