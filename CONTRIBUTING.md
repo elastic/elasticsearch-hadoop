@@ -2,6 +2,10 @@ _Elasticsearch is an open source project and we love to receive contributions fr
 
 Please read the [contributing guidelines][] which explains in detail how contribute to Elasticsearch. The _short_ version is given below:
 
+# For questions, please use the forum not the issue tracker
+
+If you need help and have questions, please use the [forums](https://discuss.elastic.co/c/elasticsearch-and-hadoop) to ask questions. If on the other hand the code does not behave appropriately and you bumped into an error, use the issue tracker.
+
 # Check the issue tracker
 
 If you have a bug fix or new feature that you would like to contribute to Elasticsearch, please [find or open an issue][] about it first. Talk about what you would like to do. 
