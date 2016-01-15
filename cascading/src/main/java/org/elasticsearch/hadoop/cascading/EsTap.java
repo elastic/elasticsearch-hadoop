@@ -141,6 +141,12 @@ public class EsTap extends Tap<Object, Object, Object> {
     }
 
     @Override
+    public Fields retrieveSourceFields(FlowProcess<Object> flowProcess) {
+        initInnerTapIfNotSetFromFlowProcess(flowProcess);
+        return actualTap.retrieveSourceFields(flowProcess);
+    }
+
+    @Override
     public TupleEntryCollector openForWrite(FlowProcess<Object> flowProcess, Object output) throws IOException {
         initInnerTapIfNotSetFromFlowProcess(flowProcess);
         return actualTap.openForWrite(flowProcess, output);

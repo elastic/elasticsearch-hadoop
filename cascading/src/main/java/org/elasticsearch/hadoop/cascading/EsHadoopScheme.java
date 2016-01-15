@@ -20,10 +20,13 @@ package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
@@ -37,6 +40,7 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -50,6 +54,9 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * Cascading Scheme handling
@@ -117,6 +124,46 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         super.sinkCleanup(flowProcess, sinkCall);
 
         sinkCall.setContext(null);
+    }
+
+    @Override
+    public Fields retrieveSourceFields(final FlowProcess<JobConf> flowProcess, final Tap tap) {
+        Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
+        if (getSourceFields() == Fields.UNKNOWN && settings.getFieldDetection()) {
+            log.info("resource: " + index);
+            String[] parts = index.split("/");
+            if (parts.length == 2) {
+                String myIndex = parts[0];
+                String docType = parts[1];
+                log.info("index: " + myIndex + ", type: " + docType);
+
+                String mappingsUrl = "/" + myIndex + "/_mapping/" + docType;
+                log.info("mapping URL: " + mappingsUrl);
+                RestClient client = new RestClient(settings);
+                try {
+                    String responseBody = IOUtils.toString(client.getRaw(mappingsUrl));
+
+                    // extract fields from the response body
+                    JsonNode mappingsObj = new ObjectMapper().readTree(responseBody)
+                        .path(myIndex).path("mappings")
+                        .path(docType).path("properties");
+                    Iterator<String> fieldsIterator = mappingsObj.getFieldNames();
+                    List<String> fieldList = new ArrayList<String>();
+                    while (fieldsIterator.hasNext())
+                        fieldList.add(fieldsIterator.next());
+                    String[] fieldNames = new String[fieldList.size()];
+                    fieldList.toArray(fieldNames);
+                    Fields fields = new Fields(fieldNames);
+                    log.info("fields: " + fieldNames);
+                    setSourceFields(fields);
+                } catch (IOException e) {
+                    log.info("no fields found in the mapping");
+                } finally {
+                    client.close();
+                }
+            }
+        }
+        return getSourceFields();
     }
 
     @Override
