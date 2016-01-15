@@ -3,11 +3,9 @@ package org.elasticsearch.spark.sql
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
-
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
@@ -53,11 +51,13 @@ import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-
 import javax.xml.bind.DatatypeConverter
+import org.elasticsearch.hadoop.util.Version
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
+  Version.logVersion()
+  
   override def createRelation(@transient sqlContext: SQLContext, parameters: Map[String, String]): BaseRelation = {
     ElasticsearchRelation(params(parameters), sqlContext)
   }
