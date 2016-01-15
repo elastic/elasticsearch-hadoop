@@ -245,7 +245,7 @@ public abstract class RestService implements Serializable {
             else {
                 client.close();
                 throw new EsHadoopIllegalArgumentException(
-                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_FIELD_READ_EMPTY_AS_NULL));
+                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY));
             }
         }
         else {
