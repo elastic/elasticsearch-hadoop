@@ -674,8 +674,7 @@ public class ScrollReader {
                 nodeMapping = currentName;
             }
 
-            String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser
-                    .absoluteName());
+            String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
             reader.beginField(absoluteName);
 
             // Must point to field name
