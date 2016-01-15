@@ -28,11 +28,31 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.json.BackportedObjectReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TrackingBytesArray;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ParseBulkErrorsTest {
+
+    private RestClient rc;
+
+    @Before
+    public void before() {
+        rc = new RestClient(new TestSettings());
+    }
+
+    @After
+    public void after() {
+        rc.close();
+    }
 
     @Test
     public void testParseItems() throws IOException {
@@ -50,4 +70,105 @@ public class ParseBulkErrorsTest {
             assertTrue(error.contains("document already exists"));
         }
     }
+
+    @Test
+    public void testParseBulkErrorsInES2x() throws Exception {
+        String inputEntry = IOUtils.asString(getClass().getResourceAsStream("bulk-retry-input-template.json"));
+
+        TrackingBytesArray inputData = new TrackingBytesArray(new BytesArray(128));
+
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "A")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "B")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "C")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "D")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "E")));
+
+        assertEquals(5, inputData.entries());
+        assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
+
+        Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es2x.json"), "");
+        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertEquals(3, inputData.entries());
+        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
+        String string = inputData.toString();
+        assertTrue(string.contains("B"));
+        assertTrue(string.contains("D"));
+        assertTrue(string.contains("E"));
+    }
+
+    @Test
+    public void testParseBulkErrorsInES1x() throws Exception {
+        String inputEntry = IOUtils.asString(getClass().getResourceAsStream("bulk-retry-input-template.json"));
+
+        TrackingBytesArray inputData = new TrackingBytesArray(new BytesArray(128));
+
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "A")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "B")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "C")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "D")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "E")));
+
+        assertEquals(5, inputData.entries());
+        assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
+
+        Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es1x.json"), "");
+        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertEquals(3, inputData.entries());
+        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
+        String string = inputData.toString();
+        assertTrue(string.contains("B"));
+        assertTrue(string.contains("D"));
+        assertTrue(string.contains("E"));
+    }
+
+    @Test
+    public void testParseBulkErrorsInES10x() throws Exception {
+        String inputEntry = IOUtils.asString(getClass().getResourceAsStream("bulk-retry-input-template.json"));
+
+        TrackingBytesArray inputData = new TrackingBytesArray(new BytesArray(128));
+
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "A")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "B")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "C")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "D")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "E")));
+
+        assertEquals(5, inputData.entries());
+        assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
+
+        Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es10x.json"), "");
+        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertEquals(3, inputData.entries());
+        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
+        String string = inputData.toString();
+        assertTrue(string.contains("B"));
+        assertTrue(string.contains("D"));
+        assertTrue(string.contains("E"));
+    }
+
+    @Test
+    public void testParseBulkErrorsInES090x() throws Exception {
+        String inputEntry = IOUtils.asString(getClass().getResourceAsStream("bulk-retry-input-template.json"));
+
+        TrackingBytesArray inputData = new TrackingBytesArray(new BytesArray(128));
+
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "A")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "B")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "C")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "D")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "E")));
+
+        assertEquals(5, inputData.entries());
+        assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
+
+        Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es090x.json"), "");
+        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertEquals(3, inputData.entries());
+        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
+        String string = inputData.toString();
+        assertTrue(string.contains("B"));
+        assertTrue(string.contains("D"));
+        assertTrue(string.contains("E"));
+    }
+
 }

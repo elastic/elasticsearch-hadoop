@@ -1,0 +1,70 @@
+{
+  "took" : 47,
+  "errors" : true,
+  "items" : [
+    {
+      "create" : {
+        "_index" : "foo",
+        "_type" : "bar",
+        "_id" : "AVJHFEumA1Cx49uQ8Rzy",
+        "_version" : 1,
+        "_shards" : {
+          "total" : 2,
+          "successful" : 1,
+          "failed" : 0
+        },
+        "status" : 201
+      }
+    },
+    {
+      "create" : {
+        "_index" : "foo",
+        "_type" : "bar",
+        "_id" : "AVJHFEumA1Cx49uQ8Rzz",
+        "status" : 429,
+        "error" : {
+          "type" : "es_rejected_execution_exception",
+          "reason" : "rejected execution of org.elasticsearch.action.support.replication.TransportReplicationAction$PrimaryPhase$1@4986e6de on EsThreadPoolExecutor[bulk, queue capacity = 1, org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor@421ce219[Running, pool size = 4, active threads = 2, queued tasks = 0, completed tasks = 4]]"
+        }
+      }
+    },
+    {
+      "create" : {
+        "_index" : "foo",
+        "_type" : "bar",
+        "_id" : "AVJHFEumA1Cx49uQ8Rz0",
+        "_version" : 1,
+        "_shards" : {
+          "total" : 2,
+          "successful" : 1,
+          "failed" : 0
+        },
+        "status" : 201
+      }
+    },
+    {
+      "create" : {
+        "_index" : "foo",
+        "_type" : "bar",
+        "_id" : "AVJHFEumA1Cx49uQ8Rz4",
+        "status" : 429,
+        "error" : {
+          "type" : "es_rejected_execution_exception",
+          "reason" : "rejected execution of org.elasticsearch.action.support.replication.TransportReplicationAction$PrimaryPhase$1@7cb1762e on EsThreadPoolExecutor[bulk, queue capacity = 1, org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor@421ce219[Running, pool size = 4, active threads = 2, queued tasks = 1, completed tasks = 4]]"
+        }
+      }
+    },
+    {
+      "create" : {
+        "_index" : "foo",
+        "_type" : "bar",
+        "_id" : "AVJHFEumA1Cx49uQ8Rz5",
+        "status" : 429,
+        "error" : {
+          "type" : "es_rejected_execution_exception",
+          "reason" : "rejected execution of org.elasticsearch.action.support.replication.TransportReplicationAction$PrimaryPhase$1@4986e6de on EsThreadPoolExecutor[bulk, queue capacity = 1, org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor@421ce219[Running, pool size = 4, active threads = 2, queued tasks = 0, completed tasks = 4]]"
+        }
+      }
+    }
+  ]
+}

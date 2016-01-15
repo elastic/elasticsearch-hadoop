@@ -173,7 +173,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean retryFailedEntries(Response response, TrackingBytesArray data) {
+    boolean retryFailedEntries(Response response, TrackingBytesArray data) {
         InputStream content = response.body();
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
@@ -407,13 +407,13 @@ public class RestClient implements Closeable, StatsAware {
             String msg = null;
             // try to parse the answer
             try {
-               msg = extractError(this.<Map> parseContent(response.body(), null));
-               if (response.isClientError()) {
+                msg = extractError(this.<Map> parseContent(response.body(), null));
+                if (response.isClientError()) {
                     msg = msg + "\n" + request.body();
-               }
-               else {
-                   msg = prettify(msg, request.body());
-               }
+                }
+                else {
+                    msg = prettify(msg, request.body());
+                }
             } catch (Exception ex) {
                 // can't parse message, move on
             }
