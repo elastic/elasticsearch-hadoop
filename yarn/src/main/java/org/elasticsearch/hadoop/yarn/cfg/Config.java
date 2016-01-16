@@ -186,7 +186,7 @@ public class Config {
     public Map<String, String> systemProps() {
         Map<String, String> sysProp = new LinkedHashMap<String, String>();
         Set<String> keys = cfg.stringPropertyNames();
-        String prefix = "sysProp.";
+        String prefix = "sys.prop.";
         for (String key : keys) {
             if (key.startsWith(prefix)) {
                 sysProp.put(key.substring(prefix.length()), cfg.getProperty(key));

@@ -29,20 +29,36 @@ As a guide, the table below lists the Hadoop-based distributions that include YA
 |===
 | Distribution		| Release
 
+| Apache Hadoop		| 2.7.x
+| Apache Hadoop		| 2.6.x
 | Apache Hadoop		| 2.5.x
 | Apache Hadoop		| 2.4.x
 
+| Amazon EMR        | 4.2.x
+| Amazon EMR        | 4.1.x
+| Amazon EMR        | 4.0.x
+| Amazon EMR        | 3.8.x
+| Amazon EMR        | 3.7.x
+| Amazon EMR        | 3.6.x
+| Amazon EMR        | 3.5.x
+| Amazon EMR        | 3.4.x
 | Amazon EMR		| 3.3.x
 | Amazon EMR		| 3.2.x
 | Amazon EMR		| 3.1.x
 
+| Cloudera CDH      | 5.5.x
+| Cloudera CDH      | 5.4.x
+| Cloudera CDH      | 5.3.x
 | Cloudera CDH		| 5.2.x
 | Cloudera CDH		| 5.1.x
 | Cloudera CDH		| 5.0.x
 
+| Hortonworks HDP   | 2.3.x
 | Hortonworks HDP   | 2.2.x
 | Hortonworks HDP   | 2.1.x
 
+| MapR              | 5.x
+| MapR              | 4.1.x
 | MapR				| 4.0.x
 |===
 

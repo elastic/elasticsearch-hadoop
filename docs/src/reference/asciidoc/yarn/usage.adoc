@@ -19,6 +19,8 @@ This command was run using /opt/share/hadoop/common/hadoop-common-2.4.1.jar
 
 Once you have confirmed Hadoop is properly configured, do a basic sanity check for {ey} by invoking ++hadoop jar++:
 
+NOTE: Some Hadoop distros might display a warning to use ++yarn jar++ instead; the two commands can be used interchangeably
+
 [source,bash]
 ----
 $ hadoop jar elasticsearch-yarn-<version>.jar
@@ -46,7 +48,7 @@ This is a _one-time_ action; if you already have {es} at hand, deploy it under +
 [source,bash]
 ----
 $ hadoop jar elasticsearch-yarn-<version> -download-es
-Downloading Elasticsearch 1.6.0
+Downloading Elasticsearch <version>
 Downloading ...........................................................................DONE
 ----
 
@@ -64,6 +66,7 @@ If the default {es} is not suitable, for example certain plugins need to be inst
 === Provision {es} into HDFS
 
 Now that we have downloaded {es}, let us upload it into HDFS so it becomes available to the Hadoop nodes.
+Make sure that the proper user (typically +hdfs+) is used for writing data to HDFS; otherwise a permission denied exception will be thrown.
 This is another _one-time_ action (as long as your HDFS cluster and the target location remain in place):
 
 [source,bash]
@@ -95,7 +98,7 @@ You can verify the provisioning by interrogating HDFS either through the web con
 
 [source,bash]
 ----
-$ hadoop fs -ls /apps/elasticsearch
+$ hadoop dfs -ls /apps/elasticsearch
 Found 2 items
 -rw-r--r--   1 hdfs hdfs   30901787 2014-11-13 10:17 /apps/elasticsearch/elasticsearch-<version>.zip
 -rw-r--r--   1 hdfs hdfs      52754 2014-11-13 16:16 /apps/elasticsearch/elasticsearch-yarn-<version>.jar
@@ -177,7 +180,7 @@ Local folder where {ey} downloads remote artifacts (like +{es}.zip+)
 +hdfs.upload.dir+ (default /apps/elasticsearch/)::
 HDFS folder used for provisioning
 
-+es.version+ (default 1.6.0)::
++es.version+ (default {es-v})::
 {es} version used for downloading, provisioning HDFS and running on the YARN cluster
 
 +containers+ (default 1)::
@@ -199,6 +202,16 @@ Pattern for setting up environment variables on each container - each property s
 $ hadoop jar elasticsearch-yarn-<version>.jar [-command] env.ES_USE_GC_LOGGING=true env.PROP=someValue
 ----
 Sets up on each container two variables +ES_USE_GC_LOGGING+ and +PROP+.
+
+added[2.2]
++sys.prop.<NAME>+::
+Pattern for setting up the JVM system property on each container - each property starting with +sys.prop.+ prefix will be set remotely on _each_ container:
+[source,bash]
+----
+$ hadoop jar elasticsearch-yarn-<version>.jar [-command] sys.prop.java.security.debug="access,failure"
+----
+Sets up on each JVM https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/envvars003.html[security debugging] - not something one wants in a production environment.
+
 
 +loadConfig+::
 Property file to be loaded as configuration. That is, instead of specifying the options in each command, save them to a file and use that instead.

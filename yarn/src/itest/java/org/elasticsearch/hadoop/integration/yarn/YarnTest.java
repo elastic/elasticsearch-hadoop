@@ -53,7 +53,7 @@ public class YarnTest {
         testEnv.add("download.local.dir=./build/downloads");
         // for tests we don't need gigs
         testEnv.add("container.mem=512");
-        testEnv.add("sysProp.es.security.manager.enabled=false");
+        testEnv.add("sys.prop.es.security.manager.enabled=false");
     }
 
     @Test

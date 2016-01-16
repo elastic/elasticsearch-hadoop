@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.NMToken;
 import org.apache.hadoop.yarn.client.api.NMTokenCache;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
@@ -33,19 +34,22 @@ import org.elasticsearch.hadoop.yarn.util.Assert;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
 import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
-import static org.elasticsearch.hadoop.yarn.EsYarnConstants.*;
+import static org.elasticsearch.hadoop.yarn.EsYarnConstants.CFG_PROPS;
+import static org.elasticsearch.hadoop.yarn.EsYarnConstants.FS_URI;
 
 public class ApplicationMaster implements AutoCloseable {
 
     private static final Log log = LogFactory.getLog(ApplicationMaster.class);
 
     private ApplicationAttemptId appId;
-    private Map<String, String> env;
+    private final Map<String, String> env;
     private AppMasterRpc rpc;
-    private Configuration cfg;
+    private final Configuration cfg;
     private EsCluster cluster;
     private NMTokenCache nmTokenCache;
     private final Config appConfig;
+
+    private RegisterApplicationMasterResponse amResponse;
 
 
     ApplicationMaster(Map<String, String> env) {
@@ -72,9 +76,9 @@ public class ApplicationMaster implements AutoCloseable {
         // register AM
         appId = YarnUtils.getApplicationAttemptId(env);
         Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s" + env);
-        RegisterApplicationMasterResponse amResponse = rpc.registerAM();
+        amResponse = rpc.registerAM();
+        updateTokens();
         cluster = new EsCluster(rpc, appConfig, env);
-
         try {
             cluster.start();
         } finally {
@@ -83,18 +87,32 @@ public class ApplicationMaster implements AutoCloseable {
     }
 
 
+    private void updateTokens() {
+        for (NMToken nmToken : amResponse.getNMTokensFromPreviousAttempts()) {
+            nmTokenCache.setToken(nmToken.getNodeId().toString(), nmToken.getToken());
+        }
+    }
+
     @Override
     public void close() {
-        if (cluster == null || cluster.hasFailed()) {
-            rpc.failAM();
-        }
-        else {
-            rpc.finishAM();
-        }
+        boolean hasFailed = (cluster == null || cluster.hasFailed());
 
-        if (cluster != null) {
-            cluster.close();
-            cluster = null;
+        try {
+            if (cluster != null) {
+                cluster.close();
+                cluster = null;
+            }
+
+        } finally {
+            if (amResponse != null) {
+                updateTokens();
+            }
+            if (hasFailed) {
+                rpc.failAM();
+            }
+            else {
+                rpc.finishAM();
+            }
         }
     }
 
