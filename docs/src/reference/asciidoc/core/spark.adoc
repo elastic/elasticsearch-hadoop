@@ -536,6 +536,12 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc ->
                                                 doc.contains("mega"));
 ----
 
+[float]
+[[spark-read-json]]
+====== Reading data in JSON format
+
+In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can use the dedicated +esJsonRDD+ methods. In this case, the connector will returns the documents content as it is received from {es} without any processing as an ++RDD[(String, String)]++ in Scala or ++JavaPairRDD[String, String]++ in Java with the keys representing the document id and the value its actual content in JSON format.
+
 [[spark-type-conversion]]
 [float]
 ==== Type conversion

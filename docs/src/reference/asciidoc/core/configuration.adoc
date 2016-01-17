@@ -149,6 +149,12 @@ The write operation {eh} should peform - can be any of:
 `update`;; updates existing data (based on its id). If no data is found, an exception is thrown.
 `upsert`;; known as _merge_ or insert if the data does not exist, updates if the data exists (based on its id).
 
+added[2.1]
+`es.output.json` (default false)::
+Whether the output from the connector should be in JSON format or not (the default). When enabled, the documents are returned in raw JSON format (as returned
+from {es}). Please see the appropriate section of each integration for more details about using JSON directly.
+
+
 [float]
 [[cfg-mapping]]
 ==== Mapping (when writing to {es})
