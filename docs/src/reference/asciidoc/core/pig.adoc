@@ -290,6 +290,13 @@ IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, 
 from Elasticsearch before passing the data to Pig for projection. In practice, this has little impact as long as a document top-level fields are used; for nested fields consider extracting the values
 yourself in Pig.
 
+
+[float]
+=== Reading data from {es} as JSON
+
+In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can instruct the {eh} to return the data as is. By setting `es.output.json` to `true`, the connector will parse the response from {es}, identify the documents and, without converting them, return their content to the user as +String/chararray+ objects.
+
+
 [[pig-type-conversion]]
 [float]
 === Type conversion

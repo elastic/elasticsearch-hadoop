@@ -259,6 +259,7 @@ conf.set("es.resource.write","my-collection/{media-type}");
 
 
 [float]
+[[mr-reading]]
 === Reading data from {es}
 
 In a similar fashion, to read data from {es}, one needs to use `org.elasticsearch.hadoop.mr.EsInputFormat` class.
@@ -348,6 +349,19 @@ public class SomeMapper extends Mapper {
  }}
 ----
 <1> `LinkedMapWritable` is type compatible with `MapWritable` so the cast will work for both
+
+[float]
+[[mr-reading-as-json]]
+==== Reading from {es} in JSON format
+
+In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can instruct the {eh} to return the data as is. By setting `es.output.json` to `true`, the connector will parse the response from {es}, identify the documents and, without converting them, return their content to the user as +Text+ objects:
+
+[source,java]
+----
+Configuration conf = new Configuration();
+conf.set("es.resource", "source/category");
+conf.set("es.output.json", "true");
+----
 
 [float]
 [[mr-read-write-job]]
