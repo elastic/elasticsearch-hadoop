@@ -1,0 +1,13 @@
+{
+    "pig" : {
+        "mappings" : {
+            "tupleartists" : {
+                "properties" : {
+                    "number" : {
+                        "type" : "long"
+                    }
+                }
+            }
+        }
+    }
+}

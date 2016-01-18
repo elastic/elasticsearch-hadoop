@@ -34,19 +34,21 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class ScrollReaderJsonTest {
 
     private boolean readMetadata = false;
-    private String metadataField;
+    private final String metadataField;
     private boolean readAsJson = true;
-    private ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
-    public ScrollReaderJsonTest(boolean readMetadata, String metadataField) {
+    public ScrollReaderJsonTest(boolean readMetadata, String metadataField, boolean readAsJson) {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
+        this.readAsJson = readAsJson;
         this.mapper = new ObjectMapper();
     }
 
@@ -148,8 +150,6 @@ public class ScrollReaderJsonTest {
         Object[] objects = read.get(0);
         String doc = objects[1].toString();
 
-        System.out.println(doc);
-
         Map value = mapper.readValue(doc, Map.class);
 
         assertTrue(value.containsKey("name"));
@@ -163,13 +163,21 @@ public class ScrollReaderJsonTest {
         }
     }
 
+    @Test(expected = EsHadoopParsingException.class)
+    public void testScrollWithParsingValueException() throws IOException {
+        InputStream stream = getClass().getResourceAsStream("numbers-as-strings-mapping.json");
+        Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
+
+        // parsing the doc (don't just read it as json) yields parsing exception
+        ScrollReader reader = new ScrollReader(new JdkValueReader(), fl, readMetadata, metadataField, false);
+        stream = getClass().getResourceAsStream("numbers-as-strings.json");
+        List<Object[]> read = reader.read(stream).getHits();
+    }
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                { Boolean.TRUE, "_metabutu" },
-                { Boolean.FALSE, "" },
-                { Boolean.TRUE, "_metabutu" },
-                { Boolean.FALSE, "" } });
+                { Boolean.TRUE, "_metabutu", Boolean.TRUE },
+                { Boolean.FALSE, "", Boolean.TRUE } });
     }
 }

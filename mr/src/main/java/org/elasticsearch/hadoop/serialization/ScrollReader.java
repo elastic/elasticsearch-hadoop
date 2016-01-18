@@ -23,10 +23,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback;
@@ -349,7 +351,7 @@ public class ScrollReader {
                 if (t == Token.FIELD_NAME && !("fields".equals(name) || "_source".equals(name))) {
 
                     reader.beginField(absoluteName);
-                    value = read(parser.nextToken(), null);
+                    value = read(absoluteName, parser.nextToken(), null);
                     if (ID_FIELD.equals(name)) {
                         id = value;
                     }
@@ -386,7 +388,7 @@ public class ScrollReader {
                 parsingCallback.beginSource();
             }
 
-            data = read(t, null);
+            data = read(StringUtils.EMPTY, t, null);
 
             if (parsingCallback != null) {
                 parsingCallback.endSource();
@@ -414,8 +416,9 @@ public class ScrollReader {
         // in case of additional fields (matched_query), add them to the metadata
         while (parser.currentToken() == Token.FIELD_NAME) {
             String name = parser.currentName();
+            String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
             if (readMetadata) {
-                reader.addToMap(data, reader.wrapString(name), read(parser.nextToken(), null));
+                reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null));
             }
             else {
                 parser.nextToken();
@@ -597,9 +600,9 @@ public class ScrollReader {
         return hits;
     }
 
-    protected Object read(Token t, String fieldMapping) {
+    protected Object read(String fieldName, Token t, String fieldMapping) {
         if (t == Token.START_ARRAY) {
-            return list(fieldMapping);
+            return list(fieldName, fieldMapping);
         }
 
         // handle nested nodes first
@@ -609,7 +612,12 @@ public class ScrollReader {
         FieldType esType = mapping(fieldMapping);
 
         if (t.isValue()) {
-            return parseValue(esType);
+            String rawValue = parser.text();
+            try {
+                return parseValue(esType);
+            } catch (Exception ex) {
+                throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
+            }
         }
         return null;
     }
@@ -627,7 +635,7 @@ public class ScrollReader {
         return obj;
     }
 
-    protected Object list(String fieldMapping) {
+    protected Object list(String fieldName, String fieldMapping) {
         Token t = parser.currentToken();
 
         if (t == null) {
@@ -641,7 +649,7 @@ public class ScrollReader {
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         for (; parser.currentToken() != Token.END_ARRAY;) {
-            content.add(read(parser.currentToken(), fieldMapping));
+            content.add(read(fieldName, parser.currentToken(), fieldMapping));
         }
 
         // eliminate END_ARRAY
@@ -680,7 +688,7 @@ public class ScrollReader {
             // Must point to field name
             Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
             // And then the value...
-            reader.addToMap(map, fieldName, read(parser.nextToken(), nodeMapping));
+            reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
 
             reader.endField(absoluteName);
         }

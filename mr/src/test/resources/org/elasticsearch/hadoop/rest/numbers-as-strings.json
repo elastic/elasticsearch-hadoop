@@ -1,0 +1,23 @@
+{
+    "_scroll_id" : "c2NhbjsxOzE6MjBLOXo0S1RTcktPNmtmSU44YjJZUTsxO3RvdGFsX2hpdHM6MTk2Ow==",
+    "took" : 30,
+    "timed_out" : false,
+    "_shards" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+    },
+    "hits" : {
+        "total" : 196,
+        "max_score" : 0.0,
+        "hits" : [{
+                "_index" : "pig",
+                "_type" : "tupleartists",
+                "_id" : "23hrGo7VRCyao8lB9Uu5Kw",
+                "_score" : 0.0,
+                "_source" : {
+                    "number" : "null"
+                }
+            }]
+    }
+}
