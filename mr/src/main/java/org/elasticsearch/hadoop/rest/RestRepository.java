@@ -40,6 +40,7 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
+import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
@@ -494,7 +495,7 @@ public class RestRepository implements Closeable, StatsAware {
             int batchSize = 250;
             String scanQuery = resourceW.indexAndType() + "/_search?search_type=scan&scroll=10m&size=" + batchSize + "&_source=false";
 
-            ScrollReader scrollReader = new ScrollReader(new JdkValueReader(), null, false, "_metadata", false);
+            ScrollReader scrollReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader()));
 
             // start iterating
             ScrollQuery sq = scanAll(scanQuery, null, scrollReader);

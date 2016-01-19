@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.dto.Node;
@@ -76,7 +77,9 @@ public class AbstractRestQueryTest {
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
         QueryBuilder qb = QueryBuilder.query(sets);
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mapping, true, "_metadata", false, false);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
 
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
@@ -93,7 +96,9 @@ public class AbstractRestQueryTest {
         Map<Shard, Node> targetShards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
 
         Field mapping = client.getMapping();
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), mapping, true, "_metadata", false);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mapping, true, "_metadata", false, false);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
 
         Settings sets = settings.copy();
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");

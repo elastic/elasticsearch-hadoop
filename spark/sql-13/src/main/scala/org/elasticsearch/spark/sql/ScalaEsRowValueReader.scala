@@ -62,7 +62,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
     else {
       LogFactory.getLog(getClass).warn(
           s"""Field '$sparkRowField' is backed by an array but the associated Spark Schema does not reflect this;
-              (use ${ConfigurationOptions.ES_FIELD_READ_AS_ARRAY_INCLUDE}/exclude) """.stripMargin)
+              (use ${ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE}/exclude) """.stripMargin)
     }
     // since the list is not used actually, return the parent field information usable for nested arrays
     previousLevel

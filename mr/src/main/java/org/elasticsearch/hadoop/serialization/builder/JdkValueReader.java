@@ -417,9 +417,9 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     @Override
     public void setSettings(Settings settings) {
-        emptyAsNull = settings.getFieldReadEmptyAsNull();
+        emptyAsNull = settings.getReadFieldEmptyAsNull();
         richDate = settings.getMappingDateRich();
         arrayInclude = SettingsUtils.getFieldArrayFilterInclude(settings);
-        arrayExclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
+        arrayExclude = StringUtils.tokenize(settings.getReadFieldAsArrayExclude());
     }
 }

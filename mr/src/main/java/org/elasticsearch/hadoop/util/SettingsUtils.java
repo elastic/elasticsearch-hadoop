@@ -179,7 +179,7 @@ public abstract class SettingsUtils {
     }
 
     public static List<NumberedInclude> getFieldArrayFilterInclude(Settings settings) {
-        String includeString = settings.getFieldReadAsArrayInclude();
+        String includeString = settings.getReadFieldAsArrayInclude();
         List<String> includes = StringUtils.tokenize(includeString);
 
         List<NumberedInclude> list = new ArrayList<NumberedInclude>(includes.size());

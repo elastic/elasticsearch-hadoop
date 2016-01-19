@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.rest.QueryBuilder;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
@@ -78,13 +79,13 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             Collection<String> fields = CascadingUtils.fieldToAlias(settings, getSourceFields());
 
             // validate if possible
-            FieldPresenceValidation validation = settings.getFieldExistanceValidation();
+            FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
             if (validation.isRequired()) {
                 MappingUtils.validateMapping(fields, mapping, validation, log);
             }
 
-            input = QueryBuilder.query(settings).fields(StringUtils.concatenateAndUriEncode(fields,  ",")).build(client,
-                          new ScrollReader(new JdkValueReader(), mapping, settings.getReadMetadata(), settings.getReadMetadataField(), settings.getOutputAsJson()));
+            input = QueryBuilder.query(settings).fields(StringUtils.concatenateAndUriEncode(fields,  ",")).
+                    build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }

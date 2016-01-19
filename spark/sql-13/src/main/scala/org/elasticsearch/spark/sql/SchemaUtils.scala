@@ -54,9 +54,6 @@ import org.apache.spark.sql.types.DataType
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
 
-  val readInclude = "es.read.field.include"
-  val readExclude = "es.read.field.exclude"
-
   def discoverMapping(cfg: Settings): Schema = {
     val field = discoverMappingAsField(cfg)
     val struct = convertToStruct(field, cfg)
@@ -67,20 +64,13 @@ private[sql] object SchemaUtils {
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
-
-        var field = repo.getMapping.skipHeaders()
-        val readIncludeCfg = cfg.getProperty(readInclude)
-        val readExcludeCfg = cfg.getProperty(readExclude)
+        var field = MappingUtils.filterMapping(repo.getMapping, cfg);
 
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
-        if (StringUtils.hasText(readIncludeCfg) || StringUtils.hasText(readExcludeCfg)) {
-          // apply any possible include/exclude that can define restrict the DataFrame to just a number of fields
-          val includes = StringUtils.tokenize(readIncludeCfg)
-          val excludes = StringUtils.tokenize(readExcludeCfg)
-          field = MappingUtils.filter(field, includes, excludes)
+        if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldAsArrayExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
-          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()));
+          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()))
         }
         return field
       }
@@ -94,7 +84,7 @@ private[sql] object SchemaUtils {
 
   def convertToStruct(rootField: Field, cfg: Settings): StructType = {
     val arrayIncludes = SettingsUtils.getFieldArrayFilterInclude(cfg)
-    val arrayExcludes = StringUtils.tokenize(cfg.getFieldReadAsArrayExclude)
+    val arrayExcludes = StringUtils.tokenize(cfg.getReadFieldAsArrayExclude)
 
     var fields = for (fl <- rootField.properties()) yield convertField(fl, null, arrayIncludes, arrayExcludes)
     if (cfg.getReadMetadata) {

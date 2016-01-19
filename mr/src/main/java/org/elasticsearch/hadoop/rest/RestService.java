@@ -18,6 +18,7 @@ import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
@@ -265,7 +266,7 @@ public abstract class RestService implements Serializable {
             Field mapping = client.getMapping();
             log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
             // validate if possible
-            FieldPresenceValidation validation = settings.getFieldExistanceValidation();
+            FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
             if (validation.isRequired()) {
                 MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
             }
@@ -307,7 +308,7 @@ public abstract class RestService implements Serializable {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));
         }
 
-        ScrollReader scrollReader = new ScrollReader(reader, fieldMapping, settings.getReadMetadata(), settings.getReadMetadataField(), settings.getOutputAsJson());
+        ScrollReader scrollReader = new ScrollReader(new ScrollReaderConfig(reader, fieldMapping, settings));
 
         // initialize REST client
         RestRepository client = new RestRepository(settings);
@@ -323,7 +324,7 @@ public abstract class RestService implements Serializable {
 
         // take into account client node routing
         QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId)
-                                                .node(partition.nodeId).restrictToNode(partition.onlyNode && (!settings.getNodesClientOnly() && !settings.getNodesWANOnly()));
+                .node(partition.nodeId).restrictToNode(partition.onlyNode && (!settings.getNodesClientOnly() && !settings.getNodesWANOnly()));
         queryBuilder.fields(settings.getScrollFields());
         queryBuilder.filter(SettingsUtils.getFilters(settings));
 

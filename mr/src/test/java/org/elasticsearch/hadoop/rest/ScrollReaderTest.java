@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
+import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.junit.Test;
@@ -34,23 +35,29 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class ScrollReaderTest {
 
     private boolean readMetadata = false;
-    private String metadataField;
-    private boolean readAsJson = false;
+    private final String metadataField;
+    private final boolean readAsJson = false;
+    private final ScrollReaderConfig scrollReaderConfig;
+    private ScrollReader reader;
 
     public ScrollReaderTest(boolean readMetadata, String metadataField) {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
+
+        scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), null, readMetadata, metadataField, readAsJson, false);
+        reader = new ScrollReader(scrollReaderConfig);
     }
 
     @Test
     public void testScrollWithFields() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
@@ -60,7 +67,6 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithMatchedQueries() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
         InputStream stream = getClass().getResourceAsStream("scroll-matched-queries.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
@@ -72,9 +78,11 @@ public class ScrollReaderTest {
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
         Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), fl, readMetadata, metadataField, readAsJson);
-        stream = getClass().getResourceAsStream("scroll-source.json");
 
+        scrollReaderConfig.rootField = fl;
+        reader = new ScrollReader(scrollReaderConfig);
+
+        stream = getClass().getResourceAsStream("scroll-source.json");
         List<Object[]> read = reader.read(stream).getHits();
 
         assertEquals(3, read.size());
@@ -90,7 +98,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithSource() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
+        reader = new ScrollReader(scrollReaderConfig);
         InputStream stream = getClass().getResourceAsStream("scroll-source.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
@@ -100,7 +108,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithoutSource() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
+        reader = new ScrollReader(scrollReaderConfig);
         InputStream stream = getClass().getResourceAsStream("empty-source.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(2, read.size());
@@ -115,7 +123,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollMultiValueList() throws IOException {
-        ScrollReader reader = new ScrollReader(new JdkValueReader(), null, readMetadata, metadataField, readAsJson);
+        reader = new ScrollReader(scrollReaderConfig);
         InputStream stream = getClass().getResourceAsStream("list-with-null.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
@@ -129,9 +137,7 @@ public class ScrollReaderTest {
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                { Boolean.TRUE, "_metabutu" },
-                { Boolean.FALSE, "" },
-                { Boolean.TRUE, "_metabutu" },
+                { Boolean.TRUE, "_metabutu"},
                 { Boolean.FALSE, "" } });
     }
 }

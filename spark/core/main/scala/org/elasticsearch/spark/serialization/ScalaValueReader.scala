@@ -146,10 +146,10 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   }
 
   def setSettings(settings: Settings) = {
-    emptyAsNull = settings.getFieldReadEmptyAsNull
+    emptyAsNull = settings.getReadFieldEmptyAsNull
     richDate = settings.getMappingDateRich
     arrayInclude = SettingsUtils.getFieldArrayFilterInclude(settings);
-    arrayExclude = StringUtils.tokenize(settings.getFieldReadAsArrayExclude());
+    arrayExclude = StringUtils.tokenize(settings.getReadFieldAsArrayExclude());
   }
 
   def createMap(): AnyRef = {

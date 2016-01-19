@@ -86,7 +86,7 @@ class SchemaUtilsTest {
     |}
     |""".stripMargin
     
-    cfg.setProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, "name")
+    cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "name")
     
     val struct = convertToStruct(fieldFromMapping(mapping), cfg)
     assertTrue(struct.fieldNames.contains("name"))
@@ -110,7 +110,7 @@ class SchemaUtilsTest {
     |}
     |""".stripMargin
     
-    cfg.setProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, "name:3")
+    cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "name:3")
     
     val struct = convertToStruct(fieldFromMapping(mapping), cfg)
     assertTrue(struct.fieldNames.contains("name"))
@@ -167,7 +167,7 @@ class SchemaUtilsTest {
     |}
     }""".stripMargin
     
-    cfg.setProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, "arr")
+    cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr")
     
     val struct = convertToStruct(fieldFromMapping(mapping), cfg)
     val info = detectRowInfo(cfg, struct)
@@ -191,7 +191,7 @@ class SchemaUtilsTest {
     |}
     }""".stripMargin
     
-    cfg.setProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, "arr:3")
+    cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr:3")
     
     val struct = convertToStruct(fieldFromMapping(mapping), cfg)
     val info = detectRowInfo(cfg, struct)

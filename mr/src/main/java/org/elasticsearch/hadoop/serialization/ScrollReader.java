@@ -28,12 +28,16 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -143,6 +147,46 @@ public class ScrollReader {
         }
     }
 
+    public static class ScrollReaderConfig {
+        public ValueReader reader;
+
+        public boolean readMetadata;
+        public String metadataName;
+        public boolean returnRawJson;
+        public boolean ignoreUnmappedFields;
+        public List<String> includeFields;
+        public List<String> excludeFields;
+        public Field rootField;
+
+        public ScrollReaderConfig(ValueReader reader, Field rootField, boolean readMetadata, String metadataName,
+                boolean returnRawJson, boolean ignoreUnmappedFields, List<String> includeFields,
+                List<String> excludeFields) {
+            super();
+            this.reader = reader;
+            this.readMetadata = readMetadata;
+            this.metadataName = metadataName;
+            this.returnRawJson = returnRawJson;
+            this.ignoreUnmappedFields = ignoreUnmappedFields;
+            this.includeFields = includeFields;
+            this.excludeFields = excludeFields;
+            this.rootField = rootField;
+        }
+
+        public ScrollReaderConfig(ValueReader reader, Field rootField, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
+            this(reader, rootField, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList());
+        }
+
+        public ScrollReaderConfig(ValueReader reader) {
+            this(reader, null, false, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList());
+        }
+
+        public ScrollReaderConfig(ValueReader reader, Field field, Settings cfg) {
+            this(reader, field, cfg.getReadMetadata(), cfg.getReadMetadataField(),
+                    cfg.getOutputAsJson(), cfg.getReadMappingMissingFieldsIgnore(),
+                    StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()));
+        }
+    }
+
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
     private Parser parser;
@@ -153,6 +197,10 @@ public class ScrollReader {
     private final boolean readMetadata;
     private final String metadataField;
     private final boolean returnRawJson;
+    private final boolean ignoreUnmappedFields;
+
+    private final List<NumberedInclude> includeFields;
+    private final List<String> excludeFields;
 
     private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
@@ -162,13 +210,24 @@ public class ScrollReader {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ValueReader reader, Field rootField, boolean readMetadata, String metadataName, boolean returnRawJson) {
-        this.reader = reader;
+    public ScrollReader(ScrollReaderConfig scrollConfig) {
+        this.reader = scrollConfig.reader;
         this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
-        this.esMapping = Field.toLookupMap(rootField);
-        this.readMetadata = readMetadata;
-        this.metadataField = metadataName;
-        this.returnRawJson = returnRawJson;
+        
+        this.readMetadata = scrollConfig.readMetadata;
+        this.metadataField = scrollConfig.metadataName;
+        this.returnRawJson = scrollConfig.returnRawJson;
+        this.ignoreUnmappedFields = scrollConfig.ignoreUnmappedFields;
+        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.includeFields);
+        this.excludeFields = scrollConfig.excludeFields;
+
+        Field mapping = scrollConfig.rootField;
+        // optimize filtering
+        if (ignoreUnmappedFields) {
+            mapping = MappingUtils.filter(mapping, scrollConfig.includeFields, scrollConfig.excludeFields);
+        }
+        
+        this.esMapping = Field.toLookupMap(mapping);
     }
 
     public Scroll read(InputStream content) throws IOException {
@@ -348,20 +407,25 @@ public class ScrollReader {
                 absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
                 Object value = null;
 
-                if (t == Token.FIELD_NAME && !("fields".equals(name) || "_source".equals(name))) {
+                if (t == Token.FIELD_NAME) {
+                    if (!("fields".equals(name) || "_source".equals(name))) {
+                        reader.beginField(absoluteName);
+                        value = read(absoluteName, parser.nextToken(), null);
+                        if (ID_FIELD.equals(name)) {
+                            id = value;
+                        }
 
-                    reader.beginField(absoluteName);
-                    value = read(absoluteName, parser.nextToken(), null);
-                    if (ID_FIELD.equals(name)) {
-                        id = value;
+                        reader.addToMap(metadata, reader.wrapString(name), value);
+                        reader.endField(absoluteName);
                     }
-
-                    reader.addToMap(metadata, reader.wrapString(name), value);
-                    reader.endField(absoluteName);
+                    else {
+                        t = parser.nextToken();
+                        break;
+                    }
                 }
                 else {
                     // if = no _source or field found, else select START_OBJECT
-                    t = (t != Token.FIELD_NAME) ? null : parser.nextToken();
+                    t = null;
                     break;
                 }
             }
@@ -442,6 +506,16 @@ public class ScrollReader {
         }
 
         return result;
+    }
+
+    private boolean shouldSkip(String absoluteName) {
+        // if ignoring unmapped fields, the filters are already applied
+        if (ignoreUnmappedFields) {
+            return !esMapping.containsKey(absoluteName);
+        }
+        else {
+            return !FieldFilter.filter(absoluteName, includeFields, excludeFields).matched;
+        }
     }
 
     private Object[] readHitAsJson() {
@@ -683,14 +757,23 @@ public class ScrollReader {
             }
 
             String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
-            reader.beginField(absoluteName);
 
-            // Must point to field name
-            Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
-            // And then the value...
-            reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
+            if (!absoluteName.equals(nodeMapping)) {
+                throw new EsHadoopParsingException("Different node mapping " + absoluteName + "|" + nodeMapping);
+            }
 
-            reader.endField(absoluteName);
+            if (shouldSkip(absoluteName)) {
+                skipCurrentBlock();
+            }
+            else {
+                reader.beginField(absoluteName);
+
+                // Must point to field name
+                Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
+                // And then the value...
+                reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
+                reader.endField(absoluteName);
+            }
         }
 
         // eliminate END_OBJECT

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -288,20 +289,37 @@ public abstract class Settings {
         return hasUpdateScript() && StringUtils.hasText(getUpdateScriptParamsJson());
     }
 
-    public boolean getFieldReadEmptyAsNull() {
-        return Booleans.parseBoolean(getProperty(ES_FIELD_READ_EMPTY_AS_NULL, ES_FIELD_READ_EMPTY_AS_NULL_DEFAULT));
+    private String getLegacyProperty(String legacyProperty, String newProperty, String defaultValue) {
+        String legacy = getProperty(legacyProperty);
+        if (StringUtils.hasText(legacy)) {
+            LogFactory.getLog(Settings.class).warn(String.format(Locale.ROOT, "[%s] property has been deprecated - use [%s] instead", legacyProperty, newProperty));
+            return legacy;
+        }
+        return getProperty(newProperty, defaultValue);
     }
 
-    public FieldPresenceValidation getFieldExistanceValidation() {
-        return FieldPresenceValidation.valueOf(getProperty(ES_FIELD_READ_VALIDATE_PRESENCE, ES_FIELD_READ_VALIDATE_PRESENCE_DEFAULT).toUpperCase(Locale.ENGLISH));
+    public boolean getReadFieldEmptyAsNull() {
+        return Booleans.parseBoolean(getLegacyProperty(ES_READ_FIELD_EMPTY_AS_NULL_LEGACY, ES_READ_FIELD_EMPTY_AS_NULL, ES_READ_FIELD_EMPTY_AS_NULL_DEFAULT));
     }
 
-    public String getFieldReadAsArrayInclude() {
-        return getProperty(ES_FIELD_READ_AS_ARRAY_INCLUDE, StringUtils.EMPTY);
+    public FieldPresenceValidation getReadFieldExistanceValidation() {
+        return FieldPresenceValidation.valueOf(getLegacyProperty(ES_READ_FIELD_VALIDATE_PRESENCE_LEGACY, ES_READ_FIELD_VALIDATE_PRESENCE, ES_READ_FIELD_VALIDATE_PRESENCE_DEFAULT).toUpperCase(Locale.ENGLISH));
     }
 
-    public String getFieldReadAsArrayExclude() {
-        return getProperty(ES_FIELD_READ_AS_ARRAY_EXCLUDE, StringUtils.EMPTY);
+    public String getReadFieldInclude() {
+        return getProperty(ES_READ_FIELD_INCLUDE, StringUtils.EMPTY);
+    }
+
+    public String getReadFieldExclude() {
+        return getProperty(ES_READ_FIELD_EXCLUDE, StringUtils.EMPTY);
+    }
+
+    public String getReadFieldAsArrayInclude() {
+        return getProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, StringUtils.EMPTY);
+    }
+
+    public String getReadFieldAsArrayExclude() {
+        return getProperty(ES_READ_FIELD_AS_ARRAY_EXCLUDE, StringUtils.EMPTY);
     }
 
     public TimeValue getHeartBeatLead() {
@@ -445,6 +463,10 @@ public abstract class Settings {
 
     public boolean getReadMetadataVersion() {
         return Booleans.parseBoolean(getProperty(ES_READ_METADATA_VERSION, ES_READ_METADATA_VERSION_DEFAULT));
+    }
+
+    public boolean getReadMappingMissingFieldsIgnore() {
+        return Booleans.parseBoolean(getProperty(ES_READ_UNMAPPED_FIELDS_IGNORE, ES_READ_UNMAPPED_FIELDS_IGNORE_DEFAULT));
     }
 
     public abstract InputStream loadResource(String location);

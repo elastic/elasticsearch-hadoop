@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
@@ -130,25 +131,36 @@ public abstract class MappingUtils {
     }
 
     public static Field filter(Field field, Collection<String> includes, Collection<String> excludes) {
-        List<Field> filtered = new ArrayList<Field>();
-
-        List<NumberedInclude> convertedIncludes = FieldFilter.toNumberedFilter(includes);
-
-        for (Field fl : field.skipHeaders().properties()) {
-            processField(fl, null, filtered, convertedIncludes, excludes);
+        if (field == null) {
+            return field;
+        }
+        field = field.skipHeaders();
+        
+        if (includes.isEmpty() && excludes.isEmpty()) {
+          return field;
         }
 
-        return new Field(field.name(), field.type(), filtered);
+        List<Field> filtered = new ArrayList<Field>();
+        List<NumberedInclude> convertedIncludes = FieldFilter.toNumberedFilter(includes);
+
+        boolean intact = true;
+        for (Field fl : field.skipHeaders().properties()) {
+            intact &= processField(fl, null, filtered, convertedIncludes, excludes);
+        }
+
+        return (intact ? field : new Field(field.name(), field.type(), filtered));
     }
 
-    private static void processField(Field field, String parentName, List<Field> filtered, Collection<NumberedInclude> includes, Collection<String> excludes) {
+    private static boolean processField(Field field, String parentName, List<Field> filtered, Collection<NumberedInclude> includes, Collection<String> excludes) {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
 
+        boolean intact = true;
+        
         if (FieldFilter.filter(fieldName, includes, excludes).matched) {
             if (FieldType.OBJECT == field.type()) {
                 List<Field> nested = new ArrayList<Field>();
                 for (Field nestedField : field.properties()) {
-                    processField(nestedField, field.name(), nested, includes, excludes);
+                    intact &= processField(nestedField, field.name(), nested, includes, excludes);
                 }
                 filtered.add(new Field(field.name(), field.type(), nested));
             }
@@ -156,5 +168,16 @@ public abstract class MappingUtils {
                 filtered.add(field);
             }
         }
+        else {
+            intact = false;
+        }
+        return intact;
+    }
+
+    public static Field filterMapping(Field mapping, Settings cfg) {
+        String readIncludeCfg = cfg.getReadFieldInclude();
+        String readExcludeCfg = cfg.getReadFieldExclude();
+
+        return filter(mapping, StringUtils.tokenize(readIncludeCfg), StringUtils.tokenize(readExcludeCfg));
     }
 }
