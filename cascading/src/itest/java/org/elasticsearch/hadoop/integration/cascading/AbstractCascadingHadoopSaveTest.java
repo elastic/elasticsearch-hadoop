@@ -41,9 +41,9 @@ import cascading.tap.Tap;
 import cascading.tap.hadoop.Hfs;
 import cascading.tuple.Fields;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingHadoopSaveTest {
@@ -62,7 +62,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/artists").skipHeaders().toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/artists").toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/alias").skipHeaders().toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/alias").toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-12").skipHeaders().toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-12").toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -111,7 +111,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testIndexPatternWithFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-format-2012-10-06").skipHeaders().toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-format-2012-10-06").toString(),
                 is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 

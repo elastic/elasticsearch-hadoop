@@ -80,7 +80,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTupleMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/tupleartists").skipHeaders().toString(), is("tupleartists=[links=STRING, name=STRING]"));
+        assertThat(RestUtils.getMapping("pig/tupleartists").toString(), is("tupleartists=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -97,7 +97,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testBagMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/bagartists").skipHeaders().toString(), is("bagartists=[links=STRING, name=STRING]"));
+        assertThat(RestUtils.getMapping("pig/bagartists").toString(), is("bagartists=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -116,7 +116,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTimestampMapping() throws Exception {
-        String mapping = RestUtils.getMapping("pig/timestamp").skipHeaders().toString();
+        String mapping = RestUtils.getMapping("pig/timestamp").toString();
         assertThat(mapping, containsString("date=DATE"));
     }
 
@@ -136,7 +136,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/fieldalias").skipHeaders().toString(), is("fieldalias=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("pig/fieldalias").toString(), is("fieldalias=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCaseSensitivityMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/casesensitivity").skipHeaders().toString(), is("casesensitivity=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
+        assertThat(RestUtils.getMapping("pig/casesensitivity").toString(), is("casesensitivity=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testEmptyComplexStructuresMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/emptyconst").skipHeaders().toString(), is("emptyconst=[]"));
+        assertThat(RestUtils.getMapping("pig/emptyconst").toString(), is("emptyconst=[]"));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCreateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/createwithid").skipHeaders().toString(), is("createwithid=[id=LONG, links=STRING, name=STRING]"));
+        assertThat(RestUtils.getMapping("pig/createwithid").toString(), is("createwithid=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -221,7 +221,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/update").skipHeaders().toString(), is("update=[id=LONG, links=STRING, name=STRING]"));
+        assertThat(RestUtils.getMapping("pig/update").toString(), is("update=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -252,7 +252,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testParentChildMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/child").skipHeaders().toString(), is("child=[id=LONG, links=STRING, name=STRING]"));
+        assertThat(RestUtils.getMapping("pig/child").toString(), is("child=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test
@@ -275,7 +275,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-123").skipHeaders().toString(), is("pattern-123=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+        assertThat(RestUtils.getMapping("pig/pattern-123").toString(), is("pattern-123=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
     }
 
     @Test
@@ -290,7 +290,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").skipHeaders().toString(), is("pattern-format-2001-10-06=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").toString(), is("pattern-format-2001-10-06=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
     }
 
     private String loadSource() {

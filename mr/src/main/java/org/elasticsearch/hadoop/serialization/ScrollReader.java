@@ -199,6 +199,8 @@ public class ScrollReader {
     private final boolean returnRawJson;
     private final boolean ignoreUnmappedFields;
 
+    private boolean insideGeo = false;
+
     private final List<NumberedInclude> includeFields;
     private final List<String> excludeFields;
 
@@ -509,6 +511,12 @@ public class ScrollReader {
     }
 
     private boolean shouldSkip(String absoluteName) {
+        // when parsing geo structures, ignore filtering as depending on the
+        // type, JSON can have an object structure
+        // especially for geo shapes
+        if (insideGeo) {
+            return false;
+        }
         // if ignoring unmapped fields, the filters are already applied
         if (ignoreUnmappedFields) {
             return !esMapping.containsKey(absoluteName);
@@ -743,6 +751,15 @@ public class ScrollReader {
             t = parser.nextToken();
         }
 
+        boolean toggleGeo = false;
+        
+        if (fieldMapping != null) {
+            // parse everything underneath without mapping
+            if (FieldType.isGeo(mapping(fieldMapping))) {
+                toggleGeo = true;
+                insideGeo = true;
+            }
+        }
         Object map = reader.createMap();
 
         for (; parser.currentToken() != Token.END_OBJECT;) {
@@ -774,6 +791,11 @@ public class ScrollReader {
                 reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
                 reader.endField(absoluteName);
             }
+        }
+
+        // geo field finished, returning
+        if (toggleGeo) {
+            insideGeo = false;
         }
 
         // eliminate END_OBJECT

@@ -42,7 +42,7 @@ public class Field implements Serializable {
     private final Field[] properties;
 
     public Field(String name, FieldType type) {
-        this(name, type, (Field[]) NO_FIELDS);
+        this(name, type, NO_FIELDS);
     }
 
     public Field(String name, FieldType type, Collection<Field> properties) {
@@ -65,11 +65,7 @@ public class Field implements Serializable {
 
     public static Field parseField(Map<String, Object> content) {
         Iterator<Entry<String, Object>> iterator = content.entrySet().iterator();
-        return (iterator.hasNext() ? parseField(iterator.next(), null) : null);
-    }
-
-    public Field skipHeaders() {
-        return skipHeaders(this);
+        return (iterator.hasNext() ? skipHeaders(parseField(iterator.next(), null)) : null);
     }
 
     private static Field skipHeaders(Field field) {
@@ -77,7 +73,7 @@ public class Field implements Serializable {
 
         // handle the common case of mapping by removing the first field (mapping.)
         if (props.length > 0 && props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
-            // followed by <type> (index/type) removal
+            // can't return the type as it is an object of properties
             return props[0].properties()[0];
         }
         return field;
@@ -195,6 +191,7 @@ public class Field implements Serializable {
         throw new EsHadoopIllegalArgumentException("invalid map received " + entry);
     }
 
+    @Override
     public String toString() {
         return String.format("%s=%s", name, (type == FieldType.OBJECT ? Arrays.toString(properties) : type));
     }

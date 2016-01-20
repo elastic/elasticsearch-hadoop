@@ -28,12 +28,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.isLocal;
+import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
+import static org.hamcrest.CoreMatchers.is;
 
 import static org.hamcrest.Matchers.containsString;
-
-import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
-import static org.hamcrest.CoreMatchers.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveTest {
@@ -60,17 +62,17 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE artistssave ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/artists");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/artists");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM source s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE artistssave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM source s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -91,17 +93,17 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE savewithmetadata ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "ts       STRING) "
-                + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<\"5m\">'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "ts       STRING) "
+                        + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<\"5m\">'");
 
         String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE savewithmetadata "
-                + "SELECT s.id, s.name, s.ts FROM sourcewithmetadata s";
+                        + "SELECT s.id, s.name, s.ts FROM sourcewithmetadata s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -113,7 +115,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testBasicSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/artists").skipHeaders().toString(), is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/artists").toString(),
+                is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -144,17 +147,17 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE compoundsave ("
-                + "rid      INT, "
-                + "mapids   ARRAY<INT>, "
-                + "rdata    MAP<INT, STRING>) "
-                + tableProps("hive/compound");
+                        + "rid      INT, "
+                        + "mapids   ARRAY<INT>, "
+                        + "rdata    MAP<INT, STRING>) "
+                        + tableProps("hive/compound");
 
         String selectTest = "SELECT rid, mapids, rdata FROM compoundsource";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE compoundsave "
-                + "SELECT rid, mapids, rdata FROM compoundsource";
+                        + "SELECT rid, mapids, rdata FROM compoundsource";
 
         System.out.println(ddl);
         System.out.println(server.execute(localTable));
@@ -167,7 +170,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testCompoundSaveMapping() throws Exception {
         assertThat(
-                RestUtils.getMapping("hive/compound").skipHeaders().toString(),
+                RestUtils.getMapping("hive/compound").toString(),
                 is("compound=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
     }
 
@@ -180,11 +183,11 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE artiststimestampsave ("
-                + "id       BIGINT, "
-                + "dte     TIMESTAMP, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/artiststimestamp");
+                        + "id       BIGINT, "
+                        + "dte     TIMESTAMP, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/artiststimestamp");
 
         String currentDate = "SELECT *, from_unixtime(unix_timestamp()) from timestampsource";
 
@@ -192,7 +195,7 @@ public class AbstractHiveSaveTest {
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
         String insert =
                 "INSERT OVERWRITE TABLE artiststimestampsave "
-                + "SELECT NULL, from_unixtime(unix_timestamp()), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
+                        + "SELECT NULL, from_unixtime(unix_timestamp()), s.name, named_struct('url', s.url, 'picture', s.picture) FROM timestampsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -204,7 +207,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testTimestampSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/artiststimestamp").skipHeaders().toString(), is("artiststimestamp=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/artiststimestamp").toString(),
+                is("artiststimestamp=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -215,16 +219,16 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE aliassave ("
-                + "dTE     TIMESTAMP, "
-                + "Name     STRING, "
-                + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps("hive/aliassave", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
+                        + "dTE     TIMESTAMP, "
+                        + "Name     STRING, "
+                        + "links    STRUCT<uRl:STRING, pICture:STRING>) "
+                        + tableProps("hive/aliassave", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
         String insert =
                 "INSERT OVERWRITE TABLE aliassave "
-                + "SELECT from_unixtime(unix_timestamp()), s.name, named_struct('uRl', s.url, 'pICture', s.picture) FROM aliassource s";
+                        + "SELECT from_unixtime(unix_timestamp()), s.name, named_struct('uRl', s.url, 'pICture', s.picture) FROM aliassource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -235,7 +239,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/aliassave").skipHeaders().toString(), is("aliassave=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/aliassave").toString(),
+                is("aliassave=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
     }
 
     @Test
@@ -247,11 +252,11 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE datesave ("
-                + "id       BIGINT, "
-                + "date     DATE, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/datesave");
+                        + "id       BIGINT, "
+                        + "date     DATE, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/datesave");
 
         // this works
         String someDate = "SELECT cast('2013-10-21' as date) from datesource";
@@ -260,7 +265,7 @@ public class AbstractHiveSaveTest {
         // this does not
         String insert =
                 "INSERT OVERWRITE TABLE datesave "
-                + "SELECT NULL, cast('2013-10-21' as date), s.name, named_struct('url', s.url, 'picture', s.picture) FROM datesource s";
+                        + "SELECT NULL, cast('2013-10-21' as date), s.name, named_struct('url', s.url, 'picture', s.picture) FROM datesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -273,7 +278,8 @@ public class AbstractHiveSaveTest {
     @Test
     @Ignore
     public void testDateSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/datesave").skipHeaders().toString(), is("datesave=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
+        assertThat(RestUtils.getMapping("hive/datesave").toString(),
+                is("datesave=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
     }
 
     @Test
@@ -284,15 +290,15 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE charsave ("
-                + "id       BIGINT, "
-                + "name     CHAR(20), "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/charsave");
+                        + "id       BIGINT, "
+                        + "name     CHAR(20), "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/charsave");
 
         // this does not
         String insert =
                 "INSERT OVERWRITE TABLE charsave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM charsource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM charsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -303,7 +309,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCharMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/charsave").skipHeaders().toString(), is("charsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/charsave").toString(),
+                is("charsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -319,12 +326,12 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE externalserdetest ("
-                + "data     STRING)"
-                + tableProps("hive/externalserde");
+                        + "data     STRING)"
+                        + tableProps("hive/externalserde");
 
         String insert =
                 "INSERT OVERWRITE TABLE externalserdetest "
-                + "SELECT s.data FROM externalserde s";
+                        + "SELECT s.data FROM externalserde s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -335,7 +342,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testExternalSerDeMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/externalserde").skipHeaders().toString(), is("externalserde=[data=STRING]"));
+        assertThat(RestUtils.getMapping("hive/externalserde").toString(), is("externalserde=[data=STRING]"));
     }
 
     @Test
@@ -346,15 +353,15 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE varcharsave ("
-                + "id       BIGINT, "
-                + "name     VARCHAR(10), "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/varcharsave");
+                        + "id       BIGINT, "
+                        + "name     VARCHAR(10), "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/varcharsave");
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE varcharsave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM varcharsource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM varcharsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -365,7 +372,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testVarcharSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/varcharsave").skipHeaders().toString(), is("varcharsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/varcharsave").toString(),
+                is("varcharsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -379,19 +387,19 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE createsave ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/createsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/createsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM createsource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE createsave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -403,7 +411,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCreateMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/createsave").skipHeaders().toString(),
+        assertThat(RestUtils.getMapping("hive/createsave").toString(),
                 is("createsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
@@ -418,19 +426,19 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE createsaveduplicate ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/createsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/createsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM createsourceduplicate s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE createsaveduplicate "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsourceduplicate s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM createsourceduplicate s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -451,19 +459,19 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE updatesave ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/updatesave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/updatesave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM updatesource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE updatesave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatesource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatesource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -475,7 +483,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/updatesave").skipHeaders().toString(), is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/updatesave").toString(),
+                is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -489,19 +498,19 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE updatewoupsertsave ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/updatewoupsertsave",
-                             "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
-                             "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/updatewoupsertsave",
+                                "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
+                                "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM updatewoupsertsource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE updatewoupsertsave "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatewoupsertsource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM updatewoupsertsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -521,19 +530,19 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE child ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/child",
-                             "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='id'",
-                             "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/child",
+                                "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='id'",
+                                "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
 
         String selectTest = "SELECT s.id, struct(s.url, s.picture) FROM childsource s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE child "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM childsource s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM childsource s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -545,7 +554,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testParentChildMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/child").skipHeaders().toString(), is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/child").toString(),
+                is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -559,17 +569,17 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE pattern ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/pattern-{id}");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/pattern-{id}");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM sourcepattern s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE pattern "
-                + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM sourcepattern s";
+                        + "SELECT s.id, s.name, named_struct('url', s.url, 'picture', s.picture) FROM sourcepattern s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -581,7 +591,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/pattern-12").skipHeaders().toString(), is("pattern-12=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+        assertThat(RestUtils.getMapping("hive/pattern-12").toString(),
+                is("pattern-12=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -595,18 +606,18 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE patternformat ("
-                + "id       BIGINT, "
-                + "name     STRING, "
-                + "ts       STRING, "
-                + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps("hive/pattern-format-{ts:YYYY-MM-dd}");
+                        + "id       BIGINT, "
+                        + "name     STRING, "
+                        + "ts       STRING, "
+                        + "links    STRUCT<url:STRING, picture:STRING>) "
+                        + tableProps("hive/pattern-format-{ts:YYYY-MM-dd}");
 
         String selectTest = "SELECT s.name, s.ts, struct(s.url, s.picture) FROM sourcepatternformat s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE patternformat "
-                + "SELECT s.id, s.name, s.ts, named_struct('url', s.url, 'picture', s.picture) FROM sourcepatternformat s";
+                        + "SELECT s.id, s.name, s.ts, named_struct('url', s.url, 'picture', s.picture) FROM sourcepatternformat s";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -618,7 +629,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").skipHeaders().toString(),
+        assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").toString(),
                 is("pattern-format-2012-10-06=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
     }
 
@@ -630,16 +641,16 @@ public class AbstractHiveSaveTest {
         // create external table
         String ddl =
                 "CREATE EXTERNAL TABLE fieldexclude ("
-                + "id       BIGINT, "
-                + "name     STRING)"
-                + tableProps("hive/fieldexclude", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
+                        + "id       BIGINT, "
+                        + "name     STRING)"
+                        + tableProps("hive/fieldexclude", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
 
         String selectTest = "SELECT s.id, s.name FROM sourcefieldexclude s";
 
         // transfer data
         String insert =
                 "INSERT OVERWRITE TABLE fieldexclude "
-                + "SELECT id, name FROM sourcefieldexclude ";
+                        + "SELECT id, name FROM sourcefieldexclude ";
 
         System.out.println(ddl);
         System.out.println(server.execute(ddl));
@@ -654,7 +665,7 @@ public class AbstractHiveSaveTest {
         string = RestUtils.get("hive/fieldexclude/7");
         assertThat(string, containsString("Manson"));
 
-        assertFalse(RestUtils.getMapping("hive/fieldexclude").skipHeaders().toString().contains("id="));
+        assertFalse(RestUtils.getMapping("hive/fieldexclude").toString().contains("id="));
     }
 
     private String createTable(String tableName) {

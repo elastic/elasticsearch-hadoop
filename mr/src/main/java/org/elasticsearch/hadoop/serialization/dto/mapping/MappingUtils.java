@@ -18,20 +18,14 @@
  */
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -134,8 +128,6 @@ public abstract class MappingUtils {
         if (field == null) {
             return field;
         }
-        field = field.skipHeaders();
-        
         if (includes.isEmpty() && excludes.isEmpty()) {
           return field;
         }
@@ -144,7 +136,7 @@ public abstract class MappingUtils {
         List<NumberedInclude> convertedIncludes = FieldFilter.toNumberedFilter(includes);
 
         boolean intact = true;
-        for (Field fl : field.skipHeaders().properties()) {
+        for (Field fl : field.properties()) {
             intact &= processField(fl, null, filtered, convertedIncludes, excludes);
         }
 
@@ -179,5 +171,77 @@ public abstract class MappingUtils {
         String readExcludeCfg = cfg.getReadFieldExclude();
 
         return filter(mapping, StringUtils.tokenize(readIncludeCfg), StringUtils.tokenize(readExcludeCfg));
+    }
+    
+    public static Map<String, GeoType> geoFields(Field rootMapping) {
+        if (rootMapping == null) {
+            return Collections.emptyMap(); 
+        }
+        
+        Map<String, GeoType> geoFields = new LinkedHashMap<String, GeoType>();
+        // ignore the root field
+        for (Field nestedField : rootMapping.properties()) {
+            findGeo(nestedField, null, geoFields);
+        }
+        return geoFields;
+    }
+    
+    private static void findGeo(Field field, String parentName, Map<String, GeoType> geoFields) {
+        String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
+        
+        if (FieldType.GEO_POINT == field.type()) {
+            geoFields.put(fieldName, GeoType.GEO_POINT);
+        }
+        else if (FieldType.GEO_SHAPE == field.type()) {
+            geoFields.put(fieldName, GeoType.GEO_SHAPE);
+        }
+        else if (FieldType.OBJECT == field.type()) {
+            for (Field nestedField : field.properties()) {
+                findGeo(nestedField, fieldName, geoFields);
+            }
+        }
+    }
+
+    public static GeoField parseGeoInfo(GeoType geoType, Object parsedContent) {
+        if (geoType == GeoType.GEO_POINT) {
+            return doParseGeoPointInfo(parsedContent);
+        }
+        if (geoType == GeoType.GEO_SHAPE) {
+            return doParseGeoShapeInfo(parsedContent);
+        }
+        
+        throw new EsHadoopIllegalArgumentException(String.format(Locale.ROOT, "Unknown GeoType %s", geoType));
+    }
+
+    private static GeoField doParseGeoPointInfo(Object parsedContent) {
+        if (parsedContent instanceof List) {
+            Object content = ((List) parsedContent).get(0);
+            if (content instanceof Double) {
+                return GeoPointType.LAT_LON_ARRAY;
+            }
+        }
+        if (parsedContent instanceof String) {
+            // check whether it's lat/lon or geohash
+            return ((String) parsedContent).contains(",") ? GeoPointType.LAT_LON_STRING : GeoPointType.GEOHASH;  
+        }
+
+        return GeoPointType.LON_LAT_OBJECT;
+    }
+
+    private static GeoField doParseGeoShapeInfo(Object parsedContent) {
+        if (parsedContent instanceof Map) {
+            Map<String, Object> geoShape = (Map<String, Object>) parsedContent;
+            Object typ = geoShape.get("type");
+            if (typ == null) {
+                throw new EsHadoopIllegalArgumentException(String.format(
+                        Locale.ROOT, "Invalid GeoShape [%s]", parsedContent));
+            }
+            String type = typ.toString();
+            GeoShapeType found = GeoShapeType.parse(type);
+            if (found != null) {
+                return found;
+            }
+        }
+        throw new EsHadoopIllegalArgumentException(String.format(Locale.ROOT, "Unknown GeoShape [%s]", parsedContent));
     }
 }

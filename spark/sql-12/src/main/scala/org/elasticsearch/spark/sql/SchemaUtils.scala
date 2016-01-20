@@ -1,10 +1,12 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Properties
+
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql.MapType
 import org.apache.spark.sql.catalyst.types.BinaryType
 import org.apache.spark.sql.catalyst.types.BooleanType
@@ -20,6 +22,7 @@ import org.apache.spark.sql.catalyst.types.StructField
 import org.apache.spark.sql.catalyst.types.StructType
 import org.apache.spark.sql.catalyst.types.TimestampType
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.FieldType.BINARY
@@ -35,11 +38,10 @@ import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
-import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_ORDER_PROPERTY
 
@@ -59,17 +61,20 @@ private[sql] object SchemaUtils {
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
+        var field = repo.getMapping
+
+        field = MappingUtils.filterMapping(field, cfg);
+        val geoInfo = repo.sampleGeoFields(field)
         
-        var field = repo.getMapping.skipHeaders()
+        if (!geoInfo.isEmpty()) {
+          throw new EsHadoopIllegalArgumentException(s"Geo types are supported only in ES-Hadoop for SparkSQL 1.3 (or higher) DataFrames")
+        }
+
         val readIncludeCfg = cfg.getProperty(readInclude)
         val readExcludeCfg = cfg.getProperty(readExclude)
         
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(readIncludeCfg) || StringUtils.hasText(readExcludeCfg)) {
-          // apply any possible include/exclude that can define restrict the DataFrame to just a number of fields
-          val includes = StringUtils.tokenize(readIncludeCfg);
-          val excludes = StringUtils.tokenize(readExcludeCfg);
-          field = MappingUtils.filter(field, includes, excludes)
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()));
@@ -80,7 +85,7 @@ private[sql] object SchemaUtils {
         throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
       }
     } finally {
-      repo.close()
+        repo.close()
     }
   }
 

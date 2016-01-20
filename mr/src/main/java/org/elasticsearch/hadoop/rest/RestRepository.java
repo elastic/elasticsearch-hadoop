@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
@@ -48,6 +49,9 @@ import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -431,6 +435,19 @@ public class RestRepository implements Closeable, StatsAware {
 
     public Field getMapping() {
         return Field.parseField(client.getMapping(resourceR.mapping()));
+    }
+    
+    public Map<String, GeoField> sampleGeoFields(Field mapping) {
+        Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
+        Map<String, Object> geoMapping = client.sampleForFields(resourceR.indexAndType(), fields.keySet());
+        
+        Map<String, GeoField> geoInfo = new LinkedHashMap<String, GeoField>();
+        for (Entry<String, GeoType> geoEntry : fields.entrySet()) {
+            String fieldName = geoEntry.getKey();
+            geoInfo.put(fieldName, MappingUtils.parseGeoInfo(geoEntry.getValue(), geoMapping.get(fieldName)));
+        }
+        
+        return geoInfo;
     }
 
     public Scroll scroll(String scrollId, ScrollReader reader) throws IOException {

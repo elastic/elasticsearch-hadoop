@@ -63,7 +63,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/artists").skipHeaders().toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/artists").toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -83,7 +83,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/alias").skipHeaders().toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/alias").toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
     }
 
 
@@ -120,7 +120,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").skipHeaders().toString(), is("fieldmapping=[name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").toString(), is("fieldmapping=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-12").skipHeaders().toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/pattern-12").toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").skipHeaders().toString(), is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").toString(), is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
     @Test

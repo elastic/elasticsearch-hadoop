@@ -1,16 +1,19 @@
 package org.elasticsearch.spark.sql
 
-import java.util.{LinkedHashSet => JHashSet}
-import java.util.{List => JList}
+import java.util.{ LinkedHashSet => JHashSet }
+import java.util.{ List => JList }
+import java.util.{ Map => JMap }
 import java.util.Properties
+
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.annotation.DeveloperApi
+
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
 import org.apache.spark.sql.types.ByteType
+import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.types.DoubleType
 import org.apache.spark.sql.types.FloatType
@@ -32,6 +35,8 @@ import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
@@ -39,40 +44,47 @@ import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
+import org.elasticsearch.hadoop.serialization.dto.mapping.GeoShapeType
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.hadoop.serialization.field.FieldFilter
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
+import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
-import org.elasticsearch.hadoop.util.SettingsUtils
-import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
-import org.apache.spark.sql.types.DataType
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
 
   def discoverMapping(cfg: Settings): Schema = {
-    val field = discoverMappingAsField(cfg)
-    val struct = convertToStruct(field, cfg)
+    val (field, geoInfo) = discoverMappingAsField(cfg)
+    val struct = convertToStruct(field, geoInfo, cfg)
     Schema(field, struct)
   }
 
-  def discoverMappingAsField(cfg: Settings): Field = {
+  def discoverMappingAsField(cfg: Settings): (Field, JMap[String, GeoField]) = {
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
-        var field = MappingUtils.filterMapping(repo.getMapping, cfg);
-
+        var field = repo.getMapping
+        if (field == null) {
+          throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
+        }
+        field = MappingUtils.filterMapping(field, cfg);
+        val geoInfo = repo.sampleGeoFields(field)
+        
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldAsArrayExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()))
         }
-        return field
+        return (field, geoInfo)
       }
       else {
         throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
@@ -82,11 +94,11 @@ private[sql] object SchemaUtils {
     }
   }
 
-  def convertToStruct(rootField: Field, cfg: Settings): StructType = {
+  def convertToStruct(rootField: Field, geoInfo: JMap[String, GeoField], cfg: Settings): StructType = {
     val arrayIncludes = SettingsUtils.getFieldArrayFilterInclude(cfg)
     val arrayExcludes = StringUtils.tokenize(cfg.getReadFieldAsArrayExclude)
 
-    var fields = for (fl <- rootField.properties()) yield convertField(fl, null, arrayIncludes, arrayExcludes)
+    var fields = for (fl <- rootField.properties()) yield convertField(fl, geoInfo, null, arrayIncludes, arrayExcludes)
     if (cfg.getReadMetadata) {
       // enrich structure
       val metadataMap = DataTypes.createStructField(cfg.getReadMetadataField, DataTypes.createMapType(StringType, StringType, true), true)
@@ -96,39 +108,85 @@ private[sql] object SchemaUtils {
     DataTypes.createStructType(fields)
   }
 
-  private def convertToStruct(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructType = {
-    DataTypes.createStructType(for (fl <- field.properties()) yield convertField(fl, parentName, arrayIncludes, arrayExcludes))
+  private def convertToStruct(field: Field, geoInfo: JMap[String, GeoField], parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructType = {
+    DataTypes.createStructType(for (fl <- field.properties()) yield convertField(fl, geoInfo, parentName, arrayIncludes, arrayExcludes))
   }
 
-  private def convertField(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructField = {
+  private def convertField(field: Field, geoInfo: JMap[String, GeoField], parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructField = {
     val absoluteName = if (parentName != null) parentName + "." + field.name() else field.name()
     val matched = FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false)
     val createArray = !arrayIncludes.isEmpty() && matched.matched
 
     var dataType = Utils.extractType(field) match {
-      case NULL    => NullType
-      case BINARY  => BinaryType
-      case BOOLEAN => BooleanType
-      case BYTE    => ByteType
-      case SHORT   => ShortType
-      case INTEGER => IntegerType
-      case LONG    => LongType
-      case FLOAT   => FloatType
-      case DOUBLE  => DoubleType
-      case STRING  => StringType
-      case DATE    => TimestampType
-      case OBJECT  => convertToStruct(field, absoluteName, arrayIncludes, arrayExcludes)
+      case NULL      => NullType
+      case BINARY    => BinaryType
+      case BOOLEAN   => BooleanType
+      case BYTE      => ByteType
+      case SHORT     => ShortType
+      case INTEGER   => IntegerType
+      case LONG      => LongType
+      case FLOAT     => FloatType
+      case DOUBLE    => DoubleType
+      case STRING    => StringType
+      case DATE      => TimestampType
+      case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes)
+      
+      // GEO
+      case GEO_POINT => {
+        geoInfo.get(absoluteName) match {
+          case GeoPointType.LAT_LON_ARRAY  => DataTypes.createArrayType(DoubleType)
+          case GeoPointType.GEOHASH        => StringType
+          case GeoPointType.LAT_LON_STRING => StringType
+          case GeoPointType.LON_LAT_OBJECT => {
+            val lon = DataTypes.createStructField("lat", DoubleType, true)
+            val lat = DataTypes.createStructField("lon", DoubleType, true)
+            DataTypes.createStructType(Array(lon,lat)) 
+          }
+        }
+      }
+      case GEO_SHAPE => {
+        var geoShapeSchema = DataTypes.createStructType(Array(DataTypes.createStructField("type", StringType, true)))
+        val COORD = "coordinates"
+        geoShapeSchema = geoInfo.get(absoluteName) match {
+          case GeoShapeType.POINT               => geoShapeSchema.add(COORD, DataTypes.createArrayType(DoubleType))
+          case GeoShapeType.LINE_STRING         => geoShapeSchema.add(COORD,createNestedArray(DoubleType, 2))
+          case GeoShapeType.POLYGON             => { 
+            geoShapeSchema = geoShapeSchema.add(COORD, createNestedArray(DoubleType, 3))
+            geoShapeSchema.add("orientation", StringType)
+          }
+          case GeoShapeType.MULTI_POINT         => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 2))
+          case GeoShapeType.MULTI_LINE_STRING   => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 3))
+          case GeoShapeType.MULTI_POLYGON       => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 4))
+          case GeoShapeType.GEOMETRY_COLLECTION => throw new EsHadoopIllegalArgumentException(s"Geoshape $geoInfo not supported")
+          case GeoShapeType.ENVELOPE            => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 2))
+          case GeoShapeType.CIRCLE              => {
+            geoShapeSchema = geoShapeSchema.add(COORD, DataTypes.createArrayType(DoubleType))
+            geoShapeSchema.add("radius", StringType)
+          }
+        }
+        geoShapeSchema
+      }
       // fall back to String
-      case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
+      case _         => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
 
     if (createArray) {
+      // can't call createNestedArray for some reason...
       var currentDepth = 0;
       for (currentDepth <- 0 until matched.depth) {
         dataType = DataTypes.createArrayType(dataType)
       }
     }
     DataTypes.createStructField(field.name(), dataType, true)
+  }
+  
+  private def createNestedArray(elementType: DataType, depth: Int): DataType = {
+      var currentDepth = 0;
+      var array = elementType
+      for (currentDepth <- 0 until depth) {
+        array = DataTypes.createArrayType(array)
+      }
+      array
   }
 
   def setRowInfo(settings: Settings, struct: StructType) = {

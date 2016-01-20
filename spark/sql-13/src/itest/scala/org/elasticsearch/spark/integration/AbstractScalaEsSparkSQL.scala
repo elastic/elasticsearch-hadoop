@@ -73,6 +73,7 @@ import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
+import org.apache.spark.sql.types.DoubleType
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -1042,12 +1043,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(3, df.count())
   }
 
-  //@Test
+  @Test
   def testNestedEmptyArray() {
     val json = """{"foo" : 5, "nested": { "bar" : [], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/empty-nested-array")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
-    val df = sqc.read.format("es").option(ES_READ_FIELD_AS_ARRAY_INCLUDE, "nested.bar").load(index)
+    val df = sqc.read.format("es").load(index)
     println(df.schema)
     df.explain
     df.show
@@ -1068,21 +1069,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.show
   }
 
-  //@Test
+  @Test
   def testArrayExcludes() {
-    val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
+    val json = """{"foo" : 6, "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/nested-array-exclude")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
-    val df = sqc.read.format("es").option("es.read.field.exclude", "nested.bar").load(index)
-    println(df.schema.treeString)
+    val df = sqc.read.format("es").option(ES_READ_FIELD_EXCLUDE, "nested.bar").load(index)
     df.explain
     df.show
   }
 
   @Test
-  def testGeoShape() {
+  def testGeoShapeWithoutMapping() {
     val json = """{"rect":{"type":"multipoint","coordinates":[[[50,32],[69,32],[69,50],[50,50],[50,32]]]}}"""
-    val index = wrapIndex("sparksql-test/geoshape")
+    val index = wrapIndex("sparksql-test/geo")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
     val df = sqc.read.format("es").option(ES_READ_FIELD_AS_ARRAY_INCLUDE, "rect.coordinates:2").load(index)
     
@@ -1092,10 +1092,536 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("array", nested.typeName)
     assertEquals("long", nested.asInstanceOf[ArrayType].elementType.typeName)
 
-    println(df.schema.treeString)
     df.show
   }
 
+  @Test
+  def testGeoPointAsLatLonString() {
+    val mapping = """{ "geopoint": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_point"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geopoint-latlonstring")
+    val indexAndType = s"$index/geopoint"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val latLonString = """{ "name" : "Chipotle Mexican Grill", "location": "40.715, -74.011" }""".stripMargin
+    sc.makeRDD(Seq(latLonString)).saveJsonToEs(indexAndType)
+    
+    RestUtils.refresh(index)
+    
+    val df = sqc.read.format("es").load(index)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("string", dataType.typeName)
+
+    val head = df.head()
+    assertThat(head.getString(0), containsString("715, "))
+    assertThat(head.getString(1), containsString("Chipotle"))
+  }
+  
+  @Test
+  def testGeoPointAsGeoHashString() {
+    val mapping = """{ "geopoint": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_point"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geopoint-geohash")
+    val indexAndType = s"$index/geopoint"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val geohash = """{ "name": "Red Pepper Restaurant", "location": "9qh0kemfy5k3" }""".stripMargin
+    sc.makeRDD(Seq(geohash)).saveJsonToEs(indexAndType)
+    
+    RestUtils.refresh(index)
+    
+    val df = sqc.read.format("es").load(index)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("string", dataType.typeName)
+
+    val head = df.head()
+    assertThat(head.getString(0), containsString("9qh0"))
+    assertThat(head.getString(1), containsString("Pepper"))
+  }
+    
+  @Test
+  def testGeoPointAsArrayOfDoubles() {
+    val mapping = """{ "geopoint": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_point"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geopoint-array")
+    val indexAndType = s"$index/geopoint"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val arrayOfDoubles = """{ "name": "Mini Munchies Pizza", "location": [ -73.983, 40.719 ]}""".stripMargin
+    sc.makeRDD(Seq(arrayOfDoubles)).saveJsonToEs(indexAndType)
+    
+    RestUtils.refresh(index)
+    
+    val df = sqc.read.format("es").load(index)
+
+    val dataType = df.schema("location").dataType
+    assertEquals("array", dataType.typeName)
+    val array = dataType.asInstanceOf[ArrayType]
+    assertEquals(DoubleType, array.elementType)
+   
+    val head = df.head()
+    println(head(0))
+    assertThat(head.getString(1), containsString("Mini"))
+  }
+
+  @Test
+  def testGeoPointAsObject() {
+    val mapping = """{ "geopoint": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_point"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geopoint-object")
+    val indexAndType = s"$index/geopoint"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val lonLatObject = """{ "name" : "Pala Pizza","location": {"lat":40.722, "lon":-73.989} }""".stripMargin
+    sc.makeRDD(Seq(lonLatObject)).saveJsonToEs(indexAndType)
+    
+    RestUtils.refresh(index)
+    
+    val df = sqc.read.format("es").load(index)
+    
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("lon"))
+    assertTrue(struct.fieldNames.contains("lat"))
+    assertEquals("double", struct("lon").dataType.simpleString)
+    assertEquals("double", struct("lat").dataType.simpleString)
+    
+    val head = df.head()
+    println(head)
+    val obj = head.getStruct(0)
+    assertThat(obj.getDouble(0), is(40.722d))
+    assertThat(obj.getDouble(1), is(-73.989d))
+    
+    assertThat(head.getString(1), containsString("Pizza"))
+  }
+
+  @Test
+  def testGeoShapePoint() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-point")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val point = """{"name":"point","location":{ "type" : "point", "coordinates": [100.0, 0.0] }}""".stripMargin
+
+    sc.makeRDD(Seq(point)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    println(df.schema.treeString)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    assertEquals("double", coords.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("point"))
+    val array = obj.getSeq[Double](1)
+    assertThat(array(0), is(100.0d))
+    assertThat(array(1), is(0.0d))
+  }
+
+  @Test
+  def testGeoShapeLine() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-linestring")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val line = """{"name":"line","location":{ "type": "linestring", "coordinates": [[-77.03, 38.89], [-77.00, 38.88]]} }""".stripMargin
+      
+    sc.makeRDD(Seq(line)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    assertEquals("array", coords.typeName)
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("linestring"))
+    val array = obj.getSeq[Seq[Double]](1)
+    assertThat(array(0)(0), is(-77.03d))
+    assertThat(array(0)(1), is(38.89d))
+  }
+
+  @Test
+  def testGeoShapePolygon() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-poly")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val polygon = """{"name":"polygon","location":{ "type" : "polygon", "coordinates": [[ [100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0] ]] }}""".stripMargin
+      
+    sc.makeRDD(Seq(polygon)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    println(df.schema.treeString)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    // level 1
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 2
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 3
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("polygon"))
+    val array = obj.getSeq[Seq[Seq[Double]]](1)
+    assertThat(array(0)(0)(0), is(100.0d))
+    assertThat(array(0)(0)(1), is(0.0d))
+  }
+
+  @Test
+  def testGeoShapePointMultiPoint() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-multipoint")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val multipoint = """{"name":"multipoint","location":{ "type" : "multipoint", "coordinates": [ [100.0, 0.0], [101.0, 0.0] ] }}""".stripMargin
+      
+    sc.makeRDD(Seq(multipoint)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    println(df.schema.treeString)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    assertEquals("array", coords.typeName)
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+    
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("multipoint"))
+    val array = obj.getSeq[Seq[Double]](1)
+    assertThat(array(0)(0), is(100.0d))
+    assertThat(array(0)(1), is(0.0d))
+  }
+
+  @Test
+  def testGeoShapeMultiLine() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-multiline")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val multiline = """{"name":"multi-line","location":{ "type": "multilinestring", "coordinates":[ [[-77.0, 38.8], [-78.0, 38.8]], [[100.0, 0.0], [101.0, 1.0]] ]} }""".stripMargin
+      
+    sc.makeRDD(Seq(multiline)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    println(df.schema.treeString)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    // level 1
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 2
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 3
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("multilinestring"))
+    val array = obj.getSeq[Seq[Seq[Double]]](1)
+    assertThat(array(0)(0)(0), is(-77.0d))
+    assertThat(array(0)(0)(1), is(38.8d))
+  }
+  
+  @Test
+  def testGeoShapeMultiPolygon() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-multi-poly")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val multipoly = """{"name":"multi-poly","location":{ "type" : "multipolygon", "coordinates": [ [[[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 0.0] ]], [[[103.0, 0.0], [104.0, 0.0], [104.0, 1.0], [103.0, 0.0] ]] ]}}""".stripMargin
+      
+    sc.makeRDD(Seq(multipoly)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    println(df.schema.treeString)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    // level 1
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 2
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 3
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    // level 4
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("multipolygon"))
+    val array = obj.getSeq[Seq[Seq[Seq[Double]]]](1)
+    assertThat(array(0)(0)(0)(0), is(100.0d))
+    assertThat(array(0)(0)(0)(1), is(0.0d))
+  }
+          
+  @Test
+  def testGeoShapeEnvelope() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-envelope")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val envelope = """{"name":"envelope","location":{ "type" : "envelope", "coordinates": [[-45.0, 45.0], [45.0, -45.0] ] }}""".stripMargin
+      
+    sc.makeRDD(Seq(envelope)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    var coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    coords = coords.asInstanceOf[ArrayType].elementType
+    assertEquals("array", coords.typeName)
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("envelope"))
+    val array = obj.getSeq[Seq[Double]](1)
+    assertThat(array(0)(0), is(-45.0d))
+    assertThat(array(0)(1), is(45.0d))
+  }
+  
+  @Test
+  def testGeoShapeCircle() {
+    val mapping = """{ "geoshape": {
+    |      "properties": {
+    |        "name": {
+    |          "type": "string"
+    |        },
+    |        "location": {
+    |          "type": "geo_shape"
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-geoshape-circle")
+    val indexAndType = s"$index/geoshape"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val circle = """{"name":"circle", "location": {"type":"circle", "coordinates":[ -45.0, 45.0], "radius":"100m"} }""".stripMargin
+      
+    sc.makeRDD(Seq(circle)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+ 
+    val dataType = df.schema("location").dataType
+    assertEquals("struct", dataType.typeName)
+
+    val struct = dataType.asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("type"))
+    assertTrue(struct.fieldNames.contains("radius"))
+    val coords = struct("coordinates").dataType
+    assertEquals("array", coords.typeName)
+    assertEquals("double", coords.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.head()
+    val obj = head.getStruct(0)
+    assertThat(obj.getString(0), is("circle"))
+    val array = obj.getSeq[Double](1)
+    assertThat(array(0), is(-45.0d))
+    assertThat(array(1), is(45.0d))
+    assertThat(obj.getString(2), is("100m"))
+  }
+          
   @Test
   def testMultiIndexes() {
     // add some data

@@ -1,7 +1,6 @@
 package org.elasticsearch.spark.sql
 
 import java.util.{ Map => JMap }
-
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.DataTypes._
@@ -17,6 +16,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.Collections
 
 class SchemaUtilsTest {
 
@@ -40,7 +40,7 @@ class SchemaUtilsTest {
     |}
     |""".stripMargin
       
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     assertTrue(struct.fieldNames.contains("name"))
     assertEquals(StringType, struct("name").dataType)
   }
@@ -60,7 +60,7 @@ class SchemaUtilsTest {
     |}
     }""".stripMargin
       
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     assertTrue(struct.fieldNames.contains("arr"))
     assertFalse(struct.fieldNames.contains("one"))
     val nested = struct("arr").dataType
@@ -88,7 +88,7 @@ class SchemaUtilsTest {
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "name")
     
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     assertTrue(struct.fieldNames.contains("name"))
     assertEquals("array", struct("name").dataType.typeName)
     
@@ -112,7 +112,7 @@ class SchemaUtilsTest {
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "name:3")
     
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     assertTrue(struct.fieldNames.contains("name"))
 
     // first level
@@ -146,7 +146,7 @@ class SchemaUtilsTest {
     |}
     }""".stripMargin
     
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     val info = detectRowInfo(cfg, struct)
     assertEquals("arr,top-level", info._1.getProperty("_"))
     assertEquals("one,two", info._1.getProperty("arr"))
@@ -169,7 +169,7 @@ class SchemaUtilsTest {
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr")
     
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     val info = detectRowInfo(cfg, struct)
     assertEquals("arr,top-level", info._1.getProperty("_"))
     assertEquals("one,two", info._1.getProperty("arr"))
@@ -193,7 +193,7 @@ class SchemaUtilsTest {
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr:3")
     
-    val struct = convertToStruct(fieldFromMapping(mapping), cfg)
+    val struct = getStruct(mapping)
     val info = detectRowInfo(cfg, struct)
     assertEquals("arr,top-level", info._1.getProperty("_"))
     assertEquals("one,two", info._1.getProperty("arr"))
@@ -202,5 +202,9 @@ class SchemaUtilsTest {
   
   private def fieldFromMapping(mapping: String) = {
     Field.parseField(new ObjectMapper().readValue(mapping, classOf[JMap[String, Object]]))
+  }
+  
+  private def getStruct(mapping: String) = {
+    convertToStruct(fieldFromMapping(mapping), Collections.emptyMap(), cfg)
   }
 }

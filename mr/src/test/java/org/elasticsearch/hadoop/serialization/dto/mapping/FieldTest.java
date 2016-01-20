@@ -27,9 +27,12 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 
 public class FieldTest {
@@ -99,13 +102,6 @@ public class FieldTest {
         Field[] props = fl.properties();
         assertEquals(1, props.length);
         assertEquals("name", props[0].name());
-    }
-
-    @Test
-    public void testGeolocationParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals(1, fl.properties().length);
     }
 
     @Test
