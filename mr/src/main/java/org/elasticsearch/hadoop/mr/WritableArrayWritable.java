@@ -8,8 +8,6 @@ import java.lang.reflect.Field;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ClassUtil;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 // an array writable implementation that actually is writable
@@ -57,6 +55,13 @@ public class WritableArrayWritable extends ArrayWritable {
     @Override
     public void write(DataOutput out) throws IOException {
         out.writeUTF(getValueClass().getName());
-        super.write(out);
+        Writable[] writables = get();
+        // handle null - ArrayWritable does not
+        if (writables == null) {
+            out.writeInt(0);
+        }
+        else {
+            super.write(out);
+        }
     }
 }
