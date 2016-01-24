@@ -417,12 +417,5 @@ IMPORTANT: If automatic index creation is used, please review <<auto-mapping-typ
 
 |===
 
-
-////
-
-== Putting it all together
-
-.TODO
-add example
-
-////
+It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. For example, based on its storage a +geo_point+ might be
+returned as a +Text+ (basically a +String+) or an +ArrayWritable+.

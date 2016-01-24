@@ -273,3 +273,6 @@ and Serde2 http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/had
 |===
 
 NOTE: While {es} understands Hive types up to version 0.13, it is backwards compatible with Hive 0.9
+
+It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. For example, based on its storage a +geo_point+ might be
+returned as a +string+ or an +array+.

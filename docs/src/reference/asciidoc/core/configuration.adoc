@@ -245,6 +245,9 @@ For example:
 ----
 # mapping nested.bar as an array
 es.field.read.as.array.include = nested.bar
+
+# mapping nested.bar as an 3-levels/dimensions array
+es.field.read.as.array.include = nested.bar:3
 ----
 
 `es.field.read.as.array.exclude` (default empty)::

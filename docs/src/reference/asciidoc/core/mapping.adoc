@@ -29,6 +29,21 @@ arrays (typically associated with lists or sequences) are *ordered*, that is, th
 It is however easy to circumvent this problem - as JSON objects (maps) contain fields, use the field names (or keys) instead of their position inside the document to reliably get their values (in Java terms think of a JSON object as a +HashMap+ as oppose to a +LinkedHashMap+).
 
 [float]
+[[mapping-geo]]
+=== Geo types
+
+For geolocation {es} provides two dedicated types, namely https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+geo_point+] and https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+geo_shape+]
+which do not have a direct equivalent in any of the libraries {eh} integrates with. Further more, {es} accepts multiple formats for each type (as there are different ways to represent data), in fact there are 4 different representations
+for +geo_point+ and 9 for +geo_shape+.
+To go around this, the connector breaks down the geo types into primitives depending on the actual format used for their respective types. 
+
+For strongly-typed libraries (like SparkSQL ++DataFrame++s), the format needs to be known before hand and thus, {eh} will _sample_ the data asking {eh} for one random document that is representative of the mapping, parse it and based
+on the values found, identify the format used and create the necessary schema. This happens automatically at start-up without any user interference. As always, the user data must all be using the _same_ format (a requirement from
+SparkSQL) otherwise reading a different format will trigger an exception.
+
+Note that typically handling of these types poses no issues for the user whether reading or writing data.
+
+[float]
 [[mapping-multi-values]]
 === Handling array/multi-values fields
 

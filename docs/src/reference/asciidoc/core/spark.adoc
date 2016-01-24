@@ -600,6 +600,11 @@ in addition, the following _implied_ conversion applies for Java types:
 The conversion is done as a _best_ effort; built-in Java and Scala types are guaranteed to be properly converted, however there are no guarantees for user types whether in Java or Scala. As mentioned in the tables above, when a `case` class is encountered in Scala or `JavaBean` in Java, the converters will try to +unwrap+ its content and save it as an `object`. Note this works only for top-level user objects - if the user object has other user objects nested in, the conversion is likely to fail since the converter does not perform nested +unwrapping+.
 This is done on purpose since the converter has to _serialize_ and _deserialize_ the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way to close to the realm of ORMs and arguably introduces too much complexity for little to now gain; thanks to the processing functionality in Spark and the plugability in {eh} one can easily transform objects into other types, if needed with minimal effort and maximum control.
 
+.Geo types
+
+It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. 
+For example, based on its storage a +geo_point+ might be returned as a +String+ or a +Traversable+.
+
 [[spark-sql]]
 [float]
 === Spark SQL support
@@ -1214,6 +1219,13 @@ While Spark SQL https://spark.apache.org/docs/latest/sql-programming-guide.html#
 
 |===
 
+.Geo Types Conversion Table
+
+In addition to the table above, for Spark SQL 1.3 or higher, {eh} performs automatic schema detection for geo types, namely {es} +geo_point+ and +geo_shape+.
+ Since each type allows multiple formats (+geo_point+ accepts latitude and longitude to be specified in 4 different ways, while +geo_shape+ allows a variety of types (currently 9)) and the mapping does not provide such information, {eh} will _sample_ the determined geo fields at startup and retrieve an arbitrary document that contains all the relevant fields; it will parse it and thus determine the necessary schema (so for example it can tell whether a +geo_point+ is
+ specified as a +StringType+ or as an +ArrayType+).
+
+IMPORTANT: Since Spark SQL is strongly-typed, each geo field needs to have the same format across _all_ documents. Shy of that, the returned data will not fit the detected schema and thus lead to errors. 
 
 [[spark-mr]]
 [float]

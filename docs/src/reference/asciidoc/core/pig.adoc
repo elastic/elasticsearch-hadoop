@@ -336,3 +336,6 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 |===
 
 NOTE: While {es} understands the Pig types up to version 0.12.1, it is backwards compatible with Pig 0.9
+
+It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. For example, based on its storage a +geo_point+ might be
+returned as a +chararray+ or a +tuple+.
