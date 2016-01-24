@@ -18,19 +18,31 @@
  */
 package org.elasticsearch.hadoop;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.node.internal.InternalSettingsPreparer;
+import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.script.groovy.GroovyPlugin;
 
 public class EsEmbeddedServer {
+    private static class PluginConfigurableNode extends Node {
+        public PluginConfigurableNode(Settings settings, Collection<Class<? extends Plugin>> classpathPlugins) {
+            super(InternalSettingsPreparer.prepareEnvironment(settings, null), Version.CURRENT, classpathPlugins);
+        }
+    }
 
     private final Node node;
     private IpAndPort ipAndPort;
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public EsEmbeddedServer(String clusterName, String homePath, String dataPath, String httpRange, String transportRange, boolean hasSlave) {
         Properties props = new Properties();
         props.setProperty("path.home", homePath);
@@ -49,8 +61,9 @@ public class EsEmbeddedServer {
         props.setProperty("script.inline", "on");
         props.setProperty("script.indexed", "on");
 
-        Settings settings = Settings.settingsBuilder().put(props).build();
-        node = NodeBuilder.nodeBuilder().local(false).client(false).settings(settings).clusterName(clusterName).build();
+        Settings settings = NodeBuilder.nodeBuilder().local(false).client(false).settings(Settings.settingsBuilder().put(props).build()).clusterName(clusterName).getSettings().build();
+        Collection plugins = Arrays.asList(GroovyPlugin.class);
+        node = new PluginConfigurableNode(settings, plugins);
     }
 
     public void start() {
