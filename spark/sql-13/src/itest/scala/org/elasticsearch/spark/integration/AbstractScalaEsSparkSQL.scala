@@ -1043,18 +1043,27 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(3, df.count())
   }
 
-  @Test
+  //@Test
   def testNestedEmptyArray() {
     val json = """{"foo" : 5, "nested": { "bar" : [], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/empty-nested-array")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
     val df = sqc.read.format("es").load(index)
-    println(df.schema)
-    df.explain
-    df.show
+    
+    df.printSchema()
+    
+    assertEquals("long", df.schema("foo").dataType.typeName)
+    assertEquals("struct", df.schema("nested").dataType.typeName)
+    val struct = df.schema("nested").asInstanceOf[StructType]
+    assertTrue(struct.fieldNames.contains("what"))
+    assertEquals("struct", struct("what").dataType.typeName)
+        
+    val head = df.head
+    assertEquals(5, head(0))
+    assertEquals("now", head.getStruct(1)(0))
   }
 
-  @Test
+  //@Test
   def testDoubleNestedArray() {
     val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/double-nested-array")
@@ -1066,20 +1075,26 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("array", bar.dataType.typeName)
     val scores = bar.dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[StructType]("scores")
     assertEquals("array", scores.dataType.typeName)
-    df.show
+    
+    val head = df.head
+    val foo = head.getSeq[Long](0)
+    assertEquals(5, foo(0))
+    assertEquals(6, foo(1))
+    val nestedBarScores = head.getStruct(1).getSeq[Row](0)(1).getSeq[Int](0)
+    println(nestedBarScores)
   }
 
-  @Test
+  //@Test
   def testArrayExcludes() {
     val json = """{"foo" : 6, "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
     val index = wrapIndex("sparksql-test/nested-array-exclude")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
     val df = sqc.read.format("es").option(ES_READ_FIELD_EXCLUDE, "nested.bar").load(index)
-    df.explain
-    df.show
+    df.printSchema()
+    println(df.head)
   }
 
-  @Test
+  //@Test
   def testMultiDepthArray() {
     val json = """{"rect":{"type":"multipoint","coordinates":[[[50,32],[69,32],[69,50],[50,50],[50,32]]]}}"""
     val index = wrapIndex("sparksql-test/geo")
@@ -1092,7 +1107,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals("array", nested.typeName)
     assertEquals("long", nested.asInstanceOf[ArrayType].elementType.typeName)
 
-    df.show
+    df.head
   }
 
   @Test
@@ -1364,8 +1379,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       
     sc.makeRDD(Seq(polygon)).saveJsonToEs(indexAndType)
     val df = sqc.read.format("es").load(index)
- 
-    println(df.schema.treeString)
  
     val dataType = df.schema("location").dataType
     assertEquals("struct", dataType.typeName)

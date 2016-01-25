@@ -67,6 +67,7 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 import com.esotericsoftware.kryo.io.{ Output => KryoOutput }
 import com.esotericsoftware.kryo.io.{ Input => KryoInput }
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.apache.spark.sql.catalyst.types.ArrayType
 
 
 case class KeyValue(key: Int, value: String)
@@ -111,7 +112,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
 
 
-  //@Test
+  @Test
   def test1KryoScalaEsRow() {
     val kryo = SparkUtils.sparkSerializer(sc.getConf)
     val row = new ScalaEsRow(StringUtils.tokenize("foo,bar,tar").asScala)
@@ -384,21 +385,102 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     select.saveToEs("test/parquet")
   }
 
-  //@Test
-  // insert not supported
-  def testEsSchemaRDD51WriteAsDataSource() {
-    val target = "sparksql-test/scala-basic-write"
-    val schemaRDD = sqc.sql("CREATE TEMPORARY TABLE sqlbasicwrite " +
-      "USING org.elasticsearch.spark.sql " +
-      "OPTIONS (resource '" + target + "')");
+  @Test
+  def testNested() {
+    val mapping = """{ "nested": {
+    |      "properties": {
+    |        "name": { "type": "string" },
+    |        "employees": {
+    |          "type": "nested",
+    |          "properties": {
+    |            "name": {"type": "string"},
+    |            "salary": {"type": "long"}
+    |          }
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
 
-    val insertRDD = sqc.sql("INSERT INTO sqlbasicwrite SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    val index = wrapIndex("sparksql-test-nested-simple")
+    val indexAndType = s"$index/nested"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
 
-    println(insertRDD.schemaString)
-    assertTrue(insertRDD.count == 1)
-    insertRDD.take(7).foreach(println)
+    val data = """{"name":"nested-simple","employees":[{"name":"anne","salary":6},{"name":"bob","salary":100}, {"name":"charlie","salary":15}] }""".stripMargin
+      
+    sc.makeRDD(Seq(data)).saveJsonToEs(indexAndType)
+    val df = sqc.esRDD(index)
+
+    val dataType = df.schema("employees").dataType
+    assertEquals("array", dataType.typeName)
+    val array = dataType.asInstanceOf[ArrayType]
+    assertEquals("struct", array.elementType.typeName)
+    val struct = array.elementType.asInstanceOf[StructType]
+    assertEquals("string", struct("name").dataType.typeName)
+    assertEquals("long", struct("salary").dataType.typeName)
+
+    val head = df.first()
+    val nested = head.getAs[Seq[Row]](0);
+    assertThat(nested.size, is(3))
+    println(nested)
+    assertEquals(nested(0).getString(0), "anne")
+    assertEquals(nested(0).getLong(1), 6)
   }
 
+  @Test
+  def testNestedEmptyArray() {
+    val json = """{"foo" : 5, "nested": { "bar" : [], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/empty-nested-array")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.esRDD(index)
+    println(df.schema)
+    println(df.first())
+  }
+
+  @Test
+  def testDoubleNestedArray() {
+    val json = """{"foo" : [5,6], "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/double-nested-array")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.esRDD(index, Map(ES_READ_FIELD_AS_ARRAY_INCLUDE -> "nested.bar,foo,nested.bar.scores"))
+
+    assertEquals("array", df.schema("foo").dataType.typeName)
+    val bar = df.schema("nested").dataType.asInstanceOf[StructType]("bar")
+    assertEquals("array", bar.dataType.typeName)
+    val scores = bar.dataType.asInstanceOf[ArrayType].elementType.asInstanceOf[StructType]("scores")
+    assertEquals("array", scores.dataType.typeName)
+    df.printSchema()
+    println(df.first())
+  }
+
+  @Test
+  def testArrayExcludes() {
+    val json = """{"foo" : 6, "nested": { "bar" : [{"date":"2015-01-01", "scores":[1,2]},{"date":"2015-01-01", "scores":[3,4]}], "what": "now" } }"""
+    val index = wrapIndex("sparksql-test/nested-array-exclude")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.esRDD(index, Map(ES_READ_FIELD_EXCLUDE -> "nested.bar"))
+    df.printSchema()
+    println(df.first())
+  }
+
+  @Test
+  def testMultiDepthArray() {
+    val json = """{"rect":{"type":"multipoint","coordinates":[[[50,32],[69,32],[69,50],[50,50],[50,32]]]}}"""
+    val index = wrapIndex("sparksql-test/geo")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.esRDD(index, Map(ES_READ_FIELD_AS_ARRAY_INCLUDE -> "rect.coordinates:2"))
+    
+    val coords = df.schema("rect").dataType.asInstanceOf[StructType]("coordinates")
+    assertEquals("array", coords.dataType.typeName)
+    val nested = coords.dataType.asInstanceOf[ArrayType].elementType
+    assertEquals("array", nested.typeName)
+    assertEquals("long", nested.asInstanceOf[ArrayType].elementType.typeName)
+
+    val head = df.first()
+    println(head)
+  }  
+  
   def wrapIndex(index: String) = {
     prefix + index
   }

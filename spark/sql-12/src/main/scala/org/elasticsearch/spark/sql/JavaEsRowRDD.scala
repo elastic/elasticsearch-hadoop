@@ -40,7 +40,7 @@ private[spark] class JavaEsRowRDDIterator(
 
     // parse the structure and save the order (requested by Spark) for each Row (root and nested)
     // since the data returned from Elastic is likely to not be in the same order
-    SchemaUtils.setRowOrder(settings, schema.struct)
+    SchemaUtils.setRowInfo(settings, schema.struct)
   }
 
   override def createValue(value: Array[Object]): Row = {

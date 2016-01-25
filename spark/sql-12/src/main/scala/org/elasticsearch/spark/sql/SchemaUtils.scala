@@ -51,8 +51,8 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
-
 import org.elasticsearch.hadoop.util.SettingsUtils
+import org.apache.spark.sql.catalyst.types.DataType
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -147,7 +147,7 @@ private[sql] object SchemaUtils {
     return new StructField(field.name(), dataType, true)
   }
 
-  def setRowOrder(settings: Settings, struct: StructType) = {
+  def setRowInfo(settings: Settings, struct: StructType) = {
     val rowInfo = detectRowInfo(settings, struct)
     // save the field in the settings to pass it to the value reader
     settings.setProperty(ROW_INFO_ORDER_PROPERTY, IOUtils.propsToString(rowInfo._1))
@@ -155,7 +155,7 @@ private[sql] object SchemaUtils {
     settings.setProperty(ROW_INFO_ARRAY_PROPERTY, IOUtils.propsToString(rowInfo._2))
   }
 
-  def getRowOrder(settings: Settings) = {
+  def getRowInfo(settings: Settings) = {
     val rowOrderString = settings.getProperty(ROW_INFO_ORDER_PROPERTY)
     Assert.hasText(rowOrderString, "no schema/row order detected...")
 
@@ -182,33 +182,46 @@ private[sql] object SchemaUtils {
 
   }
 
-  private def detectRowOrder(settings: Settings, struct: StructType): Properties = {
-    val rowOrder = new Properties
+  def detectRowInfo(settings: Settings, struct: StructType): (Properties, Properties) = {
+    // tuple - 1 = columns (in simple names) for each row, 2 - what fields (in absolute names) are arrays
+    val rowInfo = (new Properties, new Properties)
 
-    doDetectOrder(rowOrder, ROOT_LEVEL_NAME, struct)
+    doDetectInfo(rowInfo, ROOT_LEVEL_NAME, struct)
     val csv = settings.getScrollFields()
-    // if a projection is applied, use that instead
+    // if a projection is applied (filtering or projection) use that instead
     if (StringUtils.hasText(csv)) {
       if (settings.getReadMetadata) {
-        rowOrder.setProperty(ROOT_LEVEL_NAME, csv + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
+        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
       }
       else {
-        rowOrder.setProperty(ROOT_LEVEL_NAME, csv)
+        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv)
       }
     }
-    rowOrder
+    rowInfo
   }
 
-  private def doDetectOrder(properties: Properties, level: String, struct: StructType) {
-    val list = new java.util.ArrayList[String]
-
-    for (field <- struct.fields) {
-      list.add(field.name)
-      if (field.dataType.isInstanceOf[StructType]) {
-        doDetectOrder(properties, field.name, field.dataType.asInstanceOf[StructType])
+  private def doDetectInfo(info: (Properties, Properties), level: String, dataType: DataType) {
+    dataType match {
+      case s: StructType => {
+        val fields = new java.util.ArrayList[String]
+        for (field <- s.fields) {
+          fields.add(field.name)
+          doDetectInfo(info, if (level != ROOT_LEVEL_NAME) level + "." + field.name else field.name, field.dataType)
+        }
+        info._1.setProperty(level, StringUtils.concatenate(fields, StringUtils.DEFAULT_DELIMITER))
       }
+      case a: ArrayType => {
+        val prop = info._2.getProperty(level)
+        var depth = 0
+        if (StringUtils.hasText(prop)) {
+          depth = Integer.parseInt(prop)
+        }
+        depth += 1
+        info._2.setProperty(level, String.valueOf(depth))
+        doDetectInfo(info, level, a.elementType)
+      }
+      // ignore primitives
+      case _ => // ignore
     }
-
-    properties.setProperty(level, StringUtils.concatenate(list, StringUtils.DEFAULT_DELIMITER))
   }
 }
