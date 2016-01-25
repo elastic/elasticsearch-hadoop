@@ -4,11 +4,9 @@ import java.util.{ LinkedHashSet => JHashSet }
 import java.util.{ List => JList }
 import java.util.{ Map => JMap }
 import java.util.Properties
-
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -57,6 +55,8 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
+import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.apache.commons.logging.LogFactory
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -68,6 +68,9 @@ private[sql] object SchemaUtils {
   }
 
   def discoverMappingAsField(cfg: Settings): (Field, JMap[String, GeoField]) = {
+    InitializationUtils.validateSettings(cfg);
+    InitializationUtils.discoverEsVersion(cfg, LogFactory.getLog("org.elasticsearch.spark.sql.DataSource"));
+
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {

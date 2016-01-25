@@ -357,13 +357,27 @@ public class RestClient implements Closeable, StatsAware {
         }
         // remove trailing ,
         sb.setLength(sb.length() - 1);
-        sb.append("],\n\"query\":{ \"bool\": { \"must\":[");
+        sb.append("],\n\"query\":{");
+
+        if (isES20) {
+            sb.append("\"bool\": { \"must\":[");
+        }
+        else {
+            sb.append("\"constant_score\":{ \"filter\": { \"and\":[");
+
+        }
         for (String field: fields) {
             sb.append(String.format(Locale.ROOT, "\n{ \"exists\":{ \"field\":\"%s\"} },", field));
         }
         // remove trailing ,
         sb.setLength(sb.length() - 1);
-        sb.append("\n]}}}");
+        sb.append("\n]}");
+
+        if (!isES20) {
+            sb.append("}");
+        }
+
+        sb.append("}}");
         
         Map<String, List<Map<String, Object>>> hits = parseContent(execute(GET, indexAndType + "/_search", new BytesArray(sb.toString())).body(), "hits");
         List<Map<String, Object>> docs = hits.get("hits");
