@@ -53,7 +53,7 @@ public enum GeoShapeType implements GeoField {
         if (name == null) {
             return null;
         }
-        return KNOWN_TYPES.get(name);
+        return KNOWN_TYPES.get(name.toLowerCase(Locale.ENGLISH));
     }
 
     GeoShapeType(FieldType format, int arrayDepth) {
