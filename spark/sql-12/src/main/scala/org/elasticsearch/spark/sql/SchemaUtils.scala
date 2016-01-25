@@ -1,13 +1,16 @@
 package org.elasticsearch.spark.sql
 
 import java.util.Properties
-
+import java.util.{ LinkedHashSet => JHashSet }
+import java.util.{ List => JList }
+import java.util.{ Map => JMap }
+import java.util.Properties
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.MapType
+import org.apache.spark.sql.catalyst.types.ArrayType
 import org.apache.spark.sql.catalyst.types.BinaryType
 import org.apache.spark.sql.catalyst.types.BooleanType
 import org.apache.spark.sql.catalyst.types.ByteType
@@ -33,17 +36,23 @@ import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
+import org.elasticsearch.hadoop.serialization.FieldType.NESTED
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
+import org.elasticsearch.hadoop.serialization.field.FieldFilter
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
-import org.elasticsearch.spark.sql.Utils.ROW_ORDER_PROPERTY
+import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
+import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
+
+import org.elasticsearch.hadoop.util.SettingsUtils
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -90,7 +99,10 @@ private[sql] object SchemaUtils {
   }
 
   private def convertToStruct(rootField: Field, cfg: Settings): StructType = {
-    var fields = for (fl <- rootField.properties()) yield convertField(fl)
+    val arrayIncludes = SettingsUtils.getFieldArrayFilterInclude(cfg)
+    val arrayExcludes = StringUtils.tokenize(cfg.getReadFieldAsArrayExclude)
+
+    var fields = for (fl <- rootField.properties()) yield convertField(fl, null, arrayIncludes, arrayExcludes)
     if (cfg.getReadMetadata) {
       val metadataMap = new StructField(cfg.getReadMetadataField, new MapType(StringType, StringType, true), true)
       fields :+= metadataMap
@@ -98,12 +110,16 @@ private[sql] object SchemaUtils {
     new StructType(fields)
   }
 
-  private def convertToStruct(field: Field): StructType = {
-    new StructType(for (fl <- field.properties()) yield convertField(fl))
+  private def convertToStruct(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructType = {
+    new StructType(for (fl <- field.properties()) yield convertField(fl, parentName, arrayIncludes, arrayExcludes))
   }
 
-  private def convertField(field: Field): StructField = {
-    val dataType = Utils.extractType(field) match {
+  private def convertField(field: Field, parentName: String, arrayIncludes: JList[NumberedInclude], arrayExcludes: JList[String]): StructField = {
+    val absoluteName = if (parentName != null) parentName + "." + field.name() else field.name()
+    val matched = FieldFilter.filter(absoluteName, arrayIncludes, arrayExcludes, false)
+    val createArray = !arrayIncludes.isEmpty() && matched.matched
+
+    var dataType = Utils.extractType(field) match {
       case NULL    => NullType
       case BINARY  => BinaryType
       case BOOLEAN => BooleanType
@@ -115,33 +131,55 @@ private[sql] object SchemaUtils {
       case DOUBLE  => DoubleType
       case STRING  => StringType
       case DATE    => TimestampType
-      case OBJECT  => convertToStruct(field)
+      case OBJECT  => convertToStruct(field, absoluteName, arrayIncludes, arrayExcludes)
+      case NESTED  => new ArrayType(convertToStruct(field, absoluteName, arrayIncludes, arrayExcludes), true)
       // fall back to String
       case _       => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
     }
 
+    if (createArray) {
+      var currentDepth = 0;
+      for (currentDepth <- 0 until matched.depth) {
+        dataType = new ArrayType(dataType, true)
+      }
+    }
+    
     return new StructField(field.name(), dataType, true)
   }
 
-    def setRowOrder(settings: Settings, struct: StructType) = {
-    val rowOrder = detectRowOrder(settings, struct)
+  def setRowOrder(settings: Settings, struct: StructType) = {
+    val rowInfo = detectRowInfo(settings, struct)
     // save the field in the settings to pass it to the value reader
-    settings.setProperty(ROW_ORDER_PROPERTY, IOUtils.propsToString(rowOrder))
+    settings.setProperty(ROW_INFO_ORDER_PROPERTY, IOUtils.propsToString(rowInfo._1))
+    // also include any array info
+    settings.setProperty(ROW_INFO_ARRAY_PROPERTY, IOUtils.propsToString(rowInfo._2))
   }
 
   def getRowOrder(settings: Settings) = {
-    val rowOrderString = settings.getProperty(ROW_ORDER_PROPERTY)
+    val rowOrderString = settings.getProperty(ROW_INFO_ORDER_PROPERTY)
     Assert.hasText(rowOrderString, "no schema/row order detected...")
 
     val rowOrderProps = IOUtils.propsFromString(rowOrderString)
 
-    val map = new scala.collection.mutable.LinkedHashMap[String, Seq[String]]
+    val rowArrayString = settings.getProperty(ROW_INFO_ARRAY_PROPERTY)
+    val rowArrayProps = if (StringUtils.hasText(rowArrayString)) IOUtils.propsFromString(rowArrayString) else new Properties()
 
+    val order = new scala.collection.mutable.LinkedHashMap[String, Seq[String]]
     for (prop <- rowOrderProps.asScala) {
-      map.put(prop._1, new ArrayBuffer ++= (StringUtils.tokenize(prop._2).asScala))
+      val value = StringUtils.tokenize(prop._2).asScala
+      if (!value.isEmpty) {
+        order.put(prop._1, new ArrayBuffer() ++= value)
+      }
     }
 
-    map
+    val needToBeArray = new JHashSet[String]()
+
+    for (prop <- rowArrayProps.asScala) {
+      needToBeArray.add(prop._1)
+    }
+
+    (order,needToBeArray)
+
   }
 
   private def detectRowOrder(settings: Settings, struct: StructType): Properties = {

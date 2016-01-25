@@ -6,7 +6,8 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 
 abstract class Utils {
 
-    static final String ROW_ORDER_PROPERTY = "es.internal.spark.sql.row.order";
+    static final String ROW_INFO_ORDER_PROPERTY = "es.internal.spark.sql.row.order";
+    static final String ROW_INFO_ARRAY_PROPERTY = "es.internal.spark.sql.row.arrays";
     static final String ROOT_LEVEL_NAME = "_";
 
     static FieldType extractType(Field field) {

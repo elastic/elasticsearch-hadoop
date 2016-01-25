@@ -1080,7 +1080,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
-  def testGeoShapeWithoutMapping() {
+  def testMultiDepthArray() {
     val json = """{"rect":{"type":"multipoint","coordinates":[[[50,32],[69,32],[69,50],[50,50],[50,32]]]}}"""
     val index = wrapIndex("sparksql-test/geo")
     sc.makeRDD(Seq(json)).saveJsonToEs(index)
@@ -1103,7 +1103,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     |          "type": "string"
     |        },
     |        "location": {
-    |          "type": "geo_point"
+    |          "type": "geo_point",
+    |          "geohash" : true,
+    |          "fielddata" : {
+    |            "format" : "compressed",
+    |            "precision" : "1cm"
+    |          }
     |        }
     |      }
     |    }
@@ -1621,7 +1626,52 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertThat(array(1), is(45.0d))
     assertThat(obj.getString(2), is("100m"))
   }
-          
+
+  @Test
+  def testNested() {
+    val mapping = """{ "nested": {
+    |      "properties": {
+    |        "name": { "type": "string" },
+    |        "employees": {
+    |          "type": "nested",
+    |          "properties": {
+    |            "name": {"type": "string"},
+    |            "salary": {"type": "long"}
+    |          }
+    |        }
+    |      }
+    |    }
+    |  }
+    """.stripMargin
+
+    val index = wrapIndex("sparksql-test-nested-simple")
+    val indexAndType = s"$index/nested"
+    RestUtils.touch(index)
+    RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
+
+    val data = """{"name":"nested-simple","employees":[{"name":"anne","salary":6},{"name":"bob","salary":100}, {"name":"charlie","salary":15}] }""".stripMargin
+      
+    sc.makeRDD(Seq(data)).saveJsonToEs(indexAndType)
+    val df = sqc.read.format("es").load(index)
+
+    println(df.schema.treeString)
+    
+    val dataType = df.schema("employees").dataType
+    assertEquals("array", dataType.typeName)
+    val array = dataType.asInstanceOf[ArrayType]
+    assertEquals("struct", array.elementType.typeName)
+    val struct = array.elementType.asInstanceOf[StructType]
+    assertEquals("string", struct("name").dataType.typeName)
+    assertEquals("long", struct("salary").dataType.typeName)
+
+    val head = df.head()
+    val nested = head.getSeq[Row](0);
+    assertThat(nested.size, is(3))
+    assertEquals(nested(0).getString(0), "anne")
+    assertEquals(nested(0).getLong(1), 6)
+  }
+
+  
   @Test
   def testMultiIndexes() {
     // add some data

@@ -38,12 +38,11 @@ public enum FieldType {
     BINARY,
     TOKEN_COUNT,
 
-    GEO_POINT, 
+    GEO_POINT,
     GEO_SHAPE,
 
     // compound types
     OBJECT,
-    MULTI_FIELD,
     NESTED,
 
     // not supported yet
@@ -74,6 +73,10 @@ public enum FieldType {
         }
 
         return true;
+    }
+
+    public static boolean isCompound(FieldType fieldType) {
+        return (OBJECT == fieldType || NESTED == fieldType);
     }
 
     public static boolean isGeo(FieldType fieldType) {

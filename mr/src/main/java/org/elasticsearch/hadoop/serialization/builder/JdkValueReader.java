@@ -82,9 +82,8 @@ public class JdkValueReader implements SettingsAware, ValueReader {
             return binaryValue(parser.binaryValue());
         case DATE:
             return date(value, parser);
-        case OBJECT:
-        case NESTED:
-            // everything else (IP, GEO) gets translated to strings
+            // catch-all - exists really for the other custom types that might be introduced
+            // compound types should have been handled earlier in the stream
         default:
             return textValue(value);
         }

@@ -104,7 +104,7 @@ public class Field implements Serializable {
 
         fields.put(fieldName, field.type());
 
-        if (FieldType.OBJECT == field.type()) {
+        if (FieldType.isCompound(field.type())) {
             for (Field nestedField : field.properties()) {
                 add(fields, nestedField, fieldName);
             }
@@ -120,18 +120,19 @@ public class Field implements Serializable {
         // nested object
         if (value instanceof Map) {
             Map<String, Object> content = (Map<String, Object>) value;
+            // default field type for a map
+            FieldType fieldType = FieldType.OBJECT;
 
-            // check type first
+            // see whether the field was declared
             Object type = content.get("type");
             if (type instanceof String) {
-                String typeString = type.toString();
-                FieldType fieldType = FieldType.parse(typeString);
 
-                // handle multi_field separately
-                if (FieldType.MULTI_FIELD == fieldType) {
-                    // get fields
+                // handle multi_field separately as it is a meta-type
+                // and it never shows up in the actual results
+                if ("multi_field".equals(type.toString())) {
+                    // consume inner "fields"
                     Map<String, Object> fields = (Map<String, Object>) content.get("fields");
-                    // return default field
+                    // find default field
                     Map<String, Object> defaultField = (Map<String, Object>) fields.get(key);
 
                     FieldType defaultType = null;
@@ -159,32 +160,38 @@ public class Field implements Serializable {
                     else {
                         defaultType = FieldType.parse(defaultField.get("type").toString());
                     }
-
                     return new Field(key, defaultType);
                 }
 
+                fieldType = FieldType.parse(type.toString());
+
                 if (FieldType.isRelevant(fieldType)) {
-                    return new Field(key, fieldType);
+                    // primitive types are handled on the spot
+                    // while compound ones are not
+                    if (!FieldType.isCompound(fieldType)) {
+                        return new Field(key, fieldType);
+                    }
                 }
                 else {
                     return null;
                 }
             }
 
-            // no type - iterate through types
+            // compound type - iterate through types
             List<Field> fields = new ArrayList<Field>(content.size());
             for (Entry<String, Object> e : content.entrySet()) {
                 if (e.getValue() instanceof Map) {
                     Field fl = parseField(e, key);
                     if (fl != null && fl.type == FieldType.OBJECT && "properties".equals(fl.name)) {
-                        return new Field(key, fl.type, fl.properties);
+                        // use the enclosing field (as it might be nested)
+                        return new Field(key, fieldType, fl.properties);
                     }
                     if (fl != null) {
                         fields.add(fl);
                     }
                 }
             }
-            return new Field(key, FieldType.OBJECT, fields);
+            return new Field(key, fieldType, fields);
         }
 
 
@@ -193,6 +200,6 @@ public class Field implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s=%s", name, (type == FieldType.OBJECT ? Arrays.toString(properties) : type));
+        return String.format("%s=%s", name, ((type == FieldType.OBJECT || type == FieldType.NESTED) ? Arrays.toString(properties) : type));
     }
 }

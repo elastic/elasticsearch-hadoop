@@ -1,0 +1,15 @@
+{
+    "company": {
+      "properties": {
+        "name": { "type": "string"},
+        "description": {"type": "string"},
+        "employees": {
+          "type": "nested",
+          "properties": {
+            "name": {"type": "string"},
+            "salary": {"type": "long"}
+          }
+        }
+      }
+    }
+}

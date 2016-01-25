@@ -7,6 +7,7 @@ import java.util.Properties
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -37,6 +38,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
+import org.elasticsearch.hadoop.serialization.FieldType.NESTED
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
@@ -133,6 +135,7 @@ private[sql] object SchemaUtils {
       case STRING    => StringType
       case DATE      => TimestampType
       case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes)
+      case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes))
       
       // GEO
       case GEO_POINT => {

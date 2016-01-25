@@ -149,7 +149,7 @@ public abstract class MappingUtils {
         boolean intact = true;
         
         if (FieldFilter.filter(fieldName, includes, excludes).matched) {
-            if (FieldType.OBJECT == field.type()) {
+            if (FieldType.isCompound(field.type())) {
                 List<Field> nested = new ArrayList<Field>();
                 for (Field nestedField : field.properties()) {
                     intact &= processField(nestedField, field.name(), nested, includes, excludes);
@@ -195,7 +195,7 @@ public abstract class MappingUtils {
         else if (FieldType.GEO_SHAPE == field.type()) {
             geoFields.put(fieldName, GeoType.GEO_SHAPE);
         }
-        else if (FieldType.OBJECT == field.type()) {
+        else if (FieldType.isCompound(field.type())) {
             for (Field nestedField : field.properties()) {
                 findGeo(nestedField, fieldName, geoFields);
             }
