@@ -84,7 +84,7 @@ private[sql] object SchemaUtils {
         val geoInfo = repo.sampleGeoFields(field)
         
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
-        if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldAsArrayExclude)) {
+        if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()))

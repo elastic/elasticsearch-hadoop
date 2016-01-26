@@ -72,6 +72,10 @@ private[sql] object SchemaUtils {
       if (repo.indexExists(true)) {
         var field = repo.getMapping
 
+        if (field == null) {
+          throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
+        }
+
         field = MappingUtils.filterMapping(field, cfg);
         val geoInfo = repo.sampleGeoFields(field)
         
@@ -79,11 +83,8 @@ private[sql] object SchemaUtils {
           throw new EsHadoopIllegalArgumentException(s"Geo types are supported only in ES-Hadoop for SparkSQL 1.3 (or higher) DataFrames")
         }
 
-        val readIncludeCfg = cfg.getProperty(readInclude)
-        val readExcludeCfg = cfg.getProperty(readExclude)
-        
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
-        if (StringUtils.hasText(readIncludeCfg) || StringUtils.hasText(readExcludeCfg)) {
+        if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()));

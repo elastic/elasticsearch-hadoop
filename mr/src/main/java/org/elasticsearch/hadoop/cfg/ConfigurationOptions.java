@@ -195,11 +195,11 @@ public interface ConfigurationOptions {
     String ES_READ_FIELD_VALIDATE_PRESENCE_LEGACY = "es.field.read.validate.presence";
     String ES_READ_FIELD_VALIDATE_PRESENCE_DEFAULT = "warn";
 
-    String ES_READ_FIELD_INCLUDE = "es.read.field.as.array.include";
-    String ES_READ_FIELD_EXCLUDE = "es.read.field.as.array.exclude";
+    String ES_READ_FIELD_INCLUDE = "es.read.field.include";
+    String ES_READ_FIELD_EXCLUDE = "es.read.field.exclude";
 
-    String ES_READ_FIELD_AS_ARRAY_INCLUDE = "es.read.field.include";
-    String ES_READ_FIELD_AS_ARRAY_EXCLUDE = "es.read.field.exclude";
+    String ES_READ_FIELD_AS_ARRAY_INCLUDE = "es.read.field.as.array.include";
+    String ES_READ_FIELD_AS_ARRAY_EXCLUDE = "es.read.field.as.array.exclude";
 
 
     /** Metadata */
