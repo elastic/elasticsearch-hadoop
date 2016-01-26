@@ -59,6 +59,8 @@ import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.apache.commons.logging.LogFactory
+import scala.collection.mutable.ArraySeq
+import java.util.ArrayList
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -151,26 +153,27 @@ private[sql] object SchemaUtils {
         }
       }
       case GEO_SHAPE => {
-        var geoShapeSchema = DataTypes.createStructType(Array(DataTypes.createStructField("type", StringType, true)))
+        val fields = new ArrayList[StructField]()
+        fields.add(DataTypes.createStructField("type", StringType, true))
         val COORD = "coordinates"
-        geoShapeSchema = geoInfo.get(absoluteName) match {
-          case GeoShapeType.POINT               => geoShapeSchema.add(COORD, DataTypes.createArrayType(DoubleType))
-          case GeoShapeType.LINE_STRING         => geoShapeSchema.add(COORD,createNestedArray(DoubleType, 2))
+        geoInfo.get(absoluteName) match {
+          case GeoShapeType.POINT               => fields.add(DataTypes.createStructField(COORD, DataTypes.createArrayType(DoubleType), true))
+          case GeoShapeType.LINE_STRING         => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 2), true))
           case GeoShapeType.POLYGON             => { 
-            geoShapeSchema = geoShapeSchema.add(COORD, createNestedArray(DoubleType, 3))
-            geoShapeSchema.add("orientation", StringType)
+            fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 3), true))
+            fields.add(DataTypes.createStructField("orientation", StringType, true))
           }
-          case GeoShapeType.MULTI_POINT         => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 2))
-          case GeoShapeType.MULTI_LINE_STRING   => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 3))
-          case GeoShapeType.MULTI_POLYGON       => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 4))
+          case GeoShapeType.MULTI_POINT         => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 2), true))
+          case GeoShapeType.MULTI_LINE_STRING   => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 3), true))
+          case GeoShapeType.MULTI_POLYGON       => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 4), true))
           case GeoShapeType.GEOMETRY_COLLECTION => throw new EsHadoopIllegalArgumentException(s"Geoshape $geoInfo not supported")
-          case GeoShapeType.ENVELOPE            => geoShapeSchema.add(COORD, createNestedArray(DoubleType, 2))
+          case GeoShapeType.ENVELOPE            => fields.add(DataTypes.createStructField(COORD, createNestedArray(DoubleType, 2), true))
           case GeoShapeType.CIRCLE              => {
-            geoShapeSchema = geoShapeSchema.add(COORD, DataTypes.createArrayType(DoubleType))
-            geoShapeSchema.add("radius", StringType)
+            fields.add(DataTypes.createStructField(COORD, DataTypes.createArrayType(DoubleType), true))
+            fields.add(DataTypes.createStructField("radius", StringType, true))
           }
         }
-        geoShapeSchema
+        DataTypes.createStructType(fields)
       }
       // fall back to String
       case _         => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);
