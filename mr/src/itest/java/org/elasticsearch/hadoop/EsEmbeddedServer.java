@@ -58,8 +58,8 @@ public class EsEmbeddedServer {
             props.setProperty("discovery.zen.ping.multicast.enabled", "false");
         }
         //props.setProperty("script.disable_dynamic", "false");
-        props.setProperty("script.inline", "on");
-        props.setProperty("script.indexed", "on");
+        props.setProperty("script.inline", "true");
+        props.setProperty("script.indexed", "true");
 
         Settings settings = NodeBuilder.nodeBuilder().local(false).client(false).settings(Settings.settingsBuilder().put(props).build()).clusterName(clusterName).getSettings().build();
         Collection plugins = Arrays.asList(GroovyPlugin.class);
