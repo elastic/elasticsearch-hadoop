@@ -1394,7 +1394,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     RestUtils.touch(index)
     RestUtils.putMapping(indexAndType, mapping.getBytes(StringUtils.UTF_8))
 
-    val polygon = """{"name":"polygon","location":{ "type" : "Polygon", "coordinates": [[ [100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0] ]] }}""".stripMargin
+    val polygon = """{"name":"polygon","location":{ "type" : "Polygon", "coordinates": [[ [100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0] ]], "crs":null, "foo":"bar" }}""".stripMargin
       
     sc.makeRDD(Seq(polygon)).saveJsonToEs(indexAndType)
     val df = sqc.read.format("es").load(index)

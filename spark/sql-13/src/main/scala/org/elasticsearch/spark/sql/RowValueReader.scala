@@ -16,7 +16,8 @@ private[sql] trait RowValueReader extends SettingsAware {
   // fields that need to be handled as arrays (in absolute name format)
   protected var arrayFields: JSet[String] = Collections.emptySet()
   protected var sparkRowField = Utils.ROOT_LEVEL_NAME
-
+  protected var currentFieldIsGeo = false
+  
   abstract override def setSettings(settings: Settings) = {
     super.setSettings(settings)
 
@@ -37,6 +38,10 @@ private[sql] trait RowValueReader extends SettingsAware {
   def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any) {
     val pos = esRow.rowOrder.indexOf(key.toString())
     if (pos < 0 || pos >= esRow.values.size) {
+      // geo types allow fields which are ignored - need to skip these if they are not part of the schema
+      if (pos < 0 && currentFieldIsGeo) {
+        return
+      }
       throw new EsHadoopIllegalStateException(s"Position for '$sparkRowField' not found in row; typically this is caused by a mapping inconsistency")
     }
     esRow.values.update(pos, value)

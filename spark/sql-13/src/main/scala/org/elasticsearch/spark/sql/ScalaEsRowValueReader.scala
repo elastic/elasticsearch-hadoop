@@ -104,5 +104,12 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   def endTrailMetadata() {}
 
   def endDoc() {}
-
+  
+  def beginGeoField() {
+    currentFieldIsGeo = true
+  }
+  
+  def endGeoField() {
+    currentFieldIsGeo = false
+  }
 }

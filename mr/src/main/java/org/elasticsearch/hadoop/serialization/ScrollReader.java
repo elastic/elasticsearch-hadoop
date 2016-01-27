@@ -758,6 +758,9 @@ public class ScrollReader {
             if (FieldType.isGeo(mapping(fieldMapping))) {
                 toggleGeo = true;
                 insideGeo = true;
+                if (parsingCallback != null) {
+                    parsingCallback.beginGeoField();
+                }
             }
         }
         Object map = reader.createMap();
@@ -796,6 +799,9 @@ public class ScrollReader {
         // geo field finished, returning
         if (toggleGeo) {
             insideGeo = false;
+            if (parsingCallback != null) {
+                parsingCallback.endGeoField();
+            }
         }
 
         // eliminate END_OBJECT
