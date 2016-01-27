@@ -73,7 +73,7 @@ private[sql] object SchemaUtils {
 
   def discoverMappingAsField(cfg: Settings): (Field, JMap[String, GeoField]) = {
     InitializationUtils.validateSettings(cfg);
-    InitializationUtils.discoverEsVersion(cfg, LogFactory.getLog("org.elasticsearch.spark.sql.DataSource"));
+    InitializationUtils.discoverEsVersion(cfg, Utils.LOGGER);
 
     val repo = new RestRepository(cfg)
     try {
@@ -143,7 +143,7 @@ private[sql] object SchemaUtils {
       
       // GEO
       case GEO_POINT => {
-        geoInfo.get(absoluteName) match {
+        val geoPoint = geoInfo.get(absoluteName) match {
           case GeoPointType.LAT_LON_ARRAY  => DataTypes.createArrayType(DoubleType)
           case GeoPointType.GEOHASH        => StringType
           case GeoPointType.LAT_LON_STRING => StringType
@@ -153,6 +153,11 @@ private[sql] object SchemaUtils {
             DataTypes.createStructType(Array(lon,lat)) 
           }
         }
+        
+        if (Utils.LOGGER.isDebugEnabled()) {
+          Utils.LOGGER.debug(s"Detected field [${absoluteName}] as a GeoPoint with format ${geoPoint.simpleString}")
+        }
+        geoPoint
       }
       case GEO_SHAPE => {
         val fields = new ArrayList[StructField]()
@@ -175,7 +180,12 @@ private[sql] object SchemaUtils {
             fields.add(DataTypes.createStructField("radius", StringType, true))
           }
         }
-        DataTypes.createStructType(fields)
+        val geoShape = DataTypes.createStructType(fields)
+        
+        if (Utils.LOGGER.isDebugEnabled()) {
+          Utils.LOGGER.debug(s"Detected field [${absoluteName}] as a GeoShape with format ${geoShape.simpleString}")
+        }
+        geoShape
       }
       // fall back to String
       case _         => StringType //throw new EsHadoopIllegalStateException("Unknown field type " + field);

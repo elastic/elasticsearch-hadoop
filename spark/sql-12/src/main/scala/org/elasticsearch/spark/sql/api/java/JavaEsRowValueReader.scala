@@ -103,5 +103,9 @@ class JavaEsRowValueReader extends JdkValueReader with RowValueReader with Value
   def endTrailMetadata() {}
 
   def endDoc() {}
+  
+  def beginGeoField() {}
+
+  def endGeoField() {}
 
 }

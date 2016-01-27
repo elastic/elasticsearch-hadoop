@@ -1,5 +1,7 @@
 package org.elasticsearch.spark.sql;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -7,6 +9,8 @@ import org.elasticsearch.hadoop.util.unit.Booleans;
 
 abstract class Utils {
 
+    static final Log LOGGER = LogFactory.getLog("org.elasticsearch.spark.sql.DataSource");
+            
     // required since type has a special meaning in Scala
     // and thus the method cannot be called
     static FieldType extractType(Field field) {

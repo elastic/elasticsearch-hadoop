@@ -130,19 +130,19 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
     if (filters != null && filters.size > 0) {
       if (Utils.isPushDown(cfg)) {
-        if (logger.isDebugEnabled()) {
-          logger.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
+        if (Utils.LOGGER.isDebugEnabled()) {
+          Utils.LOGGER.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
         }
         val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg))
 
-        if (logger.isTraceEnabled()) {
-          logger.trace(s"Transformed filters into DSL ${filterString.mkString("[", ",", "]")}")
+        if (Utils.LOGGER.isTraceEnabled()) {
+          Utils.LOGGER.trace(s"Transformed filters into DSL ${filterString.mkString("[", ",", "]")}")
         }
         paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS -> IOUtils.serializeToBase64(filterString))
       }
       else {
-        if (logger.isTraceEnabled()) {
-          logger.trace("Push-down is disabled; ignoring Spark filters...")
+        if (Utils.LOGGER.isTraceEnabled()) {
+          Utils.LOGGER.trace("Push-down is disabled; ignoring Spark filters...")
         }
       }
     }
@@ -184,8 +184,8 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
 
     val filtered = filters.filter(unhandled)
-    if (logger.isTraceEnabled()) {
-      logger.trace(s"Unhandled filters from ${filters.mkString("[", ",", "]")} to ${filtered.mkString("[", ",", "]")}")
+    if (Utils.LOGGER.isTraceEnabled()) {
+      Utils.LOGGER.trace(s"Unhandled filters from ${filters.mkString("[", ",", "]")} to ${filtered.mkString("[", ",", "]")}")
     }
     filtered
   }
@@ -230,8 +230,8 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         }
 
         if (!strictPushDown && isStrictType) {
-          if (logger.isDebugEnabled()) {
-            logger.debug(s"Attribute $attribute type $attrType not suitable for match query; using terms (strict) instead")
+          if (Utils.LOGGER.isDebugEnabled()) {
+            Utils.LOGGER.debug(s"Attribute $attribute type $attrType not suitable for match query; using terms (strict) instead")
           }
         }
 
@@ -371,7 +371,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   def insert(data: DataFrame, overwrite: Boolean) {
     if (overwrite) {
-      logger.info(s"Overwriting data for ${cfg.getResourceWrite}")
+      Utils.LOGGER.info(s"Overwriting data for ${cfg.getResourceWrite}")
 
       // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
@@ -392,6 +392,4 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       rr.close()
       empty
   }
-
-  private def logger = LogFactory.getLog("org.elasticsearch.spark.sql.DataSource")
 }
