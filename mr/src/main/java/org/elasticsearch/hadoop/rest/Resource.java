@@ -94,7 +94,6 @@ public class Resource {
         else {
             fixedIndex.append(index);
         }
-        Assert.isTrue(StringUtils.isLowerCase(fixedIndex), String.format("Invalid index [%s] - needs to be lowercase", index));
 
         indexAndType = index + "/" + type;
 
