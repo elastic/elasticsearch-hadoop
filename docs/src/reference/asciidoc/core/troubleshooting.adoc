@@ -5,6 +5,12 @@ Unfortunately, sometimes things do not go as expected and your {eh} job executio
 This section tries to provide help and tips for doing your own diagnostics, identifying the problem and hopefully fixing it.
 
 [float]
+=== Triple check the classpath
+
+Make sure to use only one version of {eh} in your classpath. While it might not be obvious, the classpath in Hadoop/Spark is assembled from multiple folders; further more there are no guarantees what version is going to be picked up
+first by the JVM. To avoid obscure issues, double check your classpath and make sure there is only one version of the library in there, the one you are interested in.
+
+[float]
 === Isolate the issue
 
 When encountering a problem, do your best to isolate it. This can be quite tricky and many times, it is the hardest part so take your time with it. Take baby steps and try to eliminate unnecessary code or settings in small chunks until you end up with a small, tiny example that exposes your problem.
