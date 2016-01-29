@@ -23,19 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.Locale;
 
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpConnection;
-import org.apache.commons.httpclient.HttpConnectionManager;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.SimpleHttpConnectionManager;
-import org.apache.commons.httpclient.URI;
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -178,11 +168,15 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
         params.setSoTimeout((int) settings.getHttpTimeout());
+        // explicitly set the charset
+        params.setCredentialCharset(StringUtils.UTF_8.name());
+        params.setContentCharset(StringUtils.UTF_8.name());
+
         HostConfiguration hostConfig = new HostConfiguration();
 
         hostConfig = setupSSLIfNeeded(settings, hostConfig);
         hostConfig = setupSocksProxy(settings, hostConfig);
-        Object[] authSettings = setupHttpProxy(settings, hostConfig);
+        Object[] authSettings = setupHttpOrHttpsProxy(settings, hostConfig);
         hostConfig = (HostConfiguration) authSettings[0];
 
         try {
@@ -246,46 +240,82 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private Object[] setupHttpProxy(Settings settings, HostConfiguration hostConfig) {
+    private Object[] setupHttpOrHttpsProxy(Settings settings, HostConfiguration hostConfig) {
         // return HostConfiguration + HttpState
         Object[] results = new Object[2];
         results[0] = hostConfig;
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
-        if (settings.getNetworkHttpUseSystemProperties()) {
-            proxyHost = System.getProperty("http.proxyHost");
-            proxyPort = Integer.getInteger("http.proxyPort", -1);
+
+        if (sslEnabled) {
+            if (settings.getNetworkHttpsUseSystemProperties()) {
+                proxyHost = System.getProperty("https.proxyHost");
+                proxyPort = Integer.getInteger("https.proxyPort", -1);
+            }
+            if (StringUtils.hasText(settings.getNetworkProxyHttpsHost())) {
+                proxyHost = settings.getNetworkProxyHttpsHost();
+            }
+            if (settings.getNetworkProxyHttpsPort() > 0) {
+                proxyPort = settings.getNetworkProxyHttpsPort();
+            }
         }
-        if (StringUtils.hasText(settings.getNetworkProxyHttpHost())) {
-            proxyHost = settings.getNetworkProxyHttpHost();
-        }
-        if (settings.getNetworkProxyHttpPort() > 0) {
-            proxyPort = settings.getNetworkProxyHttpPort();
+        else {
+            if (settings.getNetworkHttpUseSystemProperties()) {
+                proxyHost = System.getProperty("http.proxyHost");
+                proxyPort = Integer.getInteger("http.proxyPort", -1);
+            }
+            if (StringUtils.hasText(settings.getNetworkProxyHttpHost())) {
+                proxyHost = settings.getNetworkProxyHttpHost();
+            }
+            if (settings.getNetworkProxyHttpPort() > 0) {
+                proxyPort = settings.getNetworkProxyHttpPort();
+            }
         }
 
         if (StringUtils.hasText(proxyHost)) {
             hostConfig.setProxy(proxyHost, proxyPort);
-            proxyInfo = proxyInfo.concat(String.format("[HTTP proxy %s:%s]", proxyHost, proxyPort));
+            proxyInfo = proxyInfo.concat(String.format(Locale.ROOT, "[%s proxy %s:%s]", (sslEnabled ? "HTTPS" : "HTTP"), proxyHost, proxyPort));
 
             // client is not yet initialized so postpone state
-            if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
-                if (!StringUtils.hasText(settings.getNetworkProxyHttpPass())) {
-                    log.warn(String.format("HTTP proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTP_PASS));
-
+            if (sslEnabled) {
+                if (StringUtils.hasText(settings.getNetworkProxyHttpsUser())) {
+                    if (!StringUtils.hasText(settings.getNetworkProxyHttpsPass())) {
+                        log.warn(String.format("HTTPS proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS));
+                    }
+                    HttpState state = new HttpState();
+                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpsUser(), settings.getNetworkProxyHttpsPass()));
+                    // client is not yet initialized so simply save the object for later
+                    results[1] = state;
                 }
-                HttpState state = new HttpState();
-                state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
-                // client is not yet initialized so simply save the object for later
-                results[1] = state;
+    
+                if (log.isDebugEnabled()) {
+                    if (StringUtils.hasText(settings.getNetworkProxyHttpsUser())) {
+                        log.debug(String.format("Using authenticated HTTPS proxy [%s:%s]", proxyHost, proxyPort));
+                    }
+                    else {
+                        log.debug(String.format("Using HTTPS proxy [%s:%s]", proxyHost, proxyPort));
+                    }
+                }
             }
-
-            if (log.isDebugEnabled()) {
+            else {
                 if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
-                    log.debug(String.format("Using authenticated HTTP proxy [%s:%s]", proxyHost, proxyPort));
+                    if (!StringUtils.hasText(settings.getNetworkProxyHttpPass())) {
+                        log.warn(String.format("HTTP proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTP_PASS));
+                    }
+                    HttpState state = new HttpState();
+                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
+                    // client is not yet initialized so simply save the object for later
+                    results[1] = state;
                 }
-                else {
-                    log.debug(String.format("Using HTTP proxy [%s:%s]", proxyHost, proxyPort));
+    
+                if (log.isDebugEnabled()) {
+                    if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
+                        log.debug(String.format("Using authenticated HTTP proxy [%s:%s]", proxyHost, proxyPort));
+                    }
+                    else {
+                        log.debug(String.format("Using HTTP proxy [%s:%s]", proxyHost, proxyPort));
+                    }
                 }
             }
         }

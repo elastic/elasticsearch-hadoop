@@ -433,6 +433,17 @@ added[2.1]
 `es.net.proxy.http.pass`:: Http proxy password
 `es.net.proxy.http.use.system.props`(default yes):: Whether the use the system Http proxy properties (namely `http.proxyHost` and `http.proxyPort`) or not
 
+added[2.2]
+`es.net.proxy.https.host`:: Https proxy host name
+added[2.2]
+`es.net.proxy.https.port`:: Https proxy port
+added[2.2]
+`es.net.proxy.https.user`:: Https proxy user name
+added[2.2]
+`es.net.proxy.https.pass`:: Https proxy password
+added[2.2]
+`es.net.proxy.https.use.system.props`(default yes):: Whether the use the system Https proxy properties (namely `https.proxyHost` and `https.proxyPort`) or not
+
 `es.net.proxy.socks.host`:: Http proxy host name
 `es.net.proxy.socks.port`:: Http proxy port
 `es.net.proxy.socks.user`:: Http proxy user name
@@ -440,6 +451,8 @@ added[2.1]
 `es.net.proxy.socks.use.system.props`(default yes):: Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
 
 NOTE: {eh} allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
+IMPORTANT: The semantics of these properties are described in the JVM http://docs.oracle.com/javase/8/docs/api/java/net/doc-files/net-properties.html#Proxies[docs]. In some cases, setting up the JVM property `java.net.useSystemProxies`
+to `true` works better then setting these properties manually.
 
 [float]
 [[configuration-serialization]]

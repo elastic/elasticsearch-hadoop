@@ -384,7 +384,27 @@ public abstract class Settings {
     }
 
     public boolean getNetworkHttpUseSystemProperties() {
-        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT));
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT));
+    }
+
+    public String getNetworkProxyHttpsHost() {
+        return getProperty(ES_NET_PROXY_HTTPS_HOST);
+    }
+
+    public int getNetworkProxyHttpsPort() {
+        return Integer.valueOf(getProperty(ES_NET_PROXY_HTTPS_PORT, "-1"));
+    }
+
+    public String getNetworkProxyHttpsUser() {
+        return getProperty(ES_NET_PROXY_HTTPS_USER);
+    }
+
+    public String getNetworkProxyHttpsPass() {
+        return getProperty(ES_NET_PROXY_HTTPS_PASS);
+    }
+
+    public boolean getNetworkHttpsUseSystemProperties() {
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT));
     }
 
     public String getNetworkProxySocksHost() {
