@@ -233,7 +233,29 @@ true. The actual object type is based on the library used; noteable exception be
 +LongWritable+ and +Text+ are returned regardless of this setting.
 
 added[2.2]
-`es.field.read.as.array.include` (default empty)::
+`es.read.field.include` (default empty)::
+Fields/properties that are parsed and considered when reading the documents from {es}. By default empty meaning all fields are considered. Use this property with _caution_
+as it can have nasty side-effects. Typically used in cases where some documents returned do not fit into an expected mapping.
+
+added[2.2]
+`es.read.field.exclude` (default empty)::
+Fields/properties that are discarded when reading the documents from {es}. By default empty meaning no fields are excluded. Use this property with _caution_
+as it can have nasty side-effects. Typically used in cases where some documents returned do not fit into an expected mapping.
+
+For example:
+[source,ini]
+----
+# To exclude field company.income
+es.read.field.exclude = company.income
+----
+
+`es.read.field.as.array.exclude` (default empty)::
+Fields/properties that should be considered as arrays/lists. Similar to `es.read.field.as.array.include` above. Multiple values can be specified by using a comma. 
+By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
+before-hand.
+
+added[2.2]
+`es.read.field.as.array.include` (default empty)::
 Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
 whether to instantiate one value or a array type (depending on the library type). When encountering multiple values, {eh} will automatically use 
 the array/list type but in strict mapping scenarios (like Spark SQL) this might lead to an unexpected schema change.
@@ -244,14 +266,14 @@ For example:
 [source,ini]
 ----
 # mapping nested.bar as an array
-es.field.read.as.array.include = nested.bar
+es.read.field.as.array.include = nested.bar
 
 # mapping nested.bar as an 3-levels/dimensions array
-es.field.read.as.array.include = nested.bar:3
+es.read.field.as.array.include = nested.bar:3
 ----
 
-`es.field.read.as.array.exclude` (default empty)::
-Fields/properties that should be considered as arrays/lists. Similar to `es.field.read.as.array.include` above. Multiple values can be specified by using a comma. 
+`es.read.field.as.array.exclude` (default empty)::
+Fields/properties that should be considered as arrays/lists. Similar to `es.read.field.as.array.include` above. Multiple values can be specified by using a comma. 
 By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
 before-hand.
 
