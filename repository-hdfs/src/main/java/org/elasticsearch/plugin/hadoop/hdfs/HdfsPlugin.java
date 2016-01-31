@@ -18,15 +18,6 @@
  */
 package org.elasticsearch.plugin.hadoop.hdfs;
 
-import org.elasticsearch.common.SuppressForbidden;
-import org.elasticsearch.common.io.FileSystemUtils;
-import org.elasticsearch.common.io.PathUtils;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardRepository;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.repositories.RepositoriesModule;
-import org.elasticsearch.repositories.Repository;
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -43,6 +34,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.SuppressForbidden;
+import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.io.PathUtils;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardRepository;
+import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoriesModule;
+import org.elasticsearch.repositories.Repository;
+
 public class HdfsPlugin extends Plugin {
 
     @Override
@@ -57,9 +58,13 @@ public class HdfsPlugin extends Plugin {
 
     @SuppressWarnings("unchecked")
     public void onModule(RepositoriesModule repositoriesModule) {
+        if (System.getSecurityManager() != null) {
+            Loggers.getLogger(HdfsPlugin.class).warn("The Java Security Manager is enabled however Hadoop is not compatible with it and thus needs to be disabled; see the docs for more information...");
+        }
+
         String baseLib = detectLibFolder();
         List<URL> cp = getHadoopClassLoaderPath(baseLib);
-        
+
         ClassLoader hadoopCL = URLClassLoader.newInstance(cp.toArray(new URL[cp.size()]), getClass().getClassLoader());
 
         Class<? extends Repository> repository = null;
@@ -85,7 +90,7 @@ public class HdfsPlugin extends Plugin {
     private static class HadoopDomainCombiner implements DomainCombiner {
 
         private static String BASE_LIB = detectLibFolder();
-        
+
         @Override
         public ProtectionDomain[] combine(ProtectionDomain[] currentDomains, ProtectionDomain[] assignedDomains) {
             for (ProtectionDomain pd : assignedDomains) {
@@ -107,7 +112,29 @@ public class HdfsPlugin extends Plugin {
         return cp;
     }
 
-    private String getHadoopVersion(ClassLoader hadoopCL) {
+    private String getHadoopVersion(final ClassLoader hadoopCL) {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            // unprivileged code such as scripts do not have SpecialPermission
+            sm.checkPermission(new SpecialPermission());
+        }
+
+        return AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                // Hadoop 2 relies on TCCL to determine the version
+                ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+                try {
+                    Thread.currentThread().setContextClassLoader(hadoopCL);
+                    return doGetHadoopVersion(hadoopCL);
+                } finally {
+                    Thread.currentThread().setContextClassLoader(tccl);
+                }
+            }
+        }, hadoopACC());
+    }
+
+    private String doGetHadoopVersion(ClassLoader hadoopCL) {
         String version = "Unknown";
 
         Class<?> clz = null;

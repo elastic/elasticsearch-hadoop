@@ -28,7 +28,7 @@ The HDFS Snapshot/Restore is an Elasticsearch plugin - be sure to familiarize wi
 
 ### Disable the Java Security Manager (JSM)
 
-By default, Elasticsearch enforces a Java Security Manager inside its running JVM for security purposes. Unfortunately Hadoop and its HDFS client are quite greedy in terms of the permissions needed, requiring significantly more than Elasticsearch itself.
+By default, Elasticsearch enforces a Java Security Manager inside its running JVM for security purposes. Unfortunately Hadoop and its HDFS client are quite greedy in terms of the permissions needed, requiring not just significantly more permissions than Elasticsearch itself but also dangerous ones.
 Thus, one is required to *disable* the JSM, otherwise the plugin will *not* work correctly; this can be done by adding `security.manager.enabled: false` to the `elasticsearch.yml` configuration on _each_ node where the plugin runs.
 
 One can easily check whether the JSM is disabled or not by looking at the logs for this warning:
@@ -39,7 +39,12 @@ One can easily check whether the JSM is disabled or not by looking at the logs f
 
 If the warning appears, the JSM is enabled. If it does not (after the message indicating the libraries have been loaded) then everything is fine.
 
-Note that we are [working](https://github.com/elastic/elasticsearch/pull/14108) towards a solution to have Hadoop running without disabling the JSM. The current ETA is to have this addressed in Elasticsearch 2.2. In the meantime unfortunately, this is the only workaround. 
+#### Wait, why can't the JSM be used?
+
+Security is hard. 
+While efforts like [these](https://github.com/elastic/elasticsearch/pull/14108) help with per-plugin permissions, the ultimate goal is having a secure Elasticsearch install. Unfortunately Hadoop (especially 2.x) requires _dangerous_ permissions such as _execute_ on _all_ files (triggered during even [basic initialization](https://github.com/apache/hadoop/blob/772ea7b41b06beaa1f4ac4fa86eac8d6e6c8cd36/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/Shell.java#L728). Where possible, we try to find the common ground and have the code still running securely with hacks like [these](https://github.com/elastic/elasticsearch/blob/105411060c44cd796187068abe9df6168ff9253b/core/src/main/java/org/elasticsearch/bootstrap/ESPolicy.java#L88).
+
+As the above is addressed only in master (potentially the upcoming Elasticsearch 2.3), in the meantime users need to be aware of the current situation and act accordingly. And that is disabling the JSM.
  
 ### Node restart
 _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart_ it. This applies to _all_ nodes on which the plugins have been installed - without restarting the nodes, the plugin will not function properly.
