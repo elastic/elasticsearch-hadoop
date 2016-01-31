@@ -24,9 +24,7 @@ object EsSparkSQL {
     val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
     esConf.merge(cfg.asJava)
 
-    val schema = SchemaUtils.discoverMapping(esConf)
-    val rowRDD = new ScalaEsRowRDD(sc.sparkContext, esConf.asProperties.asScala, schema)
-    sc.createDataFrame(rowRDD, schema.struct)
+    sc.load("org.elasticsearch.spark.sql", esConf.asProperties.asScala.toMap)
   }
 
   def esDF(sc: SQLContext, resource: String, query: String, cfg: Map[String, String]): DataFrame = {

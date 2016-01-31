@@ -111,7 +111,8 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	public void testEsdataFrame2Read() throws Exception {
 		String target = "sparksql-test/scala-basic-write";
 
-		DataFrame dataFrame = JavaEsSparkSQL.esDF(sqc, target);
+        // DataFrame dataFrame = JavaEsSparkSQL.esDF(sqc, target);
+        DataFrame dataFrame = sqc.read().format("es").load(target);
 		assertTrue(dataFrame.count() > 300);
 		String schema = dataFrame.schema().treeString();
 		System.out.println(schema);

@@ -84,13 +84,16 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
     // '.' seems to be problematic when specifying the options
     val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
-      else if (k == "path") ("es.resource", v)
+      else if (k == "path") (ConfigurationOptions.ES_RESOURCE, v)
       else if (k == "pushdown") (Utils.DATA_SOURCE_PUSH_DOWN, v)
       else if (k == "strict") (Utils.DATA_SOURCE_PUSH_DOWN_STRICT, v)
       else if (k == "double.filtering") (Utils.DATA_SOURCE_KEEP_HANDLED_FILTERS, v)
       else ("es." + k, v)
     }
-    params.getOrElse(ConfigurationOptions.ES_RESOURCE, throw new EsHadoopIllegalArgumentException("resource must be specified for Elasticsearch resources."))
+    // validate path
+    params.getOrElse(ConfigurationOptions.ES_RESOURCE_READ, 
+        params.getOrElse(ConfigurationOptions.ES_RESOURCE, throw new EsHadoopIllegalArgumentException("resource must be specified for Elasticsearch resources.")))
+        
     params
   }
 }
