@@ -79,22 +79,6 @@ public class Resource {
         }
         Assert.hasText(index, "No index found; expecting [index]/[type]");
 
-        StringBuilder fixedIndex = new StringBuilder();
-        if (index.contains("{") && index.contains("}")) {
-            int startPattern = index.indexOf("{");
-            int endPattern = index.indexOf("}");
-            if (endPattern > startPattern) {
-                fixedIndex.append(index.substring(0, startPattern));
-                fixedIndex.append(index.substring(endPattern + 1, index.length()));
-            }
-            else {
-                fixedIndex.append(index);
-            }
-        }
-        else {
-            fixedIndex.append(index);
-        }
-
         indexAndType = index + "/" + type;
 
         // check bulk
