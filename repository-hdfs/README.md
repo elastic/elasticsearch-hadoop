@@ -42,9 +42,12 @@ If the warning appears, the JSM is enabled. If it does not (after the message in
 #### Wait, why can't the JSM be used?
 
 Security is hard. 
-While efforts like [these](https://github.com/elastic/elasticsearch/pull/14108) help with per-plugin permissions, the ultimate goal is having a secure Elasticsearch install. Unfortunately Hadoop (especially 2.x) requires _dangerous_ permissions such as _execute_ on _all_ files (triggered during even [basic initialization](https://github.com/apache/hadoop/blob/772ea7b41b06beaa1f4ac4fa86eac8d6e6c8cd36/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/Shell.java#L728). Where possible, we try to find the common ground and have the code still running securely with hacks like [these](https://github.com/elastic/elasticsearch/blob/105411060c44cd796187068abe9df6168ff9253b/core/src/main/java/org/elasticsearch/bootstrap/ESPolicy.java#L88).
 
-As the above is addressed only in master (potentially the upcoming Elasticsearch 2.3), in the meantime users need to be aware of the current situation and act accordingly. And that is disabling the JSM.
+While efforts like [these](https://github.com/elastic/elasticsearch/pull/14108) help with per-plugin permissions, the ultimate goal is having a secure Elasticsearch install. Unfortunately Hadoop (especially 2.x) requires _dangerous_ permissions such as _execute_ on _all_ files (triggered during even [basic initialization](https://github.com/apache/hadoop/blob/772ea7b41b06beaa1f4ac4fa86eac8d6e6c8cd36/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/Shell.java#L728). Permissions like this (not to mention the shell execution) are simply too _dangerous_ and security is significantly affected.
+Where possible, we try to find the common ground and have the code still running securely with hacks like [these](https://github.com/elastic/elasticsearch/blob/105411060c44cd796187068abe9df6168ff9253b/core/src/main/java/org/elasticsearch/bootstrap/ESPolicy.java#L88).
+
+As the above is addressed only in master (potentially the upcoming Elasticsearch 2.3), in the meantime users need to be aware of the current situation and act accordingly. That is, understand that by using HDFS plugin the Java Security
+Manager is disabled.
  
 ### Node restart
 _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart_ it. This applies to _all_ nodes on which the plugins have been installed - without restarting the nodes, the plugin will not function properly.
