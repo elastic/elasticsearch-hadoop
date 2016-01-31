@@ -694,7 +694,7 @@ import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;  <2>
 ...
 
 DataFrame people = ...
-JavaEsSpark SQL.saveToEs("spark/people");                     <3>
+JavaEsSparkSQL.saveToEs(people, "spark/people");                     <3>
 ----
 
 <1> Spark SQL Java imports
@@ -855,7 +855,7 @@ The __sources__ declaration also allows specific options to be passed in, namely
 |===
 | Name | Default value| Description
 
-| `path`             | {es} index/type    | _required_
+| `path`             |  _required_        | {es} index/type
 | `pushdown`         | `true`             | Whether to translate (__push-down__) Spark SQL into {es} Query DSL
 | `strict`           | `false`            | Whether to use _exact_ (not analyzed) matching or not (analyzed)
 
@@ -1034,7 +1034,7 @@ import org.elasticsearch.spark.sql._          <2>
 
 val sql = new SQLContext(sc)
 
-val people = sql.esDF("spark/people") <3>
+val people = sql.esDF("spark/people")         <3>
 
 // check the associated schema
 println(people.schema.treeString)             <4>
@@ -1087,7 +1087,7 @@ For Java users, a dedicated API exists through +JavaEsSpark SQL+. It is striking
 [source,java]
 ----
 import org.apache.spark.sql.api.java.JavaSQLContext;          <1>
-import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;   <2>
+import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;   <2>
 ...
 SQLContext sql = new SQLContext(sc);
 
@@ -1128,7 +1128,7 @@ import org.elasticsearch.spark.sql._          <2>
 
 val sql = new SQLContext(sc)
 
-val people = sql.esRDD("spark/people") <3>
+val people = sql.esRDD("spark/people")        <3>
 
 // check the associated schema
 println(people.schema)                        <4>
@@ -1161,7 +1161,7 @@ val smiths = sqlContext.esRDD("spark/people","?q=Smith" <1>)
 [source,java]
 ----
 import org.apache.spark.sql.api.java.JavaSQLContext;               <1>
-import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;        <2>
+import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;        <2>
 ...
 JavaSQLContext jsql = new JavaSQLContext(sc);
 
