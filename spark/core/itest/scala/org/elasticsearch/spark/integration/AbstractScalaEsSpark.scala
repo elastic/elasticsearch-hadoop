@@ -43,6 +43,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.spark._
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
@@ -384,6 +385,21 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     println(RestUtils.getMapping(target))
   }
 
+  
+  @Test
+  def testEsSparkVsScCount() {
+    val target = wrapIndex("spark-test/check-counting")
+    val rawCore = List( Map("colint" -> 1, "colstr" -> "s"),
+                         Map("colint" -> null, "colstr" -> null) )
+    sc.parallelize(rawCore, 1).saveToEs(target)
+    val qjson =
+      """{"query":{"range":{"colint":{"from":null,"to":"9","include_lower":true,"include_upper":true}}}}"""
+    
+    val esRDD = EsSpark.esRDD(sc, target, qjson)
+    val scRDD = sc.esRDD(target, qjson)
+    assertEquals(esRDD.collect().size, scRDD.collect().size)
+  }
+  
   //@Test
   def testLoadJsonFile() {
     val target = "lost/id"
