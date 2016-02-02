@@ -11,7 +11,7 @@ For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/e
 
 ## Installation
 
-### Stable Release (currently `2.1.2`)
+### Stable Release (currently `2.1.3`)
 Available through any Maven-compatible tool:
 
 ```xml
