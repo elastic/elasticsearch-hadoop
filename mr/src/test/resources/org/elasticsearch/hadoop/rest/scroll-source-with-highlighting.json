@@ -1,0 +1,45 @@
+{
+  "_scroll_id" : "c2NhbjsxOzE6MjBLOXo0S1RTcktPNmtmSU44YjJZUTsxO3RvdGFsX2hpdHM6MTk2Ow==",
+  "took": 73,
+  "timed_out": false,
+  "_shards": {
+    "total": 195,
+    "successful": 195,
+    "failed": 0
+  },
+  "hits": {
+    "total": 2,
+    "max_score": 1.2188213,
+    "hits": [
+      {
+        "_index": "fts-english",
+        "_type": "Document",
+        "_id": "AVL4xra8T4Qk2Y2x3Hf6",
+        "_score": 1.2188213,
+        "_source": {
+          "Document__Body": "Breaking News Home + Live TV U.S. Edition + U.S. International Arabic Español Set edition preference: U.S. International U.S. Edition + U.S. International Arabic Español Set edition preference: U.S. International U.S. International Español Arabic Set edition preference: U.S. International U.S. Edition U.S. International Arabic Español Set edition preference Confirm"
+        },
+        "highlight": {
+          "Document__Body": [
+            "Breaking News Home + Live TV U.S. Edition + U.S. International <b>Arabic</b> Español Set edition preference: U.S. International U.S. Edition + U.S. International <b>Arabic</b> Español Set edition preference: U.S. International U.S. International Español <b>Arabic</b> Set edition preference: U.S. International U.S. Edition U.S. International <b>Arabic</b> Español Set edition preference Confirm"
+          ]
+        }
+      }
+    ,
+      {
+        "_index": "fts-english",
+        "_type": "Document",
+        "_id": "AVL4xrsNT4Qk2Y2x3Hf8",
+        "_score": 1.0876832,
+        "_source": {
+          "Document__Body": "Breaking News Home + Live TV U.S. Edition + U.S. International Arabic Español Set edition preference: U.S. International U.S. Edition + U.S. International Arabic Español Set edition preference: U.S. International U.S. International Español Arabic Set edition preference: U.S. International U.S. Edition U.S. International Arabic Español Set edition preference Confirm"
+        },
+        "highlight": {
+          "Document__Body": [
+            "Breaking News Home + Live TV U.S. Edition + U.S. International <b>Arabic</b> Español Set edition preference: U.S. International U.S. Edition + U.S. International <b>Arabic</b> Español Set edition preference: U.S. International U.S. International Español <b>Arabic</b> Set edition preference: U.S. International U.S. Edition U.S. International <b>Arabic</b> Español Set edition preference Confirm"
+          ]
+        }
+      }
+    ]
+  }
+}

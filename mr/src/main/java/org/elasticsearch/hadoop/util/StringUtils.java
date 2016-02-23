@@ -52,6 +52,8 @@ public abstract class StringUtils {
     public static final String PATH_CURRENT = ".";
     public static final String SOURCE_ROOT = "hits.hits._source.";
     public static final String FIELDS_ROOT = "hits.hits.fields.";
+    public static final String HIGHLIGHT_ROOT = "hits.hits.highlight.";
+    public static final String[] KNOWN_ROOTS = new String[]{SOURCE_ROOT, FIELDS_ROOT, HIGHLIGHT_ROOT};
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 
@@ -519,11 +521,10 @@ public abstract class StringUtils {
 
     public static String stripFieldNameSourcePrefix(String fieldName) {
         if (fieldName != null) {
-            if (fieldName.startsWith(SOURCE_ROOT)) {
-                return fieldName.substring(SOURCE_ROOT.length());
-            }
-            else if (fieldName.startsWith(FIELDS_ROOT)) {
-                return fieldName.substring(FIELDS_ROOT.length());
+            for (String knownRoot: KNOWN_ROOTS) {
+                if (fieldName.startsWith(knownRoot)) {
+                    return fieldName.substring(knownRoot.length());
+                }
             }
         }
         return fieldName;

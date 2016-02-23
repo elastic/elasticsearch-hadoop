@@ -1,0 +1,30 @@
+{
+  "fts-english": {
+    "mappings": {
+      "Document": {
+        "properties": {
+          "Document__Body": {
+            "type": "string"
+          }
+        }
+      },
+      "lock": {
+        "properties": {
+          "host": {
+            "type": "string"
+          }
+        }
+      },
+      "system": {
+        "properties": {
+          "ftsIndexVersion": {
+            "type": "long"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
