@@ -1,0 +1,562 @@
+{
+  "cluster_name": "elasticsearch",
+  "nodes": {
+    "MMkGcn1EQk6myfNvTgpUrg": {
+      "name": "node1",
+      "transport_address": "inet[/10.0.5.169:9300]",
+      "host": "ip-10-0-5-169",
+      "ip": "10.0.5.169",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.169:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.5.169:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "wT8faNVjQOaK0i35vBDJ4A": {
+      "name": "node2",
+      "transport_address": "inet[/10.0.4.13:9300]",
+      "host": "ip-10-0-4-13.us-west-2.compute.internal",
+      "ip": "10.0.4.13",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.13:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2b",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.4.13:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "HOHRFuUVTWGN1F-mQ3pFbQ": {
+      "name": "node3",
+      "transport_address": "inet[/10.0.5.128:9300]",
+      "host": "ip-10-0-5-128.us-west-2.compute.internal",
+      "ip": "10.0.5.128",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.128:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2c",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.5.128:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "RC13-kqQQSOTx5hfFpvaRw": {
+      "name": "node4",
+      "transport_address": "inet[/10.0.0.162:9300]",
+      "host": "ip-10-0-0-162",
+      "ip": "10.0.0.162",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.162:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.162:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "grCHV9cRS6iqx1q5tGLqfQ": {
+      "name": "node5",
+      "transport_address": "inet[/10.0.5.243:9300]",
+      "host": "ip-10-0-5-243",
+      "ip": "10.0.5.243",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.243:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.5.243:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "ZveGVrCQSxaf_noltUDRaQ": {
+      "name": "node6",
+      "transport_address": "inet[/10.0.4.99:9300]",
+      "host": "ip-10-0-4-99.us-west-2.compute.internal",
+      "ip": "10.0.4.99",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.99:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2b",
+        "data": "false",
+        "master": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.4.99:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "1RdDkcvwSyiwe_NHrrfpNg": {
+      "name": "node7",
+      "transport_address": "inet[/10.0.0.230:9300]",
+      "host": "ip-10-0-0-230.us-west-2.compute.internal",
+      "ip": "10.0.0.230",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.230:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2a",
+        "data": "false",
+        "master": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.0.230:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "hvLQR8D1RQ2N6G0d6Tb5hw": {
+      "name": "node8",
+      "transport_address": "inet[/10.0.4.96:9300]",
+      "host": "ip-10-0-4-96",
+      "ip": "10.0.4.96",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.96:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.96:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "BsYb4EtjRp6GcYGk9ngccQ": {
+      "name": "node9",
+      "transport_address": "inet[/10.0.0.18:9300]",
+      "host": "ip-10-0-0-18",
+      "ip": "10.0.0.18",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.18:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.18:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "IO7QVeg7QNOX8u7S_VDUrQ": {
+      "name": "node10",
+      "transport_address": "inet[/10.0.5.56:9300]",
+      "host": "ip-10-0-5-56.us-west-2.compute.internal",
+      "ip": "10.0.5.56",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.56:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2c",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.5.56:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "OQIEtCazR8e88iWxlHrKSQ": {
+      "name": "node11",
+      "transport_address": "inet[/10.0.0.64:9300]",
+      "host": "ip-10-0-0-64",
+      "ip": "10.0.0.64",
+      "version": "1.4.2",
+      "build": "927caff",
+      "http_address": "inet[/10.0.0.64:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.64:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "kxpY3zXuSl64duNRClYvYw": {
+      "name": "node12",
+      "transport_address": "inet[/10.0.4.232:9300]",
+      "host": "ip-10-0-4-232",
+      "ip": "10.0.4.232",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.232:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.232:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "2YnLM3QKQZWTAVDGNO7QGQ": {
+      "name": "node13",
+      "transport_address": "inet[/10.0.0.64:9301]",
+      "host": "ip-10-0-0-64",
+      "ip": "10.0.0.64",
+      "version": "1.7.1",
+      "build": "b88f43f",
+      "http_address": "inet[/10.0.0.64:9201]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9201]",
+        "publish_address": "inet[/10.0.0.64:9201]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "5MNIr_QSSiuCFGAz5pViow": {
+      "name": "node14",
+      "transport_address": "inet[/10.0.4.233:9300]",
+      "host": "ip-10-0-4-233",
+      "ip": "10.0.4.233",
+      "version": "1.4.2",
+      "build": "927caff",
+      "http_address": "inet[/10.0.4.233:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.233:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "0jc35-KrSHia9wKV-cH4DQ": {
+      "name": "node15",
+      "transport_address": "inet[/10.0.4.107:9300]",
+      "host": "ip-10-0-4-107",
+      "ip": "10.0.4.107",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.107:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.107:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "y_RYQFcUSnqri1Go2Ud_NA": {
+      "name": "node16",
+      "transport_address": "inet[/10.0.5.13:9300]",
+      "host": "ip-10-0-5-13.us-west-2.compute.internal",
+      "ip": "10.0.5.13",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.13:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2c",
+        "data": "false",
+        "master": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.5.13:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "05HbTNZUQ9O7n-txPHSiTg": {
+      "name": "node17",
+      "transport_address": "inet[/10.0.0.102:9300]",
+      "host": "ip-10-0-0-102",
+      "ip": "10.0.0.102",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.102:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.102:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "9oVU0SfpQnq-918Fvm1iKA": {
+      "name": "node18",
+      "transport_address": "inet[/10.0.5.80:9300]",
+      "host": "ip-10-0-5-80.us-west-2.compute.internal",
+      "ip": "10.0.5.80",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.80:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2c",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.5.80:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "X5atOIUnTTug8ide8AsdkA": {
+      "name": "node19",
+      "transport_address": "inet[/10.0.4.56:9300]",
+      "host": "ip-10-0-4-56",
+      "ip": "10.0.4.56",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.56:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.56:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "TOCIbFyxQLu_ktB09k02xQ": {
+      "name": "node20",
+      "transport_address": "inet[/10.0.4.34:9300]",
+      "host": "ip-10-0-4-34.us-west-2.compute.internal",
+      "ip": "10.0.4.34",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.34:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2b",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.4.34:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "fu0vf1GLSXiNJfJPYQwyqQ": {
+      "name": "node21",
+      "transport_address": "inet[/10.0.0.198:9300]",
+      "host": "ip-10-0-0-198.us-west-2.compute.internal",
+      "ip": "10.0.0.198",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.198:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2a",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.0.198:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "CN0sR-h1R8Gw4fx38AIGaw": {
+      "name": "node22",
+      "transport_address": "inet[/10.0.4.47:9300]",
+      "host": "ip-10-0-4-47.us-west-2.compute.internal",
+      "ip": "10.0.4.47",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.47:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2b",
+        "data": "false",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.4.47:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "YgyTZ0BISWeZYA_1TG75Dw": {
+      "name": "node23",
+      "transport_address": "inet[/10.0.0.72:9300]",
+      "host": "ip-10-0-0-72",
+      "ip": "10.0.0.72",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.72:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.72:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "SkaNmZRQTvO3SpNWlmEOcA": {
+      "name": "node24",
+      "transport_address": "inet[/10.0.4.14:9300]",
+      "host": "ip-10-0-4-14",
+      "ip": "10.0.4.14",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.14:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.4.14:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "-JTeIwdPTimlL_8nwpgi7w": {
+      "name": "node25",
+      "transport_address": "inet[/10.0.4.43:9300]",
+      "host": "ip-10-0-4-43.us-west-2.compute.internal",
+      "ip": "10.0.4.43",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.4.43:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2b",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.4.43:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "qu1BStgBS3CmC_kJrmcVVw": {
+      "name": "node26",
+      "transport_address": "inet[/10.0.0.71:9300]",
+      "host": "ip-10-0-0-71",
+      "ip": "10.0.0.71",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.71:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.0.71:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "k6_0nMhVRZ-fLwMta0AM0A": {
+      "name": "node27",
+      "transport_address": "inet[/10.0.4.233:9301]",
+      "host": "ip-10-0-4-233",
+      "ip": "10.0.4.233",
+      "version": "1.7.1",
+      "build": "b88f43f",
+      "http_address": "inet[/10.0.4.233:9201]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9201]",
+        "publish_address": "inet[/10.0.4.233:9201]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "zZ5Ogzh7Rh6cjodGOpEJuQ": {
+      "name": "node28",
+      "transport_address": "inet[/10.0.0.85:9300]",
+      "host": "ip-10-0-0-85.us-west-2.compute.internal",
+      "ip": "10.0.0.85",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.85:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2a",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.0.85:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "heCi2KdsSLGgM3bwkymC2w": {
+      "name": "node29",
+      "transport_address": "inet[/10.0.5.211:9300]",
+      "host": "ip-10-0-5-211",
+      "ip": "10.0.5.211",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.5.211:9200]",
+      "attributes": {
+        "data": "false",
+        "client": "true"
+      },
+      "http": {
+        "bound_address": "inet[/0:0:0:0:0:0:0:0%0:9200]",
+        "publish_address": "inet[/10.0.5.211:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    },
+    "oMFFDriLQtGk8eXDy5Ndzw": {
+      "name": "node30",
+      "transport_address": "inet[/10.0.0.32:9300]",
+      "host": "ip-10-0-0-32.us-west-2.compute.internal",
+      "ip": "10.0.0.32",
+      "version": "1.7.4",
+      "build": "0d3159b",
+      "http_address": "inet[/10.0.0.32:9200]",
+      "attributes": {
+        "max_local_storage_nodes": "1",
+        "placement": "us-west-2a",
+        "master": "false"
+      },
+      "http": {
+        "bound_address": "inet[/0.0.0.0:9200]",
+        "publish_address": "inet[/10.0.0.32:9200]",
+        "max_content_length_in_bytes": 104857600
+      }
+    }
+  }
+}
