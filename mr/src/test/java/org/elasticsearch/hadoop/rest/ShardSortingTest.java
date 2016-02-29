@@ -18,6 +18,17 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.junit.Test;
+
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,15 +39,50 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.junit.Test;
-
-
 import static org.junit.Assert.*;
 
 public class ShardSortingTest {
+
+    private final URL nodeList = this.getClass().getResource("node-list.json");
+    private final URL shardList = this.getClass().getResource("shard-list.json");
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Test
+    public void testLargeIndexShardList() throws Exception {
+        Map<String, Node> nodes = readNodes();
+        List<List<Map<String, Object>>> targetShards = readShards();
+        Map<Shard, Node> result = ShardSorter.find(targetShards, nodes, null);
+        Set<Integer> index1Shards = Sets.newHashSet(0, 1, 2, 3, 4);
+        Set<Integer> index2Shards = Sets.newHashSet(0, 1, 2, 3, 4);
+        for(Shard shard : result.keySet()) {
+            String index = shard.getIndex();
+            if(index.equals("index1")) {
+                index1Shards.remove(shard.getName());
+            } else if (index.equals("index2")){
+                index2Shards.remove(shard.getName());
+            }
+        }
+        assertTrue(index1Shards.isEmpty());
+        assertTrue(index2Shards.isEmpty());
+    }
+
+    private Map<String, Node> readNodes() throws java.io.IOException {
+        Map<String, Object> values = mapper.readValue(nodeList.openStream(),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      });
+        Map<String, Object> rawNodes = (Map<String, Object>)values.get("nodes");
+        Map<String, Node> nodes = Maps.newLinkedHashMap();
+        for (String nodeId : rawNodes.keySet()) {
+            Node node = new Node(nodeId, (Map<String, Object>)rawNodes.get(nodeId));
+            nodes.put(nodeId, node);
+        }
+        return nodes;
+    }
+
+    private List<List<Map<String, Object>>> readShards() throws java.io.IOException {
+        return mapper.readValue(shardList.openStream(),
+                                new TypeReference<List<List<Map<String, Object>>>>() {});
+    }
 
     @Test
     public void testPowerSet() {
@@ -45,7 +91,8 @@ public class ShardSortingTest {
         for (int i = 0; i < 10; i++) {
             set.add(Integer.valueOf(i));
         }
-        assertEquals(1023, ShardSorter.powerList(set).size());
+        List<Set<Integer>> powerList = Lists.newArrayList(ShardSorter.powerList(set));
+        assertEquals(1023, powerList.size());
     }
 
     private <K, V> Map<K, V> map(K k1, V v1) {
