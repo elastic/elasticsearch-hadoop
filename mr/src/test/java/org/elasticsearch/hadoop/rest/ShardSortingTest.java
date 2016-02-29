@@ -18,6 +18,16 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.junit.Test;
+
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,15 +38,43 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.junit.Test;
-
-
 import static org.junit.Assert.*;
 
 public class ShardSortingTest {
+
+    private final URL nodeList = this.getClass().getResource("node-list.json");
+    private final URL shardList = this.getClass().getResource("shard-list.json");
+    private final ObjectMapper mapper = new ObjectMapper();
+
+    @Test
+    public void test() throws Exception {
+        final Map<String, Node> nodes = readNodes();
+        final List<List<Map<String, Object>>> targetShards = readShards();
+        ShardSorter.find(targetShards, nodes, null);
+    }
+
+    private Map<String, Node> readNodes() throws java.io.IOException {
+        Map<String, Object> values = mapper.readValue(nodeList.openStream(),
+                                                      new TypeReference<Map<String, Object>>() {
+                                                      });
+        Map<String, Object> rawNodes = (Map<String, Object>)values.get("nodes");
+        Map<String, Node> nodes = Maps.newLinkedHashMap();
+        for (String nodeId : rawNodes.keySet()) {
+            Node node = new Node(nodeId, (Map<String, Object>)rawNodes.get(nodeId));
+            nodes.put(nodeId, node);
+        }
+        return nodes;
+    }
+
+    private List<List<Map<String, Object>>> readShards() throws java.io.IOException {
+        List<List<Map<String, Object>>> values = mapper.readValue(shardList.openStream(),
+                                                                  new TypeReference<List<List<Map<String, Object>>>>() {
+                                                                  });
+        values.forEach(System.out::println);
+
+        List<List<Map<String, Object>>> targetShards = Lists.newArrayList();
+        return targetShards;
+    }
 
     @Test
     public void testPowerSet() {
