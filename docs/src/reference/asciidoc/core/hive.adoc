@@ -14,11 +14,13 @@ Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL
 Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/Hive/languagemanual-cli.html#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
 
 ----
-ADD /path/elasticsearch-hadoop.jar;
+ADD JAR /path/elasticsearch-hadoop.jar;
 ----
 
 NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
 on various machines.
+
+IMPORTANT: When using JDBC/ODBC drivers, ++ADD JAR++ command is not available and will be ignored. Thus it is recommend to make the jar available to the Hive global classpath and indicated below.
 
 As an alternative, one can use the command-line:
 
@@ -44,6 +46,7 @@ or if the `hive-site.xml` configuration can be modified, one can register additi
   <description>A comma separated list (with no spaces) of the jar files</description>
 </property>
 ----
+
 
 [[hive-configuration]]
 [float]
