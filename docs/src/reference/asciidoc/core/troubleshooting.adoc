@@ -5,6 +5,19 @@ Unfortunately, sometimes things do not go as expected and your {eh} job executio
 This section tries to provide help and tips for doing your own diagnostics, identifying the problem and hopefully fixing it.
 
 [float]
+=== `EsHadoopNoNodesLeftException`
+
+Test that {es} is reacheable from the Spark/Hadoop cluster where the job is running. Your machine might reach it but that is not where the actual code will be running.
+If ES is accessible, minimize the number of tasks and their bulk size; if {es} is overloaded, it will keep falling behind, GC will kick in and eventually its nodes will become unresponsive causing clients to think the machines have died. See the <<performance>> section for more details.
+
+[float]
+=== Test your network
+
+Way too many times, folks use their local, development settings in a production environment. Double check that {es} is accessible from your production environments, check the host address and port and that the machines where the Hadoop/Spark job is running can access {es} (use `curl`, `telnet` or whatever tool you have available).
+
+Using `localhost` (aka the default) in a production environment is simply a misconfiguration.
+
+[float]
 === Triple check the classpath
 
 Make sure to use only one version of {eh} in your classpath. While it might not be obvious, the classpath in Hadoop/Spark is assembled from multiple folders; further more there are no guarantees what version is going to be picked up
@@ -56,7 +69,7 @@ Indexing performance depend _heavily_ on the type of data being targeted and its
 [[help]]
 === Getting help
 
-If you need help, there is a strong, helpful community of users on the https://groups.google.com/forum/?fromgroups#!forum/elasticsearch[mailing list] and http://www.elastic.co/community/[IRC] who are happy to help out.
+If you need help, there is a strong, helpful community of users on the https://discuss.elastic.co/c/elasticsearch-and-hadoop[forum] and http://www.elastic.co/community/[IRC] who are happy to help out.
 
 If something is not working, there are two possibilities:
 
