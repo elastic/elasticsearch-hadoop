@@ -1,3 +1,5 @@
+_For questions, please use the [forum](https://discuss.elastic.co/c/elasticsearch-and-hadoop) not the issue tracker_
+
 Make sure to fill the information below before submitting your issue -- thank you! 
 
 
@@ -14,7 +16,7 @@ Make sure to fill the information below before submitting your issue -- thank yo
 
 ### Issue description
 
-### Code snippets
+### Sample Configuration / Code
 
 Code:
 
@@ -31,6 +33,10 @@ Stack trace goes here
 ### Version Info
 
 Java        :
+
 Hadoop/Spark:
+
 ES-Hadoop   :
-ES          : 
+
+ES          :
+
