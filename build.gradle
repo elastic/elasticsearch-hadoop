@@ -200,11 +200,11 @@ allprojects { project ->
         testCompile "org.elasticsearch:elasticsearch:$esVersion"
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "log4j:log4j:$log4jVersion"
+        testRuntime "net.java.dev.jna:jna:4.1.0"
         testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         //testRuntime "org.codehaus.groovy:groovy-all:$groovyVersion"
         testRuntime "com.spatial4j:spatial4j:0.5"
         testRuntime "com.vividsolutions:jts:1.13"
-
         
         itestCompile sourceSets.main.output
         itestCompile configurations.testCompile
@@ -241,12 +241,22 @@ allprojects { project ->
 
     // adding the M/R project creates duplicates in the Eclipse CP so here we filter them out
     // the lib entries with sources seem to be placed first so they 'win' over those w/o sources
-    eclipse.classpath.file {
-        whenMerged { cp ->
-            entries.unique { a, b ->
-                return a.path.compareTo(b.path)
+    eclipse {
+        classpath.file {
+            whenMerged { cp ->
+                entries.unique { a, b ->
+                    return a.path.compareTo(b.path)
+                }
+                entries.removeAll { it.path.endsWith('.pom') }
             }
-            entries.removeAll { it.path.endsWith('.pom') }
+        }
+        jdt {
+            // use Java 7 since it is required by ES
+            // ES-Hadoop is still on Java 6 (since Hadoop <2.7 is still on 6)
+            javaRuntimeName = "JavaSE-1.7"
+            // specify again the compatibility to override the default JavaRE settings
+            sourceCompatibility = 1.6
+            targetCompatibility = 1.6
         }
     }
     
@@ -804,7 +814,7 @@ configure(rootProject) {
     
     task wrapper(type: Wrapper) {
         description = 'Generates gradlew[.bat] scripts'
-        gradleVersion = '2.10'
+        gradleVersion = '2.11'
     }
 }
 
