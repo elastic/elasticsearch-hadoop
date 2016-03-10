@@ -45,8 +45,6 @@ grant {
   permission javax.security.auth.AuthPermission "modifyPublicCredentials";
   
   // Hadoop 2.7.1
-  permission java.lang.RuntimePermission "getClassLoader";
-  
   permission java.lang.RuntimePermission "accessDeclaredMembers";
   
   permission java.util.PropertyPermission "*", "read,write";
