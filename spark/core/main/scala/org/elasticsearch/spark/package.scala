@@ -21,14 +21,14 @@ package object spark {
     def esRDD(resource: String, query: String) = EsSpark.esRDD(sc, resource, query)
     def esRDD(cfg: scala.collection.Map[String, String]) = EsSpark.esRDD(sc, cfg)
     def esRDD(resource: String, cfg: scala.collection.Map[String, String]) = EsSpark.esRDD(sc, resource, cfg)
-    def esRDD(resource: String, query: String, cfg: scala.collection.Map[String, String]) = EsSpark.esRDD(sc, resource, cfg)
+    def esRDD(resource: String, query: String, cfg: scala.collection.Map[String, String]) = EsSpark.esRDD(sc, resource, query, cfg)
 
     def esJsonRDD() = EsSpark.esJsonRDD(sc)
     def esJsonRDD(resource: String) = EsSpark.esJsonRDD(sc, resource)
     def esJsonRDD(resource: String, query: String) = EsSpark.esJsonRDD(sc, resource, query)
     def esJsonRDD(cfg: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, cfg)
     def esJsonRDD(resource: String, cfg: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, resource, cfg)
-    def esJsonRDD(resource: String, query:String, cfg: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, resource, cfg)
+    def esJsonRDD(resource: String, query:String, cfg: scala.collection.Map[String, String]) = EsSpark.esJsonRDD(sc, resource, query, cfg)
   }
 
   implicit def sparkRDDFunctions[T : ClassTag](rdd: RDD[T]) = new SparkRDDFunctions[T](rdd)
