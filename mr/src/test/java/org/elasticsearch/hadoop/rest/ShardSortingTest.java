@@ -47,7 +47,7 @@ public class ShardSortingTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    public void test() throws Exception {
+    public void testLargeIndexShardList() throws Exception {
         final Map<String, Node> nodes = readNodes();
         final List<List<Map<String, Object>>> targetShards = readShards();
         ShardSorter.find(targetShards, nodes, null);
@@ -83,7 +83,8 @@ public class ShardSortingTest {
         for (int i = 0; i < 10; i++) {
             set.add(Integer.valueOf(i));
         }
-        assertEquals(1023, ShardSorter.powerList(set).size());
+        List<Set<Integer>> powerList = Lists.newArrayList(ShardSorter.powerList(set));
+        assertEquals(1023, powerList.size());
     }
 
     private <K, V> Map<K, V> map(K k1, V v1) {

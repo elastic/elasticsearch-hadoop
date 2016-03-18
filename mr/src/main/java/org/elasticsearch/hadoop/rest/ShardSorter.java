@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.serialization.dto.Node;
@@ -86,12 +87,13 @@ abstract class ShardSorter {
     }
 
     private static Map<Shard, Node> checkCombo(Collection<Node> nodes, Map<Node, Set<Shard>> shardsPerNode, int numberOfShards) {
-        List<Set<Node>> nodesCombinations = powerList(new LinkedHashSet<Node>(nodes));
+        Iterator<Set<Node>> nodesCombinations = powerList(new LinkedHashSet<Node>(nodes));
 
         Set<SimpleShard> shards = new LinkedHashSet<SimpleShard>();
         boolean overlappingShards = false;
         // try each combination and check if there are duplicates
-        for (Set<Node> set : nodesCombinations) {
+        while (nodesCombinations.hasNext()) {
+            Set<Node> set = nodesCombinations.next();
             shards.clear();
             overlappingShards = false;
 
@@ -185,23 +187,9 @@ abstract class ShardSorter {
         }
     }
 
-    static <E> List<Set<E>> nodesCombinations(Set<E> set) {
-        // remove empty or 1 element set
-        List<Set<E>> list = powerList(set);
-        for (Iterator<Set<E>> iterator = list.iterator(); iterator.hasNext();) {
-            Set<E> s = iterator.next();
-            if (s.size() < 2) {
-                iterator.remove();
-            }
-        }
-        return list;
-    }
-
     // create the possible combinations using a power set. The results are afterwards sorted based on their set size.
-    static <E> List<Set<E>> powerList(Set<E> set) {
-        List<Set<E>> list = new ArrayList<Set<E>>(new PowerSet<E>(set));
-        Collections.sort(list, new SetLengthComparator<E>());
-        return list;
+    static <E> Iterator<Set<E>> powerList(Set<E> set) {
+        return new PowerSet<>(set).iterator();
     }
 
     private static class SetLengthComparator<T> implements Comparator<Set<T>> {
@@ -215,7 +203,7 @@ abstract class ShardSorter {
         private final Map<E, Integer> input;
 
         PowerSet(Set<E> set) {
-            Assert.isTrue(set.size() <= 30, "Too many elements to create a power set " + set.size());
+            Assert.isTrue(set.size() < 32, "Too many elements to create a power set " + set.size());
 
             input = new LinkedHashMap<E, Integer>(set.size());
             int i = set.size();
