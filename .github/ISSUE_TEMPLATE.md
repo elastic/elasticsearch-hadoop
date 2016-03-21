@@ -1,21 +1,30 @@
-_For questions, please use the [forum](https://discuss.elastic.co/c/elasticsearch-and-hadoop) not the issue tracker_  
-_Make sure to fill the information below before submitting your issue_
+<!--
+GitHub is reserved *only* for bug reports and feature requests. The best place
+to ask a general question is at the Elastic forums at
+https://discuss.elastic.co/c/elasticsearch-and-hadoop.
+If you are in fact posting a bug report or a feature request, please 
+include one and only one of the below blocks in your new issue.
+-->
 
 ### What kind an issue is this?
 
-- [ ] Question. Please use the [forum](https://discuss.elastic.co/c/elasticsearch-and-hadoop) instead.  
-This issue tracker is **not** the place for questions. Thank you!
 - [ ] Bug report. If you’ve found a bug, please provide a code snippet or test to reproduce it below.   
     The easier it is to track down the bug, the faster it is solved. 
 - [ ] Feature Request. Start by telling us what problem you’re trying to solve.  
     Often a solution already exists! Don’t send pull requests to implement new features without 
     first getting our support. Sometimes we leave features out on purpose to keep the project small.
 
+<!--
+If you are filing a bug report, please fill provide responses for all 
+of the below items.
+Remove the feature block.
+-->
+
 ### Issue description
 
 Description
 
-### Sample Configuration / Code
+### Steps to reproduce
 
 Code:
 
@@ -31,7 +40,15 @@ Stack trace goes here
 
 ### Version Info
 
-Java        :  
+OS:         :  
+JVM         :  
 Hadoop/Spark:  
 ES-Hadoop   :  
 ES          :  
+
+<!--
+If you are filing a feature request, please remove the above bug
+report block and provide responses for all of the below items.
+-->
+
+### Feature description
