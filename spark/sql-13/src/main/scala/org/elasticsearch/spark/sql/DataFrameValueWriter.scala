@@ -122,7 +122,9 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     for ((k, v) <- value) {
       if (shouldKeep(generator.getParentPath(), k.toString())) {
         generator.writeFieldName(k.toString)
-        if (value != null) {
+        if (v == null) {
+          generator.writeNull()
+        } else {
           val result = write(schema.valueType, v, generator)
           if (!result.isSuccesful()) {
             return handleUnknown(value, generator)
