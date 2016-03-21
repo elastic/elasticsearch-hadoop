@@ -502,8 +502,11 @@ def baseSparkProject(target, sparkVersion) {
     target.apply plugin: 'scala'
     
     target.compileScala {
-        //scalaCompileOptions.additionalParameters = ["-feature"]
-        //scalaCompileOptions.useAnt = false
+        configure(scalaCompileOptions.forkOptions) {
+            memoryMaximumSize = '1g'
+            jvmArgs = ['-XX:MaxPermSize=512m']
+        }
+        scalaCompileOptions.useAnt = false
     }
     
     if (sparkVersion != spark12Version)
@@ -814,7 +817,7 @@ configure(rootProject) {
     
     task wrapper(type: Wrapper) {
         description = 'Generates gradlew[.bat] scripts'
-        gradleVersion = '2.11'
+        gradleVersion = '2.12'
     }
 }
 
