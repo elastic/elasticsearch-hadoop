@@ -118,11 +118,9 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     for ((k, v) <- value) {
       if (shouldKeep(generator.getParentPath(), k.toString())) {
         generator.writeFieldName(k.toString)
-        if (value != null) {
-          val result = write(schema.valueType, v, generator)
-          if (!result.isSuccesful()) {
-            return handleUnknown(value, generator)
-          }
+        val result = write(schema.valueType, v, generator)
+        if (!result.isSuccesful()) {
+           return handleUnknown(v, generator)
         }
       }
     }
@@ -132,7 +130,10 @@ class SchemaRDDValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   }
 
   private[spark] def writePrimitive(value: Any, schema: DataType, generator: Generator): Result = {
-    schema match {
+    if (value == null) {
+      generator.writeNull()
+    }
+    else schema match {
       case BinaryType    => generator.writeBinary(value.asInstanceOf[Array[Byte]])
       case BooleanType   => generator.writeBoolean(value.asInstanceOf[Boolean])
       case ByteType      => generator.writeNumber(value.asInstanceOf[Byte])
