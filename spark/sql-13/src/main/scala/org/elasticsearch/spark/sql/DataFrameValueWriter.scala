@@ -119,15 +119,13 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   private def doWriteMap(schema: MapType, value: SMap[_, _], generator: Generator): Result = {
     generator.writeBeginObject()
 
-    for ((k, v) <- value) {
-      if (shouldKeep(generator.getParentPath(), k.toString())) {
-        generator.writeFieldName(k.toString)
-        if (v == null) {
-          generator.writeNull()
-        } else {
+    if (value != null) {
+      for ((k, v) <- value) {
+        if (shouldKeep(generator.getParentPath(), k.toString())) {
+          generator.writeFieldName(k.toString)
           val result = write(schema.valueType, v, generator)
           if (!result.isSuccesful()) {
-            return handleUnknown(value, generator)
+            return handleUnknown(v, generator)
           }
         }
       }
@@ -138,7 +136,10 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   }
 
   private[spark] def writePrimitive(schema: DataType, value: Any, generator: Generator): Result = {
-    schema match {
+    if (value == null) {
+      generator.writeNull()
+    }
+    else schema match {
       case BinaryType    => generator.writeBinary(value.asInstanceOf[Array[Byte]])
       case BooleanType   => generator.writeBoolean(value.asInstanceOf[Boolean])
       case ByteType      => generator.writeNumber(value.asInstanceOf[Byte])
