@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.serialization.dto.Node;
