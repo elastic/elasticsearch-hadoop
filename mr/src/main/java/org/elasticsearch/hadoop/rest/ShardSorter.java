@@ -189,7 +189,7 @@ abstract class ShardSorter {
 
     // create the possible combinations using a power set. The results are afterwards sorted based on their set size.
     static <E> Iterator<Set<E>> powerList(Set<E> set) {
-        return new PowerSet<>(set).iterator();
+        return new PowerSet<E>(set).iterator();
     }
 
     private static class SetLengthComparator<T> implements Comparator<Set<T>> {
