@@ -45,4 +45,12 @@ public class ValueReaderTest {
         ScrollReader reader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader()));
         reader.read(in);
     }
+
+    @Test
+    public void testSimplePathReaderJson() throws Exception {
+        ScrollReaderConfig config = new ScrollReaderConfig(new JdkValueReader());
+        config.returnRawJson = true;
+        ScrollReader reader = new ScrollReader(config);
+        reader.read(in);
+    }
 }

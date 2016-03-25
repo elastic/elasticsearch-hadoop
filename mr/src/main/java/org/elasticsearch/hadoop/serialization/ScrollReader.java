@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
@@ -215,7 +216,7 @@ public class ScrollReader {
     public ScrollReader(ScrollReaderConfig scrollConfig) {
         this.reader = scrollConfig.reader;
         this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
-        
+
         this.readMetadata = scrollConfig.readMetadata;
         this.metadataField = scrollConfig.metadataName;
         this.returnRawJson = scrollConfig.returnRawJson;
@@ -228,7 +229,7 @@ public class ScrollReader {
         if (ignoreUnmappedFields) {
             mapping = MappingUtils.filter(mapping, scrollConfig.includeFields, scrollConfig.excludeFields);
         }
-        
+
         this.esMapping = Field.toLookupMap(mapping);
     }
 
@@ -611,14 +612,25 @@ public class ScrollReader {
         if (t != null) {
             // move past _source or fields field name to get the accurate token location
             t = parser.nextToken();
-            int charStart = parser.tokenCharOffset();
-            // can't use skipChildren as we are within the object
-            skipCurrentBlock();
-            // make sure to include the ending char
-            int charStop = parser.tokenCharOffset();
-            // move pass end of object
-            t = parser.nextToken();
-            snippet.addDoc(new JsonFragment(charStart, charStop));
+            switch (t) {
+                case FIELD_NAME:
+                    int charStart = parser.tokenCharOffset();
+                    // can't use skipChildren as we are within the object
+                    skipCurrentBlock();
+                    // make sure to include the ending char
+                    int charStop = parser.tokenCharOffset();
+                    // move pass end of object
+                    t = parser.nextToken();
+                    snippet.addDoc(new JsonFragment(charStart, charStop));
+                    break;
+                case END_OBJECT:
+                    // move pass end of object
+                    t = parser.nextToken();
+                    snippet.addDoc(JsonFragment.EMPTY);
+                    break;
+                default:
+                    throw new EsHadoopIllegalArgumentException("unexpected token in _source: " + t);
+            }
         }
 
         // should include , plus whatever whitespace there is
@@ -752,7 +764,7 @@ public class ScrollReader {
         }
 
         boolean toggleGeo = false;
-        
+
         if (fieldMapping != null) {
             // parse everything underneath without mapping
             if (FieldType.isGeo(mapping(fieldMapping))) {
