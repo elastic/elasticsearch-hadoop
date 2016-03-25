@@ -25,11 +25,7 @@
                 "_type" : "savebulk",
                 "_id" : "lc_UrFzbRtChtaW4miAyXg",
                 "_score" : 0.0,
-                "_source" : {
-                    "name" : "Maria Mena",
-                    "url" : "http://www.last.fm/music/Maria+Mena",
-                    "picture" : "http://userserve-ak.last.fm/serve/252/13556587.jpg"
-                }
+                "_source" : {}
             }, {
                 "_index" : "rest",
                 "_type" : "savebulk",
