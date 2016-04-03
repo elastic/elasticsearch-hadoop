@@ -36,10 +36,10 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 
 public abstract class SettingsUtils {
 
-    private static List<String> qualifyNodes(String nodes, int defaultPort) {
+    private static List<String> qualifyNodes(String nodes, int defaultPort, boolean resolveHostNames) {
         List<String> list = StringUtils.tokenize(nodes);
         for (int i = 0; i < list.size(); i++) {
-            String nodeIp = resolveHostToIpIfNecessary(list.get(i));
+            String nodeIp = (resolveHostNames ? resolveHostToIpIfNecessary(list.get(i)) : list.get(i));
             list.set(i, qualifyNode(nodeIp, defaultPort));
         }
         return list;
@@ -117,7 +117,7 @@ public abstract class SettingsUtils {
     }
 
     public static List<String> declaredNodes(Settings settings) {
-        return qualifyNodes(settings.getNodes(), settings.getPort());
+        return qualifyNodes(settings.getNodes(), settings.getPort(), settings.getNodesResolveHostnames());
     }
 
     public static List<String> discoveredOrDeclaredNodes(Settings settings) {
@@ -190,17 +190,17 @@ public abstract class SettingsUtils {
             int depth = 1;
 
             try {
-            if (index > 0) {
-                filter = include.substring(0, index);
-                String depthString = include.substring(index + 1);
-                if (depthString.length() > 0) {
-                    depth = Integer.parseInt(depthString);
+                if (index > 0) {
+                    filter = include.substring(0, index);
+                    String depthString = include.substring(index + 1);
+                    if (depthString.length() > 0) {
+                        depth = Integer.parseInt(depthString);
+                    }
                 }
-            }
             } catch (NumberFormatException ex) {
                 throw new EsHadoopIllegalArgumentException(
                         String.format(Locale.ROOT, "Invalid parameter [%s] specified in setting [%s]",
-                        include, includeString), ex);
+                                include, includeString), ex);
             }
             list.add(new NumberedInclude(filter, depth));
         }

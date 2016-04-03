@@ -427,6 +427,13 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS, ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT));
     }
 
+    public boolean getNodesResolveHostnames() {
+        // by default, if not set, return a value compatible with the WAN setting
+        // otherwise return the user value.
+        // this helps validate the configuration
+        return Booleans.parseBoolean(getProperty(ES_NODES_RESOLVE_HOST_NAME), !getNodesWANOnly());
+    }
+
     public Settings setNodes(String hosts) {
         setProperty(ES_NODES, hosts);
         return this;
