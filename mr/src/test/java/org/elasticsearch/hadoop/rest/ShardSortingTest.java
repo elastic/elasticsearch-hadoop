@@ -18,17 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.junit.Test;
-
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,16 +28,27 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ShardSortingTest {
 
-    private final URL nodeList = this.getClass().getResource("node-list.json");
-    private final URL shardList = this.getClass().getResource("shard-list.json");
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
     public void testLargeIndexShardList() throws Exception {
+
         Map<String, Node> nodes = readNodes();
         List<List<Map<String, Object>>> targetShards = readShards();
         Map<Shard, Node> result = ShardSorter.find(targetShards, nodes, null);
@@ -67,9 +67,9 @@ public class ShardSortingTest {
     }
 
     private Map<String, Node> readNodes() throws java.io.IOException {
-        Map<String, Object> values = mapper.readValue(nodeList.openStream(),
-                                                      new TypeReference<Map<String, Object>>() {
-                                                      });
+        Map<String, Object> values = mapper.readValue(getClass().getResourceAsStream("node-list.json"),
+                new TypeReference<Map<String, Object>>() {
+        });
         Map<String, Object> rawNodes = (Map<String, Object>)values.get("nodes");
         Map<String, Node> nodes = Maps.newLinkedHashMap();
         for (String nodeId : rawNodes.keySet()) {
@@ -80,8 +80,8 @@ public class ShardSortingTest {
     }
 
     private List<List<Map<String, Object>>> readShards() throws java.io.IOException {
-        return mapper.readValue(shardList.openStream(),
-                                new TypeReference<List<List<Map<String, Object>>>>() {});
+        return mapper.readValue(getClass().getResourceAsStream("shard-list.json"),
+                new TypeReference<List<List<Map<String, Object>>>>() {});
     }
 
     @Test

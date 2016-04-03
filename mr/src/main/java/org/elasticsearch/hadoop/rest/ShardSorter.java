@@ -35,7 +35,6 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.elasticsearch.hadoop.util.Assert;
 
 // Utility introduced for sorting shard overlaps across multiple nodes. Occurs when dealing with aliases that involve searching multiple indices whom shards (primary or replicas)
 // might sit on the same node. As the preference API does not allow a shard for a given index to be selected, the shard with the given ID for the entire alias is used instead which
@@ -202,6 +201,7 @@ abstract class ShardSorter {
         private final Map<E, Integer> input;
 
         PowerSet(Set<E> set) {
+            // any number higher than this triggers a size bigger than Integer.MAX_VALUE
             Assert.isTrue(set.size() < 32, "Too many elements to create a power set " + set.size());
 
             input = new LinkedHashMap<E, Integer>(set.size());
