@@ -64,6 +64,8 @@ public interface ConfigurationOptions {
     String ES_NODES_WAN_ONLY = "es.nodes.wan.only";
     String ES_NODES_WAN_ONLY_DEFAULT = "false";
 
+    String ES_NODES_RESOLVE_HOST_NAME = "es.nodes.resolve.hostname";
+
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";
