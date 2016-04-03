@@ -18,23 +18,12 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.AbstractSet;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.elasticsearch.hadoop.util.Assert;
 
 // Utility introduced for sorting shard overlaps across multiple nodes. Occurs when dealing with aliases that involve searching multiple indices whom shards (primary or replicas)
 // might sit on the same node. As the preference API does not allow a shard for a given index to be selected, the shard with the given ID for the entire alias is used instead which
