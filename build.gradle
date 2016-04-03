@@ -200,7 +200,7 @@ allprojects { project ->
         testCompile "org.elasticsearch:elasticsearch:$esVersion"
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "log4j:log4j:$log4jVersion"
-        testRuntime "net.java.dev.jna:jna:4.1.0"
+        testRuntime "net.java.dev.jna:jna:4.2.2"
         testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         //testRuntime "org.codehaus.groovy:groovy-all:$groovyVersion"
         testRuntime "com.spatial4j:spatial4j:0.5"
