@@ -19,21 +19,16 @@
 package org.elasticsearch.spark.integration;
 
 import java.awt.Polygon
-import java.{lang => jl}
-import java.{util => ju}
+import java.{ lang => jl }
+import java.{ util => ju }
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.JavaConverters.mapAsJavaMapConverter
-
 
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
@@ -43,7 +38,6 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
-import org.elasticsearch.spark._
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
@@ -51,6 +45,7 @@ import org.elasticsearch.spark.rdd.Metadata.VERSION
 import org.elasticsearch.spark.serialization.Bean
 import org.elasticsearch.spark.serialization.ReflectionUtils
 import org.elasticsearch.spark.sparkByteArrayJsonRDDFunctions
+import org.elasticsearch.spark.sparkContextFunctions
 import org.elasticsearch.spark.sparkPairRDDFunctions
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
@@ -399,7 +394,14 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val scRDD = sc.esRDD(target, qjson)
     assertEquals(esRDD.collect().size, scRDD.collect().size)
   }
+
   
+  @Test
+  def testMultiIndexNonExisting() {
+    val rdd = EsSpark.esJsonRDD(sc, "bumpA,Stump", Map(ES_INDEX_READ_MISSING_AS_EMPTY -> "yes"))
+    assertEquals(0, rdd.count)
+  }
+
   //@Test
   def testLoadJsonFile() {
     val target = "lost/id"

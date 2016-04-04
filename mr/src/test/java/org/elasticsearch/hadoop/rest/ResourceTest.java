@@ -86,6 +86,11 @@ public class ResourceTest {
         createResource("foo}F{/bar");
     }
 
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testNoWhitespaceAllowed() throws Exception {
+        createResource("foo, bar/far");
+    }
+
     private Resource createResource(String target) {
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_RESOURCE, target);

@@ -92,6 +92,19 @@ public abstract class StringUtils {
         return false;
     }
 
+    public static boolean hasWhitespace(CharSequence sequence) {
+        if (!hasLength(sequence)) {
+            return false;
+        }
+        int length = sequence.length();
+        for (int i = 0; i < length; i++) {
+            if (Character.isWhitespace(sequence.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static int countOccurrences(String string, String substring) {
         if (string == null || substring == null || string.length() == 0 || substring.length() == 0) {
             return 0;

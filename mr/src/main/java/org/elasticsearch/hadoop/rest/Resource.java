@@ -78,7 +78,8 @@ public class Resource {
             Assert.hasText(type, "No type found; expecting [index]/[type]");
         }
         Assert.hasText(index, "No index found; expecting [index]/[type]");
-
+        Assert.isTrue(!StringUtils.hasWhitespace(index) && !StringUtils.hasWhitespace(type), "Index and type should not contain whitespaces");
+        
         indexAndType = index + "/" + type;
 
         // check bulk
