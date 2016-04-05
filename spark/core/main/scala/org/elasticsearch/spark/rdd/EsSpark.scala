@@ -59,7 +59,7 @@ object EsSpark {
     if (rdd == null || rdd.partitions.length == 0) {
       return
     }
-
+    
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
@@ -78,7 +78,7 @@ object EsSpark {
     if (rdd == null || rdd.partitions.length == 0) {
       return
     }
-
+    
     val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)

@@ -114,6 +114,12 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   @Test
+  def testRDDEmptyRead() {
+    val target = wrapIndex("spark-test/empty-rdd")
+    sc.emptyRDD.saveToEs(target, cfg)
+  }
+
+  @Test
   def testEsRDDWrite() {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")

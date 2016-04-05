@@ -232,6 +232,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.take(1).foreach(println)
     assertEquals(1, df.count())
   }
+  
+  @Test
+  def testEmptyDataFrame() {
+    val target = wrapIndex("spark-test/empty-dataframe")
+    val idx = sqc.emptyDataFrame.saveToEs(target)
+  }
 
   @Test
   def testMultiFieldsWithSameName {

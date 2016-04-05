@@ -43,10 +43,10 @@ object EsSparkSQL {
     saveToEs(srdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEs(srdd: DataFrame, cfg: Map[String, String]) {
-    if (srdd == null || srdd.take(1).length == 0) {
+     if (srdd == null) {
       return
     }
-
+     
     val sparkCtx = srdd.sqlContext.sparkContext
     val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
