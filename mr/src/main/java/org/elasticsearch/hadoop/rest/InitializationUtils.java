@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
@@ -185,6 +186,8 @@ public abstract class InitializationUtils {
             }
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
             return esVersion;
+        } catch (EsHadoopException ex) {
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot detect ES version - typically this happens when accessing a WAN/Cloud instance without the proper setting '%s'", ConfigurationOptions.ES_NODES_WAN_ONLY), ex);
         } finally {
             bootstrap.close();
         }
