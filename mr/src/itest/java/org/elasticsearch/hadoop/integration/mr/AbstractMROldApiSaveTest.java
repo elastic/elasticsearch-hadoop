@@ -61,7 +61,7 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeFalse;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -201,6 +201,36 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testBasicIndexWithExtractedRouting() throws Exception {
+        String type = "savewithdynamicrouting";
+        String target = "mroldapi/" + type;
+
+        RestUtils.touch(indexPrefix + "mroldapi");
+        RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
+        conf.set(ConfigurationOptions.ES_RESOURCE, target);
+
+        runJob(conf);
+    }
+
+    @Test
+    public void testBasicIndexWithConstantRouting() throws Exception {
+        String type = "savewithconstantrouting";
+        String target = "mroldapi/" + type;
+
+        RestUtils.touch(indexPrefix + "mroldapi");
+        RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+
+        JobConf conf = createJobConf();
+        conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithconstantrouting");
 
         runJob(conf);
     }
