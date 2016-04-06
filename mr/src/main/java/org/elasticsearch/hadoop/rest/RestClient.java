@@ -21,7 +21,15 @@ package org.elasticsearch.hadoop.rest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
@@ -277,11 +285,14 @@ public class RestClient implements Closeable, StatsAware {
         execute(POST, resource.refresh());
     }
 
-    public List<List<Map<String, Object>>> targetShards(String index) {
+    public List<List<Map<String, Object>>> targetShards(String index, String routing) {
         List<List<Map<String, Object>>> shardsJson = null;
 
         // https://github.com/elasticsearch/elasticsearch/issues/2726
         String target = index + "/_search_shards";
+        if (routing != null) {
+            target += "?routing=" + StringUtils.encodeQuery(routing);
+        }
         if (indexReadMissingAsEmpty) {
             Request req = new SimpleRequest(GET, null, target);
             Response res = executeNotFoundAllowed(req);
@@ -342,12 +353,12 @@ public class RestClient implements Closeable, StatsAware {
     public Map<String, Object> getMapping(String query) {
         return (Map<String, Object>) get(query, null);
     }
-    
+
     public Map<String, Object> sampleForFields(String indexAndType, Collection<String> fields) {
         if (fields == null || fields.isEmpty()) {
             return Collections.emptyMap();
         }
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append("{ \"terminate_after\":1, \"size\":1,\n");
         // use source since some fields might be objects
@@ -378,7 +389,7 @@ public class RestClient implements Closeable, StatsAware {
         }
 
         sb.append("}}");
-        
+
         Map<String, List<Map<String, Object>>> hits = parseContent(execute(GET, indexAndType + "/_search", new BytesArray(sb.toString())).body(), "hits");
         List<Map<String, Object>> docs = hits.get("hits");
         if (docs == null || docs.isEmpty()) {
@@ -386,7 +397,7 @@ public class RestClient implements Closeable, StatsAware {
         }
         Map<String, Object> foundFields = docs.get(0);
         Map<String, Object> fieldInfo = (Map<String, Object>) foundFields.get("_source");
-        
+
         return fieldInfo;
     }
 

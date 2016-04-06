@@ -301,7 +301,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     protected Object[] doGetReadTargetShards(boolean clientNodesOnly) {
-        List<List<Map<String, Object>>> info = client.targetShards(resourceR.index());
+        List<List<Map<String, Object>>> info = client.targetShards(resourceR.index(), SettingsUtils.getFixedRouting(settings));
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
 
         boolean overlappingShards = false;
@@ -411,7 +411,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     protected Map<Shard, Node> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
-        List<List<Map<String, Object>>> info = client.targetShards(resourceW.index());
+        List<List<Map<String, Object>>> info = client.targetShards(resourceW.index(), SettingsUtils.getFixedRouting(settings));
         Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
         Map<String, Node> nodes = client.getHttpNodes(clientNodesOnly);
 
@@ -436,17 +436,17 @@ public class RestRepository implements Closeable, StatsAware {
     public Field getMapping() {
         return Field.parseField(client.getMapping(resourceR.mapping()));
     }
-    
+
     public Map<String, GeoField> sampleGeoFields(Field mapping) {
         Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
         Map<String, Object> geoMapping = client.sampleForFields(resourceR.indexAndType(), fields.keySet());
-        
+
         Map<String, GeoField> geoInfo = new LinkedHashMap<String, GeoField>();
         for (Entry<String, GeoType> geoEntry : fields.entrySet()) {
             String fieldName = geoEntry.getKey();
             geoInfo.put(fieldName, MappingUtils.parseGeoInfo(geoEntry.getValue(), geoMapping.get(fieldName)));
         }
-        
+
         return geoInfo;
     }
 

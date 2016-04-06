@@ -207,4 +207,16 @@ public abstract class SettingsUtils {
 
         return list;
     }
+
+    public static String getFixedRouting(Settings settings) {
+        String routing = settings.getMappingRouting();
+        if (StringUtils.hasText(routing)) {
+            // instead of using ConstantExtractor (which is useful for JSON), parse the constant manually
+            routing = routing.trim();
+            if (routing.startsWith("<") && routing.endsWith(">")) {
+                return routing.substring(1, routing.length() -1);
+            }
+        }
+        return null;
+    }
 }
