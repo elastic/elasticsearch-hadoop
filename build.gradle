@@ -304,7 +304,7 @@ allprojects { project ->
                 "http://hive.apache.org/javadocs/r1.2.1/api/",
                 "http://docs.cascading.org/cascading/2.6/javadoc/",
                 "http://spark.apache.org/docs/latest/api/java/",
-                "http://storm.apache.org/apidocs/"
+                "http://storm.apache.org/releases/current/javadocs/"
             ]
 
             excludes = [
