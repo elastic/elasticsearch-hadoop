@@ -39,7 +39,17 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
       }
     }
     else {
-      val rowOrd = if (inArray) currentArrayRowOrder else rowColumns(sparkRowField)
+      val rowOrd = 
+      if (inArray) {
+        if (rowColumnsMap.contains(sparkRowField)) {
+            rowColumns(sparkRowField)
+        }
+        else {
+          currentArrayRowOrder
+        }
+      }
+      else rowColumns(sparkRowField)
+
       new ScalaEsRow(rowOrd)
     }
   }

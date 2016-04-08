@@ -319,7 +319,6 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(4l, array(2))
   }
 
-
   @Test
   def testBasicRead() {
     val dataFrame = artistsAsDataFrame
@@ -1048,6 +1047,40 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     artistsAsDataFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Ignore)
     assertEquals(3, df.count())
   }
+  
+  @Test
+  def testArrayWithNestedObject() {
+    val json = """{"0ey" : "val", "another-array": [{ "item" : 1, "key": { "key_a":"val_a", "key_b":"val_b" } }, { "item" : 2, "key": { "key_a":"val_c","key_b":"val_d" } } ]}"""
+    val index = wrapIndex("sparksql-test/array-with-nested-object")
+    sc.makeRDD(Seq(json)).saveJsonToEs(index)
+    val df = sqc.read.format("es").option(ES_READ_FIELD_AS_ARRAY_INCLUDE, "another-array").load(index)
+
+    df.printSchema()
+    assertEquals("array", df.schema("another-array").dataType.typeName)
+    val array = df.schema("another-array").dataType
+    val key = array.asInstanceOf[ArrayType].elementType.asInstanceOf[StructType]("key")
+    assertEquals("struct", key.dataType.typeName)
+    
+    val head = df.head
+    println(head)
+    val ky = head.getString(0)
+    assertEquals("val", ky)
+    // array
+    val arr = head.getSeq[Row](1)
+ 
+    val one = arr(0)
+    assertEquals(1, one.getLong(0))
+    val nestedOne = one.getStruct(1)
+    assertEquals("val_a", nestedOne.getString(0))
+    assertEquals("val_b", nestedOne.getString(1))
+    
+    val two = arr(1)
+    assertEquals(2, two.getLong(0))
+    val nestedTwo = two.getStruct(1)
+    assertEquals("val_c", nestedTwo.getString(0))
+    assertEquals("val_d", nestedTwo.getString(1))
+  }
+
 
   @Test
   def testNestedEmptyArray() {
