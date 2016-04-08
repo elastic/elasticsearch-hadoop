@@ -60,10 +60,6 @@ public abstract class CascadingUtils {
         Settings settings = HadoopSettingsManager.loadFrom(CascadingUtils.extractOriginalProperties(flowProperties)).merge(tapProperties);
 
         InitializationUtils.validateSettings(settings);
-        InitializationUtils.discoverEsVersion(settings, log);
-        InitializationUtils.discoverNodesIfNeeded(settings, log);
-        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
-        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
 
         InitializationUtils.setValueWriterIfNotSet(settings, CascadingValueWriter.class, log);
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
@@ -71,6 +67,13 @@ public abstract class CascadingUtils {
         InitializationUtils.setFieldExtractorIfNotSet(settings, CascadingFieldExtractor.class, log);
 
         return settings;
+    }
+
+    static void initialDiscovery(Settings settings, Log log) {
+        InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
     }
 
     static void addSerializationToken(Object config) {
