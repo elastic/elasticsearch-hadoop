@@ -107,7 +107,11 @@ public class StormSettings extends Settings {
         if (cfg != null) {
             for (Entry<Object, Object> entry : cfg.entrySet()) {
                 if (entry.getKey() instanceof String) {
-                    props.put(entry.getKey().toString(), entry.getValue().toString());
+                    Object value = entry.getValue();
+                    if (value == null) {
+                        value = StringUtils.EMPTY;
+                    }
+                    props.put(entry.getKey().toString(), value.toString());
                 }
             }
         }
