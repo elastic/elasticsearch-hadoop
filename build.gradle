@@ -511,8 +511,7 @@ def baseSparkProject(target, sparkVersion) {
         scalaCompileOptions.useAnt = false
     }
     
-    if (sparkVersion != spark12Version)
-        println "Using Scala $scalaMajorVersion [$scalaVersion]"
+    println "Using Scala $scalaMajorVersion [$scalaVersion]"
 
     // when using Scala 2.11 use a different folder to cache the artifacts between builds
     if (scalaVer == "211") {
@@ -596,7 +595,7 @@ def baseSparkProject(target, sparkVersion) {
 }
 
 project(":elasticsearch-spark") {
-    description = "Elasticsearch Spark (Spark 1.3+)"
+    description = "Elasticsearch Spark (Spark 1.3-1.6)"
 
     baseSparkProject(project, spark13Version)
     
@@ -614,12 +613,6 @@ project(":elasticsearch-spark") {
       
       exclude group: "org.mortbay.jetty"
     }
-}
-
-project(":elasticsearch-spark-1.2") {
-    description = "Elasticsearch Spark (Spark 1.0-1.2)"
-
-    baseSparkProject(project, spark12Version)
 }
 
 project(":elasticsearch-storm") {
