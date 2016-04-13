@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.storm.guava.collect.ImmutableList;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -31,12 +32,11 @@ import org.junit.Test;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 
-import com.google.common.collect.ImmutableList;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
-
-import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class AbstractStormIdMappingBoltTests extends AbstractStormBoltTests {
 

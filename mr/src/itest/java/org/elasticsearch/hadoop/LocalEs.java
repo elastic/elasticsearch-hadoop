@@ -41,7 +41,7 @@ public class LocalEs extends ExternalResource {
     public static final String DATA_PORTS_SLAVE = "9700-9799";
     public static final String TRANSPORT_PORTS_SLAVE = "9800-9899";
 
-    private boolean USE_SLAVE = false;
+    private final boolean USE_SLAVE = false;
     private boolean disabled = false;
 
     @Override
@@ -65,7 +65,7 @@ public class LocalEs extends ExternalResource {
 
         // delete data path to start fresh
         TestUtils.delete(new File(ES_DATA_PATH));
-        
+
         if (master == null) {
             System.out.println("Starting Elasticsearch Master...");
             master = new EsEmbeddedServer(CLUSTER_NAME, ES_HOME_PATH, ES_DATA_PATH, DATA_PORTS, TRANSPORT_PORTS, USE_SLAVE);
@@ -89,7 +89,11 @@ public class LocalEs extends ExternalResource {
         if (master != null) {
             if (USE_SLAVE && slave != null) {
                 System.out.println("Stopping Elasticsearch Slave...");
-                slave.stop();
+                try {
+                    slave.stop();
+                } catch (Exception ex) {
+                    // ignore
+                }
                 slave = null;
             }
 

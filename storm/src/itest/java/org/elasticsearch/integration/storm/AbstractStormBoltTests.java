@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.storm.guava.collect.ImmutableMap;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;
@@ -33,8 +34,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.collect.ImmutableMap;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 

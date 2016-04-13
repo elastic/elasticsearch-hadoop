@@ -18,8 +18,9 @@
  */
 package org.elasticsearch.hadoop;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 
 import org.elasticsearch.Version;
@@ -27,10 +28,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.node.internal.InternalSettingsPreparer;
 import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.script.groovy.GroovyPlugin;
 
 public class EsEmbeddedServer {
     private static class PluginConfigurableNode extends Node {
@@ -61,8 +60,12 @@ public class EsEmbeddedServer {
         props.setProperty("script.inline", "true");
         props.setProperty("script.indexed", "true");
 
-        Settings settings = NodeBuilder.nodeBuilder().local(false).client(false).settings(Settings.settingsBuilder().put(props).build()).clusterName(clusterName).getSettings().build();
-        Collection plugins = Arrays.asList(GroovyPlugin.class);
+        props.setProperty("node.local", "false");
+        props.setProperty("node.client", "false");
+        props.setProperty("cluster.name", clusterName);
+
+        Settings settings = Settings.settingsBuilder().put(props).build();
+        Collection plugins = Collections.emptyList(); // Arrays.asList(GroovyPlugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
 
@@ -75,7 +78,7 @@ public class EsEmbeddedServer {
         ipAndPort = StringUtils.parseIpAddress(value);
     }
 
-    public void stop() {
+    public void stop() throws IOException {
         node.close();
     }
 

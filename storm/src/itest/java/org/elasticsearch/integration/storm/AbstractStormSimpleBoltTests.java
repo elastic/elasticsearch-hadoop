@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.storm.guava.collect.ImmutableList;
+import org.apache.storm.guava.collect.ImmutableMap;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -30,9 +32,6 @@ import org.junit.Test;
 
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;

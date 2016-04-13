@@ -21,9 +21,11 @@ package org.elasticsearch.integration.storm;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.storm.guava.collect.ImmutableMap;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;
@@ -31,8 +33,6 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import com.google.common.collect.ImmutableMap;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 
@@ -64,10 +64,11 @@ public abstract class AbstractStormSpoutTests {
     @Parameters
     public static Collection<Object[]> configs() throws IOException {
         // no ack
-        Map noAck = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.FALSE.toString()));
+        Map noAck = new LinkedHashMap(Collections.singletonMap(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.FALSE.toString()));
 
         // read ack
-        Map ack = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString()));
+        Map ack = new LinkedHashMap(Collections.singletonMap(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE,
+                Boolean.TRUE.toString()));
 
         // read ack bounded queue
         Map ackWithSize = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(), StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1"));

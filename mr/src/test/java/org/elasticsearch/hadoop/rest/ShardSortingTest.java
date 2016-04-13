@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.rest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,10 +37,6 @@ import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -52,8 +50,21 @@ public class ShardSortingTest {
         Map<String, Node> nodes = readNodes();
         List<List<Map<String, Object>>> targetShards = readShards();
         Map<Shard, Node> result = ShardSorter.find(targetShards, nodes, null);
-        Set<Integer> index1Shards = Sets.newHashSet(0, 1, 2, 3, 4);
-        Set<Integer> index2Shards = Sets.newHashSet(0, 1, 2, 3, 4);
+
+        Set<Integer> index1Shards = new HashSet<Integer>();
+        index1Shards.add(0);
+        index1Shards.add(1);
+        index1Shards.add(2);
+        index1Shards.add(3);
+        index1Shards.add(4);
+
+        Set<Integer> index2Shards = new HashSet<Integer>();
+        index1Shards.add(0);
+        index1Shards.add(1);
+        index1Shards.add(2);
+        index1Shards.add(3);
+        index1Shards.add(4);
+
         for(Shard shard : result.keySet()) {
             String index = shard.getIndex();
             if(index.equals("index1")) {
@@ -71,7 +82,7 @@ public class ShardSortingTest {
                 new TypeReference<Map<String, Object>>() {
         });
         Map<String, Object> rawNodes = (Map<String, Object>)values.get("nodes");
-        Map<String, Node> nodes = Maps.newLinkedHashMap();
+        Map<String, Node> nodes = new LinkedHashMap();
         for (String nodeId : rawNodes.keySet()) {
             Node node = new Node(nodeId, (Map<String, Object>)rawNodes.get(nodeId));
             nodes.put(nodeId, node);
@@ -91,8 +102,11 @@ public class ShardSortingTest {
         for (int i = 0; i < 10; i++) {
             set.add(Integer.valueOf(i));
         }
-        List<Set<Integer>> powerList = Lists.newArrayList(ShardSorter.powerList(set));
-        assertEquals(1023, powerList.size());
+        int count = 0;
+        for (Iterator<Set<Integer>> it = ShardSorter.powerList(set); it.hasNext(); ++count) {
+            it.next();
+        }
+        assertEquals(1023, count);
     }
 
     private <K, V> Map<K, V> map(K k1, V v1) {
