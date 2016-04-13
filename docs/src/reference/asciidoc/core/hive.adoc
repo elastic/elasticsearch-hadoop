@@ -141,9 +141,6 @@ s content is used as the JSON document. That is, the library will recognize spec
 | `binary`          | use this when the JSON data is represented as a `byte[]` or similar
 | `string`          | use this if the JSON data is represented as a `String`
 | _anything else_   | make sure the `toString()` returns the desired JSON document
-
-2+h| Available in Hive 0.12 or higher
-
 | `varchar`         | use this as an alternative to Hive `string`
 
 |===
@@ -237,7 +234,7 @@ SELECT * FROM artists;
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 Hive provides various https://cwiki.apache.org/confluence/display/Hive/LanguageManual`Types[types] for defining data and internally uses different implementations depending on the target environment (from JDK native types to binary-optimized ones). {es} integrates with all of them, including
-and Serde2 http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
+and Serde2 http://hive.apache.org/javadocs/r1.0.1/api/index.html?org/apache/hadoop/hive/serde2/lazy/package-summary.html[lazy] and http://hive.apache.org/javadocs/r1.0.1/api/index.html?org/apache/hadoop/hive/serde2/lazybinary/package-summary.html[lazy binary]:
 
 [cols="^,^",options="header"]
 
@@ -259,23 +256,14 @@ and Serde2 http://hive.apache.org/javadocs/r0.12.0/api/index.html?org/apache/had
 | `map`             | `map`
 | `array`           | `array`
 | `union`           | not supported (yet)
-
-2+h| Available in Hive 0.11 or higher
-
 | `decimal`         | `string`
-
-2+h| Available in Hive 0.12 or higher
-
 | `date`            | `date`
 | `varchar`         | `string`
-
-2+h| Available in Hive 0.13 or higher
-
 | `char`            | `string`
 
 |===
 
-NOTE: While {es} understands Hive types up to version 0.13, it is backwards compatible with Hive 0.9
+NOTE: While {es} understands Hive types up to version 2.0, it is backwards compatible with Hive 1.0
 
 It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. For example, based on its storage a +geo_point+ might be
 returned as a +string+ or an +array+.
