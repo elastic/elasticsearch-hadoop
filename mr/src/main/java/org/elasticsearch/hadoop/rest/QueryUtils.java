@@ -27,8 +27,13 @@ import java.util.Map.Entry;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.Parser;
+import org.elasticsearch.hadoop.serialization.Parser.Token;
+import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -54,6 +59,16 @@ abstract class QueryUtils {
             // followed by the filters ("and" being applied all the time)
             "\"filter\": { \"and\" : [ %s ] } " +
             "}}}";
+    
+    private static String PUSH_DOWN_ES_5X = "{\"query\":{" +
+            "\"bool\":{ \"must\":{" +
+            // put query first,
+            "%s" +
+            "}," +
+            // followed by the filters ("and" being applied all the time)
+            "\"filter\": [ %s ] " +
+            "}}}";
+
 
     static {
         URI_QUERY_TO_DSL.put("q", "query");
@@ -76,7 +91,7 @@ abstract class QueryUtils {
 
         // uri query
         if (query.startsWith("?")) {
-            return new BytesArray(QueryUtils.translateUriQuery(query, settings.getScrollEscapeUri()));
+            return new BytesArray(QueryUtils.translateUriQuery(query));
         }
         else if (query.startsWith("{")) {
             return new BytesArray(query);
@@ -88,7 +103,7 @@ abstract class QueryUtils {
                 // peek the stream
                 int first = in.read();
                 if (Integer.valueOf('?').equals(first)) {
-                    return new BytesArray(QueryUtils.translateUriQuery(IOUtils.asString(in), settings.getScrollEscapeUri()));
+                    return new BytesArray(QueryUtils.translateUriQuery(IOUtils.asString(in)));
                 }
                 else {
                     BytesArray content = new BytesArray(1024);
@@ -105,7 +120,7 @@ abstract class QueryUtils {
         }
     }
 
-    private static String translateUriQuery(String query, boolean escapeUriQuery) {
+    private static String translateUriQuery(String query) {
         // strip leading ?
         if (query.startsWith("?")) {
             query = query.substring(1);
@@ -116,13 +131,7 @@ abstract class QueryUtils {
         for (String token : query.split("&")) {
             int indexOf = token.indexOf("=");
             Assert.isTrue(indexOf > 0, String.format("Cannot token [%s] in uri query [%s]", token, query));
-            if (!escapeUriQuery) {
-                params.put(StringUtils.decodePath(token.substring(0, indexOf)),
-                        StringUtils.decodePath(token.substring(indexOf + 1)));
-            }
-            else {
-                params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
-            }
+            params.put(token.substring(0, indexOf), token.substring(indexOf + 1));
         }
 
         Map<String, String> translated = new LinkedHashMap<String, String>();
@@ -172,7 +181,7 @@ abstract class QueryUtils {
         return sb.toString();
     }
 
-    static BytesArray applyFilters(BytesArray bodyQuery, String... filters) {
+    static BytesArray applyFilters(boolean isES5X, BytesArray bodyQuery, String... filters) {
         if (filters == null || filters.length == 0) {
             return bodyQuery;
         }
@@ -187,9 +196,37 @@ abstract class QueryUtils {
         Assert.isTrue(stop >= 0, msg);
         Assert.isTrue(stop - start > 0, msg);
 
-        String nestedQuery = originalQuery.substring(start + 1, stop);
-
-        // concatenate filters
-        return new BytesArray(String.format(PUSH_DOWN, nestedQuery, StringUtils.concatenate(filters, ",")));
+        String query = null;
+        if (isES5X) {
+            // in ES 5.X, the leading "query" needs to be removed
+            String nestedQuery = stripQuery(originalQuery);
+            query = String.format(PUSH_DOWN_ES_5X, nestedQuery, StringUtils.concatenate(filters, ","));
+        }
+        else {
+            String nestedQuery = originalQuery.substring(start + 1, stop);
+            query = String.format(PUSH_DOWN, nestedQuery, StringUtils.concatenate(filters, ","));
+        }
+        
+        return new BytesArray(query);
     }
+
+    static String stripQuery(String query) {
+        Parser parser = new JacksonJsonParser(new FastByteArrayInputStream(StringUtils.toUTF(query)));
+        try {
+            Token queryField = ParsingUtils.seek(parser, "query");
+            Assert.isTrue(queryField != null, "Invalid QueryDSL - cannot find 'query' field");
+            
+            // skip { to update the char offset 
+            parser.nextToken();
+            int queryStartOffset = parser.tokenCharOffset();
+            // can't call skipChildren, use work-around
+            ParsingUtils.skipCurrentBlock(parser);
+            int queryStopOffset = parser.tokenCharOffset();
+
+            return query.substring(queryStartOffset, queryStopOffset);
+        } finally {
+            parser.close();
+        }
+    }
+
 }

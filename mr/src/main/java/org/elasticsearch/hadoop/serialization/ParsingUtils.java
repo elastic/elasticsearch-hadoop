@@ -304,4 +304,28 @@ public abstract class ParsingUtils {
         generator.writeEndArray();
         parser.nextToken();
     }
+    
+    public static void skipCurrentBlock(Parser parser) {
+        int open = 1;
+
+        while (true) {
+            Token t = parser.nextToken();
+            if (t == null) {
+                // handle EOF?
+                return;
+            }
+            switch (t) {
+            case START_OBJECT:
+            case START_ARRAY:
+                ++open;
+                break;
+            case END_OBJECT:
+            case END_ARRAY:
+                if (--open == 0) {
+                    return;
+                }
+                break;
+            }
+        }
+    }
 }

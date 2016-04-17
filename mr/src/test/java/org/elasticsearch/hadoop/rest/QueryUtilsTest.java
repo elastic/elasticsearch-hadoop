@@ -24,8 +24,7 @@ import org.elasticsearch.hadoop.util.BytesArray;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.elasticsearch.hadoop.rest.QueryUtils.applyFilters;
-import static org.elasticsearch.hadoop.rest.QueryUtils.parseQuery;
+import static org.elasticsearch.hadoop.rest.QueryUtils.*;
 
 public class QueryUtilsTest {
 
@@ -77,22 +76,28 @@ public class QueryUtilsTest {
     public void testTranslateSimpleUriQueryWithNoFilter() throws Exception {
         cfg.setQuery("?q=foo:bar");
         BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(query));
-        System.out.println(applyFilters(query, null));
+        System.out.println(applyFilters(true, query));
+        System.out.println(applyFilters(true, query, null));
     }
 
     @Test
     public void testTranslateUriQueryWithBasicFilter() throws Exception {
         cfg.setQuery("?q=foo:bar");
         BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(query, FILTER));
+        System.out.println(applyFilters(true, query, FILTER));
     }
 
     @Test
     public void testTranslateUriQueryWithDefaultFieldAndFilters() throws Exception {
         cfg.setQuery("?q=foo:bar&df=name");
         BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(query, FILTER, FILTER));
+        System.out.println(applyFilters(true, query, FILTER, FILTER));
     }
-
+    
+    @Test
+    public void testStripBasicQuery() throws Exception {
+        String body = "{\"match_all\": {} }";
+        String query = stripQuery("{\"query\": " + body + "}");
+        System.out.println("body query is  " + query);
+    }
 }

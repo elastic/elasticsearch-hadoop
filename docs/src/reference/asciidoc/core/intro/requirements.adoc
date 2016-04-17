@@ -74,9 +74,15 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Apache Hadoop     | 1.2.x
 | Apache Hadoop     | 1.1.x
 
+| Amazon EMR        | 4.5.x
+| Amazon EMR        | 4.4.x
+| Amazon EMR        | 4.3.x
 | Amazon EMR        | 4.2.x
 | Amazon EMR        | 4.1.x
 | Amazon EMR        | 4.0.x
+| Amazon EMR        | 3.11.x
+| Amazon EMR        | 3.10.x
+| Amazon EMR        | 3.9.x
 | Amazon EMR        | 3.8.x
 | Amazon EMR        | 3.7.x
 | Amazon EMR        | 3.6.x
@@ -84,36 +90,18 @@ As a guide, the table below lists the Hadoop-based distributions against with th
 | Amazon EMR        | 3.4.x
 | Amazon EMR        | 3.3.x
 | Amazon EMR        | 3.2.x
-| Amazon EMR        | 3.1.x
-| Amazon EMR        | 3.0.x
-| Amazon EMR        | 2.4.x
 
+| Cloudera CDH      | 5.7.x
+| Cloudera CDH      | 5.6.x
 | Cloudera CDH      | 5.5.x
 | Cloudera CDH      | 5.4.x
-| Cloudera CDH      | 5.3.x
-| Cloudera CDH      | 5.2.x
-| Cloudera CDH      | 5.1.x
-| Cloudera CDH      | 5.0.x
-| Cloudera CDH      | 4.5.x
-| Cloudera CDH      | 4.4.x
-| Cloudera CDH      | 4.2.x
 
+| Hortonworks HDP   | 2.4.x
 | Hortonworks HDP   | 2.3.x
-| Hortonworks HDP   | 2.2.x
-| Hortonworks HDP   | 2.1.x
-| Hortonworks HDP   | 2.0.x
-| Hortonworks HDP   | 1.3.x
-
-| Pivotal HD        | 2.1.x
-| Pivotal HD        | 2.0.x
-| Pivotal HD        | 1.1.x
 
 | MapR              | 5.x
 | MapR              | 4.1.x
 | MapR              | 4.0.x
-| MapR              | 3.1.x
-| MapR              | 3.0.x
-| MapR              | 2.1.x
 |===
 
 IMPORTANT: Use the table above for guidance only; if your distro (or its version) is not there, it does not mean {eh} is not compatible with it; rather go ahead and try it out and let us know how it went.

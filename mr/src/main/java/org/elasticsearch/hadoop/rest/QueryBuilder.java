@@ -23,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.util.Assert;
@@ -47,21 +45,16 @@ public class QueryBuilder {
     private String node;
     private boolean onlyNode;
     private String[] filters;
-    private final boolean IS_ES_20;
+    private final boolean IS_ES_50;
+
     private final boolean INCLUDE_VERSION;
 
     private String fields;
 
     QueryBuilder(Settings settings) {
         this.resource = new Resource(settings, true);
-        IS_ES_20 = SettingsUtils.isEs20(settings);
+        IS_ES_50 = SettingsUtils.isEs50(settings);
         INCLUDE_VERSION = settings.getReadMetadata() && settings.getReadMetadataVersion();
-
-        if (StringUtils.hasText(settings.getProperty(ConfigurationOptions.ES_SCROLL_ESCAPE_QUERY_URI))) {
-            LogFactory.getLog(ConfigurationOptions.class).warn(String
-                    .format("Setting '%s' has been deprecated as the URI queries are _always_ translated into a Query DSL; see the documentation for more information",
-                            ConfigurationOptions.ES_SCROLL_ESCAPE_QUERY_URI));
-        }
 
         bodyQuery = QueryUtils.parseQuery(settings);
     }
@@ -125,7 +118,14 @@ public class QueryBuilder {
         sb.append("/_search?");
 
         // override infrastructure params
-        uriParams.put("search_type", "scan");
+        if (IS_ES_50) {
+            // scan type was removed
+            // default to sorting by indexing/doc order
+            uriParams.put("sort", "_doc");
+        }
+        else {
+            uriParams.put("search_type", "scan");
+        }
         uriParams.put("scroll", String.valueOf(time.toString()));
         uriParams.put("size", String.valueOf(size));
         if (INCLUDE_VERSION) {
@@ -177,7 +177,7 @@ public class QueryBuilder {
 
     public ScrollQuery build(RestRepository client, ScrollReader reader) {
         String scrollUri = assemble();
-        bodyQuery = QueryUtils.applyFilters(bodyQuery, filters);
+        bodyQuery = QueryUtils.applyFilters(IS_ES_50, bodyQuery, filters);
         return client.scanLimit(scrollUri, bodyQuery, limit, reader);
     }
 

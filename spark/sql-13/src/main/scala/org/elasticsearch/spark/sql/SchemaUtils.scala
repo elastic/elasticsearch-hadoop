@@ -1,13 +1,15 @@
 package org.elasticsearch.spark.sql
 
+import java.util.ArrayList
 import java.util.{ LinkedHashSet => JHashSet }
 import java.util.{ List => JList }
 import java.util.{ Map => JMap }
 import java.util.Properties
+
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.annotation.DeveloperApi
+
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -27,6 +29,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.Settings
+import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.FieldType.BINARY
 import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
@@ -37,12 +40,14 @@ import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NESTED
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.OBJECT
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
+import org.elasticsearch.hadoop.serialization.FieldType.TEXT
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
@@ -57,10 +62,6 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
-import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.apache.commons.logging.LogFactory
-import scala.collection.mutable.ArraySeq
-import java.util.ArrayList
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -88,7 +89,7 @@ private[sql] object SchemaUtils {
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
-          // its presence is controller through the dedicated config setting
+          // its presence is controlled through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()))
         }
         return (field, geoInfo)
@@ -136,7 +137,10 @@ private[sql] object SchemaUtils {
       case LONG      => LongType
       case FLOAT     => FloatType
       case DOUBLE    => DoubleType
+      // String type
       case STRING    => StringType
+      case TEXT      => StringType
+      case KEYWORD   => StringType
       case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))

@@ -37,7 +37,7 @@ public abstract class MappingUtils {
 
     static {
         BUILT_IN_FIELDS.addAll(Arrays.asList("_uid", "_id", "_type", "_source", "_all", "_analyzer", "_boost",
-                "_parent", "_routing", "_index", "_size", "_timestamp", "_ttl"));
+                "_parent", "_routing", "_index", "_size", "_timestamp", "_ttl", "_field_names", "_meta"));
     }
 
     public static void validateMapping(String fields, Field mapping, FieldPresenceValidation validation, Log log) {

@@ -2,10 +2,10 @@ package org.elasticsearch.spark.serialization
 
 import java.util.Collections
 import java.util.Date
-import java.util.{List => JList}
+import java.util.{ List => JList }
 
-import scala.collection.Seq
 import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.Seq
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
 
@@ -18,10 +18,12 @@ import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
 import org.elasticsearch.hadoop.serialization.FieldType.STRING
+import org.elasticsearch.hadoop.serialization.FieldType.TEXT
 import org.elasticsearch.hadoop.serialization.FieldType.TOKEN_COUNT
 import org.elasticsearch.hadoop.serialization.Parser
 import org.elasticsearch.hadoop.serialization.Parser.Token.VALUE_BOOLEAN
@@ -57,6 +59,8 @@ class ScalaValueReader extends ValueReader with SettingsAware {
     esType match {
       case NULL => nullValue()
       case STRING => textValue(value, parser)
+      case TEXT => textValue(value, parser)
+      case KEYWORD => textValue(value, parser)
       case BYTE => byteValue(value, parser)
       case SHORT => shortValue(value, parser)
       case INTEGER => intValue(value, parser)

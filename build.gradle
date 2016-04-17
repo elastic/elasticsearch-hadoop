@@ -204,8 +204,8 @@ allprojects { project ->
         testRuntime "log4j:log4j:$log4jVersion"
         testRuntime "net.java.dev.jna:jna:4.2.2"
         //testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
-        //testRuntime "org.codehaus.groovy:groovy-all:$groovyVersion"
-        testRuntime "com.spatial4j:spatial4j:0.5"
+        testCompile "org.codehaus.groovy:groovy:$groovyVersion:indy"
+        testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
         testRuntime "com.vividsolutions:jts:1.13"
         
         itestCompile sourceSets.main.output
@@ -255,7 +255,8 @@ allprojects { project ->
         jdt {
             // use Java 7 since it is required by ES
             // ES-Hadoop is still on Java 6 (since Hadoop <2.7 is still on 6)
-            javaRuntimeName = "JavaSE-1.7"
+            // but ES 5.0 is JDK8 
+            javaRuntimeName = "JavaSE-1.8"
             // specify again the compatibility to override the default JavaRE settings
             sourceCompatibility = 1.6
             targetCompatibility = 1.6

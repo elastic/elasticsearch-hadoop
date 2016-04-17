@@ -131,16 +131,24 @@ public class ScrollReader {
     }
 
     public static class Scroll {
+        static final Scroll EMPTY = new Scroll("", -1l, Collections.<Object[]> emptyList());
+        
         private final String scrollId;
+        private final long total;
         private final List<Object[]> hits;
 
-        private Scroll(String scrollId, List<Object[]> hits) {
+        private Scroll(String scrollId, long total, List<Object[]> hits) {
             this.scrollId = scrollId;
             this.hits = hits;
+            this.total = total;
         }
 
         public String getScrollId() {
             return scrollId;
+        }
+
+        public long getTotalHits() {
+            return total;
         }
 
         public List<Object[]> getHits() {
@@ -260,10 +268,10 @@ public class ScrollReader {
         Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
         String scrollId = parser.text();
 
-
+        long totalHits = hitsTotal();
         // check hits/total
-        if (hits() == 0) {
-            return null;
+        if (totalHits == 0) {
+            return Scroll.EMPTY;
         }
 
         // move to hits/hits
@@ -374,7 +382,7 @@ public class ScrollReader {
             }
         }
 
-        return new Scroll(scrollId, results);
+        return new Scroll(scrollId, totalHits, results);
     }
 
     private Object[] readHit() {
@@ -485,7 +493,15 @@ public class ScrollReader {
             String name = parser.currentName();
             String absoluteName = StringUtils.stripFieldNameSourcePrefix(parser.absoluteName());
             if (readMetadata) {
-                reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null));
+                // skip sort (useless and is an array which triggers the row mapping which does not apply)
+                if (!"sort".equals(name)) {
+                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null));
+                }
+                else {
+                    parser.nextToken();
+                    parser.skipChildren();
+                    parser.nextToken();
+                }
             }
             else {
                 parser.nextToken();
@@ -616,7 +632,7 @@ public class ScrollReader {
                 case FIELD_NAME:
                     int charStart = parser.tokenCharOffset();
                     // can't use skipChildren as we are within the object
-                    skipCurrentBlock();
+                ParsingUtils.skipCurrentBlock(parser);
                     // make sure to include the ending char
                     int charStop = parser.tokenCharOffset();
                     // move pass end of object
@@ -640,7 +656,7 @@ public class ScrollReader {
         // in case of additional fields (matched_query), add them to the metadata
         while ((t = parser.currentToken()) == Token.FIELD_NAME) {
             t = parser.nextToken();
-            skipCurrentBlock();
+            ParsingUtils.skipCurrentBlock(parser);
             t = parser.nextToken();
 
             if (readMetadata) {
@@ -664,31 +680,7 @@ public class ScrollReader {
 
     }
 
-    private void skipCurrentBlock() {
-        int open = 1;
-
-        while (true) {
-            Token t = parser.nextToken();
-            if (t == null) {
-                // handle EOF?
-                return;
-            }
-            switch (t) {
-            case START_OBJECT:
-            case START_ARRAY:
-                ++open;
-                break;
-            case END_OBJECT:
-            case END_ARRAY:
-                if (--open == 0) {
-                    return;
-                }
-                break;
-            }
-        }
-    }
-
-    private long hits() {
+    private long hitsTotal() {
         ParsingUtils.seek(parser, TOTAL);
         long hits = parser.longValue();
         return hits;
@@ -795,7 +787,15 @@ public class ScrollReader {
             }
 
             if (shouldSkip(absoluteName)) {
-                skipCurrentBlock();
+                Token nt = parser.nextToken();
+                if (nt.isValue()) {
+                    // consume and move on
+                    parser.nextToken();
+                }
+                else {
+                    ParsingUtils.skipCurrentBlock(parser);
+                    parser.nextToken();
+                }
             }
             else {
                 reader.beginField(absoluteName);

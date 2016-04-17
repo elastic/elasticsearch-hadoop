@@ -21,15 +21,7 @@ package org.elasticsearch.hadoop.rest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
@@ -66,7 +58,9 @@ public class RestClient implements Closeable, StatsAware {
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
 
+    private final boolean isES1x;
     private final boolean isES20;
+    private final boolean isES50;
 
     {
         mapper = new ObjectMapper();
@@ -98,7 +92,9 @@ public class RestClient implements Closeable, StatsAware {
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
 
+        isES1x = SettingsUtils.isEs1x(settings);
         isES20 = SettingsUtils.isEs20(settings);
+        isES50 = SettingsUtils.isEs50(settings);
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -370,7 +366,7 @@ public class RestClient implements Closeable, StatsAware {
         sb.setLength(sb.length() - 1);
         sb.append("],\n\"query\":{");
 
-        if (isES20) {
+        if (!isES1x) {
             sb.append("\"bool\": { \"must\":[");
         }
         else {
@@ -479,15 +475,6 @@ public class RestClient implements Closeable, StatsAware {
         }
     }
 
-    public String[] scan(String query, BytesArray body) {
-        Map<String, Object> scan = parseContent(execute(POST, query, body).body(), null);
-
-        String[] data = new String[2];
-        data[0] = scan.get("_scroll_id").toString();
-        data[1] = ((Map<?, ?>) scan.get("hits")).get("total").toString();
-        return data;
-    }
-
     public InputStream scroll(String scrollId) {
         // NB: dynamically get the stats since the transport can change
         long start = network.transportStats().netTotalTime;
@@ -543,8 +530,19 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public long count(String indexAndType, ByteSequence query) {
+        return isES50 ? countInES5X(indexAndType, query) : countBeforeES5X(indexAndType, query);
+    }
+    
+    private long countBeforeES5X(String indexAndType, ByteSequence query) {
         Response response = execute(GET, indexAndType + "/_count", query);
         Number count = (Number) parseContent(response.body(), "count");
+        return (count != null ? count.longValue() : -1);
+    }
+
+    private long countInES5X(String indexAndType, ByteSequence query) {
+        Response response = execute(GET, indexAndType + "/_search?size=0", query);
+        Map<String, Object> content = parseContent(response.body(), "hits");
+        Number count = (Number) content.get("total");
         return (count != null ? count.longValue() : -1);
     }
 
@@ -554,7 +552,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public void putMapping(String index, String mapping, byte[] bytes) {
-        // create index first (if needed) - it might return 403
+        // create index first (if needed) - it might return 403/404
         touch(index);
 
         execute(PUT, mapping, new BytesArray(bytes));

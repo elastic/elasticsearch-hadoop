@@ -42,9 +42,9 @@ import cascading.tap.Tap;
 import cascading.tap.local.FileTap;
 import cascading.tuple.Fields;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingLocalSaveTest {
@@ -63,7 +63,8 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/artists").toString(), is("artists=[name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/artists").toString(),
+                is("artists=[name=TEXT, picture=TEXT, url=TEXT]"));
     }
 
     @Test
@@ -83,7 +84,8 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/alias").toString(), is("alias=[address=STRING, name=STRING, picture=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/alias").toString(),
+                is("alias=[address=TEXT, name=TEXT, picture=TEXT]"));
     }
 
 
@@ -120,7 +122,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").toString(), is("fieldmapping=[name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").toString(), is("fieldmapping=[name=TEXT, picture=TEXT, url=TEXT]"));
     }
 
     @Test
@@ -136,7 +138,8 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-12").toString(), is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/pattern-12").toString(),
+                is("pattern-12=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]"));
     }
 
     @Test
@@ -153,7 +156,8 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").toString(), is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").toString(),
+                is("pattern-format-2012-10-06=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]"));
     }
 
     @Test

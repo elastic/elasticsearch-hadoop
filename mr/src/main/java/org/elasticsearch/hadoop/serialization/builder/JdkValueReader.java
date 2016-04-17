@@ -62,6 +62,8 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case NULL:
             return nullValue();
         case STRING:
+        case TEXT:
+        case KEYWORD:
             return textValue(value);
         case BYTE:
             return byteValue(value, parser);

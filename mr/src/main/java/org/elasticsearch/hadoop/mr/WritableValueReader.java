@@ -42,6 +42,8 @@ public class WritableValueReader extends JdkValueReader {
             arrayType = NullWritable.class;
             break;
         case STRING:
+        case KEYWORD:
+        case TEXT:
             arrayType = Text.class;
             break;
         case BYTE:

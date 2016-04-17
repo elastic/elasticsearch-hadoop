@@ -28,9 +28,6 @@ import org.elasticsearch.hadoop.serialization.field.DefaultParamsExtractor;
 public interface ConfigurationOptions {
 
     /** Elasticsearch host **/
-    // deprecated
-    @Deprecated
-    String ES_HOST = "es.host";
     String ES_NODES = "es.nodes";
     String ES_NODES_DEFAULT = "localhost";
 
@@ -114,11 +111,6 @@ public interface ConfigurationOptions {
     String ES_SCROLL_LIMIT_DEFAULT = "-1";
 
     /** Scroll fields */
-
-    @Deprecated
-    String ES_SCROLL_ESCAPE_QUERY_URI = "es.scroll.escape.query.uri";
-    @Deprecated
-    String ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT = "true";
 
     String ES_HEART_BEAT_LEAD = "es.action.heart.beat.lead";
     String ES_HEART_BEAT_LEAD_DEFAULT = "15s";

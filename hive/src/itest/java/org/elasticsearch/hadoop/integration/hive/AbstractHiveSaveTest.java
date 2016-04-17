@@ -116,7 +116,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testBasicSaveMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/artists").toString(),
-                is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("artists=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class AbstractHiveSaveTest {
     public void testCompoundSaveMapping() throws Exception {
         assertThat(
                 RestUtils.getMapping("hive/compound").toString(),
-                is("compound=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
+                is("compound=[mapids=LONG, rdata=[1=TEXT, 10=TEXT, 11=TEXT, 12=TEXT, 13=TEXT, 2=TEXT, 3=TEXT, 4=TEXT, 5=TEXT, 6=TEXT, 7=TEXT, 8=TEXT, 9=TEXT], rid=LONG]"));
     }
 
 
@@ -208,7 +208,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testTimestampSaveMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/artiststimestamp").toString(),
-                is("artiststimestamp=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("artiststimestamp=[dte=DATE, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -240,7 +240,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testFieldAliasMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/aliassave").toString(),
-                is("aliassave=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
+                is("aliassave=[@timestamp=DATE, links=[picture=TEXT, url_123=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -279,7 +279,7 @@ public class AbstractHiveSaveTest {
     @Ignore
     public void testDateSaveMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/datesave").toString(),
-                is("datesave=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
+                is("datesave=[id=LONG, date=LONG, name=TEXT, links=[url=TEXT, picture=TEXT]]"));
     }
 
     @Test
@@ -310,7 +310,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testCharMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/charsave").toString(),
-                is("charsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("charsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -342,7 +342,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testExternalSerDeMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/externalserde").toString(), is("externalserde=[data=STRING]"));
+        assertThat(RestUtils.getMapping("hive/externalserde").toString(), is("externalserde=[data=TEXT]"));
     }
 
     @Test
@@ -373,7 +373,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testVarcharSaveMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/varcharsave").toString(),
-                is("varcharsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("varcharsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -412,7 +412,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testCreateMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/createsave").toString(),
-                is("createsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("createsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -484,7 +484,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testUpdateWithIdMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/updatesave").toString(),
-                is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("updatesave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -555,7 +555,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testParentChildMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/child").toString(),
-                is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -592,7 +592,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testIndexPatternMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/pattern-12").toString(),
-                is("pattern-12=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                is("pattern-12=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]"));
     }
 
     @Test
@@ -630,7 +630,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
         assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").toString(),
-                is("pattern-format-2012-10-06=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
+                is("pattern-format-2012-10-06=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT, ts=DATE]"));
     }
 
     @Test

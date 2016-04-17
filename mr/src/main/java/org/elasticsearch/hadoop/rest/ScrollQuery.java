@@ -30,6 +30,8 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Result streaming data from a ElasticSearch query using the scan/scroll. Performs batching underneath to retrieve data in chunks.
@@ -51,12 +53,16 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
     private final Stats stats = new Stats();
 
     private boolean closed = false;
+    private boolean initialized = false;
+    private String query;
+    private BytesArray body;
 
-    ScrollQuery(RestRepository client, String scrollId, long size, ScrollReader reader) {
+    ScrollQuery(RestRepository client, String query, BytesArray body, long size, ScrollReader reader) {
         this.repository = client;
-        this.scrollId = scrollId;
         this.size = size;
         this.reader = reader;
+        this.query = query;
+        this.body = body;
     }
 
     @Override
@@ -67,14 +73,34 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             batch = Collections.emptyList();
             // typically the scroll is closed after it is consumed so this will trigger a 404
             // however we're closing it either way
-            repository.getRestClient().deleteScroll(scrollId);
+            if (StringUtils.hasText(scrollId)) {
+                repository.getRestClient().deleteScroll(scrollId);
+            }
         }
     }
 
     @Override
     public boolean hasNext() {
-        if (finished)
+        if (finished) {
             return false;
+        }
+
+        if (!initialized) {
+            initialized = true;
+            
+            try {
+                Scroll scroll = repository.scroll(query, body, reader);
+                // size is passed as a limit (since we can't pass it directly into the request) - if it's not specified (<1) just scroll the whole index
+                size = (size < 1 ? scroll.getTotalHits() : size);
+                scrollId = scroll.getScrollId();
+                batch = scroll.getHits();
+            } catch (IOException ex) {
+                throw new EsHadoopIllegalStateException(String.format("Cannot create scroll for query [%s/%s]", query, body), ex);
+            }
+            // no longer needed
+            body = null;
+            query = null;
+        }
 
         if (batch.isEmpty() || batchIndex >= batch.size()) {
             if (read >= size) {

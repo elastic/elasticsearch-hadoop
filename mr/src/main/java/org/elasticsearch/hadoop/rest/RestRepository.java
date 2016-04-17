@@ -60,6 +60,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
+import static org.elasticsearch.hadoop.rest.Request.Method.*;
+
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
  */
@@ -141,10 +143,7 @@ public class RestRepository implements Closeable, StatsAware {
      * @return a scroll query
      */
     ScrollQuery scanLimit(String query, BytesArray body, long limit, ScrollReader reader) {
-        String[] scrollInfo = client.scan(query, body);
-        String scrollId = scrollInfo[0];
-        long totalSize = (limit < 1 ? Long.parseLong(scrollInfo[1]) : limit);
-        return new ScrollQuery(this, scrollId, totalSize, reader);
+        return new ScrollQuery(this, query, body, limit, reader);
     }
 
     public void addRuntimeFieldExtractor(MetadataExtractor metaExtractor) {
@@ -450,7 +449,20 @@ public class RestRepository implements Closeable, StatsAware {
         return geoInfo;
     }
 
-    public Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
+    // used to initialize a scroll (based on a query)
+    Scroll scroll(String query, BytesArray body, ScrollReader reader) throws IOException {
+        InputStream scroll = client.execute(POST, query, body).body();
+        try {
+            return reader.read(scroll);
+        } finally {
+            if (scroll instanceof StatsAware) {
+                stats.aggregate(((StatsAware) scroll).stats());
+            }
+        }
+    }
+    
+    // consume the scroll
+    Scroll scroll(String scrollId, ScrollReader reader) throws IOException {
         InputStream scroll = client.scroll(scrollId);
         try {
             return reader.read(scroll);
@@ -492,8 +504,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void delete() {
-        boolean isEs20 = SettingsUtils.isEs20(settings);
-        if (!isEs20) {
+        if (SettingsUtils.isEs1x(settings)) {
             // ES 1.x - delete as usual
             client.delete(resourceW.indexAndType());
         }
@@ -501,17 +512,24 @@ public class RestRepository implements Closeable, StatsAware {
             // try first a blind delete by query (since the plugin might be installed)
             client.delete(resourceW.indexAndType() + "/_query?q=*");
 
-            // in ES 2.0 this means scrolling and deleting the docs by hand...
-
+            // in ES 2.0 and higher this means scrolling and deleting the docs by hand...
             // do a scroll-scan without source
 
             // as this is a delete, there's not much value in making this configurable so we just go for some sane/safe defaults
             // 10m scroll timeout
             // 250 results
 
-            int batchSize = 250;
-            String scanQuery = resourceW.indexAndType() + "/_search?search_type=scan&scroll=10m&size=" + batchSize + "&_source=false";
-
+            int batchSize = 500;
+            StringBuilder sb = new StringBuilder(resourceW.indexAndType());
+            sb.append("/_search?scroll=10m&_source=false&size=");
+            sb.append(batchSize);
+            if (SettingsUtils.isEs50(settings)) {
+                sb.append("&sort=_doc");
+            }
+            else {
+                sb.append("&search_type=scan");
+            }
+            String scanQuery = sb.toString();
             ScrollReader scrollReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader()));
 
             // start iterating

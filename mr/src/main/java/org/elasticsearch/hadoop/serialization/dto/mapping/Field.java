@@ -126,43 +126,6 @@ public class Field implements Serializable {
             // see whether the field was declared
             Object type = content.get("type");
             if (type instanceof String) {
-
-                // handle multi_field separately as it is a meta-type
-                // and it never shows up in the actual results
-                if ("multi_field".equals(type.toString())) {
-                    // consume inner "fields"
-                    Map<String, Object> fields = (Map<String, Object>) content.get("fields");
-                    // find default field
-                    Map<String, Object> defaultField = (Map<String, Object>) fields.get(key);
-
-                    FieldType defaultType = null;
-
-                    // check if there's no default field - corner case but is possible on 0.90
-                    // if so, check the field types and if all are the same, use that
-                    if (defaultField == null) {
-                        String defaultFieldName = null;
-                        for (Entry<String, Object> subfield : fields.entrySet()) {
-                            Map<String, Object> subFieldDef = (Map<String, Object>) subfield.getValue();
-                            FieldType subFieldType = FieldType.parse(subFieldDef.get("type").toString());
-                            if (defaultType != null) {
-                                if (defaultType != subFieldType) {
-                                    throw new EsHadoopIllegalArgumentException(
-                                            String.format("Ambiguous mapping, multi_field [%s] provides no default field and subfields have different mapping types [%s=%s], [%s=%s]",
-                                                    key, defaultFieldName, defaultType, subfield.getKey(), subFieldType));
-                                }
-                            }
-                            else {
-                                defaultFieldName = subfield.getKey();
-                                defaultType = subFieldType;
-                            }
-                        }
-                    }
-                    else {
-                        defaultType = FieldType.parse(defaultField.get("type").toString());
-                    }
-                    return new Field(key, defaultType);
-                }
-
                 fieldType = FieldType.parse(type.toString());
 
                 if (FieldType.isRelevant(fieldType)) {

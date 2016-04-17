@@ -19,12 +19,13 @@
 package org.elasticsearch.hadoop;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Properties;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.hadoop.script.GroovyPlugin;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
@@ -53,19 +54,19 @@ public class EsEmbeddedServer {
         //props.setProperty("es.index.store.type", "memory");
         // props.setProperty("gateway.type", "none");
         if (!hasSlave) {
-            props.setProperty("discovery.zen.ping.multicast", "false");
-            props.setProperty("discovery.zen.ping.multicast.enabled", "false");
+            //props.setProperty("discovery.zen.ping.multicast", "false");
+            //props.setProperty("discovery.zen.ping.multicast.enabled", "false");
         }
         //props.setProperty("script.disable_dynamic", "false");
         props.setProperty("script.inline", "true");
         props.setProperty("script.indexed", "true");
 
         props.setProperty("node.local", "false");
-        props.setProperty("node.client", "false");
+        // props.setProperty("node.client", "false");
         props.setProperty("cluster.name", clusterName);
 
         Settings settings = Settings.settingsBuilder().put(props).build();
-        Collection plugins = Collections.emptyList(); // Arrays.asList(GroovyPlugin.class);
+        Collection plugins = Arrays.asList(GroovyPlugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
 

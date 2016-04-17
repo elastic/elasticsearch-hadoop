@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -34,7 +33,7 @@ import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
-import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS;
+import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
 
 /**
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
@@ -42,11 +41,6 @@ import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL
 public abstract class Settings {
 
     public String getNodes() {
-        String host = getProperty(ES_HOST);
-        if (StringUtils.hasText(host)) {
-            throw new EsHadoopIllegalArgumentException(String.format("`%s` property has been deprecated - use `%s` instead", ES_HOST, ES_NODES));
-        }
-
         return getProperty(ES_NODES, ES_NODES_DEFAULT);
     }
 
@@ -128,11 +122,6 @@ public abstract class Settings {
 
     public String getScrollFields() {
         return getProperty(INTERNAL_ES_TARGET_FIELDS);
-    }
-
-    @Deprecated
-    public boolean getScrollEscapeUri() {
-        return Booleans.parseBoolean(getProperty(ES_SCROLL_ESCAPE_QUERY_URI, ES_SCROLL_ESCAPE_QUERY_URI_DEFAULT));
     }
 
     public String getSerializerValueWriterClassName() {

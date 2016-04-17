@@ -61,40 +61,6 @@ public class FieldTest {
     }
 
     @Test
-    public void testMultiFieldParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_field.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("tweet", fl.name());
-        assertEquals(1, fl.properties().length);
-        Field nested = fl.properties()[0];
-        assertEquals("name", nested.name());
-        assertEquals(FieldType.STRING, nested.type());
-    }
-
-    @Test
-    public void testMultiFieldWithoutDefaultFieldParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_field_no_default.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("tweet", fl.name());
-        assertEquals(1, fl.properties().length);
-        Field nested = fl.properties()[0];
-        assertEquals("name", nested.name());
-        assertEquals(FieldType.STRING, nested.type());
-    }
-
-    @Test(expected = EsHadoopIllegalArgumentException.class)
-    public void testMultiFieldWithoutDefaultFieldAndMultiTypesParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(
-                getClass().getResourceAsStream("multi_field_no_default_multi_types.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("tweet", fl.name());
-        assertEquals(1, fl.properties().length);
-        Field nested = fl.properties()[0];
-        assertEquals("name", nested.name());
-        assertEquals(FieldType.STRING, nested.type());
-    }
-
-    @Test
     public void testGeoParsingWithOptions() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
         Field fl = Field.parseField(value);

@@ -37,6 +37,8 @@ public enum FieldType {
     DATE,
     BINARY,
     TOKEN_COUNT,
+    // ES 5.x
+    TEXT, KEYWORD,
 
     GEO_POINT,
     GEO_SHAPE,
