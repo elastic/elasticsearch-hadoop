@@ -391,13 +391,25 @@ public class JdkValueReader implements SettingsAware, ValueReader {
                 val = parseDate(parser.longValue(), richDate);
             }
             else {
-                val = parseDate(value, richDate);
+                val=getConversDate(value,richDate);
+            	if(val==null)
+                     val = parseDate(value, richDate);
             }
         }
 
         return processDate(val);
     }
 
+     public  Object getConversDate(String date,boolean richDate){ 
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		try {
+			Date t = df.parse(date);
+	        return (richDate ? new TimestampWritable(new Timestamp(t.getTime())) : parseString(date));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
     protected Object parseDate(Long value, boolean richDate) {
         return (richDate ? createDate(value) : value);
     }
