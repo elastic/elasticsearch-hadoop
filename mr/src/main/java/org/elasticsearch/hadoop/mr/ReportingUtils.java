@@ -51,16 +51,24 @@ class ReportingUtils {
     }
 
     private static void oldApiCounter(Reporter reporter, Enum<?> counter, long value) {
-        org.apache.hadoop.mapred.Counters.Counter c = reporter.getCounter(counter);
-        if (c != null) {
-            c.increment(value);
+        try {
+            org.apache.hadoop.mapred.Counters.Counter c = reporter.getCounter(counter);
+            if (c != null) {
+                c.increment(value);
+            }
+        } catch (Exception ex) {
+            // counter unavailable
         }
     }
 
     private static void newApiCounter(TaskInputOutputContext tioc, Enum<?> counter, long value) {
-        org.apache.hadoop.mapreduce.Counter c = tioc.getCounter(counter);
-        if (c != null) {
-            CompatHandler.counter(c).increment(value);
+        try {
+            org.apache.hadoop.mapreduce.Counter c = tioc.getCounter(counter);
+            if (c != null) {
+                CompatHandler.counter(c).increment(value);
+            }
+        } catch (Exception ex) {
+            // counter unavailable
         }
     }
 }
