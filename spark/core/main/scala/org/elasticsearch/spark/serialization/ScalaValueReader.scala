@@ -18,6 +18,8 @@ import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
@@ -71,6 +73,10 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       case BOOLEAN => booleanValue(value, parser)
       case BINARY => binaryValue(parser.binaryValue())
       case DATE => date(value, parser)
+      // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
+      case GEO_POINT | GEO_SHAPE => {
+        if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser) 
+      }
       // everything else (IP, GEO) gets translated to strings
       case _ => textValue(value, parser)
     }

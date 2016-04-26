@@ -2,7 +2,6 @@ package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.PartitionDefinition;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -224,7 +223,9 @@ public abstract class RestService implements Serializable {
             Field mapping = null;
             if (!shards.isEmpty()) {
                 mapping = client.getMapping();
-                log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+                }
                 // validate if possible
                 FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
                 if (validation.isRequired()) {

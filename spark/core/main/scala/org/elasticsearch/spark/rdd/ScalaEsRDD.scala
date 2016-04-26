@@ -9,7 +9,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.elasticsearch.hadoop.PartitionDefinition
+import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.spark.serialization.ScalaValueReader
 
 private[spark] class ScalaEsRDD[T](

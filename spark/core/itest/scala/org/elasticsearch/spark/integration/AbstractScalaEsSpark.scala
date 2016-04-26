@@ -24,6 +24,7 @@ import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.asScalaBufferConverter
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -65,10 +66,16 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 
+import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.net.URI
+import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 object AbstractScalaEsScalaSpark {
-  @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
+  @transient val conf = new SparkConf()
+              .setAppName("estest")
+              .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
 
@@ -110,10 +117,18 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   val sc = AbstractScalaEsScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
 
+  private def readAsRDD(uri: URI) = {
+    // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
+    val path = Paths.get(uri)
+    // because Windows
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    sc.parallelize(lines)
+  }
+  
   @Test
   def testBasicRead() {
-    val input = TestUtils.sampleArtistsDat()
-    val data = sc.textFile(input).cache();
+    val input = TestUtils.sampleArtistsDatUri()
+    val data = readAsRDD(input).cache();
 
     assertTrue(data.count > 300)
   }
@@ -480,7 +495,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       |}""".stripMargin
     RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
 
-    val rdd = sc.textFile(TestUtils.sampleArtistsJson())
+    val rdd = readAsRDD(TestUtils.sampleArtistsJsonUri())
     EsSpark.saveJsonToEs(rdd, target)
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)
@@ -527,7 +542,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       |}""".stripMargin
     RestUtils.postData("lost", createIndex.getBytes());
 
-    val rdd = sc.textFile("some.json")
+    val rdd = readAsRDD(getClass().getResource("some.json").toURI())
     EsSpark.saveJsonToEs(rdd, target, collection.mutable.Map(cfg.toSeq: _*) += (
       ES_MAPPING_ID -> "id"))
     val esRDD = EsSpark.esRDD(sc, target, cfg)

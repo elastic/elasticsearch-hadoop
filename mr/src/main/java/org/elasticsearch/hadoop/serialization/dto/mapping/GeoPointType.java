@@ -24,10 +24,10 @@ import static org.elasticsearch.hadoop.serialization.FieldType.*;
 
 
 public enum GeoPointType implements GeoField {
-    LON_LAT_OBJECT(OBJECT, 0),
+    LAT_LON_OBJECT(OBJECT, 0),
     LAT_LON_STRING(STRING, 0),
     GEOHASH(STRING, 0),
-    LAT_LON_ARRAY(DOUBLE, 1);
+    LON_LAT_ARRAY(DOUBLE, 1);
 
     private final FieldType primitiveType;
     private final int arrayDepth;

@@ -148,10 +148,10 @@ private[sql] object SchemaUtils {
       // GEO
       case GEO_POINT => {
         val geoPoint = geoInfo.get(absoluteName) match {
-          case GeoPointType.LAT_LON_ARRAY  => DataTypes.createArrayType(DoubleType)
+          case GeoPointType.LON_LAT_ARRAY  => DataTypes.createArrayType(DoubleType)
           case GeoPointType.GEOHASH        => StringType
           case GeoPointType.LAT_LON_STRING => StringType
-          case GeoPointType.LON_LAT_OBJECT => {
+          case GeoPointType.LAT_LON_OBJECT => {
             val lon = DataTypes.createStructField("lat", DoubleType, true)
             val lat = DataTypes.createStructField("lon", DoubleType, true)
             DataTypes.createStructType(Array(lon,lat)) 

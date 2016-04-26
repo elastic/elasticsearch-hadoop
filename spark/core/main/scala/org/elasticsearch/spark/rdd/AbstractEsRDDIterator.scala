@@ -5,7 +5,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.TaskKilledException
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.RestService
-import org.elasticsearch.hadoop.PartitionDefinition
+import org.elasticsearch.hadoop.rest.PartitionDefinition
 
 private[spark] abstract class AbstractEsRDDIterator[T](
     val context: TaskContext,

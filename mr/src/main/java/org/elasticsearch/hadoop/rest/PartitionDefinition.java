@@ -1,5 +1,6 @@
-package org.elasticsearch.hadoop;
+package org.elasticsearch.hadoop.rest;
 
+import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;

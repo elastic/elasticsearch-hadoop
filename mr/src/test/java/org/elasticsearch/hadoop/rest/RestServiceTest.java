@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.PartitionDefinition;
 import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
 import org.junit.Before;
 import org.junit.Test;

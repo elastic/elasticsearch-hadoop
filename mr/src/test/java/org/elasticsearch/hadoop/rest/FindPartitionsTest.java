@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.rest;
 
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.PartitionDefinition;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.junit.Test;
@@ -35,6 +34,7 @@ import java.util.Map;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ;
 import static org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder.MATCH_ALL;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 

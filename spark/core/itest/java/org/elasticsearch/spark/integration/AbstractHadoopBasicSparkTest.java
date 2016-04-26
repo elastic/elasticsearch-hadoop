@@ -18,12 +18,12 @@
  */
 package org.elasticsearch.spark.integration;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
 import java.io.Serializable;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -41,19 +41,28 @@ import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-
-import scala.Tuple2;
 
 import com.esotericsoftware.kryo.Kryo;
 
+import static org.junit.Assert.*;
+
+import static org.hamcrest.Matchers.*;
+
+import static scala.collection.JavaConversions.*;
+import scala.Tuple2;
+
 public class AbstractHadoopBasicSparkTest implements Serializable {
 
-    private transient final SparkConf conf = new SparkConf().setMaster("local").setAppName("basictest");
+    private transient final SparkConf conf = new SparkConf()
+            .setAppName("basictest")
+            .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
     private transient SparkConf cfg = null;
     private transient JavaSparkContext sc;
 
@@ -72,14 +81,14 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
     }
 
     @Test
-    public void testBasicRead() {
-        String input = TestUtils.sampleArtistsDat();
+    public void testBasicRead() throws Exception {
         sc = new JavaSparkContext(cfg);
-        JavaRDD<String> data = sc.textFile(input).cache();
+        JavaRDD<String> data = readAsRDD(TestUtils.sampleArtistsDatUri()).cache();
 
         assertThat((int) data.count(), is(greaterThan(300)));
 
         long radioHead = data.filter(new Function<String, Boolean>() {
+            @Override
             public Boolean call(String s) { return s.contains("Radiohead"); }
         }).count();
 
@@ -87,6 +96,7 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
         assertEquals(1, radioHead);
 
         long megadeth = data.filter(new Function<String, Boolean>() {
+            @Override
             public Boolean call(String s) { return s.contains("Megadeth"); }
         }).count();
 
@@ -103,6 +113,7 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
     }
 
     @Test
+    @Ignore("Spark 2.0 requires Hadoop 2.x")
     public void testHadoopOldApiRead() throws Exception {
         cfg.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
         //clone.set("spark.kryo.registrator", MyRegistrator.class.getName());
@@ -124,25 +135,30 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
         JavaPairRDD data = sc.hadoopRDD(hdpConf, EsInputFormat.class, NullWritable.class, MapWritable.class);
 
         long messages = data.filter(new Function<Tuple2<Text, MapWritable>, Boolean>() {
+            @Override
             public Boolean call(Tuple2<Text, MapWritable> t) { return t._2.containsKey(new Text("message")); }
         }).count();
 
         JavaRDD map = data.map(new Function<Tuple2<Text, MapWritable>, Map<String, Object>>() {
+            @Override
             public Map<String, Object> call(Tuple2<Text, MapWritable> v1) throws Exception {
                 return (Map<String, Object>) WritableUtils.fromWritable(v1._2);
             }
         });
 
         JavaRDD fooBar = data.map(new Function<Tuple2<Text, MapWritable>, String>() {
+            @Override
             public String call(Tuple2<Text, MapWritable> v1) throws Exception {
                 return v1._1.toString();
             }
         });
 
         assertThat((int) data.count(), is(2));
-        System.out.println(data.take(10));
-        System.out.println(messages);
-        System.out.println(fooBar.take(2));
-        System.out.println(map.take(10));
     }
+    
+    private JavaRDD<String> readAsRDD(URI uri) throws Exception {
+        // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
+        Path path = Paths.get(uri);
+        return sc.parallelize(Files.readAllLines(path, StandardCharsets.ISO_8859_1));
+   }
 }

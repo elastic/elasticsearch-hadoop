@@ -22,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 
 import org.apache.hadoop.conf.Configuration;
@@ -74,15 +76,19 @@ public class TestUtils {
 
     public static String sampleQueryDsl() {
         // use the URI here to be properly loaded
-        return localUri("/org/elasticsearch/hadoop/integration/query.dsl");
+        return localUri("/org/elasticsearch/hadoop/integration/query.dsl").toString();
     }
 
     public static String sampleQueryUri() {
-        return localUri("/org/elasticsearch/hadoop/integration/query.uri");
+        return localUri("/org/elasticsearch/hadoop/integration/query.uri").toString();
     }
 
     public static String sampleArtistsJson() {
         return localResource("/artists.json");
+    }
+
+    public static URI sampleArtistsJsonUri() {
+        return localUri("/artists.json");
     }
 
     public static String sampleArtistsJson(Configuration cfg) {
@@ -91,6 +97,10 @@ public class TestUtils {
 
     public static String sampleArtistsDat() {
         return localResource("/artists.dat");
+    }
+
+    public static URI sampleArtistsDatUri() {
+        return localUri("/artists.dat");
     }
 
     public static String sampleArtistsDat(Configuration cfg) {
@@ -110,7 +120,11 @@ public class TestUtils {
         return TestSettings.class.getResource(resource).getFile();
     }
 
-    private static String localUri(String resource) {
-        return TestSettings.class.getResource(resource).toString();
+    private static URI localUri(String resource) {
+        try {
+            return TestSettings.class.getResource(resource).toURI();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
