@@ -357,7 +357,7 @@ See `gradlew tasks` for more information.
 
 To create a distributable zip, run `gradlew distZip` from the command line; once completed you will find the jar in `build/libs`.
 
-To build the project, JVM 7 (Oracle one is recommended) or higher is required.
+To build the project, JVM 8 (Oracle one is recommended) or higher is required.
 
 ## License
 This project is released under version 2.0 of the [Apache License][]
