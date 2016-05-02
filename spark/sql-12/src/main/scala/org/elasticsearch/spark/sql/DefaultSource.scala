@@ -1,17 +1,18 @@
 package org.elasticsearch.spark.sql
 
+import java.util.Arrays
+
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
-import org.apache.spark.annotation.AlphaComponent
+
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.sources.BaseRelation
-import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.sources.PrunedScan
 import org.apache.spark.sql.sources.RelationProvider
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 
 private[sql] class DefaultSource extends RelationProvider {
   override def createRelation(
@@ -50,7 +51,7 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
   def buildScan(requiredColumns: Array[String]) = {
     val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
     paramWithProjection += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> 
-                            StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+                            StringUtils.concatenateAndUriEncode(Arrays.asList(requiredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
 
     if (cfg.getReadMetadata) {
       val metadata = cfg.getReadMetadataField

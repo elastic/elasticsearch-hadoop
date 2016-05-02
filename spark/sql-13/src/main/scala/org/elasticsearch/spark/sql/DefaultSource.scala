@@ -1,13 +1,14 @@
 package org.elasticsearch.spark.sql
 
+import java.util.Arrays
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
-import org.apache.commons.logging.LogFactory
-import org.apache.spark.annotation.DeveloperApi
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -49,10 +50,11 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+
 import javax.xml.bind.DatatypeConverter
-import org.elasticsearch.hadoop.util.Version
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -120,7 +122,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
     paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                      StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+                        StringUtils.concatenateAndUriEncode(Arrays.asList(requiredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
 
     // scroll fields only apply to source fields; handle metadata separately
     if (cfg.getReadMetadata) {

@@ -1,19 +1,20 @@
 package org.elasticsearch.spark.sql
 
-import java.util.Properties
 import java.util.{ LinkedHashSet => JHashSet }
 import java.util.{ List => JList }
-import java.util.{ Map => JMap }
 import java.util.Properties
+
 import scala.Array.fallbackCanBuildFrom
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql.MapType
 import org.apache.spark.sql.catalyst.types.ArrayType
 import org.apache.spark.sql.catalyst.types.BinaryType
 import org.apache.spark.sql.catalyst.types.BooleanType
 import org.apache.spark.sql.catalyst.types.ByteType
+import org.apache.spark.sql.catalyst.types.DataType
 import org.apache.spark.sql.catalyst.types.DoubleType
 import org.apache.spark.sql.catalyst.types.FloatType
 import org.apache.spark.sql.catalyst.types.IntegerType
@@ -47,12 +48,11 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.Assert
 import org.elasticsearch.hadoop.util.IOUtils
+import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.spark.sql.Utils.ROOT_LEVEL_NAME
-import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
-import org.elasticsearch.hadoop.util.SettingsUtils
-import org.apache.spark.sql.catalyst.types.DataType
+import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 
 private[sql] object SchemaUtils {
   case class Schema(field: Field, struct: StructType)
@@ -87,7 +87,8 @@ private[sql] object SchemaUtils {
         if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
-          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet()));
+          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, 
+                StringUtils.concatenateAndUriEncode(Field.toLookupMap(field).keySet(), StringUtils.DEFAULT_DELIMITER));
         }
         return field
       }

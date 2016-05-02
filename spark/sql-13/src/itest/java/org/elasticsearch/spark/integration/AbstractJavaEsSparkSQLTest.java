@@ -128,7 +128,6 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		DataFrame nameRDD = sqc
 				.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10");
 		assertEquals(10, nameRDD.count());
-
 	}
 
 	private DataFrame artistsAsDataFrame() {

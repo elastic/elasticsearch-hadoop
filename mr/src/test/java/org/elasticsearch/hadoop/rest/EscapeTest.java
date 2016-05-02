@@ -23,9 +23,9 @@ import java.util.Arrays;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 
 public class EscapeTest {
 
@@ -41,4 +41,9 @@ public class EscapeTest {
         assertThat(uri, is("%26a,%24b,%23c,%21d,%2Fe,%3Af"));
     }
 
+    @Test
+    public void testEscapePercent() {
+        String uri = StringUtils.encodeQuery("%s");
+        assertThat(uri, is("%25s"));
+    }
 }

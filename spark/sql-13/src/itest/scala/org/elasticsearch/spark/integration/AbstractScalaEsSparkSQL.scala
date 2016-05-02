@@ -335,6 +335,21 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val results = sqc.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10")
     //results.take(5).foreach(println)
   }
+  
+  @Test
+  def test0WriteFieldNameWithPercentage() {
+    val target = wrapIndex("spark-test/scala-sql-field-with-percentage")
+
+    val trip1 = Map("%s" -> "special")
+
+    sc.makeRDD(Seq(trip1)).saveToEs(target)
+  }
+  
+  @Test
+  def test1ReadFieldNameWithPercentage() {
+    val target = wrapIndex("spark-test/scala-sql-field-with-percentage")
+    sqc.esDF(target).count()
+  }
 
   @Test
   def testEsDataFrame1Write() {
