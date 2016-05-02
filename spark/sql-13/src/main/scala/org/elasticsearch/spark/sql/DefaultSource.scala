@@ -139,7 +139,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
 
     paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                      StringUtils.concatenateAndUriEncode(Arrays.asList(filteredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
+                      StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
     
     if (filters != null && filters.size > 0) {

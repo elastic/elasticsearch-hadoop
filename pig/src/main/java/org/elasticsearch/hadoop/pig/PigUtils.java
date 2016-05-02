@@ -153,7 +153,7 @@ class PigUtils {
             addField(field, fields, alias, "");
         }
 
-        return StringUtils.concatenateAndUriEncode(fields, ",");
+        return StringUtils.concatenate(fields, ",");
     }
 
     private static void addField(RequiredField field, List<String> fields, FieldAlias fa, String currentNode) {

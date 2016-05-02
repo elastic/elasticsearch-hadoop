@@ -135,7 +135,7 @@ public class QueryBuilder {
         // override fields
         if (StringUtils.hasText(fields)) {
             // ES 1.0
-            uriParams.put("_source", fields);
+            uriParams.put("_source", StringUtils.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
             uriParams.remove("fields");
         }
         else {
