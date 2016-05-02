@@ -1,13 +1,14 @@
 package org.elasticsearch.spark.sql
 
+import java.util.Arrays
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
-import org.apache.commons.logging.LogFactory
-import org.apache.spark.annotation.DeveloperApi
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -48,12 +49,13 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
+import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+
 import javax.xml.bind.DatatypeConverter
-import org.elasticsearch.hadoop.util.Version
-import org.elasticsearch.hadoop.util.SettingsUtils
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -136,7 +138,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
 
     paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                      StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+                      StringUtils.concatenateAndUriEncode(Arrays.asList(filteredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
 
     
     if (filters != null && filters.size > 0) {
