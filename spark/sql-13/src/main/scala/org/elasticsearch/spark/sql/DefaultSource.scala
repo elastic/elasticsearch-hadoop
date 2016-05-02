@@ -76,7 +76,8 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
       case Overwrite      => relation.insert(data, true)
       case ErrorIfExists  => {
         if (relation.isEmpty()) relation.insert(data, false)
-        else throw new EsHadoopIllegalStateException(s"Index ${relation.cfg.getResourceWrite} already exists")
+        else throw new EsHadoopIllegalStateException(s"SaveMode is set to ErrorIfExists and " + 
+                s"index ${relation.cfg.getResourceWrite} exists and contains data. Consider changing the SaveMode")
       }
       case Ignore         => if (relation.isEmpty()) { relation.insert(data, false) }
     }
