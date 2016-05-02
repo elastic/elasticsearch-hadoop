@@ -59,13 +59,13 @@ public class EsEmbeddedServer {
         }
         //props.setProperty("script.disable_dynamic", "false");
         props.setProperty("script.inline", "true");
-        props.setProperty("script.indexed", "true");
+        //props.setProperty("script.indexed", "true");
 
         props.setProperty("node.local", "false");
         // props.setProperty("node.client", "false");
         props.setProperty("cluster.name", clusterName);
 
-        Settings settings = Settings.settingsBuilder().put(props).build();
+        Settings settings = Settings.builder().put(props).build();
         Collection plugins = Arrays.asList(GroovyPlugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
