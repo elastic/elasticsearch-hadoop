@@ -18,7 +18,16 @@
  */
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
@@ -42,7 +51,7 @@ public abstract class MappingUtils {
 
     public static void validateMapping(String fields, Field mapping, FieldPresenceValidation validation, Log log) {
         if (StringUtils.hasText(fields)) {
-            validateMapping(StringUtils.tokenizeAndUriDecode(fields, ","), mapping, validation, log);
+            validateMapping(StringUtils.tokenize(fields), mapping, validation, log);
         }
     }
 
@@ -129,7 +138,7 @@ public abstract class MappingUtils {
             return field;
         }
         if (includes.isEmpty() && excludes.isEmpty()) {
-          return field;
+            return field;
         }
 
         List<Field> filtered = new ArrayList<Field>();
@@ -147,7 +156,7 @@ public abstract class MappingUtils {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
 
         boolean intact = true;
-        
+
         if (FieldFilter.filter(fieldName, includes, excludes).matched) {
             if (FieldType.isCompound(field.type())) {
                 List<Field> nested = new ArrayList<Field>();
@@ -172,12 +181,12 @@ public abstract class MappingUtils {
 
         return filter(mapping, StringUtils.tokenize(readIncludeCfg), StringUtils.tokenize(readExcludeCfg));
     }
-    
+
     public static Map<String, GeoType> geoFields(Field rootMapping) {
         if (rootMapping == null) {
-            return Collections.emptyMap(); 
+            return Collections.emptyMap();
         }
-        
+
         Map<String, GeoType> geoFields = new LinkedHashMap<String, GeoType>();
         // ignore the root field
         for (Field nestedField : rootMapping.properties()) {
@@ -185,10 +194,10 @@ public abstract class MappingUtils {
         }
         return geoFields;
     }
-    
+
     private static void findGeo(Field field, String parentName, Map<String, GeoType> geoFields) {
         String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
-        
+
         if (FieldType.GEO_POINT == field.type()) {
             geoFields.put(fieldName, GeoType.GEO_POINT);
         }
@@ -209,7 +218,7 @@ public abstract class MappingUtils {
         if (geoType == GeoType.GEO_SHAPE) {
             return doParseGeoShapeInfo(parsedContent);
         }
-        
+
         throw new EsHadoopIllegalArgumentException(String.format(Locale.ROOT, "Unknown GeoType %s", geoType));
     }
 
@@ -222,7 +231,7 @@ public abstract class MappingUtils {
         }
         if (parsedContent instanceof String) {
             // check whether it's lat/lon or geohash
-            return ((String) parsedContent).contains(",") ? GeoPointType.LAT_LON_STRING : GeoPointType.GEOHASH;  
+            return ((String) parsedContent).contains(",") ? GeoPointType.LAT_LON_STRING : GeoPointType.GEOHASH;
         }
 
         return GeoPointType.LON_LAT_OBJECT;

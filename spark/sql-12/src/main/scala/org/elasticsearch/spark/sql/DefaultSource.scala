@@ -51,7 +51,7 @@ private [sql] case class ElasticsearchRelation(parameters: Map[String, String])
   def buildScan(requiredColumns: Array[String]) = {
     val paramWithProjection = LinkedHashMap[String, String]() ++ parameters
     paramWithProjection += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> 
-                            StringUtils.concatenateAndUriEncode(Arrays.asList(requiredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
+                            StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
     if (cfg.getReadMetadata) {
       val metadata = cfg.getReadMetadataField

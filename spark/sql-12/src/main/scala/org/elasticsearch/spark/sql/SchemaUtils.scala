@@ -88,7 +88,7 @@ private[sql] object SchemaUtils {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controller through the dedicated config setting
           cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, 
-                StringUtils.concatenateAndUriEncode(Field.toLookupMap(field).keySet(), StringUtils.DEFAULT_DELIMITER));
+                StringUtils.concatenate(Field.toLookupMap(field).keySet(), StringUtils.DEFAULT_DELIMITER));
         }
         return field
       }

@@ -84,7 +84,7 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
                 MappingUtils.validateMapping(fields, mapping, validation, log);
             }
 
-            input = QueryBuilder.query(settings).fields(StringUtils.concatenateAndUriEncode(fields,  ",")).
+            input = QueryBuilder.query(settings).fields(StringUtils.concatenate(fields, ",")).
                     build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());

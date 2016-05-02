@@ -123,7 +123,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
     paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                        StringUtils.concatenateAndUriEncode(Arrays.asList(requiredColumns.asInstanceOf[Array[Object]]), StringUtils.DEFAULT_DELIMITER))
+                        StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
 
     // scroll fields only apply to source fields; handle metadata separately
     if (cfg.getReadMetadata) {
