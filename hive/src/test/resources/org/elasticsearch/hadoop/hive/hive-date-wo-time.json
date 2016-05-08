@@ -1,0 +1,9 @@
+{
+    "date-wo-time" : {
+        "properties" : {
+            "load_date" : {
+                "type" : "date"
+            }
+        }
+    }
+}

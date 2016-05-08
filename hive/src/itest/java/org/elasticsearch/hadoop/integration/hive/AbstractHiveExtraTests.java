@@ -104,4 +104,31 @@ public class AbstractHiveExtraTests {
         assertThat(result.size(), is(1));
         assertThat(result.toString(), containsString("2014-08-05"));
     }
+
+    @Test
+    public void testDateWoTime() throws Exception {
+        String resource = "hive/date-wo-time";
+        RestUtils.touch("hive");
+        RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date-wo-time.json");
+
+        RestUtils.refresh("hive");
+
+        String drop = "DROP TABLE IF EXISTS isodatewotime";
+        String create = "CREATE EXTERNAL TABLE isodatewotime ("
+                + "id  BIGINT,"
+                + "load_date DATE)"
+                + HiveSuite.tableProps("hive/date-wo-time", null, "'es.mapping.id'='id'");
+
+
+        String insert = "INSERT INTO TABLE isodatewotime VALUES (1, '2016-05-09'), (2, '2016-05-10')";
+
+        server.execute(drop);
+        server.execute(create);
+        server.execute(insert);
+
+        List<String> result = server.execute(insert);
+
+        String string = RestUtils.get(resource + "/1");
+        assertThat(string, containsString("2016-05-09"));
+    }
 }

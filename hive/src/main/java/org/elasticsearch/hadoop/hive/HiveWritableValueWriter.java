@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import javax.xml.bind.DatatypeConverter;
@@ -88,11 +89,10 @@ public class HiveWritableValueWriter extends WritableValueWriter {
 
     // use nested class to efficiently get a hold of the underlying Date object (w/o doing reparsing, etc...)
     private static abstract class DateWritableWriter {
+        private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         static String toES(Object dateWritable) {
             DateWritable dw = (DateWritable) dateWritable;
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(dw.get().getTime());
-            return DatatypeConverter.printDate(cal);
+            return sdf.format(dw.get());
         }
     }
 }
