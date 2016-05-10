@@ -10,7 +10,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
@@ -36,6 +36,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.hamcrest.Matchers.*;
 
 import static scala.collection.JavaConversions.*;
+
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkSQLTest implements Serializable {
@@ -64,19 +65,19 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 
 	@Test
 	public void testBasicRead() throws Exception {
-		DataFrame dataFrame = artistsAsDataFrame();
+		Dataset<Row> dataFrame = artistsAsDataFrame();
 		assertTrue(dataFrame.count() > 300);
 		dataFrame.registerTempTable("datfile");
 		System.out.println(dataFrame.schema().toString());
-		assertEquals(5, dataFrame.take(5).length);
-		DataFrame results = sqc
+		assertEquals(5, dataFrame.takeAsList(5).size());
+		Dataset<Row> results = sqc
 				.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10");
-		assertEquals(10, dataFrame.take(10).length);
+		assertEquals(10, dataFrame.takeAsList(10).size());
 	}
 
 	@Test
 	public void testEsdataFrame1Write() throws Exception {
-		DataFrame dataFrame = artistsAsDataFrame();
+		Dataset<Row> dataFrame = artistsAsDataFrame();
 
 		String target = "sparksql-test/scala-basic-write";
 		JavaEsSparkSQL.saveToEs(dataFrame, target);
@@ -86,7 +87,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 
 	@Test
 	public void testEsdataFrame1WriteWithId() throws Exception {
-		DataFrame dataFrame = artistsAsDataFrame();
+		Dataset<Row> dataFrame = artistsAsDataFrame();
 
 		String target = "sparksql-test/scala-basic-write-id-mapping";
 		JavaEsSparkSQL.saveToEs(dataFrame, target,
@@ -98,7 +99,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 
     @Test
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
-    	DataFrame dataFrame = artistsAsDataFrame();
+    	Dataset<Row> dataFrame = artistsAsDataFrame();
 
         String target = "sparksql-test/scala-basic-write-exclude-mapping";
         JavaEsSparkSQL.saveToEs(dataFrame, target,ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
@@ -111,7 +112,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		String target = "sparksql-test/scala-basic-write";
 
         // DataFrame dataFrame = JavaEsSparkSQL.esDF(sqc, target);
-        DataFrame dataFrame = sqc.read().format("es").load(target);
+        Dataset<Row> dataFrame = sqc.read().format("es").load(target);
 		assertTrue(dataFrame.count() > 300);
 		String schema = dataFrame.schema().treeString();
 		System.out.println(schema);
@@ -124,12 +125,13 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		// dataFrame.take(5).foreach(println)
 
 		dataFrame.registerTempTable("basicRead");
-		DataFrame nameRDD = sqc
+		Dataset<Row> nameRDD = sqc
 				.sql("SELECT name FROM basicRead WHERE id >= 1 AND id <=10");
 		assertEquals(10, nameRDD.count());
+
 	}
 
-	private DataFrame artistsAsDataFrame() {
+	private Dataset<Row> artistsAsDataFrame() {
 		String input = TestUtils.sampleArtistsDat();
 		JavaRDD<String> data = sc.textFile(input);
 

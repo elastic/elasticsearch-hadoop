@@ -39,7 +39,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
   def write(taskContext: TaskContext, data: Iterator[T]) {
     val writer = RestService.createWriter(settings, taskContext.partitionId, -1, log)
 
-    taskContext.addOnCompleteCallback(() => writer.close())
+    taskContext.addTaskCompletionListener(taskContext => writer.close())
 
     if (runtimeMetadata) {
       writer.repository.addRuntimeFieldExtractor(metaExtractor)

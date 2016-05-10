@@ -546,7 +546,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dataFrame = sqc.sql(query)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-    val dfLoad = sqc.load("es", dsCfg.toMap)
+    val dfLoad = sqc.read.options(dsCfg.toMap).format("es").load
     println("root data frame")
     dfLoad.printSchema()
 
@@ -583,7 +583,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     allRDD.take(7).foreach(println)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-    val dfLoad = sqc.load("es", dsCfg.toMap)
+    val dfLoad = sqc.read.options(dsCfg.toMap).format("es").load
     dfLoad.show()
   }
 
@@ -610,7 +610,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 //      s" OPTIONS ($options)")
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-    sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+    sqc.read.options(dsCfg.toMap).format("org.elasticsearch.spark.sql").load
   }
 
   @Test
@@ -875,13 +875,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testJsonLoadAndSavedToEs() {
-    val input = sqc.jsonFile(this.getClass.getResource("/simple.json").toURI().toString())
+    val input = sqc.read.json(this.getClass.getResource("/simple.json").toURI().toString())
     println(input.schema.simpleString)
 
     val target = wrapIndex("spark-test/json-file")
     input.saveToEs(target, cfg)
 
-    val basic = sqc.jsonFile(this.getClass.getResource("/basic.json").toURI().toString())
+    val basic = sqc.read.json(this.getClass.getResource("/basic.json").toURI().toString())
     println(basic.schema.simpleString)
     basic.saveToEs(target, cfg)
   }
@@ -889,7 +889,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testJsonLoadAndSavedToEsSchema() {
     assumeFalse(readMetadata)
-    val input = sqc.jsonFile(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
+    val input = sqc.read.json(this.getClass.getResource("/multi-level-doc.json").toURI().toString())
     println("JSON schema")
     println(input.schema.treeString)
     println(input.schema)
@@ -899,7 +899,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     input.saveToEs(target, cfg)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
-    val dfLoad = sqc.load("org.elasticsearch.spark.sql", dsCfg.toMap)
+    val dfLoad = sqc.read.options(dsCfg.toMap).format("org.elasticsearch.spark.sql").load
     println("JSON schema")
     println(input.schema.treeString)
     println("Reading information from Elastic")
@@ -920,8 +920,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val index1Name = wrapIndex("sparksql-test/scala-basic-write")
     val index2Name = wrapIndex("sparksql-test/scala-basic-write-id-mapping")
 
-    val table1 = sqc.load(index1Name, "org.elasticsearch.spark.sql")
-    val table2 = sqc.load(index2Name, "org.elasticsearch.spark.sql")
+    val table1 = sqc.read.format(index1Name).load("org.elasticsearch.spark.sql")
+    val table2 = sqc.read.format(index2Name).load("org.elasticsearch.spark.sql")
 
     table1.persist(DISK_ONLY)
     table2.persist(DISK_ONLY_2)
@@ -1018,13 +1018,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testEsDataFrame60DataSourceSaveModeError() {
-    val srcFrame = sqc.jsonFile(this.getClass.getResource("/small-sample.json").toURI().toString())
+    val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
     val index = wrapIndex("sparksql-test/savemode_error")
     val table = wrapIndex("save_mode_error")
 
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.ErrorIfExists)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.ErrorIfExists).save(index)
     try {
-      srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.ErrorIfExists)
+      srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.ErrorIfExists).save(index)
       fail()
     } catch {
       case _: Throwable => // swallow
@@ -1033,45 +1033,45 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testEsDataFrame60DataSourceSaveModeAppend() {
-    val srcFrame = sqc.jsonFile(this.getClass.getResource("/small-sample.json").toURI().toString())
+    val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
     srcFrame.printSchema()
     val index = wrapIndex("sparksql-test/savemode_append")
     val table = wrapIndex("save_mode_append")
 
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Append)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Append).save(index)
     val df = EsSparkSQL.esDF(sqc, index)
 
     assertEquals(3, df.count())
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Append)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Append).save(index)
     assertEquals(6, df.count())
   }
 
   @Test
   def testEsDataFrame60DataSourceSaveModeOverwrite() {
-    val srcFrame = sqc.jsonFile(this.getClass.getResource("/small-sample.json").toURI().toString())
+    val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
     val index = wrapIndex("sparksql-test/savemode_overwrite")
     val table = wrapIndex("save_mode_overwrite")
 
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Overwrite)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).save(index)
     val df = EsSparkSQL.esDF(sqc, index)
 
     assertEquals(3, df.count())
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Overwrite)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).save(index)
     assertEquals(3, df.count())
   }
 
   @Test
   def testEsDataFrame60DataSourceSaveModeIgnore() {
-    val srcFrame = sqc.jsonFile(this.getClass.getResource("/small-sample.json").toURI().toString())
+    val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
     val index = wrapIndex("sparksql-test/savemode_ignore")
     val table = wrapIndex("save_mode_ignore")
 
-    srcFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Ignore)
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Ignore).save(index)
     val df = EsSparkSQL.esDF(sqc, index)
 
     assertEquals(3, df.count())
     // should not go through
-    artistsAsDataFrame.save(index, "org.elasticsearch.spark.sql", SaveMode.Ignore)
+    artistsAsDataFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Ignore).save(index)
     // if it does, this will likely throw an error
     assertEquals(3, df.count())
   }

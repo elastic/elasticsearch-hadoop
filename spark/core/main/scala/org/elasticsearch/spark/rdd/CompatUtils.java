@@ -12,8 +12,6 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import scala.Function0;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
 
 abstract class CompatUtils {
 
@@ -80,11 +78,10 @@ abstract class CompatUtils {
         }
 
         static void addOnCompletition(TaskContext taskContext, final Function0<?> function) {
-            taskContext.addOnCompleteCallback(new AbstractFunction0() {
+            taskContext.addTaskCompletionListener(new TaskCompletionListener() {
                 @Override
-                public BoxedUnit apply() {
+                public void onTaskCompletion(TaskContext context) {
                     function.apply();
-                    return BoxedUnit.UNIT;
                 }
             });
 
