@@ -34,6 +34,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchGenerationException;
@@ -43,6 +44,7 @@ import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.PathUtils;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.hdfs.blobstore.HdfsBlobStore;
 import org.elasticsearch.index.snapshots.IndexShardRepository;
@@ -146,32 +148,67 @@ public class HdfsRepository extends BlobStoreRepository implements FileSystemFac
     }
 
     private FileSystem initFileSystem(RepositorySettings repositorySettings) throws IOException {
+        Settings repoSettings = repositorySettings.settings();
 
-        Configuration cfg = new Configuration(repositorySettings.settings().getAsBoolean("load_defaults", settings.getAsBoolean("load_defaults", true)));
+        String key = "load_defaults";
+        Configuration cfg = new Configuration(repoSettings.getAsBoolean(key, settings.getAsBoolean(key, true)));
         cfg.setClassLoader(this.getClass().getClassLoader());
         cfg.reloadConfiguration();
 
-        String confLocation = repositorySettings.settings().get("conf_location", settings.get("conf_location"));
+        key = "conf_location";
+        String confLocation = repoSettings.get(key, settings.get(key));
         if (Strings.hasText(confLocation)) {
             for (String entry : Strings.commaDelimitedListToStringArray(confLocation)) {
                 addConfigLocation(cfg, entry.trim());
             }
         }
 
-        Map<String, String> map = repositorySettings.settings().getByPrefix("conf.").getAsMap();
+        // copy repo settings
+        Map<String, String> map = repoSettings.getByPrefix("conf.").getAsMap();
         for (Entry<String, String> entry : map.entrySet()) {
             cfg.set(entry.getKey(), entry.getValue());
         }
 
+        // check keytab info
+        key = "user_keytab";
+        String userKeyTab = repoSettings.get(key, settings.get(key));
+        key = "user_principal";
+        String userPrincipal = repoSettings.get(key, settings.get(key));
+        key = "user_principal_hostname";
+        String userPrincipalHostname = repoSettings.get(key, settings.get(key));
+
+        String USER_KEYTAB_KEY = "es.hadoop.userKeytab";
+        String USER_NAME_KEY = "es.hadoop.userPrincipal";
+
+        if (Strings.hasText(userKeyTab)) {
+            cfg.set(USER_KEYTAB_KEY, userKeyTab.trim());
+        }
+
+        if (Strings.hasText(userPrincipal)) {
+            cfg.set(USER_NAME_KEY, userPrincipal.trim());
+        }
+
         try {
             UserGroupInformation.setConfiguration(cfg);
+
+            if (Strings.hasText(userKeyTab)) {
+                if (Strings.hasText(userPrincipalHostname)) {
+                    SecurityUtil.login(cfg, USER_KEYTAB_KEY, USER_NAME_KEY, userPrincipalHostname.trim());
+                }
+                else {
+                    SecurityUtil.login(cfg, USER_KEYTAB_KEY, USER_NAME_KEY);
+                }
+                logger.debug("Login using keytab [{}] and principal [{}] (with hostname [{}])", userKeyTab, userPrincipal, userPrincipalHostname);
+            }
         } catch (Throwable th) {
             throw new ElasticsearchGenerationException(String.format(Locale.ROOT, "Cannot initialize Hadoop"), th);
         }
 
-        String uri = repositorySettings.settings().get("uri", settings.get("uri"));
+        key = "uri";
+        String uri = repoSettings.get(key, settings.get(key));
         URI actualUri = (uri != null ? URI.create(uri) : FileSystem.getDefaultUri(cfg));
-        String user = repositorySettings.settings().get("user", settings.get("user"));
+        key = "user";
+        String user = repoSettings.get(key, settings.get(key));
 
         try {
             // disable FS cache

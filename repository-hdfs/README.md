@@ -97,7 +97,11 @@ repositories
     conf.<key> : "<value>"          # optional - 'inlined' key=value added to the Hadoop configuration
     concurrent_streams: 5           # optional - the number of concurrent streams (defaults to 5)
     compress: "false"               # optional - whether to compress the metadata or not (default)
-    chunk_size: "10mb"              # optional - chunk size (disabled by default)
+    user: "foobar"                  # optional - user name for creating the file system. Typically used along-side the uri for `SIMPLE` authentication
+    ## Kerberos specific settings
+    user_keytab: "other/path"       # optional - user keytab
+    user_principal: "buckethead"    # optional - user's Kerberos principal name
+    user_principal_hostname: "gw"   # optional - hostname replacing the user's Kerberos principal $host
 ```
 
 NOTE: Be careful when including a paths within the `uri` setting; Some implementations ignore them completely while others consider them. In general, we recommend keeping the `uri` to a minimum and using the `path` element
