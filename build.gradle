@@ -764,17 +764,20 @@ configure(rootProject) {
         from ("build/libs") {
             into "$folderName/dist" 
             exclude "*-testing.jar"
+            exclude "*.asc"
         }
 
         eshModules.each { subproject ->
             from (subproject.jar.destinationDir) {
                 into ("${folderName}/dist")
+                exclude "*.asc"
             }
         }
         
         // add Spark-1.2 jar
         from (project(":elasticsearch-spark-1.2").jar.destinationDir) {
             into ("${folderName}/dist")
+            exclude "*.asc"
         }
         
         // execution phase only
