@@ -1,9 +1,12 @@
 apply plugin: "maven"
 apply plugin: "propdeps-maven"
-apply plugin: 'signing'
 
-signing {
+if (!version.endsWith("SNAPSHOT")) {
+  apply plugin: 'signing'
+
+  signing {
     sign configurations.archives
+  }
 }
 
 def customizePom(pom, gradleProject) {
