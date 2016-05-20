@@ -35,11 +35,11 @@ import org.elasticsearch.storm.serialization.StormTupleBytesConverter;
 import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 import static org.elasticsearch.storm.cfg.StormConfigurationOptions.*;
 

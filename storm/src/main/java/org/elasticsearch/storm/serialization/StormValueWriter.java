@@ -23,8 +23,8 @@ import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 
 public class StormValueWriter extends FilteringValueWriter<Tuple> {
 
