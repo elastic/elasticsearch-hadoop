@@ -26,7 +26,7 @@ import org.elasticsearch.storm.EsSpout;
 import org.junit.Before;
 import org.junit.Test;
 
-import backtype.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.TopologyBuilder;
 
 import static org.junit.Assert.*;
 

@@ -28,8 +28,8 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.elasticsearch.storm.EsBolt;
 import org.junit.Test;
 
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;

@@ -30,10 +30,10 @@ import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import backtype.storm.Config;
-import backtype.storm.ILocalCluster;
-import backtype.storm.LocalCluster;
-import backtype.storm.generated.StormTopology;
+import org.apache.storm.Config;
+import org.apache.storm.ILocalCluster;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.generated.StormTopology;
 
 @RunWith(Suite.class)
 public abstract class AbstractStormSuite {
