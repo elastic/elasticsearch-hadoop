@@ -258,7 +258,7 @@ val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
 val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
 val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
 
-sc.makeRDD(Seq(game, book, cd)).saveToEs("my-collection/{media-type}")  <2>
+sc.makeRDD(Seq(game, book, cd)).saveToEs("my-collection/{media_type}")  <2>
 ----
 
 <1> Document _key_ used for splitting the data. Any field can be declared (but make sure it is available in all documents)
@@ -281,7 +281,7 @@ Map<String, ?> cd = ...
 
 JavaRDD<Map<String, ?>> javaRDD =
                 jsc.parallelize(ImmutableList.of(game, book, cd));
-saveToEs(javaRDD, "my-collection/{media-type}");  <1>
+saveToEs(javaRDD, "my-collection/{media_type}");  <1>
 ----
 
 <1> Save each object based on its resource pattern, +media_type+ in this example
