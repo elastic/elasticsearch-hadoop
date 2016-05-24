@@ -21,17 +21,15 @@ package org.elasticsearch.integration.storm;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.storm.guava.collect.ImmutableList;
+import org.apache.storm.shade.com.google.common.collect.ImmutableList;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.elasticsearch.storm.EsBolt;
 import org.junit.Test;
 
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
-
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 import static org.hamcrest.CoreMatchers.containsString;

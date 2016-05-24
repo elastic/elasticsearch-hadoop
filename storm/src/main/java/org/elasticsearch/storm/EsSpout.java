@@ -29,6 +29,11 @@ import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
@@ -39,11 +44,6 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
 import org.elasticsearch.storm.cfg.TupleFailureHandling;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.IRichSpout;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })

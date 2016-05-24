@@ -231,16 +231,13 @@ allprojects { project ->
         eachDependency { details ->
             // for slf4j use each dependency since there are so many variants
             if (details.requested.name.contains("slf4j-")) {
-                if (!details.requested.name.contains("-impl")) {
                     details.useVersion "1.7.6"
-                }
             }
             if (details.requested.name.equals("servlet-api")) {
                 details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
             }
 
         }
-        force "org.apache.logging.log4j:log4j-slf4j-impl:2.5"
       }
     }
 
@@ -624,7 +621,9 @@ project(":elasticsearch-storm") {
     nestMRProject(project)
     
     dependencies {
-        provided("org.apache.storm:storm-core:$stormVersion")
+        provided("org.apache.storm:storm-core:$stormVersion") {
+            exclude module: "log4j-slf4j-impl"
+        }
 
         itestCompile "com.google.guava:guava:16.0.1"
         itestRuntime "com.twitter:carbonite:1.4.0"

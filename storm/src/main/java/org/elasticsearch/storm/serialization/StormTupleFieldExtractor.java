@@ -20,10 +20,9 @@ package org.elasticsearch.storm.serialization;
 
 import java.util.List;
 
+import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
-
-import org.apache.storm.tuple.Tuple;
 
 public class StormTupleFieldExtractor extends ConstantFieldExtractor implements FieldExplainer {
 

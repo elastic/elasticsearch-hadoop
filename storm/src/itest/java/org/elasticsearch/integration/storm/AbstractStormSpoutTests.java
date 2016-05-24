@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.storm.guava.collect.ImmutableMap;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;
@@ -80,10 +80,10 @@ public abstract class AbstractStormSpoutTests {
                 StormConfigurationOptions.ES_STORM_SPOUT_FIELDS, "message"));
 
         return Arrays.asList(new Object[][] {
-                { noAck, "storm-spout" },
-                { ack, "storm-spout-reliable" },
-                //{ ackWithSize, "storm-spout-reliable-size" },
-                { ackWithSizeNoRetries, "storm-spout-reliable-size-no-retries" } });
+            { noAck, "storm-spout" },
+            { ack, "storm-spout-reliable" },
+            //{ ackWithSize, "storm-spout-reliable-size" },
+            { ackWithSizeNoRetries, "storm-spout-reliable-size-no-retries" } });
     }
 
 }

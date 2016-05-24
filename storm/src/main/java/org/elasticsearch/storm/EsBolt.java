@@ -26,6 +26,11 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
@@ -35,13 +40,8 @@ import org.elasticsearch.storm.serialization.StormTupleBytesConverter;
 import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.IRichBolt;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Tuple;
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
-import static org.elasticsearch.storm.cfg.StormConfigurationOptions.*;
+import static org.elasticsearch.storm.cfg.StormConfigurationOptions.ES_STORM_BOLT_ACK;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class EsBolt implements IRichBolt {

@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.guava.collect.ImmutableMap;
+import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.storm.cfg.StormConfigurationOptions;
 import org.junit.After;

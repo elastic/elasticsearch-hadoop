@@ -21,7 +21,12 @@ package org.elasticsearch.integration.storm;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.storm.Config;
+import org.apache.storm.ILocalCluster;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.generated.StormTopology;
 import org.elasticsearch.hadoop.LocalEs;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
@@ -29,11 +34,6 @@ import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-
-import org.apache.storm.Config;
-import org.apache.storm.ILocalCluster;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.generated.StormTopology;
 
 @RunWith(Suite.class)
 public abstract class AbstractStormSuite {
@@ -54,6 +54,11 @@ public abstract class AbstractStormSuite {
 
         @Override
         protected void after() {
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            } catch (InterruptedException e) {
+                // ignore
+            }
             super.after();
         }
     };
@@ -104,7 +109,7 @@ public abstract class AbstractStormSuite {
             public void run() {
                 try {
                     start(name, topo);
-                    hasCompleted.waitForZero(TimeValue.timeValueSeconds(15));
+                    hasCompleted.waitForZero(TimeValue.timeValueSeconds(20));
                 } finally {
                     stop(name);
                 }
