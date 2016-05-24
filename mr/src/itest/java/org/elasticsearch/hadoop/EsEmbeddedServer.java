@@ -74,7 +74,7 @@ public class EsEmbeddedServer {
         node.start();
         // find out port
         String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
-        String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().iterator().next().getHttp().address().publishAddress().toString();
+        String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
 
         ipAndPort = StringUtils.parseIpAddress(value);
     }
