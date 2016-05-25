@@ -32,6 +32,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_A
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_TIMESTAMP
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
@@ -61,6 +62,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
+import org.elasticsearch.hadoop.util.StringUtils
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
@@ -169,6 +171,36 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertTrue(RestUtils.exists(target + "/2"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
+  }
+  
+  @Test
+  def testEsRDDWriteWithMappingTimestamp() {
+    val mapping = """{ "scala-timestamp-write": {
+      | "_timestamp" : {
+      |   "enabled":true
+      | }
+      |}
+      }""".stripMargin
+
+    val index = "spark-test"
+    val target = s"$index/scala-timestamp-write"
+    RestUtils.touch(index)
+    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    
+    
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "number" -> 1, "date" -> "2016-05-18T16:39:39.317Z")
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2, "date" -> "2016-03-18T10:11:28.123Z")
+
+    sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, Map(ES_MAPPING_ID -> "number", ES_MAPPING_TIMESTAMP -> "date", ES_MAPPING_EXCLUDE -> "date"))
+
+    assertEquals(2, EsSpark.esRDD(sc, target).count());
+    assertTrue(RestUtils.exists(target + "/1"))
+    assertTrue(RestUtils.exists(target + "/2"))
+
+    val search = RestUtils.get(target + "/_search?")
+    assertThat(search, containsString("SFO"))
+    assertThat(search, not(containsString("date")))
+    assertThat(search, containsString("_timestamp"))
   }
 
   @Test
