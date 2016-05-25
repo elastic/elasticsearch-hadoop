@@ -100,7 +100,9 @@ uploadArchives {
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
                 authentication(userName: deployUsername(), password: deployPassword())
             }
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            if (!version.endsWith("SNAPSHOT")) {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            }
         }
     }
 }
@@ -108,9 +110,12 @@ uploadArchives {
 install {
     repositories.mavenInstaller {
         customizePom(pom, project)
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        if (!version.endsWith("SNAPSHOT")) {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        }
     }
 }
+
 
 
 //
