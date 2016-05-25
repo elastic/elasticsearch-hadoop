@@ -1,6 +1,15 @@
 apply plugin: "maven"
 apply plugin: "propdeps-maven"
 
+if (!version.endsWith("SNAPSHOT")) {
+  apply plugin: 'signing'
+
+  signing {
+    sign configurations.archives
+  }
+}
+
+
 def customizePom(pom, gradleProject) {
     pom.whenConfigured { generatedPom ->
 
@@ -93,6 +102,9 @@ uploadArchives {
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
                 authentication(userName: deployUsername(), password: deployPassword())
             }
+            if (!version.endsWith("SNAPSHOT")) {
+                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+            }
         }
     }
 }
@@ -100,6 +112,9 @@ uploadArchives {
 install {
     repositories.mavenInstaller {
         customizePom(pom, project)
+        if (!version.endsWith("SNAPSHOT")) {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        }
     }
 }
 
