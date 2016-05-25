@@ -535,9 +535,13 @@ project(":elasticsearch-hadoop-hive") {
     nestMRProject(project)
     
     dependencies {
-        provided("org.apache.hive:hive-service:$hiveVersion")
+        provided("org.apache.hive:hive-service:$hiveVersion") {
+            exclude module: "log4j-slf4j-impl"
+        }
 
-        itestRuntime "org.apache.hive:hive-jdbc:$hiveVersion"
+        itestRuntime("org.apache.hive:hive-jdbc:$hiveVersion") {
+            exclude module: "log4j-slf4j-impl"
+        }
     }
 }
 
