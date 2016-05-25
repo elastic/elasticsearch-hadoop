@@ -107,4 +107,23 @@ public class AbstractPigExtraTests extends AbstractPigTests {
         String iterate = getResults("tmp-pig/pig-iterate");
         assertThat(iterate, containsString("World"));
     }
+    
+
+    @Test
+    public void testTupleSaving() throws Exception {
+
+        String script =
+                // (4,{(4,7,287),(4,7263,48)})
+                // 'es.mapping.pig.tuple.use.field.names = true' -> {"group":4,"answers":[[{"id":4,"parentId":7,"score":287}],[{"id":4,"parentId":7263,"score":48}]]}
+                // 'es.mapping.pig.tuple.use.field.names = false' -> {"group":4,"data":[[4,7,287],[4,7263,48]]}
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                "answers = LOAD 'src/itest/resources/tuple.txt' using PigStorage(',') as (id:int, parentId:int, score:int);" +
+                "grouped = GROUP answers by id;" +
+                "ILLUSTRATE grouped;" +
+                "STORE grouped into 'pig-test/tuple-structure' using org.elasticsearch.hadoop.pig.EsStorage('es.mapping.pig.tuple.use.field.names = true');";
+        pig.executeScript(script);
+
+        String string = RestUtils.get("pig-test/tuple-structure/_search?");
+        assertThat(string, containsString("parentId"));
+    }
 }
