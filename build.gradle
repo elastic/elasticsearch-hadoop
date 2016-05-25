@@ -353,6 +353,63 @@ allprojects { project ->
     uploadToS3 {
         ext.toDir = "hadoop"
     }
+
+}
+
+configure(rootProject) {
+    def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
+
+    // jar used for testing Hadoop remotely (es-hadoop + tests)
+    task hadoopTestingJar(type: Jar, dependsOn: jar) {
+        eshModules.each { subproject ->
+            from subproject.sourceSets.test.output
+            from subproject.sourceSets.main.output
+            from subproject.sourceSets.itest.output
+        }
+        classifier = 'testing'
+        
+        logger.info("Created Remote Testing Jar")
+    }
+}
+
+allprojects { project ->
+    task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
+        testClassesDir = sourceSets.itest.output.classesDir
+        classpath = sourceSets.itest.runtimeClasspath
+        excludes = ["**/Abstract*.class"]
+        
+        ignoreFailures = true
+        
+        minHeapSize = "256m"
+        maxHeapSize = "768m"
+        if (!java8)
+            jvmArgs '-XX:MaxPermSize=496m'
+
+        testLogging {
+            displayGranularity 0
+            events "started", "failed" //, "standardOut", "standardError"
+            exceptionFormat "full"
+            showCauses true
+            showExceptions true
+            showStackTraces true
+            stackTraceFilters "groovy"
+            minGranularity 2
+            maxGranularity 2
+        }
+        
+        reports.html.enabled = false
+        
+        jacoco {
+            enabled = project.hasProperty("enableJacoco")
+            append = true
+            destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
+            excludes = ["org.elasticsearch.spark.*"]
+            
+            if (enabled) {
+                System.setProperty("log4j.configuration", "$nullLog4jConfig")
+            }
+        }
+    }
 }
 
 project(":elasticsearch-hadoop-mr") {
@@ -631,62 +688,8 @@ project(":elasticsearch-storm") {
     
     // add itest to Eclipse
     //eclipse.classpath.plusConfigurations += [configurations.itestCompile]
-}
-
-configure(rootProject) {
-    def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
-
-    // jar used for testing Hadoop remotely (es-hadoop + tests)
-    task hadoopTestingJar(type: Jar, dependsOn: jar) {
-        eshModules.each { subproject ->
-            from subproject.sourceSets.test.output
-            from subproject.sourceSets.main.output
-            from subproject.sourceSets.itest.output
-        }
-        classifier = 'testing'
-        
-        logger.info("Created Remote Testing Jar")
-    }
-}
-
-allprojects { project ->
-    task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
-        testClassesDir = sourceSets.itest.output.classesDir
-        classpath = sourceSets.itest.runtimeClasspath
-        excludes = ["**/Abstract*.class"]
-        
-        ignoreFailures = true
-        
-        minHeapSize = "256m"
-        maxHeapSize = "768m"
-        if (!java8)
-            jvmArgs '-XX:MaxPermSize=496m'
-
-        testLogging {
-            displayGranularity 0
-            events "started", "failed" //, "standardOut", "standardError"
-            exceptionFormat "full"
-            showCauses true
-            showExceptions true
-            showStackTraces true
-            stackTraceFilters "groovy"
-            minGranularity 2
-            maxGranularity 2
-        }
-        
-        reports.html.enabled = false
-        
-        jacoco {
-            enabled = project.hasProperty("enableJacoco")
-            append = true
-            destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
-            excludes = ["org.elasticsearch.spark.*"]
-            
-            if (enabled) {
-                System.setProperty("log4j.configuration", "$nullLog4jConfig")
-            }
-        }
-    }
+    
+    integrationTest.enabled = false
 }
 
 configure(rootProject) {
