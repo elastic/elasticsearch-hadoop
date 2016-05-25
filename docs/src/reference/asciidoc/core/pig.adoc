@@ -73,10 +73,10 @@ IMPORTANT: Pig definitions are replaced as are; even though the syntax allows _p
 ==== Tuple field names
 
 Among the http://pig.apache.org/docs/r0.12.1/basic.html#data-types[various types] available in Pig, ++tuple++s are used the most. Tuples are defined as ``ordered sets of fields'' (e.g. `(19,2)`) however structurally they are shaped
-as ordered _maps_ since each field has a name, which may be defined or not (e.g. `(field:19, another:2)`).
+as ordered _maps_ since each field has a name, which may be defined or not (e.g. `(field:19, another:2)`). The _ordered_ aspect is important and forces {eh} to use JSON arrays for tuples  (using JSON objects is not an option as it does not preserve ordering besides the fact that it requires keys/names which might be or not available in a tuple).
 Obeying the rule of http://en.wikipedia.org/wiki/Principle_of_least_astonishment[least surprise], {eh} by default will _disregard_ a tuple field names, both when writing and reading.
 
-To change this behavior (which in effect means treating tuples as maps instead of sets or arrays), use the boolean property `es.mapping.pig.tuple.use.field.names` (by default `false`) and set it to `true`.
+To change this behavior (which in effect means treating tuples as arrays of maps instead of arrays), use the boolean property `es.mapping.pig.tuple.use.field.names` (by default `false`) and set it to `true`.
 
 The table below illustrates the difference between the two settings:
 
@@ -91,8 +91,8 @@ The table below illustrates the difference between the two settings:
 
 3+h| `es.mapping.pig.tuple.use.field.names` *`true`*
 
-| `(foo: (nr:int, name:chararray))` | `(1,"kimchy")` | `{"foo":[{"nr":1, "name":"kimchy"]}`
-| `(bar: (int, chararray))` | `(1,"kimchy")` | `{"bar":["val_0":1, "val_1":"name"]}`
+| `(foo: (nr:int, name:chararray))` | `(1,"kimchy")` | `{"foo":[{"nr":1, "name":"kimchy"}]}`
+| `(bar: (int, chararray))` | `(1,"kimchy")` | `{"bar":[{"val_0":1, "val_1":"name"}]}`
 
 |===
 
