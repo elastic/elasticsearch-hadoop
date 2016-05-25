@@ -24,7 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -48,7 +47,7 @@ public class CapturingBolt extends BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         if (TestSpout.DONE.equals(tuple.getValue(0))) {
-            MultiIndexSpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
+            AbstractStormSuite.COMPONENT_HAS_COMPLETED.decrement();
         }
         else {
             CAPTURED.add(tuple);

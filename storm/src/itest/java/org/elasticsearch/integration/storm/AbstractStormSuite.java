@@ -21,7 +21,6 @@ package org.elasticsearch.integration.storm;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
@@ -54,11 +53,6 @@ public abstract class AbstractStormSuite {
 
         @Override
         protected void after() {
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(2));
-            } catch (InterruptedException e) {
-                // ignore
-            }
             super.after();
         }
     };
@@ -76,6 +70,9 @@ public abstract class AbstractStormSuite {
             isLocal = "local".equals(stormMode);
             //cfg.setDebug(true);
             cfg.setNumWorkers(Integer.parseInt(TestSettings.TESTING_PROPS.getProperty("storm.numworkers", "2")));
+            //cfg.setMaxTaskParallelism(2);
+            cfg.put(Config.TOPOLOGY_MIN_REPLICATION_COUNT, 0);
+            cfg.put(Config.TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC, 0);
 
             stormCluster = new LocalCluster();
         }

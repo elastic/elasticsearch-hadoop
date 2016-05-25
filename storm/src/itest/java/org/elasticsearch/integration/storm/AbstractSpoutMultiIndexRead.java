@@ -20,28 +20,29 @@ package org.elasticsearch.integration.storm;
 
 import java.util.Map;
 
+import org.apache.storm.topology.TopologyBuilder;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 import org.elasticsearch.storm.EsSpout;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.apache.storm.topology.TopologyBuilder;
-
-import static org.junit.Assert.*;
-
-import static org.elasticsearch.integration.storm.AbstractStormSuite.*;
+import static org.junit.Assert.assertThat;
 
 import static org.hamcrest.Matchers.*;
 
+import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
+import static org.junit.Assume.assumeTrue;
+
 public class AbstractSpoutMultiIndexRead extends AbstractStormSpoutTests {
 
-    private int counter = 0;
+    private int testRuns = 0;
 
     public AbstractSpoutMultiIndexRead(Map conf, String index) {
         super(conf, index);
     }
 
+    @Override
     @Before
     public void setup() {
         // -1 bolt, -1 test
@@ -51,8 +52,7 @@ public class AbstractSpoutMultiIndexRead extends AbstractStormSpoutTests {
 
     @Test
     public void testMultiIndexRead() throws Exception {
-
-        counter++;
+        testRuns++;
 
         RestUtils.postData(index + "/foo",
                 "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
@@ -67,12 +67,12 @@ public class AbstractSpoutMultiIndexRead extends AbstractStormSpoutTests {
 
         MultiIndexSpoutStormSuite.run(index + "multi", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
+        assumeTrue(COMPONENT_HAS_COMPLETED.is(2));
         COMPONENT_HAS_COMPLETED.waitFor(1, TimeValue.timeValueSeconds(10));
 
         String results = RestUtils.get(target + "/_search?");
         assertThat(results, containsString("Hello"));
 
-        assertThat(CapturingBolt.CAPTURED.size(), greaterThanOrEqualTo(counter));
-        System.out.println(CapturingBolt.CAPTURED);
+        assertThat(CapturingBolt.CAPTURED.size(), greaterThanOrEqualTo(testRuns));
     }
 }

@@ -67,8 +67,7 @@ public abstract class AbstractStormSpoutTests {
         Map noAck = new LinkedHashMap(Collections.singletonMap(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.FALSE.toString()));
 
         // read ack
-        Map ack = new LinkedHashMap(Collections.singletonMap(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE,
-                Boolean.TRUE.toString()));
+        Map ack = new LinkedHashMap(Collections.singletonMap(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString()));
 
         // read ack bounded queue
         Map ackWithSize = new LinkedHashMap(ImmutableMap.of(StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE, Boolean.TRUE.toString(), StormConfigurationOptions.ES_STORM_SPOUT_RELIABLE_QUEUE_SIZE, "1"));
@@ -83,7 +82,8 @@ public abstract class AbstractStormSpoutTests {
             { noAck, "storm-spout" },
             { ack, "storm-spout-reliable" },
             //{ ackWithSize, "storm-spout-reliable-size" },
-            { ackWithSizeNoRetries, "storm-spout-reliable-size-no-retries" } });
+                //{ ackWithSizeNoRetries, "storm-spout-reliable-size-no-retries" } 
+        });
     }
 
 }

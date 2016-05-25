@@ -59,7 +59,7 @@ public class TestBolt implements IRichBolt {
         if (TestSpout.DONE.equals(input.getValue(0))) {
             delegate.cleanup();
             done = true;
-            MultiIndexSpoutStormSuite.COMPONENT_HAS_COMPLETED.decrement();
+            AbstractStormSuite.COMPONENT_HAS_COMPLETED.decrement();
         }
         if (!done) {
             delegate.execute(input);

@@ -34,6 +34,7 @@ import static org.junit.Assert.*;
 
 import static org.elasticsearch.integration.storm.AbstractStormSuite.COMPONENT_HAS_COMPLETED;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assume.assumeTrue;
 
 public class AbstractStormJsonSimpleBoltTests extends AbstractStormBoltTests {
 
@@ -50,6 +51,8 @@ public class AbstractStormJsonSimpleBoltTests extends AbstractStormBoltTests {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("test-spout-1", new TestSpout(ImmutableList.of(doc1, doc2), new Fields("json")));
         builder.setBolt("es-bolt-1", new TestBolt(new EsBolt(target, conf))).shuffleGrouping("test-spout-1");
+
+        assumeTrue(COMPONENT_HAS_COMPLETED.is(2));
 
         MultiIndexSpoutStormSuite.run(index + "json-simple", builder.createTopology(), COMPONENT_HAS_COMPLETED);
 
