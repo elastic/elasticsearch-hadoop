@@ -14,7 +14,7 @@
 :ver-d: 5.0.0.BUILD-SNAPSHOT
 :es-v:	5.0.0-alpha2
 :sp-v:	1.6.1
-:st-v:	0.9.6
+:st-v:	1.0.0
 :pg-v:	0.15.0
 :hv-v:	1.2.1
 :cs-v:	2.6.3

@@ -5,15 +5,17 @@ added[2.1]
 
 [quote, Storm website]
 ____
-http://storm.incubator.apache.org[Apache Storm] is a free and open source distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. 
+http://storm.apache.org[Apache Storm] is a free and open source distributed realtime computation system. Storm makes it easy to reliably process unbounded streams of data, doing for realtime processing what Hadoop did for batch processing. 
 ____
 With Storm, one can compute, transform and filter data typically in a streaming scenario. As opposed to the rest of the libraries mentioned in this documentation, Apache Storm is a computational framework that is not tied to {mr} itself however it does integrate with Hadoop, mainly through HDFS.
+
+IMPORTANT: Since {eh} 5.0, Storm 1.0 or higher (older versions cannot be used unfortunately as Storm 1.x broke backwards compatibility though package renaming).
 
 [[storm-installation]]
 [float]
 === Installation
 
-In order to use {eh}, its jar needs to be available in Storm's classpath. The Storm https://storm.incubator.apache.org/documentation/Documentation.html[documentation] covers this in detail but in short, one can either have the jar available on all Storm nodes or have {eh} part of the jar being deploy (which we recommend). The latter approach allows isolation between the jobs and since the jar is self-contained, can be easily be moved across environments without additional setup making it much more robust. 
+In order to use {eh}, its jar needs to be available in Storm's classpath. The Storm https://storm.apache.org/documentation/Documentation.html[documentation] covers this in detail but in short, one can either have the jar available on all Storm nodes or have {eh} part of the jar being deploy (which we recommend). The latter approach allows isolation between the jobs and since the jar is self-contained, can be easily be moved across environments without additional setup making it much more robust. 
 
 [[storm-configuration]]
 [float]
