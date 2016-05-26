@@ -28,7 +28,7 @@ es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 
 Note that https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html[multiple] indices and/or types are allowed *only* for reading. Use `_all/types` to search `types` in all indices or `index/` to search
 all types within `index`.
-Do note that reading multiple indices/types typically works only when the have the same structure and only with some libraries. Integrations that require a strongly type mapping (such as a table like Hive or SparkSQL) are likely to fail.
+Do note that reading multiple indices/types typically works only when they have the same structure and only with some libraries. Integrations that require a strongly type mapping (such as a table like Hive or SparkSQL) are likely to fail.
 
 [[cfg-multi-writes]]
 [float]
