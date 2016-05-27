@@ -3,7 +3,7 @@
 
 In an ideal setup, {eh} achieves best performance when {es} and Hadoop are fully accessible from every other, that is each node on the Hadoop side can access every node inside the {es} cluster. This allows maximum parallelism between the two system and thus, as the clusters scale _out_ so does the communication between them.
 
-However not all environments are setup like that, in particular cloud platforms such as Amazon Web Services, Microsoft Azure or Google Compute Engine or dedicated {es} services like https://www.elastic.co/found[Found]
+However not all environments are setup like that, in particular cloud platforms such as Amazon Web Services, Microsoft Azure or Google Compute Engine or dedicated {es} services like https://www.elastic.co/cloud[Cloud]
 that allow computing resources to be rented when needed. The typical setup here is for the spawned nodes to be started in the _cloud_, within a dedicated private network and be made available over the Internet at a dedicated address.
 This effectively means the two systems, {es} and Hadoop/Spark, are running on two _separate_ networks that do not fully see each other (if at all); rather all access to it goes through a publicly expose _gatewyay_.
 
