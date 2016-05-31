@@ -13,10 +13,6 @@ include 'sql-13'
 project(":sql-13").projectDir = new File(settingsDir, "spark/sql-13")
 project(":sql-13").name = "elasticsearch-spark"
 
-include 'sql-12'
-project(":sql-12").projectDir = new File(settingsDir, "spark/sql-12")
-project(":sql-12").name = "elasticsearch-spark-1.2"
-
 include 'storm'
 project(":storm").name = "elasticsearch-storm"
 include 'repository-hdfs'
