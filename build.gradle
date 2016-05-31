@@ -357,7 +357,7 @@ allprojects { project ->
 }
 
 configure(rootProject) {
-    def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
+    def eshModules = subprojects
 
     // jar used for testing Hadoop remotely (es-hadoop + tests)
     task hadoopTestingJar(type: Jar, dependsOn: jar) {
@@ -700,7 +700,7 @@ configure(rootProject) {
     description = "Elasticsearch Hadoop"
     
     // include Spark 1.3+ support in main jar
-    def eshModules = subprojects - project(":elasticsearch-repository-hdfs")
+    def eshModules = subprojects
     
     // build root project dependencies
     // extract optional and provided dependencies
