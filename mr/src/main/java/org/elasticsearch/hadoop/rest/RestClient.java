@@ -21,7 +21,15 @@ package org.elasticsearch.hadoop.rest;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.codehaus.jackson.JsonParser;
@@ -219,16 +227,21 @@ public class RestClient implements Closeable, StatsAware {
 
     private String extractError(Map jsonMap) {
         Object err = jsonMap.get("error");
-        String error = null;
+        String error = "";
         if (err != null) {
             // part of ES 2.0
             if (err instanceof Map) {
                 Map m = ((Map) err);
                 err = m.get("root_cause");
                 if (err == null) {
-                    error = m.get("reason").toString();
-                    if (m.containsKey("caused_by")) {
+                    if (m.containsKey("reason")) {
+                        error = m.get("reason").toString();
+                    }
+                    else if (m.containsKey("caused_by")) {
                         error += ";" + ((Map) m.get("caused_by")).get("reason");
+                    }
+                    else {
+                        error = m.toString();
                     }
                 }
                 else {
@@ -532,7 +545,7 @@ public class RestClient implements Closeable, StatsAware {
     public long count(String indexAndType, ByteSequence query) {
         return isES50 ? countInES5X(indexAndType, query) : countBeforeES5X(indexAndType, query);
     }
-    
+
     private long countBeforeES5X(String indexAndType, ByteSequence query) {
         Response response = execute(GET, indexAndType + "/_count", query);
         Number count = (Number) parseContent(response.body(), "count");
