@@ -139,14 +139,14 @@ public class PigTypeToJsonTest {
     public void testNamedTuple() {
         String expected = "{\"namedtuple\":[\"one\",\"two\"]}";
         assertThat(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two" })),
-                        createSchema("namedtuple: (first:chararray, second:chararray)"))), is(expected));
+                createSchema("namedtuple: (first:chararray, second:chararray)"))), is(expected));
     }
 
     @Test
     public void testNamedTupleWithMixedValues() {
         String expected = "{\"namedtuplewithmixedvalues\":[1,\"two\"]}";
         assertThat(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new Object[] { 1, "two" })),
-                        createSchema("namedtuplewithmixedvalues: (first:int, second:chararray)"))), is(expected));
+                createSchema("namedtuplewithmixedvalues: (first:int, second:chararray)"))), is(expected));
     }
 
     @Test
@@ -154,7 +154,7 @@ public class PigTypeToJsonTest {
         String expected = "{\"anontuple\":[\"xxx\",\"yyy\",\"zzz\"]}";
         assertThat(pigTypeToJson(createTuple(
                 TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "xxx", "yyy", "zzz" })),
-                        createSchema("anontuple: (chararray, chararray, chararray)"))), is(expected));
+                createSchema("anontuple: (chararray, chararray, chararray)"))), is(expected));
     }
 
 
@@ -203,6 +203,16 @@ public class PigTypeToJsonTest {
         map.put("two", 2);
         map.put("three", 3);
         assertThat(pigTypeToJson(createTuple(map, createSchema("map: [int]"))), is(expected));
+    }
+
+    @Test
+    public void testMixedMap() {
+        String expected = "{\"map\":{\"one\":\"one\",\"two\":2,\"three\":3.0}}";
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        map.put("one", "one");
+        map.put("two", 2);
+        map.put("three", 3f);
+        assertThat(pigTypeToJson(createTuple(map, createSchema("map: []"))), is(expected));
     }
 
     @Test

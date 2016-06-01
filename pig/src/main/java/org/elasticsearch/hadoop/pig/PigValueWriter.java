@@ -115,14 +115,8 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
         case DataType.MAP:
             ResourceSchema nestedSchema = field.getSchema();
 
-            // empty tuple shortcut
-            if (nestedSchema == null) {
-                generator.writeBeginObject();
-                generator.writeEndObject();
-                break;
-            }
-
-            ResourceFieldSchema[] nestedFields = nestedSchema.getFields();
+            // maps that are empty or have different value types have no schema - so no way to check them upfront...
+            ResourceFieldSchema valueType = (nestedSchema != null ? nestedSchema.getFields()[0] : null);
 
             generator.writeBeginObject();
             // Pig maps are actually String -> Object association so we can save the key right away
@@ -130,7 +124,7 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
                 String fieldName = entry.getKey().toString();
                 if (shouldKeep(generator.getParentPath(), fieldName)) {
                     generator.writeFieldName(alias.toES(fieldName));
-                    Result result = write(entry.getValue(), nestedFields[0], generator);
+                    Result result = write(entry.getValue(), valueType, generator);
                     if (!result.isSuccesful()) {
                         return result;
                     }
@@ -187,8 +181,15 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
         if (!isEmpty) {
             // check if the tuple contains only empty fields
             boolean allEmpty = true;
+            // as an exception, Pig maps can have different value types but in that case
+            // there has to be no schema declared (yey!)
+            // so handle this as an exception
             for (ResourceFieldSchema nestedField : nestedSchema.getFields()) {
-                allEmpty &= (nestedField.getSchema() == null && PigUtils.isComplexType(nestedField));
+                allEmpty &= (nestedField.getSchema() == null && nestedField.getType() != DataType.MAP && PigUtils.isComplexType(nestedField));
+                // break look
+                if (!allEmpty) {
+                    break;
+                }
             }
             isEmpty = allEmpty;
         }
