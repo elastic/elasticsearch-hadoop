@@ -598,7 +598,7 @@ in addition, the following _implied_ conversion applies for Java types:
 |===
 
 The conversion is done as a _best_ effort; built-in Java and Scala types are guaranteed to be properly converted, however there are no guarantees for user types whether in Java or Scala. As mentioned in the tables above, when a `case` class is encountered in Scala or `JavaBean` in Java, the converters will try to +unwrap+ its content and save it as an `object`. Note this works only for top-level user objects - if the user object has other user objects nested in, the conversion is likely to fail since the converter does not perform nested +unwrapping+.
-This is done on purpose since the converter has to _serialize_ and _deserialize_ the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way too close to the realm of ORMs and arguably introduces too much complexity for little to now gain; thanks to the processing functionality in Spark and the plugability in {eh} one can easily transform objects into other types, if needed with minimal effort and maximum control.
+This is done on purpose since the converter has to _serialize_ and _deserialize_ the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way too close to the realm of ORMs and arguably introduces too much complexity for little to no gain; thanks to the processing functionality in Spark and the plugability in {eh} one can easily transform objects into other types, if needed with minimal effort and maximum control.
 
 .Geo types
 
