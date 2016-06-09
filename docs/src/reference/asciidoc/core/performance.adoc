@@ -1,11 +1,11 @@
 [[performance]]
 == Performance considerations
 
-As the connector itself does not abstract {es} nor it is stateful per se (does not keep any state between jobs and only sends writes in bulk - see below), when looking at performance, one should keep an eye on {es} itself and its behavior.
+As the connector itself does not abstract {es} nor is it stateful per se (does not keep any state between jobs and only sends writes in bulk - see below), when looking at performance, one should keep an eye on {es} itself and its behavior.
 
 Do note that in general, we advise against changing too many settings especially on the {es} side simply because the defaults are good enough for most cases. With every release {es} becomes _smarter_ about its environment and automatically adjusts itself (for example HDD vs SDD).
 
-Unless you really _know_ what you are doing and have actual results showing the improvements (aka real benchmarks) do *not* make blind adjustments simply because there is a blog or post somewhere telling you to do so. Way too many times we have encountered systems that underperformed due to some misconfiguration that was suppose to do otherwise.
+Unless you really _know_ what you are doing and have actual results showing the improvements (aka real benchmarks) do *not* make blind adjustments simply because there is a blog or post somewhere telling you to do so. Way too many times we have encountered systems that underperformed due to some misconfiguration that was supposed to do otherwise.
 
 [float]
 === Always aim for stability
@@ -22,7 +22,7 @@ That is why for reliable results, always measure to see whether the changes that
 === Read performance
 
 {eh} performs a parallel read spread across all the target resource shards. It relies on https://www.elastic.co/guide/en/elasticsearch/guide/current/scroll.html[scrolling] which is as efficient as it can be in returning the results of a query.
-If the read performance is not optimal, first try to see how _expensive_ the query by interogating {es} directly. The {es} documentation is a good place to start such as https://www.elastic.co/guide/en/elasticsearch/guide/current/_improving_performance.html[Improving Performance] page; similar queries might return the same results but can have a different cost.
+If the read performance is not optimal, first try to see how _expensive_ the query is by interogating {es} directly. The {es} documentation is a good place to start, such as the https://www.elastic.co/guide/en/elasticsearch/guide/current/_improving_performance.html[Improving Performance] page; similar queries might return the same results but can have a different cost.
 
 If a query is inefficient, try rewriting it in a more optimal way. Sometimes changing the data structure (for example by adding a a new field or denormalizing it) can significantly improve the query performance as there are less calculations that need to be done.
 

@@ -17,6 +17,8 @@ As such, {eh} uses splits and shards as the main drivers behind the number of ta
 
 TIP: Hadoop `splits` as well as {es} `shards` play an important role regarding a system behavior - we recommend familiarizing with the two concepts to get a better understanding of your system runtime semantics.
 
+[[arch-spark]]
+[float]
 === {sp} and Shards
 
 While {sp} is not built on top of {mr} it shares similar concepts: it features the concept of `partition` which is the rough equivalent of {es} `shard` or the {mr} `split`. Thus, the analogy above applies here as well - more shards and/or more partitions increase the number of parallelism and thus allows both systems to scale better.
@@ -27,7 +29,7 @@ NOTE: Due to the similarity in concepts, through-out the docs one can think inte
 [float]
 === Reading from {es}
 
-Shards play a critical role when reading information from {es}. Since it acts as a source, {eh} will create one Hadoop `InputSplit` per {es} shard, on in case of {sp} one `Partition`, that is given a query that works against index `I`, {eh} will dynamically discover the number of shards backing `I` and then for each shard will create, in case of Hadoop an input split (which will determine the maximum number of Hadoop tasks to be executed) or in case of Spark a partition which will determine the `RDD` maximum parallelism.
+Shards play a critical role when reading information from {es}. Since it acts as a source, {eh} will create one Hadoop `InputSplit` per {es} shard, or in case of {sp} one `Partition`, that is given a query that works against index `I`. {eh} will dynamically discover the number of shards backing `I` and then for each shard will create, in case of Hadoop an input split (which will determine the maximum number of Hadoop tasks to be executed) or in case of Spark a partition which will determine the `RDD` maximum parallelism.
 
 With the default settings, {es} uses *5* {ref}/glossary.html#glossary-primary-shard[`primary`] shards per index which will result in the same number of tasks on the Hadoop side for each query.
 
@@ -39,10 +41,10 @@ A common concern (read optimization) for improving performance is to increase th
 [float]
 === Writing to {es}
 
-Writing to {es} is driven by the number of Hadoop input splits (or tasks) or Spark partitions available. {eh} detects the number of (primary) shards where the write will occur and distribute the writes between these. The more splits/partitions are available, the more mappers/reducers can write data in parallel to {es}.
+Writing to {es} is driven by the number of Hadoop input splits (or tasks) or Spark partitions available. {eh} detects the number of (primary) shards where the write will occur and distributes the writes between these. The more splits/partitions available, the more mappers/reducers can write data in parallel to {es}.
 
 [[arch-colocation]]
 [float]
 === Data co-location
 
-Whenever possible, {eh} shares the {es} cluster information with Hadoop and Spark to facilitate data co-location. In practice, this means whenever data is read from {es}, the source nodes IPs are passed on to Hadoop and Spark to optimize task execution. If co-location is desired/possible, hosting the {es} and Hadoop and Spark clusters within the same rack will provide significant network savings.
+Whenever possible, {eh} shares the {es} cluster information with Hadoop and Spark to facilitate data co-location. In practice, this means whenever data is read from {es}, the source nodes' IPs are passed on to Hadoop and Spark to optimize task execution. If co-location is desired/possible, hosting the {es} and Hadoop and Spark clusters within the same rack will provide significant network savings.

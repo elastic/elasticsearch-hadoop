@@ -1,10 +1,10 @@
 [[configuration]]
 == Configuration
 
-{eh} behavior can be customized through the properties below, typically by setting them on the target job Hadoop `Configuration`. However some of them can be specified through other means depending on the library used (see the relevant section).
+{eh} behavior can be customized through the properties below, typically by setting them on the target job's Hadoop `Configuration`. However some of them can be specified through other means depending on the library used (see the relevant section).
 
 ****
-{eh} uses the same conventions and reasonable defaults as {es} so you can give it a try out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration option, please _do ask_ for more information.
+{eh} uses the same conventions and reasonable defaults as {es} so you can try it out without bothering with the configuration. Most of the time, these defaults are just fine for running a production cluster; if you are fine-tunning your cluster or wondering about the effect of certain configuration options, please _do ask_ for more information.
 ****
 
 NOTE: All configuration properties start with the `es` prefix. The namespace `es.internal` is reserved by the library for its internal use and should _not_ be used by the user at any point.
@@ -21,14 +21,14 @@ es.resource = twitter/tweet   # index 'twitter', type 'tweet'
 ----
 
 `es.resource.read` (defaults to `es.resource`)::
-{es} resource used for reading (but not writing) data. Useful when reading and writing data to different {es} indices within the _same_ job. Typically set automatically (expect for the {mr} module which requires manual configuration).
+{es} resource used for reading (but not writing) data. Useful when reading and writing data to different {es} indices within the _same_ job. Typically set automatically (except for the {mr} module which requires manual configuration).
 
 `es.resource.write`(defaults to `es.resource`)::
-{es} resource used for writing (but not reading) data. Used typically for __dynamic resource__ writes or when writing and reading data to different {es} indices within the _same_ job. Typically set automatically (expect for the {mr} module which requires manual configuration).
+{es} resource used for writing (but not reading) data. Used typically for __dynamic resource__ writes or when writing and reading data to different {es} indices within the _same_ job. Typically set automatically (except for the {mr} module which requires manual configuration).
 
 Note that https://www.elastic.co/guide/en/elasticsearch/guide/current/multi-index-multi-type.html[multiple] indices and/or types are allowed *only* for reading. Use `_all/types` to search `types` in all indices or `index/` to search
 all types within `index`.
-Do note that reading multiple indices/types typically works only when they have the same structure and only with some libraries. Integrations that require a strongly type mapping (such as a table like Hive or SparkSQL) are likely to fail.
+Do note that reading multiple indices/types typically works only when they have the same structure and only with some libraries. Integrations that require a strongly typed mapping (such as a table like Hive or SparkSQL) are likely to fail.
 
 [[cfg-multi-writes]]
 [float]
@@ -68,14 +68,14 @@ es.resource.write = my-collection/{media_type}
 which would result in `Final Fantasy VI` indexed under `my-collection/game`, `Harry Potter` under `my-collection/book` and `Surfing With The Alien` under `my-collection/music`.
 For more information, please refer to the dedicated integration section.
 
-IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/types reads, use an appropriate {ref}/search-search.html[search query].
+IMPORTANT: Dynamic resources are supported _only_ for writing, for doing multi-index/type reads, use an appropriate {ref}/search-search.html[search query].
 
 [[cfg-multi-writes-format]]
 [float]
 ===== Formatting dynamic/multi resource writes
 
 When using dynamic/multi writes, one can also specify a formatting of the value returned by the field. Out of the box, {eh} provides formatting for date/timestamp fields which is useful for automatically grouping time-based data (such as logs)
- within a certain time range under the same index. By using the Java http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] syntax, one can format and parse the date in a locale-sensitive manager.
+ within a certain time range under the same index. By using the Java http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] syntax, one can format and parse the date in a locale-sensitive manner.
 
 For example assuming the data contains a +@timestamp+ field, one can group the documents in _daily_ indices using the following configuration:
 
@@ -88,7 +88,7 @@ es.resource.write = my-collection/{@timestamp:YYYY.MM.dd} <1>
 <1> +@timestamp+ field formatting - in this case +YYYY.MM.dd+
 
 The same configuration property is used (+es.resource.write+) however, through the special +:+ characters a formatting pattern is specified.
-Please refer to the http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDataFormat] javadocs for more information on the syntax supported.
+Please refer to the http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDateFormat] javadocs for more information on the syntax supported.
 In this case +YYYY.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
 
 http://logstash.net/[Logstash] users will find this _pattern_ quite http://logstash.net/docs/latest/filters/date[familiar].
@@ -100,7 +100,7 @@ http://logstash.net/[Logstash] users will find this _pattern_ quite http://logst
 [float]
 ==== Network
 `es.nodes` (default localhost)::
-List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can have its HTTP/REST port specified manually (e.g. `mynode:9600`).
+List of {es} nodes to connect to. When using {es} remotely, _do_ set this option. Note that the list does _not_ have to contain _every_ node inside the {es} cluster; these are discovered automatically by {eh} by default (see below). Each node can also have its HTTP/REST port specified individually (e.g. `mynode:9600`).
 
 `es.port` (default 9200)::
 Default HTTP/REST port used for connecting to {es} - this setting is applied to the nodes in `es.nodes` that do not have any port specified.
@@ -141,7 +141,7 @@ In other words, `es.query` is flexible enough so that you can use whatever searc
 
 TIP: We recommend using query dsl externalized in a file, included within the job jar (and thus available on its classpath). This makes it easy
 to identify, debug and organize your queries.
-Through-out the documentation we use the uri query to save text and increase readability - real-life queries quickly become unwielding when used as uris.
+Through-out the documentation we use the uri query to save text and increase readability - real-life queries quickly become unwieldy when used as uris.
 
 [float]
 ==== Operation
@@ -217,7 +217,7 @@ es.mapping.include = u*, foo.*
 es.mapping.exclude = *.description
 ----
 
-Using the configuration above, each entry will have only its top-level fields, starting with u and nested fields under +foo+ included
+Using the configuration above, each entry will have only its top-level fields, starting with +u+ and nested fields under +foo+ included
 in the document with the exception of any nested field named +description+. Additionally the document parent will be +123+ while the
 document id extracted from field +uuid+.
 
@@ -249,11 +249,6 @@ For example:
 es.read.field.exclude = company.income
 ----
 
-`es.read.field.as.array.exclude` (default empty)::
-Fields/properties that should be considered as arrays/lists. Similar to `es.read.field.as.array.include` above. Multiple values can be specified by using a comma. 
-By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
-before-hand.
-
 added[2.2]
 `es.read.field.as.array.include` (default empty)::
 Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
@@ -268,7 +263,7 @@ For example:
 # mapping nested.bar as an array
 es.read.field.as.array.include = nested.bar
 
-# mapping nested.bar as an 3-levels/dimensions array
+# mapping nested.bar as a 3-level/dimensional array
 es.read.field.as.array.include = nested.bar:3
 ----
 
@@ -360,7 +355,7 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
 ==== Network
 
 `es.nodes.discovery` (default true)::
-Whether to discovery the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, {eh} uses the target index shards (and their hosting nodes) unless +es.nodes.client.only+ is enabled.
+Whether to discover the nodes within the {es} cluster or only to use the ones given in `es.nodes` for metadata queries. Note that this setting only applies during start-up; afterwards when reading and writing, {eh} uses the target index shards (and their hosting nodes) unless +es.nodes.client.only+ is enabled.
 
 `es.nodes.client.only` (default false)::
 Whether to use {es} {ref}/modules-node.html[client nodes] (or _load-balancers_). When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _client_ nodes within the cluster. Note this typically significantly reduces the node parallelism and thus it is disabled by default. Enabling it also
@@ -419,7 +414,7 @@ added[2.1]
 
 `es.net.ssl.keystore.pass`:: key store password
 
-`es.net.ssl.keystore.type` (default JKS):: key store type. PK12 is an common, alternative format
+`es.net.ssl.keystore.type` (default JKS):: key store type. PK12 is a common, alternative format
 
 `es.net.ssl.truststore.location`:: trust store location (typically a URL, without a prefix it is interpreted as a classpath entry)
 
@@ -473,7 +468,7 @@ Size (in entries) for batch writes using {es} {ref}/docs-bulk.html[bulk] API - (
 Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bulk update has been completed. Note this is called only after the entire write (meaning multiple bulk updates) have been executed.
 
 `es.batch.write.retry.count` (default 3)::
-Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performad, the Hadoop job is cancelled (and fails). A negative value indicates infinite retries; be careful in setting this value as it can have unwanted side effects.
+Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performed, the Hadoop job is cancelled (and fails). A negative value indicates infinite retries; be careful in setting this value as it can have unwanted side effects.
 
 `es.batch.write.retry.wait` (default 10s)::
 Time to wait between batch write retries.
@@ -489,7 +484,7 @@ Name of the `ValueWriter` implementation for converting objects to JSON. This is
 
 When using {eh}, it is important to be aware of the following Hadoop configurations that can influence the way Map/Reduce tasks are executed and in return {eh}.
 
-IMPORTANT: Unfortunately, these settings need to be setup *manually* *before* the job / script configuration. Since {eh} is called too late in the life-cycle, after the task has been tasks have been already dispatched and as such, cannot influence the execution anymore.
+IMPORTANT: Unfortunately, these settings need to be setup *manually* *before* the job / script configuration. Since {eh} is called too late in the life-cycle, after the tasks have been already dispatched and as such, cannot influence the execution anymore.
 
 [float]
 === Speculative execution
@@ -545,13 +540,13 @@ Note that while the setting has been deprecated in Hive 0.10 and one might get a
 [float]
 ==== Spark speculative execution
 
-Out of the box, Spark has speculative execution disable. Double check this is the case through `spark.speculation` setting (`false` disabled it, `true` to enable it).
+Out of the box, Spark has speculative execution disabled. Double check this is the case through the `spark.speculation` setting (`false` to disable it, `true` to enable it).
 
 
 [[security]]
 == Security
 
-{eh} can work in secure environments and has support for authentication and authorization. However it is important to understand that {eh} per-se is a _connector_, that is bridges two different systems. So when talking about security,
+{eh} can work in secure environments and has support for authentication and authorization. However it is important to understand that {eh} per-se is a _connector_, that is, it bridges two different systems. So when talking about security,
 it is important to understand to what system it applies: the connector can run within a secure Hadoop environment talking to a vanilla/non-secured {es} cluster. Or vice-versa, it can run within a non-secured Spark environment while talking securely to a {es} cluster. Of course, the opposite can happen as well; the connector running within a secure Hadoop environment and communicating with a secured {es} cluster or the most common use-case, running from an open 
 Spark environment to a default, non-secured {es} install.
 This enumeration of setups is actually on purpose, to illustrate that based on what piece of the environment is secured, its respective connector configuration needs to be adjusted. 
@@ -569,7 +564,7 @@ As the connector runs as a _library_ within Hadoop or Spark, for the most part i
 [float]
 ==== SSL/TLS configuration
 
-In case of an encrypted transport, the SSL/TLS support needs to be enabled in {eh} in order for the connector to properly communicate with {es}. This is done by setting `es.net.ssl` property to `true` and, depending on your SSL configuration (whether the certificates are signed by a CA or not, whether they are global at JVM level or just local to one application), might require setting up the `keystore` and/or `truststore`, that is where the _credentials_ are stored (`keystore` - which typically stores private keys and certificates) and how to _verify_ the (`truststore` - which typically stores certificates from third party also known as CA - certificate authorities).
+In case of an encrypted transport, the SSL/TLS support needs to be enabled in {eh} in order for the connector to properly communicate with {es}. This is done by setting `es.net.ssl` property to `true` and, depending on your SSL configuration (whether the certificates are signed by a CA or not, whether they are global at JVM level or just local to one application), might require setting up the `keystore` and/or `truststore`, that is where the _credentials_ are stored (`keystore` - which typically stores private keys and certificates) and how to _verify_ them (`truststore` - which typically stores certificates from third party also known as CA - certificate authorities).
 Typically (and again, do note that your environment might differ significantly), if the SSL setup for {eh} is not already done at the JVM level, one needs to setup the keystore if the {eh} security requires client authentication (PKI - Public Key Infrastructure), and setup `truststore` if SSL is enabled.
 
 [float]
@@ -578,7 +573,7 @@ Typically (and again, do note that your environment might differ significantly),
 The authentication support in {eh} is of two types:
 
 Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.auth.pass` properties.
-PKI/X.509:: Use X.509 certificates to authentication {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
+PKI/X.509:: Use X.509 certificates to authenticate {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
 
 [[logging]]
@@ -611,7 +606,7 @@ Configuring logging for Hadoop (or Cascading, Hive and Pig) is outside the scope
 
 The default logging level (`INFO`) is suitable for day-to-day use; if troubleshooting is needed, consider switching to `DEBUG` but be selective of the packages included. For low-level details, enable level `TRACE` however do remember that it will result in a *significant* amount of logging data which _will_ impact your job performance and environment.
 
-To put everything together, if you want to enable `DEBUG` logging on the {mr} package make sure the `log4j.properties` (used by your environment):
+To put everything together, if you want to enable `DEBUG` logging on the {mr} package make changes to the `log4j.properties` (used by your environment):
 
 [source,bash]
 ----

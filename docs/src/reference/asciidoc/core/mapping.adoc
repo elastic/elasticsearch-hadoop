@@ -1,14 +1,14 @@
 [[mapping]]
 == Mapping and Types
 
-As explained in the previous sections, {eh} integrates closely with the Hadoop ecosystem and perform close introspection of the type information so that the data flow between {es} and Hadoop is as transparent as possible.
+As explained in the previous sections, {eh} integrates closely with the Hadoop ecosystem and performs close introspection of the type information so that the data flow between {es} and Hadoop is as transparent as possible.
 This section takes a closer look at how the type conversion takes place and how data is mapped between the two systems.
 
 [float]
 === Converting data to {es}
 
-By design, {eh} provides no data transformation or mapping layer itself simply because there is no need for them: Hadoop is designed to do ETL and some libraries (like Pig and Hive) provide type information themselves; further more {es} has rich support for mapping out of the box including automatic detection,  dynamic/schema-less mapping, templates and full manual control.
-Need to split strings into token, do data validation or eliminate unneeded data ? There are plenty of ways to do that in Hadoop before reading/writing data from/to {es}; need control over how data is stored in {es} ? Use {es} APIs to define the  {ref}/indices-put-mapping.html[mapping], to update {ref}/indices-update-settings.html[settings] or add generic {ref}/mapping-fields.html[meta-data].
+By design, {eh} provides no data transformation or mapping layer itself simply because there is no need for them: Hadoop is designed to do ETL and some libraries (like Pig and Hive) provide type information themselves. Furthermore, {es} has rich support for mapping out of the box including automatic detection,  dynamic/schema-less mapping, templates and full manual control.
+Need to split strings into token, do data validation or eliminate unneeded data? There are plenty of ways to do that in Hadoop before reading/writing data from/to {es}. Need control over how data is stored in {es}? Use {es} APIs to define the  {ref}/indices-put-mapping.html[mapping], to update {ref}/indices-update-settings.html[settings] or add generic {ref}/mapping-fields.html[meta-data].
 
 ////
 Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses on what is missing by recognizing and leveraging existing features.
@@ -52,7 +52,7 @@ Note that typically handling of these types poses no issues for the user whether
 [[mapping-multi-values]]
 === Handling array/multi-values fields
 
-{es} treats fields with single or multi-values the same; in fact the mapping provides no information about this. As a client though, it means one cannot tell whether a field is single-valued or not until is actually being read. In most cases this is not an issue and {eh} automatically creates the necessary list/array on the fly. However in environments with strict schema such as Spark SQL, changing a field actual value from its declared type is not allowed worse yet, this information needs to be available even before reading the data. And since the mapping is not conclusive enough, {eh} allows the user to specify the extra information through <<cfg-field-info, field information>> specifically +es.field.read.as.array.include+ and +es.field.read.as.array.include+.
+{es} treats fields with single or multi-values the same; in fact, the mapping provides no information about this. As a client, it means one cannot tell whether a field is single-valued or not until is actually being read. In most cases this is not an issue and {eh} automatically creates the necessary list/array on the fly. However in environments with strict schema such as Spark SQL, changing a field actual value from its declared type is not allowed. Worse yet, this information needs to be available even before reading the data. Since the mapping is not conclusive enough, {eh} allows the user to specify the extra information through <<cfg-field-info, field information>>, specifically +es.field.read.as.array.include+ and +es.field.read.as.array.include+.
 
 [float]
 === Automatic mapping

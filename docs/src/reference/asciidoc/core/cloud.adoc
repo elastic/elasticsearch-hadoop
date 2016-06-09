@@ -5,7 +5,7 @@ In an ideal setup, {eh} achieves best performance when {es} and Hadoop are fully
 
 However not all environments are setup like that, in particular cloud platforms such as Amazon Web Services, Microsoft Azure or Google Compute Engine or dedicated {es} services like https://www.elastic.co/cloud[Cloud]
 that allow computing resources to be rented when needed. The typical setup here is for the spawned nodes to be started in the _cloud_, within a dedicated private network and be made available over the Internet at a dedicated address.
-This effectively means the two systems, {es} and Hadoop/Spark, are running on two _separate_ networks that do not fully see each other (if at all); rather all access to it goes through a publicly expose _gatewyay_.
+This effectively means the two systems, {es} and Hadoop/Spark, are running on two _separate_ networks that do not fully see each other (if at all); rather all access to it goes through a publicly exposed _gateway_.
 
 Running {eh} against such an {es} instance will quickly run into issues simply because the connector once connected, will discover the cluster nodes, their IPs and try to connect to them to read and/or write. However as the {es} nodes are using non-routeable, private IPs and are not accessible from _outside_ the cloud infrastructure, the connection to the nodes will fail.
 

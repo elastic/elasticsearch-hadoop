@@ -70,7 +70,7 @@ Note that the `Tap` configuration is merged with the global one so one can mix a
 [float]
 === Mapping
 
-By default, {eh} uses the Cascading tuple to map the data in {es}, using both the field names and types in the process. There are cases however when the field names cannot be used directly with {es} (common case when working with an existing flow). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of names mapping in the following format: `Cascading field name`:`Elasticsearch field name`
+By default, {eh} uses the Cascading tuple to map the data in {es}, using both the field names and types in the process. There are cases however when the field names cannot be used directly with {es} (a common case when working with an existing flow). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of mapped names in the following format: `Cascading field name`:`Elasticsearch field name`
 
 To wit:
 
@@ -89,7 +89,7 @@ TIP: Since {eh} 2.1, the connector preserves the tuple names case sensitivity.
 [float]
 === Writing data to {es}
 
-Simply hook, `EsTap` into the Cascading flow:
+Simply hook `EsTap` into the Cascading flow:
 
 [source,java]
 ----
@@ -102,7 +102,7 @@ new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 <1> {eh} resource (index and type)
 <2> Cascading tuple declaration
 
-For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Tap+ configuration:
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>>, namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Tap+ configuration:
 
 [source,java]
 ----

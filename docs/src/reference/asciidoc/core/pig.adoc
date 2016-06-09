@@ -18,7 +18,7 @@ In order to use {eh}, its jar needs to be in Pig's classpath. There are various 
 REGISTER /path/elasticsearch-hadoop.jar;
 ----
 
-NOTE: the command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
+NOTE: The command expects a proper URI that can be found either on the local file-system or remotely. Typically it's best to use a distributed file-system (like HDFS or Amazon S3) and use that since the script might be executed
 on various machines.
 
 As an alternative, when using the command-line, one can register additional jars through the `-Dpig.additional.jars` option (that accepts an URI as well):
@@ -74,7 +74,7 @@ IMPORTANT: Pig definitions are replaced as are; even though the syntax allows _p
 
 Among the http://pig.apache.org/docs/r0.12.1/basic.html#data-types[various types] available in Pig, ++tuple++s are used the most. Tuples are defined as ``ordered sets of fields'' (e.g. `(19,2)`) however structurally they are shaped
 as ordered _maps_ since each field has a name, which may be defined or not (e.g. `(field:19, another:2)`). The _ordered_ aspect is important and forces {eh} to use JSON arrays for tuples  (using JSON objects is not an option as it does not preserve ordering besides the fact that it requires keys/names which might be or not available in a tuple).
-Obeying the rule of http://en.wikipedia.org/wiki/Principle_of_least_astonishment[least surprise], {eh} by default will _disregard_ a tuple field names, both when writing and reading.
+Obeying the rule of http://en.wikipedia.org/wiki/Principle_of_least_astonishment[least surprise], {eh} by default will _disregard_ a tuple's field names, both when writing and reading.
 
 To change this behavior (which in effect means treating tuples as arrays of maps instead of arrays), use the boolean property `es.mapping.pig.tuple.use.field.names` (by default `false`) and set it to `true`.
 
@@ -156,7 +156,7 @@ Unfortunately {eh} cannot set these properties automatically so the user has to 
 === Mapping
 
 Out of the box, {eh} uses the Pig schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Pig cannot
-be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of names mapping in the following format: `Pig field name` : `{es} field name`
+be used with {es} (invalid characters, existing names with different layout, etc...). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of mapped names in the following format: `Pig field name` : `Elasticsearch field name`
 
 For example:
 
@@ -168,7 +168,7 @@ STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
 
 <1> name mapping for two fields
 <2> Pig column `date` mapped in {es} to `@timestamp`
-<3> Pig column `url` mapped in {es} to `url_123`
+<3> Pig column `uRL` mapped in {es} to `url`
 
 TIP: Since {eh} 2.1, the Pig schema case sensitivity is preserved to {es} and back. 
 
@@ -191,7 +191,7 @@ STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage(<2>
 <1> {es} resource (index and type) associated with the given storage
 <2> additional configuration parameters can be passed here - in this case the defaults are used
 
-For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Storage+ configuration:
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>>, namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Storage+ configuration:
 
 [source,sql]
 ----
@@ -286,7 +286,7 @@ DUMP A;
 <1> {es} resource
 <2> search query to execute
 
-IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, +LoadFunctions+ are not aware of any schema associated with them. This means +EsStorage+ is forced to fully the documents 
+IMPORTANT: Due to a https://issues.apache.org/jira/browse/PIG-3646[bug] in Pig, +LoadFunctions+ are not aware of any schema associated with them. This means +EsStorage+ is forced to fully parse the documents
 from Elasticsearch before passing the data to Pig for projection. In practice, this has little impact as long as a document top-level fields are used; for nested fields consider extracting the values
 yourself in Pig.
 
@@ -294,7 +294,7 @@ yourself in Pig.
 [float]
 === Reading data from {es} as JSON
 
-In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can instruct the {eh} to return the data as is. By setting `es.output.json` to `true`, the connector will parse the response from {es}, identify the documents and, without converting them, return their content to the user as +String/chararray+ objects.
+In the case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can instruct {eh} to return the data as is. By setting `es.output.json` to `true`, the connector will parse the response from {es}, identify the documents and, without converting them, return their content to the user as +String/chararray+ objects.
 
 
 [[pig-type-conversion]]
@@ -316,7 +316,7 @@ Pig internally uses native java types for most of its types and {eh} abides to t
 | `double`          | `double`
 | `float`           | `float`
 | `bytearray`       | `binary`
-| `tuple`           | `array` or `map` (depending on <<tuple-names,this>> settings)
+| `tuple`           | `array` or `map` (depending on <<tuple-names,this>> setting)
 | `bag`             | `array`
 | `map`             | `map`
 
