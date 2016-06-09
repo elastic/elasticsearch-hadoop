@@ -20,7 +20,7 @@ Using `localhost` (aka the default) in a production environment is simply a misc
 [float]
 === Triple check the classpath
 
-Make sure to use only one version of {eh} in your classpath. While it might not be obvious, the classpath in Hadoop/Spark is assembled from multiple folders; further more there are no guarantees what version is going to be picked up
+Make sure to use only one version of {eh} in your classpath. While it might not be obvious, the classpath in Hadoop/Spark is assembled from multiple folders; furthermore, there are no guarantees what version is going to be picked up
 first by the JVM. To avoid obscure issues, double check your classpath and make sure there is only one version of the library in there, the one you are interested in.
 
 [float]
@@ -64,7 +64,7 @@ When encountering a performance issue, do some benchmarking first, in as much is
 [float]
 === Find a baseline
 
-Indexing performance depend _heavily_ on the type of data being targeted and its mapping. Same goes for searching but add the query definition to the mix. As mentioned before, experiment and measure the various parts of your dataset to find the sweet-spot of your environment before importing/searching big amounts of data.
+Indexing performance depends _heavily_ on the type of data being targeted and its mapping. Same goes for searching but add the query definition to the mix. As mentioned before, experiment and measure the various parts of your dataset to find the sweet-spot of your environment before importing/searching big amounts of data.
 
 [[help]]
 === Getting help
@@ -76,7 +76,7 @@ If something is not working, there are two possibilities:
 - there is a bug
 - you are doing something wrong
 
-Whichever it is, a *clear* description of the problem will help other users to help you. The most complete your report is, the quickest you will receive help from users!
+Whichever it is, a *clear* description of the problem will help other users to help you. The more complete your report is, the quickest you will receive help from users!
 
 [float]
 === What information is useful?

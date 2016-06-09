@@ -20,7 +20,7 @@ Just like other libraries, {eh} needs to be available in Spark's classpath. As S
 
 added[2.1]
 
-{eh} provides _native_ integration between {es} and {sp}, in the form of a +RDD+ (Resilient Distributed Dataset) (or _Pair_ +RDD+ to be precise) that can read data from Elasticsearch. The +RDD+ is offered in two 'flavors': one for Scala (which returns the data as +Tuple2+ with Scala collections) and one for Java (which returns the data as +Tuple2+ containing `java.util` collections).
+{eh} provides _native_ integration between {es} and {sp}, in the form of an +RDD+ (Resilient Distributed Dataset) (or _Pair_ +RDD+ to be precise) that can read data from Elasticsearch. The +RDD+ is offered in two 'flavors': one for Scala (which returns the data as +Tuple2+ with Scala collections) and one for Java (which returns the data as +Tuple2+ containing `java.util` collections).
 
 IMPORTANT: Whenever possible, consider using the _native_ integration as it offers the best performance and maximum flexibility.
 
@@ -28,7 +28,7 @@ IMPORTANT: Whenever possible, consider using the _native_ integration as it offe
 [float]
 ==== Configuration
 
-To configure one, one can set the various properties described in the <<configuration>> chapter through the http://spark.apache.org/docs/1.3.1/programming-guide.html#initializing-spark[`SparkConf`] object:
+To configure {eh} for {sp}, one can set the various properties described in the <<configuration>> chapter in the http://spark.apache.org/docs/1.3.1/programming-guide.html#initializing-spark[`SparkConf`] object:
 
 [source,scala]
 ----
@@ -46,7 +46,7 @@ conf.set("es.index.auto.create", "true");
 
 .Command-line
 
-For those that want to set the properties through the command-line (either directly or by loading them from a file), note that Spark _only_ accepts those that start with the "spark." prefix and will _ignore_ the rest (and depending on the version a warning might be thrown). To work-around this limitation, define the {eh} properties by appending the +spark.+ prefix (thus they become +spark.es.+) and {eh} will automatically resolve them:
+For those that want to set the properties through the command-line (either directly or by loading them from a file), note that Spark _only_ accepts those that start with the "spark." prefix and will _ignore_ the rest (and depending on the version a warning might be thrown). To work around this limitation, define the {eh} properties by appending the +spark.+ prefix (thus they become +spark.es.+) and {eh} will automatically resolve them:
 
 [source, bash]
 ----
@@ -92,9 +92,9 @@ sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
 <4> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other +RDD+ (in Java or Scala) can be passed in
 <5> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
-NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +<-+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
+NOTE: Scala users might be tempted to use +Seq+ and the +->+ notation for declaring _root_ objects (that is the JSON document) instead of using a +Map+. While similar, the first notation results in slightly different types that cannot be matched to a JSON document: +Seq+ is an order sequence (in other words a list) while +->+ creates a +Tuple+ which is more or less an ordered, fixed number of elements. As such, a list of lists cannot be used as a document since it cannot be mapped to a JSON object; however it can be used freely within one. Hence why in the example above ++Map(k->v)++ was used instead of ++Seq(k->v)++
 
-As an alternative to the _implicit_ import above, one can {eh} Spark support in Scala through +EsSpark+ in +org.elasticsearch.spark.rdd+ package which acts as an utility class allowing explicit method invocations. Additionally instead of ++Map++s (which are convenient but require one mapping per instance due to their difference in structure), use a __case class__ :
+As an alternative to the _implicit_ import above, one can use {eh} Spark support in Scala through +EsSpark+ in the +org.elasticsearch.spark.rdd+ package which acts as a utility class allowing explicit method invocations. Additionally instead of ++Map++s (which are convenient but require one mapping per instance due to their difference in structure), use a __case class__ :
 
 [source,scala]
 ----
@@ -155,7 +155,7 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");                                    
 <5> create a simple +RDD+ over the two collections; any other +RDD+ (in Java or Scala) can be passed in
 <6> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
 
-The code can be further simplifies by using Java 5 _static_ imports. Additionally, the +Map+ (who's mapping is dynamic due to its _loose_ structure) can be replaced with a +JavaBean+:
+The code can be further simplified by using Java 5 _static_ imports. Additionally, the +Map+ (who's mapping is dynamic due to its _loose_ structure) can be replaced with a +JavaBean+:
 
 [source,java]
 ----
@@ -194,7 +194,7 @@ saveToEs(javaRDD, "spark/docs");                                          <3>
 <3> call +saveToEs+ method without having to type +JavaEsSpark+ again
 
 
-Setting the document id (or other metadata fields like +ttl+ or +timestamp+) is similar to its Scala counterpart though potentially bit more verbose depending on whether you are using the JDK classes or some other utilities (like Guava):
+Setting the document id (or other metadata fields like +ttl+ or +timestamp+) is similar to its Scala counterpart, though potentially a bit more verbose depending on whether you are using the JDK classes or some other utilities (like Guava):
 
 [source,java]
 ----
@@ -246,7 +246,7 @@ JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");             <3>
 [[spark-write-dyn]]
 ==== Writing to dynamic/multi-resources
 
-For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts pattern that are resolved from the document content, at runtime. Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts a pattern that is resolved from the document content, at runtime. Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
 
 [float]
 [[spark-write-dyn-scala]]
@@ -290,7 +290,7 @@ saveToEs(javaRDD, "my-collection/{media_type}");  <1>
 [[spark-write-meta]]
 ==== Handling document metadata
 
-{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are backed to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
 In other words, for ++RDD++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
@@ -319,7 +319,7 @@ pairRDD.saveToEsWithMeta<3>(airportsRDD, "airports/2015")
 
 <1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
 <2> The key of each tuple within the +Seq+ represents the _id_ of its associated value/document; in other words, document +otp+ has id +1+, +muc+ +2+ and +sfo+ +3+
-<3> Since +airportsRDD+ is a pair +RDD+, it has the +saveToEsWithMeta+ method available. This tells {eh} to pay special attention to the +RDD+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {eh} would consider the +RDD+ tuple, that is both the key and the value as part of the document.
+<3> Since +airportsRDD+ is a pair +RDD+, it has the +saveToEsWithMeta+ method available. This tells {eh} to pay special attention to the +RDD+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {eh} would consider the +RDD+ tuple, that is both the key and the value, as part of the document.
 
 When more than just the id needs to be specified, one should use a +scala.collection.Map+ with keys of type +org.elasticsearch.spark.rdd.Metadata+:
 
@@ -379,7 +379,7 @@ JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <4>
 <3> Tuple for the second document wrapped around the id (+2+) and +jfk+
 <4> The +JavaPairRDD+ is saved accordingly using the keys as a id and the values as documents
 
-When more than just the id needs to be specified, one can chose to use a +java.util.Map+ populated with keys of type +org.elasticsearch.spark.rdd.Metadata+:
+When more than just the id needs to be specified, one can choose to use a +java.util.Map+ populated with keys of type +org.elasticsearch.spark.rdd.Metadata+:
 
 [source,java]
 ----
@@ -490,11 +490,11 @@ JavaPairRDD<String, Map<String, Object>> esRDD =
 <4> a dedicated `JavaPairRDD` for {es} is created for index `radio/artists`
 
 In a similar fashion one can use the overloaded `esRDD` methods to specify a query or pass a `Map` object for advanced configuration.
-Let us see how this looks like, but this time around using http://docs.oracle.com/javase/1.5.0/docs/guide/language/static-import.html[Java static imports] - further more, let us discard the documents ids and retrieve only the +RDD+ values:
+Let us see how this looks, but this time around using http://docs.oracle.com/javase/1.5.0/docs/guide/language/static-import.html[Java static imports]. Further more, let us discard the documents ids and retrieve only the +RDD+ values:
 
 [source,java]
 ----
-import static org.elasticsearch.spark.rdd.java.api.JavaEsSpark.*;          <1>
+import static org.elasticsearch.spark.rdd.java.api.JavaEsSpark.*;   <1>
 
 ...
 JavaRDD<Map<String, Object>> esRDD =
@@ -510,7 +510,7 @@ signatures). Moreover, the dedicated +RDD+ returns {es} documents as proper Java
 is typically the case with ++RDD++s). This is particularly powerful when using Java 8, which we strongly recommend as its
 http://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html[lambda expressions] make collection processing _extremely_ concise.
 
-To wit, let us assume one wants to filter the documents from the +RDD+ and return only those that contain a value that contain +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
+To wit, let us assume one wants to filter the documents from the +RDD+ and return only those that contain a value that contains +mega+ (please ignore the fact one can and should do the filtering directly through {es}).
 
 In versions prior to Java 8, the code would look something like this:
 [source, java]
@@ -540,13 +540,13 @@ JavaRDD<Map<String, Object>> filtered = esRDD.filter(doc ->
 [float]
 ===== Reading data in JSON format
 
-In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can use the dedicated +esJsonRDD+ methods. In this case, the connector will returns the documents content as it is received from {es} without any processing as an ++RDD[(String, String)]++ in Scala or ++JavaPairRDD[String, String]++ in Java with the keys representing the document id and the value its actual content in JSON format.
+In case where the results from {es} need to be in JSON format (typically to be sent down the wire to some other system), one can use the dedicated +esJsonRDD+ methods. In this case, the connector will return the documents content as it is received from {es} without any processing as an ++RDD[(String, String)]++ in Scala or ++JavaPairRDD[String, String]++ in Java with the keys representing the document id and the value its actual content in JSON format.
 
 [[spark-type-conversion]]
 [float]
 ==== Type conversion
 
-IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration option.
+IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration options.
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 {eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:
@@ -598,7 +598,7 @@ in addition, the following _implied_ conversion applies for Java types:
 |===
 
 The conversion is done as a _best_ effort; built-in Java and Scala types are guaranteed to be properly converted, however there are no guarantees for user types whether in Java or Scala. As mentioned in the tables above, when a `case` class is encountered in Scala or `JavaBean` in Java, the converters will try to +unwrap+ its content and save it as an `object`. Note this works only for top-level user objects - if the user object has other user objects nested in, the conversion is likely to fail since the converter does not perform nested +unwrapping+.
-This is done on purpose since the converter has to _serialize_ and _deserialize_ the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way to close to the realm of ORMs and arguably introduces too much complexity for little to now gain; thanks to the processing functionality in Spark and the plugability in {eh} one can easily transform objects into other types, if needed with minimal effort and maximum control.
+This is done on purpose since the converter has to _serialize_ and _deserialize_ the data and user types introduce ambiguity due to data loss; this can be addressed through some type of mapping however that takes the project way too close to the realm of ORMs and arguably introduces too much complexity for little to now gain; thanks to the processing functionality in Spark and the plugability in {eh} one can easily transform objects into other types, if needed with minimal effort and maximum control.
 
 .Geo types
 
@@ -713,7 +713,7 @@ saveToEs("spark/people");                                          <2>
 <1> statically import +JavaEsSpark SQL+
 <2> call +saveToEs+ method without having to type +JavaEsSpark+ again
 
-IMPORTANT: For maximum control over the mapping of your +SchemaRDD+ in {es}, it is highly recommended to create the mapping before hand. See <<mapping, this>> chapter for more information.
+IMPORTANT: For maximum control over the mapping of your +DataFrame+ in {es}, it is highly recommended to create the mapping before hand. See <<mapping, this>> chapter for more information.
 
 [float]
 [[spark-sql-write-12]]
@@ -994,8 +994,8 @@ sqlContext.sql(
 
 <1> Spark's temporary table name
 <2> +USING+ clause identifying the data source provider, in this case +org.elasticsearch.spark.sql+
-<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es+ prefix or skip it for convenient.
-<4> Since using +.+ can cause syntax exceptions, one should replace it instead with +_+ style. Thus, in this example +es.scroll.size+ becomes +scroll_size+ (as the leading +es+ can be removed). Do note this only work in Spark 1.3 as the Spark 1.4 has a stricter parser. See the chapter above for more information.
+<3> {eh} <<configuration,configuration options>>, the mandatory one being +resource+. One can use the +es+ prefix or skip it for convenience.
+<4> Since using +.+ can cause syntax exceptions, one should replace it instead with +_+ style. Thus, in this example +es.scroll.size+ becomes +scroll_size+ (as the leading +es+ can be removed). Do note this only works in Spark 1.3 as the Spark 1.4 has a stricter parser. See the chapter above for more information.
 
 Once defined, the schema is picked up automatically. So one can issue queries, right away:
 
@@ -1185,7 +1185,7 @@ JavaSchemaRDD people = JavaEsSparkSQL.esRDD(jsql, "spark/people", "?q=Smith" <1>
 [float]
 ==== Spark SQL Type conversion
 
-IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration option.
+IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in particular <<cfg-field-info, these>> configuration options.
 IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more information.
 
 {eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] (and back) as shown in the table below:
@@ -1231,7 +1231,7 @@ IMPORTANT: Since Spark SQL is strongly-typed, each geo field needs to have the s
 [float]
 === Using the {mr} layer
 
-Another way of using Spark with {es} is through the {mr} layer, that is by leveraging the dedicate +Input/OuputFormat+ in {eh}. However, unless one is stuck on
+Another way of using Spark with {es} is through the {mr} layer, that is by leveraging the dedicated +Input/OuputFormat+ in {eh}. However, unless one is stuck on
 {eh} 2.0, we _strongly_ recommend using the native integration as it offers significantly better performance and flexibility.
 
 [float]
@@ -1289,7 +1289,7 @@ long docCount = esRDD.count();
 <1> Create the Hadoop object (use the old API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represents the doc id, the value the doc itself
 
 The Scala version is below:
 

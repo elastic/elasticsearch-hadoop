@@ -6,7 +6,7 @@ ____
 http://hive.apache.org/[Hive] is a data warehouse system for Hadoop that facilitates easy data summarization, ad-hoc queries, and the analysis of large datasets stored in Hadoop compatible file systems. 
 ____
 
-Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data set are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
+Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL so that users can apply data defining and manipulating operations to it, just like with SQL. In Hive data sets are https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DDLOperations[defined] through 'tables' (that expose type information) in which data can be https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-DMLOperations[loaded], https://cwiki.apache.org/confluence/display/Hive/GettingStarted#GettingStarted-SQLOperations[selected and transformed] through built-in operators or custom/user defined functions (or https://cwiki.apache.org/confluence/display/Hive/OperatorsAndFunctions[UDF]s).
 
 [float]
 === Installation
@@ -29,7 +29,7 @@ As an alternative, one can use the command-line:
 ----
 $ bin/hive --auxpath=/path/elasticsearch-hadoop.jar
 ----
-or use the `hive.aux.jars.path` property specified either through the command-line or, if available, through if the `hive-site.xml` file, to register additional jars (that accepts an URI as well):
+or use the `hive.aux.jars.path` property specified either through the command-line or, if available, through the `hive-site.xml` file, to register additional jars (that accepts an URI as well):
 
 [source,bash]
 ----
@@ -69,7 +69,7 @@ TBLPROPERTIES('es.resource' = 'radio/artists',
 === Mapping
 
 By default, {eh} uses the Hive table schema to map the data in {es}, using both the field names and types in the process. There are cases however when the names in Hive cannot
-be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of names mapping in the following format: `Hive field name`:`Elasticsearch field name`
+be used with {es} (the field name can contain characters accepted by {es} but not by Hive). For such cases, one can use the `es.mapping.names` setting which accepts a comma-separated list of mapped names in the following format: `Hive field name`:`Elasticsearch field name`
 
 To wit:
 
@@ -88,7 +88,7 @@ TBLPROPERTIES('es.resource' = 'radio/artists',
 TIP: Hive is case **insensitive** while {es} is not. The loss of information can create invalid queries (as the column in Hive might not match the one in {es}). To avoid this, {eh} will always convert Hive column names to lower-case. 
 This being said, it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.
 
-TIP: Hive treats missing values through a special value `NULL` as indicated here https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-HandlingofNULLValues[here]. This means that when running an incorrect query (with incorrect or non-existing field names) the Hive tables will be populated with `NULL` instead of throwing an exception. Make sure to validate your data and keep a close eye on your schema since updates will otherwise go unnotice due to this lenient behavior.
+TIP: Hive treats missing values through a special value `NULL` as indicated https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types#LanguageManualTypes-HandlingofNULLValues[here]. This means that when running an incorrect query (with incorrect or non-existing field names) the Hive tables will be populated with `NULL` instead of throwing an exception. Make sure to validate your data and keep a close eye on your schema since updates will otherwise go unnotice due to this lenient behavior.
 
 [float]
 === Writing data to {es}
@@ -113,7 +113,7 @@ INSERT OVERWRITE TABLE artists
 <1> {es} Hive `StorageHandler`
 <2> {es} resource (index and type) associated with the given storage
 
-For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +table+ properties:
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>>, namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +table+ properties:
 
 [source,sql]
 ----
@@ -129,8 +129,7 @@ TBLPROPERTIES('es.mapping.id' = 'id'...);
 ==== Writing existing JSON to {es}
 
 For cases where the job input data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
-the `es.input.json` parameter. As such, in this case {eh} expects the output table to contain only one field, who
-s content is used as the JSON document. That is, the library will recognize specific 'textual' types (such as `string` or `binary`) or simply call (`toString`).
+the `es.input.json` parameter. As such, in this case {eh} expects the output table to contain only one field, who's content is used as the JSON document. That is, the library will recognize specific 'textual' types (such as `string` or `binary`) or simply call (`toString`).
 
 .Hive types to use for JSON representation
 
