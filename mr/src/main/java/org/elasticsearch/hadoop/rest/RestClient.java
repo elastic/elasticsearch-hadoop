@@ -18,7 +18,9 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -30,7 +32,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -55,7 +56,11 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.*;
+import static org.elasticsearch.hadoop.rest.Request.Method.DELETE;
+import static org.elasticsearch.hadoop.rest.Request.Method.GET;
+import static org.elasticsearch.hadoop.rest.Request.Method.HEAD;
+import static org.elasticsearch.hadoop.rest.Request.Method.POST;
+import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
 
 public class RestClient implements Closeable, StatsAware {
 
