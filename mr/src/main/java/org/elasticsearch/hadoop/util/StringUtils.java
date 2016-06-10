@@ -437,7 +437,7 @@ public abstract class StringUtils {
         else if (value.getClass().equals(String.class)) {
             return "\"" + StringUtils.jsonEncoding(value.toString()) + "\"";
         }
-        // else it's a Boolean or Number so no escaping or quotes
+        // else it's a RawJson, Boolean or Number so no escaping or quotes
         else {
             return value.toString();
         }

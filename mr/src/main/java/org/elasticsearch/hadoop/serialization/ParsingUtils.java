@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.elasticsearch.hadoop.serialization.Parser.Token;
+import org.elasticsearch.hadoop.serialization.bulk.RawJson;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -191,7 +192,7 @@ public abstract class ParsingUtils {
                                     value = parser.text();
                                     break;
                                 default:
-                                    value = readValueAsString(parser);
+                                    value = new RawJson(readValueAsString(parser));
                                 }
                             }
                             matcher.value(value);
