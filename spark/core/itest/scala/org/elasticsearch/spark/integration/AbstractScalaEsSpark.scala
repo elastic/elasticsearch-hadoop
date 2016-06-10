@@ -19,8 +19,8 @@
 package org.elasticsearch.spark.integration;
 
 import java.awt.Polygon
-import java.{ lang => jl }
-import java.{ util => ju }
+import java.{lang => jl}
+import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
@@ -50,6 +50,7 @@ import org.elasticsearch.spark.sparkContextFunctions
 import org.elasticsearch.spark.sparkPairRDDFunctions
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
+import org.hamcrest.Matchers.both
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
 import org.junit.AfterClass
@@ -290,6 +291,60 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     assertThat(RestUtils.get(wrapIndex("spark-test/json-SFO/_search?")), containsString("business"))
     assertThat(RestUtils.get(wrapIndex("spark-test/json-OTP/_search?")), containsString("participants"))
+  }
+
+  @Test
+  def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
+    val mapping = """{
+                    |  "contact": {
+                    |    "properties": {
+                    |      "id": {
+                    |        "type": "string"
+                    |      },
+                    |      "note": {
+                    |        "type": "string",
+                    |        "index": "not_analyzed"
+                    |      },
+                    |      "address": {
+                    |        "type": "nested",
+                    |        "properties": {
+                    |          "id":    { "type": "string"  },
+                    |          "zipcode": { "type": "string"  }
+                    |        }
+                    |      }
+                    |    }
+                    |  }
+                    |}""".stripMargin
+
+    val index = "spark-test"
+    val target = s"$index/contact"
+    RestUtils.touch(index)
+    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$target/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+
+    val props = Map("es.write.operation" -> "upsert",
+      "es.input.json" -> "true",
+      "es.mapping.id" -> "id"
+    )
+
+    // Upsert a value that should only modify the first document. Modification will add an address entry.
+    val lines = sc.makeRDD(List("""{"id":"1","address":{"zipcode":"12345","id":"1"}}"""))
+    val up_params = "new_address:address"
+    val up_script = "ctx._source.address+=new_address"
+    lines.saveToEs(target, props + ("es.update.script.params" -> up_params) + ("es.update.script" -> up_script))
+
+    // Upsert a value that should only modify the second document. Modification will update the "note" field.
+    val notes = sc.makeRDD(List("""{"id":"2","note":"Second"}"""))
+    val note_up_params = "new_note:note"
+    val note_up_script = "ctx._source.note=new_note"
+    notes.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script))
+
+    assertTrue(RestUtils.exists(s"$target/1"))
+    assertThat(RestUtils.get(s"$target/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
+
+    assertTrue(RestUtils.exists(s"$target/2"))
+    assertThat(RestUtils.get(s"$target/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
   }
 
   @Test
