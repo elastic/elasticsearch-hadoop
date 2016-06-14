@@ -11,7 +11,7 @@ Hive abstracts Hadoop by abstracting it through SQL-like language, called HiveQL
 [float]
 === Installation
 
-Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/Hive/languagemanual-cli.html#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
+Make {eh} jar available in the Hive classpath. Depending on your options, there are various https://cwiki.apache.org/confluence/display/Hive/HivePlugins#HivePlugins-DeployingjarsforUserDefinedFunctionsandUserDefinedSerDes[ways] to achieve that. Use https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Cli#LanguageManualCli-HiveResources[ADD] command to add files, jars (what we want) or archives to the classpath:
 
 ----
 ADD JAR /path/elasticsearch-hadoop.jar;
