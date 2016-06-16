@@ -23,10 +23,12 @@ import java.util.Map;
 
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.ResourceSchema.ResourceFieldSchema;
+import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
 import org.apache.pig.data.DataType;
 import org.apache.pig.data.Tuple;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.Generator;
@@ -182,14 +184,18 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
             // check if the tuple contains only empty fields
             boolean allEmpty = true;
             // as an exception, Pig maps can have different value types but in that case
-            // there has to be no schema declared (yey!)
-            // so handle this as an exception
+            // there has to be no schema declared (yey!).
+            // That being said, maps that are empty also have no schema (boo!).
+            // So before we say it's some empty field, check to see if it's a mixed value type map first.
+            int currentField = 0;
+            Tuple currentTuple = (Tuple) object;
             for (ResourceFieldSchema nestedField : nestedSchema.getFields()) {
-                allEmpty &= (nestedField.getSchema() == null && nestedField.getType() != DataType.MAP && PigUtils.isComplexType(nestedField));
+                allEmpty = (nestedField.getSchema() == null && !isPopulatedMixedValueMap(nestedField, currentField, currentTuple) && PigUtils.isComplexType(nestedField));
                 // break look
                 if (!allEmpty) {
                     break;
                 }
+                currentField++;
             }
             isEmpty = allEmpty;
         }
@@ -242,6 +248,25 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
         }
 
         return result;
+    }
+
+    /**
+     * Checks to see if the given field is a schema-less Map that has values.
+     * @return true if Map has no schema but has values (mixed schema map). false if not a Map or if Map is just empty.
+     */
+    private boolean isPopulatedMixedValueMap(ResourceFieldSchema schema, int field, Tuple object) {
+        if (schema.getType() != DataType.MAP) {
+            // Can't be a mixed value map if it's not a map at all.
+            return false;
+        }
+
+        try {
+            Object fieldValue = object.get(field);
+            Map<?, ?> map = (Map<?, ?>) fieldValue;
+            return schema.getSchema() == null && !(map == null || map.isEmpty());
+        } catch (ExecException e) {
+            throw new EsHadoopIllegalStateException(e);
+        }
     }
 
 
