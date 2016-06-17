@@ -39,6 +39,8 @@ allprojects {
     apply from: "$rootDir/dist.gradle"
 }
 
+println "Building version [$version]"
+
 ext.hadoopClient = []
 ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 

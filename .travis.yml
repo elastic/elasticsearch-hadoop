@@ -5,3 +5,5 @@ jdk:
 before_install:
  - "chmod +x gradlew"
  - export JAVA_OPTS="-Xmx2048m -XX:MaxPermSize=386m"
+
+install: ./gradlew assemble -Pskip.signing
