@@ -136,6 +136,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean) ext
     val results = sqc.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10")
     //results.take(5).foreach(println)
   }
+  
+  @Test(expected = classOf[EsHadoopIllegalArgumentException])
+  def testIndexCreationDisabled() {
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_INDEX_AUTO_CREATE -> "no")
+    val target = wrapIndex("spark-test-non-existing/empty-dataframe")
+    artistsAsSchemaRDD.saveToEs(target, newCfg)
+  }
 
   @Test
   def testEsSchemaRDD1Write() {

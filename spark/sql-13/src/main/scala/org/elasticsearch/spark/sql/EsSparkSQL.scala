@@ -12,6 +12,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.rest.InitializationUtils
 
 object EsSparkSQL {
 
@@ -51,6 +52,9 @@ object EsSparkSQL {
     val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
     esCfg.merge(cfg.asJava)
+
+    InitializationUtils.checkIdForOperation(esCfg);
+    InitializationUtils.checkIndexExistence(esCfg, null);
 
     sparkCtx.runJob(srdd.rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
   }

@@ -13,6 +13,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.spark.cfg.SparkSettingsManager
+import org.elasticsearch.hadoop.rest.InitializationUtils
 
 object EsSpark {
   //
@@ -54,17 +55,7 @@ object EsSpark {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEs(rdd: RDD[_], cfg: Map[String, String]) {
-    CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
-
-    if (rdd == null || rdd.partitions.length == 0) {
-      return
-    }
-    
-    val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
-    val config = new PropertiesSettings().load(sparkCfg.save())
-    config.merge(cfg.asJava)
-
-    rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save()).write _)
+    doSaveToEs(rdd, cfg, false)
   }
 
   // Save with metadata
@@ -73,6 +64,10 @@ object EsSpark {
     saveToEsWithMeta(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
   def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
+    doSaveToEs(rdd, cfg, true)
+  }
+
+  private def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean) {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
     if (rdd == null || rdd.partitions.length == 0) {
@@ -83,7 +78,10 @@ object EsSpark {
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
 
-    rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), true).write _)
+    InitializationUtils.checkIdForOperation(config);
+    InitializationUtils.checkIndexExistence(config, null);
+
+    rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), hasMeta).write _)
   }
 
   // JSON variant

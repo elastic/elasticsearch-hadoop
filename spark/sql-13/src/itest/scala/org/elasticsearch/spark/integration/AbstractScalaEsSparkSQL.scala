@@ -239,6 +239,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val idx = sqc.emptyDataFrame.saveToEs(target)
   }
 
+  @Test(expected = classOf[EsHadoopIllegalArgumentException])
+  def testIndexCreationDisabled() {
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_INDEX_AUTO_CREATE -> "no")
+    val target = wrapIndex("spark-test-non-existing/empty-dataframe")
+    val idx = sqc.emptyDataFrame.saveToEs(target, newCfg)
+  }
+
   @Test
   def testMultiFieldsWithSameName {
     val index = wrapIndex("sparksql-test")
