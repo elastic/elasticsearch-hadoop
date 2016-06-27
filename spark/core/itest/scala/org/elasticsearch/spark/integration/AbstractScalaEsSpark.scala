@@ -29,6 +29,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
@@ -64,6 +65,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
@@ -122,6 +124,18 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     sc.emptyRDD.saveToEs(target, cfg)
   }
 
+  @Test(expected=classOf[EsHadoopIllegalArgumentException])
+  def testEsRDDWriteIndexCreationDisabled() {
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+    val target = wrapIndex("spark-test-nonexisting/scala-basic-write")
+
+    sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, collection.mutable.Map(cfg.toSeq: _*) += (
+      ES_INDEX_AUTO_CREATE -> "no"))
+    assertTrue(!RestUtils.exists(target))
+  }
+    
   @Test
   def testEsRDDWrite() {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
