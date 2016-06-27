@@ -22,8 +22,6 @@ allprojects {
       // Hive depends on JDO ec2 missing from Maven Central
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
-      // Lucene snapshot
-      maven { url "http://download.elastic.co/lucenesnapshots/f0aa4fc" }
     }
 
     apply plugin: "java"
@@ -604,12 +602,14 @@ def baseSparkProject(target, sparkVersion) {
     target.eclipse {
         project.file.whenMerged { pj ->
             // eliminated resources created by gradle
+            
             linkedResources.clear()
-            linkedResources.add name: "core/main/scala", type: "2", location: "$coreSrc/main/scala"
-            linkedResources.add name: "core/test/scala", type: "2", location: "$coreSrc/test/scala"
-            linkedResources.add name: "core/itest/java", type: "2", location: "$coreSrc/itest/java"
-            linkedResources.add name: "core/itest/scala", type: "2", location: "$coreSrc/itest/scala"
-            linkedResources.add name: "core/itest/resources", type: "2", location: "$coreSrc/itest/resources"
+            linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/main/scala", "2", "$coreSrc/main/scala", null))
+            linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/test/scala", "2", "$coreSrc/test/scala", null))
+            linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/java", "2", "$coreSrc/itest/java", null))
+            linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/scala", "2", "$coreSrc/itest/scala", null))
+            linkedResources.add(new org.gradle.plugins.ide.eclipse.model.Link("core/itest/resources","2", "$coreSrc/itest/resources", null))
+            
         }
         classpath.file {
             whenMerged { cp ->

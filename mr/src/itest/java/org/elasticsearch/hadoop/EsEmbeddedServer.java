@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.hadoop.script.GroovyPlugin;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -35,7 +34,7 @@ import org.elasticsearch.plugins.Plugin;
 public class EsEmbeddedServer {
     private static class PluginConfigurableNode extends Node {
         public PluginConfigurableNode(Settings settings, Collection<Class<? extends Plugin>> classpathPlugins) {
-            super(InternalSettingsPreparer.prepareEnvironment(settings, null), Version.CURRENT, classpathPlugins);
+            super(InternalSettingsPreparer.prepareEnvironment(settings, null), classpathPlugins);
         }
     }
 

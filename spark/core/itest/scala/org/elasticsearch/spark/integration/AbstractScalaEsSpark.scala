@@ -188,7 +188,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
   
-  @Test
+  //@Test - disabled since alpha4
   def testEsRDDWriteWithMappingTimestamp() {
     val mapping = """{ "scala-timestamp-write": {
       | "_timestamp" : {

@@ -23,7 +23,7 @@ public class SparkScalaSuite {
                 System.out.println("Cannot find class " + clazz);
             }
             while (res.hasMoreElements()) {
-                System.out.println(res.nextElement().toURI().toASCIIString());
+                res.nextElement().toURI().toASCIIString();
             }
         } catch (Exception ex) {
         }
