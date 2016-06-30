@@ -13,7 +13,7 @@
 :ver:	5.0.0-alpha4
 :ver-d: 5.0.0.BUILD-SNAPSHOT
 :es-v:	5.0.0-alpha4
-:sp-v:	1.6.1
+:sp-v:	1.6.2
 :st-v:	1.0.1
 :pg-v:	0.15.0
 :hv-v:	1.2.1
