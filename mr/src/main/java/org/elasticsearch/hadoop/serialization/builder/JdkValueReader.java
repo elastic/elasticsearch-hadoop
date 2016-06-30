@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter.Result;
 import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.unit.Booleans;
 
 
 /**
@@ -172,14 +173,19 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     protected Object booleanValue(String value, Parser parser) {
         Boolean val = null;
 
-        if (value == null || isEmpty(value)) {
+        if (value == null) {
             return nullValue();
         }
         else {
             Token tk = parser.currentToken();
 
+            if (tk == Token.VALUE_NULL) {
+                return nullValue();
+            }
             if (tk == Token.VALUE_BOOLEAN) {
                 val = parser.booleanValue();
+            } else if (tk == Token.VALUE_NUMBER) {
+                val = parser.intValue() != 0;
             }
             else {
                 val = parseBoolean(value);
@@ -190,7 +196,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     }
 
     protected Boolean parseBoolean(String value) {
-        return Boolean.parseBoolean(value);
+        return Booleans.parseBoolean(value);
     }
 
     protected Object processBoolean(Boolean value) {
