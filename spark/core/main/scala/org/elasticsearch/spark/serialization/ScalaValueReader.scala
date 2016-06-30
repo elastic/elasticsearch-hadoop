@@ -2,13 +2,12 @@ package org.elasticsearch.spark.serialization
 
 import java.util.Collections
 import java.util.Date
-import java.util.{ List => JList }
+import java.util.{List => JList}
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.Seq
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.Map
-
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.FieldType
 import org.elasticsearch.hadoop.serialization.FieldType.BINARY
@@ -36,6 +35,7 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
 import org.elasticsearch.hadoop.util.DateUtils
 import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.util.unit.Booleans
 
 class ScalaValueReader extends ValueReader with SettingsAware {
 
@@ -113,7 +113,12 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   protected def parseDouble(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_NUMBER) parser.doubleValue().toDouble else value.toDouble }
 
   def booleanValue(value: String, parser:Parser) = { checkNull(parseBoolean, value, parser) }
-  protected def parseBoolean(value: String, parser:Parser) = { if (parser.currentToken()== VALUE_BOOLEAN)  parser.booleanValue() else value.toBoolean }
+  protected def parseBoolean(value: String, parser:Parser) = {
+    if (parser.currentToken()== VALUE_NULL) nullValue()
+    else if (parser.currentToken()== VALUE_BOOLEAN) parser.booleanValue()
+    else if (parser.currentToken()== VALUE_NUMBER) parser.intValue() != 0
+    else Booleans.parseBoolean(value)
+  }
 
   def binaryValue(value: Array[Byte]) = {
     if (value != null) {
