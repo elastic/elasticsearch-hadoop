@@ -31,6 +31,7 @@ public abstract class Booleans {
             return defaultValue;
         }
         String val = value.trim().toLowerCase(Locale.ROOT);
-        return (val.equals("true") || val.equals("1") || val.equals("on") || val.equals("yes"));
+        return !(val.isEmpty() || val.equals("false") || val.equals("0") || val.equals("off") || val.equals("no"));
     }
+
 }
