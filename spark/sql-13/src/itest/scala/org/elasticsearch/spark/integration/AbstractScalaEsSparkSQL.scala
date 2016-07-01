@@ -22,6 +22,7 @@ import java.{lang => jl}
 import java.sql.Timestamp
 import java.{util => ju}
 import java.util.concurrent.TimeUnit
+
 import scala.collection.JavaConversions.propertiesAsScalaMap
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsJavaMapConverter
@@ -33,9 +34,7 @@ import org.apache.spark.SparkException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SaveMode
-import org.apache.spark.sql.catalyst.expressions.GenericRow
 import org.apache.spark.sql.types.ArrayType
-import org.apache.spark.sql.types.DataTypes
 import org.apache.spark.sql.types.IntegerType
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.types.StructField
@@ -45,7 +44,6 @@ import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel._
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
-import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
@@ -71,8 +69,8 @@ import org.junit.runners.MethodSorters
 import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
+
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.apache.spark.sql.types.DoubleType
 
 object AbstractScalaEsScalaSparkSQL {
@@ -393,6 +391,28 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
     assertThat(RestUtils.exists(target + "/1"), is(true))
     assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")))
+  }
+
+  @Test
+  def testEsDataFrame1WriteNullValue() {
+    val idx = wrapIndex("spark-test")
+    val target = s"$idx/null-data-test"
+
+    val docs = Seq(
+      """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
+      """{"id":"2","name":{"first":"Chris","last":"Evans"}}"""
+    )
+
+    val conf = Map(ES_MAPPING_ID -> "id")
+    val rdd = sc.makeRDD(docs)
+    val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
+    jsonDF.saveToEs(target, conf)
+    RestUtils.refresh(idx)
+    val hit1 = RestUtils.get(s"$target/1/_source")
+    val hit2 = RestUtils.get(s"$target/2/_source")
+
+    assertThat(hit1, containsString("suffix"))
+    assertThat(hit2, not(containsString("suffix")))
   }
 
   @Test

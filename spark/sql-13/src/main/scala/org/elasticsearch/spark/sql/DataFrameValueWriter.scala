@@ -55,13 +55,11 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
 
         schema.fields.view.zipWithIndex foreach {
           case (field, index) =>
-            if (shouldKeep(generator.getParentPath(),field.name)) {
-              generator.writeFieldName(field.name)
-              if (r.isNullAt(index)) {
-                generator.writeNull()
-              } else {
+            if (shouldKeep(generator.getParentPath,field.name)) {
+              if (!r.isNullAt(index)) {
+                generator.writeFieldName(field.name)
                 val result = write(field.dataType, r(index), generator)
-                if (!result.isSuccesful()) {
+                if (!result.isSuccesful) {
                   return handleUnknown(value, generator)
                 }
               }
