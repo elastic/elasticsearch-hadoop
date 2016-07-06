@@ -87,7 +87,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es2x.json"), "");
-        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
         assertEquals(3, inputData.entries());
         assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
         String string = inputData.toString();
@@ -112,7 +112,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es1x.json"), "");
-        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
         assertEquals(3, inputData.entries());
         assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
         String string = inputData.toString();
@@ -137,7 +137,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es10x.json"), "");
-        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
         assertEquals(3, inputData.entries());
         assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
         String string = inputData.toString();
@@ -162,7 +162,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es090x.json"), "");
-        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
         assertEquals(3, inputData.entries());
         assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
         String string = inputData.toString();
@@ -187,7 +187,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es5x.json"), "");
-        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
         assertEquals(3, inputData.entries());
         assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
         String string = inputData.toString();

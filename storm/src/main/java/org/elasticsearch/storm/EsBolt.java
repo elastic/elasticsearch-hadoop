@@ -144,8 +144,7 @@ public class EsBolt implements IRichBolt {
         BitSet flush = null;
 
         try {
-            flush = writer.repository.tryFlush();
-            writer.repository.discard();
+            flush = writer.repository.tryFlush().getLeftovers();
         } catch (EsHadoopException ex) {
             // fail all recorded tuples
             for (Tuple input : inflightTuples) {

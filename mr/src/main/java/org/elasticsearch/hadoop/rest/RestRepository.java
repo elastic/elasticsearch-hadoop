@@ -165,8 +165,7 @@ public class RestRepository implements Closeable, StatsAware {
     /**
      * Writes the objects to index.
      *
-     * @param data as a byte array
-     * @param size the length to use from the given array
+     * @param ba The data as a bytes array
      */
     public void writeProcessedToIndex(BytesArray ba) {
         Assert.notNull(ba, "no data given");
@@ -211,8 +210,8 @@ public class RestRepository implements Closeable, StatsAware {
         }
     }
 
-    public BitSet tryFlush() {
-        BitSet bulkResult = EMPTY;
+    public BulkResponse tryFlush() {
+        BulkResponse bulkResult;
 
         try {
             // double check data - it might be a false flush (called on clean-up)
@@ -223,17 +222,16 @@ public class RestRepository implements Closeable, StatsAware {
 
                 bulkResult = client.bulk(resourceW, data);
                 executedBulkWrite = true;
+            } else {
+                bulkResult = BulkResponse.ok(0);
             }
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
             throw ex;
         }
 
-        // discard the data buffer, only if it was properly sent/processed
-        //if (bulkResult.isEmpty()) {
         // always discard data since there's no code path that uses the in flight data
         discard();
-        //}
 
         return bulkResult;
     }
@@ -244,9 +242,15 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void flush() {
-        BitSet bulk = tryFlush();
-        if (!bulk.isEmpty()) {
-            throw new EsHadoopException(String.format("Could not write all entries [%s/%s] (maybe ES was overloaded?). Bailing out...", bulk.cardinality(), bulk.size()));
+        BulkResponse bulk = tryFlush();
+        if (!bulk.getLeftovers().isEmpty()) {
+            String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getLeftovers().cardinality(), bulk.getTotalWrites(), bulk.getErrorExamples().size());
+            StringBuilder message = new StringBuilder(header);
+            for (String errors : bulk.getErrorExamples()) {
+                message.append("\t").append(errors).append("\n");
+            }
+            message.append("Bailing out...");
+            throw new EsHadoopException(message.toString());
         }
     }
 

@@ -22,7 +22,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,6 +62,8 @@ import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
 
 public class RestClient implements Closeable, StatsAware {
+
+    private final static int MAX_BULK_ERROR_MESSAGES = 5;
 
     private NetworkClient network;
     private final ObjectMapper mapper;
@@ -149,9 +150,9 @@ public class RestClient implements Closeable, StatsAware {
         return (T) (string != null ? map.get(string) : map);
     }
 
-    public BitSet bulk(Resource resource, TrackingBytesArray data) {
+    public BulkResponse bulk(Resource resource, TrackingBytesArray data) {
         Retry retry = retryPolicy.init();
-        int httpStatus = 0;
+        BulkResponse processedResponse;
 
         boolean isRetry = false;
 
@@ -175,14 +176,14 @@ public class RestClient implements Closeable, StatsAware {
 
             isRetry = true;
 
-            httpStatus = (retryFailedEntries(response, data) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK);
-        } while (data.length() > 0 && retry.retry(httpStatus));
+            processedResponse = processBulkResponse(response, data);
+        } while (data.length() > 0 && retry.retry(processedResponse.getHttpStatus()));
 
-        return data.leftoversPosition();
+        return processedResponse;
     }
 
     @SuppressWarnings("rawtypes")
-    boolean retryFailedEntries(Response response, TrackingBytesArray data) {
+    BulkResponse processBulkResponse(Response response, TrackingBytesArray data) {
         InputStream content = response.body();
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
@@ -192,12 +193,15 @@ public class RestClient implements Closeable, StatsAware {
                     // recorded bytes are ack here
                     stats.bytesAccepted += data.length();
                     stats.docsAccepted += data.entries();
-                    return false;
+                    return BulkResponse.ok(data.entries());
                 }
             } finally {
                 countStreamStats(content);
             }
 
+            int docsSent = data.entries();
+            List<String> errorMessageSample = new ArrayList<String>(MAX_BULK_ERROR_MESSAGES);
+            int errorMessagesSoFar = 0;
             int entryToDeletePosition = 0; // head of the list
             for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
                 Map map = iterator.next();
@@ -208,6 +212,14 @@ public class RestClient implements Closeable, StatsAware {
                 if (error != null && !error.isEmpty()) {
                     if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
+                        if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
+                            // We don't want to spam the log with the same error message 1000 times.
+                            // Chances are that the error message is the same across all failed writes
+                            // and if it is not, then there are probably only a few different errors which
+                            // this should pick up.
+                            errorMessageSample.add(error);
+                            errorMessagesSoFar++;
+                        }
                     }
                     else {
                         String message = (status != null ?
@@ -222,7 +234,8 @@ public class RestClient implements Closeable, StatsAware {
                 }
             }
 
-            return entryToDeletePosition > 0;
+            int httpStatusToReport = entryToDeletePosition > 0 ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
+            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), errorMessageSample);
             // catch IO/parsing exceptions
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
