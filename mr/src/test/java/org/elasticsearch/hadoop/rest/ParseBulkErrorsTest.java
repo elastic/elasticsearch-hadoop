@@ -171,4 +171,30 @@ public class ParseBulkErrorsTest {
         assertTrue(string.contains("E"));
     }
 
+    @Test
+    public void testParseBulkErrorsInES5x() throws Exception {
+        String inputEntry = IOUtils.asString(getClass().getResourceAsStream("bulk-retry-input-template.json"));
+
+        TrackingBytesArray inputData = new TrackingBytesArray(new BytesArray(128));
+
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "A")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "B")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "C")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "D")));
+        inputData.copyFrom(new BytesArray(inputEntry.replace("w", "E")));
+
+        assertEquals(5, inputData.entries());
+        assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
+
+        Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es5x.json"), "");
+        assertTrue(rc.retryFailedEntries(response, inputData));
+        assertEquals(3, inputData.entries());
+        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
+        String string = inputData.toString();
+        assertTrue(string.contains("B"));
+        assertTrue(string.contains("D"));
+        assertTrue(string.contains("E"));
+
+    }
+
 }
