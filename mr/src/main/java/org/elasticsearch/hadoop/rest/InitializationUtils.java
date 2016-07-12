@@ -160,6 +160,12 @@ public abstract class InitializationUtils {
 
         // pick between data or client only nodes
         Assert.isTrue(!(settings.getNodesClientOnly() && settings.getNodesDataOnly()), "Use either client-only or data-only nodes but not both");
+
+        // field inclusion/exclusion + input as json does not mix and the user should be informed.
+        if (settings.getInputAsJson()) {
+            Assert.isTrue(settings.getMappingIncludes().isEmpty(), "When writing data as JSON, the field inclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+        }
     }
 
     public static String discoverEsVersion(Settings settings, Log log) {
