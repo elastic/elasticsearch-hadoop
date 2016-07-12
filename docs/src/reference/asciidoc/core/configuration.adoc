@@ -195,11 +195,17 @@ Field/property to be included in the document sent to {es}. Useful for _extracti
 to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
 
+IMPORTANT: The `es.mapping.include` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
+data that is implicitly excluded, any jobs with these property conflicts will refuse to execute!
+
 added[2.1]
 `es.mapping.exclude` (default none)::
 Field/property to be excluded in the document sent to {es}. Useful for _eliminating_ unneeded data from entities. The syntax is similar
 to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded.
+
+IMPORTANT: The `es.mapping.exclude` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
+data that is explicitly excluded, any jobs with these property conflicts will refuse to execute!
 
 For example:
 [source,ini]
