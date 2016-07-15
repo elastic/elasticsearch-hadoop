@@ -20,7 +20,7 @@ Instead of 'reinventing the wheel' and replicating functionality, {eh} focuses o
 
 When it comes to handling dates, {es} always uses the http://en.wikipedia.org/wiki/ISO_8601[ISO 8601] format for date/time. This is the default date format of {es} - if a custom one is needed, please *add* it to the default option rather then just replacing it. See the {ref}/mapping-date-format.html[date format] section in {es} reference documentation for more information.
 Note that when reading data, if the date is not in ISO8601 format, by default {eh} will likely not understand it as it does not replicate the elaborate date parsing in {es}. In these cases one can simply disable the date conversion
-and pass the raw information as a `long` or `String`, through the `es.mapping.rich.date` <<cfg-field-info, property>>.
+and pass the raw information as a `long` or `String`, through the `es.mapping.date.rich` <<cfg-field-info, property>>.
 
 As a side note, {eh} tries to detect whether dedicated date parsing libraries (in particular Joda, used also by {es}) are available at runtime and if so, will use them. If not, it will default to parsing using JDK classes which are not
 as rich. Going forward especially with the advent of JDK 8, {eh} will try to migrate to `javax.time` library to have the same behaviour regardless of the classpath available at runtime.
