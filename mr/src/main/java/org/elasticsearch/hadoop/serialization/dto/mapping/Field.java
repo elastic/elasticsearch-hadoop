@@ -145,7 +145,7 @@ public class Field implements Serializable {
             for (Entry<String, Object> e : content.entrySet()) {
                 if (e.getValue() instanceof Map) {
                     Field fl = parseField(e, key);
-                    if (fl != null && fl.type == FieldType.OBJECT && "properties".equals(fl.name)) {
+                    if (fl != null && fl.type == FieldType.OBJECT && "properties".equals(fl.name) && !isFieldNamedProperties(e.getValue())) {
                         // use the enclosing field (as it might be nested)
                         return new Field(key, fieldType, fl.properties);
                     }
@@ -159,6 +159,16 @@ public class Field implements Serializable {
 
 
         throw new EsHadoopIllegalArgumentException("invalid map received " + entry);
+    }
+
+
+    private static boolean isFieldNamedProperties(Object fieldValue){
+        if(fieldValue instanceof Map){
+            Map<String,Object> fieldValueAsMap = ((Map<String, Object>)fieldValue);
+            if((fieldValueAsMap.containsKey("type") && fieldValueAsMap.get("type") instanceof String)
+                    || (fieldValueAsMap.containsKey("properties") && !isFieldNamedProperties(fieldValueAsMap.get("properties")))) return true;
+        }
+        return false;
     }
 
     @Override
