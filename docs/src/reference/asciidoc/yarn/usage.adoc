@@ -227,3 +227,23 @@ and tell {ey} to load it:
 ----
 $ hadoop jar elasticsearch-yarn-<version>.jar [-command] loadConfig=extra-cfg.properties
 ----
+
+added[5.0]
++am.kerberos.principal+::
+Name of the kerberos prinicpal that the Application Master should use when connecting to HDFS to retrieve parcels for provisioning containers.
+This defaults to the current system user name. When YARN is in secure container mode, the Application Master is executed using the user name
+that submitted the application originally, and thus, that original user name will be used if nothing is specified for this config.
+If a user specifies a +_HOST+ pattern in the principal, then the pattern will be replaced with the environment's hostname. This allows
+administrators to provision a different keytab file per host. To wit:
+[source,bash]
+----
+elasticsearch@SECURITY.REALM        <1>
+elasticsearch/_HOST@SECURITY.REALM  <2>
+----
+<1> This principal would be unmodified no matter which host the Application Master starts on.
+<2> If the Application Manager starts on a node called +pd-yarn-01+ then this principal would be modified into +elasticsearch/pd-yarn-01@SECURITY.REALM+.
+
++am.kerberos.keytab+::
+Path to a readable keytab file that is accessible on every node that the Application Master may start on. The keytab
+must contain valid credentials for the principal configured using the +am.kerberos.principal+ setting, either in the
+format of +user@REALM+ or +user/host@REALM+.
