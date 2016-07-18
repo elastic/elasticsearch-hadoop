@@ -54,3 +54,14 @@ IMPORTANT: If no storage is configured, out of the box {es} will use its contain
 === Node affinity
 
 Currently, {ey} does not provide any option for tying {es} nodes to specify YARN nodes however this will be addressed in the future. In practice this means that unless YARN is specifically configured, there are no guarantees on its topology between restarts, that is on what machines {es} nodes will run each time.
+
+=== Security
+
+The Hadoop Ecosystem uses Kerberos for authentication between different components. The services that make up the
+components of the Ecosystem require keytab files to be present on each node to allow for passwordless login. When
+submitting an application to a secured YARN cluster, YARN runs the application as if it were the user that submitted
+it. In the case of this integration, The Application Master requires access to HDFS to distribute the Elasticsearch
+packages during container provisioning. The Application Master must be able to find a valid keytab file on any of the
+nodes that the it may start on as well as a principal that can be found within said keytab. You can do this by using a
+unique user as the owner of the Elasticsearch cluster in YARN, and distributing keytabs for this user to all machines
+in the cluster.
