@@ -209,4 +209,36 @@ public class FieldTest {
         assertEquals("name", nestedProps[0].name());
         assertEquals(FieldType.LONG, nestedProps[1].type());
     }
+
+    @Test
+    public void testMappingWithFieldsNamedPropertiesAndType() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("mapping_with_fields_named_properties_and_type.json"), Map.class);
+        Field fl = Field.parseField(value);
+        assertEquals("es_type_name", fl.name());
+        assertEquals(FieldType.OBJECT, fl.type());
+        assertEquals("field1", fl.properties()[0].name());
+        assertEquals(FieldType.STRING, fl.properties()[0].type());
+        assertEquals("properties", fl.properties()[1].name());
+        assertEquals(FieldType.OBJECT, fl.properties()[1].type());
+        assertEquals("subfield1", fl.properties()[1].properties()[0].name());
+        assertEquals(FieldType.STRING, fl.properties()[1].properties()[0].type());
+        assertEquals("subfield2", fl.properties()[1].properties()[1].name());
+        assertEquals(FieldType.STRING, fl.properties()[1].properties()[1].type());
+        assertEquals("field2", fl.properties()[2].name());
+        assertEquals(FieldType.OBJECT, fl.properties()[2].type());
+        assertEquals("subfield3", fl.properties()[2].properties()[0].name());
+        assertEquals(FieldType.STRING, fl.properties()[2].properties()[0].type());
+        assertEquals("properties", fl.properties()[2].properties()[1].name());
+        assertEquals(FieldType.STRING, fl.properties()[2].properties()[1].type());
+        assertEquals("type", fl.properties()[2].properties()[2].name());
+        assertEquals(FieldType.OBJECT, fl.properties()[2].properties()[2].type());
+        assertEquals("properties", fl.properties()[2].properties()[2].properties()[0].name());
+        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[1].type());
+        assertEquals("subfield5", fl.properties()[2].properties()[2].properties()[1].name());
+        assertEquals(FieldType.OBJECT, fl.properties()[2].properties()[2].properties()[0].type());
+        assertEquals("properties", fl.properties()[2].properties()[2].properties()[0].properties()[0].name());
+        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[0].properties()[0].type());
+        assertEquals("subfield4", fl.properties()[2].properties()[2].properties()[0].properties()[1].name());
+        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[0].properties()[1].type());
+    }
 }
