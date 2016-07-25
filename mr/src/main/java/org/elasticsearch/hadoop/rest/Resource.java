@@ -103,11 +103,11 @@ public class Resource {
         return indexAndType;
     }
 
-    String type() {
+    public String type() {
         return type;
     }
 
-    String index() {
+    public String index() {
         return index;
     }
 

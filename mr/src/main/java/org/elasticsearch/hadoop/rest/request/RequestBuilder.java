@@ -16,28 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.request;
 
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.Before;
-import org.junit.Test;
+import org.elasticsearch.hadoop.rest.RestClient;
 
-import static org.junit.Assert.assertTrue;
+public abstract class RequestBuilder<T extends RequestBuilder.Response> {
+    protected final RestClient client;
 
-public class QueryTest {
-
-    private Settings cfg = new TestSettings();
-
-    @Before
-    public void setup() {
-        cfg = new TestSettings();
+    public RequestBuilder(RestClient client) {
+        this.client = client;
     }
 
-    @Test
-    public void testSimpleQuery() {
-        cfg.setResourceRead("foo/bar");
-        assertTrue(new SearchRequestBuilder(EsMajorVersion.V_5_X, true).indices("foo").types("bar").toString().contains("foo/bar"));
-    }
+    public abstract T execute();
+
+    interface Response {}
 }

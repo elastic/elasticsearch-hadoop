@@ -16,20 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.query;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.BytesArray;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.elasticsearch.hadoop.rest.QueryUtils.*;
+import static org.elasticsearch.hadoop.rest.query.QueryUtils.*;
 
 public class QueryUtilsTest {
 
     private Settings cfg;
-    private final String FILTER = "{\"term\" : { \"foo\" : \"bar\" } }";
 
     @Before
     public void before() {
@@ -40,64 +38,56 @@ public class QueryUtilsTest {
     @Test
     public void testTranslateSimpleUriQueryWithoutArgs() throws Exception {
         cfg.setQuery("?q=m*");
-        BytesArray query = parseQuery(cfg);
+        QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
     }
 
     @Test
     public void testTranslateSimpleUriQuery() throws Exception {
         cfg.setQuery("?q=foo");
-        BytesArray query = parseQuery(cfg);
+        QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
     }
 
     @Test
     public void testTranslateSimpleFieldUriQuery() throws Exception {
         cfg.setQuery("?q=foo:bar");
-        BytesArray query = parseQuery(cfg);
+        QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
     }
 
     @Test
     public void testTranslateUriQueryWithAnalyzer() throws Exception {
         cfg.setQuery("?q=foo:bar&analyzer=default");
-        BytesArray query = parseQuery(cfg);
+        QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
     }
 
     @Test
     public void testTranslateUriQueryWithDefaultField() throws Exception {
         cfg.setQuery("?q=foo:bar&df=name");
-        BytesArray query = parseQuery(cfg);
+        QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
     }
 
     @Test
     public void testTranslateSimpleUriQueryWithNoFilter() throws Exception {
         cfg.setQuery("?q=foo:bar");
-        BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(true, query));
-        System.out.println(applyFilters(true, query, null));
+        QueryBuilder query = parseQuery(cfg);
+        System.out.println(query);
     }
 
     @Test
     public void testTranslateUriQueryWithBasicFilter() throws Exception {
         cfg.setQuery("?q=foo:bar");
-        BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(true, query, FILTER));
+        QueryBuilder query = parseQuery(cfg);
+        System.out.println(query);
     }
 
     @Test
     public void testTranslateUriQueryWithDefaultFieldAndFilters() throws Exception {
         cfg.setQuery("?q=foo:bar&df=name");
-        BytesArray query = parseQuery(cfg);
-        System.out.println(applyFilters(true, query, FILTER, FILTER));
-    }
-    
-    @Test
-    public void testStripBasicQuery() throws Exception {
-        String body = "{\"match_all\": {} }";
-        String query = stripQuery("{\"query\": " + body + "}");
-        System.out.println("body query is  " + query);
+        QueryBuilder query = parseQuery(cfg);
+        System.out.println(query);
     }
 }

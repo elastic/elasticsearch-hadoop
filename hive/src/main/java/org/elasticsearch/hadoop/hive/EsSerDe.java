@@ -70,8 +70,6 @@ public class EsSerDe extends AbstractSerDe {
     private BulkCommand command;
 
     private boolean writeInitialized = false;
-    private boolean readInitialized = false;
-    private boolean IS_ES_20 = true;
     private boolean trace = false;
 
 
@@ -99,15 +97,10 @@ public class EsSerDe extends AbstractSerDe {
 
     @Override
     public Object deserialize(Writable blob) throws SerDeException {
-        if (!readInitialized) {
-            readInitialized = true;
-            IS_ES_20 = SettingsUtils.isEs20(settings);
-        }
-
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
-        Object des = hiveFromWritable(structTypeInfo, blob, alias, IS_ES_20);
+        Object des = hiveFromWritable(structTypeInfo, blob, alias);
 
         if (trace) {
             log.trace(String.format("Deserialized [%s] to [%s]", blob, des));
@@ -161,7 +154,7 @@ public class EsSerDe extends AbstractSerDe {
 
 
     @SuppressWarnings("unchecked")
-    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias, boolean IS_ES_20) {
+    static Object hiveFromWritable(TypeInfo type, Writable data, FieldAlias alias) {
         if (data == null || data instanceof NullWritable) {
             return null;
         }
@@ -175,7 +168,7 @@ public class EsSerDe extends AbstractSerDe {
 
             List<Object> list = new ArrayList<Object>();
             for (Writable writable : aw.get()) {
-                list.add(hiveFromWritable(listElementType, writable, alias, IS_ES_20));
+                list.add(hiveFromWritable(listElementType, writable, alias));
             }
 
             return list;
@@ -188,8 +181,8 @@ public class EsSerDe extends AbstractSerDe {
             Map<Object, Object> map = new LinkedHashMap<Object, Object>();
 
             for (Entry<Writable, Writable> entry : mw.entrySet()) {
-                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias, IS_ES_20),
-                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias, IS_ES_20));
+                map.put(hiveFromWritable(mapType.getMapKeyTypeInfo(), entry.getKey(), alias),
+                        hiveFromWritable(mapType.getMapValueTypeInfo(), entry.getValue(), alias));
             }
 
             return map;
@@ -215,7 +208,7 @@ public class EsSerDe extends AbstractSerDe {
                         break;
                     }
                 }
-                struct.add(hiveFromWritable(info.get(index), result, alias, IS_ES_20));
+                struct.add(hiveFromWritable(info.get(index), result, alias));
             }
             return struct;
         }

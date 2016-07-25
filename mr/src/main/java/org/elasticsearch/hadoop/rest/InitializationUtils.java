@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -168,29 +169,24 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static String discoverEsVersion(Settings settings, Log log) {
+    public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
         if (StringUtils.hasText(version)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Elasticsearch version [%s] already present in configuration; skipping discovery", version));
             }
 
-            return version;
+            return EsMajorVersion.parse(version);
         }
 
         RestClient bootstrap = new RestClient(settings);
         // first get ES version
         try {
-            String esVersion = bootstrap.esVersion();
+            EsMajorVersion esVersion = bootstrap.remoteEsVersion();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
             }
-            // validate version (make sure it's running against ES 1.x, 2.x or 5.x)
-
-            if (!(esVersion.startsWith("1.") || esVersion.startsWith("2.") || esVersion.startsWith("5.0."))) {
-                throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version " + esVersion);
-            }
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
+            settings.setInternalVersion(esVersion);
             return esVersion;
         } catch (EsHadoopException ex) {
             throw new EsHadoopIllegalArgumentException(String.format("Cannot detect ES version - "

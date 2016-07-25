@@ -1,0 +1,818 @@
+[
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index1",
+      "allocation_id": {
+        "id": "DFJ3ZMkiSBSRfsoRSpqTsg"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index1",
+      "allocation_id": {
+        "id": "j104koiqQCmeWi8fpbvV-w"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index2",
+      "allocation_id": {
+        "id": "e8q_QHyxRIWVe3yOzxq9GQ"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index2",
+      "allocation_id": {
+        "id": "-xz7Gh59Sw64edDV5dASVA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index3",
+      "allocation_id": {
+        "id": "4y0RP4QjRPaqK7aJVOPLPA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 0,
+      "index": "index3",
+      "allocation_id": {
+        "id": "kPYi-K82SQmK0Oj94gS09w"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 1,
+      "index": "index1",
+      "allocation_id": {
+        "id": "gq3ypoqYTH-38Ro0SUca8Q"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 1,
+      "index": "index1",
+      "allocation_id": {
+        "id": "zxdGMnYlSei5TxXtAvJC8w"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 1,
+      "index": "index2",
+      "allocation_id": {
+        "id": "ZsX3vtCoSe2LnS9ynpd9_A"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 1,
+      "index": "index2",
+      "allocation_id": {
+        "id": "6CXNogc3TdOSQyqRVoDf9A"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 2,
+      "index": "index1",
+      "allocation_id": {
+        "id": "7UXPmO73QRyj1DKjryN74g"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 2,
+      "index": "index1",
+      "allocation_id": {
+        "id": "7fh9AFw3RFeKO_rTEeVykw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 2,
+      "index": "index2",
+      "allocation_id": {
+        "id": "SvXNpt_SSzKJtc_PvLdFfw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 2,
+      "index": "index2",
+      "allocation_id": {
+        "id": "mCncvS8lQp6VrlVZWLNjHw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 3,
+      "index": "index1",
+      "allocation_id": {
+        "id": "QE-4RW7tT8e-bShYeV1YcA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 3,
+      "index": "index1",
+      "allocation_id": {
+        "id": "iiUOBikyQluogUzXqgaT5A"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 3,
+      "index": "index2",
+      "allocation_id": {
+        "id": "y3CQ6e8fSWKO-_9r1jQaQQ"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 3,
+      "index": "index2",
+      "allocation_id": {
+        "id": "kX-fGRKoSaGm9OZUwCNTyA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 4,
+      "index": "index1",
+      "allocation_id": {
+        "id": "R596Zt1mREywU3OufGymsA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 4,
+      "index": "index1",
+      "allocation_id": {
+        "id": "i3bob52pRV-Jbd9N62nuEg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 4,
+      "index": "index2",
+      "allocation_id": {
+        "id": "489CTG_SSpC1CWPYwASXTQ"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 4,
+      "index": "index2",
+      "allocation_id": {
+        "id": "WKhvUA4jTG-5l3DCA-DWYw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 5,
+      "index": "index1",
+      "allocation_id": {
+        "id": "P9FptM10SjePglk9RW6pKg"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 5,
+      "index": "index1",
+      "allocation_id": {
+        "id": "gRTxLvDdSbm5MuIVAtUxPQ"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 5,
+      "index": "index2",
+      "allocation_id": {
+        "id": "TXvpyDkpTZaTORSdgMYMOw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 5,
+      "index": "index2",
+      "allocation_id": {
+        "id": "dzwsr0mcR2eBTmb_YCB9gg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 6,
+      "index": "index1",
+      "allocation_id": {
+        "id": "zQQkfUOBQmKN_5rddqF8QQ"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 6,
+      "index": "index1",
+      "allocation_id": {
+        "id": "jXWq4WeDSCCR6cfjZQVWeA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 6,
+      "index": "index2",
+      "allocation_id": {
+        "id": "EzI9v9xbQS6Ydcp3u-hmOA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 6,
+      "index": "index2",
+      "allocation_id": {
+        "id": "jN7Gv5rKRQG3Xlkio9SYxA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 7,
+      "index": "index1",
+      "allocation_id": {
+        "id": "bNppKGJuSFmSmD1Koolr-Q"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 7,
+      "index": "index1",
+      "allocation_id": {
+        "id": "dht_1vOfSxCHDBidvwiLkg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 7,
+      "index": "index2",
+      "allocation_id": {
+        "id": "7MEbDKDQS5yfVUr3L1sy-w"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 7,
+      "index": "index2",
+      "allocation_id": {
+        "id": "OWEY_8JEQ7qrN8DdAtMZNw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 8,
+      "index": "index1",
+      "allocation_id": {
+        "id": "5jvfh-FcQhabGhw5K8s75A"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 8,
+      "index": "index1",
+      "allocation_id": {
+        "id": "zLtkY05RS5Ot8H-ryv-EEA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 8,
+      "index": "index2",
+      "allocation_id": {
+        "id": "ZFB9EXVsQ2GIzSpVVDwdZw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 8,
+      "index": "index2",
+      "allocation_id": {
+        "id": "vitivCDVRmOYwwoqnYj0Jg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 9,
+      "index": "index1",
+      "allocation_id": {
+        "id": "S8gK5iI3QAujHGvpm7SICw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 9,
+      "index": "index1",
+      "allocation_id": {
+        "id": "Z7WwltzDQTOsLzRHVDewSg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 9,
+      "index": "index2",
+      "allocation_id": {
+        "id": "lb-GodrEQl-Xb6DfD43zQw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 9,
+      "index": "index2",
+      "allocation_id": {
+        "id": "54X-xzlQRZuBLkONMJL1ig"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 10,
+      "index": "index1",
+      "allocation_id": {
+        "id": "8QKmA2DhQsKTl058pTc93A"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 10,
+      "index": "index1",
+      "allocation_id": {
+        "id": "rTZT8ElvSjicypAvnx76hw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 10,
+      "index": "index2",
+      "allocation_id": {
+        "id": "UNizO-vqTqucU2DCXc7zHw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 10,
+      "index": "index2",
+      "allocation_id": {
+        "id": "jN9TJs7qQt6NKUh_GD5tpA"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 11,
+      "index": "index1",
+      "allocation_id": {
+        "id": "ZbDZYLI1TgeWzij6h2iyZA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 11,
+      "index": "index1",
+      "allocation_id": {
+        "id": "MSx5kBVwRbG4E6ovVabSMg"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 11,
+      "index": "index2",
+      "allocation_id": {
+        "id": "wB79hx-BQU--PiU1RGXXTg"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 11,
+      "index": "index2",
+      "allocation_id": {
+        "id": "Db1HyV0sQdCph0j2g_2wIw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 12,
+      "index": "index1",
+      "allocation_id": {
+        "id": "KZ1kRVW8SWWgauZEVxeVaA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 12,
+      "index": "index1",
+      "allocation_id": {
+        "id": "iFxlLFmYQ7m4nQKb1aqleQ"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 12,
+      "index": "index2",
+      "allocation_id": {
+        "id": "_YbtrcxgQf-d4pFLbRcFUg"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 12,
+      "index": "index2",
+      "allocation_id": {
+        "id": "Ge1GHxnUSxmlmaszPzHVzw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 13,
+      "index": "index1",
+      "allocation_id": {
+        "id": "ZceKxeZASoqi5bh6--EUgg"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 13,
+      "index": "index1",
+      "allocation_id": {
+        "id": "pIvU4VpVQxmg-IIFvjU_xQ"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 13,
+      "index": "index2",
+      "allocation_id": {
+        "id": "dquH-s1SQvWS4HL2hAWM5A"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 13,
+      "index": "index2",
+      "allocation_id": {
+        "id": "96br3WRoT6K25UjicXv5Aw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 14,
+      "index": "index1",
+      "allocation_id": {
+        "id": "o1A8OFm1QXu-kfxi2-wQsw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 14,
+      "index": "index1",
+      "allocation_id": {
+        "id": "qKVGROTJT3KqhgC-V95WHQ"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 14,
+      "index": "index2",
+      "allocation_id": {
+        "id": "HsUY7ATGRoeGPGv8C3mlhw"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 14,
+      "index": "index2",
+      "allocation_id": {
+        "id": "zwS_M2vWR1Kr6F_dckv-8Q"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 15,
+      "index": "index2",
+      "allocation_id": {
+        "id": "9VBj68VWSaKKcIRYOYOXqA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 15,
+      "index": "index2",
+      "allocation_id": {
+        "id": "cNBEYClTSXiGxg3DTTriCw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 16,
+      "index": "index2",
+      "allocation_id": {
+        "id": "htSct3xQQiezfemgn24SJA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 16,
+      "index": "index2",
+      "allocation_id": {
+        "id": "GvgN6527QICm75wd61YLCw"
+      }
+    }
+  ],
+  [
+    {
+      "state": "STARTED",
+      "primary": false,
+      "node": "H1V0McfOQIqyymf-zknchg",
+      "relocating_node": null,
+      "shard": 17,
+      "index": "index2",
+      "allocation_id": {
+        "id": "Jq8zS-3KQcWR_6mjxLe6rA"
+      }
+    },
+    {
+      "state": "STARTED",
+      "primary": true,
+      "node": "WNG-vpfsTaCS_jDbT-I-sw",
+      "relocating_node": null,
+      "shard": 17,
+      "index": "index2",
+      "allocation_id": {
+        "id": "yBz6lnFNQwKrPZE-r18pgw"
+      }
+    }
+  ]
+]

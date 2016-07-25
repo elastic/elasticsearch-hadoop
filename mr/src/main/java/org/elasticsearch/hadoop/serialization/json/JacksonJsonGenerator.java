@@ -74,67 +74,73 @@ public class JacksonJsonGenerator implements Generator {
     }
 
     @Override
-    public void writeBeginArray() {
+    public Generator writeBeginArray() {
         try {
             generator.writeStartArray();
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeEndArray() {
+    public Generator writeEndArray() {
         try {
             generator.writeEndArray();
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeBeginObject() {
+    public Generator writeBeginObject() {
         try {
             generator.writeStartObject();
             if (currentName != null) {
                 currentPath.addLast(currentName);
             }
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeEndObject() {
+    public Generator writeEndObject() {
         try {
             generator.writeEndObject();
             currentPath.pollLast();
             currentPathCached = null;
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeFieldName(String name) {
+    public Generator writeFieldName(String name) {
         try {
             generator.writeFieldName(name);
             currentName = name;
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeString(String text) {
+    public Generator writeString(String text) {
         try {
             generator.writeString(text);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeUTF8String(byte[] text, int offset, int len) {
+    public Generator writeUTF8String(byte[] text, int offset, int len) {
         try {
             if (HAS_UTF_8) {
                 generator.writeUTF8String(text, offset, len);
@@ -142,89 +148,107 @@ public class JacksonJsonGenerator implements Generator {
             else {
                 generator.writeString(new String(text, offset, len, StringUtils.UTF_8));
             }
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeUTF8String(byte[] text) {
-        writeUTF8String(text, 0, text.length);
+    public Generator writeUTF8String(byte[] text) {
+        return writeUTF8String(text, 0, text.length);
     }
 
     @Override
-    public void writeBinary(byte[] data, int offset, int len) {
+    public Generator writeBinary(byte[] data, int offset, int len) {
         try {
             generator.writeBinary(data, offset, len);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeBinary(byte[] data) {
-        writeBinary(data, 0, data.length);
+    public Generator writeBinary(byte[] data) {
+        return writeBinary(data, 0, data.length);
     }
 
     @Override
-    public void writeNumber(short s) {
-        writeNumber((int) s);
+    public Generator writeNumber(short s) {
+        return writeNumber((int) s);
     }
 
     @Override
-    public void writeNumber(byte b) {
-        writeNumber((int) b);
+    public Generator writeNumber(byte b) {
+        return writeNumber((int) b);
     }
 
     @Override
-    public void writeNumber(int i) {
+    public Generator writeNumber(int i) {
         try {
             generator.writeNumber(i);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeNumber(long l) {
+    public Generator writeNumber(long l) {
         try {
             generator.writeNumber(l);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeNumber(double d) {
+    public Generator writeNumber(double d) {
         try {
             generator.writeNumber(d);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeNumber(float f) {
+    public Generator writeNumber(float f) {
         try {
             generator.writeNumber(f);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeBoolean(boolean b) {
+    public Generator writeBoolean(boolean b) {
         try {
             generator.writeBoolean(b);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }
     }
 
     @Override
-    public void writeNull() {
+    public Generator writeNull() {
         try {
             generator.writeNull();
+            return this;
+        } catch (IOException ex) {
+            throw new EsHadoopSerializationException(ex);
+        }
+    }
+
+    @Override
+    public Generator writeRaw(String value) {
+        try {
+            generator.writeRaw(value);
+            return this;
         } catch (IOException ex) {
             throw new EsHadoopSerializationException(ex);
         }

@@ -64,7 +64,6 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     private final String nodes;
     private final int port;
     private final Properties props;
-    private boolean IS_ES_20;
 
     private static Log log = LogFactory.getLog(EsHadoopScheme.class);
 
@@ -91,7 +90,6 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Settings settings = loadSettings(flowProcess.getConfigCopy(), true);
         context[2] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
-        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @Override
@@ -110,7 +108,6 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
         context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
-        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     public void sinkCleanup(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {

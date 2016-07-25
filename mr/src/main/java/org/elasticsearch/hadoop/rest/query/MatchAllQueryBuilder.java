@@ -16,28 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.query;
 
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.Before;
-import org.junit.Test;
+import org.elasticsearch.hadoop.serialization.Generator;
 
-import static org.junit.Assert.assertTrue;
+/**
+ * A query that matches on all documents.
+ */
+public class MatchAllQueryBuilder extends QueryBuilder {
+    public static final MatchAllQueryBuilder MATCH_ALL = new MatchAllQueryBuilder();
 
-public class QueryTest {
+    private MatchAllQueryBuilder() {}
 
-    private Settings cfg = new TestSettings();
-
-    @Before
-    public void setup() {
-        cfg = new TestSettings();
+    @Override
+    public int hashCode() {
+        return getClass().getName().hashCode();
     }
 
-    @Test
-    public void testSimpleQuery() {
-        cfg.setResourceRead("foo/bar");
-        assertTrue(new SearchRequestBuilder(EsMajorVersion.V_5_X, true).indices("foo").types("bar").toString().contains("foo/bar"));
+    @Override
+    public boolean equals(Object other) {
+        return other != null && getClass() == other.getClass();
+    }
+
+    @Override
+    public void toJson(Generator out) {
+        out.writeFieldName("match_all")
+                .writeBeginObject().writeEndObject();
     }
 }

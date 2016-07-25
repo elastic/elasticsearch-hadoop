@@ -34,12 +34,12 @@ import org.elasticsearch.hadoop.util.StringUtils;
 @SuppressWarnings("rawtypes")
 public class EsPigInputFormat extends EsInputFormat<String, Object> {
 
-    protected static abstract class AbstractPigShardRecordReader<V> extends ShardRecordReader<String, V> {
-        public AbstractPigShardRecordReader() {
+    protected static abstract class AbstractPigEsInputRecordReader<V> extends EsInputRecordReader<String, V> {
+        public AbstractPigEsInputRecordReader() {
             super();
         }
 
-        public AbstractPigShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+        public AbstractPigEsInputRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             super(split, job, reporter);
         }
 
@@ -56,13 +56,13 @@ public class EsPigInputFormat extends EsInputFormat<String, Object> {
         }
     }
 
-    protected static class PigShardRecordReader extends AbstractPigShardRecordReader<Map> {
+    protected static class PigEsInputRecordReader extends AbstractPigEsInputRecordReader<Map> {
 
-        public PigShardRecordReader() {
+        public PigEsInputRecordReader() {
             super();
         }
 
-        public PigShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+        public PigEsInputRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             super(split, job, reporter);
         }
 
@@ -83,13 +83,13 @@ public class EsPigInputFormat extends EsInputFormat<String, Object> {
         }
     }
 
-    protected static class PigJsonShardRecordReader extends AbstractPigShardRecordReader<String> {
+    protected static class PigJsonEsInputRecordReader extends AbstractPigEsInputRecordReader<String> {
 
-        public PigJsonShardRecordReader() {
+        public PigJsonEsInputRecordReader() {
             super();
         }
 
-        public PigJsonShardRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
+        public PigJsonEsInputRecordReader(org.apache.hadoop.mapred.InputSplit split, Configuration job, Reporter reporter) {
             super(split, job, reporter);
         }
 
@@ -107,13 +107,13 @@ public class EsPigInputFormat extends EsInputFormat<String, Object> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AbstractPigShardRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
-        return isOutputAsJson(CompatHandler.taskAttemptContext(context).getConfiguration()) ? new PigJsonShardRecordReader() : new PigShardRecordReader();
+    public AbstractPigEsInputRecordReader createRecordReader(InputSplit split, TaskAttemptContext context) {
+        return isOutputAsJson(CompatHandler.taskAttemptContext(context).getConfiguration()) ? new PigJsonEsInputRecordReader() : new PigEsInputRecordReader();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public AbstractPigShardRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
-        return isOutputAsJson(job) ? new PigJsonShardRecordReader(split, job, reporter) : new PigShardRecordReader(split, job, reporter);
+    public AbstractPigEsInputRecordReader getRecordReader(org.apache.hadoop.mapred.InputSplit split, JobConf job, Reporter reporter) {
+        return isOutputAsJson(job) ? new PigJsonEsInputRecordReader(split, job, reporter) : new PigEsInputRecordReader(split, job, reporter);
     }
 }

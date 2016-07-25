@@ -19,21 +19,24 @@
 package org.elasticsearch.hadoop.integration.rest;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.SearchRequestBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryUtils;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 /**
  */
 public class AbstractRestQueryTest {
-
+    private static Log log = LogFactory.getLog(AbstractRestQueryTest.class);
     private RestRepository client;
     private Settings settings;
 
@@ -66,7 +69,7 @@ public class AbstractRestQueryTest {
 
     @Test
     public void testShardInfo() throws Exception {
-        Map<Shard, Node> shards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
+        List<List<Map<String, Object>>> shards = client.getReadTargetShards();
         System.out.println(shards);
         assertNotNull(shards);
     }
@@ -75,7 +78,18 @@ public class AbstractRestQueryTest {
     public void testQueryBuilder() throws Exception {
         Settings sets = settings.copy();
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
-        QueryBuilder qb = QueryBuilder.query(sets);
+        EsMajorVersion esVersion = EsMajorVersion.V_5_X;
+        Resource read = new Resource(settings, true);
+        SearchRequestBuilder qb =
+                new SearchRequestBuilder(esVersion, settings.getReadMetadata() && settings.getReadMetadataVersion())
+                        .types(read.type())
+                        .indices(read.index())
+                        .query(QueryUtils.parseQuery(settings))
+                        .scroll(settings.getScrollKeepAlive())
+                        .size(settings.getScrollSize())
+                        .limit(settings.getScrollLimit())
+                        .fields(settings.getScrollFields())
+                        .filters(QueryUtils.parseFilters(settings));
         Field mapping = client.getMapping();
 
         ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mapping, true, "_metadata", false, false);
@@ -84,35 +98,6 @@ public class AbstractRestQueryTest {
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {
             Object[] next = query.next();
-            assertNotNull(next);
-            count++;
-        }
-
-        assertTrue(count > 0);
-    }
-
-    @Test
-    public void testQueryShards() throws Exception {
-        Map<Shard, Node> targetShards = (Map<Shard, Node>) client.getReadTargetShards(false)[1];
-
-        Field mapping = client.getMapping();
-
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mapping, true, "_metadata", false, false);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
-
-        Settings sets = settings.copy();
-        sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
-
-        String nodeId = targetShards.values().iterator().next().getId();
-        ScrollQuery query = QueryBuilder.query(sets)
-                .shard("0")
-                .node(nodeId)
-                .build(client, reader);
-
-        int count = 0;
-        for (; query.hasNext();) {
-            Object[] next = query.next();
-            System.out.println(Arrays.toString(next));
             assertNotNull(next);
             count++;
         }

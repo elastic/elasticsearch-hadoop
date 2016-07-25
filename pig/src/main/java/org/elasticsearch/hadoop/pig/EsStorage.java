@@ -92,7 +92,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     private PigTuple pigTuple;
 
     private List<String> aliasesTupleNames;
-    private boolean IS_ES_20;
 
     public EsStorage() {
         this(new String[0]);
@@ -153,8 +152,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         changed |= InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         changed |= InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
-
-        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @SuppressWarnings("unchecked")
@@ -230,7 +227,6 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         Configuration cfg = job.getConfiguration();
 
         Settings settings = HadoopSettingsManager.loadFrom(cfg);
-        IS_ES_20 = SettingsUtils.isEs20(settings);
 
         if (settings.getScrollFields() != null) {
             return;

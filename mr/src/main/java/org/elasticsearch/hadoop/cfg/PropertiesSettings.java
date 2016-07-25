@@ -64,4 +64,8 @@ public class PropertiesSettings extends Settings {
     public Properties asProperties() {
         return props;
     }
+
+    public static Settings readFrom(String ser) {
+        return new PropertiesSettings(new Properties()).load(ser);
+    }
 }

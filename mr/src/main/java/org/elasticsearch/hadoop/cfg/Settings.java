@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -39,6 +40,29 @@ import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
 public abstract class Settings {
+    /**
+     * Get the internal version or throw an {@link IllegalArgumentException} if not present
+     * @return The {@link EsMajorVersion} extracted from the properties
+     */
+    public EsMajorVersion getInternalVersionOrThrow() {
+        String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
+        if (version == null) {
+            throw new IllegalArgumentException("Elasticsearch version:[ " + InternalConfigurationOptions.INTERNAL_ES_VERSION + "] not present in configuration");
+        }
+        return EsMajorVersion.parse(version);
+    }
+
+    /**
+     * Get the internal version or {@link EsMajorVersion#LATEST} if not present
+     * @return The {@link EsMajorVersion} extracted from the properties or {@link EsMajorVersion#LATEST} if not present
+     */
+    public EsMajorVersion getInternalVersionOrLatest() {
+        String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
+        if (version == null) {
+            return EsMajorVersion.LATEST;
+        }
+        return EsMajorVersion.parse(version);
+    }
 
     public String getNodes() {
         return getProperty(ES_NODES, ES_NODES_DEFAULT);
@@ -423,6 +447,11 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_RESOLVE_HOST_NAME), !getNodesWANOnly());
     }
 
+    public Settings setInternalVersion(EsMajorVersion version) {
+        setProperty(INTERNAL_ES_VERSION, version.toString());
+        return this;
+    }
+
     public Settings setNodes(String hosts) {
         setProperty(ES_NODES, hosts);
         return this;
@@ -453,6 +482,11 @@ public abstract class Settings {
         return this;
     }
 
+    public Settings setMaxDocsPerPartition(int size) {
+        setProperty(ES_MAX_DOCS_PER_PARTITION, Integer.toString(size));
+        return this;
+    }
+
     protected String getResource() {
         return getProperty(ES_RESOURCE);
     }
@@ -467,6 +501,10 @@ public abstract class Settings {
 
     public String getQuery() {
         return getProperty(ES_QUERY);
+    }
+
+    public int getMaxDocsPerPartition() {
+        return Integer.parseInt(getProperty(ES_MAX_DOCS_PER_PARTITION, Integer.toString(ES_DEFAULT_MAX_DOCS_PER_PARTITION)));
     }
 
     public boolean getReadMetadata() {

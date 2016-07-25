@@ -58,8 +58,6 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     private final Properties props;
     private transient RestRepository client;
 
-    private boolean IS_ES_20;
-
     EsLocalScheme(String host, int port, String index, String query, Fields fields, Properties props) {
         this.resource = index;
         this.query = query;
@@ -80,7 +78,6 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
         Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.alias(settings);
         sourceCall.setContext(context);
-        IS_ES_20 = SettingsUtils.isEs20(settings);
     }
 
     @Override
