@@ -1,0 +1,24 @@
+{
+  "index1": {
+    "aliases": {
+      "alias1": {
+        "filter": {
+          "term": {
+            "system": "hadoop"
+          }
+        },
+        "index_routing": "2",
+        "search_routing": "1,2"
+      },
+      "alias2": {
+        "filter": {
+          "term": {
+            "system": "spark"
+          }
+        },
+        "index_routing": "2",
+        "search_routing": "1,2"
+      }
+    }
+  }
+}

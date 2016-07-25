@@ -10,7 +10,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
+import org.elasticsearch.hadoop.PartitionDefinition
 import org.elasticsearch.spark.rdd.AbstractEsRDD
 import org.elasticsearch.spark.rdd.AbstractEsRDDIterator
 import org.elasticsearch.spark.rdd.EsPartition

@@ -16,28 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.query;
 
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.TestSettings;
-import org.junit.Before;
-import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import org.elasticsearch.hadoop.serialization.Generator;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
-public class QueryTest {
 
-    private Settings cfg = new TestSettings();
+public abstract class QueryBuilder {
+    public abstract void toJson(Generator out);
 
-    @Before
-    public void setup() {
-        cfg = new TestSettings();
-    }
-
-    @Test
-    public void testSimpleQuery() {
-        cfg.setResourceRead("foo/bar");
-        assertTrue(new SearchRequestBuilder(EsMajorVersion.V_5_X, true).indices("foo").types("bar").toString().contains("foo/bar"));
+    @Override
+    public String toString() {
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
+        generator.writeBeginObject();
+        toJson(generator);
+        generator.writeEndObject();
+        generator.close();
+        return out.toString();
     }
 }

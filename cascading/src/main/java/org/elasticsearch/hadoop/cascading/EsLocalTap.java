@@ -26,7 +26,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.rest.QueryBuilder;
+import org.elasticsearch.hadoop.rest.SearchRequestBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryUtils;
+import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
@@ -34,6 +36,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -83,9 +86,20 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             if (validation.isRequired()) {
                 MappingUtils.validateMapping(fields, mapping, validation, log);
             }
-
-            input = QueryBuilder.query(settings).fields(StringUtils.concatenate(fields, ",")).
-                    build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));
+            
+            EsMajorVersion esVersion = settings.getInternalVersionOrThrow();
+            Resource read = new Resource(settings, true);
+            SearchRequestBuilder queryBuilder =
+                    new SearchRequestBuilder(esVersion, settings.getReadMetadata() && settings.getReadMetadataVersion())
+                            .types(read.type())
+                            .indices(read.index())
+                            .query(QueryUtils.parseQuery(settings))
+                            .scroll(settings.getScrollKeepAlive())
+                            .size(settings.getScrollSize())
+                            .limit(settings.getScrollLimit())
+                            .filters(QueryUtils.parseFilters(settings))
+                            .fields(StringUtils.concatenate(fields, ","));
+            input = queryBuilder.build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }

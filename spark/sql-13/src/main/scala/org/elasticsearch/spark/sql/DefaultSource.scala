@@ -1,6 +1,5 @@
 package org.elasticsearch.spark.sql
 
-import java.util.Arrays
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -8,7 +7,6 @@ import java.util.Locale
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -43,8 +41,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
-import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.elasticsearch.hadoop.rest.RestRepository
+import org.elasticsearch.hadoop.rest.{InitializationUtils, RestClient, RestRepository}
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
@@ -54,7 +51,6 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-
 import javax.xml.bind.DatatypeConverter
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {

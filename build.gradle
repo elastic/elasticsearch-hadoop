@@ -426,6 +426,7 @@ project(":elasticsearch-hadoop-mr") {
         }
         
         testCompile "io.netty:netty-all:4.0.23.Final"
+        testCompile "org.elasticsearch:securemock:1.2"
     }
     
     def generatedResources = "$buildDir/generated-resources/main"

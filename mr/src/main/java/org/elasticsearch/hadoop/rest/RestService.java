@@ -1,31 +1,40 @@
 package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.PartitionDefinition;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
-import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.query.BoolQueryBuilder;
+import org.elasticsearch.hadoop.rest.query.ConstantScoreQueryBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryUtils;
+import org.elasticsearch.hadoop.rest.query.RawQueryBuilder;
+import org.elasticsearch.hadoop.rest.request.GetAliasesRequestBuilder;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
+import org.elasticsearch.hadoop.serialization.dto.IndicesAliases;
 import org.elasticsearch.hadoop.serialization.dto.Node;
 import org.elasticsearch.hadoop.serialization.dto.Shard;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -33,56 +42,16 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.Version;
 
 public abstract class RestService implements Serializable {
-
-    public static class PartitionDefinition implements Serializable {
-        public final String serializedSettings, serializedMapping;
-        public final String nodeIp, nodeId, nodeName, shardId;
-        public final int nodePort;
-        public final boolean onlyNode;
-
-        PartitionDefinition(Shard shard, Node node, String settings, String mapping, boolean onlyNode) {
-            this(node.getIpAddress(), node.getHttpPort(), node.getName(), node.getId(), shard.getName().toString(),
-                    onlyNode, settings, mapping);
-        }
-
-        public PartitionDefinition(String nodeIp, int nodePort, String nodeName, String nodeId, String shardId,
-                boolean onlyNode, String settings, String mapping) {
-            this.nodeIp = nodeIp;
-            this.nodePort = nodePort;
-            this.nodeName = nodeName;
-            this.nodeId = nodeId;
-            this.shardId = shardId;
-
-            this.serializedSettings = settings;
-            this.serializedMapping = mapping;
-
-            this.onlyNode = onlyNode;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("EsPartition [node=[").append(nodeId).append("/").append(nodeName)
-            .append("|").append(nodeIp).append(":").append(nodePort)
-            .append("],shard=").append(shardId).append("]");
-            return builder.toString();
-        }
-
-        public Settings settings() {
-            return new PropertiesSettings(new Properties()).load(serializedSettings);
-        }
-    }
-
     public static class PartitionReader implements Closeable {
         public final ScrollReader scrollReader;
         public final RestRepository client;
-        public final QueryBuilder queryBuilder;
+        public final SearchRequestBuilder queryBuilder;
 
         private ScrollQuery scrollQuery;
 
         private boolean closed = false;
 
-        PartitionReader(ScrollReader scrollReader, RestRepository client, QueryBuilder queryBuilder) {
+        PartitionReader(ScrollReader scrollReader, RestRepository client, SearchRequestBuilder queryBuilder) {
             this.scrollReader = scrollReader;
             this.client = client;
             this.queryBuilder = queryBuilder;
@@ -179,12 +148,11 @@ public abstract class RestService implements Serializable {
             }
 
 
-            for (boolean hasValue = false; !hasValue;) {
+            for (boolean hasValue = false; !hasValue; ) {
                 if (currentReader == null) {
                     if (definitionIterator.hasNext()) {
                         currentReader = RestService.createReader(settings, definitionIterator.next(), log);
-                    }
-                    else {
+                    } else {
                         finished = true;
                         return null;
                     }
@@ -224,97 +192,126 @@ public abstract class RestService implements Serializable {
     public static List<PartitionDefinition> findPartitions(Settings settings, Log log) {
         Version.logVersion();
 
-        boolean overlappingShards = false;
-        Map<Shard, Node> targetShards = null;
-
         InitializationUtils.validateSettings(settings);
-        InitializationUtils.discoverEsVersion(settings, log);
+        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
 
-        String savedSettings = settings.save();
-
         RestRepository client = new RestRepository(settings);
-        boolean indexExists = client.indexExists(true);
+        try {
+            boolean indexExists = client.indexExists(true);
 
-        if (!indexExists) {
-            if (settings.getIndexReadMissingAsEmpty()) {
-                log.info(String.format("Index [%s] missing - treating it as empty", settings.getResourceRead()));
-                targetShards = Collections.emptyMap();
-            }
-            else {
-                client.close();
-                throw new EsHadoopIllegalArgumentException(
-                        String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY));
-            }
-        }
-        else {
-            Object[] result = client.getReadTargetShards(settings.getNodesClientOnly());
-            overlappingShards = (Boolean) result[0];
-            targetShards = (Map<Shard, Node>) result[1];
+            List<List<Map<String, Object>>> shards = null;
 
-            if (log.isTraceEnabled()) {
-                log.trace("Creating splits for shards " + targetShards);
-            }
-        }
-
-        log.info(String.format("Reading from [%s]", settings.getResourceRead()));
-
-        String savedMapping = null;
-        if (!targetShards.isEmpty()) {
-            Field mapping = client.getMapping();
-            log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
-            // validate if possible
-            FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
-            if (validation.isRequired()) {
-                MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
+            if (!indexExists) {
+                if (settings.getIndexReadMissingAsEmpty()) {
+                    log.info(String.format("Index [%s] missing - treating it as empty", settings.getResourceRead()));
+                    shards = Collections.emptyList();
+                } else {
+                    throw new EsHadoopIllegalArgumentException(
+                            String.format("Index [%s] missing and settings [%s] is set to false", settings.getResourceRead(), ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY));
+                }
+            } else {
+                shards = client.getReadTargetShards();
+                if (log.isTraceEnabled()) {
+                    log.trace("Creating splits for shards " + shards);
+                }
             }
 
-            //TODO: implement this more efficiently
-            savedMapping = IOUtils.serializeToBase64(mapping);
+            log.info(String.format("Reading from [%s]", settings.getResourceRead()));
+
+            Field mapping = null;
+            if (!shards.isEmpty()) {
+                mapping = client.getMapping();
+                log.info(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+                // validate if possible
+                FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
+                if (validation.isRequired()) {
+                    MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
+                }
+            }
+            final List<PartitionDefinition> partitions;
+            if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+                partitions = findSlicePartitions(client.getRestClient(), settings, mapping, shards);
+            } else {
+                partitions = findShardPartitions(settings, mapping, shards);
+            }
+            Collections.shuffle(partitions);
+            return partitions;
+        } finally {
+            client.close();
         }
+    }
 
-        client.close();
-
-        List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(targetShards.size());
-
-        for (Entry<Shard, Node> entry : targetShards.entrySet()) {
-            partitions.add(new PartitionDefinition(entry.getKey(), entry.getValue(), savedSettings, savedMapping, !overlappingShards));
+    /**
+     * Create one {@link PartitionDefinition} per shard for each requested index.
+     */
+    static List<PartitionDefinition> findShardPartitions(Settings settings, Field mapping, List<List<Map<String, Object>>> shards) {
+        List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
+        for (List<Map<String, Object>> group : shards) {
+            for (Map<String, Object> replica : group) {
+                Shard shard = new Shard(replica);
+                PartitionDefinition partition = new PartitionDefinition(shard.getIndex(), shard.getName(), settings, mapping);
+                partitions.add(partition);
+                break;
+            }
         }
+        return partitions;
+    }
 
+    /**
+     * Partitions the query based on the max number of documents allowed per partition {@link Settings#getMaxDocsPerPartition()}.
+     */
+    static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, Field mapping,
+                                                         List<List<Map<String, Object>>> shards) {
+        QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
+        int maxDocsPerPartition = settings.getMaxDocsPerPartition();
+        String types = new Resource(settings, true).type();
+
+        List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
+        for (List<Map<String, Object>> group : shards) {
+            for (Map<String, Object> replica : group) {
+                Shard shard = new Shard(replica);
+                StringBuilder indexAndType = new StringBuilder(shard.getIndex());
+                if (StringUtils.hasLength(types)) {
+                    indexAndType.append("/");
+                    indexAndType.append(types);
+                }
+                // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
+                long numDocs = client.count(indexAndType.toString(), Integer.toString(shard.getName()), query);
+                int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
+                for (int i = 0; i < numPartitions; i++) {
+                    PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
+                    partitions.add(new PartitionDefinition(shard.getIndex(), shard.getName(), slice, settings, mapping));
+                }
+                break;
+            }
+        }
         return partitions;
     }
 
     public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
-
-        if (!SettingsUtils.hasPinnedNode(settings)) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition,
-                        partition.nodeId, partition.nodePort));
-            }
-
-            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
-        }
+        InitializationUtils.validateSettings(settings);
+        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
 
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
-
+        // initialize REST client
+        RestRepository repository = new RestRepository(settings);
         Field fieldMapping = null;
-
-        if (StringUtils.hasText(partition.serializedMapping)) {
-            fieldMapping = IOUtils.deserializeFromBase64(partition.serializedMapping);
+        if (StringUtils.hasText(partition.getSerializedMapping())) {
+            fieldMapping = IOUtils.deserializeFromBase64(partition.getSerializedMapping());
         }
         else {
             log.warn(String.format("No mapping found for [%s] - either no index exists or the partition configuration has been corrupted", partition));
         }
 
         ScrollReader scrollReader = new ScrollReader(new ScrollReaderConfig(reader, fieldMapping, settings));
-
-        // initialize REST client
-        RestRepository client = new RestRepository(settings);
-
         if (settings.getNodesClientOnly()) {
-            String clientNode = client.getRestClient().getCurrentNode();
+            String clientNode = repository.getRestClient().getCurrentNode();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Client-node routing detected; partition reader instance [%s] assigned to [%s]",
                         partition, clientNode));
@@ -323,22 +320,97 @@ public abstract class RestService implements Serializable {
         }
 
         // take into account client node routing
-        QueryBuilder queryBuilder = QueryBuilder.query(settings).shard(partition.shardId)
-                .node(partition.nodeId).restrictToNode(partition.onlyNode && (!settings.getNodesClientOnly() && !settings.getNodesWANOnly()));
-        queryBuilder.fields(settings.getScrollFields());
-        queryBuilder.filter(SettingsUtils.getFilters(settings));
-
-        return new PartitionReader(scrollReader, client, queryBuilder);
+        boolean includeVersion = settings.getReadMetadata() && settings.getReadMetadataVersion();
+        Resource read = new Resource(settings, true);
+        SearchRequestBuilder requestBuilder =
+                new SearchRequestBuilder(version, includeVersion)
+                        .types(read.type())
+                        .indices(partition.getIndex())
+                        .query(QueryUtils.parseQuery(settings))
+                        .scroll(settings.getScrollKeepAlive())
+                        .size(settings.getScrollSize())
+                        .limit(settings.getScrollLimit())
+                        .fields(settings.getScrollFields())
+                        .filters(QueryUtils.parseFilters(settings))
+                        .shard(Integer.toString(partition.getShardId()));
+        if (partition.getSlice() != null && partition.getSlice().max > 1) {
+            requestBuilder.slice(partition.getSlice().id, partition.getSlice().max);
+        }
+        String[] indices = read.index().split(",");
+        if (QueryUtils.isExplicitlyRequested(partition.getIndex(), indices) == false) {
+            IndicesAliases indicesAliases =
+                    new GetAliasesRequestBuilder(repository.getRestClient())
+                            .indices(partition.getIndex())
+                            .execute().getIndices();
+            Map<String, IndicesAliases.Alias> aliases = indicesAliases.getAliases(partition.getIndex());
+            if (aliases != null && aliases.size() > 0) {
+                requestBuilder = applyAliasMetadata(aliases, requestBuilder, partition.getIndex(), indices);
+            }
+        }
+        return new PartitionReader(scrollReader, repository, requestBuilder);
     }
 
+    /**
+     * Check if the index name is part of the requested indices or the result of an alias.
+     * If the index is the result of an alias, the filters and routing values of the alias are added in the
+     * provided {@link SearchRequestBuilder}.
+     */
+    static SearchRequestBuilder applyAliasMetadata(Map<String, IndicesAliases.Alias> aliases, SearchRequestBuilder searchRequestBuilder,
+                                                   String index, String... indicesOrAliases) {
+        if (QueryUtils.isExplicitlyRequested(index, indicesOrAliases)) {
+            return searchRequestBuilder;
+        }
+
+        Set<String> routing = new HashSet<String>();
+        List<QueryBuilder> aliasFilters = new ArrayList<QueryBuilder>();
+        for (IndicesAliases.Alias alias : aliases.values()) {
+            if (QueryUtils.isExplicitlyRequested(alias.getName(), indicesOrAliases)) {
+                // The alias is explicitly requested
+                if (StringUtils.hasLength(alias.getSearchRouting())) {
+                    for (String value : alias.getSearchRouting().split(",")) {
+                        routing.add(value.trim());
+                    }
+                }
+                if (alias.getFilter() != null) {
+                    try {
+                        aliasFilters.add(new RawQueryBuilder(alias.getFilter()));
+                    } catch (IOException e) {
+                        throw new EsHadoopIllegalArgumentException("Failed to parse alias filter: [" + alias.getFilter() + "]");
+                    }
+                }
+            }
+        }
+        if (aliasFilters.size() > 0) {
+            QueryBuilder aliasQuery;
+            if (aliasFilters.size() == 1) {
+                aliasQuery = aliasFilters.get(0);
+            } else {
+                aliasQuery = new BoolQueryBuilder();
+                for (QueryBuilder filter : aliasFilters) {
+                    ((BoolQueryBuilder) aliasQuery).should(filter);
+                }
+            }
+            if (searchRequestBuilder.query() == null) {
+                searchRequestBuilder.query(aliasQuery);
+            } else {
+                BoolQueryBuilder mainQuery = new BoolQueryBuilder();
+                mainQuery.must(searchRequestBuilder.query());
+                mainQuery.must(new ConstantScoreQueryBuilder().filter(aliasQuery).boost(0.0f));
+                searchRequestBuilder.query(mainQuery);
+            }
+        }
+        if (routing.size() > 0) {
+            searchRequestBuilder.routing(StringUtils.concatenate(routing, ","));
+        }
+        return searchRequestBuilder;
+    }
 
     // expects currentTask to start from 0
     public static List<PartitionDefinition> assignPartitions(List<PartitionDefinition> partitions, int currentTask, int totalTasks) {
         int esPartitions = partitions.size();
         if (totalTasks >= esPartitions) {
-            return (currentTask >= esPartitions ? Collections.<PartitionDefinition> emptyList() : Collections.singletonList(partitions.get(currentTask)));
-        }
-        else {
+            return (currentTask >= esPartitions ? Collections.<PartitionDefinition>emptyList() : Collections.singletonList(partitions.get(currentTask)));
+        } else {
             int partitionsPerTask = esPartitions / totalTasks;
             int remainder = esPartitions % totalTasks;
 

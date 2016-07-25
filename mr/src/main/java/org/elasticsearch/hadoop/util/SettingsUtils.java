@@ -162,32 +162,6 @@ public abstract class SettingsUtils {
         return IOUtils.deserializeFromBase64(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS));
     }
 
-    public static boolean isEs1x(Settings settings) {
-        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        // assume not ES 1.0 by default
-        if (!StringUtils.hasText(version)) {
-            return false;
-        }
-
-        return version.startsWith("1.");
-    }
-
-    /**
-     * Whether the settings indicate a ES 2.x (which introduces breaking changes) or 1.x.
-     *
-     * @param settings
-     * @return
-     */
-    public static boolean isEs20(Settings settings) {
-        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        // assume ES 2.0 by default
-        if (!StringUtils.hasText(version)) {
-            return true;
-        }
-
-        return version.startsWith("2.");
-    }
-    
     /**
      * Whether the settings indicate a ES 5.0.x (which introduces breaking changes) or otherwise.
      *
@@ -203,7 +177,6 @@ public abstract class SettingsUtils {
 
         return version.startsWith("5.0");
     }
-
 
     public static List<NumberedInclude> getFieldArrayFilterInclude(Settings settings) {
         String includeString = settings.getReadFieldAsArrayInclude();

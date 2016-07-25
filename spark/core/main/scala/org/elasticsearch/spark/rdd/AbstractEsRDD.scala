@@ -8,10 +8,9 @@ import org.apache.spark.Partition
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.rest.RestService
-import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition
+import org.elasticsearch.hadoop.PartitionDefinition
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
-import org.elasticsearch.hadoop.rest.RestClient
 import org.elasticsearch.hadoop.rest.RestRepository
 
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
@@ -34,9 +33,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val esSplit = split.asInstanceOf[EsPartition]
-    val ip = esSplit.esPartition.nodeIp
-    if (ip != null) Seq(ip) else Nil
+    Nil
   }
 
   override def checkpoint() {
