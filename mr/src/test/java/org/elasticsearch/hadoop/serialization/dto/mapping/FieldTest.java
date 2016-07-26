@@ -61,6 +61,41 @@ public class FieldTest {
     }
 
     @Test
+    public void testPrimitivesParsing() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("primitives.json"), Map.class);
+        Field fl = Field.parseField(value);
+        assertEquals("primitives", fl.name());
+        Field[] props = fl.properties();
+        assertEquals(13, props.length);
+        assertEquals("field01", props[0].name());
+        assertEquals(FieldType.BOOLEAN, props[0].type());
+        assertEquals("field02", props[1].name());
+        assertEquals(FieldType.BYTE, props[1].type());
+        assertEquals("field03", props[2].name());
+        assertEquals(FieldType.SHORT, props[2].type());
+        assertEquals("field04", props[3].name());
+        assertEquals(FieldType.INTEGER, props[3].type());
+        assertEquals("field05", props[4].name());
+        assertEquals(FieldType.LONG, props[4].type());
+        assertEquals("field06", props[5].name());
+        assertEquals(FieldType.FLOAT, props[5].type());
+        assertEquals("field07", props[6].name());
+        assertEquals(FieldType.DOUBLE, props[6].type());
+        assertEquals("field08", props[7].name());
+        assertEquals(FieldType.STRING, props[7].type());
+        assertEquals("field09", props[8].name());
+        assertEquals(FieldType.DATE, props[8].type());
+        assertEquals("field10", props[9].name());
+        assertEquals(FieldType.BINARY, props[9].type());
+        assertEquals("field11", props[10].name());
+        assertEquals(FieldType.TEXT, props[10].type());
+        assertEquals("field12", props[11].name());
+        assertEquals(FieldType.KEYWORD, props[11].type());
+        assertEquals("field13", props[12].name());
+        assertEquals(FieldType.HALF_FLOAT, props[12].type());
+    }
+
+    @Test
     public void testGeoParsingWithOptions() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
         Field fl = Field.parseField(value);

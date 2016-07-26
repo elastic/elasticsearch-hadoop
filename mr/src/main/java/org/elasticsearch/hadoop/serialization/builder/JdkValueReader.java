@@ -75,6 +75,7 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case TOKEN_COUNT:
         case LONG:
             return longValue(value, parser);
+        case HALF_FLOAT:
         case FLOAT:
             return floatValue(value, parser);
         case DOUBLE:
