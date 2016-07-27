@@ -523,6 +523,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_READ_UNMAPPED_FIELDS_IGNORE, ES_READ_UNMAPPED_FIELDS_IGNORE_DEFAULT));
     }
 
+    public boolean getDataFrameWriteNullValues() {
+        return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
+    }
+
     public abstract InputStream loadResource(String location);
 
     public abstract Settings copy();

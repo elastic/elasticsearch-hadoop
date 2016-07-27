@@ -394,7 +394,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
-  def testEsDataFrame1WriteNullValue() {
+  def testEsDataFrame11CheckNoWriteNullValue() {
     val idx = wrapIndex("spark-test")
     val target = s"$idx/null-data-test"
 
@@ -413,6 +413,28 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
+  }
+
+  @Test
+  def testEsDataFrame12CheckYesWriteNullValue() {
+    val idx = wrapIndex("spark-test")
+    val target = s"$idx/null-data-test"
+
+    val docs = Seq(
+      """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
+      """{"id":"2","name":{"first":"Chris","last":"Evans"}}"""
+    )
+
+    val conf = Map(ES_MAPPING_ID -> "id", ES_SPARK_DATAFRAME_WRITE_NULL_VALUES -> "true")
+    val rdd = sc.makeRDD(docs)
+    val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
+    jsonDF.saveToEs(target, conf)
+    RestUtils.refresh(idx)
+    val hit1 = RestUtils.get(s"$target/1/_source")
+    val hit2 = RestUtils.get(s"$target/2/_source")
+
+    assertThat(hit1, containsString("suffix"))
+    assertThat(hit2, containsString("suffix"))
   }
 
   @Test

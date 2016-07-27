@@ -179,6 +179,9 @@ public interface ConfigurationOptions {
     String ES_MAPPING_EXCLUDE = "es.mapping.exclude";
     String ES_MAPPING_EXCLUDE_DEFAULT = "";
 
+    /** Technology Specific **/
+    String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES = "es.spark.dataframe.write.null";
+    String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT = "false";
 
     /** Read settings */
 
