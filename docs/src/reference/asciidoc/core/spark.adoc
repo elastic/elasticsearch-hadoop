@@ -681,6 +681,10 @@ people.saveToEs("spark/people")           <4>
 <3> Read a text file as _normal_ +RDD+ and map it to a +DataFrame+ (using the +Person+ case class)
 <4> Index the resulting +DataFrame+ to {es} through the +saveToEs+ method
 
+NOTE: By default, {eh} will ignore null values in favor of not writing any field at all. Since a +DataFrame+ is meant
+to be treated as structured tabular data, you can enable writing nulls as null valued fields for +DataFrame+ Objects
+only by toggling the +es.spark.dataframe.write.null+ setting to +true+.
+
 [float]
 [[spark-sql-write-java]]
 ===== Java
