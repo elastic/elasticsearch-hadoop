@@ -37,6 +37,7 @@ public abstract class QueryUtils {
         if (!StringUtils.hasText(query)) {
             return MatchAllQueryBuilder.MATCH_ALL;
         }
+        query = query.trim();
         if (query.startsWith("?") == false && query.startsWith("{") == false) {
             try {
                 // must be a resource
@@ -49,7 +50,6 @@ public abstract class QueryUtils {
                                 query));
             }
         }
-        query = query.trim();
         try {
             return SimpleQueryParser.parse(query, true);
         } catch (IOException e) {
