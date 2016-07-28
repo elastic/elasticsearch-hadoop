@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.hadoop.PartitionDefinition;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,32 +50,32 @@ public class RestServiceTest {
         info.put("node", "1");
         info.put("primary", "true");
 
-        Shard sh1 = new Shard(info);
+        ShardInfo sh1 = new ShardInfo(info);
 
         info.put("name", "2");
         info.put("shard", 2);
 
-        Shard sh2 = new Shard(info);
+        ShardInfo sh2 = new ShardInfo(info);
 
         info.put("name", "3");
         info.put("shard", 3);
 
-        Shard sh3 = new Shard(info);
+        ShardInfo sh3 = new ShardInfo(info);
 
         info.put("name", "4");
         info.put("shard", 4);
 
-        Shard sh4 = new Shard(info);
+        ShardInfo sh4 = new ShardInfo(info);
 
         info.put("name", "5");
         info.put("shard", 5);
 
-        Shard sh5 = new Shard(info);
+        ShardInfo sh5 = new ShardInfo(info);
 
         info.put("name", "6");
         info.put("shard", 6);
 
-        Shard sh6 = new Shard(info);
+        ShardInfo sh6 = new ShardInfo(info);
 
         pd1 = new PartitionDefinition(sh1.getIndex(), sh1.getName(), null, null);
         pd2 = new PartitionDefinition(sh2.getIndex(), sh2.getName(), null, null);

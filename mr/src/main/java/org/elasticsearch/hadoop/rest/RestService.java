@@ -16,8 +16,8 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.IndicesAliases;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
@@ -251,7 +251,7 @@ public abstract class RestService implements Serializable {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
             for (Map<String, Object> replica : group) {
-                Shard shard = new Shard(replica);
+                ShardInfo shard = new ShardInfo(replica);
                 PartitionDefinition partition = new PartitionDefinition(shard.getIndex(), shard.getName(), settings, mapping);
                 partitions.add(partition);
                 break;
@@ -272,7 +272,7 @@ public abstract class RestService implements Serializable {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
             for (Map<String, Object> replica : group) {
-                Shard shard = new Shard(replica);
+                ShardInfo shard = new ShardInfo(replica);
                 StringBuilder indexAndType = new StringBuilder(shard.getIndex());
                 if (StringUtils.hasLength(types)) {
                     indexAndType.append("/");
@@ -292,12 +292,21 @@ public abstract class RestService implements Serializable {
     }
 
     public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
-        InitializationUtils.validateSettings(settings);
-        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
-        InitializationUtils.discoverNodesIfNeeded(settings, log);
-        InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
-        InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
+        /**if (!SettingsUtils.hasPinnedNode(settings)) {
+            String pinHostName = null;
+            for (String nodeHostName : partition.getPreferredNodes()) {
+                if (nodeHostName.equals(hostName)) {
+                    pinHostName = nodeHostName;
+                }
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition,
+                        partition.nodeId, partition.nodePort));
+            }
 
+            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
+        }**/
+        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
         // initialize REST client
         RestRepository repository = new RestRepository(settings);
@@ -509,7 +518,7 @@ public abstract class RestService implements Serializable {
         }
 
         // no routing necessary; select the relevant target shard/node
-        Map<Shard, Node> targetShards = Collections.emptyMap();
+        Map<ShardInfo, NodeInfo> targetShards = Collections.emptyMap();
 
         targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
         repository.close();
@@ -518,7 +527,7 @@ public abstract class RestService implements Serializable {
                 String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
 
 
-        List<Shard> orderedShards = new ArrayList<Shard>(targetShards.keySet());
+        List<ShardInfo> orderedShards = new ArrayList<ShardInfo>(targetShards.keySet());
         // make sure the order is strict
         Collections.sort(orderedShards);
         if (log.isTraceEnabled()) {
@@ -530,11 +539,11 @@ public abstract class RestService implements Serializable {
             currentInstance = new Random().nextInt(targetShards.size()) + 1;
         }
         int bucket = currentInstance % targetShards.size();
-        Shard chosenShard = orderedShards.get(bucket);
-        Node targetNode = targetShards.get(chosenShard);
+        ShardInfo chosenShard = orderedShards.get(bucket);
+        NodeInfo targetNode = targetShards.get(chosenShard);
 
         // pin settings
-        SettingsUtils.pinNode(settings, targetNode.getIpAddress(), targetNode.getHttpPort());
+        SettingsUtils.pinNode(settings, targetNode.getPublishAddress());
         String node = SettingsUtils.getPinnedNode(settings);
         repository = new RestRepository(settings);
 

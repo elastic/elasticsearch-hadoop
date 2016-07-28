@@ -5,8 +5,8 @@
         "fiR5azTbTDiX59m78yzOTw" : {
             "name" : "Darkhawk",
             "transport_address" : "inet[/192.168.1.50:9300]",
-            "hostname" : "cerberus",
-            "version" : "0.90.12",
+            "host" : "cerberus",
+            "version" : "1.7.3",
             "http_address" : "inet[/192.168.1.50:9200]",
             "attributes" : {
                 "data" : "false",
@@ -22,8 +22,8 @@
         "L9DM79IvStq2RStogXR8Sg" : {
             "name" : "Unseen",
             "transport_address" : "inet[/192.168.1.50:9301]",
-            "hostname" : "cerberus",
-            "version" : "0.90.12",
+            "host" : "cerberus",
+            "version" : "1.7.3",
             "http_address" : "inet[/192.168.1.50:9201]",
             "http" : {
                 "bound_address" : "inet[/0:0:0:0:0:0:0:0%0:9201]",

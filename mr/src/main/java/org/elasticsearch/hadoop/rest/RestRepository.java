@@ -18,15 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
@@ -42,8 +33,8 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
@@ -57,7 +48,17 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
@@ -303,9 +304,9 @@ public class RestRepository implements Closeable, StatsAware {
         return client.targetShards(resourceR.index(), SettingsUtils.getFixedRouting(settings));
     }
 
-    public Map<Shard, Node> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
+    public Map<ShardInfo, NodeInfo> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
         for (int retries = 0; retries < 3; retries++) {
-            Map<Shard, Node> map = doGetWriteTargetPrimaryShards(clientNodesOnly);
+            Map<ShardInfo, NodeInfo> map = doGetWriteTargetPrimaryShards(clientNodesOnly);
             if (map != null) {
                 return map;
             }
@@ -313,17 +314,21 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Map<Shard, Node> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
+    protected Map<ShardInfo, NodeInfo> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index(), SettingsUtils.getFixedRouting(settings));
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-        Map<String, Node> nodes = client.getHttpNodes(clientNodesOnly);
+        Map<ShardInfo, NodeInfo> shards = new LinkedHashMap<ShardInfo, NodeInfo>();
+        List<NodeInfo> nodes = client.getHttpNodes(clientNodesOnly);
+        Map<String, NodeInfo> nodeMap = new HashMap<String, NodeInfo>(nodes.size());
+        for (NodeInfo node : nodes) {
+            nodeMap.put(node.getId(), node);
+        }
 
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                ShardInfo shard = new ShardInfo(shardData);
                 if (shard.isPrimary()) {
-                    Node node = nodes.get(shard.getNode());
+                    NodeInfo node = nodeMap.get(shard.getNode());
                     if (node == null) {
                         log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
                         return null;

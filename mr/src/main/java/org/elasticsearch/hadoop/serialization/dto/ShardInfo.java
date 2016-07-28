@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.serialization.dto;
 import java.io.Serializable;
 import java.util.Map;
 
-public class Shard implements Comparable<Shard>, Serializable {
+public class ShardInfo implements Comparable<ShardInfo>, Serializable {
 
     public enum State {
         UNASSIGNED, INITIALIZING, STARTED, RELOCATING;
@@ -38,7 +38,7 @@ public class Shard implements Comparable<Shard>, Serializable {
     private final Integer id;
     private final String index;
 
-    public Shard(Map<String, Object> data) {
+    public ShardInfo(Map<String, Object> data) {
         state = State.valueOf((String) data.get("state"));
         id = (Integer) data.get("shard");
         index = (String) data.get("index");
@@ -65,7 +65,7 @@ public class Shard implements Comparable<Shard>, Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        Shard other = (Shard) obj;
+        ShardInfo other = (ShardInfo) obj;
 
         if (index == null) {
             if (other.index != null)
@@ -123,7 +123,7 @@ public class Shard implements Comparable<Shard>, Serializable {
     }
 
     @Override
-    public int compareTo(Shard o) {
+    public int compareTo(ShardInfo o) {
         return id - o.id;
     }
 }

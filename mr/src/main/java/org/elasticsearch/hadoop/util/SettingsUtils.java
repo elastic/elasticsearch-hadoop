@@ -18,6 +18,12 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -28,11 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 
 public abstract class SettingsUtils {
 
@@ -83,14 +84,8 @@ public abstract class SettingsUtils {
         return host;
     }
 
-    public static void pinNode(Settings settings, String node) {
-        pinNode(settings, node, settings.getPort());
-    }
-
-    public static void pinNode(Settings settings, String node, int port) {
-        if (StringUtils.hasText(node) && port > 0) {
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, qualifyNode(node, port));
-        }
+    public static void pinNode(Settings settings, String address) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, address);
     }
 
     public static boolean hasPinnedNode(Settings settings) {
@@ -103,11 +98,15 @@ public abstract class SettingsUtils {
         return node;
     }
 
-    public static void addDiscoveredNodes(Settings settings, List<String> discoveredNodes) {
+    public static void addDiscoveredNodes(Settings settings, List<NodeInfo> discoveredNodes) {
         // clean-up and merge
         Set<String> nodes = new LinkedHashSet<String>();
         nodes.addAll(declaredNodes(settings));
-        nodes.addAll(discoveredNodes);
+        for (NodeInfo node : discoveredNodes) {
+            if (node.hasHttp()) {
+                nodes.add(node.getPublishAddress());
+            }
+        }
 
         setDiscoveredNodes(settings, nodes);
     }
