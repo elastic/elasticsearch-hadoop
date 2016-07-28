@@ -26,6 +26,7 @@ import java.util.Locale;
 
 import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
+import org.elasticsearch.hadoop.rest.RestClient;
 
 public class TestUtils {
 
@@ -44,6 +45,10 @@ public class TestUtils {
             }
         }
         return file.delete() & result;
+    }
+
+    public static EsMajorVersion getEsVersion() {
+        return new RestClient(new TestSettings()).remoteEsVersion();
     }
 
     public static boolean isWindows() {

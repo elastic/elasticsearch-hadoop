@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -33,6 +34,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
 import static org.junit.Assert.*;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -41,6 +43,8 @@ import static org.hamcrest.CoreMatchers.*;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractPigSaveTest extends AbstractPigTests {
+
+    private final EsMajorVersion VERSION = TestUtils.getEsVersion();
 
     @BeforeClass
     public static void localStartup() throws Exception {
@@ -80,7 +84,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTupleMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/tupleartists").toString(), is("tupleartists=[links=TEXT, name=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/tupleartists").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("tupleartists=[links=TEXT, name=TEXT]")
+                        : is("tupleartists=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -97,7 +104,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testBagMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/bagartists").toString(), is("bagartists=[links=TEXT, name=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/bagartists").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("bagartists=[links=TEXT, name=TEXT]")
+                        : is("bagartists=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -136,7 +146,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/fieldalias").toString(), is("fieldalias=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/fieldalias").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("fieldalias=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("fieldalias=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -154,7 +167,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCaseSensitivityMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/casesensitivity").toString(), is("casesensitivity=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/casesensitivity").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("casesensitivity=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]")
+                        : is("casesensitivity=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
     }
 
     @Test
@@ -188,7 +204,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCreateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/createwithid").toString(), is("createwithid=[id=LONG, links=TEXT, name=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/createwithid").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("createwithid=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("createwithid=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -221,7 +240,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/update").toString(), is("update=[id=LONG, links=TEXT, name=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/update").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("update=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("update=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -252,7 +274,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testParentChildMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/child").toString(), is("child=[id=LONG, links=TEXT, name=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/child").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("child=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("child=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test
@@ -275,7 +300,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-123").toString(), is("pattern-123=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/pattern-123").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("pattern-123=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
+                        : is("pattern-123=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
     }
 
     @Test
@@ -290,7 +318,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").toString(), is("pattern-format-2001-10-06=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]"));
+        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("pattern-format-2001-10-06=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
+                        : is("pattern-format-2001-10-06=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
     }
 
     private String loadSource() {

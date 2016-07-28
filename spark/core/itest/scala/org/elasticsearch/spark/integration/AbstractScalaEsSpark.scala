@@ -24,7 +24,6 @@ import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -66,6 +65,7 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
@@ -462,7 +462,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = wrapIndex("spark-template-index/alias")
 
     val template = """
-      |{"template" : """".stripMargin + "*" + """",
+      |{"template" : """".stripMargin + "spark-template-*" + """",
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
@@ -485,6 +485,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)
     println(RestUtils.getMapping(target))
+
+    val erc = new ExtendedRestClient()
+    erc.delete("_template/" + wrapIndex("test_template"))
+    erc.close()
   }
 
   
