@@ -68,27 +68,6 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
         }
     }
 
-    public String getIndex() {
-        return index;
-    }
-
-    public int getShardId() {
-        return shardId;
-    }
-
-    public Slice getSlice() {
-        return slice;
-    }
-
-    public String getSerializedSettings() {
-        return serializedSettings;
-    }
-
-    public String getSerializedMapping() {
-        return serializedMapping;
-    }
-
-
     public void write(DataOutput out) throws IOException {
         out.writeUTF(index);
         out.writeInt(shardId);
@@ -112,6 +91,26 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
             out.writeInt(utf.length);
             out.write(utf);
         }
+    }
+
+    public String getIndex() {
+        return index;
+    }
+
+    public int getShardId() {
+        return shardId;
+    }
+
+    public Slice getSlice() {
+        return slice;
+    }
+
+    public String getSerializedSettings() {
+        return serializedSettings;
+    }
+
+    public String getSerializedMapping() {
+        return serializedMapping;
     }
 
     public Settings settings() {

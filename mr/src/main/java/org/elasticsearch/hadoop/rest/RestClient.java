@@ -18,19 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -43,7 +30,7 @@ import org.elasticsearch.hadoop.rest.query.QueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
-import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
@@ -57,6 +44,18 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.DELETE;
 import static org.elasticsearch.hadoop.rest.Request.Method.GET;
@@ -108,21 +107,34 @@ public class RestClient implements Closeable, StatsAware {
         internalVersion = settings.getInternalVersionOrLatest();
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public List<String> discoverNodes() {
-        String endpoint = "_nodes/transport";
-        Map<String, Map> nodes = (Map<String, Map>) get(endpoint, "nodes");
+    public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
+        List<NodeInfo> nodes = new ArrayList<NodeInfo>();
 
-        List<String> hosts = new ArrayList<String>(nodes.size());
-
-        for (Map value : nodes.values()) {
-            String inet = (String) value.get("http_address");
-            if (StringUtils.hasText(inet)) {
-                hosts.add(StringUtils.parseIpAddress(inet).toString());
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            NodeInfo node = new NodeInfo(entry.getKey(), entry.getValue());
+            if (node.hasHttp() && (!clientNodeOnly || node.isClient())) {
+                nodes.add(node);
             }
         }
+        return nodes;
+    }
 
-        return hosts;
+    public List<NodeInfo> getHttpClientNodes() {
+        return getHttpNodes(true);
+    }
+
+    public List<NodeInfo> getHttpDataNodes() {
+        List<NodeInfo> nodes = getHttpNodes(false);
+
+        Iterator<NodeInfo> it = nodes.iterator();
+        while (it.hasNext()) {
+            NodeInfo node = it.next();
+            if (!node.isData()) {
+                it.remove();
+            }
+        }
+        return nodes;
     }
 
     public <T> T get(String q, String string) {
@@ -332,45 +344,6 @@ public class RestClient implements Closeable, StatsAware {
         }
 
         return shardsJson;
-    }
-
-    public Map<String, Node> getHttpNodes(boolean allowNonHttp) {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        Map<String, Node> nodes = new LinkedHashMap<String, Node>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (allowNonHttp || (node.hasHttp() && !node.isClient())) {
-                nodes.put(entry.getKey(), node);
-            }
-        }
-        return nodes;
-    }
-
-    public List<String> getHttpClientNodes() {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        List<String> nodes = new ArrayList<String>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.isClient() && node.hasHttp()) {
-                nodes.add(node.getInet());
-            }
-        }
-        return nodes;
-    }
-
-    public List<String> getHttpDataNodes() {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        List<String> nodes = new ArrayList<String>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.isData() && node.hasHttp()) {
-                nodes.add(node.getInet());
-            }
-        }
-        return nodes;
     }
 
     @SuppressWarnings("unchecked")

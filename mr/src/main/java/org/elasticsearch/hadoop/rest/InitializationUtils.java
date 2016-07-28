@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
@@ -33,6 +31,7 @@ import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -40,6 +39,9 @@ import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class InitializationUtils {
 
@@ -57,7 +59,7 @@ public abstract class InitializationUtils {
             RestClient bootstrap = new RestClient(settings);
 
             try {
-                List<String> discoveredNodes = bootstrap.discoverNodes();
+                List<NodeInfo> discoveredNodes = bootstrap.getHttpNodes(false);
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
                 }
@@ -80,23 +82,25 @@ public abstract class InitializationUtils {
         RestClient bootstrap = new RestClient(settings);
         try {
             String message = "Client-only routing specified but no client nodes with HTTP-enabled available";
-            List<String> clientNodes = bootstrap.getHttpClientNodes();
+            List<NodeInfo> clientNodes = bootstrap.getHttpClientNodes();
             if (clientNodes.isEmpty()) {
                 throw new EsHadoopIllegalArgumentException(message);
             }
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found client nodes %s", clientNodes));
             }
-
+            List<String> toRetain = new ArrayList<String>(clientNodes.size());
+            for (NodeInfo node : clientNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
             List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
             // remove non-client nodes
-            ddNodes.retainAll(clientNodes);
+            ddNodes.retainAll(toRetain);
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Filtered discovered only nodes %s to client-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
             }
 
             if (ddNodes.isEmpty()) {
-
                 if (settings.getNodesDiscovery()) {
                     message += String.format("; looks like the client nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
                 }
@@ -120,17 +124,20 @@ public abstract class InitializationUtils {
         RestClient bootstrap = new RestClient(settings);
         try  {
             String message = "No data nodes with HTTP-enabled available";
-            List<String> dataNodes = bootstrap.getHttpDataNodes();
+            List<NodeInfo> dataNodes = bootstrap.getHttpDataNodes();
             if (dataNodes.isEmpty()) {
                 throw new EsHadoopIllegalArgumentException(message);
             }
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found data nodes %s", dataNodes));
             }
-
+            List<String> toRetain = new ArrayList<String>(dataNodes.size());
+            for (NodeInfo node : dataNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
             List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
             // remove non-data nodes
-            ddNodes.retainAll(dataNodes);
+            ddNodes.retainAll(toRetain);
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Filtered discovered only nodes %s to data-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
             }
@@ -145,7 +152,7 @@ public abstract class InitializationUtils {
                 throw new EsHadoopIllegalArgumentException(message);
             }
 
-            SettingsUtils.setDiscoveredNodes(settings, dataNodes);
+            SettingsUtils.setDiscoveredNodes(settings, ddNodes);
         } finally {
             bootstrap.close();
         }

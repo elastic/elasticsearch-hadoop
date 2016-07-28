@@ -23,7 +23,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.elasticsearch.hadoop.rest.query.QueryUtils.*;
+import static org.elasticsearch.hadoop.rest.query.QueryUtils.parseQuery;
 
 public class QueryUtilsTest {
 
