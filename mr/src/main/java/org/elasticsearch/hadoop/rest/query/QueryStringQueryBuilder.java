@@ -20,6 +20,9 @@ package org.elasticsearch.hadoop.rest.query;
 
 import org.elasticsearch.hadoop.serialization.Generator;
 
+/**
+ * A query that parses a query string.
+ */
 public class QueryStringQueryBuilder extends QueryBuilder {
     private String query;
     private String defaultField;

@@ -27,19 +27,47 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A Query builder which allows building a query given JSON string as input. This is useful when you want
+ * to use the Java Builder API but still have JSON query strings at hand that you want to combine with other
+ * query builders.
+ * <p>
+ * Example:
+ * <pre>
+ * <code>
+ *      BoolQueryBuilder bool = new BoolQueryBuilder();
+ *      bool.must(new RawQueryBuilder("{\"term\": {\"field\":\"value\"}}", true);
+ *      bool.must(new TermQueryBuilder("field2","value2");
+ * </code>
+ * </pre>
+ */
 public class RawQueryBuilder extends QueryBuilder {
     private static final ObjectMapper MAPPER =
             new ObjectMapper()
                     .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     private final String queryString;
 
-    public RawQueryBuilder(String value) throws IOException {
-        this((Map<String, Object>) MAPPER.readValue(value, HashMap.class));
+    /**
+     *
+     * @param value the JSON string representing the query
+     * @param isQuery true if the JSON string is a query otherwise the string is considered as
+     *                a filter (only relevant for elasticsearch version prior to 2.x).
+     * @throws IOException if the JSON string is not valid
+     */
+    public RawQueryBuilder(String value, boolean isQuery) throws IOException {
+        this((Map<String, Object>) MAPPER.readValue(value, HashMap.class), isQuery);
     }
 
-    public RawQueryBuilder(Map<String, Object> map) throws IOException {
+    /**
+     *
+     * @param map A map representation of the query
+     * @param isQuery true if the JSON string is a query otherwise the string is considered as
+     *                a filter (only relevant for elasticsearch version prior to 2.x).
+     * @throws IOException if the JSON string is not valid
+     */
+    public RawQueryBuilder(Map<String, Object> map, boolean isQuery) throws IOException {
         Object query = map;
-        if (map.containsKey("query")) {
+        if (isQuery && map.containsKey("query")) {
             query = map.remove("query");
         }
         String raw = MAPPER.writeValueAsString(query);

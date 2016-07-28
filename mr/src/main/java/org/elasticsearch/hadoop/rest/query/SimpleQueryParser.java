@@ -22,19 +22,40 @@ import org.elasticsearch.hadoop.util.Assert;
 
 import java.io.IOException;
 
+/**
+ * Simple query parser which allows parsing a query given a string as input.
+ * The input can be a JSON string or an URI search.
+ * <p>
+ * Example:
+ * <pre>
+ * <code>
+ *      SimpleQueryParser.parse("{\"term\": {\"field\":\"value\"}}", true);
+ *      SimpleQueryParser.parse("{\"query\": {\"term\": {\"field\":\"value\"}}}", true);
+ *      SimpleQueryParser.parse("?q=user:costin", true);
+ * </code>
+ * </pre>
+ */
 public class SimpleQueryParser {
-     public QueryBuilder parse(String raw) throws IOException {
+    /**
+     * Builds a QueryBuilder from the given string
+     * @param raw a JSON string or an URI search
+     * @param isQuery true if the string is a query otherwise the string is considered as
+     *                a filter (only relevant for elasticsearch version prior to 2.x).
+     * @return
+     * @throws IOException
+     */
+     public static QueryBuilder parse(String raw, boolean isQuery) throws IOException {
         if (raw.startsWith("?")) {
             return parseURI(raw.substring(1));
         } else if (raw.startsWith("{")) {
-            return new RawQueryBuilder(raw);
+            return new RawQueryBuilder(raw, isQuery);
 
         } else {
             throw new IllegalArgumentException("Failed to parse query: " + raw);
         }
     }
 
-    private QueryBuilder parseURI(String raw) {
+    static QueryBuilder parseURI(String raw) {
         // break down the uri into parameters
         QueryStringQueryBuilder builder = new QueryStringQueryBuilder();
         for (String token : raw.split("&")) {
@@ -48,7 +69,7 @@ public class SimpleQueryParser {
         return builder;
     }
 
-    private void applyURIParameter(QueryStringQueryBuilder builder, String name, String value) {
+    static void applyURIParameter(QueryStringQueryBuilder builder, String name, String value) {
         if (name.equals("q") || name.equals("query")) {
             builder.query(value);
         } else if (name.equals("df") || name.equals("default_field")) {

@@ -18,14 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.elasticsearch.hadoop.rest.query.BoolQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.FilteredQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryBuilder;
@@ -37,6 +29,17 @@ import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+/**
+ * A search request builder which allows building {@link ScrollQuery}
+ */
 public class SearchRequestBuilder {
     private static class Slice {
         final int id;
@@ -210,7 +213,7 @@ public class SearchRequestBuilder {
         String scrollUri = assemble();
         QueryBuilder root = query;
         if (filters.isEmpty() == false) {
-            if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            if (version.onOrAfter(EsMajorVersion.V_2_X)) {
                 root = new BoolQueryBuilder().must(query).filters(filters);
             } else {
                 root = new FilteredQueryBuilder().query(query).filters(filters);

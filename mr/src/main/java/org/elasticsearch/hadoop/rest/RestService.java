@@ -1,17 +1,5 @@
 package org.elasticsearch.hadoop.rest;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.PartitionDefinition;
@@ -40,6 +28,18 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.Version;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 public abstract class RestService implements Serializable {
     public static class PartitionReader implements Closeable {
@@ -344,7 +344,7 @@ public abstract class RestService implements Serializable {
                             .execute().getIndices();
             Map<String, IndicesAliases.Alias> aliases = indicesAliases.getAliases(partition.getIndex());
             if (aliases != null && aliases.size() > 0) {
-                requestBuilder = applyAliasMetadata(aliases, requestBuilder, partition.getIndex(), indices);
+                requestBuilder = applyAliasMetadata(version, aliases, requestBuilder, partition.getIndex(), indices);
             }
         }
         return new PartitionReader(scrollReader, repository, requestBuilder);
@@ -355,7 +355,9 @@ public abstract class RestService implements Serializable {
      * If the index is the result of an alias, the filters and routing values of the alias are added in the
      * provided {@link SearchRequestBuilder}.
      */
-    static SearchRequestBuilder applyAliasMetadata(Map<String, IndicesAliases.Alias> aliases, SearchRequestBuilder searchRequestBuilder,
+    static SearchRequestBuilder applyAliasMetadata(EsMajorVersion version,
+                                                   Map<String, IndicesAliases.Alias> aliases,
+                                                   SearchRequestBuilder searchRequestBuilder,
                                                    String index, String... indicesOrAliases) {
         if (QueryUtils.isExplicitlyRequested(index, indicesOrAliases)) {
             return searchRequestBuilder;
@@ -373,7 +375,7 @@ public abstract class RestService implements Serializable {
                 }
                 if (alias.getFilter() != null) {
                     try {
-                        aliasFilters.add(new RawQueryBuilder(alias.getFilter()));
+                        aliasFilters.add(new RawQueryBuilder(alias.getFilter(), false));
                     } catch (IOException e) {
                         throw new EsHadoopIllegalArgumentException("Failed to parse alias filter: [" + alias.getFilter() + "]");
                     }
@@ -395,7 +397,11 @@ public abstract class RestService implements Serializable {
             } else {
                 BoolQueryBuilder mainQuery = new BoolQueryBuilder();
                 mainQuery.must(searchRequestBuilder.query());
-                mainQuery.must(new ConstantScoreQueryBuilder().filter(aliasQuery).boost(0.0f));
+                if (version.after(EsMajorVersion.V_1_X)) {
+                    mainQuery.filter(aliasQuery);
+                } else {
+                    mainQuery.must(new ConstantScoreQueryBuilder().filter(aliasQuery).boost(0.0f));
+                }
                 searchRequestBuilder.query(mainQuery);
             }
         }

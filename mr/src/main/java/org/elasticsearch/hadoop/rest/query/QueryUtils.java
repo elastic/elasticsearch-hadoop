@@ -18,18 +18,18 @@
  */
 package org.elasticsearch.hadoop.rest.query;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.regex.Regex;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class QueryUtils {
     public static QueryBuilder parseQuery(Settings settings) {
@@ -49,10 +49,9 @@ public abstract class QueryUtils {
                                 query));
             }
         }
-        SimpleQueryParser parser = new SimpleQueryParser();
         query = query.trim();
         try {
-            return parser.parse(query);
+            return SimpleQueryParser.parse(query, true);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to parse query: " + query, e);
         }
@@ -65,10 +64,9 @@ public abstract class QueryUtils {
         }
         List<QueryBuilder> filters = new ArrayList<QueryBuilder>();
         for (String filter : rawFilters) {
-            SimpleQueryParser parser = new SimpleQueryParser();
             filter = filter.trim();
             try {
-                filters.add(parser.parse(filter));
+                filters.add(SimpleQueryParser.parse(filter, false));
             } catch (IOException e) {
                 throw new IllegalArgumentException("Failed to parse filter: " + filter, e);
             }

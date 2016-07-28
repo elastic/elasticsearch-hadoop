@@ -20,6 +20,9 @@ package org.elasticsearch.hadoop.rest.query;
 
 import org.elasticsearch.hadoop.serialization.Generator;
 
+/**
+ * A query that matches on all documents.
+ */
 public class MatchAllQueryBuilder extends QueryBuilder {
     public static final MatchAllQueryBuilder MATCH_ALL = new MatchAllQueryBuilder();
 

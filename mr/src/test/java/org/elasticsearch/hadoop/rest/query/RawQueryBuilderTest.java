@@ -36,7 +36,7 @@ public class RawQueryBuilderTest {
             QueryBuilder randomQuery = RandomQueryBuilders.randomQuery(random);
             String queryString = printQueryBuilder(randomQuery, false);
 
-            RawQueryBuilder rawQuery = new RawQueryBuilder(queryString);
+            RawQueryBuilder rawQuery = new RawQueryBuilder(queryString, false);
             String rawQueryString = printQueryBuilder(rawQuery, false);
             assertEquals(queryString, rawQueryString);
             if (randomQuery instanceof RawQueryBuilder) {

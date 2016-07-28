@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * A query that applies a filter to the results of another query.
+ */
 public class FilteredQueryBuilder extends QueryBuilder {
     private QueryBuilder query;
     private final List<QueryBuilder> filters = new ArrayList<QueryBuilder>();

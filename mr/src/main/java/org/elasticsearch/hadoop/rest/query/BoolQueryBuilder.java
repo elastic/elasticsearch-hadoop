@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * A Query that matches documents matching boolean combinations of other queries.
+ */
 public class BoolQueryBuilder extends QueryBuilder {
     private final List<QueryBuilder> mustClauses = new ArrayList<QueryBuilder> ();
     private final List<QueryBuilder> mustNotClauses = new ArrayList<QueryBuilder> ();

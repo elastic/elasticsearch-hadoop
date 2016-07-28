@@ -23,8 +23,16 @@ import org.elasticsearch.hadoop.serialization.Generator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 
-
+/**
+ * QueryBuilder for Elasticsearch query DSL
+ */
 public abstract class QueryBuilder {
+    /**
+     * Converts this QueryBuilder to a JSON string.
+     *
+     * @param out The JSON generator
+     * @return The JSON string which represents the query
+     */
     public abstract void toJson(Generator out);
 
     @Override

@@ -20,8 +20,13 @@ package org.elasticsearch.hadoop.rest.query;
 
 import org.elasticsearch.hadoop.serialization.Generator;
 
+/**
+ * A Query that matches documents containing a term.
+ */
 public class TermQueryBuilder extends QueryBuilder {
+    /** Name of field to match against. */
     private String field;
+    /** Value to find matches for. */
     private String term;
 
     public TermQueryBuilder field(String value) {

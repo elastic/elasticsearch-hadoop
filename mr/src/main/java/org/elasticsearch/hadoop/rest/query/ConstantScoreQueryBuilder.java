@@ -2,6 +2,10 @@ package org.elasticsearch.hadoop.rest.query;
 
 import org.elasticsearch.hadoop.serialization.Generator;
 
+/**
+ * A query that wraps a filter and simply returns a constant score equal to the
+ * query boost for every document in the filter.
+ */
 public class ConstantScoreQueryBuilder extends QueryBuilder {
     public static final float DEFAULT_BOOST = 1.0f;
     private QueryBuilder filter;

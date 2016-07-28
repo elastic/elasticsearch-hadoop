@@ -102,7 +102,7 @@ public class RandomQueryBuilders {
         generator.writeEndObject();
         generator.close();
         try {
-            return new RawQueryBuilder(out.toString().trim());
+            return new RawQueryBuilder(out.toString().trim(), false);
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to parse raw query", e);
         }
