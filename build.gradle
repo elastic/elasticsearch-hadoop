@@ -381,7 +381,7 @@ allprojects { project ->
         ignoreFailures = true
         
         minHeapSize = "256m"
-        maxHeapSize = "768m"
+        maxHeapSize = "2g"
         if (!java8)
             jvmArgs '-XX:MaxPermSize=496m'
 
