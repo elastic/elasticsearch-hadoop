@@ -584,6 +584,10 @@ def baseSparkProject(target, sparkVersion) {
       target.javadoc {
         destinationDir = file("$project.docsDir/javadoc-211")
       }
+      target.integrationTest {
+        // update test target
+        testClassesDir = target.sourceSets.itest.output.classesDir
+      }
     }
     
     def coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
