@@ -10,8 +10,8 @@
 :ey:	Elasticsearch on YARN
 :ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/2.0
 :description: Reference documentation of {eh}
-:ver:	2.3.3
-:ver-d: 2.3.4.BUILD-SNAPSHOT
+:ver:	2.3.4
+:ver-d: 2.3.5.BUILD-SNAPSHOT
 :es-v:	2.3.5
 :sp-v:	1.6.1
 :st-v:	0.9.6
