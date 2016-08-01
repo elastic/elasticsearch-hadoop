@@ -33,7 +33,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     private final String SCRIPT;
     private final String SCRIPT_LANG;
 
-    private final boolean HAS_SCRIPT, HAS_LANG, HAS_PARAMS;
+    private final boolean HAS_SCRIPT, HAS_LANG;
     private final boolean UPSERT;
 
     public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
@@ -49,7 +49,6 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         HAS_SCRIPT = StringUtils.hasText(settings.getUpdateScript());
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
-        HAS_PARAMS = StringUtils.hasText(settings.getUpdateScriptParams());
 
         SCRIPT_LANG = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
         SCRIPT = "{\"script\":{\"inline\":\"" + settings.getUpdateScript() + "\"";
@@ -81,7 +80,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
             if (HAS_LANG) {
                 list.add(SCRIPT_LANG);
             }
-            if (HAS_PARAMS && paramExtractor != null) {
+            if (paramExtractor != null) {
                 list.add(",\"params\":");
                 list.add(paramExtractor);
             }
