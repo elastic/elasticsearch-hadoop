@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.internal.InternalSettingsPreparer;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.transport.Netty3Plugin;
 
 public class EsEmbeddedServer {
     private static class PluginConfigurableNode extends Node {
@@ -49,9 +50,8 @@ public class EsEmbeddedServer {
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
         props.setProperty("cluster.name", "es.hadoop.test");
-        props.setProperty("node.local", "true");
-        //props.setProperty("es.index.store.type", "memory");
-        // props.setProperty("gateway.type", "none");
+        props.setProperty("transport.type", "local");
+        props.setProperty("discovery.type", "local");
         if (!hasSlave) {
             //props.setProperty("discovery.zen.ping.multicast", "false");
             //props.setProperty("discovery.zen.ping.multicast.enabled", "false");
@@ -60,12 +60,11 @@ public class EsEmbeddedServer {
         props.setProperty("script.inline", "true");
         //props.setProperty("script.indexed", "true");
 
-        props.setProperty("node.local", "false");
         // props.setProperty("node.client", "false");
         props.setProperty("cluster.name", clusterName);
 
         Settings settings = Settings.builder().put(props).build();
-        Collection plugins = Arrays.asList(GroovyPlugin.class);
+        Collection plugins = Arrays.asList(GroovyPlugin.class, Netty3Plugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
 

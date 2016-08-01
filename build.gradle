@@ -22,6 +22,7 @@ allprojects {
       // Hive depends on JDO ec2 missing from Maven Central
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
+	  maven { url "https://download.elasticsearch.org/elasticsearch/staging/5.0.0-alpha5-a91bb29/" }
     }
 
     apply plugin: "java"
@@ -205,6 +206,7 @@ allprojects { project ->
         testRuntime "net.java.dev.jna:jna:4.2.2"
         //testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         testCompile "org.codehaus.groovy:groovy:$groovyVersion:indy"
+		testCompile "org.elasticsearch.plugin:transport-netty3-client:$esVersion"
         testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
         testRuntime "com.vividsolutions:jts:1.13"
         
