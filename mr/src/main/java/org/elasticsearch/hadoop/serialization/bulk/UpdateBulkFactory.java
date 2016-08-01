@@ -23,7 +23,6 @@ import java.util.List;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
-import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -52,8 +51,8 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
         HAS_PARAMS = StringUtils.hasText(settings.getUpdateScriptParams());
 
-        SCRIPT_LANG = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
-        SCRIPT = "\"script\":\"" + settings.getUpdateScript() + "\"";
+        SCRIPT_LANG = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
+        SCRIPT = "{\"script\":{\"inline\":\"" + settings.getUpdateScript() + "\"";
     }
 
     @Override
@@ -77,25 +76,22 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         Object paramExtractor = getExtractorOrDynamicValue(Metadata.PARAMS, getParamExtractor());
 
-        if (paramExtractor != null) {
-            list.add("{\"params\":");
-            list.add(paramExtractor);
-            list.add(",");
-        }
-        else {
-            list.add("{");
-        }
-
         if (HAS_SCRIPT) {
+            list.add(SCRIPT);
             if (HAS_LANG) {
                 list.add(SCRIPT_LANG);
             }
-            list.add(SCRIPT);
+            if (HAS_PARAMS && paramExtractor != null) {
+                list.add(",\"params\":");
+                list.add(paramExtractor);
+            }
+            list.add("}");
             if (UPSERT) {
                 list.add(",\"upsert\":");
             }
         }
         else {
+            list.add("{");
             if (UPSERT) {
                 list.add("\"doc_as_upsert\":true,");
             }

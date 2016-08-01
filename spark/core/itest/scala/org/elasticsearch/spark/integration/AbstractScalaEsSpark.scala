@@ -354,7 +354,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     val props = Map("es.write.operation" -> "upsert",
       "es.input.json" -> "true",
-      "es.mapping.id" -> "id"
+      "es.mapping.id" -> "id",
+      "es.update.script.lang" -> "groovy"
     )
 
     // Upsert a value that should only modify the first document. Modification will add an address entry.

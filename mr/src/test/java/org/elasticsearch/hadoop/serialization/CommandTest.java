@@ -196,7 +196,7 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                        "{\"lang\":\"groovy\",\"script\":\"counter = 3\"}\n";
+                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -214,7 +214,7 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                        "{\"params\":{\"param1\":1,\"param2\":1},\"lang\":\"groovy\",\"script\":\"counter = param1; anothercounter = param2\"}\n";
+                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
         assertEquals(result, ba.toString());
     }
