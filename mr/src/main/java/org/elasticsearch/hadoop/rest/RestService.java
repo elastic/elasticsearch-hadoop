@@ -1,3 +1,21 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
@@ -31,8 +49,12 @@ import org.elasticsearch.hadoop.util.Version;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -193,7 +215,7 @@ public abstract class RestService implements Serializable {
 
         InitializationUtils.validateSettings(settings);
         EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
-        InitializationUtils.discoverNodesIfNeeded(settings, log);
+        List<NodeInfo> nodes = InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
 
@@ -232,11 +254,15 @@ public abstract class RestService implements Serializable {
                     MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
                 }
             }
+            final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
+            for (NodeInfo node : nodes) {
+                nodesMap.put(node.getId(), node);
+            }
             final List<PartitionDefinition> partitions;
             if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-                partitions = findSlicePartitions(client.getRestClient(), settings, mapping, shards);
+                partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards);
             } else {
-                partitions = findShardPartitions(settings, mapping, shards);
+                partitions = findShardPartitions(settings, mapping, nodesMap, shards);
             }
             Collections.shuffle(partitions);
             return partitions;
@@ -248,15 +274,24 @@ public abstract class RestService implements Serializable {
     /**
      * Create one {@link PartitionDefinition} per shard for each requested index.
      */
-    static List<PartitionDefinition> findShardPartitions(Settings settings, Field mapping, List<List<Map<String, Object>>> shards) {
+    static List<PartitionDefinition> findShardPartitions(Settings settings, Field mapping, Map<String, NodeInfo> nodes,
+                                                         List<List<Map<String, Object>>> shards) {
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
+            String index = null;
+            int shardId = -1;
+            List<String> locationList = new ArrayList<String> ();
             for (Map<String, Object> replica : group) {
                 ShardInfo shard = new ShardInfo(replica);
-                PartitionDefinition partition = new PartitionDefinition(shard.getIndex(), shard.getName(), settings, mapping);
-                partitions.add(partition);
-                break;
+                index = shard.getIndex();
+                shardId = shard.getName();
+                if (nodes.containsKey(shard.getNode())) {
+                    locationList.add(nodes.get(shard.getNode()).getPublishAddress());
+                }
             }
+            PartitionDefinition partition = new PartitionDefinition(settings, mapping, index, shardId,
+                    locationList.toArray(new String[0]));
+            partitions.add(partition);
         }
         return partitions;
     }
@@ -265,48 +300,87 @@ public abstract class RestService implements Serializable {
      * Partitions the query based on the max number of documents allowed per partition {@link Settings#getMaxDocsPerPartition()}.
      */
     static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, Field mapping,
-                                                         List<List<Map<String, Object>>> shards) {
+                                                         Map<String, NodeInfo> nodes, List<List<Map<String, Object>>> shards) {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
         int maxDocsPerPartition = settings.getMaxDocsPerPartition();
         String types = new Resource(settings, true).type();
 
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
+            String index = null;
+            int shardId = -1;
+            List<String> locationList = new ArrayList<String> ();
             for (Map<String, Object> replica : group) {
                 ShardInfo shard = new ShardInfo(replica);
-                StringBuilder indexAndType = new StringBuilder(shard.getIndex());
-                if (StringUtils.hasLength(types)) {
-                    indexAndType.append("/");
-                    indexAndType.append(types);
+                index = shard.getIndex();
+                shardId = shard.getName();
+                if (nodes.containsKey(shard.getNode())) {
+                    locationList.add(nodes.get(shard.getNode()).getPublishAddress());
                 }
-                // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
-                long numDocs = client.count(indexAndType.toString(), Integer.toString(shard.getName()), query);
-                int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
-                for (int i = 0; i < numPartitions; i++) {
-                    PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
-                    partitions.add(new PartitionDefinition(shard.getIndex(), shard.getName(), slice, settings, mapping));
-                }
-                break;
+            }
+            String[] locations = locationList.toArray(new String[0]);
+            StringBuilder indexAndType = new StringBuilder(index);
+            if (StringUtils.hasLength(types)) {
+                indexAndType.append("/");
+                indexAndType.append(types);
+            }
+            // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
+            long numDocs = client.count(indexAndType.toString(), Integer.toString(shardId), query);
+            int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
+            for (int i = 0; i < numPartitions; i++) {
+                PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
+                partitions.add(new PartitionDefinition(settings, mapping, index, shardId, slice, locations));
             }
         }
         return partitions;
     }
 
-    public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
-        /**if (!SettingsUtils.hasPinnedNode(settings)) {
-            String pinHostName = null;
-            for (String nodeHostName : partition.getPreferredNodes()) {
-                if (nodeHostName.equals(hostName)) {
-                    pinHostName = nodeHostName;
+    /**
+     * Returns the first address in {@code locations} that is equals to a public IP of the system
+     * @param locations The list of address (hostname:port or ip:port) to check
+     * @return The first address in {@code locations} that is equals to a public IP of the system or null if none
+     */
+    static String checkLocality(String[] locations, Log log) {
+        try {
+            InetAddress[] candidates = NetworkUtils.getGlobalInterfaces();
+            for (String address : locations) {
+                StringUtils.IpAndPort ipAndPort = StringUtils.parseIpAddress(address);
+                InetAddress addr = InetAddress.getByName(ipAndPort.ip);
+                for (InetAddress candidate : candidates) {
+                    if (addr.equals(candidate)) {
+                        return address;
+                    }
                 }
             }
+        } catch (SocketException e) {
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition,
-                        partition.nodeId, partition.nodePort));
+                log.debug("Unable to retrieve the global interfaces of the system", e);
             }
+        } catch (UnknownHostException e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to retrieve IP address", e);
+            }
+        }
+        return null;
+    }
 
-            SettingsUtils.pinNode(settings, partition.nodeIp, partition.nodePort);
-        }**/
+    /**
+     * Creates a PartitionReader from a {@code PartitionDefinition}
+     * @param settings The settings for the reader
+     * @param partition The {@link PartitionDefinition} used to create the reader
+     * @param log The logger
+     * @return The {@link PartitionReader} that is able to read the documents associated with the {@code partition}
+     */
+    public static PartitionReader createReader(Settings settings, PartitionDefinition partition, Log log) {
+        if (!SettingsUtils.hasPinnedNode(settings) && partition.getLocations().length > 0) {
+            String pinAddress = checkLocality(partition.getLocations(), log);
+            if (pinAddress != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition, pinAddress));
+                }
+                SettingsUtils.pinNode(settings, pinAddress);
+            }
+        }
         EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
         // initialize REST client
@@ -342,7 +416,8 @@ public abstract class RestService implements Serializable {
                         .limit(settings.getScrollLimit())
                         .fields(settings.getScrollFields())
                         .filters(QueryUtils.parseFilters(settings))
-                        .shard(Integer.toString(partition.getShardId()));
+                        .shard(Integer.toString(partition.getShardId()))
+                        .local(true);
         if (partition.getSlice() != null && partition.getSlice().max > 1) {
             requestBuilder.slice(partition.getSlice().id, partition.getSlice().max);
         }

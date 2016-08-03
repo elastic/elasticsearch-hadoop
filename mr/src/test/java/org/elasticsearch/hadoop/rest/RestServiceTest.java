@@ -18,19 +18,18 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
-import org.junit.Before;
-import org.junit.Test;
-
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-
-import static org.hamcrest.Matchers.is;
 
 public class RestServiceTest {
 
@@ -76,12 +75,12 @@ public class RestServiceTest {
 
         ShardInfo sh6 = new ShardInfo(info);
 
-        pd1 = new PartitionDefinition(sh1.getIndex(), sh1.getName(), null, null);
-        pd2 = new PartitionDefinition(sh2.getIndex(), sh2.getName(), null, null);
-        pd3 = new PartitionDefinition(sh3.getIndex(), sh3.getName(), null, null);
-        pd4 = new PartitionDefinition(sh4.getIndex(), sh4.getName(), null, null);
-        pd5 = new PartitionDefinition(sh5.getIndex(), sh5.getName(), null, null);
-        pd6 = new PartitionDefinition(sh6.getIndex(), sh6.getName(), null, null);
+        pd1 = new PartitionDefinition(null, null, sh1.getIndex(), sh1.getName());
+        pd2 = new PartitionDefinition(null, null, sh2.getIndex(), sh2.getName());
+        pd3 = new PartitionDefinition(null, null, sh3.getIndex(), sh3.getName());
+        pd4 = new PartitionDefinition(null, null, sh4.getIndex(), sh4.getName());
+        pd5 = new PartitionDefinition(null, null, sh5.getIndex(), sh5.getName());
+        pd6 = new PartitionDefinition(null, null, sh6.getIndex(), sh6.getName());
 
         pds = Arrays.asList(pd1, pd2, pd3, pd4, pd5, pd6);
     }

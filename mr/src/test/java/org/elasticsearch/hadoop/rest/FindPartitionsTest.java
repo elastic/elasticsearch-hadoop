@@ -22,6 +22,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -47,13 +48,13 @@ public class FindPartitionsTest {
         List<PartitionDefinition> expected =
                 new ArrayList<PartitionDefinition>();
         for (int i = 0; i < 15; i++) {
-            expected.add(new PartitionDefinition("index1", i, null, null));
+            expected.add(new PartitionDefinition(null, null, "index1", i));
         }
         for (int i = 0; i < 18; i++) {
-            expected.add(new PartitionDefinition("index2", i, null, null));
+            expected.add(new PartitionDefinition(null, null, "index2", i));
         }
         for (int i = 0; i < 1; i++) {
-            expected.add(new PartitionDefinition("index3", i, null, null));
+            expected.add(new PartitionDefinition(null, null, "index3", i));
         }
         Collections.sort(expected);
         EXPECTED_SHARDS_PARTITIONS = expected.toArray(new PartitionDefinition[0]);
@@ -63,15 +64,18 @@ public class FindPartitionsTest {
     public void testEmpty() {
         Settings settings = new PropertiesSettings();
         settings.setProperty(ES_RESOURCE_READ, "_all");
-        assertEquals(RestService.findShardPartitions(settings, null, Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
-        assertEquals(RestService.findSlicePartitions(null, settings, null, Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
+        assertEquals(RestService.findShardPartitions(settings, null,
+                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
+        assertEquals(RestService.findSlicePartitions(null, settings, null,
+                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
     }
 
     @Test
     public void testShardPartitions() throws IOException {
         List<List<Map<String, Object>>> shards =
                 MAPPER.readValue(getClass().getResourceAsStream("search-shards-response.json"), ArrayList.class);
-        List<PartitionDefinition> partitions = RestService.findShardPartitions(null, null, shards);
+        List<PartitionDefinition> partitions = RestService.findShardPartitions(null, null, Collections.<String, NodeInfo>emptyMap(),
+                shards);
         Collections.sort(partitions);
         assertEquals(partitions.size(), 34);
         assertEquals(new HashSet(partitions).size(), 34);
@@ -96,21 +100,24 @@ public class FindPartitionsTest {
         }
         {
             settings.setMaxDocsPerPartition(1000);
-            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null, shards);
+            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
+                    Collections.<String, NodeInfo>emptyMap(), shards);
             // 15 + 18*10 + 1*100
             assertEquals(partitions.size(), 295);
             assertEquals(new HashSet(partitions).size(), 295);
         }
         {
             settings.setMaxDocsPerPartition(100);
-            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null, shards);
+            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
+                    Collections.<String, NodeInfo>emptyMap(), shards);
             // 15*10 + 18*100 + 1*1000
             assertEquals(partitions.size(), 2950);
             assertEquals(new HashSet(partitions).size(), 2950);
         }
         {
             settings.setMaxDocsPerPartition(Integer.MAX_VALUE);
-            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null, shards);
+            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
+                    Collections.<String, NodeInfo>emptyMap(), shards);
 
             // 15 + 18 + 1
             assertEquals(partitions.size(), 34);
@@ -126,7 +133,8 @@ public class FindPartitionsTest {
             Mockito.when(client.count("index3/type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
         }
         {
-            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null, shards);
+            List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
+                    Collections.<String, NodeInfo>emptyMap(), shards);
             assertEquals(partitions.size(), 34);
             assertEquals(new HashSet(partitions).size(), 34);
         }

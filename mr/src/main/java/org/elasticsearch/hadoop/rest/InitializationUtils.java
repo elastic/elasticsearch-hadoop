@@ -54,7 +54,7 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static boolean discoverNodesIfNeeded(Settings settings, Log log) {
+    public static List<NodeInfo> discoverNodesIfNeeded(Settings settings, Log log) {
         if (settings.getNodesDiscovery()) {
             RestClient bootstrap = new RestClient(settings);
 
@@ -65,13 +65,13 @@ public abstract class InitializationUtils {
                 }
 
                 SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
+                return discoveredNodes;
             } finally {
                 bootstrap.close();
             }
-            return true;
         }
 
-        return false;
+        return null;
     }
 
     public static void filterNonClientNodesIfNeeded(Settings settings, Log log) {

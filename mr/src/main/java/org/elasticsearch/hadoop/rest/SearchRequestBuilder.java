@@ -64,6 +64,7 @@ public class SearchRequestBuilder {
     private final List<QueryBuilder> filters = new ArrayList<QueryBuilder> ();
     private String routing;
     private Slice slice;
+    private boolean local = false;
 
     public SearchRequestBuilder(EsMajorVersion version, boolean includeVersion) {
         this.version = version;
@@ -144,6 +145,11 @@ public class SearchRequestBuilder {
         return this;
     }
 
+    public SearchRequestBuilder local(boolean value) {
+        this.local = value;
+        return this;
+    }
+
     private String assemble() {
         if (limit > 0) {
             if (size > limit) {
@@ -183,6 +189,12 @@ public class SearchRequestBuilder {
         if (StringUtils.hasText(shard)) {
             pref.append("_shards:");
             pref.append(shard);
+        }
+        if (local) {
+            if (pref.length() > 0) {
+                pref.append(";");
+            }
+            pref.append("_local");
         }
 
         if (pref.length() > 0) {
