@@ -52,10 +52,11 @@ public class EsEmbeddedServer {
         props.setProperty("cluster.name", "es.hadoop.test");
         props.setProperty("transport.type", "local");
         props.setProperty("discovery.type", "local");
-        if (!hasSlave) {
+        props.setProperty("http.type", "netty3");
+        // if (!hasSlave) {
             //props.setProperty("discovery.zen.ping.multicast", "false");
             //props.setProperty("discovery.zen.ping.multicast.enabled", "false");
-        }
+        //}
         //props.setProperty("script.disable_dynamic", "false");
         props.setProperty("script.inline", "true");
         //props.setProperty("script.indexed", "true");
