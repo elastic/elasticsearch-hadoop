@@ -44,9 +44,9 @@ public class Resource {
 
         // add compatibility for now
         if (resource.contains("?") || resource.contains("&")) {
-            if (!StringUtils.hasText(settings.getQuery())) {
+            if (StringUtils.hasText(settings.getQuery())) {
                 throw new EsHadoopIllegalArgumentException(String.format(
-                        "Cannot specify a query in the target index and through %s", ConfigurationOptions.ES_QUERY));
+                        "Cannot specify a query in the target index AND through %s", ConfigurationOptions.ES_QUERY));
             }
 
             // extract query
