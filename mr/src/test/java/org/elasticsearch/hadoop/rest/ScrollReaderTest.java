@@ -97,6 +97,30 @@ public class ScrollReaderTest {
     }
 
     @Test
+    public void testScrollWithHighlightedNestedFields() throws IOException {
+        InputStream stream = getClass().getResourceAsStream("scroll-source-with-highlighting-mapping.json");
+        Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
+
+        scrollReaderConfig.rootField = fl;
+        reader = new ScrollReader(scrollReaderConfig);
+
+
+        stream = getClass().getResourceAsStream("scroll-source-with-highlighting.json");
+        List<Object[]> read = reader.read(stream).getHits();
+
+        assertEquals(2, read.size());
+        Object[] objects = read.get(0);
+        Map result = (Map) objects[1];
+        assertTrue(result.containsKey("Document__Body"));
+        if (readMetadata) {
+            //The highlight section is part of the hit data and should appear in the top level of the map
+            assertTrue(result.containsKey("highlight"));
+        }
+
+
+    }
+
+    @Test
     public void testScrollWithSource() throws IOException {
         reader = new ScrollReader(scrollReaderConfig);
         InputStream stream = getClass().getResourceAsStream("scroll-source.json");
