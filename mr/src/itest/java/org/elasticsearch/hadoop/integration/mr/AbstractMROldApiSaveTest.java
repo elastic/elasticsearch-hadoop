@@ -250,6 +250,23 @@ public class AbstractMROldApiSaveTest {
         testCreateWithId();
     }
 
+    @Test
+    public void testSaveWithIngest() throws Exception {
+        JobConf conf = createJobConf();
+
+        RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
+        String prefix = "mrnewapi";
+        String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
+        client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
+        client.close();
+
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/ingested");
+        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
+
+        runJob(conf);
+    }
+
+
     @Test(expected = IOException.class)
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();

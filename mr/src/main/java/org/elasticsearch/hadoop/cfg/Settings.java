@@ -269,6 +269,8 @@ public abstract class Settings {
         return getProperty(ES_MAPPING_EXCLUDE, ES_MAPPING_EXCLUDE_DEFAULT);
     }
 
+    public String getIngestPipeline() { return getProperty(ES_INGEST_PIPELINE, ES_INGEST_PIPELINE_DEFAULT); }
+
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
     }

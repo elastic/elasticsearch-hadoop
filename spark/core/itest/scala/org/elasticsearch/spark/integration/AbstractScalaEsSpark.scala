@@ -66,11 +66,12 @@ import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-
 import java.nio.file.Paths
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.net.URI
+
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf()
@@ -285,6 +286,28 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target +  "/_search?"), containsString("participants"))
     assertThat(RestUtils.get(target +  "/_search?"), not(containsString("airport")))
   }
+
+  @Test
+  def testEsRDDIngest() {
+    val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
+    val prefix: String = "spark"
+    val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"
+    client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline))
+    client.close();
+
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+    val target = wrapIndex("spark-test/scala-ingest-write")
+
+    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> "spark-pipeline")
+
+    sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, ingestCfg)
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString(""))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("\"pipeTEST\":true"))
+  }
+
 
   @Test
   def testEsMultiIndexRDDWrite() {

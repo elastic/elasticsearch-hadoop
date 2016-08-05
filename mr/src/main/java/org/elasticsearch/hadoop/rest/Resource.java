@@ -24,6 +24,9 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.StringUtils;
 
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OPERATION_UPDATE;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OPERATION_UPSERT;
+
 
 /**
  * ElasticSearch Rest Resource - index and type.
@@ -82,8 +85,17 @@ public class Resource {
         
         indexAndType = index + "/" + type;
 
+        String bulkEndpoint = "/_bulk";
+
+        String ingestPipeline = settings.getIngestPipeline();
+        if (StringUtils.hasText(ingestPipeline)) {
+            Assert.isTrue(!StringUtils.hasWhitespace(ingestPipeline), "Ingest Pipeline name should not contain whitespaces");
+            Assert.isTrue(!(ES_OPERATION_UPDATE.equals(settings.getOperation()) || ES_OPERATION_UPSERT.equals(settings.getOperation())), "Cannot specify an ingest pipeline when doing updates or upserts");
+            bulkEndpoint = bulkEndpoint + "?pipeline=" + ingestPipeline;
+        }
+
         // check bulk
-        bulk = (indexAndType.contains("{") ? "/_bulk" : indexAndType + "/_bulk");
+        bulk = (indexAndType.contains("{") ? bulkEndpoint : indexAndType + bulkEndpoint);
         refresh = (index.contains("{") ? "/_refresh" : index + "/_refresh");
     }
 

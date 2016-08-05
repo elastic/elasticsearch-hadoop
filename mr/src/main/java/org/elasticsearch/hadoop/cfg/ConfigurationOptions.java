@@ -166,7 +166,6 @@ public interface ConfigurationOptions {
     String ES_MAPPING_DATE_RICH_OBJECT = "es.mapping.date.rich";
     String ES_MAPPING_DATE_RICH_OBJECT_DEFAULT = "true";
 
-
     String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
     String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
     String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";
@@ -178,6 +177,10 @@ public interface ConfigurationOptions {
     String ES_MAPPING_INCLUDE_DEFAULT = "";
     String ES_MAPPING_EXCLUDE = "es.mapping.exclude";
     String ES_MAPPING_EXCLUDE_DEFAULT = "";
+
+    /** Ingest Node **/
+    String ES_INGEST_PIPELINE = "es.ingest.pipeline";
+    String ES_INGEST_PIPELINE_DEFAULT = "";
 
     /** Technology Specific **/
     String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES = "es.spark.dataframe.write.null";

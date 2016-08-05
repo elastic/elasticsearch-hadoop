@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.hadoop.ingest.common.IngestCommonPlugin;
 import org.elasticsearch.hadoop.script.GroovyPlugin;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
@@ -63,9 +64,10 @@ public class EsEmbeddedServer {
 
         // props.setProperty("node.client", "false");
         props.setProperty("cluster.name", clusterName);
+        props.setProperty("node.ingest", "true");
 
         Settings settings = Settings.builder().put(props).build();
-        Collection plugins = Arrays.asList(GroovyPlugin.class, Netty3Plugin.class);
+        Collection plugins = Arrays.asList(GroovyPlugin.class, Netty3Plugin.class, IngestCommonPlugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
 

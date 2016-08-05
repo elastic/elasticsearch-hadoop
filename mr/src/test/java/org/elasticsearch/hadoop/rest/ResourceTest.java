@@ -111,6 +111,42 @@ public class ResourceTest {
         createResource("foo, bar/far");
     }
 
+    @Test
+    public void testBulkWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        Resource res = createResource("pipeline/test", settings);
+        assertEquals("pipeline/test", res.indexAndType());
+        assertEquals("pipeline/test/_mapping", res.mapping());
+        assertEquals("pipeline/_aliases", res.aliases());
+        assertEquals("pipeline/test/_bulk?pipeline=ingest-pipeline", res.bulk());
+        assertEquals("pipeline/_refresh", res.refresh());
+    }
+
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkWithBadIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest pipeline");
+        createResource("pipeline/test", settings);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkUpdateBreaksWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPDATE);
+        createResource("pipeline/test", settings);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkUpsertBreaksWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPSERT);
+        createResource("pipeline/test", settings);
+    }
+
     private Resource createResource(String target) {
         return createResource(target, new TestSettings());
     }

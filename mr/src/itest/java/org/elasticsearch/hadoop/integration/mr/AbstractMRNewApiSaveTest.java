@@ -188,6 +188,22 @@ public class AbstractMRNewApiSaveTest {
         assertFalse("job should have failed", runJob(conf));
     }
 
+    @Test
+    public void testSaveWithIngest() throws Exception {
+        Configuration conf = createConf();
+
+        RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
+        String prefix = "mrnewapi";
+        String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
+        client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
+        client.close();
+
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/ingested");
+        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
+
+        runJob(conf);
+    }
+
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testUpdateWithoutId() throws Exception {
         Configuration conf = createConf();
