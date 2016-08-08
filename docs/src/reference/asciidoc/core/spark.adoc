@@ -314,7 +314,7 @@ val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
 val sc = ...
 
 val airportsRDD<1> = sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
-pairRDD.saveToEsWithMeta<3>(airportsRDD, "airports/2015")
+airportsRDD.saveToEsWithMeta<3>("airports/2015")
 ----
 
 <1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
@@ -341,7 +341,7 @@ val sfoMeta = Map(ID -> 3)                             <4>
 val sc = ...
 
 val airportsRDD = sc.makeRDD<5>(Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
-pairRDD.saveToEsWithMeta(airportsRDD, "airports/2015") <6>
+airportsRDD.saveToEsWithMeta("airports/2015") <6>
 ----
 
 <1> Import the +Metadata+ enum
