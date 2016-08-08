@@ -51,6 +51,7 @@ public abstract class StringUtils {
     public static final String PATH_CURRENT = ".";
     public static final String SOURCE_ROOT = "hits.hits._source.";
     public static final String FIELDS_ROOT = "hits.hits.fields.";
+    public static final String[] EMPTY_ARRAY = new String[0];
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 

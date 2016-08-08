@@ -81,8 +81,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
         @Override
         public String[] getLocations() {
-            // TODO: check whether the host name needs to be used instead
-            return new String[] {};
+            return partition.getHostNames();
         }
 
         @Override

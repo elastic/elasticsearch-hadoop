@@ -1,6 +1,5 @@
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
@@ -11,6 +10,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
+
+import static org.elasticsearch.hadoop.util.StringUtils.EMPTY_ARRAY;
 
 /**
  * Represents a logical split of an elasticsearch query.
@@ -20,13 +22,30 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
     private final int shardId;
     private final Slice slice;
     private final String serializedSettings, serializedMapping;
+    private final String[] locations;
 
-    public PartitionDefinition(String index, int shardId, Settings settings, Field mapping) {
-        this(index, shardId, null, settings, mapping);
+    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId) {
+        this(settings, mapping, index, shardId, null, EMPTY_ARRAY);
     }
 
-    public PartitionDefinition(String index, int shardId, Slice slice,
-                               Settings settings, Field mapping) {
+    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, String[] locations) {
+        this(settings, mapping, index, shardId, null, locations);
+    }
+
+    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, Slice slice) {
+        this(settings, mapping, index, shardId, slice, EMPTY_ARRAY);
+    }
+
+    /**
+     *
+     * @param settings The settings for the partition reader
+     * @param mapping The mapping of the index
+     * @param index The index name the partition will be executed on
+     * @param shardId The shard id the partition will be executed on
+     * @param slice The slice the partition will be executed on or null
+     * @param locations The locations where to find nodes (hostname:port or ip:port) that can execute the partition locally
+     */
+    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, Slice slice, String[] locations) {
         this.index = index;
         this.shardId = shardId;
         if (settings != null) {
@@ -40,6 +59,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
             this.serializedMapping = null;
         }
         this.slice = slice;
+        this.locations = locations;
     }
 
     public PartitionDefinition(DataInput in) throws IOException {
@@ -67,6 +87,12 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
         } else {
             this.serializedMapping = null;
         }
+
+        int length = in.readInt();
+        locations = new String[length];
+        for (int i = 0; i < length; i++) {
+            locations[i] = in.readUTF();
+        }
     }
 
     public void write(DataOutput out) throws IOException {
@@ -92,6 +118,11 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
             out.writeInt(utf.length);
             out.write(utf);
         }
+
+        out.writeInt(locations.length);
+        for (String location : locations) {
+            out.writeUTF(location);
+        }
     }
 
     public String getIndex() {
@@ -112,6 +143,18 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
     public String getSerializedMapping() {
         return serializedMapping;
+    }
+
+    public String[] getLocations() {
+        return locations;
+    }
+
+    public String[] getHostNames() {
+        String[] newLocations = new String[locations.length];
+        for (int i = 0; i < locations.length; i++) {
+            newLocations[i] = StringUtils.parseIpAddress(locations[i]).ip;
+        }
+        return newLocations;
     }
 
     public Settings settings() {
@@ -158,11 +201,12 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SlicePartition [index=").append(index)
-                .append(",shardId=").append(shardId).append(",id=")
-                .append(slice.id).append(",max=").append(slice.max).append("]");
-        return builder.toString();
+        return "PartitionDefinition{" +
+                "index=" + index +
+                ", shardId=" + shardId +
+                (slice != null ? ", slice=" + slice.id + "/" + slice.max : "") +
+                ", locations=" + Arrays.toString(locations) +
+                '}';
     }
 
     public static class Slice implements Serializable, Comparable<Slice> {
