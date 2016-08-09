@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
@@ -143,6 +144,7 @@ private[sql] object SchemaUtils {
       case TEXT      => StringType
       case KEYWORD   => StringType
       case HALF_FLOAT => FloatType
+      case SCALED_FLOAT => FloatType
       case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))

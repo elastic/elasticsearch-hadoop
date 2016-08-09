@@ -66,7 +66,7 @@ public class FieldTest {
         Field fl = Field.parseField(value);
         assertEquals("primitives", fl.name());
         Field[] props = fl.properties();
-        assertEquals(13, props.length);
+        assertEquals(14, props.length);
         assertEquals("field01", props[0].name());
         assertEquals(FieldType.BOOLEAN, props[0].type());
         assertEquals("field02", props[1].name());
@@ -93,6 +93,8 @@ public class FieldTest {
         assertEquals(FieldType.KEYWORD, props[11].type());
         assertEquals("field13", props[12].name());
         assertEquals(FieldType.HALF_FLOAT, props[12].type());
+        assertEquals("field14", props[13].name());
+        assertEquals(FieldType.SCALED_FLOAT, props[13].type());
     }
 
     @Test

@@ -16,6 +16,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
 import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
@@ -70,6 +71,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       case TOKEN_COUNT => longValue(value, parser)
       case LONG => longValue(value, parser)
       case HALF_FLOAT => floatValue(value, parser)
+      case SCALED_FLOAT => floatValue(value, parser)
       case FLOAT => floatValue(value, parser)
       case DOUBLE => doubleValue(value, parser)
       case BOOLEAN => booleanValue(value, parser)
