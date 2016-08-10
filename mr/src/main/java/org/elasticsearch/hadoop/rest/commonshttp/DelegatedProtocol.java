@@ -41,4 +41,8 @@ class DelegatedProtocol extends Protocol {
     public int hashCode() {
         return original.hashCode();
     }
+
+    Protocol getOriginal() {
+        return original;
+    }
 }
