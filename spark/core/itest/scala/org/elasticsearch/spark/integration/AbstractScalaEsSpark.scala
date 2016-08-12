@@ -300,7 +300,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     val target = wrapIndex("spark-test/scala-ingest-write")
 
-    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> "spark-pipeline")
+    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> "spark-pipeline") + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
 
     sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, ingestCfg)
     assertTrue(RestUtils.exists(target))

@@ -34,20 +34,26 @@ import static org.junit.Assert.assertTrue;
 public class NodeInfoTest {
     @Test
     public void testV1() throws Exception {
-        assertNodeInfoMap(getClass().getResourceAsStream("client-nodes-v1.json"));
+        Map<String, NodeInfo> nodeMap = testNodeInfo(getClass().getResourceAsStream("client-nodes-v1.json"));
+        assertFalse(nodeMap.get("Darkhawk").isIngest());
+        assertFalse(nodeMap.get("Unseen").isIngest());
     }
 
     @Test
     public void testV2() throws Exception {
-        assertNodeInfoMap(getClass().getResourceAsStream("client-nodes-v2.json"));
+        Map<String, NodeInfo> nodeMap = testNodeInfo(getClass().getResourceAsStream("client-nodes-v2.json"));
+        assertFalse(nodeMap.get("Darkhawk").isIngest());
+        assertFalse(nodeMap.get("Unseen").isIngest());
     }
 
     @Test
     public void testV5() throws Exception {
-        assertNodeInfoMap(getClass().getResourceAsStream("client-nodes-v5.json"));
+        Map<String, NodeInfo> nodeMap = testNodeInfo(getClass().getResourceAsStream("client-nodes-v5.json"));
+        assertFalse(nodeMap.get("Darkhawk").isIngest());
+        assertTrue(nodeMap.get("Unseen").isIngest());
     }
 
-    static void assertNodeInfoMap(InputStream input) throws IOException {
+    static Map<String, NodeInfo> testNodeInfo(InputStream input) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonParser jsonParser = mapper.getJsonFactory().createJsonParser(input);
         Map<String, Map<String, Object>> map =
@@ -75,5 +81,7 @@ public class NodeInfoTest {
         assertEquals(nodeInfo.getHost(), "cerberus");
         assertEquals(nodeInfo.getId(), "L9DM79IvStq2RStogXR8Sg");
         assertEquals(nodeInfo.getPublishAddress(), "192.168.1.50:9201");
+
+        return nodeMap;
     }
 }

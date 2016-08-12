@@ -84,8 +84,12 @@ public abstract class Settings {
     }
 
     public boolean getNodesDataOnly() {
-        // by default, if not set, return a value compatible with the WAN setting (see above)
-        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY), !getNodesWANOnly() && !getNodesClientOnly());
+        // by default, if not set, return a value compatible with the other settings
+        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY), !getNodesWANOnly() && !getNodesClientOnly() && !getNodesIngestOnly());
+    }
+
+    public boolean getNodesIngestOnly() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_INGEST_ONLY, ES_NODES_INGEST_ONLY_DEFAULT));
     }
 
     public boolean getNodesClientOnly() {

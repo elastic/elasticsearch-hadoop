@@ -218,6 +218,7 @@ public abstract class RestService implements Serializable {
         List<NodeInfo> nodes = InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
 
         RestRepository client = new RestRepository(settings);
         try {
@@ -543,6 +544,7 @@ public abstract class RestService implements Serializable {
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
 
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
 

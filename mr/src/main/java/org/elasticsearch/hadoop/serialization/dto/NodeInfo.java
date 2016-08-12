@@ -37,6 +37,7 @@ public class NodeInfo implements Serializable {
     private final boolean hasHttp;
     private final boolean isClient;
     private final boolean isData;
+    private final boolean isIngest;
 
     public NodeInfo(String id, Map<String, Object> map) {
         this.id = id;
@@ -54,10 +55,12 @@ public class NodeInfo implements Serializable {
                 this.isClient = data == null ? true : !Boolean.parseBoolean(data);
                 this.isData = data == null ? true : Boolean.parseBoolean(data);
             }
+            this.isIngest = false;
         } else {
             List<String> roles = (List<String>) map.get("roles");
             this.isClient = roles.contains("data") == false;
             this.isData = roles.contains("data");
+            this.isIngest = roles.contains("ingest");
         }
         Map<String, Object> httpMap = (Map<String, Object>) map.get("http");
         if (httpMap != null) {
@@ -86,6 +89,10 @@ public class NodeInfo implements Serializable {
 
     public boolean isData() {
         return isData;
+    }
+
+    public boolean isIngest() {
+        return isIngest;
     }
 
     public String getId() {

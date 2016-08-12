@@ -255,13 +255,14 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
 
         RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
-        String prefix = "mrnewapi";
+        String prefix = "mroldapi";
         String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
         client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
         client.close();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/ingested");
-        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/ingested");
+        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mroldapi-pipeline");
+        conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
 
         runJob(conf);
     }

@@ -74,6 +74,7 @@ public abstract class CascadingUtils {
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
+        InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
     }
 
     static void addSerializationToken(Object config) {

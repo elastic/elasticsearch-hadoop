@@ -57,6 +57,10 @@ public interface ConfigurationOptions {
     String ES_NODES_DATA_ONLY = "es.nodes.data.only";
     String ES_NODES_DATA_ONLY_DEFAULT = "true";
 
+    /** Ingest only */
+    String ES_NODES_INGEST_ONLY = "es.nodes.ingest.only";
+    String ES_NODES_INGEST_ONLY_DEFAULT = "false";
+
     /** WAN only */
     String ES_NODES_WAN_ONLY = "es.nodes.wan.only";
     String ES_NODES_WAN_ONLY_DEFAULT = "false";

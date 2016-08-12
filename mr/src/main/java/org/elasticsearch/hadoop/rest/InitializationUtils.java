@@ -105,7 +105,7 @@ public abstract class InitializationUtils {
                     message += String.format("; looks like the client nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
                 }
                 else {
-                    message += String.format("; node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
                 }
                 throw new EsHadoopIllegalArgumentException(message);
             }
@@ -117,7 +117,7 @@ public abstract class InitializationUtils {
     }
 
     public static void filterNonDataNodesIfNeeded(Settings settings, Log log) {
-        if (!settings.getNodesDataOnly() || settings.getNodesClientOnly()) {
+        if (!settings.getNodesDataOnly()) {
             return;
         }
 
@@ -147,7 +147,49 @@ public abstract class InitializationUtils {
                     message += String.format("; looks like the data nodes discovered have been removed; is the cluster in a stable state? %s", dataNodes);
                 }
                 else {
-                    message += String.format("; node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                }
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+
+            SettingsUtils.setDiscoveredNodes(settings, ddNodes);
+        } finally {
+            bootstrap.close();
+        }
+    }
+
+    public static void filterNonIngestNodesIfNeeded(Settings settings, Log log) {
+        if (!settings.getNodesIngestOnly()) {
+            return;
+        }
+
+        RestClient bootstrap = new RestClient(settings);
+        try {
+            String message = "Ingest-only routing specified but no ingest nodes with HTTP-enabled available";
+            List<NodeInfo> clientNodes = bootstrap.getHttpIngestNodes();
+            if (clientNodes.isEmpty()) {
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found ingest nodes %s", clientNodes));
+            }
+            List<String> toRetain = new ArrayList<String>(clientNodes.size());
+            for (NodeInfo node : clientNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
+            List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            // remove non-client nodes
+            ddNodes.retainAll(toRetain);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Filtered discovered only nodes %s to ingest-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
+            }
+
+            if (ddNodes.isEmpty()) {
+                if (settings.getNodesDiscovery()) {
+                    message += String.format("; looks like the ingest nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
+                }
+                else {
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
                 }
                 throw new EsHadoopIllegalArgumentException(message);
             }
@@ -164,10 +206,16 @@ public abstract class InitializationUtils {
             Assert.isTrue(!settings.getNodesDiscovery(), "Discovery cannot be enabled when running in WAN mode");
             Assert.isTrue(!settings.getNodesClientOnly(), "Client-only nodes cannot be enabled when running in WAN mode");
             Assert.isTrue(!settings.getNodesDataOnly(), "Data-only nodes cannot be enabled when running in WAN mode");
+            Assert.isTrue(!settings.getNodesIngestOnly(), "Ingest-only nodes cannot be enabled when running in WAN mode");
         }
 
-        // pick between data or client only nodes
-        Assert.isTrue(!(settings.getNodesClientOnly() && settings.getNodesDataOnly()), "Use either client-only or data-only nodes but not both");
+        // pick between data or client or ingest only nodes
+        boolean alreadyRestricted = false;
+        boolean[] restrictions = {settings.getNodesClientOnly(), settings.getNodesDataOnly(), settings.getNodesIngestOnly()};
+        for (boolean restriction : restrictions) {
+            Assert.isTrue(!(alreadyRestricted && restriction), "Use either client-only or data-only or ingest-only nodes but not a combination");
+            alreadyRestricted = alreadyRestricted || restriction;
+        }
 
         // field inclusion/exclusion + input as json does not mix and the user should be informed.
         if (settings.getInputAsJson()) {

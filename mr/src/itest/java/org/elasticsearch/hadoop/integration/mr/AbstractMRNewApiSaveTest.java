@@ -200,6 +200,7 @@ public class AbstractMRNewApiSaveTest {
 
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/ingested");
         conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
+        conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
 
         runJob(conf);
     }

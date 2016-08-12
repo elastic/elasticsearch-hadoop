@@ -137,6 +137,19 @@ public class RestClient implements Closeable, StatsAware {
         return nodes;
     }
 
+    public List<NodeInfo> getHttpIngestNodes() {
+        List<NodeInfo> nodes = getHttpNodes(false);
+
+        Iterator<NodeInfo> it = nodes.iterator();
+        while (it.hasNext()) {
+            NodeInfo nodeInfo = it.next();
+            if (!nodeInfo.isIngest()) {
+                it.remove();
+            }
+        }
+        return nodes;
+    }
+
     public <T> T get(String q, String string) {
         return parseContent(execute(GET, q), string);
     }
