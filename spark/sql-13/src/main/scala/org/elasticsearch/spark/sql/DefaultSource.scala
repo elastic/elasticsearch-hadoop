@@ -117,7 +117,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   def buildScan(requiredColumns: Array[String]): RDD[Row] = buildScan(requiredColumns, Array.empty)
 
   // PrunedFilteredScan
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
+  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
 
     var filteredColumns = requiredColumns
