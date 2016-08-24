@@ -256,6 +256,9 @@ public abstract class RestService implements Serializable {
                 }
             }
             final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
+            if (nodes==null){
+                nodes = client.getRestClient().getHttpNodes(false);
+            }
             for (NodeInfo node : nodes) {
                 nodesMap.put(node.getId(), node);
             }
