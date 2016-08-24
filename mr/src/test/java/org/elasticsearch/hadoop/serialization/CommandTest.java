@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
@@ -52,21 +53,36 @@ public class CommandTest {
     private final String operation;
     private boolean noId = false;
     private boolean jsonInput = false;
+    private final EsMajorVersion version;
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                { ConfigurationOptions.ES_OPERATION_INDEX, false },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false }, { ConfigurationOptions.ES_OPERATION_INDEX, true },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true }, { ConfigurationOptions.ES_OPERATION_UPDATE, true },
-
+                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_1_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_2_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_5_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_5_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_5_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_5_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_5_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_5_X },
         });
     }
 
-    public CommandTest(String operation, boolean jsonInput) {
+    public CommandTest(String operation, boolean jsonInput, EsMajorVersion version) {
         this.operation = operation;
         this.jsonInput = jsonInput;
+        this.version = version;
     }
 
     @Before
@@ -184,8 +200,9 @@ public class CommandTest {
     }
 
     @Test
-    public void testUpdateOnlyScript() throws Exception {
+    public void testUpdateOnlyScript5X() throws Exception {
         assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeTrue(version.after(EsMajorVersion.V_1_X));
         Settings set = settings();
 
         set.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
@@ -196,13 +213,32 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
+                "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
     @Test
-    public void testUpdateOnlyParamScript() throws Exception {
+    public void testUpdateOnlyScript1X() throws Exception {
         assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeTrue(version.onOrBefore(EsMajorVersion.V_1_X));
+        Settings set = settings();
+
+        set.setProperty(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+
+        create(set).write(data).copyTo(ba);
+        String result =
+                "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
+                "{\"lang\":\"groovy\",\"script\":\"counter = 3\"}\n";
+        assertEquals(result, ba.toString());
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript5X() throws Exception {
+        assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeTrue(version.after(EsMajorVersion.V_1_X));
         Settings set = settings();
 
         set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
@@ -214,8 +250,27 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
+                "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
+        assertEquals(result, ba.toString());
+    }
+
+    @Test
+    public void testUpdateOnlyParamScript1X() throws Exception {
+        assumeTrue(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeTrue(version.onOrBefore(EsMajorVersion.V_1_X));
+        Settings set = settings();
+
+        set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        set.setProperty(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:n ");
+
+        create(set).write(data).copyTo(ba);
+
+        String result =
+                "{\"" + operation + "\":{\"_id\":1}}\n" +
+                "{\"params\":{\"param1\":1,\"param2\":1},\"lang\":\"groovy\",\"script\":\"counter = param1; anothercounter = param2\"}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -224,7 +279,7 @@ public class CommandTest {
         if (!StringUtils.hasText(settings.getResourceWrite())) {
             settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         }
-        return BulkCommands.create(settings, null);
+        return BulkCommands.create(settings, null, version);
     }
 
     private Settings settings() {

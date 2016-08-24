@@ -42,15 +42,14 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapred.JobTracker;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.FieldAlias;
-import org.elasticsearch.hadoop.util.SettingsUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.*;
 
 public class EsSerDe extends AbstractSerDe {
 
@@ -67,6 +66,7 @@ public class EsSerDe extends AbstractSerDe {
     private final HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
+    private EsMajorVersion version;
     private BulkCommand command;
 
     private boolean writeInitialized = false;
@@ -82,6 +82,8 @@ public class EsSerDe extends AbstractSerDe {
         cfg = conf;
         settings = (cfg != null ? HadoopSettingsManager.loadFrom(cfg).merge(tbl) : HadoopSettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
+
+        version = InitializationUtils.discoverEsVersion(settings, log);
 
         HiveUtils.fixHive13InvalidComments(settings, tbl);
         this.tableProperties = tbl;
@@ -149,7 +151,7 @@ public class EsSerDe extends AbstractSerDe {
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
-        this.command = BulkCommands.create(settings, null);
+        this.command = BulkCommands.create(settings, null, version);
     }
 
 

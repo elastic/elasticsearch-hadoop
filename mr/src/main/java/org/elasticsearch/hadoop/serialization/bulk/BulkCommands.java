@@ -21,13 +21,14 @@ package org.elasticsearch.hadoop.serialization.bulk;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 /**
  * Handles the instantiation of bulk commands.
  */
 public abstract class BulkCommands {
 
-    public static BulkCommand create(Settings settings, MetadataExtractor metaExtractor) {
+    public static BulkCommand create(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion version) {
 
         String operation = settings.getOperation();
         BulkFactory factory = null;
@@ -39,10 +40,10 @@ public abstract class BulkCommands {
             factory = new IndexBulkFactory(settings, metaExtractor);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
-            factory = new UpdateBulkFactory(settings, metaExtractor);
+            factory = new UpdateBulkFactory(settings, metaExtractor, version);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPSERT.equals(operation)) {
-            factory = new UpdateBulkFactory(settings, true, metaExtractor);
+            factory = new UpdateBulkFactory(settings, true, metaExtractor, version);
         }
         else {
             throw new EsHadoopIllegalArgumentException("Unknown operation " + operation);

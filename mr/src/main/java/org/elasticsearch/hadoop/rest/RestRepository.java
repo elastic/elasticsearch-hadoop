@@ -124,7 +124,7 @@ public class RestRepository implements Closeable, StatsAware {
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-            this.command = BulkCommands.create(settings, metaExtractor);
+            this.command = BulkCommands.create(settings, metaExtractor, client.internalVersion);
         }
     }
 
