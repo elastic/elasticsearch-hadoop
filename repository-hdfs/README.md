@@ -69,7 +69,7 @@ Or grab the latest nightly build from the [repository](http://oss.sonatype.org/c
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-repository-hdfs</artifactId>
-  <version>2.3.5.BUILD-SNAPSHOT</version>
+  <version>2.4.1.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
