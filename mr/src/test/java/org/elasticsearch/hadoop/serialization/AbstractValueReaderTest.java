@@ -40,6 +40,7 @@ public abstract class AbstractValueReaderTest {
     public abstract void checkFloat(Object typeFromJson);
     public abstract void checkBoolean(Object typeFromJson);
     public abstract void checkByteArray(Object typeFromJson, String encode);
+    public abstract void checkBinary(Object typeFromJson, byte[] encode);
 
 
     @Before
@@ -93,6 +94,12 @@ public abstract class AbstractValueReaderTest {
         checkByteArray(typeFromJson("\"" + encode + "\""), encode);
     }
 
+    @Test
+    public void testBinary() {
+        String encode = Base64Variants.getDefaultVariant().encode("binary blob".getBytes());
+        checkBinary(readFromJson("\"" + encode + "\"", FieldType.BINARY), encode.getBytes());
+    }
+
     //@Test
     public void testArray() {
         typeFromJson("[ \"one\" ,\"two\"]");
@@ -103,9 +110,19 @@ public abstract class AbstractValueReaderTest {
         typeFromJson("{ one:1, two:2 }");
     }
 
-    private Object typeFromJson(String json) {
+    private JacksonJsonParser parserFromJson(String json) {
         JacksonJsonParser parser = new JacksonJsonParser(json.getBytes());
         parser.nextToken();
+        return parser;
+    }
+
+    private Object readFromJson(String json, FieldType esType) {
+        JacksonJsonParser parser = parserFromJson(json);
+        return vr.readValue(parser, parser.text(), esType);
+    }
+
+    private Object typeFromJson(String json) {
+        JacksonJsonParser parser = parserFromJson(json);
         return vr.readValue(parser, parser.text(), fromJson(parser, parser.currentToken()));
     }
 

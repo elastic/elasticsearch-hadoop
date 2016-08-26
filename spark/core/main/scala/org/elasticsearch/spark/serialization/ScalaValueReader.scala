@@ -75,7 +75,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       case FLOAT => floatValue(value, parser)
       case DOUBLE => doubleValue(value, parser)
       case BOOLEAN => booleanValue(value, parser)
-      case BINARY => binaryValue(parser.binaryValue())
+      case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
       case DATE => date(value, parser)
       // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
       case GEO_POINT | GEO_SHAPE => {
