@@ -256,8 +256,10 @@ public abstract class RestService implements Serializable {
                 }
             }
             final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
-            for (NodeInfo node : nodes) {
-                nodesMap.put(node.getId(), node);
+            if (nodes != null) {
+                for (NodeInfo node : nodes) {
+                    nodesMap.put(node.getId(), node);
+                }
             }
             final List<PartitionDefinition> partitions;
             if (version.onOrAfter(EsMajorVersion.V_5_X)) {
