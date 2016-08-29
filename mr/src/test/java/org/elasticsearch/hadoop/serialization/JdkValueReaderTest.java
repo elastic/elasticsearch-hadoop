@@ -80,6 +80,9 @@ public class JdkValueReaderTest extends AbstractValueReaderTest {
         assertEquals(encode, typeFromJson);
     }
 
+    @Override
+    public void checkBinary(Object typeFromJson, byte[] encode) { assertArrayEquals(encode, (byte[])typeFromJson); }
+
     @Test
     public void parseJDKRichDateISO() {
         Object withColon = DateUtils.parseDate("2015-05-25T22:30:00+03:00");
