@@ -1117,6 +1117,19 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testEsDataFrame60DataSourceSaveModeOverwriteWithID() {
+    val srcFrame = artistsJsonAsDataFrame
+    val index = wrapIndex("sparksql-test/savemode_overwrite_id")
+
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).option("es.mapping.id", "number").save(index)
+    val df = EsSparkSQL.esDF(sqc, index)
+
+    assertEquals(3, df.count())
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).option("es.mapping.id", "number").save(index)
+    assertEquals(3, df.count())
+  }
+
+  @Test
   def testEsDataFrame60DataSourceSaveModeIgnore() {
     val srcFrame = artistsJsonAsDataFrame
     val index = wrapIndex("sparksql-test/savemode_ignore")

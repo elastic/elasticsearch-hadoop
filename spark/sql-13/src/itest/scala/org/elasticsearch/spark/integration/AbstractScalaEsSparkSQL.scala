@@ -1099,13 +1099,25 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsDataFrame60DataSourceSaveModeOverwrite() {
     val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
     val index = wrapIndex("sparksql-test/savemode_overwrite")
-    val table = wrapIndex("save_mode_overwrite")
 
     srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).save(index)
     val df = EsSparkSQL.esDF(sqc, index)
 
     assertEquals(3, df.count())
     srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).save(index)
+    assertEquals(3, df.count())
+  }
+
+  @Test
+  def testEsDataFrame60DataSourceSaveModeOverwriteWithID() {
+    val srcFrame = sqc.read.json(this.getClass.getResource("/small-sample.json").toURI().toString())
+    val index = wrapIndex("sparksql-test/savemode_overwrite_id")
+
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).option("es.mapping.id", "number").save(index)
+    val df = EsSparkSQL.esDF(sqc, index)
+
+    assertEquals(3, df.count())
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Overwrite).option("es.mapping.id", "number").save(index)
     assertEquals(3, df.count())
   }
 
