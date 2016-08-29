@@ -65,7 +65,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       case FLOAT => floatValue(value, parser)
       case DOUBLE => doubleValue(value, parser)
       case BOOLEAN => booleanValue(value, parser)
-      case BINARY => binaryValue(parser.binaryValue())
+      case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
       case DATE => date(value, parser)
       // everything else (IP, GEO) gets translated to strings
       case _ => textValue(value, parser)
@@ -117,17 +117,10 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   }
 
   def binaryValue(value: Array[Byte]) = {
-    if (value != null) {
-      if (emptyAsNull) {
-        nullValue()
-      }
-      else {
+    Option(value) collect {
+      case value: Array[Byte] if !emptyAsNull || !value.isEmpty =>
         parseBinary(value)
-      }
-    }
-    else {
-      nullValue()
-    }
+    } getOrElse nullValue()
   }
   protected def parseBinary(value: Array[Byte]) = { value }
 

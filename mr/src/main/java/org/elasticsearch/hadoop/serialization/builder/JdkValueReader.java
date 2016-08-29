@@ -80,7 +80,9 @@ public class JdkValueReader implements SettingsAware, ValueReader {
         case BOOLEAN:
             return booleanValue(value, parser);
         case BINARY:
-            return binaryValue(parser.binaryValue());
+            byte[] binValue = parser.binaryValue();
+            if(binValue == null) binValue = value.getBytes();
+            return binaryValue(binValue);
         case DATE:
             return date(value, parser);
             // catch-all - exists really for the other custom types that might be introduced
