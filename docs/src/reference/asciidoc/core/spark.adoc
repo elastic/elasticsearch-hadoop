@@ -697,7 +697,7 @@ In a similar fashion, for Java usage the dedicated package +org.elasticsearch.sp
 [source,java]
 ----
 import org.apache.spark.sql.api.java.*;                      <1>
-import org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL;  <2>
+import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;  <2>
 ...
 
 DataFrame people = ...
