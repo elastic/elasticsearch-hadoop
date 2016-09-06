@@ -51,14 +51,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel.DISK_ONLY
 import org.apache.spark.storage.StorageLevel.DISK_ONLY_2
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_FIELD_EXCLUDE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_FIELD_INCLUDE
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
@@ -419,7 +412,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame1WriteNullValue() {
     val idx = wrapIndex("spark-test")
-    val target = s"$idx/null-data-test"
+    val target = s"$idx/null-data-test-0"
 
     val docs = Seq(
       """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
@@ -436,6 +429,84 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
+  }
+
+  @Test
+  def testEsDataFrame12CheckYesWriteNullValue() {
+    val idx = wrapIndex("spark-test")
+    val target = s"$idx/null-data-test-1"
+
+    val docs = Seq(
+      """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
+      """{"id":"2","name":{"first":"Chris","last":"Evans"}}"""
+    )
+
+    val conf = Map(ES_MAPPING_ID -> "id", ES_SPARK_DATAFRAME_WRITE_NULL_VALUES -> "true")
+    val rdd = sc.makeRDD(docs)
+    val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
+    jsonDF.saveToEs(target, conf)
+    RestUtils.refresh(idx)
+    val hit1 = RestUtils.get(s"$target/1/_source")
+    val hit2 = RestUtils.get(s"$target/2/_source")
+
+    assertThat(hit1, containsString("suffix"))
+    assertThat(hit2, containsString("suffix"))
+  }
+
+
+  @Test
+  def testEsDataFrame11CheckNoWriteNullValueFromRows() {
+    val idx = wrapIndex("spark-test")
+    val target = s"$idx/null-data-test-2"
+
+    val data = Seq(
+      Row("1", "Robert", "Downey", "Jr"),
+      Row("2", "Chris", "Evans", null)
+    )
+    val schema = StructType(Array(
+      StructField("id", StringType),
+      StructField("first", StringType),
+      StructField("last", StringType),
+      StructField("suffix", StringType, nullable = true)
+    ))
+
+    val conf = Map("es.mapping.id" -> "id")
+    val rdd = sc.makeRDD(data)
+    val df = sqc.createDataFrame(rdd, schema)
+    df.saveToEs(target, conf)
+    RestUtils.refresh(idx)
+    val hit1 = RestUtils.get(s"$target/1/_source")
+    val hit2 = RestUtils.get(s"$target/2/_source")
+
+    assertThat(hit1, containsString("suffix"))
+    assertThat(hit2, not(containsString("suffix")))
+  }
+
+  @Test
+  def testEsDataFrame12CheckYesWriteNullValueFromRows() {
+    val idx = wrapIndex("spark-test")
+    val target = s"$idx/null-data-test-3"
+    val data = Seq(
+      Row("1", "Robert", "Downey", "Jr"),
+      Row("2", "Chris", "Evans", null)
+    )
+    val schema = StructType(Array(
+      StructField("id", StringType),
+      StructField("first", StringType),
+      StructField("last", StringType),
+      StructField("suffix", StringType, nullable = true)
+    ))
+
+    val conf = Map("es.mapping.id" -> "id", "es.spark.dataframe.write.null" -> "true")
+    val rdd = sc.makeRDD(data)
+    val df = sqc.createDataFrame(rdd, schema)
+    df.saveToEs(target, conf)
+    RestUtils.refresh(idx)
+    val hit1 = RestUtils.get(s"$target/1/_source")
+    val hit2 = RestUtils.get(s"$target/2/_source")
+
+    assertThat(hit1, containsString("suffix"))
+    assertThat(hit2, containsString("suffix"))
   }
 
   @Test

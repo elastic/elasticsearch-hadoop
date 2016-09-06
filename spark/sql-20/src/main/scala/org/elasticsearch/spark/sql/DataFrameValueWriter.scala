@@ -8,7 +8,6 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
 
-import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.DataType
@@ -23,13 +22,15 @@ import org.apache.spark.sql.types.DataTypes.LongType
 import org.apache.spark.sql.types.DataTypes.ShortType
 import org.apache.spark.sql.types.DataTypes.StringType
 import org.apache.spark.sql.types.DataTypes.TimestampType
-import org.apache.spark.sql.types.DecimalType
 import org.apache.spark.sql.types.MapType
 import org.apache.spark.sql.types.StructType
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT
+import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
+import org.elasticsearch.hadoop.util.unit.Booleans
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 
@@ -40,6 +41,12 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   }
 
   private val scalaValueWriter = new ScalaValueWriter(writeUnknownTypes)
+  private var writeNullValues = Booleans.parseBoolean(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT)
+
+  override def setSettings(settings: Settings): Unit = {
+    super.setSettings(settings)
+    writeNullValues = settings.getDataFrameWriteNullValues
+  }
 
   override def write(value: (Row, StructType), generator: Generator): Result = {
     val row = value._1
@@ -62,6 +69,9 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
                 if (!result.isSuccesful) {
                   return handleUnknown(value, generator)
                 }
+              } else if (writeNullValues) {
+                generator.writeFieldName(field.name)
+                generator.writeNull()
               }
             }
         }
