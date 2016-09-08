@@ -556,7 +556,7 @@ public class RestClient implements Closeable, StatsAware {
         StringBuilder uri = new StringBuilder(indexAndType);
         uri.append("/_count");
         if (StringUtils.hasLength(shardId)) {
-            uri.append("?preference=");
+            uri.append("?preference=_shards:");
             uri.append(shardId);
         }
         Response response = execute(GET, uri.toString(), searchRequest(query));
@@ -568,7 +568,7 @@ public class RestClient implements Closeable, StatsAware {
         StringBuilder uri = new StringBuilder(indexAndType);
         uri.append("/_search?size=0");
         if (StringUtils.hasLength(shardId)) {
-            uri.append("&preference=");
+            uri.append("&preference=_shards:");
             uri.append(shardId);
         }
         Response response = execute(GET, uri.toString(), searchRequest(query));
