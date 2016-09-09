@@ -33,11 +33,15 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
+import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransportFactory;
+import org.elasticsearch.hadoop.rest.pooling.PooledTransportManager;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.SettingsUtils;
+
+import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY;
 
 
 public class NetworkClient implements StatsAware, Closeable {
@@ -47,6 +51,7 @@ public class NetworkClient implements StatsAware, Closeable {
     private final List<String> nodes;
     private final Map<String, Throwable> failedNodes = new LinkedHashMap<String, Throwable>();
 
+    private TransportFactory transportFactory;
     private Transport currentTransport;
     private String currentNode;
     private int nextClient = 0;
@@ -54,8 +59,14 @@ public class NetworkClient implements StatsAware, Closeable {
     private final Stats stats = new Stats();
 
     public NetworkClient(Settings settings) {
+        this(settings, (settings.getProperty(INTERNAL_TRANSPORT_POOLING_KEY) == null ? new CommonsHttpTransportFactory() : PooledTransportManager.getTransportFactory(settings)));
+    }
+
+    public NetworkClient(Settings settings, TransportFactory transportFactory) {
         this.settings = settings.copy();
         this.nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+        this.transportFactory = transportFactory;
+
         // shuffle the list of nodes so in case of failures, the fallback is spread
         Collections.shuffle(nodes);
 
@@ -88,7 +99,7 @@ public class NetworkClient implements StatsAware, Closeable {
         closeTransport();
         currentNode = nodes.get(nextClient++);
         SettingsUtils.pinNode(settings, currentNode);
-        currentTransport = new CommonsHttpTransport(settings, currentNode);
+        currentTransport = transportFactory.create(settings, currentNode);
         return true;
     }
 

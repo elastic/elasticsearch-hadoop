@@ -71,7 +71,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
 
     private final HttpClient client;
-    private final Stats stats = new Stats();
+    protected Stats stats = new Stats();
     private HttpConnection conn;
     private String proxyInfo = "";
     private final String httpInfo;

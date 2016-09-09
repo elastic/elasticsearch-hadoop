@@ -67,7 +67,7 @@ object EsSpark {
     doSaveToEs(rdd, cfg, true)
   }
 
-  private def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean) {
+  private[spark] def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean) {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
     if (rdd == null || rdd.partitions.length == 0) {
