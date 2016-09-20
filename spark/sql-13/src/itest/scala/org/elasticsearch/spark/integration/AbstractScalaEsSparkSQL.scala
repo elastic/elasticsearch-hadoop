@@ -1317,9 +1317,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     |          "type": "string"
     |        },
     |        "location": {
-    |          "type": "geo_point",
-    |          "geohash" : true,
-    |          "precision_step" : "8"
+    |          "type": "geo_point"
     |        }
     |      }
     |    }

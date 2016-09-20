@@ -38,6 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Scorer;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
@@ -58,7 +60,6 @@ import org.elasticsearch.bootstrap.BootstrapInfo;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.hash.MessageDigests;
-import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.script.ClassPermission;
 import org.elasticsearch.script.CompiledScript;
@@ -93,32 +94,37 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
      */
     private final ClassLoader loader;
 
+    /**
+     * We want to use our log framework. Sorry log4j2...
+     */
+    private final Log log = LogFactory.getLog(GroovyScriptEngineService.class);
+
     public GroovyScriptEngineService(Settings settings) {
         super(settings);
+
+        deprecationLogger.deprecated("[groovy] scripts are deprecated, use [painless] scripts instead");
+
         // Creates the classloader here in order to isolate Groovy-land code
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SpecialPermission());
         }
-        this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
-            @Override
-            public GroovyClassLoader run() {
-                // snapshot our context (which has permissions for classes), since the script has none
-                final AccessControlContext engineContext = AccessController.getContext();
-                return new GroovyClassLoader(new ClassLoader(getClass().getClassLoader()) {
-                    @Override
-                    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-                        if (sm != null) {
-                            try {
-                                engineContext.checkPermission(new ClassPermission(name));
-                            } catch (SecurityException e) {
-                                throw new ClassNotFoundException(name, e);
-                            }
+        this.loader = AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
+            // snapshot our context (which has permissions for classes), since the script has none
+            AccessControlContext context = AccessController.getContext();
+            return new ClassLoader(getClass().getClassLoader()) {
+                @Override
+                protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                    if (sm != null) {
+                        try {
+                            context.checkPermission(new ClassPermission(name));
+                        } catch (SecurityException e) {
+                            throw new ClassNotFoundException(name, e);
                         }
-                        return super.loadClass(name, resolve);
                     }
-                });
-            }
+                    return super.loadClass(name, resolve);
+                }
+            };
         });
     }
 
@@ -138,9 +144,9 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
     }
 
     @Override
-    public Object compile(final String scriptName, final String scriptSource, Map<String, String> params) {
+    public Object compile(String scriptName, String scriptSource, Map<String, String> params) {
         // Create the script class name
-        final String className = MessageDigests.toHexString(MessageDigests.sha1().digest(scriptSource.getBytes(StandardCharsets.UTF_8)));
+        String className = MessageDigests.toHexString(MessageDigests.sha1().digest(scriptSource.getBytes(StandardCharsets.UTF_8)));
 
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -162,9 +168,9 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
 
                 GroovyClassLoader groovyClassLoader = new GroovyClassLoader(loader, configuration);
                 return groovyClassLoader.parseClass(codeSource);
-            } catch (Throwable e) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Exception compiling Groovy script:", e);
+            } catch (Exception e) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Exception compiling Groovy script:", e);
                 }
                 throw convertToScriptException("Error compiling script " + className, scriptSource, e);
             }
@@ -176,11 +182,9 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
      * Return a script object with the given vars from the compiled script object
      */
     @SuppressWarnings("unchecked")
-    private Script createScript(Object compiledScript, Map<String, Object> vars)
-            throws ReflectiveOperationException {
+    private Script createScript(Object compiledScript, Map<String, Object> vars) throws ReflectiveOperationException {
         Class<?> scriptClass = (Class<?>) compiledScript;
-        Script scriptObject = (Script) scriptClass.getConstructor()
-                .newInstance();
+        Script scriptObject = (Script) scriptClass.getConstructor().newInstance();
         Binding binding = new Binding();
         binding.getVariables().putAll(vars);
         scriptObject.setBinding(binding);
@@ -189,12 +193,14 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
 
     @Override
     public ExecutableScript executable(CompiledScript compiledScript, Map<String, Object> vars) {
+        deprecationLogger.deprecated("[groovy] scripts are deprecated, use [painless] scripts instead");
+
         try {
-            Map<String, Object> allVars = new HashMap<String, Object>();
+            Map<String, Object> allVars = new HashMap<>();
             if (vars != null) {
                 allVars.putAll(vars);
             }
-            return new GroovyScript(compiledScript, createScript(compiledScript.compiled(), allVars), this.logger);
+            return new GroovyScript(compiledScript, createScript(compiledScript.compiled(), allVars), log);
         } catch (ReflectiveOperationException e) {
             throw convertToScriptException("Failed to build executable script", compiledScript.name(), e);
         }
@@ -202,12 +208,14 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
 
     @Override
     public SearchScript search(final CompiledScript compiledScript, final SearchLookup lookup, @Nullable final Map<String, Object> vars) {
+        deprecationLogger.deprecated("[groovy] scripts are deprecated, use [painless] scripts instead");
+
         return new SearchScript() {
 
             @Override
             public LeafSearchScript getLeafSearchScript(LeafReaderContext context) throws IOException {
                 final LeafSearchLookup leafLookup = lookup.getLeafSearchLookup(context);
-                Map<String, Object> allVars = new HashMap<String, Object>();
+                Map<String, Object> allVars = new HashMap<>();
                 allVars.putAll(leafLookup.asMap());
                 if (vars != null) {
                     allVars.putAll(vars);
@@ -218,7 +226,7 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
                 } catch (ReflectiveOperationException e) {
                     throw convertToScriptException("Failed to build search script", compiledScript.name(), e);
                 }
-                return new GroovyScript(compiledScript, scriptObject, leafLookup, logger);
+                return new GroovyScript(compiledScript, scriptObject, leafLookup, log);
             }
 
             @Override
@@ -233,17 +241,16 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
      * Converts a {@link Throwable} to a {@link ScriptException}
      */
     private ScriptException convertToScriptException(String message, String source, Throwable cause) {
-        List<String> stack = new ArrayList<String>();
+        List<String> stack = new ArrayList<>();
         if (cause instanceof MultipleCompilationErrorsException) {
             @SuppressWarnings({"unchecked"})
-            List<Message> errors = ((MultipleCompilationErrorsException) cause).getErrorCollector().getErrors();
+            List<Message> errors = (List<Message>) ((MultipleCompilationErrorsException) cause).getErrorCollector().getErrors();
             for (Message error : errors) {
-                StringWriter writer = new StringWriter();
-                try {
+                try (StringWriter writer = new StringWriter()) {
                     error.write(new PrintWriter(writer));
                     stack.add(writer.toString());
-                } catch (Exception e1) {
-                    logger.error("failed to write compilation error message to the stack", e1);
+                } catch (IOException e1) {
+                    log.error("failed to write compilation error message to the stack", e1);
                 }
             }
         } else if (cause instanceof CompilationFailedException) {
@@ -259,14 +266,14 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
         private final Script script;
         private final LeafSearchLookup lookup;
         private final Map<String, Object> variables;
-        private final ESLogger logger;
+        private final Log logger;
 
-        public GroovyScript(CompiledScript compiledScript, Script script, ESLogger logger) {
+        public GroovyScript(CompiledScript compiledScript, Script script, Log logger) {
             this(compiledScript, script, null, logger);
         }
 
         @SuppressWarnings("unchecked")
-        public GroovyScript(CompiledScript compiledScript, Script script, @Nullable LeafSearchLookup lookup, ESLogger logger) {
+        public GroovyScript(CompiledScript compiledScript, Script script, @Nullable LeafSearchLookup lookup, Log logger) {
             this.compiledScript = compiledScript;
             this.script = script;
             this.lookup = lookup;
@@ -309,11 +316,24 @@ public class GroovyScriptEngineService extends AbstractComponent implements Scri
                         return script.run();
                     }
                 });
-            } catch (Throwable e) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("failed to run {}", e, compiledScript);
+            } catch (AssertionError ae) {
+                // Groovy asserts are not java asserts, and cannot be disabled, so we do a best-effort trying to determine if this is a
+                // Groovy assert (in which case we wrap it and throw), or a real Java assert, in which case we rethrow it as-is, likely
+                // resulting in the uncaughtExceptionHandler handling it.
+                final StackTraceElement[] elements = ae.getStackTrace();
+                if (elements.length > 0 && "org.codehaus.groovy.runtime.InvokerHelper".equals(elements[0].getClassName())) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("failed to run {%s}", compiledScript), ae);
+                        throw new ScriptException("Error evaluating " + compiledScript.name(),
+                                ae, emptyList(), "", compiledScript.lang());
+                    }
                 }
-                throw new ScriptException("Error evaluating " + compiledScript.name(), e, Collections.<String> emptyList(), "", compiledScript.lang());
+                throw ae;
+            } catch (Exception | NoClassDefFoundError e) {
+                if (logger.isTraceEnabled()) {
+                    logger.trace(String.format("failed to run {%s}", compiledScript), e);
+                }
+                throw new ScriptException("Error evaluating " + compiledScript.name(), e, emptyList(), "", compiledScript.lang());
             }
         }
 

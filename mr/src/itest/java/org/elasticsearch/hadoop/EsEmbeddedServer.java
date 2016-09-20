@@ -72,12 +72,15 @@ public class EsEmbeddedServer {
     }
 
     public void start() {
-        node.start();
-        // find out port
-        String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
-        String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
-
-        ipAndPort = StringUtils.parseIpAddress(value);
+        try {
+            node.start();
+            // find out port
+            String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
+            String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
+            ipAndPort = StringUtils.parseIpAddress(value);
+        } catch (Exception e) {
+            throw new EsHadoopException("Encountered exception during embedded node startup", e);
+        }
     }
 
     public void stop() throws IOException {

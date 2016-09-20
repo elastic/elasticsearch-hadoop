@@ -22,6 +22,7 @@ allprojects {
       // Hive depends on JDO ec2 missing from Maven Central
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
+      maven { url "https://staging.elastic.co/5.0.0-beta1-5eb5cbdb/maven" }
     }
 
     apply plugin: "java"
@@ -201,7 +202,10 @@ allprojects { project ->
         // makes eclipse classpath easier
         testCompile "org.elasticsearch:elasticsearch:$esVersion"
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
-        testRuntime "log4j:log4j:$log4jVersion"
+//        testRuntime "log4j:log4j:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-core:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion"
         testRuntime "net.java.dev.jna:jna:4.2.2"
         //testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         testCompile "org.codehaus.groovy:groovy:$groovyVersion:indy"
