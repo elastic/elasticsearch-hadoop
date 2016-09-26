@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.util;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
@@ -96,6 +97,26 @@ public abstract class SettingsUtils {
         String node = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE);
         Assert.hasText(node, "Task has not been pinned to a node...");
         return node;
+    }
+
+    public static void setJobTransportPoolingKey(Settings settings, String key) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY, key);
+    }
+
+    public static void ensureJobTransportPoolingKey(Settings settings) {
+        if (!hasJobTransportPoolingKey(settings)) {
+            throw new EsHadoopIllegalStateException("Job has not been assigned a transport pooling key. Required `"+InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY+"` to be set but it was not assigned.");
+        }
+    }
+
+    public static boolean hasJobTransportPoolingKey(Settings settings) {
+        return StringUtils.hasText(settings.getProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY));
+    }
+
+    public static String getJobTransportPoolingKey(Settings settings) {
+        String jobKey = settings.getProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY);
+        Assert.hasText(jobKey, "Job has not been assigned a transport pooling key...");
+        return jobKey;
     }
 
     public static void addDiscoveredNodes(Settings settings, List<NodeInfo> discoveredNodes) {

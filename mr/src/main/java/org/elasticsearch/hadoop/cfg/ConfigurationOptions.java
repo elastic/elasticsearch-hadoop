@@ -241,6 +241,9 @@ public interface ConfigurationOptions {
     String ES_OUTPUT_JSON_DEFAULT = "no";
 
     /** Network options */
+    String ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT = "es.net.transport.pooling.expiration.timeout";
+    String ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT_DEFAULT = "5m";
+
     // SSL
     String ES_NET_USE_SSL = "es.net.ssl";
     String ES_NET_USE_SSL_DEFAULT = "false";

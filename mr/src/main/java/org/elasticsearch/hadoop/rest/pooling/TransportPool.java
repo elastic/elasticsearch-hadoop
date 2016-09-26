@@ -10,6 +10,7 @@ import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -21,33 +22,45 @@ import static org.elasticsearch.hadoop.rest.Request.Method.GET;
  * A basic connection pool meant for allocating {@link Transport} objects.
  * This only supports pooling of the {@link CommonsHttpTransport} object at this time.
  */
-class TransportPool {
+final class TransportPool {
 
     private final Log log = LogFactory.getLog(this.getClass());
 
     private final Settings transportSettings;
     private final String hostName;
     private final String jobPoolingKey;
+    private final TimeValue idleTransportTimeout;
 
     private final SimpleRequest validationRequest = new SimpleRequest(/*method:*/GET, /*uri:*/null, /*path:*/"", /*params:*/"");
 
     private final Map<PooledTransport, Long> idle;
     private final Map<PooledTransport, Long> leased;
 
-    private volatile long lastUsed = 0L;
-
+    /**
+     * @param jobPoolingKey Unique key for all pooled connections for this job
+     * @param hostName Host name to pool transports for
+     * @param transportSettings Settings to use for this pool and for new transports
+     */
     TransportPool(String jobPoolingKey, String hostName, Settings transportSettings) {
         this.jobPoolingKey = jobPoolingKey;
         this.hostName = hostName;
         this.transportSettings = transportSettings;
         this.leased = new HashMap<PooledTransport, Long>();
         this.idle = new HashMap<PooledTransport, Long>();
+
+        this.idleTransportTimeout = transportSettings.getTransportPoolingExpirationTimeout();
     }
 
+    /**
+     * @return This pool's assigned job id
+     */
     String getJobPoolingKey() {
         return jobPoolingKey;
     }
 
+    /**
+     * @return a new Transport for use in the pool.
+     */
     private PooledTransport create() {
         if (log.isDebugEnabled()) {
             log.debug("Creating new pooled CommonsHttpTransport for host ["+hostName+"] belonging to job ["+jobPoolingKey+"]");
@@ -55,20 +68,33 @@ class TransportPool {
         return new PooledCommonsHttpTransport(transportSettings, hostName);
     }
 
+    /**
+     * Used to validate an idle pooled transport is still good for consumption.
+     * @param transport to test
+     * @return if the transport succeeded the validation or not
+     */
     private boolean validate(PooledTransport transport) {
-        // TODO: better validation logic (logging errors and other things)
         try {
             Response response = transport.execute(validationRequest);
             return response.hasSucceeded();
         } catch (IOException ioe) {
+            log.warn("Could not validate pooled connection on lease. Releasing pooled connection and trying again...", ioe);
             return false;
         }
     }
 
+    /**
+     * Takes the steps required to close the given Transport object
+     * @param transport to be closed
+     */
     private void release(PooledTransport transport) {
         transport.close();
     }
 
+    /**
+     * Borrows a Transport from this pool. If there are no pooled Transports available, a new one is created.
+     * @return A Transport backed by a pooled resource
+     */
     synchronized Transport borrowTransport() {
         long now = System.currentTimeMillis();
         for (Map.Entry<PooledTransport, Long> entry : idle.entrySet()) {
@@ -76,7 +102,6 @@ class TransportPool {
             if (validate(transport)) {
                 idle.remove(transport);
                 leased.put(transport, now);
-                lastUsed = now;
                 return new LeasedTransport(transport, this);
             } else {
                 idle.remove(transport);
@@ -85,10 +110,13 @@ class TransportPool {
         }
         PooledTransport transport = create();
         leased.put(transport, now);
-        lastUsed = now;
         return new LeasedTransport(transport, this);
     }
 
+    /**
+     * Returns a transport to the pool.
+     * @param returning Transport to be cleaned and returned to the pool.
+     */
     private synchronized void returnTransport(Transport returning) {
         long now = System.currentTimeMillis();
         PooledTransport unwrapped;
@@ -107,18 +135,32 @@ class TransportPool {
         if (leased.containsKey(unwrapped)) {
             leased.remove(unwrapped);
             idle.put(unwrapped, now);
-            lastUsed = now;
         } else {
             throw new EsHadoopIllegalStateException("Cannot return a Transport object to a pool that was not sourced from the pool");
         }
     }
 
-    public long lastUsed() {
-        return lastUsed;
-    }
-
-    public synchronized int leaseCount() {
-        return leased.size();
+    /**
+     * Cleans the pool by removing any resources that have been idle for longer than the configured transport pool idle time.
+     * @return how many connections in the pool still exist (idle AND leased).
+     */
+    synchronized int removeOldConnections() {
+        long now = System.currentTimeMillis();
+        long expirationTime = now - idleTransportTimeout.millis();
+        for (Map.Entry<PooledTransport, Long> idleEntry : idle.entrySet()) {
+            long lastUsed = idleEntry.getValue();
+            if (lastUsed < expirationTime) {
+                PooledTransport removed = idleEntry.getKey();
+                if (log.isTraceEnabled()) {
+                    log.trace("Expiring idle transport for job [" + jobPoolingKey + "], transport: ["
+                            + removed.toString() + "]. Last used [" + new TimeValue(now-lastUsed) + "] ago. Expired ["
+                            + idleTransportTimeout + "] ago.");
+                }
+                release(removed);
+                idle.remove(removed);
+            }
+        }
+        return idle.size() + leased.size();
     }
 
     /**
@@ -174,17 +216,25 @@ class TransportPool {
 
     /**
      * A subclass of {@link CommonsHttpTransport} that allows us to
-     * clean up certain things about the object before returning it
-     * to the pool.
+     * clean up stuff like the 'stats' member before returning the
+     * transport to the pool.
      */
     private final class PooledCommonsHttpTransport extends CommonsHttpTransport implements PooledTransport {
+        private final String loggingHostInformation;
+
         PooledCommonsHttpTransport(Settings settings, String host) {
             super(settings, host);
+            this.loggingHostInformation = host;
         }
 
         @Override
         public void clean() {
             this.stats = new Stats();
+        }
+
+        @Override
+        public String toString() {
+            return "PooledCommonsHttpTransport{'" + loggingHostInformation + "'}";
         }
     }
 }

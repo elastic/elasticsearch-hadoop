@@ -345,6 +345,10 @@ public abstract class Settings {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
 
+    public TimeValue getTransportPoolingExpirationTimeout() {
+        return TimeValue.parseTimeValue(getProperty(ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT, ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT_DEFAULT));
+    }
+
     // SSL
     public boolean getNetworkSSLEnabled() {
         return Booleans.parseBoolean(getProperty(ES_NET_USE_SSL, ES_NET_USE_SSL_DEFAULT));

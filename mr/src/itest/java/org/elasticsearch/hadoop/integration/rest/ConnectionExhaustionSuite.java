@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.LocalEs;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -17,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY;
 
 @Ignore
 @RunWith(Suite.class)
@@ -65,7 +64,7 @@ public class ConnectionExhaustionSuite {
             for (String jobKey : JOB_KEYS) {
                 final Settings workerSettings = SETTINGS.copy();
                 if (POOLED) {
-                    workerSettings.setProperty(INTERNAL_TRANSPORT_POOLING_KEY, jobKey);
+                    SettingsUtils.setJobTransportPoolingKey(workerSettings, jobKey);
                 }
                 Thread worker = new Thread(new Exhauster(++workerNum, workerSettings));
                 worker.start();

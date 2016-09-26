@@ -32,7 +32,6 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransportFactory;
 import org.elasticsearch.hadoop.rest.pooling.PooledTransportManager;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -40,8 +39,6 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.SettingsUtils;
-
-import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY;
 
 
 public class NetworkClient implements StatsAware, Closeable {
@@ -59,7 +56,7 @@ public class NetworkClient implements StatsAware, Closeable {
     private final Stats stats = new Stats();
 
     public NetworkClient(Settings settings) {
-        this(settings, (settings.getProperty(INTERNAL_TRANSPORT_POOLING_KEY) == null ? new CommonsHttpTransportFactory() : PooledTransportManager.getTransportFactory(settings)));
+        this(settings,(SettingsUtils.hasJobTransportPoolingKey(settings) ? new CommonsHttpTransportFactory() : PooledTransportManager.getTransportFactory(settings)));
     }
 
     public NetworkClient(Settings settings, TransportFactory transportFactory) {
