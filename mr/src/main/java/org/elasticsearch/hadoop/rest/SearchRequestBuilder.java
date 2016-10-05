@@ -192,7 +192,7 @@ public class SearchRequestBuilder {
         }
         if (local) {
             if (pref.length() > 0) {
-                pref.append(";");
+                pref.append("|");
             }
             pref.append("_local");
         }

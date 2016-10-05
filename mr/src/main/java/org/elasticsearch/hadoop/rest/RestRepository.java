@@ -419,7 +419,11 @@ public class RestRepository implements Closeable, StatsAware {
         }
         else {
             // try first a blind delete by query (since the plugin might be installed)
-            client.delete(resourceW.indexAndType() + "/_query?q=*");
+            try {
+                client.delete(resourceW.indexAndType() + "/_query?q=*");
+            } catch (EsHadoopInvalidRequest ehir) {
+                log.info("Skipping delete by query as the plugin is not installed...");
+            }
 
             // in ES 2.0 and higher this means scrolling and deleting the docs by hand...
             // do a scroll-scan without source

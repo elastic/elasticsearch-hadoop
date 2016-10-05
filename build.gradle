@@ -22,7 +22,7 @@ allprojects {
       // Hive depends on JDO ec2 missing from Maven Central
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
-      maven { url "https://staging.elastic.co/5.0.0-beta1-5eb5cbdb/maven" }
+      maven { url "https://staging.elastic.co/5.0.0-rc1-9db751df/maven" }
     }
 
     apply plugin: "java"
