@@ -56,7 +56,7 @@ public class NetworkClient implements StatsAware, Closeable {
     private final Stats stats = new Stats();
 
     public NetworkClient(Settings settings) {
-        this(settings,(SettingsUtils.hasJobTransportPoolingKey(settings) ? new CommonsHttpTransportFactory() : PooledTransportManager.getTransportFactory(settings)));
+        this(settings, (!SettingsUtils.hasJobTransportPoolingKey(settings) ? new CommonsHttpTransportFactory() : PooledTransportManager.getTransportFactory(settings)));
     }
 
     public NetworkClient(Settings settings, TransportFactory transportFactory) {
