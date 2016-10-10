@@ -178,7 +178,7 @@ public class TripBean implements Serializable {
 
 [source,java]
 ----
-import static org.elasticsearch.spark.rdd.java.api.JavaEsSpark;                <1>
+import static org.elasticsearch.spark.rdd.api.java.JavaEsSpark;                <1>
 ...
 
 TripBean upcoming = new TripBean("OTP", "SFO");
@@ -359,7 +359,7 @@ In a similar fashion, on the Java side, +JavaEsSpark+ provides +saveToEsWithMeta
 
 [source,java]
 ----
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 
 // data to be saved
 Map<String, ?> otp = ImmutableMap.of("iata", "OTP", "name", "Otopeni");
@@ -383,7 +383,7 @@ When more than just the id needs to be specified, one can choose to use a +java.
 
 [source,java]
 ----
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.elasticsearch.spark.rdd.Metadata;          <1>
 
 import static org.elasticsearch.spark.rdd.Metadata.*; <2>
@@ -474,7 +474,7 @@ Java users have a dedicated `JavaPairRDD` that works the same as its Scala count
 [source,java]
 ----
 import org.apache.spark.api.java.JavaSparkContext;               <1>
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark;             <2>
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;             <2>
 ...
 
 SparkConf conf = ...
@@ -494,7 +494,7 @@ Let us see how this looks, but this time around using http://docs.oracle.com/jav
 
 [source,java]
 ----
-import static org.elasticsearch.spark.rdd.java.api.JavaEsSpark.*;   <1>
+import static org.elasticsearch.spark.rdd.api.java.JavaEsSpark.*;   <1>
 
 ...
 JavaRDD<Map<String, Object>> esRDD =
@@ -692,7 +692,7 @@ only by toggling the +es.spark.dataframe.write.null+ setting to +true+.
 [[spark-sql-write-java]]
 ===== Java
 
-In a similar fashion, for Java usage the dedicated package +org.elasticsearch.spark.sql.java.api+ provides similar functionality through the +JavaEsSpark SQL+ :
+In a similar fashion, for Java usage the dedicated package +org.elasticsearch.spark.sql.api.java+ provides similar functionality through the +JavaEsSpark SQL+ :
 
 [source,java]
 ----
@@ -712,7 +712,7 @@ Again, with Java 5 _static_ imports this can be further simplied to:
 
 [source,java]
 ----
-import static org.elasticsearch.spark.sql.java.api.JavaEsSpark SQL; <1>
+import static org.elasticsearch.spark.sql.api.java.JavaEsSpark SQL; <1>
 ...
 saveToEs("spark/people");                                          <2>
 ----
@@ -1016,7 +1016,7 @@ For Java users, a dedicated API exists through +JavaEsSpark SQL+. It is striking
 [source,java]
 ----
 import org.apache.spark.sql.api.java.JavaSQLContext;          <1>
-import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;   <2>
+import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;   <2>
 ...
 SQLContext sql = new SQLContext(sc);
 
