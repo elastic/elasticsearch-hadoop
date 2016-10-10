@@ -29,14 +29,14 @@ Available through any Maven-compatible tool:
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
 
-### Beta Release (currently `5.0.0-beta1`)
+### Beta Release (currently `5.0.0-rc1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.0.0-beta1</version>
+  <version>5.0.0-rc1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
