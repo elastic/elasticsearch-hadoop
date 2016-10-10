@@ -281,7 +281,7 @@ To read data from ES, create a dedicated `RDD` and specify the query as an argum
 
 ```java
 import org.apache.spark.api.java.JavaSparkContext;   
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark; 
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
 
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);   
@@ -301,7 +301,7 @@ DataFrame playlist = df.filter(df.col("category").equalTo("pikes").and(df.col("y
 
 Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
 ```java
-import org.elasticsearch.spark.java.api.JavaEsSpark; 
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
 
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf); 
@@ -316,7 +316,7 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 #### Spark SQL
 
 ```java
-import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;
+import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 
 DataFrame df = sqlContext.read.json("examples/people.json")
 JavaEsSparkSQL.saveToES(df, "spark/docs")
