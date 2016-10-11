@@ -42,6 +42,9 @@ public abstract class QueryUtils {
             try {
                 // must be a resource
                 InputStream in = settings.loadResource(query);
+                if (in == null) {
+                    throw new IOException();
+                }
                 query = IOUtils.asString(in);
             } catch (IOException ex) {
                 throw new EsHadoopIllegalArgumentException(
