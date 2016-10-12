@@ -131,7 +131,7 @@ public interface ConfigurationOptions {
     String ES_SERIALIZATION_READER_VALUE_CLASS = "es.ser.reader.value.class";
 
     /** Input options **/
-    String ES_MAX_DOCS_PER_PARTITION = "es.input.maxdocsperpartition";
+    String ES_MAX_DOCS_PER_PARTITION = "es.input.max.docs.per.partition";
     int ES_DEFAULT_MAX_DOCS_PER_PARTITION = 100000;
     String ES_INPUT_JSON = "es.input.json";
     String ES_INPUT_JSON_DEFAULT = "no";
