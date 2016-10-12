@@ -361,6 +361,13 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
 ----
 
 [float]
+==== Input
+
+added[5.0.0]
+`es.input.max.docs.per.partition` (default 100000)::
+When reading from an {es} cluster that supports scroll slicing ({es} v5.0.0 and above), this parameter advises the connector on what the maximum number of documents per input partition should be. The connector will sample and estimate the number of documents on each shard to be read and divides each shard into input slices using the value supplied by this property. This property is ignored if you are reading from an {es} cluster that does not support scroll slicing ({es} any version below v5.0.0).
+
+[float]
 ==== Network
 
 `es.nodes.discovery` (default true)::
