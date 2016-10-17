@@ -20,12 +20,8 @@ package org.elasticsearch.hadoop.pig;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,6 +87,8 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     private RecordWriter<Object, Object> writer;
     private PigTuple pigTuple;
 
+    private boolean isJSON = false;
+
     private List<String> aliasesTupleNames;
 
     public EsStorage() {
@@ -103,6 +101,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                 for (String string : configuration) {
                     // replace ; with line separators
                     properties.load(new StringReader(string));
+                    log.trace(properties.toString());
                 }
             } catch (IOException ex) {
                 throw new EsHadoopIllegalArgumentException("Cannot parse options " + Arrays.toString(configuration), ex);
@@ -145,13 +144,13 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         settings = (read ? settings.setResourceRead(location) : settings.setResourceWrite(location));
 
-        boolean changed = false;
         InitializationUtils.checkIdForOperation(settings);
+        InitializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
+        InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
+        InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
 
-        changed |= InitializationUtils.setValueWriterIfNotSet(settings, PigValueWriter.class, log);
-        changed |= InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
-        changed |= InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
-        changed |= InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
+        isJSON = settings.getOutputAsJson();
     }
 
     @SuppressWarnings("unchecked")
@@ -264,7 +263,13 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
                 return null;
             }
 
-            Map dataMap = reader.getCurrentValue();
+            Map dataMap;
+            if (isJSON) {
+                dataMap = new HashMap(1);
+                dataMap.put("data", reader.getCurrentValue());
+            } else {
+                dataMap = reader.getCurrentValue();
+            }
             Tuple tuple = TupleFactory.getInstance().newTuple(dataMap.size());
 
             if (dataMap.isEmpty()) {
