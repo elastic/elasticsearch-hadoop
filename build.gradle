@@ -702,6 +702,16 @@ project(":elasticsearch-spark-20") {
     description = "Elasticsearch Spark (for Spark 2.0)"
 
     baseSparkProject(project, spark20Version)
+
+    dependencies {
+        optional("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark20Version") {
+            exclude group: 'org.apache.hadoop'
+        }
+
+        itestCompile("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark20Version") {
+            exclude group: 'org.apache.hadoop'
+        }
+    }
 }
 
 project(":elasticsearch-storm") {
