@@ -187,12 +187,12 @@ public class SearchRequestBuilder {
 
         StringBuilder pref = new StringBuilder();
         if (StringUtils.hasText(shard)) {
-            pref.append("_shards:");
+            pref.append("_shards%3A");
             pref.append(shard);
         }
         if (local) {
             if (pref.length() > 0) {
-                pref.append("|");
+                pref.append("%7C");
             }
             pref.append("_local");
         }
