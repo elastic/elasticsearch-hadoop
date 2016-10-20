@@ -185,6 +185,7 @@ public class SearchRequestBuilder {
             uriParams.put("_source", StringUtils.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
         }
 
+        // set shard preference
         StringBuilder pref = new StringBuilder();
         if (StringUtils.hasText(shard)) {
             pref.append("_shards:");
@@ -192,15 +193,20 @@ public class SearchRequestBuilder {
         }
         if (local) {
             if (pref.length() > 0) {
-                pref.append("|");
+                if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+                    pref.append("|");
+                } else {
+                    pref.append(";");
+                }
             }
             pref.append("_local");
         }
 
         if (pref.length() > 0) {
-            uriParams.put("preference", pref.toString());
+            uriParams.put("preference", StringUtils.encodeQuery(pref.toString()));
         }
 
+        // Request routing
         if (routing != null) {
             uriParams.put("routing", StringUtils.encodeQuery(routing));
         }
