@@ -83,7 +83,7 @@ object AbstractScalaEsScalaSparkStreaming {
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(classOf[Parameterized])
-class AbstractScalaEsScalaSparkStreaming(prefix: String, readMetadata: jl.Boolean) extends Serializable {
+class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Boolean) extends Serializable {
 
   val sc = AbstractScalaEsScalaSparkStreaming.sc
   val cfg = Map(ConfigurationOptions.ES_READ_METADATA -> readMetadata.toString)
@@ -169,7 +169,7 @@ class AbstractScalaEsScalaSparkStreaming(prefix: String, readMetadata: jl.Boolea
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = "spark-test/scala-id-write"
+    val target = wrapIndex("spark-test/scala-id-write")
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
     runStream(batch)(_.saveToEs(target, Map(ES_MAPPING_ID -> "number")))
@@ -242,9 +242,9 @@ class AbstractScalaEsScalaSparkStreaming(prefix: String, readMetadata: jl.Boolea
   @Test
   def testEsRDDIngest() {
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-    val prefix: String = "spark"
+    val pipelineName: String = prefix + "-pipeline"
     val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"
-    client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline))
+    client.put("/_ingest/pipeline/" + pipelineName, StringUtils.toUTF(pipeline))
     client.close()
 
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
@@ -252,13 +252,12 @@ class AbstractScalaEsScalaSparkStreaming(prefix: String, readMetadata: jl.Boolea
 
     val target = wrapIndex("spark-test/scala-ingest-write")
 
-    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> "spark-pipeline") + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
+    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> pipelineName) + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
     runStream(batch)(_.saveToEs(target, ingestCfg))
 
     assertTrue(RestUtils.exists(target))
-    assertThat(RestUtils.get(target + "/_search?"), containsString(""))
     assertThat(RestUtils.get(target + "/_search?"), containsString("\"pipeTEST\":true"))
   }
 
