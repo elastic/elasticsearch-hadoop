@@ -29,7 +29,7 @@
 
 {ey}:: run {es} on top of YARN - see <<es-yarn>>
 
-repository-hdfs:: use HDFS as a repository back-end; that is storage for doing snapshot/restore from/to {es}. For more information refer to its https://github.com/elasticsearch/elasticsearch-hadoop/tree/master/repository-hdfs[home page]
+repository-hdfs:: use HDFS as a back-end repository for doing snapshot/restore from/to {es}. For more information, refer to its https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html[home page]
 
 {eh} proper:: interact with {es} from within a Hadoop environment. If you are using {mr}, Cascading, Hive, Pig, {sp} or {st}, this project is for you.
 
