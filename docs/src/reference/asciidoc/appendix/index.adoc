@@ -3,4 +3,5 @@ include::resources.adoc[]
 
 include::license.adoc[]
 
+include::release-notes.adoc[]
 
