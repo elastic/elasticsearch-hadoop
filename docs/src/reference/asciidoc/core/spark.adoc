@@ -233,7 +233,7 @@ new SparkContext(conf).makeRDD(Seq(json1, json2))
 String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
 String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
 
-JavaContextSpark jsc = ...
+JavaSparkContext jsc = ...
 JavaRDD<String><2> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
 JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");             <3>
 ----
@@ -603,6 +603,545 @@ This is done on purpose since the converter has to _serialize_ and _deserialize_
 .Geo types
 
 It is worth mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above. 
+For example, based on its storage a +geo_point+ might be returned as a +String+ or a +Traversable+.
+
+[[spark-streaming]]
+[float]
+=== Spark Streaming support
+
+added[5.0]
+
+[quote, Spark website]
+____
+http://spark.apache.org/streaming/[Spark Streaming] is an extension of the core Spark API that enables scalable, high-throughput, fault-tolerant stream processing of live data streams.
+____
+
+Spark Streaming is an extension on top of the core Spark functionality that allows near real time processing of stream data. Spark Streaming works around the idea of ++DStream++s, or _Discretized Streams_. +DStreams+ operate by collecting newly arrived records into a small +RDD+ and executing it. This repeats every few seconds with a new +RDD+ in a process called _microbatching_. The +DStream+ api includes many of the same processing operations as the +RDD+ api, plus a few other streaming specific methods. {eh} provides native integration with Spark Streaming as of version 5.0.
+
+When using the {eh} Spark Streaming support, {es} can be targeted as an output location to index data into from a Spark Streaming job in the same way that one might persist the results from an +RDD+. Though, unlike ++RDD++s, you are unable to read data out of {es} using a +DStream+ due to the continuous nature of it.
+
+IMPORTANT: Spark Streaming support provides special optimizations to allow for conservation of network resources on Spark executors when running jobs with very small processing windows. For this reason, one should prefer to use this integration instead of invoking +saveToEs+ on ++RDD++s returned from the +foreachRDD+ call on +DStream+.
+
+[float]
+[[spark-streaming-write]]
+==== Writing +DStream+ to {es}
+Like ++RDD++s, any +DStream+ can be saved to {es} as long as its content can be translated into documents. In practice this means the +DStream+ type needs to be a +Map+ (either a Scala or a Java one), a http://docs.oracle.com/javase/tutorial/javabeans/[+JavaBean+] or a Scala http://docs.scala-lang.org/tutorials/tour/case-classes.html[case class]. When that is not the case, one can easily _transform_ the data
+in Spark or plug-in their own custom <<configuration-serialization,+ValueWriter+>>.
+
+[float]
+[[spark-streaming-write-scala]]
+===== Scala
+
+When using Scala, simply import the `org.elasticsearch.spark.streaming` package which, through the http://www.artima.com/weblogs/viewpost.jsp?thread=179766[__pimp my library__] pattern, enriches the +DStream+ API with `saveToEs` methods:
+
+[source,scala]
+----
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._               <1>
+import org.apache.spark.streaming.StreamingContext
+import org.apache.spark.streaming.StreamingContext._
+
+import org.elasticsearch.spark.streaming._           <2>
+
+...
+
+val conf = ...
+val sc = new SparkContext(conf)                      <3>
+val ssc = new StreamingContext(sc, Seconds(1))       <4>
+
+val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
+val airports = Map("arrival" -> "Otopeni", "SFO" -> "San Fran")
+
+val rdd = sc.makeRDD(Seq(numbers, airports))
+val microbatches = mutable.Queue(rdd)                <5>
+
+ssc.queueStream(microbatches).saveToEs<6>("spark/docs")
+
+ssc.start()
+ssc.awaitTermination() <7>
+----
+
+<1> Spark and Spark Streaming Scala imports
+<2> {eh} Spark Streaming imports
+<3> start Spark through its Scala API
+<4> start SparkStreaming context by passing it the SparkContext. The microbatches will be processed every second.
+<5> `makeRDD` creates an ad-hoc `RDD` based on the collection specified; any other +RDD+ (in Java or Scala) can be passed in. Create a queue of `RDD`s to signify the microbatches to perform.
+<6> Create a `DStream` out of the `RDD`s and index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
+<7> Start the spark Streaming Job and wait for it to eventually finish.
+
+As an alternative to the _implicit_ import above, one can use {eh} Spark Streaming support in Scala through +EsSparkStreaming+ in the +org.elasticsearch.spark.streaming+ package which acts as a utility class allowing explicit method invocations. Additionally instead of ++Map++s (which are convenient but require one mapping per instance due to their difference in structure), use a __case class__ :
+
+[source,scala]
+----
+import org.apache.spark.SparkContext
+import org.elasticsearch.spark.streaming.EsSparkStreaming         <1>
+
+// define a case class
+case class Trip(departure: String, arrival: String)               <2>
+
+val upcomingTrip = Trip("OTP", "SFO")
+val lastWeekTrip = Trip("MUC", "OTP")
+
+val rdd = sc.makeRDD(Seq(upcomingTrip, lastWeekTrip))
+val microbatches = mutable.Queue(rdd)                             <3>
+val dstream = ssc.queueStream(microbatches)
+
+EsSparkStreaming.saveToEs(dstream, "spark/docs")                  <4>
+
+ssc.start()                                                       <5>
+----
+
+<1> +EsSparkStreaming+ import
+<2> Define a case class named +Trip+
+<3> Create a +DStream+ around the +RDD+ of +Trip+ instances
+<4> Index the +RDD+ explicitly through +EsSpark+
+<4> Configure the +DStream+ to be indexed explicitly through +EsSparkStreaming+
+<5> Start the streaming process
+
+IMPORTANT: Once a SparkStreamingContext is started, no new ++DStream++s can be added or configured. Once a context has stopped, it cannot be restarted. There can only be one active SparkStreamingContext at a time per JVM. Also note that when stopping a SparkStreamingContext programmatically, it stops the underlying SparkContext unless instructed not to.
+
+For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>> namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +DStream+ configuration (it is also possible to set the property on the +SparkConf+ though due to its global effect it is discouraged):
+
+[source,scala]
+----
+EsSparkStreaming.saveToEs(dstream, "spark/docs", Map("es.mapping.id" -> "id"))
+----
+
+
+[float]
+[[spark-streaming-write-java]]
+===== Java
+
+Java users have a dedicated class that provides a similar functionality to +EsSparkStreaming+, namely +JavaEsSparkStreaming+ in the package +org.elasticsearch.spark.streaming.api.java+ (a package similar to Spark's https://spark.apache.org/docs/1.6.1/api/java/index.html?org/apache/spark/streaming/api/java/package-summary.html[Java API]):
+
+[source,java]
+----
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.SparkConf;                                              <1>
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.api.java.JavaDStream;
+
+import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;         <2>
+...
+
+SparkConf conf = ...
+JavaSparkContext jsc = new JavaSparkContext(conf);                              <3>
+JavaStreamingContext jssc = new JavaSparkStreamingContext(jsc, Seconds.apply(1));
+
+Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);                   <4>
+Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
+
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports));
+Queue<JavaRDD<Map<String, ?>>> microbatches = new LinkedList<>();
+microbatches.add(javaRDD);                                                      <5>
+JavaDStream<Map<String, ?>> javaDStream = jssc.queueStream(microbatches);
+
+JavaEsSparkStreaming.saveToEs(javaDStream, "spark/docs");                       <6>
+
+jssc.start()                                                                    <7>
+----
+
+<1> Spark and Spark Streaming Java imports
+<2> {eh} Java imports
+<3> start Spark and Spark Streaming through its Java API. The microbatches will be processed every second.
+<4> to simplify the example, use https://code.google.com/p/guava-libraries/[Guava](a dependency of Spark) +Immutable+* methods for simple +Map+, +List+ creation
+<5> create a simple +DStream+ over the microbatch; any other ++RDD++s (in Java or Scala) can be passed in
+<6> index the content (namely the two _documents_ (numbers and airports)) in {es} under `spark/docs`
+<7> execute the streaming job.
+
+The code can be further simplified by using Java 5 _static_ imports. Additionally, the +Map+ (who's mapping is dynamic due to its _loose_ structure) can be replaced with a +JavaBean+:
+
+[source,java]
+----
+public class TripBean implements Serializable {
+   private String departure, arrival;
+
+   public TripBean(String departure, String arrival) {
+       setDeparture(departure);
+       setArrival(arrival);
+   }
+
+   public TripBean() {}
+
+   public String getDeparture() { return departure; }
+   public String getArrival() { return arrival; }
+   public void setDeparture(String dep) { departure = dep; }
+   public void setArrival(String arr) { arrival = arr; }
+}
+----
+
+[source,java]
+----
+import static org.elasticsearch.spark.rdd.api.java.JavaEsSparkStreaming;  <1>
+...
+
+TripBean upcoming = new TripBean("OTP", "SFO");
+TripBean lastWeek = new TripBean("MUC", "OTP");
+
+JavaRDD<TripBean> javaRDD = jsc.parallelize(ImmutableList.of(upcoming, lastWeek));
+Queue<JavaRDD<TripBean>> microbatches = new LinkedList<JavaRDD<TripBean>>();
+microbatches.add(javaRDD);
+JavaDStream<TripBean> javaDStream = jssc.queueStream(microbatches);       <2>
+
+saveToEs(javaRDD, "spark/docs");                                          <3>
+
+jssc.start()                                                              <4>
+----
+
+<1> statically import +JavaEsSparkStreaming+
+<2> define a +DStream+ containing +TripBean+ instances (+TripBean+ is a +JavaBean+)
+<3> call +saveToEs+ method without having to type +JavaEsSparkStreaming+ again
+<4> run that Streaming job
+
+
+Setting the document id (or other metadata fields like +ttl+ or +timestamp+) is similar to its Scala counterpart, though potentially a bit more verbose depending on whether you are using the JDK classes or some other utilities (like Guava):
+
+[source,java]
+----
+JavaEsSparkStreaming.saveToEs(javaDStream, "spark/docs", ImmutableMap.of("es.mapping.id", "id"));
+----
+
+[float]
+[[spark-streaming-write-json]]
+==== Writing Existing JSON to {es}
+
+For cases where the data being streamed by the `DStream` is already serialized as JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. As such, in this case, {eh} expects either a +DStream+ containing +String+ or byte arrays (+byte[]+/+Array[Byte]+), assuming each entry represents a JSON document. If the +DStream+ does not have the proper signature, the +saveJsonToEs+ methods cannot be applied (in Scala they will not be available).
+
+
+[float]
+[[spark-streaming-write-json-scala]]
+===== Scala
+
+[source,scala]
+----
+val json1 = """{"reason" : "business", "airport" : "SFO"}"""      <1>
+val json2 = """{"participants" : 5, "airport" : "OTP"}"""
+
+val sc = new SparkContext(conf)
+val ssc = new StreamingContext(sc, Seconds(1))
+
+val rdd = sc.makeRDD(Seq(json1, json2))
+val microbatch = mutable.Queue(rdd)
+ssc.queueStream(microbatch).saveJsonToEs("spark/json-trips")      <2>
+
+ssc.start()                                                       <3>
+----
+
+<1> example of an entry within the +DStream+ - the JSON is _written_ as is, without any transformation
+<2> configure the stream to index the JSON data through the dedicated +saveJsonToEs+ method
+<3> start the streaming job
+
+[float]
+[[spark-streaming-write-json-java]]
+===== Java
+
+[source,java]
+----
+String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
+String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
+
+JavaSparkContext jsc = ...
+JavaStreamingContext jssc = ...
+JavaRDD<String> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
+Queue<JavaRDD<String>> microbatches = new LinkedList<JavaRDD<String>>();      <2>
+microbatches.add(stringRDD);
+JavaDStream<String><3> stringDStream = jssc.queueStream(microbatches);
+
+JavaEsSparkStreaming.saveJsonToEs(stringRDD, "spark/json-trips");    <3>
+
+jssc.start()                                                         <4>
+----
+
+<1> example of an entry within the +DStream+ - the JSON is _written_ as is, without any transformation
+<2> creating an +RDD+, placing it into a queue, and creating a +DStream+ out of the queued ++RDD++s, treating each as a microbatch.
+<2> notice the +JavaDStream<String>+ signature
+<3> configure stream to index the JSON data through the dedicated +saveJsonToEs+ method
+<4> launch stream job
+
+[float]
+[[spark-write-dyn]]
+==== Writing to dynamic/multi-resources
+
+For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts a pattern that is resolved from the document content, at runtime. Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
+
+[float]
+[[spark-write-dyn-scala]]
+===== Scala
+
+[source,scala]
+----
+val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
+val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
+val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
+
+val batch = sc.makeRDD(Seq(game, book, cd))
+val microbatches = mutable.Queue(batch)
+ssc.queueStream(microbatches).saveToEs("my-collection/{media_type}")  <2>
+ssc.start()
+----
+
+<1> Document _key_ used for splitting the data. Any field can be declared (but make sure it is available in all documents)
+<2> Save each object based on its resource pattern, in this example based on +media_type+
+
+For each document/object about to be written, {eh} will extract the +media_type+ field and use its value to determine the target resource.
+
+[float]
+[[spark-write-dyn-java]]
+===== Java
+
+As expected, things in Java are strikingly similar:
+
+[source,java]
+----
+Map<String, ?> game =
+  ImmutableMap.of("media_type", "game", "title", "FF VI", "year", "1994");
+Map<String, ?> book = ...
+Map<String, ?> cd = ...
+
+JavaRDD<Map<String, ?>> javaRDD =
+                jsc.parallelize(ImmutableList.of(game, book, cd));
+Queue<JavaRDD<Map<String, ?>>> microbatches = ...
+JavaDStream<Map<String, ?>> javaDStream =
+                jssc.queueStream(microbatches);
+
+saveToEs(javaDStream, "my-collection/{media_type}");  <1>
+jssc.start();
+----
+
+<1> Save each object based on its resource pattern, +media_type+ in this example
+
+[float]
+[[spark-write-meta]]
+==== Handling document metadata
+
+{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+
+This is no different in Spark Streaming. For ++DStreams++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
+
+The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
+Thus a +DStream+'s keys can be a +Map+ containing the +Metadata+ for each document and its associated values. If the +DStream+ key is not of type +Map+, {eh} will consider the object as representing the document id and use it accordingly.
+This sounds more complicated than it is, so let us see some examples.
+
+[float]
+[[spark-write-meta-scala]]
+===== Scala
+
+Pair ++DStreams++s, or simply put ++DStreams++s with the signature +DStream[(K,V)]+ can take advantage of the +saveToEsWithMeta+ methods that are available either through the _implicit_ import of +org.elasticsearch.spark.streaming+ package or +EsSparkStreaming+ object.
+To manually specify the id for each document, simply pass in the +Object+ (not of type +Map+) in your +DStream+:
+
+[source,scala]
+----
+val otp = Map("iata" -> "OTP", "name" -> "Otopeni")
+val muc = Map("iata" -> "MUC", "name" -> "Munich")
+val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
+
+// instance of SparkContext
+val sc = ...
+// instance of StreamingContext
+val ssc = ...
+
+val airportsRDD<1> = sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
+val microbatches = mutable.Queue(airportsRDD)
+
+ssc.queueStream<3>(microbatches).saveToEsWithMeta<4>("airports/2015")
+ssc.start()
+----
+
+<1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
+<2> The key of each tuple within the +Seq+ represents the _id_ of its associated value/document; in other words, document +otp+ has id +1+, +muc+ +2+ and +sfo+ +3+
+<3> We construct a +DStream+ which inherits the type signature of the +RDD+
+<4> Since the resulting +DStream+ is a pair +DStream+, it has the +saveToEsWithMeta+ method available. This tells {eh} to pay special attention to the +DStream+ keys and use them as metadata, in this case as document ids. If +saveToEs+ would have been used instead, then {eh} would consider the +DStream+ tuple, that is both the key and the value, as part of the document.
+
+When more than just the id needs to be specified, one should use a +scala.collection.Map+ with keys of type +org.elasticsearch.spark.rdd.Metadata+:
+
+[source,scala]
+----
+import org.elasticsearch.spark.rdd.Metadata._          <1>
+
+val otp = Map("iata" -> "OTP", "name" -> "Otopeni")
+val muc = Map("iata" -> "MUC", "name" -> "Munich")
+val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
+
+// metadata for each document
+// note it's not required for them to have the same structure
+val otpMeta = Map(ID -> 1, TTL -> "3h")                <2>
+val mucMeta = Map(ID -> 2, VERSION -> "23")            <3>
+val sfoMeta = Map(ID -> 3)                             <4>
+
+// instance of SparkContext
+val sc = ...
+// instance of StreamingContext
+val ssc = ...
+
+val airportsRDD = sc.makeRDD<5>(Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
+val microbatches = mutable.Queue(airportsRDD)
+
+ssc.queueStream<6>(microbatches).saveToEsWithMeta<7>("airports/2015")
+ssc.start()
+----
+
+<1> Import the +Metadata+ enum
+<2> The metadata used for +otp+ document. In this case, +ID+ with a value of 1 and +TTL+ with a value of +3h+
+<3> The metadata used for +muc+ document. In this case, +ID+ with a value of 2 and +VERSION+ with a value of +23+
+<4> The metadata used for +sfo+ document. In this case, +ID+ with a value of 3
+<5> The metadata and the documents are assembled into a _pair_ +RDD+
+<6> The +DStream+ inherits the signature from the +RDD+, becoming a pair +DStream+
+<7> The +DStream+ is configured to index the data accordingly using the +saveToEsWithMeta+ method
+
+[float]
+[[spark-write-meta-java]]
+===== Java
+
+In a similar fashion, on the Java side, +JavaEsSparkStreaming+ provides +saveToEsWithMeta+ methods that are applied to +JavaPairDStream+ (the equivalent in Java of +DStream[(K,V)]+).
+
+This tends to involve a little more work due to the Java API's limitations. For instance, you cannot create a +JavaPairDStream+ directly from a queue of ++JavaPairRDD++s. Instead, you must create a regular +JavaDStream+ of +Tuple2+ objects and convert the +JavaDStream+ into a +JavaPairDStream+. This sounds complex, but it's a simple work around for a limitation of the API.
+
+First, we'll create a pair function, that takes a +Tuple2+ object in, and returns it right back to the framework:
+[source,java]
+----
+public static class ExtractTuples implements PairFunction<Tuple2<Object, Object>, Object, Object>, Serializable {
+    @Override
+    public Tuple2<Object, Object> call(Tuple2<Object, Object> tuple2) throws Exception {
+        return tuple2;
+    }
+}
+----
+
+Then we'll apply the pair function to a +JavaDStream+ of ++Tuple2++s to create a +JavaPairDStream+ and save it:
+
+[source,java]
+----
+import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;
+
+// data to be saved
+Map<String, ?> otp = ImmutableMap.of("iata", "OTP", "name", "Otopeni");
+Map<String, ?> jfk = ImmutableMap.of("iata", "JFK", "name", "JFK NYC");
+
+JavaSparkContext jsc = ...
+JavaStreamingContext jssc = ...
+
+// create an RDD of between the id and the docs
+JavaRDD<Tuple2<?, ?>> rdd = jsc.parallelize<1>(ImmutableList.of(
+        new Tuple2<Object, Object>(1, otp),          <2>
+        new Tuple2<Object, Object>(2, jfk)));        <3>
+
+Queue<JavaRDD<Tuple2<?, ?>>> microbatches = ...
+JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <4>
+
+JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()); <5>
+
+JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <6>
+jssc.start();
+----
+
+<1> Create a regular +JavaRDD+ of Scala ++Tuple2++s wrapped around the document id and the document itself
+<2> Tuple for the first document wrapped around the id (+1+) and the doc (+otp+) itself
+<3> Tuple for the second document wrapped around the id (+2+) and +jfk+
+<4> Assemble a regular +JavaDStream+ out of the tuple +RDD+
+<5> Transform the +JavaDStream+ into a +JavaPairDStream+ by passing our +Tuple2+ identity function to the +mapToPair+ method. This will allow the type to be converted to a +JavaPairDStream+. This function could be replaced by anything in your job that would extract both the id and the document to be indexed from a single entry.
+<6> The +JavaPairRDD+ is configured to index the data accordingly using the keys as a id and the values as documents
+
+When more than just the id needs to be specified, one can choose to use a +java.util.Map+ populated with keys of type +org.elasticsearch.spark.rdd.Metadata+. We'll use the same typing trick to repack the +JavaDStream+ as a +JavaPairDStream+:
+
+[source,java]
+----
+import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;
+import org.elasticsearch.spark.rdd.Metadata;          <1>
+
+import static org.elasticsearch.spark.rdd.Metadata.*; <2>
+
+// data to be saved
+Map<String, ?> otp = ImmutableMap.of("iata", "OTP", "name", "Otopeni");
+Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
+
+// metadata for each document
+// note it's not required for them to have the same structure
+Map<Metadata, Object> otpMeta<3> = ImmutableMap.<Metadata, Object><4> of(ID, 1, TTL, "1d");
+Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+
+JavaSparkContext jsc = ...
+
+// create a pair RDD between the id and the docs
+JavaRDD<Tuple2<?, ?>> pairRdd = jsc.parallelize<(ImmutableList.of(
+        new Tuple2<Object, Object>(otpMeta, otp),    <6>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
+
+Queue<JavaRDD<Tuple2<?, ?>>> microbatches = ...
+JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <8>
+
+JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()) <9>
+
+JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <10>
+jssc.start();
+----
+
+<1> +Metadata+ +enum+ describing the document metadata that can be declared
+<2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
+<3> Metadata for +otp+ document
+<4> Boiler-plate construct for forcing the +of+ method generic signature
+<5> Metadata for +sfo+ document
+<6> Tuple between +otp+ (as the value) and its metadata (as the key)
+<7> Tuple associating +sfo+ and its metadata
+<8> Create a +JavaDStream+ out of the +JavaRDD+
+<9> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
+<8> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
+
+[float]
+[[spark-streaming-type-conversion]]
+==== Spark Streaming Type Conversion
+
+The {eh} Spark Streaming support leverages the same type mapping as the regular Spark type mapping. The mappings are repeated here for consistency:
+
+.Scala Types Conversion Table
+
+[cols="^,^",options="header"]
+|===
+| Scala type | {es} type
+
+| `None`            | `null`
+| `Unit`            | `null`
+| `Nil`             | empty `array`
+| `Some[T]`         | `T` according to the table
+| `Map`             | `object`
+| `Traversable`     | `array`
+| __case class__    | `object` (see `Map`)
+| `Product`         | `array`
+
+|===
+
+in addition, the following _implied_ conversion applies for Java types:
+
+.Java Types Conversion Table
+
+[cols="^,^",options="header"]
+|===
+| Java type | {es} type
+
+| `null`                | `null`
+| `String`              | `string`
+| `Boolean`             | `boolean`
+| `Byte`                | `byte`
+| `Short`               | `short`
+| `Integer`             | `int`
+| `Long`                | `long`
+| `Double`              | `double`
+| `Float`               | `float`
+| `Number`              | `float` or `double` (depending on size)
+| `java.util.Calendar`  | `date`  (`string` format)
+| `java.util.Date`      | `date`  (`string` format)
+| `java.util.Timestamp` | `date`  (`string` format)
+| `byte[]`              | `string` (BASE64)
+| `Object[]`            | `array`
+| `Iterable`            | `array`
+| `Map`                 | `object`
+| __Java Bean__         | `object` (see `Map`)
+
+|===
+
+.Geo types
+
+It is worth re-mentioning that rich data types available only in {es}, such as https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-point.html[+GeoPoint+] or https://www.elastic.co/guide/en/elasticsearch/reference/2.1/geo-shape.html[+GeoShape+] are supported by converting their structure into the primitives available in the table above.
 For example, based on its storage a +geo_point+ might be returned as a +String+ or a +Traversable+.
 
 [[spark-sql]]
