@@ -3,5 +3,7 @@ include::resources.adoc[]
 
 include::license.adoc[]
 
+include::breaking.adoc[]
+
 include::release-notes.adoc[]
 

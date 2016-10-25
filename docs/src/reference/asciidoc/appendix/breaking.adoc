@@ -1,0 +1,90 @@
+[appendix]
+[[breaking-changes]]
+= Breaking Changes
+
+Generally, we strive to maintain backwards compatibility between minor
+versions (e.g. 5.x to 5.7) so that upgrades can be done without any code
+or configuration changes, but breaking changes do manifest between major
+versions (e.g. 5.x to 6.y).
+
+For clarity, we always list any breaking changes at the top of the
+<<release-notes,release notes>> for each version.
+
+[[breaking-changes-5.0]]
+=== Breaking Changes in 5.0
+
+This section discusses the changes that you should be aware of if you
+upgrade ES-Hadoop from version 2.x to 5.x.
+
+==== Supported Hadoop Versions
+
+ES-Hadoop 5.0 has added support for new versions of software from the Hadoop
+ecosystem. Support for older versions is normally dropped during these cycles
+for the purposes of stability and to allow for cleanup of older code. Please
+note the following version compatibility changes in 5.0:
+
+* Support for Hive 0.13 and 0.14 has been removed. These versions of Hive are
+known to have serious issues that have since been repaired in 1.0. Hive 1.0 has
+been released for a while and a majority of distributions have already
+switched to it. Hive 1.0 will continue to be supported by ES-Hadoop 5.0.
+* With the addition of support for Storm 1.x, support for Storm 0.9 has been removed due to backwards compatibility issues.
+* Support for SparkSQL 1.0-1.2 has been removed. SparkSQL was originally
+released in Spark 1.0-1.2 as an alpha, but has since become stable in Spark
+1.3 with a drastically changed API. Additionally, we have added support for
+Spark 2.0, which is binary-incompatible with previous versions of Spark.
+Instead of supporting three different version compatibilities of Spark at the
+same time we have decided to drop support for Spark SQL 1.0-1.2.
+
+==== Names of Included Spark Jars in ES-Hadoop
+
+With the removal of support for Spark 1.0-1.2 and the addition of support for
+Spark 2.0, the names of all the Spark artifacts included in ES-Hadoop 5.0
+have changed. All Spark artifacts in this release now have both of their
+Spark and Scala versions explicitly demarcated in their names (instead of
+just Scala and _sometimes_ Spark).
+
+.Spark Jar Name Changes from 2.x to 5.x
+[cols="2,2,10,10",options="header",]
+|==========================================================
+| Spark Version | Scala Version | ES-Hadoop 2.x name | ES-Hadoop 5.x Name
+| 1.0 - 1.2 | 2.10 | elasticsearch-spark-1.2_2.10-2.4.0.jar | <removed>
+| 1.0 - 1.2 | 2.11 | elasticsearch-spark-1.2_2.11-2.4.0.jar | <removed>
+| 1.3 - 1.6 | 2.10 | elasticsearch-spark_2.10-2.4.0.jar | elasticsearch-spark-13_2.10-5.0.0.jar
+| 1.3 - 1.6 | 2.11 | elasticsearch-spark_2.11-2.4.0.jar | elasticsearch-spark-13_2.11-5.0.0.jar
+| 2.0+ | 2.10 | <N/A> | elasticsearch-spark-20_2.10-5.0.0.jar
+| 2.0+ | 2.11 | <N/A> | elasticsearch-spark-20_2.11-5.0.0.jar
+|==========================================================
+
+==== HDFS Repository
+In 5.0, the HDFS Repository plugin has been all but re-built from the ground up to allow for compatibility with the changes to security policies in Elasticsearch's plugin framework.
+
+===== Code has Moved
+In 5.0, the Repository HDFS plugin https://github.com/elastic/elasticsearch/tree/master/plugins/repository-hdfs[has been moved]
+to the https://github.com/elastic/elasticsearch[main Elasticsearch project].
+The documentation page in the elasticsearch-hadoop repository has been
+updated with a header signaling this move.
+
+===== Security
+Disabling the Java SecurityManager in Elasticsearch is no longer required for the HDFS Repository plugin to function. Elasticsearch 5.0 requires all plugins to operate properly with the configured SecurityManager. The plugin was heavily modified to allow for compatibility with this new constraint. This should allow you to maintain a secured Elasticsearch instance while still using HDFS as a location for storing snapshots.
+
+===== Changes in Configurations
+Due to constraints in the underlying security system as well as changes to
+the way the plugin functions, the following configurations have been removed
+in 5.0 with no replacement options:
+
+* `concurrent_streams`
+* `user_keytab`
+* `user_principal`
+* `user_principal_hostname`
+
+===== Supported Versions
+Previously, the HDFS Repository supported both Apache Hadoop 1.x (default)
+and Apache Hadoop 2.x through two distributions. In 5.0, there is now only
+one distribution which is built against the latest Apache Hadoop 2.x (at this
+time 2.7.1). The distribution for Apache Hadoop 1.x has been removed.
+
+===== Version ++light++ removed
+Even if Hadoop is already installed on the Elasticsearch nodes, for security
+reasons, the required libraries need to be placed under the plugin folder.
+Because of this, the `light` distribution of the repository plugin which
+contained no Hadoop client dependencies is no longer available in 5.0.
