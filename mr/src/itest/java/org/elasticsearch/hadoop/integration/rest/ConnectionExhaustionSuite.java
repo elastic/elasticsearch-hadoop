@@ -37,18 +37,16 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-@Ignore
-@RunWith(Suite.class)
-@Suite.SuiteClasses({ ConnectionExhaustionSuite.ConnectionExhaustionTest.class })
+//@RunWith(Suite.class)
+//@Suite.SuiteClasses({ ConnectionExhaustionSuite.AbstractConnectionExhaustionTest.class })
 public class ConnectionExhaustionSuite {
 
     @ClassRule
     public static ExternalResource resource = new LocalEs();
 
-    public static class ConnectionExhaustionTest {
+    public static class AbstractConnectionExhaustionTest {
 
         private static final boolean POOLED = true;
-//        private static final boolean POOLED = false;
 
         private static final boolean SLEEP = !POOLED;
 
@@ -75,7 +73,7 @@ public class ConnectionExhaustionSuite {
             };
         }
 
-        @Test
+//        @Test
         public void exhaustConnections() throws InterruptedException {
             List<Thread> threads = new ArrayList<>();
             int workerNum = 0;
