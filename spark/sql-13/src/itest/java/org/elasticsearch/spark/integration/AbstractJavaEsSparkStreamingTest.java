@@ -39,6 +39,7 @@ import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted;
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.spark.rdd.Metadata;
@@ -47,6 +48,7 @@ import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -377,6 +379,11 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
 
     @Test
     public void testEsRDDIngest() throws Exception {
+        try (RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient()) {
+            EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
+            Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
+        }
+
         RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
         String pipelineName =  prefix + "-pipeline";
         String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";

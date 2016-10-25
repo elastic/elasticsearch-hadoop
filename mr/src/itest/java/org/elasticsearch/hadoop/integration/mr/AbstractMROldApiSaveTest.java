@@ -50,10 +50,12 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
+import org.junit.Assume;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -252,6 +254,11 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testSaveWithIngest() throws Exception {
+        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
+        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
+        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
+        versionTestingClient.close();
+
         JobConf conf = createJobConf();
 
         RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();

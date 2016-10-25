@@ -38,8 +38,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.util.TestSettings
-import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings, TestUtils}
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
@@ -54,17 +53,14 @@ import org.elasticsearch.spark.sparkStringJsonRDDFunctions
 import org.hamcrest.Matchers.both
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
-import org.junit.AfterClass
+import org.junit.{AfterClass, Assume, BeforeClass, Test}
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
-import org.junit.BeforeClass
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import java.nio.file.Paths
 import java.nio.charset.StandardCharsets
@@ -289,6 +285,16 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDIngest() {
+    try {
+      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
+      try {
+        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
+        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
+      } finally {
+        if (versionTestingClient != null) versionTestingClient.close()
+      }
+    }
+
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val prefix: String = "spark"
     val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"

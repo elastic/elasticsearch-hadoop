@@ -31,7 +31,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.util.{StringUtils, TestSettings}
+import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings}
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata._
 import org.elasticsearch.spark.serialization.{Bean, ReflectionUtils}
@@ -241,6 +241,16 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsRDDIngest() {
+    try {
+      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
+      try {
+        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
+        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
+      } finally {
+        if (versionTestingClient != null) versionTestingClient.close()
+      }
+    }
+
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val pipelineName: String = prefix + "-pipeline"
     val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"

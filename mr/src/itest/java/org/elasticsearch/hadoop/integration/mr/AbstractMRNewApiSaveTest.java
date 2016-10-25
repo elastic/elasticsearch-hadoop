@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -54,6 +55,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -190,6 +192,11 @@ public class AbstractMRNewApiSaveTest {
 
     @Test
     public void testSaveWithIngest() throws Exception {
+        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
+        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
+        assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
+        versionTestingClient.close();
+
         Configuration conf = createConf();
 
         RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
