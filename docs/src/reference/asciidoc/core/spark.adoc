@@ -694,7 +694,6 @@ ssc.start()                                                       <5>
 <1> +EsSparkStreaming+ import
 <2> Define a case class named +Trip+
 <3> Create a +DStream+ around the +RDD+ of +Trip+ instances
-<4> Index the +RDD+ explicitly through +EsSpark+
 <4> Configure the +DStream+ to be indexed explicitly through +EsSparkStreaming+
 <5> Start the streaming process
 
@@ -848,16 +847,16 @@ Queue<JavaRDD<String>> microbatches = new LinkedList<JavaRDD<String>>();      <2
 microbatches.add(stringRDD);
 JavaDStream<String><3> stringDStream = jssc.queueStream(microbatches);
 
-JavaEsSparkStreaming.saveJsonToEs(stringRDD, "spark/json-trips");    <3>
+JavaEsSparkStreaming.saveJsonToEs(stringRDD, "spark/json-trips");    <4>
 
-jssc.start()                                                         <4>
+jssc.start()                                                         <5>
 ----
 
 <1> example of an entry within the +DStream+ - the JSON is _written_ as is, without any transformation
 <2> creating an +RDD+, placing it into a queue, and creating a +DStream+ out of the queued ++RDD++s, treating each as a microbatch.
-<2> notice the +JavaDStream<String>+ signature
-<3> configure stream to index the JSON data through the dedicated +saveJsonToEs+ method
-<4> launch stream job
+<3> notice the +JavaDStream<String>+ signature
+<4> configure stream to index the JSON data through the dedicated +saveJsonToEs+ method
+<5> launch stream job
 
 [float]
 [[spark-streaming-write-dyn]]
@@ -1085,7 +1084,7 @@ jssc.start();
 <7> Tuple associating +sfo+ and its metadata
 <8> Create a +JavaDStream+ out of the +JavaRDD+
 <9> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
-<8> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
+<10> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
 
 [float]
 [[spark-streaming-type-conversion]]
