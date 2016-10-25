@@ -860,13 +860,13 @@ jssc.start()                                                         <4>
 <4> launch stream job
 
 [float]
-[[spark-write-dyn]]
+[[spark-streaming-write-dyn]]
 ==== Writing to dynamic/multi-resources
 
 For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts a pattern that is resolved from the document content, at runtime. Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
 
 [float]
-[[spark-write-dyn-scala]]
+[[spark-streaming-write-dyn-scala]]
 ===== Scala
 
 [source,scala]
@@ -887,7 +887,7 @@ ssc.start()
 For each document/object about to be written, {eh} will extract the +media_type+ field and use its value to determine the target resource.
 
 [float]
-[[spark-write-dyn-java]]
+[[spark-streaming-write-dyn-java]]
 ===== Java
 
 As expected, things in Java are strikingly similar:
@@ -912,7 +912,7 @@ jssc.start();
 <1> Save each object based on its resource pattern, +media_type+ in this example
 
 [float]
-[[spark-write-meta]]
+[[spark-streaming-write-meta]]
 ==== Handling document metadata
 
 {es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
@@ -924,7 +924,7 @@ Thus a +DStream+'s keys can be a +Map+ containing the +Metadata+ for each docume
 This sounds more complicated than it is, so let us see some examples.
 
 [float]
-[[spark-write-meta-scala]]
+[[spark-streaming-write-meta-scala]]
 ===== Scala
 
 Pair ++DStreams++s, or simply put ++DStreams++s with the signature +DStream[(K,V)]+ can take advantage of the +saveToEsWithMeta+ methods that are available either through the _implicit_ import of +org.elasticsearch.spark.streaming+ package or +EsSparkStreaming+ object.
@@ -990,7 +990,7 @@ ssc.start()
 <7> The +DStream+ is configured to index the data accordingly using the +saveToEsWithMeta+ method
 
 [float]
-[[spark-write-meta-java]]
+[[spark-streaming-write-meta-java]]
 ===== Java
 
 In a similar fashion, on the Java side, +JavaEsSparkStreaming+ provides +saveToEsWithMeta+ methods that are applied to +JavaPairDStream+ (the equivalent in Java of +DStream[(K,V)]+).
