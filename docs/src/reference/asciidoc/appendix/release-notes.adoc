@@ -110,6 +110,7 @@ Pig::
 * Pig maps can have values of different types 
 http://github.com/elastic/elasticsearch-hadoop/issues/777[#777]
 Rest::
+* Update/Upsert bulk actions with scripts are broken for ES 1.x as of 5.0.0-alpha5
 http://github.com/elastic/elasticsearch-hadoop/issues/817[#817]
 * Shard size estimations for Slice API do not target shards 
 http://github.com/elastic/elasticsearch-hadoop/issues/843[#843]
@@ -129,6 +130,8 @@ http://github.com/elastic/elasticsearch-hadoop/issues/720[#720]
 http://github.com/elastic/elasticsearch-hadoop/issues/793[#793]
 * Parsing error messages can cause a NPE 
 http://github.com/elastic/elasticsearch-hadoop/issues/776[#776]
+* shard preference concatenation with | gives query error
+https://github.com/elastic/elasticsearch-hadoop/issues/874[#874]
 Spark::
 * Dropping a whole column of a DataFrame while indexing the DF into ES 
 http://github.com/elastic/elasticsearch-hadoop/issues/841[#841]
@@ -168,6 +171,10 @@ http://github.com/elastic/elasticsearch-hadoop/issues/773[#773]
 http://github.com/elastic/elasticsearch-hadoop/issues/772[#772]
 * Tests fail in build 
 http://github.com/elastic/elasticsearch-hadoop/issues/755[#755]
+* Documentation Issue : Wrong package name
+https://github.com/elastic/elasticsearch-hadoop/issues/838[#838]
+* ES_CLASSPATH removed from ES 2.x
+https://github.com/elastic/elasticsearch-hadoop/issues/861[#861]
 
 [float]
 [[nonissue-5.0.0]]
