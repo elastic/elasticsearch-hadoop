@@ -96,8 +96,8 @@ object EsSpark {
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
 
-    InitializationUtils.checkIdForOperation(config);
-    InitializationUtils.checkIndexExistence(config, null);
+    InitializationUtils.checkIdForOperation(config)
+    InitializationUtils.checkIndexExistence(config)
 
     rdd.sparkContext.runJob(rdd, new EsRDDWriter(config.save(), hasMeta).write _)
   }

@@ -88,8 +88,8 @@ object EsSparkSQL {
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
     esCfg.merge(cfg.asJava)
 
-    InitializationUtils.checkIdForOperation(esCfg);
-    InitializationUtils.checkIndexExistence(esCfg, null);
+    InitializationUtils.checkIdForOperation(esCfg)
+    InitializationUtils.checkIndexExistence(esCfg)
     
     sparkCtx.runJob(srdd.toDF().rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
   }
