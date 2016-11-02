@@ -256,11 +256,8 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         Settings settings = HadoopSettingsManager.loadFrom(cfg);
         Assert.hasText(settings.getResourceWrite(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
-        // lazy-init
-        RestRepository client = null;
-
         InitializationUtils.checkIdForOperation(settings);
-        InitializationUtils.checkIndexExistence(settings, client);
+        InitializationUtils.checkIndexExistence(settings);
 
         if (HadoopCfgUtils.getReduceTasks(cfg) != null) {
             if (HadoopCfgUtils.getSpeculativeReduce(cfg)) {

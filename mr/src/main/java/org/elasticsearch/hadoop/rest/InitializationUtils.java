@@ -253,20 +253,28 @@ public abstract class InitializationUtils {
     }
 
     public static void checkIndexExistence(RestRepository client) {
-        checkIndexExistence(client.getSettings(), client);
+        if (!client.getSettings().getIndexAutoCreate()) {
+            doCheckIndexExistence(client.getSettings(), client);
+        }
     }
 
-    public static void checkIndexExistence(Settings settings, RestRepository client) {
-        // check index existence
+    public static void checkIndexExistence(Settings settings) {
+        // Only open a connection and check if autocreate is disabled
         if (!settings.getIndexAutoCreate()) {
-            if (client == null) {
-                client = new RestRepository(settings);
+            RestRepository repository = new RestRepository(settings);
+            try {
+                doCheckIndexExistence(settings, repository);
+            } finally {
+                repository.close();
             }
-            if (!client.indexExists(false)) {
-                client.close();
-                throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
-                        settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
-            }
+        }
+    }
+
+    private static void doCheckIndexExistence(Settings settings, RestRepository client) {
+        // check index existence
+        if (!client.indexExists(false)) {
+            throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
+                    settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
         }
     }
 
