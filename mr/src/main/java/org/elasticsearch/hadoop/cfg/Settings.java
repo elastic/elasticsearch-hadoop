@@ -407,7 +407,7 @@ public abstract class Settings {
     }
 
     public boolean getNetworkHttpUseSystemProperties() {
-        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT));
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT));
     }
 
     public String getNetworkProxyHttpsHost() {
