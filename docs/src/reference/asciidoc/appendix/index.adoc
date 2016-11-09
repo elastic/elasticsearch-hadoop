@@ -5,5 +5,5 @@ include::license.adoc[]
 
 include::breaking.adoc[]
 
-include::release-notes.adoc[]
+include::release.adoc[]
 
