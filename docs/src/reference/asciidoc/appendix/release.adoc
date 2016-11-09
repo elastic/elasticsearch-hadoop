@@ -1,0 +1,56 @@
+[[release-notes]]
+= Release Notes
+
+[partintro]
+--
+This section summarizes the changes in each release.
+
+* <<eshadoop-5.0.1>>
+* <<eshadoop-5.0.0>>
+
+--
+
+////////////////////////
+// Template
+[[eshadoop-5.0.1]]
+== Elasticsearch for Apache Hadoop version 5.0.1
+November 9, 2016
+
+[[breaking-5.0.1]]
+=== Breaking Changes
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+[[new-5.0.1]]
+=== New Features
+Section::
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+[[enhancements-5.0.1]]
+=== Enhancements
+Section::
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+[[bugs-5.0.1]]
+=== Bug Fixes
+Section::
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+[[docs-5.0.1]]
+=== Documentation
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+[[nonissue-5.0.1]]
+=== Non-issue
+Section::
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
+////////////////////////
+
+include::release-notes/5.0.1.adoc[]
+include::release-notes/5.0.0.adoc[]
