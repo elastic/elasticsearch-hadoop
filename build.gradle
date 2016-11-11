@@ -576,6 +576,9 @@ def baseSparkProject(target, sparkVersion) {
             jvmArgs = ['-XX:MaxPermSize=512m']
         }
         scalaCompileOptions.useAnt = false
+
+        sourceCompatibility = 1.6
+        targetCompatibility = 1.6
     }
     
     println "Using Scala $scalaMajorVersion [$scalaVersion]"
