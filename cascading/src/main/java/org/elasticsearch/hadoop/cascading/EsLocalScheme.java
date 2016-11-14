@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -74,9 +75,10 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sourcePrepare(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Object[] context = new Object[1];
+        Object[] context = new Object[2];
         Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
         context[0] = CascadingUtils.alias(settings);
+        context[1] = settings.getOutputAsJson();
         sourceCall.setContext(context);
     }
 
@@ -150,8 +152,18 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             return false;
         }
 
+        boolean isJSON = (Boolean) sourceCall.getContext()[1];
+
         TupleEntry entry = sourceCall.getIncomingEntry();
-        Map<String, ?> data = (Map<String, ?>) query.next()[1];
+
+        Map<String, Object> data;
+        if (isJSON) {
+            data = new HashMap<String, Object>(1);
+            data.put("data", query.next()[1]);
+        } else {
+            data = (Map<String, Object>) query.next()[1];
+        }
+
         FieldAlias alias = (FieldAlias) sourceCall.getContext()[0];
 
         if (entry.getFields().isDefined()) {

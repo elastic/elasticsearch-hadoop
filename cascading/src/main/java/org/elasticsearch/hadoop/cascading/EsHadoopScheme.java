@@ -19,10 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -83,12 +80,13 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourcePrepare(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Object[] context = new Object[3];
+        Object[] context = new Object[4];
         context[0] = sourceCall.getInput().createKey();
         context[1] = sourceCall.getInput().createValue();
         // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
         Settings settings = loadSettings(flowProcess.getConfigCopy(), true);
         context[2] = CascadingUtils.alias(settings);
+        context[3] = settings.getOutputAsJson();
         sourceCall.setContext(context);
     }
 
@@ -166,8 +164,18 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
             return false;
         }
 
+        boolean isJSON = (Boolean) context[3];
+
         TupleEntry entry = sourceCall.getIncomingEntry();
-        Map data = (Map) context[1];
+
+        Map data;
+        if (isJSON) {
+            data = new HashMap(1);
+            data.put(new Text("data"), context[1]);
+        } else {
+            data = (Map) context[1];
+        }
+
         FieldAlias alias = (FieldAlias) context[2];
 
         if (entry.getFields().isDefined()) {
