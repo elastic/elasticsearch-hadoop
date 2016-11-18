@@ -31,7 +31,9 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.GET;
@@ -115,20 +117,37 @@ final class TransportPool {
      */
     synchronized Transport borrowTransport() {
         long now = System.currentTimeMillis();
+
+        List<PooledTransport> garbageTransports = new ArrayList<PooledTransport>();
+        PooledTransport candidate = null;
+
+        // Grab a transport
         for (Map.Entry<PooledTransport, Long> entry : idle.entrySet()) {
             PooledTransport transport = entry.getKey();
             if (validate(transport)) {
-                idle.remove(transport);
-                leased.put(transport, now);
-                return new LeasedTransport(transport, this);
+                candidate = transport;
+                break;
             } else {
-                idle.remove(transport);
-                release(transport);
+                garbageTransports.add(transport);
             }
         }
-        PooledTransport transport = create();
-        leased.put(transport, now);
-        return new LeasedTransport(transport, this);
+
+        // Remove any dead connections found
+        for (PooledTransport transport : garbageTransports) {
+            idle.remove(transport);
+            release(transport);
+        }
+
+        // Create the connection if we didn't find any, remove it from the pool if we did.
+        if (candidate == null) {
+            candidate = create();
+        } else {
+            idle.remove(candidate);
+        }
+
+        // Lease.
+        leased.put(candidate, now);
+        return new LeasedTransport(candidate, this);
     }
 
     /**
@@ -165,6 +184,8 @@ final class TransportPool {
     synchronized int removeOldConnections() {
         long now = System.currentTimeMillis();
         long expirationTime = now - idleTransportTimeout.millis();
+
+        List<PooledTransport> removeFromIdle = new ArrayList<PooledTransport>();
         for (Map.Entry<PooledTransport, Long> idleEntry : idle.entrySet()) {
             long lastUsed = idleEntry.getValue();
             if (lastUsed < expirationTime) {
@@ -175,9 +196,14 @@ final class TransportPool {
                             + idleTransportTimeout + "] ago.");
                 }
                 release(removed);
-                idle.remove(removed);
+                removeFromIdle.add(removed);
             }
         }
+
+        for (PooledTransport toRemove : removeFromIdle) {
+            idle.remove(toRemove);
+        }
+
         return idle.size() + leased.size();
     }
 
