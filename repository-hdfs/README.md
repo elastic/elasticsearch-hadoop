@@ -46,7 +46,7 @@ Security is hard.
 While efforts like [these](https://github.com/elastic/elasticsearch/pull/14108) help with per-plugin permissions, the ultimate goal is having a secure Elasticsearch install. Unfortunately Hadoop (especially 2.x) requires _dangerous_ permissions such as _execute_ on _all_ files (triggered during even [basic initialization](https://github.com/apache/hadoop/blob/772ea7b41b06beaa1f4ac4fa86eac8d6e6c8cd36/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/Shell.java#L728). Permissions like this (not to mention the shell execution) are simply too _dangerous_ and security is significantly affected.
 Where possible, we try to find the common ground and have the code still running securely with hacks like [these](https://github.com/elastic/elasticsearch/blob/105411060c44cd796187068abe9df6168ff9253b/core/src/main/java/org/elasticsearch/bootstrap/ESPolicy.java#L88).
 
-As the above is addressed only in master (potentially the upcoming Elasticsearch 2.3), in the meantime users need to be aware of the current situation and act accordingly. That is, understand that by using HDFS plugin the Java Security
+As the above is addressed only in master (now in Elasticsearch 5.0), in the meantime users need to be aware of the current situation and act accordingly. That is, understand that by using HDFS plugin the Java Security
 Manager is disabled.
  
 ### Node restart
@@ -54,10 +54,10 @@ _After_ installing the plugin on _every_ Elasticsearch node, be sure to _restart
 
 ### Stable version
 As with any other plugin, simply run:
-`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.4.1`
 
 When looking for `light` or `hadoop2` artifacts use:
-`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.2.0-<classifier>`
+`bin/plugin install elasticsearch/elasticsearch-repository-hdfs/2.4.1-<classifier>`
 
 ### Development Snapshot
 To install the latest snapshot, please install the plugin manually using:
@@ -69,7 +69,7 @@ Or grab the latest nightly build from the [repository](http://oss.sonatype.org/c
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-repository-hdfs</artifactId>
-  <version>2.4.1.BUILD-SNAPSHOT</version>
+  <version>2.4.2.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
