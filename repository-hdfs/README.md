@@ -2,7 +2,7 @@
 
 The HDFS Snapshot/Restore plugin has been [_moved_](https://github.com/elastic/elasticsearch/issues/15191) into Elasticsearch proper. When upgrading, please keep in mind that the `light` and `1.x` versions are no longer supported in 5.x. 
 
-More information can be found [here](https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html).
+More information can be found [here](https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html). For feature requests or bugs regarding the Repository HDFS plugin, please open an issue in the [Elasticsearch repository](https://github.com/elastic/elasticsearch/issues) with the ":Plugin Repository HDFS" tag.
 
 ## ES-Hadoop 2.x instructions below
 
