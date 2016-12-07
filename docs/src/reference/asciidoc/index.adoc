@@ -34,7 +34,7 @@ repository-hdfs:: use HDFS as a back-end repository for doing snapshot/restore f
 {ey}:: run {es} on top of YARN - see <<es-yarn>>. This project is in beta.
 
 
-Thus, while all projects fall under the Hadoop umbrella, each is covering a certain aspect of it so please be sure to read the appropriate documentation.
+Thus, while all projects fall under the Hadoop umbrella, each is covering a certain aspect of it so please be sure to read the appropriate documentation. For general questions around any of these projects, the https://discuss.elastic.co/c/elasticsearch-and-hadoop[Elastic Discuss forum] is a great place to interact with other users in the community.
 
 include::yarn/index.adoc[]
 
