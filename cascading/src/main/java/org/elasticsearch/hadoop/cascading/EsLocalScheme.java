@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -32,7 +33,6 @@ import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.util.FieldAlias;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -44,12 +44,19 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+import static org.elasticsearch.hadoop.cascading.CascadingValueWriter.SINK_CTX_ALIASES;
+import static org.elasticsearch.hadoop.cascading.CascadingValueWriter.SINK_CTX_SIZE;
+
 /**
  * Cascading Scheme handling
  */
 class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Object[]> {
 
     private static final long serialVersionUID = 979036202776892844L;
+
+    private final static int SRC_CTX_SIZE = 2;
+    private final static int SRC_CTX_ALIASES = 0;
+    private final static int SRC_CTX_OUTPUT_JSON = 1;
 
     private final String resource;
     private final String query;
@@ -74,9 +81,10 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sourcePrepare(FlowProcess<Properties> flowProcess, SourceCall<Object[], ScrollQuery> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Object[] context = new Object[1];
+        Object[] context = new Object[SRC_CTX_SIZE];
         Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
-        context[0] = CascadingUtils.alias(settings);
+        context[SRC_CTX_ALIASES] = CascadingUtils.alias(settings);
+        context[SRC_CTX_OUTPUT_JSON] = settings.getOutputAsJson();
         sourceCall.setContext(context);
     }
 
@@ -115,9 +123,9 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
     public void sinkPrepare(FlowProcess<Properties> flowProcess, SinkCall<Object[], Object> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
-        Object[] context = new Object[1];
+        Object[] context = new Object[SINK_CTX_SIZE];
         Settings settings = HadoopSettingsManager.loadFrom(flowProcess.getConfigCopy()).merge(props);
-        context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
+        context[SINK_CTX_ALIASES] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
     }
 
@@ -150,9 +158,19 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             return false;
         }
 
+        boolean isJSON = (Boolean) sourceCall.getContext()[SRC_CTX_OUTPUT_JSON];
+
         TupleEntry entry = sourceCall.getIncomingEntry();
-        Map<String, ?> data = (Map<String, ?>) query.next()[1];
-        FieldAlias alias = (FieldAlias) sourceCall.getContext()[0];
+
+        Map<String, Object> data;
+        if (isJSON) {
+            data = new HashMap<String, Object>(1);
+            data.put("data", query.next()[1]);
+        } else {
+            data = (Map<String, Object>) query.next()[1];
+        }
+
+        FieldAlias alias = (FieldAlias) sourceCall.getContext()[SRC_CTX_ALIASES];
 
         if (entry.getFields().isDefined()) {
             // lookup using writables
