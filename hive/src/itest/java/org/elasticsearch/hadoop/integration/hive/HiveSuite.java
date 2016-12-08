@@ -37,8 +37,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractHiveSaveTest.class, AbstractHiveSaveJsonTest.class, AbstractHiveSearchTest.class, AbstractHiveSearchJsonTest.class, AbstractHiveExtraTests.class})
+@Suite.SuiteClasses({ AbstractHiveSaveTest.class, AbstractHiveSaveJsonTest.class, AbstractHiveSearchTest.class, AbstractHiveSearchJsonTest.class, AbstractHiveReadJsonTest.class, AbstractHiveExtraTests.class})
 //@Suite.SuiteClasses({ AbstractHiveSaveJsonTest.class, AbstractHiveSearchJsonTest.class })
+//@Suite.SuiteClasses({ AbstractHiveSaveJsonTest.class, AbstractHiveReadJsonTest.class })
 //@Suite.SuiteClasses({ AbstractHiveSaveTest.class })
 public class HiveSuite {
 
