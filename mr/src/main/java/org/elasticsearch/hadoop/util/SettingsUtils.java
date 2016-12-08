@@ -189,13 +189,8 @@ public abstract class SettingsUtils {
      * @return
      */
     public static boolean isEs50(Settings settings) {
-        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        // assume ES 5.0 by default
-        if (!StringUtils.hasText(version)) {
-            return true;
-        }
-
-        return version.startsWith("5.0");
+        EsMajorVersion version = settings.getInternalVersionOrLatest();
+        return version.onOrAfter(EsMajorVersion.V_5_X);
     }
 
     public static List<NumberedInclude> getFieldArrayFilterInclude(Settings settings) {

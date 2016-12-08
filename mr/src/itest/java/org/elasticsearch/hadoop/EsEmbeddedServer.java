@@ -52,7 +52,7 @@ public class EsEmbeddedServer {
         props.setProperty("transport.tcp.port", transportRange);
         props.setProperty("cluster.name", "es.hadoop.test");
         props.setProperty("transport.type", "local");
-        props.setProperty("discovery.type", "local");
+//        props.setProperty("discovery.type", "local");
         props.setProperty("http.type", "netty3");
         // if (!hasSlave) {
             //props.setProperty("discovery.zen.ping.multicast", "false");
