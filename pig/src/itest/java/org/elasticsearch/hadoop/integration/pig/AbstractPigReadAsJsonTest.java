@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,11 +30,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
@@ -48,10 +47,6 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     @Parameters
     public static Collection<Object[]> queries() {
         return QueryTestParams.params();
-//        Collection<Object[]> params = QueryTestParams.params();
-//        Collection<Object[]> param = new ArrayList<>();
-//        param.add(params.iterator().next());
-//        return param;
     }
 
     private final String query;
