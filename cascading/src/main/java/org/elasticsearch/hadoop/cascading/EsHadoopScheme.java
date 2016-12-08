@@ -19,10 +19,7 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +48,9 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+import static org.elasticsearch.hadoop.cascading.CascadingValueWriter.SINK_CTX_ALIASES;
+import static org.elasticsearch.hadoop.cascading.CascadingValueWriter.SINK_CTX_SIZE;
+
 /**
  * Cascading Scheme handling
  */
@@ -58,6 +58,12 @@ import cascading.tuple.TupleEntry;
 class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Object[], Object[]> {
 
     private static final long serialVersionUID = 4304172465362298925L;
+
+    private static final int SRC_CTX_SIZE = 4;
+    private static final int SRC_CTX_KEY = 0;
+    private static final int SRC_CTX_VALUE = 1;
+    private static final int SRC_CTX_ALIASES = 2;
+    private static final int SRC_CTX_OUTPUT_JSON = 3;
 
     private final String index;
     private final String query;
@@ -83,12 +89,13 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sourcePrepare(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         super.sourcePrepare(flowProcess, sourceCall);
 
-        Object[] context = new Object[3];
-        context[0] = sourceCall.getInput().createKey();
-        context[1] = sourceCall.getInput().createValue();
+        Object[] context = new Object[SRC_CTX_SIZE];
+        context[SRC_CTX_KEY] = sourceCall.getInput().createKey();
+        context[SRC_CTX_VALUE] = sourceCall.getInput().createValue();
         // as the tuple _might_ vary (some objects might be missing), we use a map rather then a collection
         Settings settings = loadSettings(flowProcess.getConfigCopy(), true);
-        context[2] = CascadingUtils.alias(settings);
+        context[SRC_CTX_ALIASES] = CascadingUtils.alias(settings);
+        context[SRC_CTX_OUTPUT_JSON] = settings.getOutputAsJson();
         sourceCall.setContext(context);
     }
 
@@ -103,10 +110,10 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public void sinkPrepare(FlowProcess<JobConf> flowProcess, SinkCall<Object[], OutputCollector> sinkCall) throws IOException {
         super.sinkPrepare(flowProcess, sinkCall);
 
-        Object[] context = new Object[1];
+        Object[] context = new Object[SINK_CTX_SIZE];
         // the tuple is fixed, so we can just use a collection/index
         Settings settings = loadSettings(flowProcess.getConfigCopy(), false);
-        context[0] = CascadingUtils.fieldToAlias(settings, getSinkFields());
+        context[SINK_CTX_ALIASES] = CascadingUtils.fieldToAlias(settings, getSinkFields());
         sinkCall.setContext(context);
     }
 
@@ -162,13 +169,23 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
     public boolean source(FlowProcess<JobConf> flowProcess, SourceCall<Object[], RecordReader> sourceCall) throws IOException {
         Object[] context = sourceCall.getContext();
 
-        if (!sourceCall.getInput().next(context[0], context[1])) {
+        if (!sourceCall.getInput().next(context[SRC_CTX_KEY], context[1])) {
             return false;
         }
 
+        boolean isJSON = (Boolean) context[SRC_CTX_OUTPUT_JSON];
+
         TupleEntry entry = sourceCall.getIncomingEntry();
-        Map data = (Map) context[1];
-        FieldAlias alias = (FieldAlias) context[2];
+
+        Map data;
+        if (isJSON) {
+            data = new HashMap(1);
+            data.put(new Text("data"), context[SRC_CTX_VALUE]);
+        } else {
+            data = (Map) context[SRC_CTX_VALUE];
+        }
+
+        FieldAlias alias = (FieldAlias) context[SRC_CTX_ALIASES];
 
         if (entry.getFields().isDefined()) {
             // lookup using writables

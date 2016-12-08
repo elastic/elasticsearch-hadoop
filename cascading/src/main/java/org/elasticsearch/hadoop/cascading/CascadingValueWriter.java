@@ -35,6 +35,9 @@ import cascading.tuple.Tuple;
  */
 public class CascadingValueWriter extends FilteringValueWriter<SinkCall<Object[], ?>> {
 
+    final static int SINK_CTX_SIZE = 1;
+    final static int SINK_CTX_ALIASES = 0;
+
     private final JdkValueWriter jdkWriter;
     private final WritableValueWriter writableWriter;
 
@@ -52,7 +55,7 @@ public class CascadingValueWriter extends FilteringValueWriter<SinkCall<Object[]
     public Result write(SinkCall<Object[], ?> sinkCall, Generator generator) {
         Tuple tuple = CascadingUtils.coerceToString(sinkCall);
         // consider names (in case of aliases these are already applied)
-        List<String> names = (List<String>) sinkCall.getContext()[0];
+        List<String> names = (List<String>) sinkCall.getContext()[SINK_CTX_ALIASES];
 
         generator.writeBeginObject();
         for (int i = 0; i < tuple.size(); i++) {
