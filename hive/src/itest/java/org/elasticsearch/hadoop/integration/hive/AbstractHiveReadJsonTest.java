@@ -37,7 +37,9 @@ import java.util.List;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.provisionEsLib;
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("Duplicates")
 @RunWith(Parameterized.class)
