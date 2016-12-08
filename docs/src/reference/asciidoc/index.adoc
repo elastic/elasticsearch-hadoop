@@ -12,7 +12,7 @@
 :description: Reference documentation of {eh}
 :ver:	5.0.0
 :ver-d: 5.0.1.BUILD-SNAPSHOT
-:es-v:	5.0.0
+:es-v:	5.1.1
 :sp-v:	1.6.2
 :st-v:	1.0.1
 :pg-v:	0.15.0
