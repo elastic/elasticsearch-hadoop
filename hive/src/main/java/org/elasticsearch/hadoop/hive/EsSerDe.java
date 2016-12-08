@@ -42,9 +42,8 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.JobTracker;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
@@ -71,6 +70,8 @@ public class EsSerDe extends AbstractSerDe {
 
     private boolean writeInitialized = false;
     private boolean trace = false;
+    private boolean outputJSON = false;
+    private Text jsonFieldName = null;
 
 
     // introduced in Hive 0.14
@@ -89,6 +90,10 @@ public class EsSerDe extends AbstractSerDe {
         this.tableProperties = tbl;
 
         trace = log.isTraceEnabled();
+        outputJSON = settings.getOutputAsJson();
+        if (outputJSON) {
+            jsonFieldName = new Text(HiveUtils.discoverJsonFieldName(settings, alias));
+        }
     }
 
 
@@ -102,13 +107,32 @@ public class EsSerDe extends AbstractSerDe {
         if (blob == null || blob instanceof NullWritable) {
             return null;
         }
-        Object des = hiveFromWritable(structTypeInfo, blob, alias);
+
+        Writable deserialize = blob;
+        if (outputJSON) {
+            deserialize = wrapJsonData(blob);
+        }
+
+        Object des = hiveFromWritable(structTypeInfo, deserialize, alias);
 
         if (trace) {
             log.trace(String.format("Deserialized [%s] to [%s]", blob, des));
         }
 
         return des;
+    }
+
+    private Writable wrapJsonData(Writable blob) {
+        Assert.isTrue(blob instanceof Text, "Property `es.output.json` is enabled, but returned data was not of type Text...");
+
+        switch (structTypeInfo.getCategory()) {
+            case STRUCT:
+                Map<Writable, Writable> mapContainer = new MapWritable();
+                mapContainer.put(jsonFieldName, blob);
+                return (Writable) mapContainer;
+            default:
+                throw new EsHadoopIllegalStateException("Could not correctly wrap JSON data for structural type " + structTypeInfo.getCategory());
+        }
     }
 
     @Override
