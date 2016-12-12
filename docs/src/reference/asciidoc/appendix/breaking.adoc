@@ -88,3 +88,12 @@ Even if Hadoop is already installed on the Elasticsearch nodes, for security
 reasons, the required libraries need to be placed under the plugin folder.
 Because of this, the `light` distribution of the repository plugin which
 contained no Hadoop client dependencies is no longer available in 5.0.
+
+===== Strict Query Parsing
+In previous versions, users were able to specify options that modify search
+properties in Query DSL strings provided to the client. In some cases these
+properties would conflict with how the framework executed searches during
+read operations. In 5.0, when specifying a Query DSL string, if a `query` field
+is present, its contents are extracted and all other contents are discarded
+(such as `source` or `size`). If there is no `query` field, the entire text
+is nested inside of the `query` field during execution.
