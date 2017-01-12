@@ -18,13 +18,13 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.{ lang => jl }
+import java.{lang => jl}
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.sql.Timestamp
-import java.{ util => ju }
+import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
@@ -32,7 +32,6 @@ import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -50,7 +49,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.storage.StorageLevel.DISK_ONLY
 import org.apache.spark.storage.StorageLevel.DISK_ONLY_2
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
@@ -83,11 +82,10 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-
-import com.esotericsoftware.kryo.io.{ Input => KryoInput }
-import com.esotericsoftware.kryo.io.{ Output => KryoOutput }
-
+import com.esotericsoftware.kryo.io.{Input => KryoInput}
+import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
+
 import org.apache.spark.sql.SparkSession
 
 object AbstractScalaEsScalaSparkSQL {
@@ -556,6 +554,30 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
     nameRDD.take(7).foreach(println)
     assertEquals(10, nameRDD.count)
+  }
+
+  @Test(expected = classOf[EsHadoopIllegalStateException])
+  def testEsDataFrame2ReadWithUserSchemaSpecified() {
+    val target = wrapIndex("sparksql-test/scala-basic-write")
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_INCLUDE -> "id, name, url") += (ES_READ_SOURCE_FILTER -> "name")
+
+    val dataFrame = sqc.esDF(target, newCfg)
+    val schema = dataFrame.schema.treeString
+    assertTrue(schema.contains("id: long"))
+    assertTrue(schema.contains("name: string"))
+    assertFalse(schema.contains("pictures: string"))
+    assertFalse(schema.contains("time:"))
+    assertTrue(schema.contains("url: string"))
+
+    assertTrue(dataFrame.count > 300)
+
+    //dataFrame.take(5).foreach(println)
+
+    val tempTable = wrapIndex("basicRead")
+    dataFrame.registerTempTable(tempTable)
+    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
+    nameRDD.take(7)
   }
 
   @Test

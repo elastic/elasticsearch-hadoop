@@ -231,11 +231,9 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
         Settings settings = HadoopSettingsManager.loadFrom(cfg);
 
-        if (settings.getScrollFields() != null) {
-            return;
+        if (settings.getScrollFields() == null) {
+            extractProjection(cfg);
         }
-
-        extractProjection(cfg);
     }
 
     @Override

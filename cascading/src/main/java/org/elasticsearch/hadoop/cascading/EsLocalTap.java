@@ -24,6 +24,8 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.SearchRequestBuilder;
@@ -80,6 +82,18 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             RestRepository client = new RestRepository(settings);
             Field mapping = client.getMapping();
             Collection<String> fields = CascadingUtils.fieldToAlias(settings, getSourceFields());
+
+            String userFilter = settings.getReadSourceFilter();
+            if (StringUtils.hasText(userFilter)){
+                if (fields.isEmpty()) {
+                    fields = StringUtils.tokenize(userFilter, ",");
+                } else {
+                    throw new EsHadoopIllegalStateException("User specified source filters were found [" + userFilter + "], " +
+                            "but the connector is executing in a state where it has provided its own source filtering " +
+                            "[" + StringUtils.concatenate(fields, ",") + "]. Please clear the user specified source fields under the " +
+                            "[" + ConfigurationOptions.ES_READ_SOURCE_FILTER + "] property to continue.");
+                }
+            }
 
             // validate if possible
             FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();

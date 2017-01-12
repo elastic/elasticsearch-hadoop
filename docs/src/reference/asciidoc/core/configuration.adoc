@@ -360,6 +360,25 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
    in the Elasticsearch mapping specified; did you mean [name, location.address]?
 ----
 
+`es.read.source.filter` (default none)::
+Normally when using an integration that allows specifying some form of schema
+(such as Hive, or Cascading), the connector will automatically extract the field
+names from the schema and request only those fields from {es} to save on bandwidth.
+When using an integration that _does not_ leverage any data schemas (such as normal
+MR and Spark), this property allows you to specify a comma separated list of fields
+that you would like to return from {es}.
+
+IMPORTANT: If `es.read.source.filter` is set, an exception will be thrown in the
+case that the connector tries to push down a different source field filtering.
+In these cases you should clear this property and trust that the connector knows
+which fields should be returned. This occurs in SparkSQL, Hive, and when
+specifying a schema in Cascading and Pig.
+
+[source,bash]
+----
+User specified source filters were found [name,timestamp], but the connector is executing in a state where it has provided its own source filtering [name,timestamp,location.address]. Please clear the user specified source fields under the [es.read.source.filter] property to continue. Bailing out...
+----
+
 [float]
 ==== Input
 

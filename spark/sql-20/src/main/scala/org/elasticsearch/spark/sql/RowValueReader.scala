@@ -39,7 +39,6 @@ private[sql] trait RowValueReader extends SettingsAware {
   abstract override def setSettings(settings: Settings) = {
     super.setSettings(settings)
 
-    val csv = settings.getScrollFields
     readMetadata = settings.getReadMetadata
     val rowInfo = SchemaUtils.getRowInfo(settings)
     rowColumnsMap = rowInfo._1

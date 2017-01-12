@@ -252,7 +252,8 @@ public abstract class RestService implements Serializable {
                 // validate if possible
                 FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
                 if (validation.isRequired()) {
-                    MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
+//                    MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
+                    MappingUtils.validateMapping(SettingsUtils.determineSourceFields(settings), mapping, validation, log);
                 }
             }
             final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
@@ -417,7 +418,7 @@ public abstract class RestService implements Serializable {
                         .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())
                         .limit(settings.getScrollLimit())
-                        .fields(settings.getScrollFields())
+                        .fields(SettingsUtils.determineSourceFields(settings))
                         .filters(QueryUtils.parseFilters(settings))
                         .shard(Integer.toString(partition.getShardId()))
                         .local(true);

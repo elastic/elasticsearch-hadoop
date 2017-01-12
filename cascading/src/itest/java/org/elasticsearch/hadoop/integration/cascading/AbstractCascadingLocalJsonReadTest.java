@@ -23,6 +23,7 @@ import cascading.flow.local.LocalFlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -86,6 +87,32 @@ public class AbstractCascadingLocalJsonReadTest {
         String doc1 = "{\"number\":\"917\",\"name\":\"Iron Maiden\",\"url\":\"http://www.last.fm/music/Iron+Maiden\",\"picture\":\"http://userserve-ak.last.fm/serve/252/22493569.jpg\",\"@timestamp\":\"2870-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]}";
         String doc2 = "{\"number\":\"979\",\"name\":\"Smash Mouth\",\"url\":\"http://www.last.fm/music/Smash+Mouth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/82063.jpg\",\"@timestamp\":\"2931-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]}";
         String doc3 = "{\"number\":\"190\",\"name\":\"Muse\",\"url\":\"http://www.last.fm/music/Muse\",\"picture\":\"http://userserve-ak.last.fm/serve/252/416514.jpg\",\"@timestamp\":\"2176-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]}";
+
+        assertThat(records, hasItems(doc1, doc2, doc3));
+    }
+
+    @Test
+    public void testReadFromESWithSourceFilter() throws Exception {
+        Tap in = new EsTap(indexPrefix + "cascading-local/artists");
+        Pipe pipe = new Pipe("copy");
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        Tap out = new OutputStreamTap(new TextLine(), os);
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.read.source.filter", "name");
+
+        build(cfg, in, out, pipe);
+
+        BufferedReader r = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(os.toByteArray())));
+
+        List<String> records = new ArrayList<>();
+        for (String line = r.readLine(); line != null; line = r.readLine()) {
+            records.add(line);
+        }
+
+        String doc1 = "{\"name\":\"Iron Maiden\"}";
+        String doc2 = "{\"name\":\"Smash Mouth\"}";
+        String doc3 = "{\"name\":\"Muse\"}";
 
         assertThat(records, hasItems(doc1, doc2, doc3));
     }

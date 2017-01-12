@@ -271,7 +271,7 @@ private[sql] object SchemaUtils {
     val rowInfo = (new Properties, new Properties)
 
     doDetectInfo(rowInfo, ROOT_LEVEL_NAME, struct)
-    val csv = settings.getScrollFields()
+    val csv = SettingsUtils.determineSourceFields(settings)
     // if a projection is applied (filtering or projection) use that instead
     if (StringUtils.hasText(csv)) {
       if (settings.getReadMetadata) {

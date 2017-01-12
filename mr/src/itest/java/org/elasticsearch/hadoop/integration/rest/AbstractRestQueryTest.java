@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.Before;
@@ -88,7 +89,7 @@ public class AbstractRestQueryTest {
                         .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())
                         .limit(settings.getScrollLimit())
-                        .fields(settings.getScrollFields())
+                        .fields(SettingsUtils.determineSourceFields(settings))
                         .filters(QueryUtils.parseFilters(settings));
         Field mapping = client.getMapping();
 

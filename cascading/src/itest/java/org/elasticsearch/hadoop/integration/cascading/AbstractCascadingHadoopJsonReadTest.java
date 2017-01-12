@@ -83,6 +83,20 @@ public class AbstractCascadingHadoopJsonReadTest {
         build(cfg(), in, out, pipe);
     }
 
+    @Test
+    public void testReadFromESWithSourceFilter() throws Exception {
+//        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists", new Fields("data"));
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists");
+        Pipe pipe = new Pipe("copy");
+
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.read.source.filter", "name");
+
+        build(cfg, in, out, pipe);
+    }
+
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
         StatsUtils.proxy(new HadoopFlowConnector(cfg).connect(in, out, pipe)).complete();
     }

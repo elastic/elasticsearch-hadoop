@@ -37,9 +37,8 @@ import java.util.List;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.provisionEsLib;
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("Duplicates")
 @RunWith(Parameterized.class)
@@ -144,6 +143,27 @@ public class AbstractHiveReadJsonTest {
         assertContains(result, "Marilyn");
         assertContains(result, "last.fm/music/MALICE");
         assertContains(result, "last.fm/serve/252/2181591.jpg");
+    }
+
+    @Test
+    public void testNoSourceFilterCollisions() throws Exception {
+
+        String create = "CREATE EXTERNAL TABLE jsonartistscollisionread" + testInstance + " (data INT, garbage INT, garbage2 STRING) "
+                + tableProps(
+                    "json-hive/artists",
+                    "'es.output.json' = 'true'",
+                    "'es.read.source.filter'='name'"
+                );
+
+        String select = "SELECT * FROM jsonartistscollisionread" + testInstance;
+
+        server.execute(create);
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        System.out.println(result);
+        assertContains(result, "Marilyn");
+        assertThat(result, not(hasItem(containsString("last.fm/music/MALICE"))));
+        assertThat(result, not(hasItem(containsString("last.fm/serve/252/5872875.jpg"))));
     }
 
     private static boolean containsNoNull(List<String> str) {
