@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
@@ -180,6 +181,31 @@ public abstract class SettingsUtils {
 
     public static String[] getFilters(Settings settings) {
         return IOUtils.deserializeFromBase64(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS));
+    }
+
+    public static String determineSourceFields(Settings settings) {
+        String internalScrollFields = settings.getScrollFields();
+        String userProvided = settings.getReadSourceFilter();
+
+        if (StringUtils.hasText(userProvided) && StringUtils.hasText(internalScrollFields)) {
+            // Conflict found
+            throw new EsHadoopIllegalStateException("User specified source filters were found ["+userProvided+"], " +
+                    "but the connector is executing in a state where it has provided its own source filtering " +
+                    "["+internalScrollFields+"]. Please clear the user specified source fields under the " +
+                    "["+ConfigurationOptions.ES_READ_SOURCE_FILTER+"] property to continue. Bailing out...");
+        }
+
+        String sourceFields = null;
+
+        if (StringUtils.hasText(userProvided)) {
+            sourceFields = userProvided;
+        }
+
+        if (StringUtils.hasText(internalScrollFields)) {
+            sourceFields = internalScrollFields;
+        }
+
+        return sourceFields;
     }
 
     /**

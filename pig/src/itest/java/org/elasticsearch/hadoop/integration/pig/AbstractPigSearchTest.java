@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.pig;
 
 import java.util.Collection;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
@@ -211,6 +212,36 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         assertThat(results, containsString(tabify("Paradise Lost", "(http://www.last.fm/music/Paradise+Lost,http://userserve-ak.last.fm/serve/252/35325935.jpg)")));
         assertThat(results, containsString(tabify("Megadeth", "(http://www.last.fm/music/Megadeth,http://userserve-ak.last.fm/serve/252/8129787.jpg)")));
         assertThat(results, containsString(tabify("Anathema", "(http://www.last.fm/music/Anathema,http://userserve-ak.last.fm/serve/252/45858121.png)")));
+    }
+
+    @Test
+    public void testSourceFilterCollisionNoSchema() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                        "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata + "','es.read.source.filter=name');" +
+                        "A = LOAD 'pig/tupleartists' USING EsStorage();" +
+                        "X = LIMIT A 3;" +
+                        "DUMP X;" +
+                        "STORE A INTO '" + tmpPig() + "/nocollision';";
+        pig.executeScript(script);
+        String results = getResults("" + tmpPig() + "/nocollision");
+        assertThat(results, containsString("Behemoth"));
+        assertThat(results, containsString("Megadeth"));
+        assertThat(results, containsString("Foo Fighters"));
+    }
+
+    @Test(expected = EsHadoopIllegalStateException.class)
+    public void testSourceFilterCollisionWithSchemaAndProjectionPushdown() throws Exception {
+        String script =
+                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                        "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"','es.read.source.filter=name');" +
+                        "A = LOAD 'pig/tupleartists' USING EsStorage() AS (name: chararray, links: chararray);" +
+                        "B = FOREACH A GENERATE name;" +
+                        "X = LIMIT B 3;" +
+                        //"DESCRIBE A;";
+                        "STORE B INTO '" + tmpPig() + "/collision';";
+        pig.executeScript(script);
+        fail("Should not have made it to here: User specified source filtering should have broken when connector accepts projection pushdown from Pig because the 'links' field is unused in later steps.");
     }
 
     @Test

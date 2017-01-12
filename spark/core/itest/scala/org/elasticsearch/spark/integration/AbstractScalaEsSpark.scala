@@ -463,6 +463,24 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   @Test
+  def testEsRDDReadWithSourceFilter() {
+    val target = wrapIndex("spark-test/scala-source-filter-read")
+    RestUtils.touch(wrapIndex("spark-test"))
+    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.refresh(wrapIndex("spark-test"))
+
+    val testCfg = cfg + (ConfigurationOptions.ES_READ_SOURCE_FILTER -> "message_date")
+
+    val esData = EsSpark.esRDD(sc, target, testCfg)
+    val messages = esData.filter(doc => doc._2.contains("message_date"))
+
+    assertTrue(messages.count() == 2)
+    assertNotNull(messages.take(10))
+    assertNotNull(messages)
+  }
+
+  @Test
   def testIndexAlias() {
     val doc = """
         | { "number" : 1, "list" : [ "an array", "some value"], "song" : "Golden Eyes" }

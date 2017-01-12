@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.integration.hive;
 
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -223,6 +224,22 @@ public class AbstractHiveSearchTest {
         server.execute(create);
         List<String> result = server.execute(select);
         assertEquals(0, result.size());
+    }
+
+    @Test(expected = SQLException.class)
+    public void testSourceFieldCollision() throws Exception {
+
+        String create = "CREATE EXTERNAL TABLE collisiontest" + testInstance + "("
+                + "id         BIGINT, "
+                + "name     STRING, "
+                + "links     STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive/artists", "'es.read.source.filter' = 'name,links'");
+
+        String select = "SELECT * FROM collisiontest" + testInstance;
+
+        server.execute(create);
+        server.execute(select);
+        fail("Should not have executed successfully: User specified source filter should conflict with source filter from connector.");
     }
 
     @Test

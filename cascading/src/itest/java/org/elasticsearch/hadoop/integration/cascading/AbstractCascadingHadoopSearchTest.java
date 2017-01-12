@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 import java.util.Collection;
 import java.util.Properties;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.Stream;
@@ -139,13 +140,45 @@ public class AbstractCascadingHadoopSearchTest {
     }
 
     @Test
+    public void testReadFromESWithSourceFiltering() throws Exception {
+        Tap in = new EsTap("cascading-hadoop/artists", query);
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.read.source.filter", "name");
+
+        build(cfg, in, out, pipe);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testReadFromESWithSourceFilteringCollision() throws Exception {
+        Tap in = new EsTap("cascading-hadoop/artists", query, new Fields("url", "name"));
+        Pipe pipe = new Pipe("copy");
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
+        pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
+
+        // print out
+        Tap out = new HadoopPrintStreamTap(Stream.NULL);
+
+        Properties cfg = cfg();
+        cfg.setProperty("es.read.source.filter", "name");
+
+        build(cfg, in, out, pipe);
+    }
+
+//    @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-1"));
         Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-500"));
         Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-990"));
     }
 
-    @Test
+//    @Test
     public void testDynamicPatternFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-format-2001-10-06"));
         Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-format-2500-10-06"));

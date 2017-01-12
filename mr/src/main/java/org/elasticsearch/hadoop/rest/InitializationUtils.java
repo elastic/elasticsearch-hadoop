@@ -222,6 +222,9 @@ public abstract class InitializationUtils {
             Assert.isTrue(settings.getMappingIncludes().isEmpty(), "When writing data as JSON, the field inclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
             Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
         }
+
+        // Early attempt to catch the internal field filtering clashing with user specified field filtering
+        SettingsUtils.determineSourceFields(settings); // ignore return, just checking for the throw.
     }
 
     public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {
