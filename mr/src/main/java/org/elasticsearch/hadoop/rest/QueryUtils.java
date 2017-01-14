@@ -85,6 +85,9 @@ abstract class QueryUtils {
             try {
                 // must be a resource
                 InputStream in = settings.loadResource(query);
+                if (in == null) {
+                    throw new IOException();
+                }
                 // peek the stream
                 int first = in.read();
                 if (Integer.valueOf('?').equals(first)) {
