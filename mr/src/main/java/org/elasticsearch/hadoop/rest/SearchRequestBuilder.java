@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.util.ArrayList;
@@ -158,10 +159,10 @@ public class SearchRequestBuilder {
         }
         Map<String, String> uriParams = new LinkedHashMap<String, String>();
         StringBuilder sb = new StringBuilder();
-        sb.append(StringUtils.encodePath(indices));
+        sb.append(indices);
         if (StringUtils.hasLength(types)) {
             sb.append("/");
-            sb.append(StringUtils.encodePath(types));
+            sb.append(types);
         }
         sb.append("/_search?");
 
@@ -182,7 +183,7 @@ public class SearchRequestBuilder {
 
         // override fields
         if (StringUtils.hasText(fields)) {
-            uriParams.put("_source", StringUtils.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
+            uriParams.put("_source", HttpEncodingTools.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
         }
 
         // set shard preference
@@ -203,12 +204,12 @@ public class SearchRequestBuilder {
         }
 
         if (pref.length() > 0) {
-            uriParams.put("preference", StringUtils.encodeQuery(pref.toString()));
+            uriParams.put("preference", HttpEncodingTools.encode(pref.toString()));
         }
 
         // Request routing
         if (routing != null) {
-            uriParams.put("routing", StringUtils.encodeQuery(routing));
+            uriParams.put("routing", HttpEncodingTools.encode(routing));
         }
 
         // append params

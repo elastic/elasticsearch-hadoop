@@ -19,7 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.util.ByteSequence;
-
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class SimpleRequest implements Request {
 
@@ -44,8 +44,18 @@ public class SimpleRequest implements Request {
     public SimpleRequest(Method method, CharSequence uri, CharSequence path, CharSequence params, ByteSequence body) {
         this.method = method;
         this.uri = uri;
-        this.path = path;
-        this.params = params;
+        int queryMark = String.valueOf(path).indexOf('?'); // FOR BWC ISSUES
+        if (StringUtils.hasText(params) && queryMark >= 0) {
+            throw new IllegalArgumentException("Found Request with Query in Path, as well as specified within the params option.");
+        }
+        else if (queryMark >= 0) {
+            this.path = path.subSequence(0, queryMark);
+            this.params = path.subSequence(queryMark + 1, path.length());
+        }
+        else {
+            this.path = path;
+            this.params = params;
+        }
         this.body = body;
     }
 

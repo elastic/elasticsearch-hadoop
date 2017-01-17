@@ -18,21 +18,10 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.Socket;
-import java.util.Locale;
-
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.HeadMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
@@ -50,6 +39,14 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.Socket;
+import java.util.Locale;
 
 /**
  * Transport implemented on top of Commons Http. Provides transport retries.
@@ -430,12 +427,22 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         CharSequence uri = request.uri();
         if (StringUtils.hasText(uri)) {
+            if (String.valueOf(uri).contains("?")) {
+                throw new EsHadoopInvalidRequest("URI has query portion on it: [" + uri + "]");
+            }
             http.setURI(new URI(escapeUri(uri.toString(), sslEnabled), false));
         }
 
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
         // add node prefix (if specified)
-        http.setPath(pathPrefix + addLeadingSlashIfNeeded(request.path().toString()));
+        String path = pathPrefix + addLeadingSlashIfNeeded(request.path().toString());
+        if (path.contains("?")) {
+            throw new EsHadoopInvalidRequest("Path has query portion on it: [" + path + "]");
+        }
+
+        path = HttpEncodingTools.encodePath(path);
+
+        http.setPath(path);
 
         try {
             // validate new URI
@@ -463,7 +470,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {
-            log.trace(String.format("Tx %s[%s]@[%s][%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.body()));
+            log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
         }
 
         long start = System.currentTimeMillis();
@@ -504,7 +511,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
     private static String escapeUri(String uri, boolean ssl) {
         // escape the uri right away
-        String escaped = StringUtils.encodeUri(uri);
+        String escaped = HttpEncodingTools.encodeUri(uri);
         return escaped.contains("://") ? escaped : (ssl ? "https://" : "http://") + escaped;
     }
 
