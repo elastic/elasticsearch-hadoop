@@ -18,16 +18,10 @@
  */
 package org.elasticsearch.hadoop.util;
 
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.util.URIUtil;
 import org.codehaus.jackson.io.JsonStringEncoder;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -127,17 +121,6 @@ public abstract class StringUtils {
         return tokenize(string, delimiters, true, true);
     }
 
-    public static List<String> tokenizeAndUriDecode(String string, String delimiters) {
-        List<String> tokenize = tokenize(string, delimiters, true, true);
-        List<String> decoded = new ArrayList<String>(tokenize.size());
-
-        for (String token : tokenize) {
-            decoded.add(StringUtils.decodeQuery(token));
-        }
-
-        return decoded;
-    }
-
     public static List<String> tokenize(String string, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
         if (!StringUtils.hasText(string)) {
             return Collections.emptyList();
@@ -176,17 +159,6 @@ public abstract class StringUtils {
 
         sb.setLength(sb.length() - delimiter.length());
         return sb.toString();
-    }
-
-    public static String concatenateAndUriEncode(Collection<?> list, String delimiter) {
-        Collection<String> escaped = new ArrayList<String>();
-
-        if (list != null) {
-            for (Object object : list) {
-                escaped.add(encodeQuery(object.toString()));
-            }
-        }
-        return concatenate(escaped, delimiter);
     }
 
     public static String concatenate(Object[] array, String delimiter) {
@@ -365,46 +337,6 @@ public abstract class StringUtils {
             res = res.substring(0, res.length() - 1);
         }
         return res;
-    }
-
-    public static String encodeUri(String uri) {
-        try {
-            return URIUtil.encodePathQuery(uri);
-        } catch (URIException ex) {
-            throw new EsHadoopIllegalArgumentException("Cannot escape uri" + uri);
-        }
-    }
-
-    public static String encodePath(String path) {
-        try {
-            return URIUtil.encodePath(path, "UTF-8");
-        } catch (URIException ex) {
-            throw new EsHadoopIllegalArgumentException("Cannot encode path" + path, ex);
-        }
-    }
-
-    public static String decodePath(String path) {
-        try {
-            return URIUtil.decode(path, "UTF-8");
-        } catch (URIException ex) {
-            throw new EsHadoopIllegalArgumentException("Cannot encode path" + path, ex);
-        }
-    }
-
-    public static String encodeQuery(String query) {
-        try {
-            return URLEncoder.encode(query, "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            throw new EsHadoopIllegalArgumentException("Cannot encode path" + query, ex);
-        }
-    }
-
-    public static String decodeQuery(String query) {
-        try {
-            return URLDecoder.decode(query, "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            throw new EsHadoopIllegalArgumentException("Cannot encode path" + query, ex);
-        }
     }
 
     public static boolean isLowerCase(CharSequence string) {

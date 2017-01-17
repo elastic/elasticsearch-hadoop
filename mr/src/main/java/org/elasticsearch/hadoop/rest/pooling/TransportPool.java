@@ -51,7 +51,7 @@ final class TransportPool {
     private final String jobPoolingKey;
     private final TimeValue idleTransportTimeout;
 
-    private final SimpleRequest validationRequest = new SimpleRequest(/*method:*/GET, /*uri:*/null, /*path:*/"", /*params:*/"");
+    private final SimpleRequest validationRequest = new SimpleRequest(/*method:*/GET, /*uri:*/null, /*path:*/"");
 
     private final Map<PooledTransport, Long> idle;
     private final Map<PooledTransport, Long> leased;

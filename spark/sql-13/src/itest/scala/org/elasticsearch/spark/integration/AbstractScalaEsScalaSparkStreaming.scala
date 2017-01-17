@@ -135,6 +135,22 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
+  def testEsDataFrame1WriteSPECIALCHARACTER() {
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+    val target = wrapIndex("sparksql-test/scala-בְּדִיקָה-write")
+
+    val batch = sc.makeRDD(Seq(doc1, doc2))
+
+    runStream(batch)(_.saveToEs(target, cfg))
+
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("OTP"))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("two"))
+  }
+
+  @Test
   def testNestedUnknownCharacter() {
     val expected = ExpectingToThrow(classOf[SparkException]).from(ssc)
     val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())

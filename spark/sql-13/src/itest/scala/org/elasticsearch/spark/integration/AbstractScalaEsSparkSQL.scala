@@ -16,8 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.spark.integration;
+package org.elasticsearch.spark.integration
 
+import java.lang.Boolean.{FALSE, TRUE}
 import java.{lang => jl}
 import java.sql.Timestamp
 import java.{util => ju}
@@ -100,56 +101,74 @@ object AbstractScalaEsScalaSparkSQL {
   @Parameters
   def testParams(): ju.Collection[Array[jl.Object]] = {
     val list = new ju.ArrayList[Array[jl.Object]]()
-    // no query
+
     val noQuery = ""
-    list.add(Array("default", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("defaultstrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("defaultnopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("withmeta", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("withmetastrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, noQuery))
-    list.add(Array("withmetanopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, noQuery))
-
-    // disable double filtering
-    list.add(Array("default_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("defaultstrict_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("defaultnopush_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("withmeta_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("withmetastrict_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, noQuery))
-    list.add(Array("withmetanopush_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, noQuery))
-
-    // uri query
     val uriQuery = "?q=*"
-    list.add(Array("defaulturiquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("defaulturiquerystrict", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("defaulturiquerynopush", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("withmetauri_query", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("withmetauri_querystrict", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, uriQuery))
-    list.add(Array("withmetauri_querynopush", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, uriQuery))
-
-    // disable double filtering
-    list.add(Array("defaulturiquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("defaulturiquerystrict_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("defaulturiquerynopush_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("withmetauri_query_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("withmetauri_querystrict_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, uriQuery))
-    list.add(Array("withmetauri_querynopush_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, uriQuery))
-
-    // dsl query
     val dslQuery = """ {"query" : { "match_all" : { } } } """
-    list.add(Array("defaultdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("defaultstrictdslquery", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("defaultnopushdslquery", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("withmetadslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("withmetastrictdslquery", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, dslQuery))
-    list.add(Array("withmetanopushdslquery", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.TRUE, dslQuery))
 
-    // disable double filtering
-    list.add(Array("defaultdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("defaultstrictdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("defaultnopushdslquery_skiphandled", jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("withmetadslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("withmetastrictdslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.TRUE, jl.Boolean.FALSE, dslQuery))
-    list.add(Array("withmetanopushdslquery_skiphandled", jl.Boolean.TRUE, jl.Boolean.FALSE, jl.Boolean.FALSE, jl.Boolean.FALSE, dslQuery))
+    // no query                      meta, push, strict, filter, encode, query
+    list.add(Array("default",        FALSE, TRUE,  FALSE, TRUE, FALSE, noQuery))
+    list.add(Array("defaultstrict",  FALSE, TRUE,  TRUE,  TRUE, FALSE, noQuery))
+    list.add(Array("defaultnopush",  FALSE, FALSE, FALSE, TRUE, FALSE, noQuery))
+    list.add(Array("withmeta",       TRUE,  TRUE,  FALSE, TRUE, FALSE, noQuery))
+    list.add(Array("withmetastrict", TRUE,  TRUE,  TRUE,  TRUE, FALSE, noQuery))
+    list.add(Array("withmetanopush", TRUE,  FALSE, FALSE, TRUE, FALSE, noQuery))
+
+    // disable double filtering                  meta, push, strict, filter, encode, query
+    list.add(Array("default_skiphandled",        FALSE, TRUE,  FALSE, FALSE, FALSE, noQuery))
+    list.add(Array("defaultstrict_skiphandled",  FALSE, TRUE,  TRUE,  FALSE, FALSE, noQuery))
+    list.add(Array("defaultnopush_skiphandled",  FALSE, FALSE, FALSE, FALSE, FALSE, noQuery))
+    list.add(Array("withmeta_skiphandled",       TRUE,  TRUE,  FALSE, FALSE, FALSE, noQuery))
+    list.add(Array("withmetastrict_skiphandled", TRUE,  TRUE,  TRUE,  FALSE, FALSE, noQuery))
+    list.add(Array("withmetanopush_skiphandled", TRUE,  FALSE, FALSE, FALSE, FALSE, noQuery))
+
+    // uri query                              meta, push, strict, filter, encode, query
+    list.add(Array("defaulturiquery",         FALSE, TRUE,  FALSE, TRUE, FALSE, uriQuery))
+    list.add(Array("defaulturiquerystrict",   FALSE, TRUE,  TRUE,  TRUE, FALSE, uriQuery))
+    list.add(Array("defaulturiquerynopush",   FALSE, FALSE, FALSE, TRUE, FALSE, uriQuery))
+    list.add(Array("withmetauri_query",       TRUE,  TRUE,  FALSE, TRUE, FALSE, uriQuery))
+    list.add(Array("withmetauri_querystrict", TRUE,  TRUE,  TRUE,  TRUE, FALSE, uriQuery))
+    list.add(Array("withmetauri_querynopush", TRUE,  FALSE, FALSE, TRUE, FALSE, uriQuery))
+
+    // disable double filtering                           meta, push, strict, filter, encode, query
+    list.add(Array("defaulturiquery_skiphandled",         FALSE, TRUE,  FALSE, FALSE, FALSE, uriQuery))
+    list.add(Array("defaulturiquerystrict_skiphandled",   FALSE, TRUE,  TRUE,  FALSE, FALSE, uriQuery))
+    list.add(Array("defaulturiquerynopush_skiphandled",   FALSE, FALSE, FALSE, FALSE, FALSE, uriQuery))
+    list.add(Array("withmetauri_query_skiphandled",       TRUE,  TRUE,  FALSE, FALSE, FALSE, uriQuery))
+    list.add(Array("withmetauri_querystrict_skiphandled", TRUE,  TRUE,  TRUE,  FALSE, FALSE, uriQuery))
+    list.add(Array("withmetauri_querynopush_skiphandled", TRUE,  FALSE, FALSE, FALSE, FALSE, uriQuery))
+
+    // dsl query                             meta, push, strict, filter, encode, query
+    list.add(Array("defaultdslquery",        FALSE, TRUE,  FALSE, TRUE, FALSE, dslQuery))
+    list.add(Array("defaultstrictdslquery",  FALSE, TRUE,  TRUE,  TRUE, FALSE, dslQuery))
+    list.add(Array("defaultnopushdslquery",  FALSE, FALSE, FALSE, TRUE, FALSE, dslQuery))
+    list.add(Array("withmetadslquery",       TRUE,  TRUE,  FALSE, TRUE, FALSE, dslQuery))
+    list.add(Array("withmetastrictdslquery", TRUE,  TRUE,  TRUE,  TRUE, FALSE, dslQuery))
+    list.add(Array("withmetanopushdslquery", TRUE,  FALSE, FALSE, TRUE, FALSE, dslQuery))
+
+    // disable double filtering                          meta, push, strict, filter, encode, query
+    list.add(Array("defaultdslquery_skiphandled",        FALSE, TRUE,  FALSE, FALSE, FALSE, dslQuery))
+    list.add(Array("defaultstrictdslquery_skiphandled",  FALSE, TRUE,  TRUE,  FALSE, FALSE, dslQuery))
+    list.add(Array("defaultnopushdslquery_skiphandled",  FALSE, FALSE, FALSE, FALSE, FALSE, dslQuery))
+    list.add(Array("withmetadslquery_skiphandled",       TRUE,  TRUE,  FALSE, FALSE, FALSE, dslQuery))
+    list.add(Array("withmetastrictdslquery_skiphandled", TRUE,  TRUE,  TRUE,  FALSE, FALSE, dslQuery))
+    list.add(Array("withmetanopushdslquery_skiphandled", TRUE,  FALSE, FALSE, FALSE, FALSE, dslQuery))
+
+    // unicode                                      meta, push, strict, filter, encode, query
+    list.add(Array("default_" + "בְּדִיק" + "_",        FALSE, TRUE,  FALSE, TRUE, TRUE, noQuery))
+    list.add(Array("defaultstrict_" + "בְּדִיק" + "_",  FALSE, TRUE,  TRUE,  TRUE, TRUE, noQuery))
+    list.add(Array("defaultnopush_" + "בְּדִיק" + "_",  FALSE, FALSE, FALSE, TRUE, TRUE, noQuery))
+    list.add(Array("withmeta_" + "בְּדִיק" + "_",       TRUE,  TRUE,  FALSE, TRUE, TRUE, noQuery))
+    list.add(Array("withmetastrict_" + "בְּדִיק" + "_", TRUE,  TRUE,  TRUE,  TRUE, TRUE, noQuery))
+    list.add(Array("withmetanopush_" + "בְּדִיק" + "_", TRUE,  FALSE, FALSE, TRUE, TRUE, noQuery))
+
+    // disable double filtering                                 meta, push, strict, filter, encode, query
+    list.add(Array("default_skiphandled_" + "בְּדִיק" + "_",        FALSE, TRUE,  FALSE, FALSE, TRUE, noQuery))
+    list.add(Array("defaultstrict_skiphandled_" + "בְּדִיק" + "_",  FALSE, TRUE,  TRUE,  FALSE, TRUE, noQuery))
+    list.add(Array("defaultnopush_skiphandled_" + "בְּדִיק" + "_",  FALSE, FALSE, FALSE, FALSE, TRUE, noQuery))
+    list.add(Array("withmeta_skiphandled_" + "בְּדִיק" + "_",       TRUE,  TRUE,  FALSE, FALSE, TRUE, noQuery))
+    list.add(Array("withmetastrict_skiphandled_" + "בְּדִיק" + "_", TRUE,  TRUE,  TRUE,  FALSE, TRUE, noQuery))
+    list.add(Array("withmetanopush_skiphandled_" + "בְּדִיק" + "_", TRUE,  FALSE, FALSE, FALSE, TRUE, noQuery))
 
     list
   }
@@ -157,7 +176,7 @@ object AbstractScalaEsScalaSparkSQL {
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(classOf[Parameterized])
-class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pushDown: jl.Boolean, strictPushDown: jl.Boolean, doubleFiltering: jl.Boolean, query: String = "") extends Serializable {
+class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pushDown: jl.Boolean, strictPushDown: jl.Boolean, doubleFiltering: jl.Boolean, escapeResources: jl.Boolean, query: String = "") extends Serializable {
 
   val sc = AbstractScalaEsScalaSparkSQL.sc
   val sqc = AbstractScalaEsScalaSparkSQL.sqc
@@ -511,7 +530,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val tempTable = wrapIndex("basicRead")
     dataFrame.registerTempTable(tempTable)
-    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM ${wrapTableName(tempTable)} WHERE id >= 1 AND id <=10")
     nameRDD.take(7).foreach(println)
     assertEquals(10, nameRDD.count)
   }
@@ -536,7 +555,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val tempTable = wrapIndex("basicRead")
     dataFrame.registerTempTable(tempTable)
-    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM ${wrapTableName(tempTable)} WHERE id >= 1 AND id <=10")
     nameRDD.take(7).foreach(println)
     assertEquals(10, nameRDD.count)
   }
@@ -561,7 +580,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val tempTable = wrapIndex("basicRead")
     dataFrame.registerTempTable(tempTable)
-    val nameRDD = sqc.sql(s"SELECT name FROM $tempTable WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM ${wrapTableName(tempTable)} WHERE id >= 1 AND id <=10")
     nameRDD.take(7)
   }
 
@@ -665,7 +684,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     var options = s"""resource '$target' """
     val table = wrapIndex("sqlbasicread1")
 
-    val query = s"CREATE TEMPORARY TABLE $table "+
+    val query = s"CREATE TEMPORARY TABLE ${wrapTableName(table)} "+
       " USING org.elasticsearch.spark.sql " +
       s" OPTIONS ($options)"
 
@@ -682,11 +701,11 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     println("results data frame")
     results.printSchema()
 
-    val allRDD = sqc.sql(s"SELECT * FROM $table WHERE id >= 1 AND id <=10")
+    val allRDD = sqc.sql(s"SELECT * FROM ${wrapTableName(table)} WHERE id >= 1 AND id <=10")
     println("select all rdd")
     allRDD.printSchema()
 
-    val nameRDD = sqc.sql(s"SELECT name FROM $table WHERE id >= 1 AND id <=10")
+    val nameRDD = sqc.sql(s"SELECT name FROM ${wrapTableName(table)} WHERE id >= 1 AND id <=10")
     println("select name rdd")
     nameRDD.printSchema()
 
@@ -702,11 +721,11 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val table = wrapIndex("sqlbasicread2")
 
     val options = s"""path '$target' , readMetadata "true" """
-    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(table)}" +
       " USING es " +
       s" OPTIONS ($options)")
 
-    val allRDD = sqc.sql(s"SELECT * FROM $table WHERE id >= 1 AND id <=10")
+    val allRDD = sqc.sql(s"SELECT * FROM ${wrapTableName(table)} WHERE id >= 1 AND id <=10")
     allRDD.printSchema()
     allRDD.take(7).foreach(println)
 
@@ -983,18 +1002,18 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var options = s"""resource '$target' """
 
-    val s = sqc.sql(s"CREATE TEMPORARY TABLE $table" +
+    val s = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(table)}" +
        " USING org.elasticsearch.spark.sql " +
        s" OPTIONS ($options)")
 
-    val allResults = sqc.sql(s"SELECT * FROM $table")
+    val allResults = sqc.sql(s"SELECT * FROM ${wrapTableName(table)}")
     assertEquals(3, allResults.count())
     allResults.printSchema()
 
-    val filter = sqc.sql(s"SELECT * FROM $table WHERE airport = 'OTP'")
+    val filter = sqc.sql(s"SELECT * FROM ${wrapTableName(table)} WHERE airport = 'OTP'")
     assertEquals(1, filter.count())
 
-    val nullColumns = sqc.sql(s"SELECT reason, airport FROM $table ORDER BY airport")
+    val nullColumns = sqc.sql(s"SELECT reason, airport FROM ${wrapTableName(table)} ORDER BY airport")
     val rows = nullColumns.take(3)
     assertEquals("[null,MUC OTP SFO JFK]", rows(0).toString())
     assertEquals("[null,OTP]", rows(1).toString())
@@ -1060,7 +1079,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     table1.registerTempTable(table1Name)
     table1.registerTempTable(table2Name)
 
-    val join = sqc.sql(s"SELECT t1.name, t2.pictures FROM $table1Name t1, $table2Name t2 WHERE t1.id = t2.id")
+    val join = sqc.sql(s"SELECT t1.name, t2.pictures FROM ${wrapTableName(table1Name)} t1, ${wrapTableName(table2Name)} t2 WHERE t1.id = t2.id")
 
     println(join.schema.treeString)
     println(join.take(1)(0).schema)
@@ -1077,12 +1096,12 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var options = s"resource '$index '"
 
-    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(table)} " +
       s"USING org.elasticsearch.spark.sql " +
       s"OPTIONS ($options)");
 
-    val insertRDD = sqc.sql(s"INSERT INTO TABLE $table SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
-    val df = sqc.table(table)
+    val insertRDD = sqc.sql(s"INSERT INTO TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    val df = sqc.table(wrapTableName(table))
     println(df.count)
     assertTrue(df.count > 100)
   }
@@ -1101,14 +1120,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var options = s"resource '$index'"
 
-    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $table " +
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(table)} " +
       s"USING org.elasticsearch.spark.sql " +
       s"OPTIONS ($options)");
 
-    var df = sqc.table(table)
+    var df = sqc.table(wrapTableName(table))
     assertTrue(df.count > 1)
-    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE $table SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
-    df = sqc.table(table)
+    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE ${wrapTableName(table)} SELECT 123456789, 'test-sql', 'http://test-sql.com', '', 12345")
+    df = sqc.table(wrapTableName(table))
     assertEquals(1, df.count)
   }
 
@@ -1130,16 +1149,16 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     var srcOptions = s"resource '$index'"
 
-    val srcFrame = sqc.sql(s"CREATE TEMPORARY TABLE $srcTable " +
+    val srcFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(srcTable)} " +
       s"USING org.elasticsearch.spark.sql " +
       s"OPTIONS ($srcOptions)");
 
-    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE $dstTable " +
+    val dataFrame = sqc.sql(s"CREATE TEMPORARY TABLE ${wrapTableName(dstTable)} " +
       s"USING org.elasticsearch.spark.sql " +
       s"OPTIONS ($dstOptions)");
 
-    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE $dstTable SELECT * FROM $srcTable")
-    val df = sqc.table(dstTable)
+    val insertRDD = sqc.sql(s"INSERT OVERWRITE TABLE ${wrapTableName(dstTable)} SELECT * FROM ${wrapTableName(srcTable)}")
+    val df = sqc.table(wrapTableName(dstTable))
     println(df.count)
     assertTrue(df.count > 100)
   }
@@ -1926,8 +1945,27 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(2, df.count())
   }
 
+  /**
+   * Take advantage of the fixed method order and clear out all created indices.
+   * The indices will last in Elasticsearch for all parameters of this test suite.
+   * This test suite often puts a lot of stress on the system's available file
+   * descriptors due to the volume of indices it creates.
+   */
+  @Test
+  def zzzz_clearEnvironment() {
+    // Nuke the whole environment after the tests run.
+    RestUtils.delete("_all")
+  }
+  
   def wrapIndex(index: String) = {
     prefix + index
+  }
+
+  /**
+   * When using Unicode characters in table names for SparkSQL, they need to be enclosed in backticks.
+   */
+  def wrapTableName(name: String) = {
+    if (escapeResources) "`" + name + "`" else name
   }
 
   private def keepHandledFilters = {

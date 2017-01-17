@@ -60,7 +60,7 @@ public class RestUtils {
         }
 
         public String refresh(String index) throws IOException {
-            return IOUtils.asString(execute(Request.Method.POST, index + "/_refresh", null).body());
+            return IOUtils.asString(execute(Request.Method.POST, index + "/_refresh", (ByteSequence) null).body());
         }
     }
 
@@ -103,6 +103,12 @@ public class RestUtils {
     public static void put(String index, byte[] content) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
         rc.put(index, content);
+        rc.close();
+    }
+
+    public static void delete(String index) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        rc.delete(index);
         rc.close();
     }
 

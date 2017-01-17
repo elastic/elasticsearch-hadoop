@@ -43,6 +43,7 @@ import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
+import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.Closeable;
@@ -340,7 +341,7 @@ public class RestClient implements Closeable, StatsAware {
         // https://github.com/elasticsearch/elasticsearch/issues/2726
         String target = index + "/_search_shards";
         if (routing != null) {
-            target += "?routing=" + StringUtils.encodeQuery(routing);
+            target += "?routing=" + HttpEncodingTools.encode(routing);
         }
         if (indexReadMissingAsEmpty) {
             Request req = new SimpleRequest(GET, null, target);
@@ -432,12 +433,28 @@ public class RestClient implements Closeable, StatsAware {
         return execute(new SimpleRequest(method, null, path), checkStatus);
     }
 
+    protected InputStream execute(Method method, String path, String params) {
+        return execute(new SimpleRequest(method, null, path, params));
+    }
+
+    protected Response execute(Method method, String path, String params, boolean checkStatus) {
+        return execute(new SimpleRequest(method, null, path, params), checkStatus);
+    }
+
     protected Response execute(Method method, String path, ByteSequence buffer) {
         return execute(new SimpleRequest(method, null, path, null, buffer), true);
     }
 
     protected Response execute(Method method, String path, ByteSequence buffer, boolean checkStatus) {
         return execute(new SimpleRequest(method, null, path, null, buffer), checkStatus);
+    }
+
+    protected Response execute(Method method, String path, String params, ByteSequence buffer) {
+        return execute(new SimpleRequest(method, null, path, params, buffer), true);
+    }
+
+    protected Response execute(Method method, String path, String params, ByteSequence buffer, boolean checkStatus) {
+        return execute(new SimpleRequest(method, null, path, params, buffer), checkStatus);
     }
 
     protected Response execute(Request request, boolean checkStatus) {

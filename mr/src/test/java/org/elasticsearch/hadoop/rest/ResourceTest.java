@@ -21,8 +21,8 @@ package org.elasticsearch.hadoop.rest;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -158,8 +158,8 @@ public class ResourceTest {
 
     @Test
     public void testURiEscaping() throws Exception {
-        assertEquals("http://localhost:9200/index/type%7Cfoo?q=foo%7Cbar:bar%7Cfoo", StringUtils.encodeUri("http://localhost:9200/index/type|foo?q=foo|bar:bar|foo"));
-        assertEquals("foo%7Cbar", StringUtils.encodeUri("foo|bar"));
-        System.out.println(StringUtils.encodeUri("foo|bar,abc,xyz|rpt"));
+        assertEquals("http://localhost:9200/index/type%7Cfoo?q=foo%7Cbar:bar%7Cfoo", HttpEncodingTools.encodeUri("http://localhost:9200/index/type|foo?q=foo|bar:bar|foo"));
+        assertEquals("foo%7Cbar", HttpEncodingTools.encodeUri("foo|bar"));
+        System.out.println(HttpEncodingTools.encodeUri("foo|bar,abc,xyz|rpt"));
     }
 }
