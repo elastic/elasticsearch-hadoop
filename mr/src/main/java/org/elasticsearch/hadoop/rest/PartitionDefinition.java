@@ -177,7 +177,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
 
     public Settings settings() {
         PropertiesSettings settings = new PropertiesSettings();
-        return serializedMapping != null ? settings.load(serializedSettings) : settings;
+        return serializedSettings != null ? settings.load(serializedSettings) : settings;
     }
 
     @Override
