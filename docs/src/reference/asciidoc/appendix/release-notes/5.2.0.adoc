@@ -1,0 +1,21 @@
+[[eshadoop-5.2.0]]
+== Elasticsearch for Apache Hadoop version 5.2.0
+January 26, 2017
+
+[[new-5.2.0]]
+=== New Features
+Section::
+* Support for Spark 2.1.0 added.
+http://github.com/elastic/elasticsearch-hadoop/issues/915[#915]
+
+[[enhancements-5.2.0]]
+=== Enhancements
+Section::
+* You can now specify which fields to return in schema-less integrations.
+http://github.com/elastic/elasticsearch-hadoop/issues/901[#901]
+
+[[bugs-5.2.0]]
+=== Bug Fixes
+Section::
+* Typo-error in PartitionDefinition.java
+http://github.com/elastic/elasticsearch-hadoop/issues/919[#919]
