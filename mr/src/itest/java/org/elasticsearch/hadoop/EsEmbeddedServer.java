@@ -18,73 +18,42 @@
  */
 package org.elasticsearch.hadoop;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Properties;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.hadoop.ingest.common.IngestCommonPlugin;
-import org.elasticsearch.hadoop.script.GroovyPlugin;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.InternalSettingsPreparer;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.transport.Netty3Plugin;
 
 public class EsEmbeddedServer {
-    private static class PluginConfigurableNode extends Node {
-        public PluginConfigurableNode(Settings settings, Collection<Class<? extends Plugin>> classpathPlugins) {
-            super(InternalSettingsPreparer.prepareEnvironment(settings, null), classpathPlugins);
-        }
-    }
 
-    private final Node node;
+    private static final String ES_PORTS_FILE_LOCATION = "es.test.ports.file.location";
+
     private IpAndPort ipAndPort;
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public EsEmbeddedServer(String clusterName, String homePath, String dataPath, String httpRange, String transportRange, boolean hasSlave) {
-        Properties props = new Properties();
-        props.setProperty("path.home", homePath);
-        props.setProperty("path.data", dataPath);
-        props.setProperty("http.port", httpRange);
-        props.setProperty("transport.tcp.port", transportRange);
-        props.setProperty("cluster.name", "es.hadoop.test");
-        props.setProperty("transport.type", "local");
-//        props.setProperty("discovery.type", "local");
-        props.setProperty("http.type", "netty3");
-        // if (!hasSlave) {
-            //props.setProperty("discovery.zen.ping.multicast", "false");
-            //props.setProperty("discovery.zen.ping.multicast.enabled", "false");
-        //}
-        //props.setProperty("script.disable_dynamic", "false");
-        props.setProperty("script.inline", "true");
-        //props.setProperty("script.indexed", "true");
-
-        // props.setProperty("node.client", "false");
-        props.setProperty("cluster.name", clusterName);
-        props.setProperty("node.ingest", "true");
-
-        Settings settings = Settings.builder().put(props).build();
-        Collection plugins = Arrays.asList(GroovyPlugin.class, Netty3Plugin.class, IngestCommonPlugin.class);
-        node = new PluginConfigurableNode(settings, plugins);
-    }
-
-    public void start() {
+    public EsEmbeddedServer() {
         try {
-            node.start();
-            // find out port
-            String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
-            String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
-            ipAndPort = StringUtils.parseIpAddress(value);
+            String path = System.getProperty(ES_PORTS_FILE_LOCATION);
+            if (path == null) {
+                // No local ES stood up. Better throw...
+                throw new IllegalStateException("Could not find Elasticsearch ports file. Should " +
+                        "you be running tests with an external cluster?");
+            }
+
+            File portsFile = new File(path);
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(portsFile)))) {
+                for (String line = in.readLine(); line != null; line = in.readLine()) {
+                    if (line.contains("[") || line.contains("]") || line.isEmpty()) {
+                        continue;
+                    }
+                    ipAndPort = StringUtils.parseIpAddress(line);
+                    break;
+                }
+            }
         } catch (Exception e) {
             throw new EsHadoopException("Encountered exception during embedded node startup", e);
         }
-    }
-
-    public void stop() throws IOException {
-        node.close();
     }
 
     public IpAndPort getIpAndPort() {

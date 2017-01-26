@@ -508,7 +508,9 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")
       val rr = new RestRepository(cfgCopy)
-      rr.delete()
+      if (rr.indexExists(false)) {
+        rr.delete()
+      }
       rr.close()
     }
     EsSparkSQL.saveToEs(data, parameters)

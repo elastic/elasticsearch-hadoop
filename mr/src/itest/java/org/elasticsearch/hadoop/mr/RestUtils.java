@@ -71,6 +71,10 @@ public class RestUtils {
         rc.close();
     }
 
+    public static void createMultiTypeIndex(String index) throws Exception {
+        put(index, "{\"settings\":{\"index.mapping.single_type\":false}}".getBytes());
+    }
+
     public static Field getMapping(String index) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
         Field parseField = Field.parseField(rc.getMapping(index + "/_mapping"));
