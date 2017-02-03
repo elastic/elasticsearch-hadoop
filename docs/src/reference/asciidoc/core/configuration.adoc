@@ -436,6 +436,23 @@ Thus the total number of documents returned is `LIMIT * NUMBER_OF_SCROLLS (OR TA
 `es.action.heart.beat.lead` (default 15s)::
 The lead to task timeout before {eh} informs Hadoop the task is still running to prevent task restart.
 
+added[5.3.0]
+[float]
+==== Setting HTTP Request Headers
+`es.net.http.header.[HEADER-NAME]` ::
+By using the `es.net.http.header.` prefix, you can provide HTTP Headers to all
+requests made to {es} from {eh}. Please note that some standard HTTP Headers are
+reserved by the connector to ensure correct operation and cannot be set or overridden
+by the user (`Accept` and `Content-Type` for instance).
+
+For example, here the user is setting the `Max-Forwards` HTTP header:
+
+[source,ini]
+----
+es.net.http.header.Max-Forwards = 10
+----
+
+
 added[2.1]
 [float]
 ==== Basic Authentication

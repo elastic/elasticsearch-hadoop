@@ -26,6 +26,7 @@ import java.net.Socket;
 import java.util.Locale;
 
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -43,13 +44,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.rest.DelegatingInputStream;
-import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
-import org.elasticsearch.hadoop.rest.Request;
-import org.elasticsearch.hadoop.rest.Response;
-import org.elasticsearch.hadoop.rest.ReusableInputStream;
-import org.elasticsearch.hadoop.rest.SimpleResponse;
-import org.elasticsearch.hadoop.rest.Transport;
+import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.ByteSequence;
@@ -71,6 +66,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
 
     private final HttpClient client;
+    private final HeaderProcessor headers;
     protected Stats stats = new Stats();
     private HttpConnection conn;
     private String proxyInfo = "";
@@ -193,6 +189,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
         connectionParams.setTcpNoDelay(true);
+
+        this.headers = new HeaderProcessor(settings);
 
         if (log.isTraceEnabled()) {
             log.trace("Opening HTTP transport to " + httpInfo);
@@ -460,6 +458,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             entityMethod.setRequestEntity(new BytesArrayRequestEntity(ba));
             entityMethod.setContentChunked(false);
         }
+
+        headers.applyTo(http);
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {
