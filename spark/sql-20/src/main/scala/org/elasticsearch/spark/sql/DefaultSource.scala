@@ -156,9 +156,20 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
     }
 
-    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                      StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+    // Set fields to scroll over (_metadata is excluded, because it isn't a part of _source)
+    val sourceCSV = StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER)
+    val requiredCSV = StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER)
+    if (requiredCSV == cfg.getReadMetadataField)
+      // This is a small hack to avoid reading _source fields in case if only _metadata field is requested.
+      // By default, SearchRequestBuilder includes all fields, if INTERNAL_ES_TARGET_FIELDS is empty.
+      // To prevent us from querying useless data, we set _id field,
+      // which isn't a part of _source, but is allowed by SearchRequestBuilder
+      paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> "_id")
+    else
+      paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> sourceCSV)
 
+    // Keep the order of fields requested by user (we don't exclude _metadata here)
+    paramWithScan += (Utils.DATA_SOURCE_REQUIRED_COLUMNS -> requiredCSV)
     
     if (filters != null && filters.size > 0) {
       if (Utils.isPushDown(cfg)) {

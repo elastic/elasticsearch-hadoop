@@ -19,15 +19,14 @@
 package org.elasticsearch.spark.sql
 
 import java.util.ArrayList
-import java.util.{ LinkedHashSet => JHashSet }
-import java.util.{ List => JList }
-import java.util.{ Map => JMap }
+import java.util.{LinkedHashSet => JHashSet}
+import java.util.{List => JList}
+import java.util.{Map => JMap}
 import java.util.Properties
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -269,16 +268,21 @@ private[sql] object SchemaUtils {
     val rowInfo = (new Properties, new Properties)
 
     doDetectInfo(rowInfo, ROOT_LEVEL_NAME, struct)
-    val csv = SettingsUtils.determineSourceFields(settings)
-    // if a projection is applied (filtering or projection) use that instead
-    if (StringUtils.hasText(csv)) {
-      if (settings.getReadMetadata) {
-        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
-      }
-      else {
-        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv)
-      }
-    }
+
+    val requiredFields = settings.getProperty(Utils.DATA_SOURCE_REQUIRED_COLUMNS)
+    val sourceFields = SettingsUtils.determineSourceFields(settings)
+
+    // In case when user selected specific fields (we want to keep the same order in a spark sql row)
+    if (StringUtils.hasText(requiredFields))
+      rowInfo._1.setProperty(ROOT_LEVEL_NAME, requiredFields)
+
+    // In case when we read all fields including metadata
+    else if (StringUtils.hasText(sourceFields) && settings.getReadMetadata)
+      rowInfo._1.setProperty(ROOT_LEVEL_NAME, sourceFields + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
+
+    // In case when we read all fields without metadata
+    else if (StringUtils.hasText(sourceFields))
+      rowInfo._1.setProperty(ROOT_LEVEL_NAME, sourceFields)
     rowInfo
   }
 
