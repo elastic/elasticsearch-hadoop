@@ -300,8 +300,17 @@ Whether to include the document version in the returned metadata. Applicable onl
 
 One using the `update` or `upsert` operation, additional settings (that mirror the {ref}/docs-update.html[update] API) are available:
 
-`es.update.script` (default none)::
-Script used for updating the document.
+`es.update.script.inline` (default none)::
+Inline Script used for updating the document.
+
+added[6.0]
+`es.update.script.file` (default none)::
+Name of file script to use for updating document. File scripts are removed in 6.x, and as such, this property will throw
+an error if used against a 6.x and above cluster.
+
+added[6.0]
+`es.update.script.stored` (default none)::
+Identifier of a stored script to use for updating the document.
 
 `es.update.script.lang` (default none)::
 Script language. By default, no value is specified applying the node configuration.

@@ -284,7 +284,19 @@ public abstract class Settings {
     }
 
     public String getUpdateScript() {
-        return getProperty(ES_UPDATE_SCRIPT);
+        return getProperty(ES_UPDATE_SCRIPT_LEGACY);
+    }
+
+    public String getUpdateScriptInline() {
+        return getLegacyProperty(ES_UPDATE_SCRIPT_LEGACY, ES_UPDATE_SCRIPT_INLINE, null);
+    }
+
+    public String getUpdateScriptFile() {
+        return getProperty(ES_UPDATE_SCRIPT_FILE);
+    }
+
+    public String getUpdateScriptStored() {
+        return getProperty(ES_UPDATE_SCRIPT_STORED);
     }
 
     public String getUpdateScriptLang() {
@@ -301,7 +313,13 @@ public abstract class Settings {
 
     public boolean hasUpdateScript() {
         String op = getOperation();
-        return ((ConfigurationOptions.ES_OPERATION_UPDATE.equals(op) || ConfigurationOptions.ES_OPERATION_UPSERT.equals(op)) && StringUtils.hasText(getUpdateScript()));
+        boolean hasScript = false;
+        if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(op) || ConfigurationOptions.ES_OPERATION_UPSERT.equals(op)) {
+            hasScript = StringUtils.hasText(getUpdateScriptInline());
+            hasScript |= StringUtils.hasText(getUpdateScriptFile());
+            hasScript |= StringUtils.hasText(getUpdateScriptStored());
+        }
+        return hasScript;
     }
 
     public boolean hasUpdateScriptParams() {

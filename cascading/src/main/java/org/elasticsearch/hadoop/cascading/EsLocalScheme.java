@@ -145,6 +145,7 @@ class EsLocalScheme extends Scheme<Properties, ScrollQuery, Object, Object[], Ob
             Settings settings = CascadingUtils.addDefaultsToSettings(props, this.props, LogFactory.getLog(EsTap.class));
             CascadingUtils.init(settings, host, port, resource, query, read);
             CascadingUtils.initialDiscovery(settings, LogFactory.getLog(EsTap.class));
+            CascadingUtils.finalValidation(settings, read);
             client = new RestRepository(settings);
         }
     }

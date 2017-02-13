@@ -16,6 +16,11 @@ For clarity, we always list any breaking changes at the top of the
 This section discusses the changes that you should be aware of if you
 upgrade ES-Hadoop from version 5.x to 6.x.
 
+==== Configuration Changes
+`es.update.script` has been deprecated in favor of the new `es.update.script.
+inline` option. The `es.update.script` configuration will continue to function
+as a legacy configuration with the same meaning as `es.update.script.inline`.
+
 ==== Pattern Formatting in Index and Type Names
 
 Coming soon in 6.0 is the removal of multiple types per index. All project

@@ -241,7 +241,7 @@ public abstract class InitializationUtils {
         boolean alreadyRestricted = false;
         boolean[] restrictions = {settings.getNodesClientOnly(), settings.getNodesDataOnly(), settings.getNodesIngestOnly()};
         for (boolean restriction : restrictions) {
-            Assert.isTrue(!(alreadyRestricted && restriction), "Use either client-only or data-only or ingest-only nodes but not a combination");
+            Assert.isTrue((alreadyRestricted && restriction) == false, "Use either client-only or data-only or ingest-only nodes but not a combination");
             alreadyRestricted = alreadyRestricted || restriction;
         }
 
@@ -251,6 +251,15 @@ public abstract class InitializationUtils {
             Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
         }
 
+        // Check to make sure user doesn't specify more than one script type
+        boolean hasScript = false;
+        String[] scripts = {settings.getUpdateScriptInline(), settings.getUpdateScriptFile(), settings.getUpdateScriptStored()};
+        for (String script: scripts) {
+            boolean isSet = StringUtils.hasText(script);
+            Assert.isTrue((hasScript && isSet) == false, "Multiple scripts are specified. Please specify only one via [es.update.script.inline], [es.update.script.file], or [es.update.script.stored]");
+            hasScript = hasScript || isSet;
+        }
+
         // Early attempt to catch the internal field filtering clashing with user specified field filtering
         SettingsUtils.determineSourceFields(settings); // ignore return, just checking for the throw.
     }
@@ -258,6 +267,14 @@ public abstract class InitializationUtils {
     public static void validateSettingsForReading(Settings settings) {
         checkIndexNameForRead(settings);
         checkIndexStatus(settings);
+    }
+
+    public static void validateSettingsForWriting(Settings settings) {
+        EsMajorVersion version = settings.getInternalVersionOrThrow();
+
+        if (version.onOrAfter(EsMajorVersion.V_6_X) && StringUtils.hasText(settings.getUpdateScriptFile())) {
+            throw new EsHadoopIllegalArgumentException("Cannot use file scripts on ES 6.x and above. Please use stored scripts.");
+        }
     }
 
     public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {

@@ -14,6 +14,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -272,7 +273,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     @Test
     public void test2WriteToIngestPipeline() throws Exception {
-        org.elasticsearch.hadoop.mr.Assume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
+        EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
 
         String pipelineName =  prefix + "-pipeline";
         String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";

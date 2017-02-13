@@ -20,10 +20,8 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
-import org.apache.commons.logging.impl.NoOpLog;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -115,10 +113,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 3");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 3");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 3");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -141,10 +139,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; String anothercounter = params.param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; String anothercounter = params.param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -167,10 +165,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = params.param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -205,10 +203,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 1");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 1");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 1");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -229,10 +227,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -253,10 +251,10 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + params.param1; ctx._source.anothercounter = ctx._source.getOrDefault('anothercounter', 0) + params.param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + params.param1; ctx._source.anothercounter = ctx._source.getOrDefault('anothercounter', 0) + params.param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.counter += param1; ctx._source.anothercounter += param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.counter += param1; ctx._source.anothercounter += param2");
             properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 

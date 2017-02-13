@@ -319,10 +319,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 3");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 3");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -340,10 +340,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; String anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; String anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -361,10 +361,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -382,10 +382,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "HashSet list = new HashSet(); list.add(ctx._source.list); list.add(params.some_list); ctx._source.list = list.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet list = new HashSet(); list.add(ctx._source.list); list.add(params.some_list); ctx._source.list = list.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -397,7 +397,7 @@ public class AbstractMROldApiSaveTest {
         //
         //        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         //        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
+        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
         //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
         //
@@ -421,10 +421,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"new_date\": [\"add me\", \"and me\"]}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "HashSet tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(params.new_date); ctx._source.tags = tmp.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(params.new_date); ctx._source.tags = tmp.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -439,7 +439,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 1");
 
         runJob(conf);
     }
@@ -451,7 +451,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, "param2:name , param3:number, param1:<1>");
 
@@ -465,7 +465,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
@@ -489,10 +489,10 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, (conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true") ? "update_tags:name" :"update_tags:list"));
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.tags = params.update_tags");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.tags = params.update_tags");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.tags = update_tags");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.tags = update_tags");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 

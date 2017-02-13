@@ -77,6 +77,14 @@ public abstract class CascadingUtils {
         InitializationUtils.filterNonIngestNodesIfNeeded(settings, log);
     }
 
+    static void finalValidation(Settings settings, boolean read) {
+        if (read) {
+            InitializationUtils.validateSettingsForReading(settings);
+        } else {
+            InitializationUtils.validateSettingsForWriting(settings);
+        }
+    }
+
     static void addSerializationToken(Object config) {
         Configuration cfg = (Configuration) config;
         String tokens = cfg.get(TupleSerializationProps.SERIALIZATION_TOKENS);

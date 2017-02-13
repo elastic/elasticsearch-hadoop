@@ -109,4 +109,13 @@ public class InitializationUtilsTest {
         set.setProperty(ES_NODES_INGEST_ONLY, "true");
         validateSettings(set);
     }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateMultipleScripts() throws Exception {
+        Settings set = new TestSettings();
+        set.setProperty(ES_UPDATE_SCRIPT_FILE, "test");
+        set.setProperty(ES_UPDATE_SCRIPT_INLINE, "test");
+        set.setProperty(ES_UPDATE_SCRIPT_STORED, "test");
+        validateSettings(set);
+    }
 }

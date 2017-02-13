@@ -235,7 +235,10 @@ public interface ConfigurationOptions {
     String ES_UPDATE_RETRY_ON_CONFLICT = "es.update.retry.on.conflict";
     String ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT = "0";
 
-    String ES_UPDATE_SCRIPT = "es.update.script";
+    String ES_UPDATE_SCRIPT_FILE = "es.update.script.file";
+    String ES_UPDATE_SCRIPT_INLINE = "es.update.script.inline";
+    String ES_UPDATE_SCRIPT_STORED = "es.update.script.stored";
+    String ES_UPDATE_SCRIPT_LEGACY = "es.update.script";
     String ES_UPDATE_SCRIPT_LANG = "es.update.script.lang";
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";

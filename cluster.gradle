@@ -13,8 +13,10 @@ configurations {
     esfixture
 }
 
+def version = project.hasProperty("es-version") ? project.getProperty("es-version") : esVersion
+
 dependencies {
-    esfixture group: 'org.elasticsearch.distribution.zip', name: 'elasticsearch', version: esVersion, ext: "zip"
+    esfixture group: 'org.elasticsearch.distribution.zip', name: 'elasticsearch', version: version, ext: "zip"
 }
 
 // Optionally allow user to disable the fixture
@@ -23,14 +25,17 @@ def useFixture = Boolean.parseBoolean(project.hasProperty("run-node") ? project.
 if (useFixture) {
     // Depends on project already containing an "integrationTest"
     // task, as well as javaHome configured
-    createClusterFor(project.tasks.getByName("integrationTest"))
+    createClusterFor(project.tasks.getByName("integrationTest"), version)
 } else {
     project.tasks.getByName("integrationTest") {
         systemProperty "test.disable.local.es", "true"
     }
 }
 
-def createClusterFor(Task integrationTest) {
+def createClusterFor(Task integrationTest, String version) {
+
+    // Version settings
+    def majorVersion = version.tokenize(".").get(0).toInteger()
 
     // General settings
     def clusterName = "elasticsearch-fixture"
@@ -47,10 +52,11 @@ def createClusterFor(Task integrationTest) {
     def esArgs = []
 
     // Directories & Files (indented to illustrate layout)
-    def baseDir = new File(rootProject.buildDir, "$clusterName-$esVersion")
+    def baseDir = new File(rootProject.buildDir, "$clusterName-$version")
         def pidFile = new File(baseDir, "es.pid")
         def homeDir = new File(baseDir, "$nodeName")
             def confDir = new File(homeDir, "config")
+                def scriptsDir = new File(confDir, 'scripts')
                 def configFile = new File(confDir, 'elasticsearch.yml')
             def logsDir = new File(homeDir, 'logs')
                 def httpPortsFile = new File(logsDir, 'http.ports')
@@ -125,7 +131,7 @@ def createClusterFor(Task integrationTest) {
         }
         into baseDir
         doLast {
-            new File(baseDir, "elasticsearch-$esVersion").renameTo(homeDir)
+            new File(baseDir, "elasticsearch-$version").renameTo(homeDir)
         }
     }
 
@@ -138,16 +144,22 @@ def createClusterFor(Task integrationTest) {
             "path.data"                    : new File(homeDir, "data").toString(),
             "http.port"                    : "9500-9599",
             "transport.tcp.port"           : "9600-9699",
-            "transport.type"               : "netty4",
-            "http.type"                    : "netty4",
             "node.ingest"                  : "true"
     ]
 
-    boolean versionIs6 = (esVersion.tokenize(".").get(0).toInteger() >= 6)
-    if (versionIs6) {
-        // By default all scripts are allowed.
-    } else {
+    // Version specific configurations
+    if (majorVersion <= 2) {
+        esConfig.put("transport.type","local")
+        esConfig.put("http.type","netty3")
         esConfig.put("script.inline", "true")
+        esConfig.put("script.indexed", "true")
+    } else if (majorVersion == 5) {
+        esConfig.put("transport.type","netty4")
+        esConfig.put("http.type","netty4")
+        esConfig.put("script.inline", "true")
+    } else if (majorVersion >= 6) {
+        esConfig.put("transport.type","netty4")
+        esConfig.put("http.type","netty4")
     }
 
     // we set min master nodes to the total number of nodes in the cluster and
@@ -165,6 +177,15 @@ def createClusterFor(Task integrationTest) {
     writeConfig.doFirst {
         logger.info("Configuring ${configFile}")
         configFile.setText(esConfig.collect { key, value -> "${key}: ${value}" }.join('\n'), 'UTF-8')
+
+        // Also write a script to a file for use in tests
+        if (majorVersion <= 2) {
+            scriptsDir.mkdirs()
+            new File(scriptsDir, "increment.groovy").setText("ctx._source.counter+=1", 'UTF-8')
+        } else if (majorVersion == 5) {
+            scriptsDir.mkdirs()
+            new File(scriptsDir, "increment.painless").setText("ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1", 'UTF-8')
+        }
     }
 
     // Start the node up
@@ -197,7 +218,12 @@ def createClusterFor(Task integrationTest) {
             esScript = new File(homeDir, 'bin/elasticsearch')
         }
         esArgs.add("${wrapperScript}")
-        esArgs.addAll("-E", "node.portsfile=true")
+
+        if (majorVersion < 5) {
+            esArgs.addAll("--node.portsfile=true")
+        } else {
+            esArgs.addAll("-E", "node.portsfile=true")
+        }
 
         String argsPasser = '"$@"'
         String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"

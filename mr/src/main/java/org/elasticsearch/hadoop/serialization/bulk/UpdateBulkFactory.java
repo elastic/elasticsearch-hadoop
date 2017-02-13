@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.List;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
@@ -31,6 +32,8 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
     private final int RETRY_ON_FAILURE;
     private final String RETRY_HEADER;
+
+    private final String SCRIPT_2X;
 
     private final String SCRIPT_5X;
     private final String SCRIPT_LANG_5X;
@@ -56,14 +59,30 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         RETRY_ON_FAILURE = settings.getUpdateRetryOnConflict();
         RETRY_HEADER = "\"_retry_on_conflict\":" + RETRY_ON_FAILURE + "";
 
-        HAS_SCRIPT = StringUtils.hasText(settings.getUpdateScript());
+        HAS_SCRIPT = settings.hasUpdateScript();
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
 
         SCRIPT_LANG_5X = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
-        SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScript() + "\"";
-
         SCRIPT_LANG_1X = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
-        SCRIPT_1X = "\"script\":\"" + settings.getUpdateScript() + "\"";
+
+        if (StringUtils.hasText(settings.getUpdateScriptInline())) {
+            // INLINE
+            SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScriptInline() + "\"";
+            SCRIPT_2X = SCRIPT_5X;
+            SCRIPT_1X = "\"script\":\"" + settings.getUpdateScriptInline() + "\"";
+        } else if (StringUtils.hasText(settings.getUpdateScriptFile())) {
+            // FILE
+            SCRIPT_5X = "{\"script\":{\"file\":\"" + settings.getUpdateScriptFile() + "\"";
+            SCRIPT_2X = SCRIPT_5X;
+            SCRIPT_1X = "\"script_file\":\"" + settings.getUpdateScriptFile() + "\"";
+        } else if (StringUtils.hasText(settings.getUpdateScriptStored())) {
+            // STORED
+            SCRIPT_5X = "{\"script\":{\"stored\":\"" + settings.getUpdateScriptStored() + "\"";
+            SCRIPT_2X = "{\"script\":{\"id\":\"" + settings.getUpdateScriptStored() + "\"";
+            SCRIPT_1X = "\"script_id\":\"" + settings.getUpdateScriptStored() + "\"";
+        } else {
+            throw new EsHadoopIllegalStateException("No update script found...");
+        }
     }
 
     @Override
@@ -87,10 +106,12 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         Object paramExtractor = getExtractorOrDynamicValue(Metadata.PARAMS, getParamExtractor());
 
-        if (esMajorVersion.after(EsMajorVersion.V_1_X)) {
-            writeStrictFormatting(list, paramExtractor);
-        } else {
+        if (esMajorVersion.on(EsMajorVersion.V_1_X)) {
             writeLegacyFormatting(list, paramExtractor);
+        } else if (esMajorVersion.on(EsMajorVersion.V_2_X)) {
+            writeStrictFormatting(list, paramExtractor, SCRIPT_2X);
+        } else {
+            writeStrictFormatting(list, paramExtractor, SCRIPT_5X);
         }
     }
 
@@ -110,6 +131,14 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         }
 
         if (HAS_SCRIPT) {
+            /*
+             * {
+             *   "params": ...,
+             *   "lang": "...",
+             *   "script": "...",
+             *   "upsert": {...}
+             * }
+             */
             if (HAS_LANG) {
                 list.add(SCRIPT_LANG_1X);
             }
@@ -119,6 +148,12 @@ class UpdateBulkFactory extends AbstractBulkFactory {
             }
         }
         else {
+            /*
+             * {
+             *   "doc_as_upsert": true,
+             *   "doc": {...}
+             * }
+             */
             if (UPSERT) {
                 list.add("\"doc_as_upsert\":true,");
             }
@@ -131,9 +166,19 @@ class UpdateBulkFactory extends AbstractBulkFactory {
      * @param list Consumer of snippets
      * @param paramExtractor Extracts parameters from documents or constants
      */
-    private void writeStrictFormatting(List<Object> list, Object paramExtractor) {
+    private void writeStrictFormatting(List<Object> list, Object paramExtractor, String scriptToUse) {
         if (HAS_SCRIPT) {
-            list.add(SCRIPT_5X);
+            /*
+             * {
+             *   "script":{
+             *     "inline": "...",
+             *     "lang": "...",
+             *     "params": ...,
+             *   },
+             *   "upsert": {...}
+             * }
+             */
+            list.add(scriptToUse);
             if (HAS_LANG) {
                 list.add(SCRIPT_LANG_5X);
             }
@@ -145,8 +190,13 @@ class UpdateBulkFactory extends AbstractBulkFactory {
             if (UPSERT) {
                 list.add(",\"upsert\":");
             }
-        }
-        else {
+        } else {
+            /*
+             * {
+             *   "doc_as_upsert": true,
+             *   "doc": {...}
+             * }
+             */
             list.add("{");
             if (UPSERT) {
                 list.add("\"doc_as_upsert\":true,");

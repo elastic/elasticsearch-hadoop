@@ -19,17 +19,21 @@
 package org.elasticsearch.spark.integration;
 
 import java.awt.Polygon
+import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 import java.{lang => jl}
 import java.{util => ju}
-import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConversions.propertiesAsScalaMap
-import scala.collection.JavaConverters.asScalaBufferConverter
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
@@ -37,11 +41,15 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_TIMESTAMP
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
+import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings, TestUtils}
+import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
+import org.elasticsearch.hadoop.util.EsMajorVersion
+import org.elasticsearch.hadoop.util.StringUtils
+import org.elasticsearch.hadoop.util.TestSettings
+import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
-import org.elasticsearch.spark.rdd.Metadata.TTL
 import org.elasticsearch.spark.rdd.Metadata.VERSION
 import org.elasticsearch.spark.serialization.Bean
 import org.elasticsearch.spark.serialization.ReflectionUtils
@@ -53,22 +61,24 @@ import org.elasticsearch.spark.sparkStringJsonRDDFunctions
 import org.hamcrest.Matchers.both
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
-import org.junit._
+import org.junit.AfterClass
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Assume
+import org.junit.Assume.assumeNoException
+import org.junit.BeforeClass
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
-import java.nio.file.Paths
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.net.URI
 
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
+import scala.collection.JavaConversions.propertiesAsScalaMap
+import scala.collection.JavaConverters.asScalaBufferConverter
+
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf()
               .setAppName("estest")
@@ -114,7 +124,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   val sc = AbstractScalaEsScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
-  val version = TestUtils.getEsVersion
+  val version: EsMajorVersion = TestUtils.getEsVersion
+  val keyword: String = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
 
   private def readAsRDD(uri: URI) = {
     // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
@@ -353,6 +364,118 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(wrapIndex("spark-test-json-otp/data/_search?")), containsString("participants"))
   }
 
+  @Test(expected = classOf[EsHadoopIllegalArgumentException ])
+  def testEsRDDBreakOnFileScript(): Unit = {
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "File scripts are only removed in 6.x and on")
+    val props = Map("es.write.operation" -> "upsert", "es.update.script.file" -> "break")
+    val lines = sc.makeRDD(List(Map("id" -> "1")))
+    try {
+      lines.saveToEs("should-break", props)
+    } catch {
+      case s: SparkException => throw s.getCause
+      case t: Throwable => throw t
+    }
+    fail("Should not have succeeded with file script on ES 6x and up.")
+  }
+
+  @Test
+  def testEsRDDWriteFileScriptUpdate(): Unit = {
+    EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "File scripts are only available in 5.x and lower")
+    // assumes you have a script named "increment" as a file. I don't think there's a way to verify this before
+    // the test runs. Maybe a quick poke before the job runs?
+
+    val mapping =
+      s"""{
+         |  "data": {
+         |    "properties": {
+         |      "id": {
+         |        "type": "$keyword"
+         |      },
+         |      "counter": {
+         |        "type": "long"
+         |      }
+         |    }
+         |  }
+         |}""".stripMargin
+
+    val index = wrapIndex("spark-test-stored")
+    val target = s"$index/data"
+    RestUtils.touch(index)
+    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.refresh(index)
+    RestUtils.put(s"$target/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
+
+    // Test assumption:
+    try {
+      if (version.onOrBefore(EsMajorVersion.V_2_X)) {
+        RestUtils.postData(s"$target/1/_update", """{"script_file":"increment"}""".getBytes(StringUtils.UTF_8))
+      } else {
+        RestUtils.postData(s"$target/1/_update", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
+      }
+    } catch {
+      case t: Throwable => assumeNoException("Script not installed", t)
+    }
+
+    val scriptName = "increment"
+    val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
+    val script = if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+      "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1"
+    } else {
+      "ctx._source.counter += 1"
+    }
+
+    val props = Map("es.write.operation" -> "update", "es.mapping.id" -> "id", "es.update.script.file" -> scriptName)
+    val lines = sc.makeRDD(List(Map("id"->"1")))
+    lines.saveToEs(target, props)
+
+    val docs = RestUtils.get(s"$target/_search")
+    Assert.assertThat(docs, containsString(""""counter":6"""))
+  }
+
+  @Test
+  def testEsRDDWriteStoredScriptUpdate(): Unit = {
+    val mapping =
+      s"""{
+        |  "data": {
+        |    "properties": {
+        |      "id": {
+        |        "type": "$keyword"
+        |      },
+        |      "counter": {
+        |        "type": "long"
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+
+    val index = wrapIndex("spark-test-stored")
+    val target = s"$index/data"
+    RestUtils.touch(index)
+    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.put(s"$target/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
+
+    val scriptName = "increment"
+    val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
+    val script = if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+      "ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1"
+    } else {
+      "ctx._source.counter += 1"
+    }
+
+    if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+      RestUtils.put(s"_scripts/$scriptName", s"""{"script":{"lang":"$lang", "code": "$script"}}""".getBytes(StringUtils.UTF_8))
+    } else {
+      RestUtils.put(s"_scripts/$lang/$scriptName", s"""{"script":"$script"}""".getBytes(StringUtils.UTF_8))
+    }
+
+    val props = Map("es.write.operation" -> "update", "es.mapping.id" -> "id", "es.update.script.stored" -> scriptName)
+    val lines = sc.makeRDD(List(Map("id"->"1")))
+    lines.saveToEs(target, props)
+
+    val docs = RestUtils.get(s"$target/_search")
+    Assert.assertThat(docs, containsString(""""counter":6"""))
+  }
+
   @Test
   def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
     val mapping = """{
@@ -375,7 +498,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
                     |  }
                     |}""".stripMargin
 
-    val index = "spark-test-contact"
+    val index = wrapIndex("spark-test-contact")
     val target = s"$index/data"
     RestUtils.touch(index)
     RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))

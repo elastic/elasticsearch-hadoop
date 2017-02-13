@@ -21,7 +21,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.mr.{Assume => EsAssume}
+import org.elasticsearch.hadoop.mr.{EsAssume => EsAssume}
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.hadoop.util.StringUtils
