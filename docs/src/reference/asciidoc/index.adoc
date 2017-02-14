@@ -8,7 +8,7 @@
 :sp:	Apache Spark
 :st:	Apache Storm
 :ey:	Elasticsearch on YARN
-:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/2.0
+:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/5.2
 :description: Reference documentation of {eh}
 :ver:	5.2.0
 :ver-d: 5.2.1.BUILD-SNAPSHOT
