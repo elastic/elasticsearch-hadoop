@@ -4,6 +4,6 @@ February 14, 2017
 
 ES-Hadoop 5.2.1 is a version compatibility release, tested specifically against Elasticsearch 5.2.1.
 
-[[docs-5.1.2]]
+[[docs-5.2.1]]
 === Documentation
 * Updated links that point to the ES reference documentation to use version 5.2 instead of 2.0.
