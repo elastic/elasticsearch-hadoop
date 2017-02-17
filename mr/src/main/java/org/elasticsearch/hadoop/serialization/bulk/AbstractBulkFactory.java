@@ -120,6 +120,12 @@ public abstract class AbstractBulkFactory implements BulkFactory {
 
                 pool.get().bytes(valueString);
             }
+            
+            else if (value instanceof Date) {
+                String valueString = (value == null ? "null": Long.toString(((Date) value).getTime()));
+                pool.get().bytes(valueString);
+            }
+            
             else if (value instanceof RawJson) {
                 pool.get().bytes(((RawJson) value).json());
             }
