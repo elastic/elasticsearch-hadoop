@@ -59,13 +59,13 @@ object AbstractScalaEsScalaSparkStreaming {
   @transient var ssc: StreamingContext = null
 
   @BeforeClass
-  def setup() {
+  def setup(): Unit =  {
     conf.setAll(TestSettings.TESTING_PROPS)
     sc = new SparkContext(conf)
   }
 
   @AfterClass
-  def cleanup() {
+  def cleanup(): Unit =  {
     if (sc != null) {
       sc.stop
       // give jetty time to clean its act up
@@ -103,7 +103,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteIndexCreationDisabled() {
+  def testEsRDDWriteIndexCreationDisabled(): Unit = {
     val expecting = ExpectingToThrow(classOf[EsHadoopIllegalArgumentException]).from(ssc)
 
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
@@ -119,7 +119,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsDataFrame1Write() {
+  def testEsDataFrame1Write(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
@@ -135,7 +135,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsDataFrame1WriteSPECIALCHARACTER() {
+  def testEsDataFrame1WriteSPECIALCHARACTER(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
@@ -151,7 +151,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testNestedUnknownCharacter() {
+  def testNestedUnknownCharacter(): Unit = {
     val expected = ExpectingToThrow(classOf[SparkException]).from(ssc)
     val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())
     val batch = sc.makeRDD(Seq(doc))
@@ -160,7 +160,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteCaseClass() {
+  def testEsRDDWriteCaseClass(): Unit = {
     val javaBean = new Bean("bar", 1, true)
     val caseClass1 = Trip("OTP", "SFO")
     val caseClass2 = AbstractScalaEsScalaSpark.ModuleCaseClass(1, "OTP", "MUC")
@@ -181,7 +181,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteWithMappingId() {
+  def testEsRDDWriteWithMappingId(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
@@ -198,7 +198,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteWithDynamicMapping() {
+  def testEsRDDWriteWithDynamicMapping(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
@@ -217,7 +217,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteWithDynamicMapMapping() {
+  def testEsRDDWriteWithDynamicMapMapping(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
@@ -240,7 +240,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteWithMappingExclude() {
+  def testEsRDDWriteWithMappingExclude(): Unit = {
     val trip1 = Map("reason" -> "business", "airport" -> "SFO")
     val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
@@ -256,7 +256,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDIngest() {
+  def testEsRDDIngest(): Unit = {
     try {
       val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
       try {
@@ -289,7 +289,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
 
   @Test
-  def testEsMultiIndexRDDWrite() {
+  def testEsMultiIndexRDDWrite(): Unit = {
     val trip1 = Map("reason" -> "business", "airport" -> "SFO")
     val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
@@ -305,7 +305,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsWriteAsJsonMultiWrite() {
+  def testEsWriteAsJsonMultiWrite(): Unit = {
     val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"
     val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
 
@@ -329,7 +329,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
+  def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString(): Unit = {
     val mapping = """{
                     |  "contact": {
                     |    "properties": {
@@ -384,7 +384,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  def testNullAsEmpty() {
+  def testNullAsEmpty(): Unit = {
     val data = Seq(
       Map("field1" -> 5.4, "field2" -> "foo"),
       Map("field2" -> "bar"),

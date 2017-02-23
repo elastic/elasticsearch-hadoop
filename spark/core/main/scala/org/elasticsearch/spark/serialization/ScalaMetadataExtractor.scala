@@ -32,12 +32,14 @@ private[spark] class ScalaMetadataExtractor extends PerEntityPoolingMetadataExtr
   override def getValue(metadata: InternalMetadata): AnyRef = {
     val sparkEnum = ScalaMetadataExtractor.toSparkEnum(metadata)
 
-    if (sparkEnum == null) return null
-
-    entity match {
-      case jmap: JMap[_, _] => jmap.asInstanceOf[JMap[SparkMetadata, AnyRef]].get(sparkEnum)
-      case smap: SMap[_, _] => smap.asInstanceOf[SMap[SparkMetadata, AnyRef]].getOrElse(sparkEnum, null)
-      case _                => if (sparkEnum == SparkMetadata.ID) entity else null;
+    if (sparkEnum == null){
+      null
+    } else {
+      entity match {
+        case jmap: JMap[_, _] => jmap.asInstanceOf[JMap[SparkMetadata, AnyRef]].get(sparkEnum)
+        case smap: SMap[_, _] => smap.asInstanceOf[SMap[SparkMetadata, AnyRef]].getOrElse(sparkEnum, null)
+        case _                => if (sparkEnum == SparkMetadata.ID) entity else null
+      }
     }
   }
 }

@@ -41,13 +41,9 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   protected var logger = LogFactory.getLog(this.getClass())
 
   override def getPartitions: Array[Partition] = {
-    val sparkPartitions = new Array[Partition](esPartitions.size)
-    var idx: Int = 0
-    for (esPartition <- esPartitions) {
-      sparkPartitions(idx) = new EsPartition(id, idx, esPartition)
-      idx += 1
-    }
-    sparkPartitions
+    esPartitions.zipWithIndex.map { case(esPartition, idx) =>
+      new EsPartition(id, idx, esPartition)
+    }.toArray
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
@@ -62,7 +58,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   def esCount(): Long = {
     val repo = new RestRepository(esCfg)
     try {
-      return repo.count(true)
+      repo.count(true)
     } finally {
       repo.close()
     }

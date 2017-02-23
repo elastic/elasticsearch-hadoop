@@ -52,7 +52,7 @@ private[sql] trait RowValueReader extends SettingsAware {
     }
   }
 
-  def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any) {
+  def addToBuffer(esRow: ScalaEsRow, key: AnyRef, value: Any): Unit = {
     val pos = esRow.rowOrder.indexOf(key.toString())
     if (pos < 0 || pos >= esRow.values.size) {
       // geo types allow fields which are ignored - need to skip these if they are not part of the schema

@@ -72,25 +72,23 @@ object EsSparkSQL {
   // Write
   //
   
-  def saveToEs(srdd: Dataset[_], resource: String) {
+  def saveToEs(srdd: Dataset[_], resource: String): Unit = {
     saveToEs(srdd, Map(ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(srdd: Dataset[_], resource: String, cfg: Map[String, String]) {
+  def saveToEs(srdd: Dataset[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(srdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(srdd: Dataset[_], cfg: Map[String, String]) {
-     if (srdd == null) {
-      return
-    }
-     
-    val sparkCtx = srdd.sqlContext.sparkContext
-    val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
-    val esCfg = new PropertiesSettings().load(sparkCfg.save())
-    esCfg.merge(cfg.asJava)
+  def saveToEs(srdd: Dataset[_], cfg: Map[String, String]): Unit = {
+    if (srdd != null) {
+      val sparkCtx = srdd.sqlContext.sparkContext
+      val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
+      val esCfg = new PropertiesSettings().load(sparkCfg.save())
+      esCfg.merge(cfg.asJava)
 
-    InitializationUtils.checkIdForOperation(esCfg)
-    InitializationUtils.checkIndexExistence(esCfg)
-    
-    sparkCtx.runJob(srdd.toDF().rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
+      InitializationUtils.checkIdForOperation(esCfg)
+      InitializationUtils.checkIndexExistence(esCfg)
+
+      sparkCtx.runJob(srdd.toDF().rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
+    }
   }
 }

@@ -30,35 +30,35 @@ import scala.collection.Map
 object EsSparkStreaming {
 
   // Save methods
-  def saveToEs(ds: DStream[_], resource: String) {
+  def saveToEs(ds: DStream[_], resource: String): Unit = {
     saveToEs(ds, Map(ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(ds: DStream[_], resource: String, cfg: Map[String, String]) {
+  def saveToEs(ds: DStream[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(ds, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(ds: DStream[_], cfg: Map[String, String]) {
+  def saveToEs(ds: DStream[_], cfg: Map[String, String]): Unit = {
     doSaveToEs(ds, cfg, hasMeta = false)
   }
 
   // Save with metadata
-  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], resource: String) {
+  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], resource: String): Unit = {
     saveToEsWithMeta(ds, Map(ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], resource: String, cfg: Map[String, String]) {
+  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], resource: String, cfg: Map[String, String]): Unit = {
     saveToEsWithMeta(ds, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], cfg: Map[String, String]) {
+  def saveToEsWithMeta[K,V](ds: DStream[(K,V)], cfg: Map[String, String]): Unit = {
     doSaveToEs(ds, cfg, hasMeta = true)
   }
 
   // Save as JSON
-  def saveJsonToEs(ds: DStream[_], resource: String) {
+  def saveJsonToEs(ds: DStream[_], resource: String): Unit = {
     saveToEs(ds, resource, Map(ES_INPUT_JSON -> true.toString))
   }
-  def saveJsonToEs(ds: DStream[_], resource: String, cfg: Map[String, String]) {
+  def saveJsonToEs(ds: DStream[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(ds, resource, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
-  def saveJsonToEs(ds: DStream[_], cfg: Map[String, String]) {
+  def saveJsonToEs(ds: DStream[_], cfg: Map[String, String]): Unit = {
     saveToEs(ds, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 
