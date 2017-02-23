@@ -24,7 +24,7 @@ That is why for reliable results, always measure to see whether the changes that
 {eh} performs a parallel read spread across all the target resource shards. It relies on https://www.elastic.co/guide/en/elasticsearch/guide/current/scroll.html[scrolling] which is as efficient as it can be in returning the results of a query.
 If the read performance is not optimal, first try to see how _expensive_ the query is by interogating {es} directly. The {es} documentation is a good place to start, such as the https://www.elastic.co/guide/en/elasticsearch/guide/current/_improving_performance.html[Improving Performance] page; similar queries might return the same results but can have a different cost.
 
-If a query is inefficient, try rewriting it in a more optimal way. Sometimes changing the data structure (for example by adding a a new field or denormalizing it) can significantly improve the query performance as there are less calculations that need to be done.
+If a query is inefficient, try rewriting it in a more optimal way. Sometimes changing the data structure (for example by adding a new field or denormalizing it) can significantly improve the query performance as there are less calculations that need to be done.
 
 Note that typically, the number of results do not influence the performance of the connector nor {es} itself. The connector does *not* read all the results at once but rather in chunks and passes them onwards to the consumer.
 Thus typically the size becomes an issue on the consumer side depending on whether it tries to buffer the results from the connector or can simply iterate or stream through them.
