@@ -1,0 +1,10 @@
+[[eshadoop-5.2.2]]
+== Elasticsearch for Apache Hadoop version 5.2.2
+February 28, 2017
+
+ES-Hadoop 5.2.2 is a version compatibility release, tested specifically against Elasticsearch 5.2.2.
+
+[[docs-5.2.2]]
+=== Documentation
+* typo in performance.adoc
+http://github.com/elastic/elasticsearch-hadoop/pull/929[#929]
