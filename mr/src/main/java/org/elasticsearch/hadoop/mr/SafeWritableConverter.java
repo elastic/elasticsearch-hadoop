@@ -16,29 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.elasticsearch.hadoop.mr;
 
-import org.elasticsearch.hadoop.serialization.JdkBytesConverter;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.Text;
 import org.elasticsearch.hadoop.util.BytesArray;
 
-public class WritableBytesConverter extends JdkBytesConverter {
-
-    private static SafeWritableConverter safeWritableConverter;
-
-    static {
-        try {
-            safeWritableConverter = new SafeWritableConverter();
-        } catch (Error e) {
-            // no Hadoop libs loaded
-        }
+/**
+ *
+ */
+class SafeWritableConverter {
+    public SafeWritableConverter() {
+        Text.class.getName(); // force class to be loaded
     }
 
-    @Override
-    public void convert(Object from, BytesArray to) {
-
-        if (safeWritableConverter != null)
-            safeWritableConverter.invoke(from, to);
-
-        super.convert(from, to);
+    public void invoke(Object from, BytesArray to) {
+        // handle common cases
+        if (from instanceof Text) {
+            Text t = (Text) from;
+            to.bytes(t.getBytes(), t.getLength());
+        }
+        if (from instanceof BytesWritable) {
+            BytesWritable b = (BytesWritable) from;
+            to.bytes(b.getBytes(), b.getLength());
+        }
     }
 }
