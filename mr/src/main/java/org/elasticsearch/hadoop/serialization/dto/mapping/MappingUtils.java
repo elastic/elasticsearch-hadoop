@@ -226,7 +226,7 @@ public abstract class MappingUtils {
         if (parsedContent instanceof List) {
             Object content = ((List) parsedContent).get(0);
             if (content instanceof Double) {
-                return GeoPointType.LAT_LON_ARRAY;
+                return GeoPointType.LON_LAT_ARRAY;
             }
         }
         if (parsedContent instanceof String) {
@@ -234,7 +234,7 @@ public abstract class MappingUtils {
             return ((String) parsedContent).contains(",") ? GeoPointType.LAT_LON_STRING : GeoPointType.GEOHASH;
         }
 
-        return GeoPointType.LON_LAT_OBJECT;
+        return GeoPointType.LAT_LON_OBJECT;
     }
 
     private static GeoField doParseGeoShapeInfo(Object parsedContent) {

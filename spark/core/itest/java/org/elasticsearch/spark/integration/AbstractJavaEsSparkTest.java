@@ -54,7 +54,9 @@ import scala.Tuple2;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractJavaEsSparkTest implements Serializable {
 
-    private static final transient SparkConf conf = new SparkConf().setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS)).setMaster("local").setAppName("estest");
+    private static final transient SparkConf conf = new SparkConf()
+                    .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS))
+                    .setAppName("estest");
     private static transient JavaSparkContext sc = null;
 
     @BeforeClass
@@ -287,7 +289,9 @@ public class AbstractJavaEsSparkTest implements Serializable {
     public void testEsRDDZReadMultiIndex() throws Exception {
         String index = "spark-test";
 
-        for (int i = 0; i < 10; i++) {
+        int count = 10;
+
+        for (int i = 0; i < count; i++) {
             RestUtils.postData(index + "/foo", ("{\"message\" : \"Hello World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
             RestUtils.postData(index + "/bar", ("{\"message\" : \"Goodbye World\", \"counter\":" + i +", \"message_date\" : \"2014-05-25\"}").getBytes());
         }
@@ -298,9 +302,9 @@ public class AbstractJavaEsSparkTest implements Serializable {
         JavaRDD<Map<String, Object>> typeRDD = JavaEsSpark.esRDD(sc, ImmutableMap.of(ES_RESOURCE, "spark*")).values();
 
         JavaRDD<Map<String, Object>> allRDD = JavaEsSpark.esRDD(sc, "_all/foo", "").values();
-        //assertEquals(wildRDD.count(), allRDD.count());
-        System.out.println(typeRDD.count());
-        // assertEquals(500, allRDD.count());
+        // assertEquals(wildRDD.count(), allRDD.count());
+        // System.out.println(typeRDD.count());
+        assertEquals(count, allRDD.count());
     }
 
     // @Test(expected = EsHadoopIllegalArgumentException.class)

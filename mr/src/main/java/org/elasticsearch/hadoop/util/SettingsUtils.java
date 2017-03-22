@@ -18,6 +18,13 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -28,11 +35,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 
 public abstract class SettingsUtils {
 
@@ -83,14 +85,8 @@ public abstract class SettingsUtils {
         return host;
     }
 
-    public static void pinNode(Settings settings, String node) {
-        pinNode(settings, node, settings.getPort());
-    }
-
-    public static void pinNode(Settings settings, String node, int port) {
-        if (StringUtils.hasText(node) && port > 0) {
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, qualifyNode(node, port));
-        }
+    public static void pinNode(Settings settings, String address) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_PINNED_NODE, address);
     }
 
     public static boolean hasPinnedNode(Settings settings) {
@@ -103,11 +99,35 @@ public abstract class SettingsUtils {
         return node;
     }
 
-    public static void addDiscoveredNodes(Settings settings, List<String> discoveredNodes) {
+    public static void setJobTransportPoolingKey(Settings settings, String key) {
+        settings.setProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY, key);
+    }
+
+    public static void ensureJobTransportPoolingKey(Settings settings) {
+        if (!hasJobTransportPoolingKey(settings)) {
+            throw new EsHadoopIllegalStateException("Job has not been assigned a transport pooling key. Required `"+InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY+"` to be set but it was not assigned.");
+        }
+    }
+
+    public static boolean hasJobTransportPoolingKey(Settings settings) {
+        return StringUtils.hasText(settings.getProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY));
+    }
+
+    public static String getJobTransportPoolingKey(Settings settings) {
+        String jobKey = settings.getProperty(InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY);
+        Assert.hasText(jobKey, "Job has not been assigned a transport pooling key...");
+        return jobKey;
+    }
+
+    public static void addDiscoveredNodes(Settings settings, List<NodeInfo> discoveredNodes) {
         // clean-up and merge
         Set<String> nodes = new LinkedHashSet<String>();
         nodes.addAll(declaredNodes(settings));
-        nodes.addAll(discoveredNodes);
+        for (NodeInfo node : discoveredNodes) {
+            if (node.hasHttp()) {
+                nodes.add(node.getPublishAddress());
+            }
+        }
 
         setDiscoveredNodes(settings, nodes);
     }
@@ -162,32 +182,6 @@ public abstract class SettingsUtils {
         return IOUtils.deserializeFromBase64(settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS));
     }
 
-    public static boolean isEs1x(Settings settings) {
-        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        // assume not ES 1.0 by default
-        if (!StringUtils.hasText(version)) {
-            return false;
-        }
-
-        return version.startsWith("1.");
-    }
-
-    /**
-     * Whether the settings indicate a ES 2.x (which introduces breaking changes) or 1.x.
-     *
-     * @param settings
-     * @return
-     */
-    public static boolean isEs20(Settings settings) {
-        String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        // assume ES 2.0 by default
-        if (!StringUtils.hasText(version)) {
-            return true;
-        }
-
-        return version.startsWith("2.");
-    }
-    
     /**
      * Whether the settings indicate a ES 5.0.x (which introduces breaking changes) or otherwise.
      *
@@ -203,7 +197,6 @@ public abstract class SettingsUtils {
 
         return version.startsWith("5.0");
     }
-
 
     public static List<NumberedInclude> getFieldArrayFilterInclude(Settings settings) {
         String includeString = settings.getReadFieldAsArrayInclude();

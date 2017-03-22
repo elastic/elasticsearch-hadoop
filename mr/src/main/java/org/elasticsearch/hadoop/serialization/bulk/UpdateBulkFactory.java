@@ -23,26 +23,34 @@ import java.util.List;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
-import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 class UpdateBulkFactory extends AbstractBulkFactory {
 
     private final int RETRY_ON_FAILURE;
     private final String RETRY_HEADER;
-    private final String SCRIPT;
-    private final String SCRIPT_LANG;
 
-    private final boolean HAS_SCRIPT, HAS_LANG, HAS_PARAMS;
+    private final String SCRIPT_5X;
+    private final String SCRIPT_LANG_5X;
+
+    private final String SCRIPT_1X;
+    private final String SCRIPT_LANG_1X;
+
+    private final boolean HAS_SCRIPT, HAS_LANG;
     private final boolean UPSERT;
 
-    public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
-        this(settings, false, metaExtractor);
+    private final EsMajorVersion esMajorVersion;
+
+    public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
+        this(settings, false, metaExtractor, esMajorVersion);
     }
 
-    public UpdateBulkFactory(Settings settings, boolean upsert, MetadataExtractor metaExtractor) {
+    public UpdateBulkFactory(Settings settings, boolean upsert, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
         super(settings, metaExtractor);
+
+        this.esMajorVersion = esMajorVersion;
 
         UPSERT = upsert;
         RETRY_ON_FAILURE = settings.getUpdateRetryOnConflict();
@@ -50,10 +58,12 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         HAS_SCRIPT = StringUtils.hasText(settings.getUpdateScript());
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
-        HAS_PARAMS = StringUtils.hasText(settings.getUpdateScriptParams());
 
-        SCRIPT_LANG = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
-        SCRIPT = "\"script\":\"" + settings.getUpdateScript() + "\"";
+        SCRIPT_LANG_5X = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
+        SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScript() + "\"";
+
+        SCRIPT_LANG_1X = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
+        SCRIPT_1X = "\"script\":\"" + settings.getUpdateScript() + "\"";
     }
 
     @Override
@@ -77,6 +87,19 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         Object paramExtractor = getExtractorOrDynamicValue(Metadata.PARAMS, getParamExtractor());
 
+        if (esMajorVersion.after(EsMajorVersion.V_1_X)) {
+            writeStrictFormatting(list, paramExtractor);
+        } else {
+            writeLegacyFormatting(list, paramExtractor);
+        }
+    }
+
+    /**
+     * Script format meant for versions 1.x to 2.x. Required format for 1.x and below.
+     * @param list Consumer of snippets
+     * @param paramExtractor Extracts parameters from documents or constants
+     */
+    private void writeLegacyFormatting(List<Object> list, Object paramExtractor) {
         if (paramExtractor != null) {
             list.add("{\"params\":");
             list.add(paramExtractor);
@@ -88,14 +111,43 @@ class UpdateBulkFactory extends AbstractBulkFactory {
 
         if (HAS_SCRIPT) {
             if (HAS_LANG) {
-                list.add(SCRIPT_LANG);
+                list.add(SCRIPT_LANG_1X);
             }
-            list.add(SCRIPT);
+            list.add(SCRIPT_1X);
             if (UPSERT) {
                 list.add(",\"upsert\":");
             }
         }
         else {
+            if (UPSERT) {
+                list.add("\"doc_as_upsert\":true,");
+            }
+            list.add("\"doc\":");
+        }
+    }
+
+    /**
+     * Script format meant for versions 2.x to 5.x. Required format for 5.x and above.
+     * @param list Consumer of snippets
+     * @param paramExtractor Extracts parameters from documents or constants
+     */
+    private void writeStrictFormatting(List<Object> list, Object paramExtractor) {
+        if (HAS_SCRIPT) {
+            list.add(SCRIPT_5X);
+            if (HAS_LANG) {
+                list.add(SCRIPT_LANG_5X);
+            }
+            if (paramExtractor != null) {
+                list.add(",\"params\":");
+                list.add(paramExtractor);
+            }
+            list.add("}");
+            if (UPSERT) {
+                list.add(",\"upsert\":");
+            }
+        }
+        else {
+            list.add("{");
             if (UPSERT) {
                 list.add("\"doc_as_upsert\":true,");
             }

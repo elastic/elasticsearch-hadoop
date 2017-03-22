@@ -1,0 +1,36 @@
+{
+    "ok" : true,
+    "cluster_name" : "elasticsearch",
+    "nodes" : {
+        "fiR5azTbTDiX59m78yzOTw" : {
+            "name" : "Darkhawk",
+            "transport_address" : "192.168.1.50:9300",
+            "host" : "cerberus",
+            "version" : "5.0.0-alpha5",
+            "roles" : [],
+            "http" : {
+                "bound_address" : "0:0:0:0:0:0:0:0:9200",
+                "publish_address" : "192.168.1.50:9200",
+                "max_content_length" : "100mb",
+                "max_content_length_in_bytes" : 104857600
+            }
+        },
+        "L9DM79IvStq2RStogXR8Sg" : {
+            "name" : "Unseen",
+            "transport_address" : "192.168.1.50:9301",
+            "host" : "cerberus",
+            "version" : "5.0.0-alpha5",
+            "roles" : [
+                "master",
+                "data",
+                "ingest"
+            ],
+            "http" : {
+                "bound_address" : "0:0:0:0:0:0:0:0%0:9201",
+                "publish_address" : "192.168.1.50:9201",
+                "max_content_length" : "100mb",
+                "max_content_length_in_bytes" : 104857600
+            }
+        }
+    }
+}

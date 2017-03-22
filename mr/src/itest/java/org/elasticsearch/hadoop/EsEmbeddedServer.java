@@ -24,12 +24,14 @@ import java.util.Collection;
 import java.util.Properties;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.hadoop.ingest.common.IngestCommonPlugin;
 import org.elasticsearch.hadoop.script.GroovyPlugin;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.StringUtils.IpAndPort;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.internal.InternalSettingsPreparer;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.transport.Netty3Plugin;
 
 public class EsEmbeddedServer {
     private static class PluginConfigurableNode extends Node {
@@ -49,33 +51,36 @@ public class EsEmbeddedServer {
         props.setProperty("http.port", httpRange);
         props.setProperty("transport.tcp.port", transportRange);
         props.setProperty("cluster.name", "es.hadoop.test");
-        props.setProperty("node.local", "true");
-        //props.setProperty("es.index.store.type", "memory");
-        // props.setProperty("gateway.type", "none");
-        if (!hasSlave) {
+        props.setProperty("transport.type", "local");
+        props.setProperty("discovery.type", "local");
+        props.setProperty("http.type", "netty3");
+        // if (!hasSlave) {
             //props.setProperty("discovery.zen.ping.multicast", "false");
             //props.setProperty("discovery.zen.ping.multicast.enabled", "false");
-        }
+        //}
         //props.setProperty("script.disable_dynamic", "false");
         props.setProperty("script.inline", "true");
         //props.setProperty("script.indexed", "true");
 
-        props.setProperty("node.local", "false");
         // props.setProperty("node.client", "false");
         props.setProperty("cluster.name", clusterName);
+        props.setProperty("node.ingest", "true");
 
         Settings settings = Settings.builder().put(props).build();
-        Collection plugins = Arrays.asList(GroovyPlugin.class);
+        Collection plugins = Arrays.asList(GroovyPlugin.class, Netty3Plugin.class, IngestCommonPlugin.class);
         node = new PluginConfigurableNode(settings, plugins);
     }
 
     public void start() {
-        node.start();
-        // find out port
-        String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
-        String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
-
-        ipAndPort = StringUtils.parseIpAddress(value);
+        try {
+            node.start();
+            // find out port
+            String localNodeId = node.client().admin().cluster().prepareState().get().getState().getNodes().getLocalNodeId();
+            String value = node.client().admin().cluster().prepareNodesInfo(localNodeId).get().getNodes().iterator().next().getHttp().address().publishAddress().toString();
+            ipAndPort = StringUtils.parseIpAddress(value);
+        } catch (Exception e) {
+            throw new EsHadoopException("Encountered exception during embedded node startup", e);
+        }
     }
 
     public void stop() throws IOException {

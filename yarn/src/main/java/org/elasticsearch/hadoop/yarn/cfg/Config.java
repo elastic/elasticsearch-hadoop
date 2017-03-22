@@ -115,6 +115,14 @@ public class Config {
         return Integer.parseInt(cfg.getProperty("containers"));
     }
 
+    public String kerberosPrincipal() {
+        return cfg.getProperty("am.kerberos.principal", System.getProperty("user.name"));
+    }
+
+    public String kerberosKeytab() {
+        return cfg.getProperty("am.kerberos.keytab");
+    }
+
     public URL downloadURL() {
         String url = cfg.getProperty("download.es.full.url");
         url = (StringUtils.hasText(url) ? url : cfg.getProperty("download.es.url") + esZipName());

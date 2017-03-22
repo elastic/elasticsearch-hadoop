@@ -24,6 +24,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.BytesWritable;
 import org.elasticsearch.hadoop.mr.WritableValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 
@@ -77,7 +78,8 @@ public class WritableValueReaderTest extends AbstractValueReaderTest {
     }
 
     @Override
-    public void checkByteArray(Object typeFromJson, String encode) {
-        assertEquals(new Text(encode), typeFromJson);
-    }
+    public void checkByteArray(Object typeFromJson, String encode) { assertEquals(new Text(encode), typeFromJson); }
+
+    @Override
+    public void checkBinary(Object typeFromJson, byte[] encode) { assertEquals(new BytesWritable(encode), typeFromJson); }
 }

@@ -201,10 +201,14 @@ allprojects { project ->
         // makes eclipse classpath easier
         testCompile "org.elasticsearch:elasticsearch:$esVersion"
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
-        testRuntime "log4j:log4j:$log4jVersion"
+//        testRuntime "log4j:log4j:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-core:$log4jVersion"
+        testRuntime "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion"
         testRuntime "net.java.dev.jna:jna:4.2.2"
         //testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         testCompile "org.codehaus.groovy:groovy:$groovyVersion:indy"
+        testCompile "org.elasticsearch.plugin:transport-netty3-client:$esVersion"
         testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
         testRuntime "com.vividsolutions:jts:1.13"
         
@@ -381,7 +385,7 @@ allprojects { project ->
         ignoreFailures = true
         
         minHeapSize = "256m"
-        maxHeapSize = "768m"
+        maxHeapSize = "2g"
         if (!java8)
             jvmArgs '-XX:MaxPermSize=496m'
 
@@ -425,7 +429,8 @@ project(":elasticsearch-hadoop-mr") {
             testCompile "commons-io:commons-io:2.1"
         }
         
-        testCompile "io.netty:netty-all:4.0.23.Final"
+        testCompile "io.netty:netty-all:4.0.29.Final"
+        testCompile "org.elasticsearch:securemock:1.2"
     }
     
     def generatedResources = "$buildDir/generated-resources/main"
@@ -571,6 +576,9 @@ def baseSparkProject(target, sparkVersion) {
             jvmArgs = ['-XX:MaxPermSize=512m']
         }
         scalaCompileOptions.useAnt = false
+
+        sourceCompatibility = 1.6
+        targetCompatibility = 1.6
     }
     
     println "Using Scala $scalaMajorVersion [$scalaVersion]"
@@ -582,6 +590,10 @@ def baseSparkProject(target, sparkVersion) {
       }
       target.javadoc {
         destinationDir = file("$project.docsDir/javadoc-211")
+      }
+      target.integrationTest {
+        // update test target
+        testClassesDir = target.sourceSets.itest.output.classesDir
       }
     }
     
@@ -658,11 +670,21 @@ def baseSparkProject(target, sparkVersion) {
     }
 }
 
-project(":elasticsearch-spark") {
-    description = "Elasticsearch Spark (Spark 1.3-1.6)"
+project(":elasticsearch-spark-13") {
+    description = "Elasticsearch Spark (for Spark 1.3-1.6)"
 
     baseSparkProject(project, spark13Version)
-    
+
+    dependencies {
+        optional("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark13Version") {
+            exclude group: 'org.apache.hadoop'
+        }
+
+        itestCompile("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark13Version") {
+            exclude group: 'org.apache.hadoop'
+        }
+    }
+
     // deal with the messy conflicts out there
     configurations.all {
       resolutionStrategy {
@@ -676,6 +698,22 @@ project(":elasticsearch-spark") {
       }
       
       exclude group: "org.mortbay.jetty"
+    }
+}
+
+project(":elasticsearch-spark-20") {
+    description = "Elasticsearch Spark (for Spark 2.0)"
+
+    baseSparkProject(project, spark20Version)
+
+    dependencies {
+        optional("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark20Version") {
+            exclude group: 'org.apache.hadoop'
+        }
+
+        itestCompile("org.apache.spark:spark-streaming_$scalaMajorVersion:$spark20Version") {
+            exclude group: 'org.apache.hadoop'
+        }
     }
 }
 
@@ -701,8 +739,8 @@ project(":elasticsearch-storm") {
 configure(rootProject) {
     description = "Elasticsearch Hadoop"
     
-    // include Spark 1.3+ support in main jar
-    def eshModules = subprojects
+    // include Spark 2.0 support in main jar
+    def eshModules = subprojects - project(":elasticsearch-spark-13")
     
     // build root project dependencies
     // extract optional and provided dependencies
@@ -819,7 +857,7 @@ configure(rootProject) {
     
     task wrapper(type: Wrapper) {
         description = 'Generates gradlew[.bat] scripts'
-        gradleVersion = '2.12'
+        gradleVersion = '2.14.1'
     }
 }
 

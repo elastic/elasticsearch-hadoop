@@ -1,4 +1,4 @@
-# Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elastic/elasticsearch-hadoop.svg?branch=master)](https://travis-ci.org/elastic/elasticsearch-hadoop) [![Build Status](http://build-us-00.elastic.co/view/Hadoop/job/es-hadoop-quick/badge/icon)](http://build-us-00.elastic.co/view/Hadoop/job/es-hadoop-quick/)
+# Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elastic/elasticsearch-hadoop.svg?branch=master)](https://travis-ci.org/elastic/elasticsearch-hadoop)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.  
 Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
@@ -17,26 +17,14 @@ ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
 
 ## Installation
 
-### Stable Release (currently `2.3.2`)
+### Stable Release (currently `5.0.0`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>2.3.2</version>
-</dependency>
-```
-or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
-
-### Alpha Release (currently `5.0.0-alpha4`)
-Available through any Maven-compatible tool:
-
-```xml
-<dependency>
-  <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.0.0-alpha4</version>
+  <version>5.0.0</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -48,7 +36,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.0.0.BUILD-SNAPSHOT</version>
+  <version>5.0.1.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -281,7 +269,7 @@ To read data from ES, create a dedicated `RDD` and specify the query as an argum
 
 ```java
 import org.apache.spark.api.java.JavaSparkContext;   
-import org.elasticsearch.spark.rdd.java.api.JavaEsSpark; 
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
 
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf);   
@@ -301,7 +289,7 @@ DataFrame playlist = df.filter(df.col("category").equalTo("pikes").and(df.col("y
 
 Use `JavaEsSpark` to index any `RDD` to Elasticsearch:
 ```java
-import org.elasticsearch.spark.java.api.JavaEsSpark; 
+import org.elasticsearch.spark.rdd.api.java.JavaEsSpark; 
 
 SparkConf conf = ...
 JavaSparkContext jsc = new JavaSparkContext(conf); 
@@ -316,7 +304,7 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 #### Spark SQL
 
 ```java
-import org.elasticsearch.spark.sql.java.api.JavaEsSparkSQL;
+import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 
 DataFrame df = sqlContext.read.json("examples/people.json")
 JavaEsSparkSQL.saveToES(df, "spark/docs")

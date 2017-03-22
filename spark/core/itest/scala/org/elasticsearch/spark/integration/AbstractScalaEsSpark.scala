@@ -24,7 +24,7 @@ import java.{util => ju}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConversions.propertiesAsScalaMap
-
+import scala.collection.JavaConverters.asScalaBufferConverter
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
@@ -38,8 +38,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.RestUtils
-import org.elasticsearch.hadoop.util.TestSettings
-import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings, TestUtils}
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
 import org.elasticsearch.spark.rdd.Metadata.TTL
@@ -54,21 +53,26 @@ import org.elasticsearch.spark.sparkStringJsonRDDFunctions
 import org.hamcrest.Matchers.both
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.not
-import org.junit.AfterClass
+import org.junit.{AfterClass, Assume, BeforeClass, Test}
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
-import org.junit.BeforeClass
-import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
-import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.net.URI
 
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 object AbstractScalaEsScalaSpark {
-  @transient val conf = new SparkConf().set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setMaster("local").setAppName("estest")
+  @transient val conf = new SparkConf()
+              .setAppName("estest")
+              .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null
 
@@ -110,10 +114,18 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   val sc = AbstractScalaEsScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
 
+  private def readAsRDD(uri: URI) = {
+    // don't use the sc.read.json/textFile to avoid the whole Hadoop madness
+    val path = Paths.get(uri)
+    // because Windows
+    val lines = Files.readAllLines(path, StandardCharsets.ISO_8859_1).asScala
+    sc.parallelize(lines)
+  }
+  
   @Test
   def testBasicRead() {
-    val input = TestUtils.sampleArtistsDat()
-    val data = sc.textFile(input).cache();
+    val input = TestUtils.sampleArtistsDatUri()
+    val data = readAsRDD(input).cache();
 
     assertTrue(data.count > 300)
   }
@@ -272,6 +284,38 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   @Test
+  def testEsRDDIngest() {
+    try {
+      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
+      try {
+        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
+        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
+      } finally {
+        if (versionTestingClient != null) versionTestingClient.close()
+      }
+    }
+
+    val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
+    val prefix: String = "spark"
+    val pipeline: String = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}"
+    client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline))
+    client.close();
+
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
+
+    val target = wrapIndex("spark-test/scala-ingest-write")
+
+    val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> "spark-pipeline") + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
+
+    sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, ingestCfg)
+    assertTrue(RestUtils.exists(target))
+    assertThat(RestUtils.get(target + "/_search?"), containsString(""))
+    assertThat(RestUtils.get(target + "/_search?"), containsString("\"pipeTEST\":true"))
+  }
+
+
+  @Test
   def testEsMultiIndexRDDWrite() {
     val trip1 = Map("reason" -> "business", "airport" -> "SFO")
     val trip2 = Map("participants" -> 5, "airport" -> "OTP")
@@ -339,7 +383,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     val props = Map("es.write.operation" -> "upsert",
       "es.input.json" -> "true",
-      "es.mapping.id" -> "id"
+      "es.mapping.id" -> "id",
+      "es.update.script.lang" -> "groovy"
     )
 
     // Upsert a value that should only modify the first document. Modification will add an address entry.
@@ -462,7 +507,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = wrapIndex("spark-template-index/alias")
 
     val template = """
-      |{"template" : """".stripMargin + "*" + """",
+      |{"template" : """".stripMargin + "spark-template-*" + """",
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
@@ -480,11 +525,15 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       |}""".stripMargin
     RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
 
-    val rdd = sc.textFile(TestUtils.sampleArtistsJson())
+    val rdd = readAsRDD(TestUtils.sampleArtistsJsonUri())
     EsSpark.saveJsonToEs(rdd, target)
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)
     println(RestUtils.getMapping(target))
+
+    val erc = new ExtendedRestClient()
+    erc.delete("_template/" + wrapIndex("test_template"))
+    erc.close()
   }
 
   
@@ -523,7 +572,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       |}""".stripMargin
     RestUtils.postData("lost", createIndex.getBytes());
 
-    val rdd = sc.textFile("some.json")
+    val rdd = readAsRDD(getClass().getResource("some.json").toURI())
     EsSpark.saveJsonToEs(rdd, target, collection.mutable.Map(cfg.toSeq: _*) += (
       ES_MAPPING_ID -> "id"))
     val esRDD = EsSpark.esRDD(sc, target, cfg)

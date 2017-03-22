@@ -75,4 +75,38 @@ public class InitializationUtilsTest {
         set.setProperty(ES_NODES_DATA_ONLY, "true");
         validateSettings(set);
     }
+
+    @Test
+    public void testValidateIngestOnlyNodesWithDefaults() throws Exception {
+        Settings set = new TestSettings();
+        set.setProperty(ES_NODES_INGEST_ONLY, "true");
+        validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateIngestOnlyVsDataOnly() throws Exception {
+        Settings set = new TestSettings();
+        set.setProperty(ES_NODES_INGEST_ONLY, "true");
+        set.setProperty(ES_NODES_DATA_ONLY, "true");
+        validateSettings(set);
+    }
+
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateIngestOnlyVsClientOnly() throws Exception {
+        Settings set = new TestSettings();
+        set.setProperty(ES_NODES_INGEST_ONLY, "true");
+        set.setProperty(ES_NODES_CLIENT_ONLY, "true");
+        validateSettings(set);
+    }
+
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateAllRestrictionsBreak() throws Exception {
+        Settings set = new TestSettings();
+        set.setProperty(ES_NODES_CLIENT_ONLY, "true");
+        set.setProperty(ES_NODES_DATA_ONLY, "true");
+        set.setProperty(ES_NODES_INGEST_ONLY, "true");
+        validateSettings(set);
+    }
 }

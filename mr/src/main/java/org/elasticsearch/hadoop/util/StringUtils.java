@@ -18,6 +18,13 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
+import org.codehaus.jackson.io.JsonStringEncoder;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -30,13 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.commons.httpclient.URIException;
-import org.apache.commons.httpclient.util.URIUtil;
-import org.codehaus.jackson.io.JsonStringEncoder;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
-
 
 /**
  * Utility class around Strings. Used to remove dependency on other libraries that might (or not) be available at runtime.
@@ -45,13 +45,13 @@ public abstract class StringUtils {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
     public static final String EMPTY = "";
-    public static final String[] EMPTY_ARRAY = new String[0];
     public static final String DEFAULT_DELIMITER = ",";
     public static final String SLASH = "/";
     public static final String PATH_TOP = "..";
     public static final String PATH_CURRENT = ".";
     public static final String SOURCE_ROOT = "hits.hits._source.";
     public static final String FIELDS_ROOT = "hits.hits.fields.";
+    public static final String[] EMPTY_ARRAY = new String[0];
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
 

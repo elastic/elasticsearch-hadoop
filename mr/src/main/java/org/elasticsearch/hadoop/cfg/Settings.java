@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
@@ -39,6 +40,29 @@ import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
  * Holder class containing the various configuration bits used by ElasticSearch Hadoop. Handles internally the fall back to defaults when looking for undefined, optional settings.
  */
 public abstract class Settings {
+    /**
+     * Get the internal version or throw an {@link IllegalArgumentException} if not present
+     * @return The {@link EsMajorVersion} extracted from the properties
+     */
+    public EsMajorVersion getInternalVersionOrThrow() {
+        String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
+        if (version == null) {
+            throw new IllegalArgumentException("Elasticsearch version:[ " + InternalConfigurationOptions.INTERNAL_ES_VERSION + "] not present in configuration");
+        }
+        return EsMajorVersion.parse(version);
+    }
+
+    /**
+     * Get the internal version or {@link EsMajorVersion#LATEST} if not present
+     * @return The {@link EsMajorVersion} extracted from the properties or {@link EsMajorVersion#LATEST} if not present
+     */
+    public EsMajorVersion getInternalVersionOrLatest() {
+        String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
+        if (version == null) {
+            return EsMajorVersion.LATEST;
+        }
+        return EsMajorVersion.parse(version);
+    }
 
     public String getNodes() {
         return getProperty(ES_NODES, ES_NODES_DEFAULT);
@@ -60,8 +84,12 @@ public abstract class Settings {
     }
 
     public boolean getNodesDataOnly() {
-        // by default, if not set, return a value compatible with the WAN setting (see above)
-        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY), !getNodesWANOnly() && !getNodesClientOnly());
+        // by default, if not set, return a value compatible with the other settings
+        return Booleans.parseBoolean(getProperty(ES_NODES_DATA_ONLY), !getNodesWANOnly() && !getNodesClientOnly() && !getNodesIngestOnly());
+    }
+
+    public boolean getNodesIngestOnly() {
+        return Booleans.parseBoolean(getProperty(ES_NODES_INGEST_ONLY, ES_NODES_INGEST_ONLY_DEFAULT));
     }
 
     public boolean getNodesClientOnly() {
@@ -245,6 +273,8 @@ public abstract class Settings {
         return getProperty(ES_MAPPING_EXCLUDE, ES_MAPPING_EXCLUDE_DEFAULT);
     }
 
+    public String getIngestPipeline() { return getProperty(ES_INGEST_PIPELINE, ES_INGEST_PIPELINE_DEFAULT); }
+
     public int getUpdateRetryOnConflict() {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
     }
@@ -315,6 +345,10 @@ public abstract class Settings {
         return TimeValue.parseTimeValue(getProperty(ES_HEART_BEAT_LEAD, ES_HEART_BEAT_LEAD_DEFAULT));
     }
 
+    public TimeValue getTransportPoolingExpirationTimeout() {
+        return TimeValue.parseTimeValue(getProperty(ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT, ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT_DEFAULT));
+    }
+
     // SSL
     public boolean getNetworkSSLEnabled() {
         return Booleans.parseBoolean(getProperty(ES_NET_USE_SSL, ES_NET_USE_SSL_DEFAULT));
@@ -373,7 +407,7 @@ public abstract class Settings {
     }
 
     public boolean getNetworkHttpUseSystemProperties() {
-        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT));
+        return Booleans.parseBoolean(getProperty(ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS, ES_NET_PROXY_HTTP_USE_SYSTEM_PROPS_DEFAULT));
     }
 
     public String getNetworkProxyHttpsHost() {
@@ -423,6 +457,11 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_RESOLVE_HOST_NAME), !getNodesWANOnly());
     }
 
+    public Settings setInternalVersion(EsMajorVersion version) {
+        setProperty(INTERNAL_ES_VERSION, version.toString());
+        return this;
+    }
+
     public Settings setNodes(String hosts) {
         setProperty(ES_NODES, hosts);
         return this;
@@ -453,6 +492,11 @@ public abstract class Settings {
         return this;
     }
 
+    public Settings setMaxDocsPerPartition(int size) {
+        setProperty(ES_MAX_DOCS_PER_PARTITION, Integer.toString(size));
+        return this;
+    }
+
     protected String getResource() {
         return getProperty(ES_RESOURCE);
     }
@@ -469,6 +513,10 @@ public abstract class Settings {
         return getProperty(ES_QUERY);
     }
 
+    public int getMaxDocsPerPartition() {
+        return Integer.parseInt(getProperty(ES_MAX_DOCS_PER_PARTITION, Integer.toString(ES_DEFAULT_MAX_DOCS_PER_PARTITION)));
+    }
+
     public boolean getReadMetadata() {
         return Booleans.parseBoolean(getProperty(ES_READ_METADATA, ES_READ_METADATA_DEFAULT));
     }
@@ -483,6 +531,10 @@ public abstract class Settings {
 
     public boolean getReadMappingMissingFieldsIgnore() {
         return Booleans.parseBoolean(getProperty(ES_READ_UNMAPPED_FIELDS_IGNORE, ES_READ_UNMAPPED_FIELDS_IGNORE_DEFAULT));
+    }
+
+    public boolean getDataFrameWriteNullValues() {
+        return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
     }
 
     public abstract InputStream loadResource(String location);

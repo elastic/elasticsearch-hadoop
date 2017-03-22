@@ -1,6 +1,23 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.spark.rdd;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import org.apache.commons.logging.Log;
@@ -8,16 +25,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.SparkConf;
 import org.apache.spark.TaskContext;
 import org.apache.spark.util.TaskCompletionListener;
+import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 
 import scala.Function0;
-import scala.runtime.AbstractFunction0;
-import scala.runtime.BoxedUnit;
 
 abstract class CompatUtils {
-
-    private static final boolean SPARK_11_AVAILABLE = ObjectUtils.isClassPresent("org.apache.spark.util.TaskCompletionListener", SparkConf.class.getClassLoader());
 
     private static final Class<?> SCHEMA_RDD_LIKE_CLASS;
 
@@ -33,94 +47,75 @@ abstract class CompatUtils {
         // apply the warning when the class is loaded (to cover all access points)
 
         // check whether the correct es-hadoop is used with the correct Spark version
-        boolean isSpark13 = ObjectUtils.isClassPresent("org.apache.spark.sql.DataFrame", SparkConf.class.getClassLoader());
-        boolean isEshForSpark13 = !ObjectUtils.isClassPresent("org.elasticsearch.spark.sql.EsSchemaRDDWriter", CompatUtils.class.getClassLoader());
-
-        // XOR can be applied as well but != increases readability
-        if (isSpark13 != isEshForSpark13) {
-
-            // need SparkContext which requires context
-            // as such do another reflex dance
-
-            String sparkVersion = null;
-
-            // Spark 1.0 - 1.1: SparkContext$.MODULE$.SPARK_VERSION();
-            // Spark 1.2+     : package$.MODULE$.SPARK_VERSION();
-            Object target = org.apache.spark.SparkContext$.MODULE$;
-            Method sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
-
-            if (sparkVersionMethod == null) {
-                target = org.apache.spark.package$.MODULE$;
-                sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
-            }
-
-            if (sparkVersionMethod == null) {
-                sparkVersion = (isSpark13 ? "1.3+" : "1.0-1.2");
-            }
-            else {
-                sparkVersion = ReflectionUtils.<String> invoke(sparkVersionMethod, target);
-            }
-
-            LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").
-                warn(String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with Spark %s",
-                        (isEshForSpark13 ? "1.3 (or higher)" : "1.0-1.2"),
-                        sparkVersion
-                        ));
-        }
-
+        checkSparkLibraryCompatibility(false);
     }
 
-    private static abstract class Spark10TaskContext {
-        private static Field INTERRUPTED_FIELD;
+    static void checkSparkLibraryCompatibility(boolean throwOnIncompatible) {
+        // check whether the correct es-hadoop is used with the correct Spark version
+        boolean isSpark13Level = ObjectUtils.isClassPresent("org.apache.spark.sql.DataFrame", SparkConf.class.getClassLoader());
+        boolean isSpark20Level = ObjectUtils.isClassPresent("org.apache.spark.sql.streaming.StreamingQuery", SparkConf.class.getClassLoader());
 
-        static {
-            Field field = ReflectionUtils.findField(TaskContext.class, "interrupted");
-            ReflectionUtils.makeAccessible(field);
-            INTERRUPTED_FIELD = field;
+        CompatibilityLevel compatibilityLevel = ObjectUtils.instantiate("org.elasticsearch.spark.sql.SparkSQLCompatibilityLevel", CompatUtils.class.getClassLoader());
+
+        boolean isEshForSpark20 = "20".equals(compatibilityLevel.versionId());
+        String esSupportedSparkVersion = compatibilityLevel.versionDescription();
+
+        String errorMessage = null;
+
+        if (!(isSpark13Level || isSpark20Level)) {
+            String sparkVersion = getSparkVersionOr("1.0-1.2");
+            errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with unsupported Spark version %s",
+                    esSupportedSparkVersion, sparkVersion);
+        } else if (isSpark20Level != isEshForSpark20) { // XOR can be applied as well but != increases readability
+            String sparkVersion = getSparkVersionOr(isSpark13Level ? "1.3-1.6" : "2.0+");
+            errorMessage = String.format("Incorrect classpath detected; Elasticsearch Spark compiled for Spark %s but used with Spark %s",
+                    esSupportedSparkVersion, sparkVersion);
         }
 
-        static void addOnCompletition(TaskContext taskContext, final Function0<?> function) {
-            taskContext.addOnCompleteCallback(new AbstractFunction0() {
-                @Override
-                public BoxedUnit apply() {
-                    function.apply();
-                    return BoxedUnit.UNIT;
-                }
-            });
-
-        }
-
-        static boolean isInterrupted(TaskContext taskContext) {
-            return ReflectionUtils.getField(INTERRUPTED_FIELD, taskContext);
+        if (errorMessage != null) {
+            if (throwOnIncompatible) {
+                throw new EsHadoopIllegalStateException(errorMessage);
+            } else {
+                LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark").warn(errorMessage);
+            }
         }
     }
 
-    private static abstract class Spark11TaskContext {
-        static void addOnCompletition(TaskContext taskContext, final Function0<?> function) {
-            taskContext.addTaskCompletionListener(new TaskCompletionListener() {
-                @Override
-                public void onTaskCompletion(TaskContext context) {
-                    function.apply();
-                }
-            });
+    private static String getSparkVersionOr(String defaultValue) {
+        // need SparkContext which requires context
+        // as such do another reflex dance
+        String sparkVersion = null;
+
+        // Spark 1.0 - 1.1: SparkContext$.MODULE$.SPARK_VERSION();
+        // Spark 1.2+     : package$.MODULE$.SPARK_VERSION();
+        Object target = org.apache.spark.SparkContext$.MODULE$;
+        Method sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
+
+        if (sparkVersionMethod == null) {
+            target = org.apache.spark.package$.MODULE$;
+            sparkVersionMethod = ReflectionUtils.findMethod(target.getClass(), "SPARK_VERSION");
         }
 
-        static boolean isInterrupted(TaskContext taskContext) {
-            return taskContext.isInterrupted();
+        if (sparkVersionMethod != null) {
+            sparkVersion = ReflectionUtils.<String>invoke(sparkVersionMethod, target);
+        } else {
+            sparkVersion = defaultValue;
         }
+
+        return sparkVersion;
     }
 
-    static void addOnCompletition(TaskContext taskContext, Function0<?> function) {
-        if (SPARK_11_AVAILABLE) {
-            Spark11TaskContext.addOnCompletition(taskContext, function);
-        }
-        else {
-            Spark10TaskContext.addOnCompletition(taskContext, function);
-        }
+    static void addOnCompletition(TaskContext taskContext, final Function0<?> function) {
+        taskContext.addTaskCompletionListener(new TaskCompletionListener() {
+            @Override
+            public void onTaskCompletion(TaskContext context) {
+                function.apply();
+            }
+        });
     }
 
     static boolean isInterrupted(TaskContext taskContext) {
-        return (SPARK_11_AVAILABLE ? Spark11TaskContext.isInterrupted(taskContext) : Spark10TaskContext.isInterrupted(taskContext));
+        return taskContext.isInterrupted();
     }
 
     static void warnSchemaRDD(Object rdd, Log log) {

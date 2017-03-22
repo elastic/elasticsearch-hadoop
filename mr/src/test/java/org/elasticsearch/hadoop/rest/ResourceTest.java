@@ -53,15 +53,35 @@ public class ResourceTest {
         assertEquals("fo_o/ba_r", res.indexAndType());
     }
 
-    @Test(expected = EsHadoopIllegalArgumentException.class)
+    @Test
     public void testQueryUri() throws Exception {
-        Resource res = createResource("foo/bar/_search=?somequery");
+        Settings s = new TestSettings();
+        Resource res = createResource("foo/bar/_search=?somequery", s);
+        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("?somequery", s.getQuery());
+    }
+
+    @Test
+    public void testQueryUriWithParams() throws Exception {
+        Settings s = new TestSettings();
+        Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
+        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("?somequery&bla=bla", s.getQuery());
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testQueryUriConflict() throws Exception {
+        Settings s = new TestSettings();
+        s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
+        Resource res = createResource("foo/bar/_search=?somequery", s);
         assertEquals("foo/bar", res.indexAndType());
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
-    public void testQueryUriWithParams() throws Exception {
-        Resource res = createResource("foo/bar/_search=?somequery&bla=bla");
+    public void testQueryUriConflictWithParams() throws Exception {
+        Settings s = new TestSettings();
+        s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
+        Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
         assertEquals("foo/bar", res.indexAndType());
     }
 
@@ -91,8 +111,47 @@ public class ResourceTest {
         createResource("foo, bar/far");
     }
 
+    @Test
+    public void testBulkWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        Resource res = createResource("pipeline/test", settings);
+        assertEquals("pipeline/test", res.indexAndType());
+        assertEquals("pipeline/test/_mapping", res.mapping());
+        assertEquals("pipeline/_aliases", res.aliases());
+        assertEquals("pipeline/test/_bulk?pipeline=ingest-pipeline", res.bulk());
+        assertEquals("pipeline/_refresh", res.refresh());
+    }
+
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkWithBadIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest pipeline");
+        createResource("pipeline/test", settings);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkUpdateBreaksWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPDATE);
+        createResource("pipeline/test", settings);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testBulkUpsertBreaksWithIngestPipeline() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
+        settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPSERT);
+        createResource("pipeline/test", settings);
+    }
+
     private Resource createResource(String target) {
-        Settings s = new TestSettings();
+        return createResource(target, new TestSettings());
+    }
+
+    private Resource createResource(String target, Settings s) {
         s.setProperty(ConfigurationOptions.ES_RESOURCE, target);
         return new Resource(s, true);
     }

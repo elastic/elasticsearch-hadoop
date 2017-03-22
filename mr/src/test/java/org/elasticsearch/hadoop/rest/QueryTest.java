@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +38,6 @@ public class QueryTest {
     @Test
     public void testSimpleQuery() {
         cfg.setResourceRead("foo/bar");
-        cfg.setQuery("?q=name:bucket");
-        assertTrue(QueryBuilder.query(cfg).toString().contains("foo/bar"));
+        assertTrue(new SearchRequestBuilder(EsMajorVersion.V_5_X, true).indices("foo").types("bar").toString().contains("foo/bar"));
     }
 }

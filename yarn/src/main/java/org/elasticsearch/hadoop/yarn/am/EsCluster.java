@@ -19,6 +19,8 @@
 package org.elasticsearch.hadoop.yarn.am;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,6 +38,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
@@ -89,6 +92,7 @@ class EsCluster implements AutoCloseable {
         nmRpc.start();
 
         UserGroupInformation.setConfiguration(cfg);
+        attemptKeytabLogin();
 
         log.info(String.format("Allocating Elasticsearch cluster with %d nodes", appConfig.containersToAllocate()));
 
@@ -185,6 +189,25 @@ class EsCluster implements AutoCloseable {
                 throw new RuntimeException(e);
             }
             close();
+        }
+    }
+
+    private void attemptKeytabLogin() {
+        if (UserGroupInformation.isSecurityEnabled()) {
+            try {
+                String localhost = InetAddress.getLocalHost().getCanonicalHostName();
+                String keytabFilename = appConfig.kerberosKeytab();
+                if (keytabFilename == null || keytabFilename.length() == 0) {
+                    throw new EsYarnAmException("Security is enabled, but we could not find a configured keytab; Bailing out...");
+                }
+                String configuredPrincipal = appConfig.kerberosPrincipal();
+                String principal = SecurityUtil.getServerPrincipal(configuredPrincipal, localhost);
+                UserGroupInformation.loginUserFromKeytab(principal, keytabFilename);
+            } catch (UnknownHostException e) {
+                throw new EsYarnAmException("Could not read localhost information for server principal construction; Bailing out...", e);
+            } catch (IOException e) {
+                throw new EsYarnAmException("Could not log in.", e);
+            }
         }
     }
 

@@ -18,19 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -39,21 +26,36 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request.Method;
+import org.elasticsearch.hadoop.rest.query.QueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
-import org.elasticsearch.hadoop.serialization.dto.Node;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.DELETE;
 import static org.elasticsearch.hadoop.rest.Request.Method.GET;
@@ -70,10 +72,7 @@ public class RestClient implements Closeable, StatsAware {
     private final TimeValue scrollKeepAlive;
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
-
-    private final boolean isES1x;
-    private final boolean isES20;
-    private final boolean isES50;
+    final EsMajorVersion internalVersion;
 
     {
         mapper = new ObjectMapper();
@@ -104,30 +103,54 @@ public class RestClient implements Closeable, StatsAware {
         }
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
-
-        isES1x = SettingsUtils.isEs1x(settings);
-        isES20 = SettingsUtils.isEs20(settings);
-        isES50 = SettingsUtils.isEs50(settings);
+        // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
+        internalVersion = settings.getInternalVersionOrLatest();
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public List<String> discoverNodes() {
-        String endpoint = "_nodes/transport";
-        Map<String, Map> nodes = (Map<String, Map>) get(endpoint, "nodes");
+    public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
+        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
+        List<NodeInfo> nodes = new ArrayList<NodeInfo>();
 
-        List<String> hosts = new ArrayList<String>(nodes.size());
-
-        for (Map value : nodes.values()) {
-            String inet = (String) value.get("http_address");
-            if (StringUtils.hasText(inet)) {
-                hosts.add(StringUtils.parseIpAddress(inet).toString());
+        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
+            NodeInfo node = new NodeInfo(entry.getKey(), entry.getValue());
+            if (node.hasHttp() && (!clientNodeOnly || node.isClient())) {
+                nodes.add(node);
             }
         }
-
-        return hosts;
+        return nodes;
     }
 
-    private <T> T get(String q, String string) {
+    public List<NodeInfo> getHttpClientNodes() {
+        return getHttpNodes(true);
+    }
+
+    public List<NodeInfo> getHttpDataNodes() {
+        List<NodeInfo> nodes = getHttpNodes(false);
+
+        Iterator<NodeInfo> it = nodes.iterator();
+        while (it.hasNext()) {
+            NodeInfo node = it.next();
+            if (!node.isData()) {
+                it.remove();
+            }
+        }
+        return nodes;
+    }
+
+    public List<NodeInfo> getHttpIngestNodes() {
+        List<NodeInfo> nodes = getHttpNodes(false);
+
+        Iterator<NodeInfo> it = nodes.iterator();
+        while (it.hasNext()) {
+            NodeInfo nodeInfo = it.next();
+            if (!nodeInfo.isIngest()) {
+                it.remove();
+            }
+        }
+        return nodes;
+    }
+
+    public <T> T get(String q, String string) {
         return parseContent(execute(GET, q), string);
     }
 
@@ -290,7 +313,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     private String prettify(String error) {
-        if (isES20) {
+        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
             return error;
         }
 
@@ -300,7 +323,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     private String prettify(String error, ByteSequence body) {
-        if (isES20) {
+        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
             return error;
         }
         String message = ErrorUtils.extractJsonParse(error, body);
@@ -336,45 +359,6 @@ public class RestClient implements Closeable, StatsAware {
         return shardsJson;
     }
 
-    public Map<String, Node> getHttpNodes(boolean allowNonHttp) {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        Map<String, Node> nodes = new LinkedHashMap<String, Node>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (allowNonHttp || (node.hasHttp() && !node.isClient())) {
-                nodes.put(entry.getKey(), node);
-            }
-        }
-        return nodes;
-    }
-
-    public List<String> getHttpClientNodes() {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        List<String> nodes = new ArrayList<String>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.isClient() && node.hasHttp()) {
-                nodes.add(node.getInet());
-            }
-        }
-        return nodes;
-    }
-
-    public List<String> getHttpDataNodes() {
-        Map<String, Map<String, Object>> nodesData = get("_nodes/http", "nodes");
-        List<String> nodes = new ArrayList<String>();
-
-        for (Entry<String, Map<String, Object>> entry : nodesData.entrySet()) {
-            Node node = new Node(entry.getKey(), entry.getValue());
-            if (node.isData() && node.hasHttp()) {
-                nodes.add(node.getInet());
-            }
-        }
-        return nodes;
-    }
-
     @SuppressWarnings("unchecked")
     public Map<String, Object> getMapping(String query) {
         return (Map<String, Object>) get(query, null);
@@ -396,7 +380,7 @@ public class RestClient implements Closeable, StatsAware {
         sb.setLength(sb.length() - 1);
         sb.append("],\n\"query\":{");
 
-        if (!isES1x) {
+        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
             sb.append("\"bool\": { \"must\":[");
         }
         else {
@@ -410,7 +394,7 @@ public class RestClient implements Closeable, StatsAware {
         sb.setLength(sb.length() - 1);
         sb.append("\n]}");
 
-        if (!isES20) {
+        if (internalVersion.on(EsMajorVersion.V_1_X)) {
             sb.append("}");
         }
 
@@ -559,21 +543,54 @@ public class RestClient implements Closeable, StatsAware {
         return false;
     }
 
-    public long count(String indexAndType, ByteSequence query) {
-        return isES50 ? countInES5X(indexAndType, query) : countBeforeES5X(indexAndType, query);
+    public long count(String indexAndType, QueryBuilder query) {
+        return count(indexAndType, null, query);
     }
 
-    private long countBeforeES5X(String indexAndType, ByteSequence query) {
-        Response response = execute(GET, indexAndType + "/_count", query);
+    public long count(String indexAndType, String shardId, QueryBuilder query) {
+        return internalVersion.onOrAfter(EsMajorVersion.V_5_X) ?
+                countInES5X(indexAndType, shardId, query) : countBeforeES5X(indexAndType, shardId, query);
+    }
+
+    private long countBeforeES5X(String indexAndType, String shardId, QueryBuilder query) {
+        StringBuilder uri = new StringBuilder(indexAndType);
+        uri.append("/_count");
+        if (StringUtils.hasLength(shardId)) {
+            uri.append("?preference=_shards:");
+            uri.append(shardId);
+        }
+        Response response = execute(GET, uri.toString(), searchRequest(query));
         Number count = (Number) parseContent(response.body(), "count");
         return (count != null ? count.longValue() : -1);
     }
 
-    private long countInES5X(String indexAndType, ByteSequence query) {
-        Response response = execute(GET, indexAndType + "/_search?size=0", query);
+    private long countInES5X(String indexAndType, String shardId, QueryBuilder query) {
+        StringBuilder uri = new StringBuilder(indexAndType);
+        uri.append("/_search?size=0");
+        if (StringUtils.hasLength(shardId)) {
+            uri.append("&preference=_shards:");
+            uri.append(shardId);
+        }
+        Response response = execute(GET, uri.toString(), searchRequest(query));
         Map<String, Object> content = parseContent(response.body(), "hits");
         Number count = (Number) content.get("total");
         return (count != null ? count.longValue() : -1);
+    }
+
+    static BytesArray searchRequest(QueryBuilder query) {
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
+        try {
+            generator.writeBeginObject();
+            generator.writeFieldName("query");
+            generator.writeBeginObject();
+            query.toJson(generator);
+            generator.writeEndObject();
+            generator.writeEndObject();
+        } finally {
+            generator.close();
+        }
+        return out.bytes();
     }
 
     public boolean isAlias(String query) {
@@ -588,12 +605,12 @@ public class RestClient implements Closeable, StatsAware {
         execute(PUT, mapping, new BytesArray(bytes));
     }
 
-    public String esVersion() {
-        Map<String, String> version = get("", "version");
-        if (version == null || !StringUtils.hasText(version.get("number"))) {
-            return "Unknown";
+    public EsMajorVersion remoteEsVersion() {
+        Map<String, String> result = get("", "version");
+        if (result == null || !StringUtils.hasText(result.get("number"))) {
+            throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch version.");
         }
-        return version.get("number");
+        return EsMajorVersion.parse(result.get("number"));
     }
 
     public boolean health(String index, HEALTH health, TimeValue timeout) {

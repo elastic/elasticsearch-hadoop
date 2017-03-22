@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
@@ -33,12 +31,17 @@ import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class InitializationUtils {
 
@@ -51,24 +54,24 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static boolean discoverNodesIfNeeded(Settings settings, Log log) {
+    public static List<NodeInfo> discoverNodesIfNeeded(Settings settings, Log log) {
         if (settings.getNodesDiscovery()) {
             RestClient bootstrap = new RestClient(settings);
 
             try {
-                List<String> discoveredNodes = bootstrap.discoverNodes();
+                List<NodeInfo> discoveredNodes = bootstrap.getHttpNodes(false);
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("Nodes discovery enabled - found %s", discoveredNodes));
                 }
 
                 SettingsUtils.addDiscoveredNodes(settings, discoveredNodes);
+                return discoveredNodes;
             } finally {
                 bootstrap.close();
             }
-            return true;
         }
 
-        return false;
+        return null;
     }
 
     public static void filterNonClientNodesIfNeeded(Settings settings, Log log) {
@@ -79,28 +82,30 @@ public abstract class InitializationUtils {
         RestClient bootstrap = new RestClient(settings);
         try {
             String message = "Client-only routing specified but no client nodes with HTTP-enabled available";
-            List<String> clientNodes = bootstrap.getHttpClientNodes();
+            List<NodeInfo> clientNodes = bootstrap.getHttpClientNodes();
             if (clientNodes.isEmpty()) {
                 throw new EsHadoopIllegalArgumentException(message);
             }
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found client nodes %s", clientNodes));
             }
-
+            List<String> toRetain = new ArrayList<String>(clientNodes.size());
+            for (NodeInfo node : clientNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
             List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
             // remove non-client nodes
-            ddNodes.retainAll(clientNodes);
+            ddNodes.retainAll(toRetain);
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Filtered discovered only nodes %s to client-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
             }
 
             if (ddNodes.isEmpty()) {
-
                 if (settings.getNodesDiscovery()) {
                     message += String.format("; looks like the client nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
                 }
                 else {
-                    message += String.format("; node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
                 }
                 throw new EsHadoopIllegalArgumentException(message);
             }
@@ -112,24 +117,27 @@ public abstract class InitializationUtils {
     }
 
     public static void filterNonDataNodesIfNeeded(Settings settings, Log log) {
-        if (!settings.getNodesDataOnly() || settings.getNodesClientOnly()) {
+        if (!settings.getNodesDataOnly()) {
             return;
         }
 
         RestClient bootstrap = new RestClient(settings);
         try  {
             String message = "No data nodes with HTTP-enabled available";
-            List<String> dataNodes = bootstrap.getHttpDataNodes();
+            List<NodeInfo> dataNodes = bootstrap.getHttpDataNodes();
             if (dataNodes.isEmpty()) {
                 throw new EsHadoopIllegalArgumentException(message);
             }
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Found data nodes %s", dataNodes));
             }
-
+            List<String> toRetain = new ArrayList<String>(dataNodes.size());
+            for (NodeInfo node : dataNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
             List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
             // remove non-data nodes
-            ddNodes.retainAll(dataNodes);
+            ddNodes.retainAll(toRetain);
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Filtered discovered only nodes %s to data-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
             }
@@ -139,12 +147,54 @@ public abstract class InitializationUtils {
                     message += String.format("; looks like the data nodes discovered have been removed; is the cluster in a stable state? %s", dataNodes);
                 }
                 else {
-                    message += String.format("; node discovery is disabled and none of nodes specified fits the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
                 }
                 throw new EsHadoopIllegalArgumentException(message);
             }
 
-            SettingsUtils.setDiscoveredNodes(settings, dataNodes);
+            SettingsUtils.setDiscoveredNodes(settings, ddNodes);
+        } finally {
+            bootstrap.close();
+        }
+    }
+
+    public static void filterNonIngestNodesIfNeeded(Settings settings, Log log) {
+        if (!settings.getNodesIngestOnly()) {
+            return;
+        }
+
+        RestClient bootstrap = new RestClient(settings);
+        try {
+            String message = "Ingest-only routing specified but no ingest nodes with HTTP-enabled available";
+            List<NodeInfo> clientNodes = bootstrap.getHttpIngestNodes();
+            if (clientNodes.isEmpty()) {
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Found ingest nodes %s", clientNodes));
+            }
+            List<String> toRetain = new ArrayList<String>(clientNodes.size());
+            for (NodeInfo node : clientNodes) {
+                toRetain.add(node.getPublishAddress());
+            }
+            List<String> ddNodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
+            // remove non-client nodes
+            ddNodes.retainAll(toRetain);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Filtered discovered only nodes %s to ingest-only %s", SettingsUtils.discoveredOrDeclaredNodes(settings), ddNodes));
+            }
+
+            if (ddNodes.isEmpty()) {
+                if (settings.getNodesDiscovery()) {
+                    message += String.format("; looks like the ingest nodes discovered have been removed; is the cluster in a stable state? %s", clientNodes);
+                }
+                else {
+                    message += String.format("; node discovery is disabled and none of nodes specified fit the criterion %s", SettingsUtils.discoveredOrDeclaredNodes(settings));
+                }
+                throw new EsHadoopIllegalArgumentException(message);
+            }
+
+            SettingsUtils.setDiscoveredNodes(settings, ddNodes);
         } finally {
             bootstrap.close();
         }
@@ -156,10 +206,16 @@ public abstract class InitializationUtils {
             Assert.isTrue(!settings.getNodesDiscovery(), "Discovery cannot be enabled when running in WAN mode");
             Assert.isTrue(!settings.getNodesClientOnly(), "Client-only nodes cannot be enabled when running in WAN mode");
             Assert.isTrue(!settings.getNodesDataOnly(), "Data-only nodes cannot be enabled when running in WAN mode");
+            Assert.isTrue(!settings.getNodesIngestOnly(), "Ingest-only nodes cannot be enabled when running in WAN mode");
         }
 
-        // pick between data or client only nodes
-        Assert.isTrue(!(settings.getNodesClientOnly() && settings.getNodesDataOnly()), "Use either client-only or data-only nodes but not both");
+        // pick between data or client or ingest only nodes
+        boolean alreadyRestricted = false;
+        boolean[] restrictions = {settings.getNodesClientOnly(), settings.getNodesDataOnly(), settings.getNodesIngestOnly()};
+        for (boolean restriction : restrictions) {
+            Assert.isTrue(!(alreadyRestricted && restriction), "Use either client-only or data-only or ingest-only nodes but not a combination");
+            alreadyRestricted = alreadyRestricted || restriction;
+        }
 
         // field inclusion/exclusion + input as json does not mix and the user should be informed.
         if (settings.getInputAsJson()) {
@@ -168,29 +224,24 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static String discoverEsVersion(Settings settings, Log log) {
+    public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
         if (StringUtils.hasText(version)) {
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Elasticsearch version [%s] already present in configuration; skipping discovery", version));
             }
 
-            return version;
+            return EsMajorVersion.parse(version);
         }
 
         RestClient bootstrap = new RestClient(settings);
         // first get ES version
         try {
-            String esVersion = bootstrap.esVersion();
+            EsMajorVersion esVersion = bootstrap.remoteEsVersion();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
             }
-            // validate version (make sure it's running against ES 1.x, 2.x or 5.x)
-
-            if (!(esVersion.startsWith("1.") || esVersion.startsWith("2.") || esVersion.startsWith("5.0."))) {
-                throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version " + esVersion);
-            }
-            settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, esVersion);
+            settings.setInternalVersion(esVersion);
             return esVersion;
         } catch (EsHadoopException ex) {
             throw new EsHadoopIllegalArgumentException(String.format("Cannot detect ES version - "
@@ -202,20 +253,28 @@ public abstract class InitializationUtils {
     }
 
     public static void checkIndexExistence(RestRepository client) {
-        checkIndexExistence(client.getSettings(), client);
+        if (!client.getSettings().getIndexAutoCreate()) {
+            doCheckIndexExistence(client.getSettings(), client);
+        }
     }
 
-    public static void checkIndexExistence(Settings settings, RestRepository client) {
-        // check index existence
+    public static void checkIndexExistence(Settings settings) {
+        // Only open a connection and check if autocreate is disabled
         if (!settings.getIndexAutoCreate()) {
-            if (client == null) {
-                client = new RestRepository(settings);
+            RestRepository repository = new RestRepository(settings);
+            try {
+                doCheckIndexExistence(settings, repository);
+            } finally {
+                repository.close();
             }
-            if (!client.indexExists(false)) {
-                client.close();
-                throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
-                        settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
-            }
+        }
+    }
+
+    private static void doCheckIndexExistence(Settings settings, RestRepository client) {
+        // check index existence
+        if (!client.indexExists(false)) {
+            throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
+                    settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
         }
     }
 

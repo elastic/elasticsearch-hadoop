@@ -162,6 +162,9 @@ added[2.1]
 Whether the output from the connector should be in JSON format or not (the default). When enabled, the documents are returned in raw JSON format (as returned
 from {es}). Please see the appropriate section of each integration for more details about using JSON directly.
 
+added[5.0.0]
+`es.ingest.pipeline` (default none)::
+The name of an existing {es} Ingest pipeline that should be targeted when indexing or creating documents. Only usable when doing `index` and `create` operations; Incompatible with `update` or `upsert` operations.
 
 [float]
 [[cfg-mapping]]
@@ -358,6 +361,13 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
 ----
 
 [float]
+==== Input
+
+added[5.0.0]
+`es.input.max.docs.per.partition` (default 100000)::
+When reading from an {es} cluster that supports scroll slicing ({es} v5.0.0 and above), this parameter advises the connector on what the maximum number of documents per input partition should be. The connector will sample and estimate the number of documents on each shard to be read and divides each shard into input slices using the value supplied by this property. This property is ignored if you are reading from an {es} cluster that does not support scroll slicing ({es} any version below v5.0.0).
+
+[float]
 ==== Network
 
 `es.nodes.discovery` (default true)::
@@ -370,6 +380,10 @@ disables `es.nodes.data.only` (since a client node is a non-data node).
 added[2.1.2]
 `es.nodes.data.only` (default true)::
 Whether to use {es} {ref}/modules-node.html[data nodes] only. When enabled, {eh} will route _all_ its requests (after nodes discovery, if enabled) through the _data_ nodes within the cluster. The purpose of this configuration setting is to avoid overwhelming non-data nodes as these tend to be "smaller" nodes. This is enabled by default.
+
+added[5.0.0]
+`es.nodes.ingest.only` (default false)::
+Whether to use {es} {ref}/modules-node.html[ingest nodes] only. When enabled, {eh} will route _all_ of its requests (after nodes discovery, if enabled) through the _ingest_ nodes within the cluster. The purpose of this configuration setting is to avoid incurring the cost of forwarding data meant for a pipeline from non-ingest nodes; Really only useful when writing data to an Ingest Pipeline (see `es.ingest.pipeline` above).
 
 added[2.2]
 `es.nodes.wan.only` (default false)::

@@ -10,9 +10,9 @@
 :ey:	Elasticsearch on YARN
 :ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/2.0
 :description: Reference documentation of {eh}
-:ver:	5.0.0-alpha4
-:ver-d: 5.0.0.BUILD-SNAPSHOT
-:es-v:	5.0.0-alpha4
+:ver:	5.0.0
+:ver-d: 5.0.1.BUILD-SNAPSHOT
+:es-v:	5.0.0
 :sp-v:	1.6.2
 :st-v:	1.0.1
 :pg-v:	0.15.0
@@ -29,7 +29,7 @@
 
 {ey}:: run {es} on top of YARN - see <<es-yarn>>
 
-repository-hdfs:: use HDFS as a repository back-end; that is storage for doing snapshot/restore from/to {es}. For more information refer to its https://github.com/elasticsearch/elasticsearch-hadoop/tree/master/repository-hdfs[home page]
+repository-hdfs:: use HDFS as a back-end repository for doing snapshot/restore from/to {es}. For more information, refer to its https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html[home page]
 
 {eh} proper:: interact with {es} from within a Hadoop environment. If you are using {mr}, Cascading, Hive, Pig, {sp} or {st}, this project is for you.
 

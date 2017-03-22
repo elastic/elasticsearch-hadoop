@@ -23,41 +23,43 @@ import java.io.Closeable;
 
 public interface Generator extends Closeable {
 
-    void writeBeginArray();
+    Generator writeBeginArray();
 
-    void writeEndArray();
+    Generator writeEndArray();
 
-    void writeBeginObject();
+    Generator writeBeginObject();
 
-    void writeEndObject();
+    Generator writeEndObject();
 
-    void writeFieldName(String name);
+    Generator writeFieldName(String name);
 
-    void writeString(String text);
+    Generator writeString(String text);
 
-    void writeUTF8String(byte[] text, int offset, int len);
+    Generator writeUTF8String(byte[] text, int offset, int len);
 
-    void writeUTF8String(byte[] text);
+    Generator writeUTF8String(byte[] text);
 
-    void writeBinary(byte[] data, int offset, int len);
+    Generator writeBinary(byte[] data, int offset, int len);
 
-    void writeBinary(byte[] data);
+    Generator writeBinary(byte[] data);
 
-    void writeNumber(short s);
+    Generator writeNumber(short s);
 
-    void writeNumber(byte b);
+    Generator writeNumber(byte b);
 
-    void writeNumber(int i);
+    Generator writeNumber(int i);
 
-    void writeNumber(long l);
+    Generator writeNumber(long l);
 
-    void writeNumber(double d);
+    Generator writeNumber(double d);
 
-    void writeNumber(float f);
+    Generator writeNumber(float f);
 
-    void writeBoolean(boolean b);
+    Generator writeBoolean(boolean b);
 
-    void writeNull();
+    Generator writeNull();
+
+    Generator writeRaw(String value);
 
     void flush();
 

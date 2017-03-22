@@ -23,7 +23,7 @@ java version "1.8.0_45"
 [[requirements-es]]
 === {es}
 
-version *1.X* or higher, though we *highly* recommend using the latest Elasticsearch (currently {es-v}) is needed to run {es}. Using a lower version is not possible as {eh} uses new features added in 1.X for distributed, parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
+We *highly* recommend using the latest Elasticsearch (currently {es-v}), but {eh} is also backwards compatible with the *1.X* and *2.X* versions of {es}. {es} versions lower than 1.X are not supported as {eh} uses new features added in 1.X for distributed parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
 
 The {es} version is shown in its folder name:
 
@@ -33,7 +33,7 @@ $ ls
 elasticsearch-{es-v}
 ----
 
-If {es} is running (locally or remotely), one can find out through REST its version:
+If {es} is running (locally or remotely), one can find out its version through REST:
 
 ["source","js",subs="attributes"]
 ----
@@ -188,9 +188,12 @@ If planning on using Spark SQL make sure to download the appropriate jar. While 
 it is _not_ part of Spark core but rather has its own jar. Thus, when constructing the classpath make sure to
 include +spark-sql-<scala-version>.jar+ or the Spark _assembly_ : +spark-assembly-{sp-v}-<distro>.jar+
 
-{eh} supports Spark SQL {sp-v} through the main jar. Since Spark SQL 1.3 is _not_
+{eh} supports Spark SQL 1.3 though 1.6 and also Spark SQL 2.0. Since Spark 2.x is not compatible with Spark 1.x,
+two different artifacts are provided by {eh}.
+{eh} supports Spark SQL {sp-v} through its main jar. Since Spark SQL 2.0 is _not_
 https://spark.apache.org/docs/latest/sql-programming-guide.html#upgrading-from-spark-sql-10-12-to-13[backwards compatible]
-with Spark SQL 1.2 or 1.1, {eh} provides a dedicated jar. See the Spark chapter for more information.
+with Spark SQL 1.6 or lower, {eh} provides a dedicated jar. See the Spark chapter for more information.
+Note that Spark 1.0-1.2 are no longer supported (again due to backwards incompatible changes in Spark).
 
 [[requirements-storm]]
 === Apache Storm

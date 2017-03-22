@@ -18,25 +18,12 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Random;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
@@ -46,8 +33,8 @@ import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
@@ -55,12 +42,23 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
 /**
  * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
@@ -99,7 +97,6 @@ public class RestRepository implements Closeable, StatsAware {
     private final Settings settings;
     private final Stats stats = new Stats();
 
-
     public RestRepository(Settings settings) {
         this.settings = settings;
 
@@ -127,7 +124,7 @@ public class RestRepository implements Closeable, StatsAware {
             bufferEntriesThreshold = settings.getBatchSizeInEntries();
             requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
 
-            this.command = BulkCommands.create(settings, metaExtractor);
+            this.command = BulkCommands.create(settings, metaExtractor, client.internalVersion);
         }
     }
 
@@ -293,9 +290,9 @@ public class RestRepository implements Closeable, StatsAware {
         return client;
     }
 
-    public Object[] getReadTargetShards(boolean clientNodesOnly) {
+    public List<List<Map<String, Object>>> getReadTargetShards() {
         for (int retries = 0; retries < 3; retries++) {
-            Object[] result = doGetReadTargetShards(clientNodesOnly);
+            List<List<Map<String, Object>>> result = doGetReadTargetShards();
             if (result != null) {
                 return result;
             }
@@ -303,109 +300,13 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Object[] doGetReadTargetShards(boolean clientNodesOnly) {
-        List<List<Map<String, Object>>> info = client.targetShards(resourceR.index(), SettingsUtils.getFixedRouting(settings));
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-
-        boolean overlappingShards = false;
-        Object[] result = new Object[2];
-        // false by default
-        result[0] = overlappingShards;
-        result[1] = shards;
-
-        Map<String, Node> httpNodes = Collections.emptyMap();
-
-        if (settings.getNodesWANOnly()) {
-            httpNodes = new LinkedHashMap<String, Node>();
-            List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
-            Random rnd = new Random();
-
-            for (List<Map<String, Object>> shardGroup : info) {
-                for (Map<String, Object> shardData : shardGroup) {
-                    Shard shard = new Shard(shardData);
-                    if (shard.getState().isStarted()) {
-                        int nextInt = rnd.nextInt(nodes.size());
-                        String nodeAddress = nodes.get(nextInt);
-                        // create a fake node
-                        Node node = new Node(shard.getNode(), "wan-only-node-" + nextInt, StringUtils.parseIpAddress(nodeAddress));
-                        httpNodes.put(shard.getNode(), node);
-                    }
-                }
-            }
-        }
-
-        else {
-            // if client-nodes routing is used, allow non-http clients
-            httpNodes = client.getHttpNodes(clientNodesOnly);
-        }
-
-        if (httpNodes.isEmpty()) {
-            String msg = "No HTTP-enabled data nodes found";
-            if (!settings.getNodesClientOnly()) {
-                msg += String.format("; if you are using client-only nodes make sure to configure es-hadoop as such through [%s] property", ConfigurationOptions.ES_NODES_CLIENT_ONLY);
-            }
-            throw new EsHadoopIllegalStateException(msg);
-        }
-
-
-        // check if multiple indices are hit
-        if (!isReadIndexConcrete()) {
-            String message = String.format("Read resource [%s] includes multiple indices or/and aliases; to avoid duplicate results (caused by shard overlapping), parallelism ", resourceR);
-
-            Map<Shard, Node> combination = ShardSorter.find(info, httpNodes, log);
-            if (combination.isEmpty()) {
-                message += "is minimized";
-                log.warn(message);
-                overlappingShards = true;
-                result[0] = overlappingShards;
-            }
-            else {
-                int initialParallelism = 0;
-                for (List<Map<String, Object>> shardGroup : info) {
-                    initialParallelism += shardGroup.size();
-                }
-
-                if (initialParallelism > combination.size()) {
-                    message += String.format("is reduced from %s to %s", initialParallelism, combination.size());
-                    log.warn(message);
-                }
-                result[0] = overlappingShards;
-                result[1] = combination;
-
-                return result;
-            }
-        }
-
-        Set<Integer> seenShards = new LinkedHashSet<Integer>();
-
-        for (List<Map<String, Object>> shardGroup : info) {
-            for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
-                if (shard.getState().isStarted()) {
-                    Node node = httpNodes.get(shard.getNode());
-                    if (node == null) {
-                        log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, httpNodes, info));
-                        return null;
-                    }
-                    // when dealing with overlapping shards, simply keep a shard for each id/name (0, 1, ...)
-                    if (overlappingShards) {
-                        if (seenShards.add(shard.getName())) {
-                            shards.put(shard, node);
-                        }
-                    }
-                    else {
-                        shards.put(shard, node);
-                        break;
-                    }
-                }
-            }
-        }
-        return result;
+    protected List<List<Map<String, Object>>> doGetReadTargetShards() {
+        return client.targetShards(resourceR.index(), SettingsUtils.getFixedRouting(settings));
     }
 
-    public Map<Shard, Node> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
+    public Map<ShardInfo, NodeInfo> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
         for (int retries = 0; retries < 3; retries++) {
-            Map<Shard, Node> map = doGetWriteTargetPrimaryShards(clientNodesOnly);
+            Map<ShardInfo, NodeInfo> map = doGetWriteTargetPrimaryShards(clientNodesOnly);
             if (map != null) {
                 return map;
             }
@@ -413,17 +314,21 @@ public class RestRepository implements Closeable, StatsAware {
         throw new EsHadoopIllegalStateException("Cluster state volatile; cannot find node backing shards - please check whether your cluster is stable");
     }
 
-    protected Map<Shard, Node> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
+    protected Map<ShardInfo, NodeInfo> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
         List<List<Map<String, Object>>> info = client.targetShards(resourceW.index(), SettingsUtils.getFixedRouting(settings));
-        Map<Shard, Node> shards = new LinkedHashMap<Shard, Node>();
-        Map<String, Node> nodes = client.getHttpNodes(clientNodesOnly);
+        Map<ShardInfo, NodeInfo> shards = new LinkedHashMap<ShardInfo, NodeInfo>();
+        List<NodeInfo> nodes = client.getHttpNodes(clientNodesOnly);
+        Map<String, NodeInfo> nodeMap = new HashMap<String, NodeInfo>(nodes.size());
+        for (NodeInfo node : nodes) {
+            nodeMap.put(node.getId(), node);
+        }
 
         for (List<Map<String, Object>> shardGroup : info) {
             // consider only primary shards
             for (Map<String, Object> shardData : shardGroup) {
-                Shard shard = new Shard(shardData);
+                ShardInfo shard = new ShardInfo(shardData);
                 if (shard.isPrimary()) {
-                    Node node = nodes.get(shard.getNode());
+                    NodeInfo node = nodeMap.get(shard.getNode());
                     if (node == null) {
                         log.warn(String.format("Cannot find node with id [%s] (is HTTP enabled?) from shard [%s] in nodes [%s]; layout [%s]", shard.getNode(), shard, nodes, info));
                         return null;
@@ -508,13 +413,17 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void delete() {
-        if (SettingsUtils.isEs1x(settings)) {
+        if (client.internalVersion.on(EsMajorVersion.V_1_X)) {
             // ES 1.x - delete as usual
             client.delete(resourceW.indexAndType());
         }
         else {
             // try first a blind delete by query (since the plugin might be installed)
-            client.delete(resourceW.indexAndType() + "/_query?q=*");
+            try {
+                client.delete(resourceW.indexAndType() + "/_query?q=*");
+            } catch (EsHadoopInvalidRequest ehir) {
+                log.info("Skipping delete by query as the plugin is not installed...");
+            }
 
             // in ES 2.0 and higher this means scrolling and deleting the docs by hand...
             // do a scroll-scan without source
@@ -527,7 +436,7 @@ public class RestRepository implements Closeable, StatsAware {
             StringBuilder sb = new StringBuilder(resourceW.indexAndType());
             sb.append("/_search?scroll=10m&_source=false&size=");
             sb.append(batchSize);
-            if (SettingsUtils.isEs50(settings)) {
+            if (client.internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
                 sb.append("&sort=_doc");
             }
             else {

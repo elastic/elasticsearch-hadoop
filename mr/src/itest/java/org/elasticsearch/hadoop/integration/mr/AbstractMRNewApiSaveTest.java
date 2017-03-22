@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -54,6 +55,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -186,6 +188,28 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/createwithid");
 
         assertFalse("job should have failed", runJob(conf));
+    }
+
+    @Test
+    public void testSaveWithIngest() throws Exception {
+        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
+        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
+        assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
+        versionTestingClient.close();
+
+        Configuration conf = createConf();
+
+        RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
+        String prefix = "mrnewapi";
+        String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
+        client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
+        client.close();
+
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi/ingested");
+        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
+        conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
+
+        runJob(conf);
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)

@@ -1,6 +1,6 @@
 ## :warning: Starting with ES-Hadoop 5.x, the plugin has moved to Elasticsearch
 
-The HDFS Snapshot/Restore plugin has been [_moved_](https://github.com/elastic/elasticsearch/issues/15191) into Elasticsearch proper. 
+The HDFS Snapshot/Restore plugin has been [_moved_](https://github.com/elastic/elasticsearch/issues/15191) into Elasticsearch proper. When upgrading, please keep in mind that the `light` and `1.x` versions are no longer supported in 5.x. 
 
 More information can be found [here](https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html).
 
@@ -24,7 +24,7 @@ The `hadoop2` version contains the plugin jar plus the Hadoop 2.x (Yarn) depende
 The `light` version contains just the plugin jar, without any Hadoop dependencies.
 
 ### What version to use?
-It depends on whether you have Hadoop installed on your nodes or not. If you do, then we recommend exposing Hadoop to the Elasticsearch classpath (typically through an environment variable such as +ES_CLASSPATH+ - see the Elasticsearch [reference](https://www.elastic.co/guide/en/elasticsearch/reference/2.0/setup-configuration.html) for more info) and using the `light` version.
+It depends on whether you have Hadoop installed on your nodes or not. If you do, then it may be easiest to expose Hadoop to the Elasticsearch classpath (typically by creating symbolic links to the client jars within the Elasticsearch `lib/` directory) and using the `light` version.
 This guarantees the existing libraries and configuration are being picked up by the plugin.
 If you do not have Hadoop installed, then select either the default version (for Hadoop stable/1.x) or, if you are using Hadoop 2, the `hadoop2` version.
 

@@ -1,3 +1,21 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.spark.serialization
 
 import java.util.Collections
@@ -15,9 +33,13 @@ import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
+import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
+import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NULL
 import org.elasticsearch.hadoop.serialization.FieldType.SHORT
@@ -66,11 +88,17 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       case INTEGER => intValue(value, parser)
       case TOKEN_COUNT => longValue(value, parser)
       case LONG => longValue(value, parser)
+      case HALF_FLOAT => floatValue(value, parser)
+      case SCALED_FLOAT => floatValue(value, parser)
       case FLOAT => floatValue(value, parser)
       case DOUBLE => doubleValue(value, parser)
       case BOOLEAN => booleanValue(value, parser)
-      case BINARY => binaryValue(parser.binaryValue())
+      case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
       case DATE => date(value, parser)
+      // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
+      case GEO_POINT | GEO_SHAPE => {
+        if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser) 
+      }
       // everything else (IP, GEO) gets translated to strings
       case _ => textValue(value, parser)
     }
@@ -121,17 +149,10 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   }
 
   def binaryValue(value: Array[Byte]) = {
-    if (value != null) {
-      if (emptyAsNull) {
-        nullValue()
-      }
-      else {
+    Option(value) collect {
+      case value: Array[Byte] if !emptyAsNull || !value.isEmpty =>
         parseBinary(value)
-      }
-    }
-    else {
-      nullValue()
-    }
+    } getOrElse nullValue()
   }
   protected def parseBinary(value: Array[Byte]) = { value }
 

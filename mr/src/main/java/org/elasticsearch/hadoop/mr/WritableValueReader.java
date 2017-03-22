@@ -59,6 +59,8 @@ public class WritableValueReader extends JdkValueReader {
         case LONG:
             arrayType = LongWritable.class;
             break;
+        case HALF_FLOAT:
+        case SCALED_FLOAT:
         case FLOAT:
             arrayType = FloatWritable.class;
             break;

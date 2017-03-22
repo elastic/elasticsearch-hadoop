@@ -57,6 +57,10 @@ public interface ConfigurationOptions {
     String ES_NODES_DATA_ONLY = "es.nodes.data.only";
     String ES_NODES_DATA_ONLY_DEFAULT = "true";
 
+    /** Ingest only */
+    String ES_NODES_INGEST_ONLY = "es.nodes.ingest.only";
+    String ES_NODES_INGEST_ONLY_DEFAULT = "false";
+
     /** WAN only */
     String ES_NODES_WAN_ONLY = "es.nodes.wan.only";
     String ES_NODES_WAN_ONLY_DEFAULT = "false";
@@ -127,6 +131,8 @@ public interface ConfigurationOptions {
     String ES_SERIALIZATION_READER_VALUE_CLASS = "es.ser.reader.value.class";
 
     /** Input options **/
+    String ES_MAX_DOCS_PER_PARTITION = "es.input.max.docs.per.partition";
+    int ES_DEFAULT_MAX_DOCS_PER_PARTITION = 100000;
     String ES_INPUT_JSON = "es.input.json";
     String ES_INPUT_JSON_DEFAULT = "no";
 
@@ -164,7 +170,6 @@ public interface ConfigurationOptions {
     String ES_MAPPING_DATE_RICH_OBJECT = "es.mapping.date.rich";
     String ES_MAPPING_DATE_RICH_OBJECT_DEFAULT = "true";
 
-
     String ES_MAPPING_VERSION_TYPE = "es.mapping.version.type";
     String ES_MAPPING_VERSION_TYPE_INTERNAL = "internal";
     String ES_MAPPING_VERSION_TYPE_EXTERNAL = "external";
@@ -177,6 +182,13 @@ public interface ConfigurationOptions {
     String ES_MAPPING_EXCLUDE = "es.mapping.exclude";
     String ES_MAPPING_EXCLUDE_DEFAULT = "";
 
+    /** Ingest Node **/
+    String ES_INGEST_PIPELINE = "es.ingest.pipeline";
+    String ES_INGEST_PIPELINE_DEFAULT = "";
+
+    /** Technology Specific **/
+    String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES = "es.spark.dataframe.write.null";
+    String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT = "false";
 
     /** Read settings */
 
@@ -229,6 +241,9 @@ public interface ConfigurationOptions {
     String ES_OUTPUT_JSON_DEFAULT = "no";
 
     /** Network options */
+    String ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT = "es.net.transport.pooling.expiration.timeout";
+    String ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT_DEFAULT = "5m";
+
     // SSL
     String ES_NET_USE_SSL = "es.net.ssl";
     String ES_NET_USE_SSL_DEFAULT = "false";

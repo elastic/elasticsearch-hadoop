@@ -1,6 +1,23 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.spark.sql
 
-import java.util.Arrays
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -8,7 +25,6 @@ import java.util.Locale
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
 import scala.collection.mutable.LinkedHashSet
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Row
@@ -43,8 +59,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
-import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.elasticsearch.hadoop.rest.RestRepository
+import org.elasticsearch.hadoop.rest.{InitializationUtils, RestClient, RestRepository}
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
@@ -54,8 +69,9 @@ import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
-
 import javax.xml.bind.DatatypeConverter
+
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
 
@@ -121,7 +137,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   def buildScan(requiredColumns: Array[String]): RDD[Row] = buildScan(requiredColumns, Array.empty)
 
   // PrunedFilteredScan
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]) = {
+  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val paramWithScan = LinkedHashMap[String, String]() ++ parameters
 
     var filteredColumns = requiredColumns
@@ -474,6 +490,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
       InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
+      InitializationUtils.setFieldExtractorIfNotSet(cfgCopy, classOf[ConstantFieldExtractor], null) //throw away extractor
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")

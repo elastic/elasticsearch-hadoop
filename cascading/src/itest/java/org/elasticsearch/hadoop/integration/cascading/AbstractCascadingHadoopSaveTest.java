@@ -23,6 +23,7 @@ import java.util.Properties;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -41,6 +42,7 @@ import cascading.tap.Tap;
 import cascading.tap.hadoop.Hfs;
 import cascading.tuple.Fields;
 
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
 import static org.junit.Assert.assertThat;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -49,6 +51,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class AbstractCascadingHadoopSaveTest {
 
     private static final String INPUT = TestUtils.sampleArtistsDat(CascadingHadoopSuite.configuration);
+    private static final EsMajorVersion VERSION = TestUtils.getEsVersion();
 
     @Test
     public void testWriteToES() throws Exception {
@@ -62,7 +65,10 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/artists").toString(), is("artists=[name=TEXT, picture=TEXT, url=TEXT]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/artists").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("artists=[name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("artists=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -81,7 +87,10 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/alias").toString(), is("alias=[address=TEXT, name=TEXT, picture=TEXT]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/alias").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("alias=[address=TEXT, name=TEXT, picture=TEXT]")
+                        : is("alias=[address=STRING, name=STRING, picture=STRING]"));
     }
 
     @Test
@@ -96,7 +105,10 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-12").toString(), is("pattern-12=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]"));
+        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-12").toString(),
+                VERSION.onOrAfter(V_5_X)
+                        ? is("pattern-12=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -112,7 +124,9 @@ public class AbstractCascadingHadoopSaveTest {
     @Test
     public void testIndexPatternWithFormatMapping() throws Exception {
         assertThat(RestUtils.getMapping("cascading-hadoop/pattern-format-2012-10-06").toString(),
-                is("pattern-format-2012-10-06=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]"));
+                VERSION.onOrAfter(V_5_X)
+                        ? is("pattern-format-2012-10-06=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
+                        : is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
     @Test

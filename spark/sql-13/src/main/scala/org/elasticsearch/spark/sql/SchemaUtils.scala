@@ -1,3 +1,21 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.spark.sql
 
 import java.util.ArrayList
@@ -36,6 +54,8 @@ import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
+import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
@@ -141,6 +161,8 @@ private[sql] object SchemaUtils {
       case STRING    => StringType
       case TEXT      => StringType
       case KEYWORD   => StringType
+      case HALF_FLOAT => FloatType
+      case SCALED_FLOAT => FloatType
       case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
@@ -148,10 +170,10 @@ private[sql] object SchemaUtils {
       // GEO
       case GEO_POINT => {
         val geoPoint = geoInfo.get(absoluteName) match {
-          case GeoPointType.LAT_LON_ARRAY  => DataTypes.createArrayType(DoubleType)
+          case GeoPointType.LON_LAT_ARRAY  => DataTypes.createArrayType(DoubleType)
           case GeoPointType.GEOHASH        => StringType
           case GeoPointType.LAT_LON_STRING => StringType
-          case GeoPointType.LON_LAT_OBJECT => {
+          case GeoPointType.LAT_LON_OBJECT => {
             val lon = DataTypes.createStructField("lat", DoubleType, true)
             val lat = DataTypes.createStructField("lon", DoubleType, true)
             DataTypes.createStructType(Array(lon,lat)) 

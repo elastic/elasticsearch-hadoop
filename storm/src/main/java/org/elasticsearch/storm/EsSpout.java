@@ -36,9 +36,9 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.MultiReaderIterator;
-import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
@@ -51,7 +51,7 @@ public class EsSpout implements IRichSpout {
 
     private transient static Log log = LogFactory.getLog(EsSpout.class);
 
-    private Map spoutConfig = new LinkedHashMap();
+    private final Map spoutConfig = new LinkedHashMap();
 
     private transient SpoutOutputCollector collector;
     private transient MultiReaderIterator iterator;
@@ -222,9 +222,9 @@ public class EsSpout implements IRichSpout {
         int primitive = attempts.intValue();
         if (primitive == 0) {
             switch (tupleFailure) {
-               case ABORT: throw new EsHadoopIllegalStateException(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
-               case WARN: log.warn(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
-               case IGNORE: // move on
+            case ABORT: throw new EsHadoopIllegalStateException(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
+            case WARN: log.warn(String.format("Tuple [%s] has failed to be fully processed after [%d] retries; aborting...", tuple, attempts));
+            case IGNORE: // move on
             }
             return;
         }

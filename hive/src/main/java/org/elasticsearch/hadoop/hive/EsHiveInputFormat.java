@@ -54,7 +54,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         private Path path;
 
         EsHiveSplit() {
-            this(new ShardInputSplit(), null);
+            this(new EsInputSplit(), null);
         }
 
         EsHiveSplit(InputSplit delegate, Path path) {
@@ -119,8 +119,8 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public AbstractWritableShardRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
+    public AbstractWritableEsInputRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
         InputSplit delegate = ((EsHiveSplit) split).delegate;
-        return isOutputAsJson(job) ? new JsonWritableShardRecordReader(delegate, job, reporter) : new WritableShardRecordReader(delegate, job, reporter);
+        return isOutputAsJson(job) ? new JsonWritableEsInputRecordReader(delegate, job, reporter) : new WritableEsInputRecordReader(delegate, job, reporter);
     }
 }

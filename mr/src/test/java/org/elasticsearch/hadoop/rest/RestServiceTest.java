@@ -18,21 +18,18 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.hadoop.rest.RestService.PartitionDefinition;
-import org.elasticsearch.hadoop.serialization.dto.Node;
-import org.elasticsearch.hadoop.serialization.dto.Shard;
-import org.junit.Before;
-import org.junit.Test;
-
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-
-import static org.hamcrest.Matchers.is;
 
 public class RestServiceTest {
 
@@ -51,45 +48,39 @@ public class RestServiceTest {
         info.put("node", "1");
         info.put("primary", "true");
 
-        Shard sh1 = new Shard(info);
-        Node node1 = new Node("1", info);
+        ShardInfo sh1 = new ShardInfo(info);
 
         info.put("name", "2");
         info.put("shard", 2);
 
-        Shard sh2 = new Shard(info);
-        Node node2 = new Node("2", info);
+        ShardInfo sh2 = new ShardInfo(info);
 
         info.put("name", "3");
         info.put("shard", 3);
 
-        Shard sh3 = new Shard(info);
-        Node node3 = new Node("3", info);
+        ShardInfo sh3 = new ShardInfo(info);
 
         info.put("name", "4");
         info.put("shard", 4);
 
-        Shard sh4 = new Shard(info);
-        Node node4 = new Node("4", info);
+        ShardInfo sh4 = new ShardInfo(info);
 
         info.put("name", "5");
         info.put("shard", 5);
 
-        Shard sh5 = new Shard(info);
-        Node node5 = new Node("5", info);
+        ShardInfo sh5 = new ShardInfo(info);
 
         info.put("name", "6");
         info.put("shard", 6);
 
-        Shard sh6 = new Shard(info);
-        Node node6 = new Node("6", info);
+        ShardInfo sh6 = new ShardInfo(info);
 
-        pd1 = new PartitionDefinition(sh1, node1, null, null, true);
-        pd2 = new PartitionDefinition(sh2, node2, null, null, true);
-        pd3 = new PartitionDefinition(sh3, node3, null, null, true);
-        pd4 = new PartitionDefinition(sh4, node4, null, null, true);
-        pd5 = new PartitionDefinition(sh5, node5, null, null, true);
-        pd6 = new PartitionDefinition(sh6, node6, null, null, true);
+        pd1 = new PartitionDefinition(null, null, sh1.getIndex(), sh1.getName());
+        pd2 = new PartitionDefinition(null, null, sh2.getIndex(), sh2.getName());
+        pd3 = new PartitionDefinition(null, null, sh3.getIndex(), sh3.getName());
+        pd4 = new PartitionDefinition(null, null, sh4.getIndex(), sh4.getName());
+        pd5 = new PartitionDefinition(null, null, sh5.getIndex(), sh5.getName());
+        pd6 = new PartitionDefinition(null, null, sh6.getIndex(), sh6.getName());
 
         pds = Arrays.asList(pd1, pd2, pd3, pd4, pd5, pd6);
     }

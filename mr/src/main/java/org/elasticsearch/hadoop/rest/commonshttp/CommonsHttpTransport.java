@@ -71,7 +71,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
 
     private final HttpClient client;
-    private final Stats stats = new Stats();
+    protected Stats stats = new Stats();
     private HttpConnection conn;
     private String proxyInfo = "";
     private final String httpInfo;
@@ -217,7 +217,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         int port = 443;
         SecureProtocolSocketFactory sslFactory = new SSLSocketFactory(settings);
 
-        replaceProtocol(hostConfig, sslFactory, schema, port);
+        replaceProtocol(sslFactory, schema, port);
 
         return hostConfig;
     }
@@ -375,21 +375,24 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             String schema = sslEnabled ? "https" : "http";
             int port = sslEnabled ? 443 : 80;
             SocksSocketFactory socketFactory = new SocksSocketFactory(proxyHost, proxyPort, proxyUser, proxyPass);
-            replaceProtocol(hostConfig, socketFactory, schema, port);
+            replaceProtocol(socketFactory, schema, port);
         }
 
         return hostConfig;
     }
 
-    private void replaceProtocol(HostConfiguration hostConfig, ProtocolSocketFactory socketFactory, String schema, int defaultPort) {
+    static void replaceProtocol(ProtocolSocketFactory socketFactory, String schema, int defaultPort) {
         //
         // switch protocol
         // due to how HttpCommons work internally this dance is best to be kept as is
         //
 
-        // NB: not really needed (see below that the protocol is reseted) but in place just in case
-        hostConfig = new ProtocolAwareHostConfiguration(hostConfig);
         Protocol directHttp = Protocol.getProtocol(schema);
+        if (directHttp instanceof DelegatedProtocol) {
+            // unwrap the original
+            directHttp = ((DelegatedProtocol)directHttp).getOriginal();
+            assert directHttp instanceof DelegatedProtocol == false;
+        }
         Protocol proxiedHttp = new DelegatedProtocol(socketFactory, directHttp, schema, defaultPort);
         // NB: register the new protocol since when using absolute URIs, HttpClient#executeMethod will override the configuration (#387)
         // NB: hence why the original/direct http protocol is saved - as otherwise the connection is not closed since it is considered different

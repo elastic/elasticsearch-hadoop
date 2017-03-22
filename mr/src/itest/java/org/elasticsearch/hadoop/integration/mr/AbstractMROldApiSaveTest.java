@@ -50,10 +50,12 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
+import org.junit.Assume;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -249,6 +251,29 @@ public class AbstractMROldApiSaveTest {
     public void testCreateWithIdShouldFailOnDuplicate() throws Exception {
         testCreateWithId();
     }
+
+    @Test
+    public void testSaveWithIngest() throws Exception {
+        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
+        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
+        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
+        versionTestingClient.close();
+
+        JobConf conf = createJobConf();
+
+        RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
+        String prefix = "mroldapi";
+        String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
+        client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
+        client.close();
+
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/ingested");
+        conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mroldapi-pipeline");
+        conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
+
+        runJob(conf);
+    }
+
 
     @Test(expected = IOException.class)
     public void testUpdateWithoutId() throws Exception {
@@ -449,6 +474,8 @@ public class AbstractMROldApiSaveTest {
     public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/external-version-implied");
+        // an id must be provided if version type or value are set
+        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
 
         runJob(conf);

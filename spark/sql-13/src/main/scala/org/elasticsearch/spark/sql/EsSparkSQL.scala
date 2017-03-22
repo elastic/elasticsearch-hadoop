@@ -1,3 +1,21 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.elasticsearch.spark.sql
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
@@ -25,7 +43,7 @@ object EsSparkSQL {
     val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
     esConf.merge(cfg.asJava)
 
-    sc.load("org.elasticsearch.spark.sql", esConf.asProperties.asScala.toMap)
+    sc.read.format("org.elasticsearch.spark.sql").options(esConf.asProperties.asScala.toMap).load
   }
 
   def esDF(sc: SQLContext, resource: String, query: String, cfg: Map[String, String]): DataFrame = {
@@ -53,8 +71,8 @@ object EsSparkSQL {
     val esCfg = new PropertiesSettings().load(sparkCfg.save())
     esCfg.merge(cfg.asJava)
 
-    InitializationUtils.checkIdForOperation(esCfg);
-    InitializationUtils.checkIndexExistence(esCfg, null);
+    InitializationUtils.checkIdForOperation(esCfg)
+    InitializationUtils.checkIndexExistence(esCfg)
 
     sparkCtx.runJob(srdd.rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
   }
