@@ -88,7 +88,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc1.add("\",\"_score\":null,\"sort\":[");
+            doc1.add("\",\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
@@ -96,7 +96,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc2.add("\",\"_score\":null,\"sort\":[");
+            doc2.add("\",\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
@@ -104,7 +104,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc3.add("\",\"_score\":null,\"sort\":[");
+            doc3.add("\",\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
@@ -128,7 +128,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc1.add("\",\"_score\":null,\"sort\":[");
+            doc1.add("\",\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
@@ -136,7 +136,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc2.add("\",\"_score\":null,\"sort\":[");
+            doc2.add("\",\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
@@ -144,7 +144,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"tupleartists\",\"_id\":\"");
-            doc3.add("\",\"_score\":null,\"sort\":[");
+            doc3.add("\",\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
@@ -167,7 +167,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"fieldalias\",\"_id\":\"");
-            doc1.add("\",\"_score\":null,\"sort\":[");
+            doc1.add("\",\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
@@ -175,7 +175,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"fieldalias\",\"_id\":\"");
-            doc2.add("\",\"_score\":null,\"sort\":[");
+            doc2.add("\",\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
@@ -183,7 +183,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"fieldalias\",\"_id\":\"");
-            doc3.add("\",\"_score\":null,\"sort\":[");
+            doc3.add("\",\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
@@ -218,7 +218,8 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
-            doc1.add("\",\"_score\":null,\"_routing\":\"12\",\"_parent\":\"12\",\"sort\":[");
+            doc1.add("\",\"_score\":");
+            doc1.add("\"_routing\":\"12\",\"_parent\":\"12\"");
         }
 
         List<String> doc2 = Lists.newArrayList(
@@ -226,7 +227,8 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
-            doc2.add("\",\"_score\":null,\"_routing\":\"918\",\"_parent\":\"918\",\"sort\":[");
+            doc2.add("\",\"_score\":");
+            doc2.add("\"_routing\":\"918\",\"_parent\":\"918\"");
         }
 
         List<String> doc3 = Lists.newArrayList(
@@ -234,7 +236,8 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
-            doc3.add("\",\"_score\":null,\"_routing\":\"982\",\"_parent\":\"982\",\"sort\":[");
+            doc3.add("\",\"_score\":");
+            doc3.add("\"_routing\":\"982\",\"_parent\":\"982\"");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
