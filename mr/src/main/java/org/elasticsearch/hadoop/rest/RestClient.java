@@ -512,7 +512,7 @@ public class RestClient implements Closeable, StatsAware {
         try {
             // use post instead of get to avoid some weird encoding issues (caused by the long URL)
             InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
-                    new BytesArray(scrollId)).body();
+                    new BytesArray("{\"scroll_id\":\"" + scrollId + "\"}")).body();
             stats.scrollTotal++;
             return is;
         } finally {
@@ -526,7 +526,8 @@ public class RestClient implements Closeable, StatsAware {
         return (res.status() == HttpStatus.OK ? true : false);
     }
     public boolean deleteScroll(String scrollId) {
-        Request req = new SimpleRequest(DELETE, null, "_search/scroll", new BytesArray(scrollId.getBytes(StringUtils.UTF_8)));
+        Request req = new SimpleRequest(DELETE, null, "_search/scroll",
+                new BytesArray(("{\"scroll_id\":[\"" + scrollId + "\"]}").getBytes(StringUtils.UTF_8)));
         Response res = executeNotFoundAllowed(req);
         return (res.status() == HttpStatus.OK ? true : false);
     }
