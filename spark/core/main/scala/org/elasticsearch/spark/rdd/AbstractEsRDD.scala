@@ -38,7 +38,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
 
-  protected var logger = LogFactory.getLog(this.getClass())
+  @transient protected lazy val logger = LogFactory.getLog(this.getClass())
 
   override def getPartitions: Array[Partition] = {
     val sparkPartitions = new Array[Partition](esPartitions.size)
