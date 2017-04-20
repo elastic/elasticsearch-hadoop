@@ -13,7 +13,7 @@ Simply download elasticsearch-yarn-<version>.jar in a location of choice and mak
 
 
     > ls
-    elasticsearch-yarn-5.3.0
+    elasticsearch-yarn-5.3.1
 
     > hadoop version
     Hadoop 2.4.1
