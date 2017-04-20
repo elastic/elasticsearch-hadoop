@@ -5,6 +5,7 @@
 --
 This section summarizes the changes in each release.
 
+* <<eshadoop-5.3.1>>
 * <<eshadoop-5.3.0>>
 * <<eshadoop-5.2.2>>
 * <<eshadoop-5.2.1>>
@@ -19,39 +20,39 @@ This section summarizes the changes in each release.
 
 ////////////////////////
 // Template
-[[eshadoop-5.0.1]]
-== Elasticsearch for Apache Hadoop version 5.0.1
-November 9, 2016
+[[eshadoop-5.3.1]]
+== Elasticsearch for Apache Hadoop version 5.3.1
+Month 00, 2017
 
-[[breaking-5.0.1]]
+[[breaking-5.3.1]]
 === Breaking Changes
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[new-5.0.1]]
+[[new-5.3.1]]
 === New Features
 Section::
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[enhancements-5.0.1]]
+[[enhancements-5.3.1]]
 === Enhancements
 Section::
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[bugs-5.0.1]]
+[[bugs-5.3.1]]
 === Bug Fixes
 Section::
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[docs-5.0.1]]
+[[docs-5.3.1]]
 === Documentation
 * Summary
 http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
-[[nonissue-5.0.1]]
+[[nonissue-5.3.1]]
 === Non-issue
 Section::
 * Summary
@@ -59,6 +60,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/5.3.1.adoc[]
 include::release-notes/5.3.0.adoc[]
 include::release-notes/5.2.2.adoc[]
 include::release-notes/5.2.1.adoc[]

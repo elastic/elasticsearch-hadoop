@@ -1,0 +1,10 @@
+[[eshadoop-5.3.1]]
+== Elasticsearch for Apache Hadoop version 5.3.1
+April 20, 2017
+
+ES-Hadoop 5.3.1 is a version compatibility release, tested specifically against Elasticsearch 5.3.1.
+
+[[docs-5.3.1]]
+=== Documentation
+* Fixed incorrect documentation version links
+http://github.com/elastic/elasticsearch-hadoop/issues/960[#960]
