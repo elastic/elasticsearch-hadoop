@@ -24,6 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.elasticsearch.hadoop.rest.query.QueryUtils.parseQuery;
+import static org.elasticsearch.hadoop.rest.query.QueryUtils.isExplicitlyRequested;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class QueryUtilsTest {
 
@@ -89,5 +92,27 @@ public class QueryUtilsTest {
         cfg.setQuery("?q=foo:bar&df=name");
         QueryBuilder query = parseQuery(cfg);
         System.out.println(query);
+    }
+
+    @Test
+    public void testIsExplicitlyRequested() throws Exception {
+        assertThat(isExplicitlyRequested("test"), is(false));
+        assertThat(isExplicitlyRequested("test", "test"), is(true));
+        assertThat(isExplicitlyRequested("test", "nope"), is(false));
+        assertThat(isExplicitlyRequested("test", "nope", "test"), is(true));
+
+        assertThat(isExplicitlyRequested("test", "+test"), is(true));
+        assertThat(isExplicitlyRequested("test", "-test"), is(false));
+
+        assertThat(isExplicitlyRequested("test", "+te*"), is(true));
+        assertThat(isExplicitlyRequested("test", "-te*"), is(false));
+
+        // If we're looking for all indices, it's an implicit requesting, not explicit
+        assertThat(isExplicitlyRequested("test", "+*"), is(false));
+        assertThat(isExplicitlyRequested("test", "-*"), is(false));
+        assertThat(isExplicitlyRequested("test", "+_all"), is(false));
+        assertThat(isExplicitlyRequested("test", "-_all"), is(false));
+
+        assertThat(isExplicitlyRequested("test", "test"), is(true));
     }
 }
