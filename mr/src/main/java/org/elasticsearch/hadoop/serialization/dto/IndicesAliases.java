@@ -33,6 +33,38 @@ public class IndicesAliases {
         return indices.get(index);
     }
 
+    /**
+     * Parse an aliases response into an instance of {@link IndicesAliases}
+     *
+     * Example of response from server:
+     * <pre>
+     * {
+     *   "index1" : {
+     *     "aliases" : {
+     *       "alias1" : {
+     *         "filter" : {
+     *           "term" : {
+     *             "user" : "kimchy"
+     *           }
+     *         },
+     *         "index_routing" : "1",
+     *         "search_routing" : "1"
+     *       },
+     *       "alias2" : {
+     *         "search_routing" : "5"
+     *       }
+     *     }
+     *   },
+     *   "index2" : {
+     *     "aliases" : {
+     *       ...
+     *     }
+     *   }
+     * }
+     * </pre>
+     *
+     * @param resp JSON Response in the form of a Java Map
+     */
     public static IndicesAliases parse(Map<String, Object> resp) {
         final Map<String, Map<String, Alias> > indices = new HashMap<String, Map<String, Alias> > ();
         for (Map.Entry<String, Object> index : resp.entrySet()) {
