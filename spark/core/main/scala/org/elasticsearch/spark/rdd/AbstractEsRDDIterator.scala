@@ -35,7 +35,7 @@ private[spark] abstract class AbstractEsRDDIterator[T](
   private var nextValue: T = _
   private var closed = false
 
-  private var log = getLogger()
+  @transient private lazy val log = getLogger()
 
   private var initialized = false;
 
