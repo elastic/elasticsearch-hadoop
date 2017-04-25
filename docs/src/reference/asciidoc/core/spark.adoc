@@ -783,7 +783,7 @@ Queue<JavaRDD<TripBean>> microbatches = new LinkedList<JavaRDD<TripBean>>();
 microbatches.add(javaRDD);
 JavaDStream<TripBean> javaDStream = jssc.queueStream(microbatches);       <2>
 
-saveToEs(javaRDD, "spark/docs");                                          <3>
+saveToEs(javaDStream, "spark/docs");                                          <3>
 
 jssc.start()                                                              <4>
 ----
