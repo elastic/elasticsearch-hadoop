@@ -40,7 +40,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
                                               val runtimeMetadata: Boolean = false)
   extends Serializable {
 
-  protected val log = LogFactory.getLog(this.getClass())
+  @transient protected lazy val log = LogFactory.getLog(this.getClass())
 
   lazy val settings = {
     val settings = new PropertiesSettings().load(serializedSettings);
