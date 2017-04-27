@@ -1,0 +1,14 @@
+[[eshadoop-5.3.2]]
+== Elasticsearch for Apache Hadoop version 5.3.2
+April 27, 2017
+
+[[bugs-5.3.2]]
+=== Bug Fixes
+Spark::
+* Added transient to loggers where necessary
+http://github.com/elastic/elasticsearch-hadoop/pull/959[#959]
+
+[[docs-5.3.2]]
+=== Documentation
+* Wrong variable saved in java streaming example
+http://github.com/elastic/elasticsearch-hadoop/pull/961[#961]
