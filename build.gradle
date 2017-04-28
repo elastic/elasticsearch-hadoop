@@ -576,6 +576,16 @@ def baseSparkProject(target, sparkVersion) {
             jvmArgs = ['-XX:MaxPermSize=512m']
         }
         scalaCompileOptions.useAnt = false
+        scalaCompileOptions.additionalParameters = [
+            "-feature",
+            "-unchecked",
+            "-deprecation",
+            "-Xfuture",
+            "-Yno-adapted-args",
+            "-Ywarn-dead-code",
+            "-Ywarn-numeric-widen",
+            "-Ywarn-value-discard"
+        ]
 
         sourceCompatibility = 1.6
         targetCompatibility = 1.6
