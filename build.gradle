@@ -575,6 +575,16 @@ def baseSparkProject(target, sparkVersion) {
             memoryMaximumSize = '1g'
             jvmArgs = ['-XX:MaxPermSize=512m']
         }
+        scalaCompileOptions.additionalParameters = [
+            "-feature",
+            "-unchecked",
+            "-deprecation",
+            "-Xfuture",
+            "-Yno-adapted-args",
+            "-Ywarn-dead-code",
+            "-Ywarn-numeric-widen",
+            "-Ywarn-value-discard"
+        ]
 
         sourceCompatibility = 1.6
         targetCompatibility = 1.6
