@@ -575,7 +575,6 @@ def baseSparkProject(target, sparkVersion) {
             memoryMaximumSize = '1g'
             jvmArgs = ['-XX:MaxPermSize=512m']
         }
-        scalaCompileOptions.useAnt = false
         scalaCompileOptions.additionalParameters = [
             "-feature",
             "-unchecked",
@@ -591,7 +590,7 @@ def baseSparkProject(target, sparkVersion) {
         targetCompatibility = 1.6
     }
     
-    println "Using Scala $scalaMajorVersion [$scalaVersion]"
+    println "Spark $sparkVersion compiled using Scala $scalaMajorVersion [$scalaVersion]"
 
     // when using Scala 2.11 use a different folder to cache the artifacts between builds
     if (scalaVer == "211") {
