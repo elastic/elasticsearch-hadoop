@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.impl.NoOpLog;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
@@ -43,6 +45,9 @@ public class FindPartitionsTest {
     private static final ObjectMapper MAPPER =
             new ObjectMapper()
                     .configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+
+    private static final Log LOGGER = new NoOpLog("FindPartitionsTest");
+
     private static final PartitionDefinition[] EXPECTED_SHARDS_PARTITIONS;
     static {
         List<PartitionDefinition> expected =
@@ -65,9 +70,9 @@ public class FindPartitionsTest {
         Settings settings = new PropertiesSettings();
         settings.setProperty(ES_RESOURCE_READ, "_all");
         assertEquals(RestService.findShardPartitions(settings, null,
-                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
+                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
         assertEquals(RestService.findSlicePartitions(null, settings, null,
-                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList()).size(), 0);
+                Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
     }
 
     @Test
@@ -75,7 +80,7 @@ public class FindPartitionsTest {
         List<List<Map<String, Object>>> shards =
                 MAPPER.readValue(getClass().getResourceAsStream("search-shards-response.json"), ArrayList.class);
         List<PartitionDefinition> partitions = RestService.findShardPartitions(null, null, Collections.<String, NodeInfo>emptyMap(),
-                shards);
+                shards, LOGGER);
         Collections.sort(partitions);
         assertEquals(partitions.size(), 34);
         assertEquals(new HashSet(partitions).size(), 34);
@@ -101,7 +106,7 @@ public class FindPartitionsTest {
         {
             settings.setMaxDocsPerPartition(1000);
             List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
-                    Collections.<String, NodeInfo>emptyMap(), shards);
+                    Collections.<String, NodeInfo>emptyMap(), shards, LOGGER);
             // 15 + 18*10 + 1*100
             assertEquals(partitions.size(), 295);
             assertEquals(new HashSet(partitions).size(), 295);
@@ -109,7 +114,7 @@ public class FindPartitionsTest {
         {
             settings.setMaxDocsPerPartition(100);
             List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
-                    Collections.<String, NodeInfo>emptyMap(), shards);
+                    Collections.<String, NodeInfo>emptyMap(), shards, LOGGER);
             // 15*10 + 18*100 + 1*1000
             assertEquals(partitions.size(), 2950);
             assertEquals(new HashSet(partitions).size(), 2950);
@@ -117,7 +122,7 @@ public class FindPartitionsTest {
         {
             settings.setMaxDocsPerPartition(Integer.MAX_VALUE);
             List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
-                    Collections.<String, NodeInfo>emptyMap(), shards);
+                    Collections.<String, NodeInfo>emptyMap(), shards, LOGGER);
 
             // 15 + 18 + 1
             assertEquals(partitions.size(), 34);
@@ -134,7 +139,7 @@ public class FindPartitionsTest {
         }
         {
             List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,
-                    Collections.<String, NodeInfo>emptyMap(), shards);
+                    Collections.<String, NodeInfo>emptyMap(), shards, LOGGER);
             assertEquals(partitions.size(), 34);
             assertEquals(new HashSet(partitions).size(), 34);
         }

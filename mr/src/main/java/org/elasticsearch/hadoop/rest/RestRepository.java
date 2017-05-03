@@ -480,7 +480,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public boolean waitForYellow() {
-        return client.health(resourceW.index(), RestClient.HEALTH.YELLOW, TimeValue.timeValueSeconds(10));
+        return client.waitForHealth(resourceW.index(), RestClient.Health.YELLOW, TimeValue.timeValueSeconds(10));
     }
 
     @Override

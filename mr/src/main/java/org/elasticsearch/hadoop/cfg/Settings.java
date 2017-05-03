@@ -172,6 +172,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_INDEX_READ_MISSING_AS_EMPTY, ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT));
     }
 
+    public boolean getIndexReadAllowRedStatus() {
+        return Booleans.parseBoolean(getProperty(ES_INDEX_READ_ALLOW_RED_STATUS, ES_INDEX_READ_ALLOW_RED_STATUS_DEFAULT));
+    }
+
     public boolean getInputAsJson() {
         return Booleans.parseBoolean(getProperty(ES_INPUT_JSON, ES_INPUT_JSON_DEFAULT));
     }

@@ -84,7 +84,7 @@ public class RestClient implements Closeable, StatsAware {
 
     private final Stats stats = new Stats();
 
-    public enum HEALTH {
+    public enum Health {
         RED, YELLOW, GREEN
     }
 
@@ -631,7 +631,17 @@ public class RestClient implements Closeable, StatsAware {
         return EsMajorVersion.parse(result.get("number"));
     }
 
-    public boolean health(String index, HEALTH health, TimeValue timeout) {
+    public Health getHealth(String index) {
+        StringBuilder sb = new StringBuilder("/_cluster/health/");
+        sb.append(index);
+        String status = get(sb.toString(), "status");
+        if (status == null) {
+            throw new EsHadoopIllegalStateException("Could not determine index health, returned status was null. Bailing out...");
+        }
+        return Health.valueOf(status.toUpperCase());
+    }
+
+    public boolean waitForHealth(String index, Health health, TimeValue timeout) {
         StringBuilder sb = new StringBuilder("/_cluster/health/");
         sb.append(index);
         sb.append("?wait_for_status=");
