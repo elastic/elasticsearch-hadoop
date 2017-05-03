@@ -40,7 +40,7 @@ object EsSparkSQL {
   def esDF(sc: SQLContext, resource: String): DataFrame = esDF(sc, Map(ES_RESOURCE_READ -> resource))
   def esDF(sc: SQLContext, resource: String, query: String): DataFrame = esDF(sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esDF(sc: SQLContext, cfg: Map[String, String]): DataFrame = {
-    val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
+    val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy()
     esConf.merge(cfg.asJava)
 
     sc.read.format("org.elasticsearch.spark.sql").options(esConf.asProperties.asScala.toMap).load
@@ -55,25 +55,23 @@ object EsSparkSQL {
   }
 
 
-  def saveToEs(srdd: DataFrame, resource: String) {
+  def saveToEs(srdd: DataFrame, resource: String): Unit = {
     saveToEs(srdd, Map(ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(srdd: DataFrame, resource: String, cfg: Map[String, String]) {
+  def saveToEs(srdd: DataFrame, resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(srdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(srdd: DataFrame, cfg: Map[String, String]) {
-     if (srdd == null) {
-      return
+  def saveToEs(srdd: DataFrame, cfg: Map[String, String]): Unit = {
+    if (srdd != null) {
+      val sparkCtx = srdd.sqlContext.sparkContext
+      val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
+      val esCfg = new PropertiesSettings().load(sparkCfg.save())
+      esCfg.merge(cfg.asJava)
+
+      InitializationUtils.checkIdForOperation(esCfg)
+      InitializationUtils.checkIndexExistence(esCfg)
+
+      sparkCtx.runJob(srdd.rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
     }
-     
-    val sparkCtx = srdd.sqlContext.sparkContext
-    val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
-    val esCfg = new PropertiesSettings().load(sparkCfg.save())
-    esCfg.merge(cfg.asJava)
-
-    InitializationUtils.checkIdForOperation(esCfg)
-    InitializationUtils.checkIndexExistence(esCfg)
-
-    sparkCtx.runJob(srdd.rdd, new EsDataFrameWriter(srdd.schema, esCfg.save()).write _)
   }
 }

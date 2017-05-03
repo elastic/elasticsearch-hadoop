@@ -45,9 +45,9 @@ package object sql {
   implicit def sparkDataFrameFunctions(df: DataFrame) = new SparkDataFrameFunctions(df)
 
   class SparkDataFrameFunctions(df: DataFrame) extends Serializable {
-    def saveToEs(resource: String) { EsSparkSQL.saveToEs(df, resource) }
-    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(df, resource, cfg) }
-    def saveToEs(cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(df, cfg)    }
+    def saveToEs(resource: String): Unit = { EsSparkSQL.saveToEs(df, resource) }
+    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit = { EsSparkSQL.saveToEs(df, resource, cfg) }
+    def saveToEs(cfg: scala.collection.Map[String, String]): Unit = { EsSparkSQL.saveToEs(df, cfg)    }
   }
   
   implicit def sparkSessionFunctions(ss: SparkSession)= new SparkSessionFunctions(ss)
@@ -64,8 +64,8 @@ package object sql {
   implicit def sparkDatasetFunctions[T : ClassTag](ds: Dataset[T]) = new SparkDatasetFunctions(ds)
   
   class SparkDatasetFunctions[T : ClassTag](ds: Dataset[T]) extends Serializable {
-    def saveToEs(resource: String) { EsSparkSQL.saveToEs(ds, resource) }
-    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(ds, resource, cfg) }
-    def saveToEs(cfg: scala.collection.Map[String, String]) { EsSparkSQL.saveToEs(ds, cfg)    }
+    def saveToEs(resource: String): Unit =  { EsSparkSQL.saveToEs(ds, resource) }
+    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit =  { EsSparkSQL.saveToEs(ds, resource, cfg) }
+    def saveToEs(cfg: scala.collection.Map[String, String]): Unit =  { EsSparkSQL.saveToEs(ds, cfg)    }
   }
 }

@@ -182,42 +182,43 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   // introduced in Spark 1.6
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = {
-    if (Utils.isKeepHandledFilters(cfg) || filters == null || filters.size == 0)
-      return filters;
+    if (Utils.isKeepHandledFilters(cfg) || filters == null || filters.size == 0) {
+      filters
+    } else {
+      // walk the filters (things like And / Or) and see whether we recognize all of them
+      // if we do, skip the filter, otherwise let it in there even though we might push some of it
+      def unhandled(filter: Filter): Boolean = {
+        filter match {
+          case EqualTo(_, _)                                                             => false
+          case GreaterThan(_, _)                                                         => false
+          case GreaterThanOrEqual(_, _)                                                  => false
+          case LessThan(_, _)                                                            => false
+          case LessThanOrEqual(_, _)                                                     => false
+          // In is problematic - see translate, don't filter it
+          case In(_, _)                                                                  => true
+          case IsNull(_)                                                                 => false
+          case IsNotNull(_)                                                              => false
+          case And(left, right)                                                          => unhandled(left) || unhandled(right)
+          case Or(left, right)                                                           => unhandled(left) || unhandled(right)
+          case Not(pred)                                                                 => unhandled(pred)
+          // Spark 1.3.1+
+          case f: Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => false
+          case f: Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => false
+          case f: Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => false
+          // Spark 1.5+
+          case f: Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")    => false
 
-    // walk the filters (things like And / Or) and see whether we recognize all of them
-    // if we do, skip the filter, otherwise let it in there even though we might push some of it
-    def unhandled(filter: Filter): Boolean = {
-      filter match {
-        case EqualTo(_, _)                                                            => false
-        case GreaterThan(_, _)                                                        => false
-        case GreaterThanOrEqual(_, _)                                                 => false
-        case LessThan(_, _)                                                           => false
-        case LessThanOrEqual(_, _)                                                    => false
-        // In is problematic - see translate, don't filter it
-        case In(_, _)                                                                 => true
-        case IsNull(_)                                                                => false
-        case IsNotNull(_)                                                             => false
-        case And(left, right)                                                         => unhandled(left) || unhandled(right)
-        case Or(left, right)                                                          => unhandled(left) || unhandled(right)
-        case Not(pred)                                                                => unhandled(pred)
-        // Spark 1.3.1+
-        case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => false
-        case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => false
-        case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => false
-        // Spark 1.5+
-        case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")    => false
-
-        // unknown
-        case _                                                                        => true
+          // unknown
+          case _                                                                         => true
+        }
       }
-    }
 
-    val filtered = filters.filter(unhandled)
-    if (Utils.LOGGER.isTraceEnabled()) {
-      Utils.LOGGER.trace(s"Unhandled filters from ${filters.mkString("[", ",", "]")} to ${filtered.mkString("[", ",", "]")}")
+      val filtered = filters.filter(unhandled)
+      if (Utils.LOGGER.isTraceEnabled()) {
+        Utils.LOGGER.trace(s"Unhandled filters from ${filters.mkString("[", ",", "]")} to ${filtered.mkString("[", ",", "]")}")
+      }
+      filtered
     }
-    filtered
   }
 
   private def createDSLFromFilters(filters: Array[Filter], strictPushDown: Boolean, isES50: Boolean) = {
@@ -334,8 +335,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // instead wildcard query is used, with the value lowercased (to match analyzed fields)
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringStartsWith") => {
-        var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg = arg.toLowerCase(Locale.ROOT) }
+        val arg = {
+          val x = f.productElement(1).toString()
+          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
+        }
         if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"$arg*"}}"""
         }
@@ -345,8 +348,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringEndsWith")   => {
-        var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg = arg.toLowerCase(Locale.ROOT) }
+        val arg = {
+          val x = f.productElement(1).toString()
+          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
+        }
         if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"*$arg"}}"""
         }
@@ -356,8 +361,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.StringContains")   => {
-        var arg = f.productElement(1).toString()
-        if (!strictPushDown) { arg = arg.toLowerCase(Locale.ROOT) }
+        val arg = {
+          val x = f.productElement(1).toString()
+          if (!strictPushDown) x.toLowerCase(Locale.ROOT) else x
+        }
         if (isES50) {
           s"""{"wildcard":{"${f.productElement(0)}":"*$arg*"}}"""
         }
@@ -369,7 +376,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // the filters below are available only from Spark 1.5.0
 
       case f:Product if isClass(f, "org.apache.spark.sql.sources.EqualNullSafe")    => {
-        var arg = extract(f.productElement(1))
+        val arg = extract(f.productElement(1))
         if (strictPushDown) s"""{"term":{"${f.productElement(0)}":$arg}}"""
         else {
           if (isES50) {
@@ -412,9 +419,8 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
     if (numbers.isEmpty) {
      if (strings.isEmpty) {
-       return StringUtils.EMPTY
-     }
-     return {
+       StringUtils.EMPTY
+     } else  {
        if (SettingsUtils.isEs50(cfg)) {
          s"""{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
        }
@@ -422,15 +428,13 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
          s"""{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""  
        }
      }
-     //s"""{"query":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
-    }
-    else {
+    } else {
       // translate the numbers into a terms query
       val str = s"""{"terms":{"$attribute":${numbers.mkString("[", ",", "]")}}}"""
-      if (strings.isEmpty) return str
+      if (strings.isEmpty) {
+        str
       // if needed, add the strings as a match query
-      else return str + 
-      {
+      } else str + {
         if (SettingsUtils.isEs50(cfg)) {
           s""",{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
         }
@@ -483,7 +487,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
     }
   }
 
-  def insert(data: DataFrame, overwrite: Boolean) {
+  def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (overwrite) {
       Utils.LOGGER.info(s"Overwriting data for ${cfg.getResourceWrite}")
 

@@ -25,7 +25,6 @@ import java.util.{Map => JMap}
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.DataType
@@ -70,7 +69,7 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     val row = value._1
     val schema = value._2
 
-    return writeStruct(schema, row, generator)
+    writeStruct(schema, row, generator)
   }
 
   private[spark] def writeStruct(schema: StructType, value: Any, generator: Generator): Result = {
@@ -110,12 +109,11 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
 
   private[spark] def writeArray(schema: ArrayType, value: Any, generator: Generator): Result = {
     value match {
-      case a: Array[_] => return doWriteSeq(schema.elementType, a, generator)
-      case s: Seq[_]   => return doWriteSeq(schema.elementType, s, generator)
+      case a: Array[_] => doWriteSeq(schema.elementType, a, generator)
+      case s: Seq[_]   => doWriteSeq(schema.elementType, s, generator)
       // unknown array type
-      case _           => return handleUnknown(value, generator)
+      case _           => handleUnknown(value, generator)
     }
-    Result.SUCCESFUL()
   }
 
   private def doWriteSeq(schema: DataType, value: Seq[_], generator: Generator): Result = {
@@ -137,9 +135,8 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
       case sm: SMap[_, _] => doWriteMap(schema, sm, generator)
       case jm: JMap[_, _] => doWriteMap(schema, jm.asScala, generator)
       // unknown map type
-      case _              => return handleUnknown(value, generator)
+      case _              => handleUnknown(value, generator)
     }
-    Result.SUCCESFUL()
   }
 
   private def doWriteMap(schema: MapType, value: SMap[_, _], generator: Generator): Result = {
@@ -192,10 +189,10 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
   protected def handleUnknown(value: Any, generator: Generator): Result = {
     if (!writeUnknownTypes) {
       println("can't handle type " + value);
-      return Result.FAILED(value)
+      Result.FAILED(value)
+    } else {
+      generator.writeString(value.toString())
+      Result.SUCCESFUL()
     }
-
-    generator.writeString(value.toString())
-    Result.SUCCESFUL()
   }
 }

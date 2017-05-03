@@ -59,6 +59,8 @@ import org.elasticsearch.hadoop.util.SettingsUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.unit.Booleans
 
+import scala.annotation.tailrec
+
 class ScalaValueReader extends ValueReader with SettingsAware {
 
   var emptyAsNull: Boolean = false
@@ -70,37 +72,34 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   var currentFieldName: String = StringUtils.EMPTY
 
   def readValue(parser: Parser, value: String, esType: FieldType) = {
-    if (esType == null) {
-      null
-    }
-
-    if (parser.currentToken() == VALUE_NULL) {
+    if (esType == null || parser.currentToken() == VALUE_NULL) {
       nullValue()
-    }
 
-    esType match {
-      case NULL => nullValue()
-      case STRING => textValue(value, parser)
-      case TEXT => textValue(value, parser)
-      case KEYWORD => textValue(value, parser)
-      case BYTE => byteValue(value, parser)
-      case SHORT => shortValue(value, parser)
-      case INTEGER => intValue(value, parser)
-      case TOKEN_COUNT => longValue(value, parser)
-      case LONG => longValue(value, parser)
-      case HALF_FLOAT => floatValue(value, parser)
-      case SCALED_FLOAT => floatValue(value, parser)
-      case FLOAT => floatValue(value, parser)
-      case DOUBLE => doubleValue(value, parser)
-      case BOOLEAN => booleanValue(value, parser)
-      case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
-      case DATE => date(value, parser)
-      // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
-      case GEO_POINT | GEO_SHAPE => {
-        if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser) 
+    } else {
+      esType match {
+        case NULL => nullValue()
+        case STRING => textValue(value, parser)
+        case TEXT => textValue(value, parser)
+        case KEYWORD => textValue(value, parser)
+        case BYTE => byteValue(value, parser)
+        case SHORT => shortValue(value, parser)
+        case INTEGER => intValue(value, parser)
+        case TOKEN_COUNT => longValue(value, parser)
+        case LONG => longValue(value, parser)
+        case HALF_FLOAT => floatValue(value, parser)
+        case SCALED_FLOAT => floatValue(value, parser)
+        case FLOAT => floatValue(value, parser)
+        case DOUBLE => doubleValue(value, parser)
+        case BOOLEAN => booleanValue(value, parser)
+        case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
+        case DATE => date(value, parser)
+        // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
+        case GEO_POINT | GEO_SHAPE => {
+          if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser)
+        }
+        // everything else (IP, GEO) gets translated to strings
+        case _ => textValue(value, parser)
       }
-      // everything else (IP, GEO) gets translated to strings
-      case _ => textValue(value, parser)
     }
   }
 
@@ -186,18 +185,18 @@ class ScalaValueReader extends ValueReader with SettingsAware {
     new LinkedHashMap
   }
 
-  override def addToMap(map: AnyRef, key: AnyRef, value: Any) = {
+  override def addToMap(map: AnyRef, key: AnyRef, value: Any): Unit = {
     map.asInstanceOf[Map[AnyRef, Any]].put(key, value)
   }
 
-  override def wrapString(value: String) = {
+  override def wrapString(value: String): AnyRef = {
     value
   }
 
   def createArray(typ: FieldType): AnyRef = {
     nestedArrayLevel += 1
 
-    List.empty;
+    List.empty
   }
 
   override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
@@ -206,55 +205,41 @@ class ScalaValueReader extends ValueReader with SettingsAware {
       var arr: AnyRef = values.asScala
       // outer most array (a multi level array might be defined)
       if (nestedArrayLevel == 0) {
-          val result = FieldFilter.filter(currentFieldName, arrayInclude, arrayExclude);
+          val result = FieldFilter.filter(currentFieldName, arrayInclude, arrayExclude)
           if (result.matched && result.depth > 1) {
-              val extraDepth = result.depth - arrayDepth(arr);
+              val extraDepth = result.depth - arrayDepth(arr)
               if (extraDepth > 0) {
                   arr = wrapArray(arr, extraDepth)
               }
           }
       }
-      return arr
+      arr
   }
 
   def arrayDepth(potentialArray: AnyRef): Int = {
-    var depth = 0
-    var potentialArr = potentialArray
-
-    var keepOnGoing = true
-
-    while (keepOnGoing) {
-      potentialArr match {
-        case col: Seq[AnyRef] => {
-          depth += 1
-          keepOnGoing = !col.isEmpty
-          if (keepOnGoing) {
-            potentialArr = col(0)
-          }
-        }
-        case _ => {
-          keepOnGoing = false
-        }
+    @tailrec
+    def _arrayDepth(potentialArray: AnyRef, depth: Int): Int = {
+      potentialArray match {
+        case Seq(x: AnyRef, _*) => _arrayDepth(x, depth + 1)
+        case _ => depth
       }
     }
-
-    return depth
+    _arrayDepth(potentialArray, 0)
   }
 
   def wrapArray(array: AnyRef, extraDepth: Int): AnyRef = {
       var arr = array
-      var i = 0
-      for (i <- 0 until extraDepth) {
-          arr = List(array)
+      for (_ <- 0 until extraDepth) {
+          arr = List(arr)
       }
-      return arr
+      arr
   }
 
-  def beginField(fieldName: String) {
+  def beginField(fieldName: String): Unit = {
        currentFieldName = fieldName
   }
 
-  def endField(fieldName: String) {
+  def endField(fieldName: String): Unit = {
        currentFieldName = null
   }
 }

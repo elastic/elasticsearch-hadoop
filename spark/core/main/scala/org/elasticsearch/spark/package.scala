@@ -52,25 +52,25 @@ package object spark {
   implicit def sparkRDDFunctions[T : ClassTag](rdd: RDD[T]) = new SparkRDDFunctions[T](rdd)
 
   class SparkRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
-    def saveToEs(resource: String) { EsSpark.saveToEs(rdd, resource) }
-    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSpark.saveToEs(rdd, resource, cfg) }
-    def saveToEs(cfg: scala.collection.Map[String, String]) { EsSpark.saveToEs(rdd, cfg)    }
+    def saveToEs(resource: String): Unit = { EsSpark.saveToEs(rdd, resource) }
+    def saveToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit = { EsSpark.saveToEs(rdd, resource, cfg) }
+    def saveToEs(cfg: scala.collection.Map[String, String]): Unit = { EsSpark.saveToEs(rdd, cfg)    }
   }
 
   implicit def sparkStringJsonRDDFunctions(rdd: RDD[String]) = new SparkJsonRDDFunctions[String](rdd)
   implicit def sparkByteArrayJsonRDDFunctions(rdd: RDD[Array[Byte]]) = new SparkJsonRDDFunctions[Array[Byte]](rdd)
 
   class SparkJsonRDDFunctions[T : ClassTag](rdd: RDD[T]) extends Serializable {
-    def saveJsonToEs(resource: String) { EsSpark.saveJsonToEs(rdd, resource) }
-    def saveJsonToEs(resource: String, cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, resource, cfg) }
-    def saveJsonToEs(cfg: scala.collection.Map[String, String]) { EsSpark.saveJsonToEs(rdd, cfg) }
+    def saveJsonToEs(resource: String): Unit = { EsSpark.saveJsonToEs(rdd, resource) }
+    def saveJsonToEs(resource: String, cfg: scala.collection.Map[String, String]): Unit = { EsSpark.saveJsonToEs(rdd, resource, cfg) }
+    def saveJsonToEs(cfg: scala.collection.Map[String, String]): Unit = { EsSpark.saveJsonToEs(rdd, cfg) }
   }
 
   implicit def sparkPairRDDFunctions[K : ClassTag, V : ClassTag](rdd: RDD[(K,V)]) = new SparkPairRDDFunctions[K,V](rdd)
 
   class SparkPairRDDFunctions[K : ClassTag, V : ClassTag](rdd: RDD[(K,V)]) extends Serializable {
-    def saveToEsWithMeta[K,V](resource: String) { EsSpark.saveToEsWithMeta(rdd, resource) }
-    def saveToEsWithMeta[K,V](resource: String, cfg: Map[String, String]) { EsSpark.saveToEsWithMeta(rdd, resource, cfg) }
-    def saveToEsWithMeta[K,V](cfg: Map[String, String]) { EsSpark.saveToEsWithMeta(rdd, cfg) }
+    def saveToEsWithMeta[K,V](resource: String): Unit = { EsSpark.saveToEsWithMeta(rdd, resource) }
+    def saveToEsWithMeta[K,V](resource: String, cfg: Map[String, String]): Unit = { EsSpark.saveToEsWithMeta(rdd, resource, cfg) }
+    def saveToEsWithMeta[K,V](cfg: Map[String, String]): Unit = { EsSpark.saveToEsWithMeta(rdd, cfg) }
   }
 }

@@ -41,12 +41,12 @@ class SchemaUtilsTest {
   var cfg: Settings = null
 
   @Before
-  def start() {
+  def start(): Unit = {
     cfg = new TestSettings
   }
 
   @Test
-  def testConvertToStructSimpleField() {
+  def testConvertToStructSimpleField(): Unit = {
     val mapping = """{
     |  "simple" : {
     |      "properties" : {
@@ -64,7 +64,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testConvertToStructWithObject() {
+  def testConvertToStructWithObject(): Unit = {
     val mapping = """{ "nested-array": {
     | "properties" : {
     |   "arr" : {
@@ -92,7 +92,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testConvertToStructWithSpecifiedArray() {
+  def testConvertToStructWithSpecifiedArray(): Unit = {
     val mapping = """{
     |  "simple" : {
     |      "properties" : {
@@ -116,7 +116,7 @@ class SchemaUtilsTest {
 
   
   @Test
-  def testConvertToStructWithSpecifiedArrayDepth() {
+  def testConvertToStructWithSpecifiedArrayDepth(): Unit = {
     val mapping = """{
     |  "simple" : {
     |      "properties" : {
@@ -150,7 +150,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testDetectRowInfoSimple() {
+  def testDetectRowInfoSimple(): Unit = {
     val mapping = """{ "array-mapping-top-level": {
     | "properties" : {
     |   "arr" : {
@@ -171,7 +171,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testDetectRowInfoWithOneNestedArray() {
+  def testDetectRowInfoWithOneNestedArray(): Unit = {
     val mapping = """{ "array-mapping-top-level": {
     | "properties" : {
     |   "arr" : {
@@ -195,7 +195,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testDetectRowInfoWithMultiDepthArray() {
+  def testDetectRowInfoWithMultiDepthArray(): Unit = {
     val mapping = """{ "array-mapping-top-level": {
     | "properties" : {
     |   "arr" : {

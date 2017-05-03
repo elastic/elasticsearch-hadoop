@@ -47,6 +47,6 @@ class ScalaMapFieldExtractor extends MapFieldExtractor {
         }
       }
     }
-    return obj
+    obj
   }
 }
