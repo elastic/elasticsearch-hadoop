@@ -41,6 +41,6 @@ class DataFrameFieldExtractor extends ScalaMapFieldExtractor {
         case _ => super.extractField(target)
       }
     }
-    return obj
+    obj
   }
 }

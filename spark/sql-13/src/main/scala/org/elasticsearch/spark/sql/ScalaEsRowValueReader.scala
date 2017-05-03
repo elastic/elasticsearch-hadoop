@@ -100,8 +100,14 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   override def addToArray(array: AnyRef, values: java.util.List[Object]): AnyRef = {
     // restore previous state
     array match {
-      case (pastInArray: Boolean, pastRowOrder: Seq[String]) => { inArray = pastInArray; currentArrayRowOrder = pastRowOrder }
-      case _                                                 => { inArray = false; currentArrayRowOrder = null}
+      case (pastInArray: Boolean, pastRowOrder: Seq[String @unchecked]) => {
+        inArray = pastInArray
+        currentArrayRowOrder = pastRowOrder
+      }
+      case _ => {
+        inArray = false
+        currentArrayRowOrder = null
+      }
     }
     super.addToArray(array, values)
   }
@@ -117,27 +123,27 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
     new Timestamp(value)
   }
 
-  def beginDoc() {}
+  def beginDoc(): Unit = {}
 
-  def beginLeadMetadata() { metadataMap = true }
+  def beginLeadMetadata(): Unit = { metadataMap = true }
 
-  def endLeadMetadata() {}
+  def endLeadMetadata(): Unit = {}
 
-  def beginSource() { rootLevel = true; sparkRowField = Utils.ROOT_LEVEL_NAME }
+  def beginSource(): Unit = { rootLevel = true; sparkRowField = Utils.ROOT_LEVEL_NAME }
 
-  def endSource() {}
+  def endSource(): Unit = {}
 
-  def beginTrailMetadata() {}
+  def beginTrailMetadata(): Unit = {}
 
-  def endTrailMetadata() {}
+  def endTrailMetadata(): Unit = {}
 
-  def endDoc() {}
+  def endDoc(): Unit = {}
   
-  def beginGeoField() {
+  def beginGeoField(): Unit = {
     currentFieldIsGeo = true
   }
   
-  def endGeoField() {
+  def endGeoField(): Unit = {
     currentFieldIsGeo = false
   }
 }

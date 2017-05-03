@@ -48,7 +48,7 @@ object JavaEsSparkSQL {
   def esDF(ss: SparkSession, resource: String, cfg: JMap[String, String]): DataFrame = EsSparkSQL.esDF(ss, resource, cfg.asScala)
   def esDF(ss: SparkSession, resource: String, query: String, cfg: JMap[String, String]): DataFrame = EsSparkSQL.esDF(ss, resource, query, cfg.asScala)
 
-  def saveToEs[T](ds: Dataset[T], resource: String) = EsSparkSQL.saveToEs(ds , resource)
-  def saveToEs[T](ds: Dataset[T], resource: String, cfg: JMap[String, String]) = EsSparkSQL.saveToEs(ds, resource, cfg.asScala)
-  def saveToEs[T](ds: Dataset[T], cfg: JMap[String, String]) = EsSparkSQL.saveToEs(ds, cfg.asScala)
+  def saveToEs[T](ds: Dataset[T], resource: String): Unit = EsSparkSQL.saveToEs(ds , resource)
+  def saveToEs[T](ds: Dataset[T], resource: String, cfg: JMap[String, String]): Unit = EsSparkSQL.saveToEs(ds, resource, cfg.asScala)
+  def saveToEs[T](ds: Dataset[T], cfg: JMap[String, String]): Unit = EsSparkSQL.saveToEs(ds, cfg.asScala)
 }
