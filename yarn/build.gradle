@@ -52,7 +52,7 @@ def baseZip(Zip zip) {
     // zip.outputs.file file(zip.archivePath.absolutePath + '.sha1.txt')
 
     // execute phase
-    zip << {
+    zip.doLast {
         ant.checksum(file: zip.archivePath, algorithm: 'SHA1', format: 'MD5SUM', fileext: '.sha1.txt')
     }
 }
