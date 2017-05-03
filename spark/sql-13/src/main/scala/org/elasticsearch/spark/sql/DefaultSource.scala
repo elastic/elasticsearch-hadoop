@@ -428,9 +428,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
          s"""{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""  
        }
      }
-     //s"""{"query":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
-    }
-    else {
+    } else {
       // translate the numbers into a terms query
       val str = s"""{"terms":{"$attribute":${numbers.mkString("[", ",", "]")}}}"""
       if (strings.isEmpty) {

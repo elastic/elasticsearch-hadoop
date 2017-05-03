@@ -72,37 +72,34 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   var currentFieldName: String = StringUtils.EMPTY
 
   def readValue(parser: Parser, value: String, esType: FieldType) = {
-    if (esType == null) {
-      null // TODO Does this intend 'return null'?
-    }
+    if (esType == null || parser.currentToken() == VALUE_NULL) {
+      nullValue()
 
-    if (parser.currentToken() == VALUE_NULL) {
-      nullValue() // TODO Does this intend 'return nullValue()'?
-    }
-
-    esType match {
-      case NULL => nullValue()
-      case STRING => textValue(value, parser)
-      case TEXT => textValue(value, parser)
-      case KEYWORD => textValue(value, parser)
-      case BYTE => byteValue(value, parser)
-      case SHORT => shortValue(value, parser)
-      case INTEGER => intValue(value, parser)
-      case TOKEN_COUNT => longValue(value, parser)
-      case LONG => longValue(value, parser)
-      case HALF_FLOAT => floatValue(value, parser)
-      case SCALED_FLOAT => floatValue(value, parser)
-      case FLOAT => floatValue(value, parser)
-      case DOUBLE => doubleValue(value, parser)
-      case BOOLEAN => booleanValue(value, parser)
-      case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
-      case DATE => date(value, parser)
-      // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
-      case GEO_POINT | GEO_SHAPE => {
-        if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser) 
+    } else {
+      esType match {
+        case NULL => nullValue()
+        case STRING => textValue(value, parser)
+        case TEXT => textValue(value, parser)
+        case KEYWORD => textValue(value, parser)
+        case BYTE => byteValue(value, parser)
+        case SHORT => shortValue(value, parser)
+        case INTEGER => intValue(value, parser)
+        case TOKEN_COUNT => longValue(value, parser)
+        case LONG => longValue(value, parser)
+        case HALF_FLOAT => floatValue(value, parser)
+        case SCALED_FLOAT => floatValue(value, parser)
+        case FLOAT => floatValue(value, parser)
+        case DOUBLE => doubleValue(value, parser)
+        case BOOLEAN => booleanValue(value, parser)
+        case BINARY => binaryValue(Option(parser.binaryValue()).getOrElse(value.getBytes()))
+        case DATE => date(value, parser)
+        // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
+        case GEO_POINT | GEO_SHAPE => {
+          if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser)
+        }
+        // everything else (IP, GEO) gets translated to strings
+        case _ => textValue(value, parser)
       }
-      // everything else (IP, GEO) gets translated to strings
-      case _ => textValue(value, parser)
     }
   }
 
@@ -223,7 +220,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
     @tailrec
     def _arrayDepth(potentialArray: AnyRef, depth: Int): Int = {
       potentialArray match {
-        case Seq(x: AnyRef, _*) => _arrayDepth(potentialArray, depth + 1)
+        case Seq(x: AnyRef, _*) => _arrayDepth(x, depth + 1)
         case _ => depth
       }
     }
@@ -233,7 +230,7 @@ class ScalaValueReader extends ValueReader with SettingsAware {
   def wrapArray(array: AnyRef, extraDepth: Int): AnyRef = {
       var arr = array
       for (_ <- 0 until extraDepth) {
-          arr = List(array) // TODO Should this line be arr = List(arr)?
+          arr = List(arr)
       }
       arr
   }

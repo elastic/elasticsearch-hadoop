@@ -26,7 +26,8 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.{Map => SMap}
 import scala.collection.Seq
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.ArrayType
+import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.types.DataTypes.BinaryType
 import org.apache.spark.sql.types.DataTypes.BooleanType
 import org.apache.spark.sql.types.DataTypes.ByteType
@@ -38,6 +39,8 @@ import org.apache.spark.sql.types.DataTypes.LongType
 import org.apache.spark.sql.types.DataTypes.ShortType
 import org.apache.spark.sql.types.DataTypes.StringType
 import org.apache.spark.sql.types.DataTypes.TimestampType
+import org.apache.spark.sql.types.MapType
+import org.apache.spark.sql.types.StructType
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT
 import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
