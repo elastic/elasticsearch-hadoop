@@ -143,6 +143,9 @@ public interface ConfigurationOptions {
     String ES_INDEX_READ_MISSING_AS_EMPTY = "es.index.read.missing.as.empty";
     String ES_INDEX_READ_MISSING_AS_EMPTY_DEFAULT = "false";
 
+    String ES_INDEX_READ_ALLOW_RED_STATUS = "es.index.read.allow.red.status";
+    String ES_INDEX_READ_ALLOW_RED_STATUS_DEFAULT = "false";
+
     /** Mapping types */
     String ES_MAPPING_DEFAULT_EXTRACTOR_CLASS = "es.mapping.default.extractor.class";
 

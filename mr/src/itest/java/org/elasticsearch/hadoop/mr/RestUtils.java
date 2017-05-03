@@ -23,7 +23,7 @@ import java.io.IOException;
 import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
-import org.elasticsearch.hadoop.rest.RestClient.HEALTH;
+import org.elasticsearch.hadoop.rest.RestClient.Health;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -120,7 +120,7 @@ public class RestUtils {
 
     public static void waitForYellow(String string) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
-        rc.health(string, HEALTH.YELLOW, TimeValue.timeValueSeconds(5));
+        rc.waitForHealth(string, Health.YELLOW, TimeValue.timeValueSeconds(5));
         rc.close();
     }
 

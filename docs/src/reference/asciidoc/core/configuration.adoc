@@ -379,6 +379,19 @@ specifying a schema in Cascading and Pig.
 User specified source filters were found [name,timestamp], but the connector is executing in a state where it has provided its own source filtering [name,timestamp,location.address]. Please clear the user specified source fields under the [es.read.source.filter] property to continue. Bailing out...
 ----
 
+added[5.4]
+`es.index.read.allow.red.status` (default false)::
+When executing a job that is reading from Elasticsearch, if the resource provided for reads
+includes an index that has missing shards that are causing the cluster to have a status of
+`red`, then ES-Hadoop will inform you of this status and fail fast. In situations where the
+job must continue using the remaining available data that is still reachable, users can
+enable this property to instruct the connector to ignore shards it could not reach.
+
+WARNING: Using `es.index.read.allow.red.status` can lead to jobs running over incomplete
+datasets. Jobs executed against a red cluster will yield inconsistent results when
+compared to jobs executed against a fully green or yellow cluster. Use this setting with
+caution.
+
 [float]
 ==== Input
 
