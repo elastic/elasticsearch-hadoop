@@ -22,6 +22,7 @@ import org.apache.spark.streaming.dstream.DStream
 import org.elasticsearch.hadoop.util.ObjectUtils
 
 import scala.reflect.ClassTag
+import scala.language.implicitConversions
 
 package object streaming {
 
