@@ -1,0 +1,23 @@
+[[eshadoop-5.4.0]]
+== Elasticsearch for Apache Hadoop version 5.4.0
+May 4, 2017
+
+[[enhancements-5.4.0]]
+=== Enhancements
+REST::
+* Add status checks for when ES cluster is red
+https://github.com/elastic/elasticsearch-hadoop/issues/976[#976]
+Build::
+* Upgrade Gradle to 3.3
+https://github.com/elastic/elasticsearch-hadoop/issues/977[#977]
+* Add Scala compiler options
+https://github.com/elastic/elasticsearch-hadoop/pull/964[#964]
+
+[[bugs-5.4.0]]
+=== Bug Fixes
+REST::
+* Red index status causes NullPointerException in PySpark
+https://github.com/elastic/elasticsearch-hadoop/issues/957[#957]
+Spark::
+* Take Scala standard in spark support
+https://github.com/elastic/elasticsearch-hadoop/pull/940[#940]
