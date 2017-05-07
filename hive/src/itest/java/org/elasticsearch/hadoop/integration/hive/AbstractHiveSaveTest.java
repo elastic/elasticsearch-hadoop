@@ -21,10 +21,7 @@ package org.elasticsearch.hadoop.integration.hive;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.elasticsearch.hadoop.rest.RestClient;
-import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -73,7 +70,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/artists");
+                        + tableProps("hive-artists/data");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM source s";
 
@@ -91,6 +88,7 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
+    @Ignore // TTL no longer available
     public void testMappingttl() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
@@ -104,7 +102,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "ts       STRING) "
-                        + tableProps("hive/savemeta", "'es.mapping.timestamp' = 'ts'", "'es.mapping.id' = 'id'", "'es.mapping.ttl' = '<\"5m\">'");
+                        + tableProps("hive-savemeta/data", "'es.mapping.id' = 'id'", "'es.mapping.version' = '<\"5\">'");
 
         String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
 
@@ -123,10 +121,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testBasicSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/artists").toString(),
+        assertThat(RestUtils.getMapping("hive-artists/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("artists=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("artists=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -160,7 +158,7 @@ public class AbstractHiveSaveTest {
                         + "rid      INT, "
                         + "mapids   ARRAY<INT>, "
                         + "rdata    MAP<INT, STRING>) "
-                        + tableProps("hive/compound");
+                        + tableProps("hive-compound/data");
 
         String selectTest = "SELECT rid, mapids, rdata FROM compoundsource";
 
@@ -180,10 +178,10 @@ public class AbstractHiveSaveTest {
     @Test
     public void testCompoundSaveMapping() throws Exception {
         assertThat(
-                RestUtils.getMapping("hive/compound").toString(),
+                RestUtils.getMapping("hive-compound/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("compound=[mapids=LONG, rdata=[1=TEXT, 10=TEXT, 11=TEXT, 12=TEXT, 13=TEXT, 2=TEXT, 3=TEXT, 4=TEXT, 5=TEXT, 6=TEXT, 7=TEXT, 8=TEXT, 9=TEXT], rid=LONG]")
-                        : is("compound=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
+                        ? is("data=[mapids=LONG, rdata=[1=TEXT, 10=TEXT, 11=TEXT, 12=TEXT, 13=TEXT, 2=TEXT, 3=TEXT, 4=TEXT, 5=TEXT, 6=TEXT, 7=TEXT, 8=TEXT, 9=TEXT], rid=LONG]")
+                        : is("data=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
     }
 
 
@@ -199,7 +197,7 @@ public class AbstractHiveSaveTest {
                         + "dte     TIMESTAMP, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/artiststimestamp");
+                        + tableProps("hive-artiststimestamp/data");
 
         String currentDate = "SELECT *, from_unixtime(unix_timestamp()) from timestampsource";
 
@@ -219,10 +217,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testTimestampSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/artiststimestamp").toString(),
+        assertThat(RestUtils.getMapping("hive-artiststimestamp/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("artiststimestamp=[dte=DATE, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("artiststimestamp=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[dte=DATE, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -236,7 +234,7 @@ public class AbstractHiveSaveTest {
                         + "dTE     TIMESTAMP, "
                         + "Name     STRING, "
                         + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                        + tableProps("hive/aliassave", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
+                        + tableProps("hive-aliassave/data", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
@@ -253,10 +251,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/aliassave").toString(),
+        assertThat(RestUtils.getMapping("hive-aliassave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("aliassave=[@timestamp=DATE, links=[picture=TEXT, url_123=TEXT], name=TEXT]")
-                        : is("aliassave=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
+                        ? is("data=[@timestamp=DATE, links=[picture=TEXT, url_123=TEXT], name=TEXT]")
+                        : is("data=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
     }
 
     @Test
@@ -272,7 +270,7 @@ public class AbstractHiveSaveTest {
                         + "date     DATE, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/datesave");
+                        + tableProps("hive-datesave/data");
 
         // this works
         String someDate = "SELECT cast('2013-10-21' as date) from datesource";
@@ -294,10 +292,10 @@ public class AbstractHiveSaveTest {
     @Test
     @Ignore
     public void testDateSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/datesave").toString(),
+        assertThat(RestUtils.getMapping("hive-datesave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("datesave=[id=LONG, date=LONG, name=TEXT, links=[url=TEXT, picture=TEXT]]")
-                        : is("datesave=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
+                        ? is("data=[id=LONG, date=LONG, name=TEXT, links=[url=TEXT, picture=TEXT]]")
+                        : is("data=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
     }
 
     @Test
@@ -311,7 +309,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     CHAR(20), "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/charsave");
+                        + tableProps("hive-charsave/data");
 
         // this does not
         String insert =
@@ -327,10 +325,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCharMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/charsave").toString(),
+        assertThat(RestUtils.getMapping("hive-charsave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                    ? is("charsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                    : is("charsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                    ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                    : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -347,7 +345,7 @@ public class AbstractHiveSaveTest {
         String ddl =
                 "CREATE EXTERNAL TABLE externalserdetest ("
                         + "data     STRING)"
-                        + tableProps("hive/externalserde");
+                        + tableProps("hive-externalserde/data");
 
         String insert =
                 "INSERT OVERWRITE TABLE externalserdetest "
@@ -362,10 +360,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testExternalSerDeMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/externalserde").toString(),
+        assertThat(RestUtils.getMapping("hive-externalserde/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("externalserde=[data=TEXT]")
-                        : is("externalserde=[data=STRING]"));
+                        ? is("data=[data=TEXT]")
+                        : is("data=[data=STRING]"));
     }
 
     @Test
@@ -379,7 +377,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     VARCHAR(10), "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/varcharsave");
+                        + tableProps("hive-varcharsave/data");
 
         // transfer data
         String insert =
@@ -395,10 +393,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testVarcharSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/varcharsave").toString(),
+        assertThat(RestUtils.getMapping("hive-varcharsave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("varcharsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("varcharsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -415,7 +413,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/createsave",
+                        + tableProps("hive-createsave/data",
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -436,10 +434,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCreateMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/createsave").toString(),
+        assertThat(RestUtils.getMapping("hive-createsave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("createsave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("createsave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -456,7 +454,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/createsave",
+                        + tableProps("hive-createsave/data",
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -489,7 +487,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/updatesave",
+                        + tableProps("hive-updatesave/data",
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
@@ -510,10 +508,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/updatesave").toString(),
+        assertThat(RestUtils.getMapping("hive-updatesave/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("updatesave=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("updatesave=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -530,7 +528,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/updatewoupsertsave",
+                        + tableProps("hive-updatewoupsertsave/data",
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
@@ -551,7 +549,8 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testParentChild() throws Exception {
-        RestUtils.putMapping("hive/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.createMultiTypeIndex("hive-pc");
+        RestUtils.putMapping("hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String localTable = createTable("childsource");
         String load = loadData("childsource");
@@ -562,7 +561,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/child",
+                        + tableProps("hive-pc/child",
                                 "'" + ConfigurationOptions.ES_MAPPING_PARENT + "'='id'",
                                 "'" + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "'='false'");
 
@@ -583,7 +582,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testParentChildMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/child").toString(),
+        assertThat(RestUtils.getMapping("hive-pc/child").toString(),
                 targetVersion.onOrAfter(V_5_X)
                         ? is("child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
                         : is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
@@ -603,7 +602,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/pattern-{id}");
+                        + tableProps("hive-pattern-{id}/data");
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM sourcepattern s";
 
@@ -622,10 +621,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/pattern-12").toString(),
+        assertThat(RestUtils.getMapping("hive-pattern-12/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("pattern-12=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("pattern-12=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -643,7 +642,7 @@ public class AbstractHiveSaveTest {
                         + "name     STRING, "
                         + "ts       STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive/pattern-format-{ts:YYYY-MM-dd}");
+                        + tableProps("hive-pattern-format-{ts|YYYY-MM-dd}/data");
 
         String selectTest = "SELECT s.name, s.ts, struct(s.url, s.picture) FROM sourcepatternformat s";
 
@@ -662,10 +661,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive/pattern-format-2012-10-06").toString(),
+        assertThat(RestUtils.getMapping("hive-pattern-format-2012-10-06/data").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("pattern-format-2012-10-06=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT, ts=DATE]")
-                        : is("pattern-format-2012-10-06=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
+                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT, ts=DATE]")
+                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
     }
 
     @Test
@@ -678,7 +677,7 @@ public class AbstractHiveSaveTest {
                 "CREATE EXTERNAL TABLE fieldexclude ("
                         + "id       BIGINT, "
                         + "name     STRING)"
-                        + tableProps("hive/fieldexclude", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
+                        + tableProps("hive-fieldexclude/data", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
 
         String selectTest = "SELECT s.id, s.name FROM sourcefieldexclude s";
 
@@ -694,13 +693,13 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
 
-        String string = RestUtils.get("hive/fieldexclude/1");
+        String string = RestUtils.get("hive-fieldexclude/data/1");
         assertThat(string, containsString("MALICE"));
 
-        string = RestUtils.get("hive/fieldexclude/7");
+        string = RestUtils.get("hive-fieldexclude/data/7");
         assertThat(string, containsString("Manson"));
 
-        assertFalse(RestUtils.getMapping("hive/fieldexclude").toString().contains("id="));
+        assertFalse(RestUtils.getMapping("hive-fieldexclude/data").toString().contains("id="));
     }
 
     private String createTable(String tableName) {

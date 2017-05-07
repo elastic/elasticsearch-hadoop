@@ -100,7 +100,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsDataset1Write() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-		String target = "sparksql-test/scala-basic-write";
+		String target = "sparksql-test-scala-basic-write/data";
         JavaEsSparkSQL.saveToEs(dataset, target);
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
@@ -110,7 +110,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsDataset1WriteWithId() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-		String target = "sparksql-test/scala-basic-write-id-mapping";
+		String target = "sparksql-test-scala-basic-write-id-mapping/data";
         JavaEsSparkSQL.saveToEs(dataset, target,
 				ImmutableMap.of(ES_MAPPING_ID, "id"));
 		assertTrue(RestUtils.exists(target));
@@ -122,7 +122,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-        String target = "sparksql-test/scala-basic-write-exclude-mapping";
+        String target = "sparksql-test-scala-basic-write-exclude-mapping/data";
         JavaEsSparkSQL.saveToEs(dataset, target,
                 ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
         assertTrue(RestUtils.exists(target));
@@ -131,7 +131,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     
 	@Test
     public void testEsDataset2Read() throws Exception {
-		String target = "sparksql-test/scala-basic-write";
+		String target = "sparksql-test-scala-basic-write/data";
 
         // Dataset<Row> dataset = JavaEsSparkSQL.esDF(sqc, target);
         Dataset<Row> dataset = sqc.read().format("es").load(target);

@@ -56,7 +56,7 @@ public class AbstractCascadingHadoopSaveTest {
     @Test
     public void testWriteToES() throws Exception {
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop/artists", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop-artists/data", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         FlowDef flowDef = FlowDef.flowDef().addSource(pipe, in).addTailSink(pipe, out);
@@ -65,16 +65,16 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/artists").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-artists/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("artists=[name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("artists=[name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
     public void testWriteToESWithAlias() throws Exception {
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop/alias", "", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop-alias/data", "", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
@@ -87,10 +87,10 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/alias").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-alias/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("alias=[address=TEXT, name=TEXT, picture=TEXT]")
-                        : is("alias=[address=STRING, name=STRING, picture=STRING]"));
+                        ? is("data=[address=TEXT, name=TEXT, picture=TEXT]")
+                        : is("data=[address=STRING, name=STRING, picture=STRING]"));
     }
 
     @Test
@@ -98,17 +98,17 @@ public class AbstractCascadingHadoopSaveTest {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop/pattern-{id}", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop-pattern-{id}/data", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-12").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-12/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-12=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -116,17 +116,17 @@ public class AbstractCascadingHadoopSaveTest {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop/pattern-format-{ts:YYYY-MM-dd}", new Fields("id", "name", "url", "picture", "ts"));
+        Tap out = new EsTap("cascading-hadoop-pattern-format-{ts:YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
         Pipe pipe = new Pipe("copy");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }
 
     @Test
     public void testIndexPatternWithFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop/pattern-format-2012-10-06").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-format-2012-10-06").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-format-2012-10-06=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
-                        : is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
     @Test
@@ -135,7 +135,7 @@ public class AbstractCascadingHadoopSaveTest {
         Properties cfg = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         FlowDef flow = new FlowDef().addSource(copy, sourceTap())
-                .addTailSink(copy, new EsTap("cascading-hadoop/cascade-connector"));
+                .addTailSink(copy, new EsTap("cascading-hadoop-cascade-connector/data"));
 
         FlowConnector connector = new HadoopFlowConnector(cfg);
         Flow[] flows = new Flow[] { connector.connect(flow) };

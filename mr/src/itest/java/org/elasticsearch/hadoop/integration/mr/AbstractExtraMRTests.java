@@ -120,14 +120,14 @@ public class AbstractExtraMRTests {
     @Test
     public void testSaveDocWithEscapedChars() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-gibberish/data");
         runJob(conf);
     }
 
     @Test
     public void testSaveDocWithEscapedCharsAndMapping() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/gibberish-with-mapping");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-gibberish-with-mapping/data");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "@id");
         runJob(conf);
     }
@@ -136,7 +136,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDoc() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-gibberish/data");
         JobClient.runJob(conf);
     }
 
@@ -144,7 +144,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDocWithMapping() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/gibberish-with-mapping");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-gibberish-with-mapping/data");
         JobClient.runJob(conf);
     }
 

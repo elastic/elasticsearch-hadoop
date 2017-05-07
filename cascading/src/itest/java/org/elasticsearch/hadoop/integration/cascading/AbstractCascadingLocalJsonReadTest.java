@@ -66,12 +66,12 @@ public class AbstractCascadingLocalJsonReadTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "cascading-local");
+        RestUtils.refresh(indexPrefix + "cascading-local*");
     }
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-local/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-local-artists/data");
         Pipe pipe = new Pipe("copy");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Tap out = new OutputStreamTap(new TextLine(), os);
@@ -93,7 +93,7 @@ public class AbstractCascadingLocalJsonReadTest {
 
     @Test
     public void testReadFromESWithSourceFilter() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-local/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-local-artists/data");
         Pipe pipe = new Pipe("copy");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         Tap out = new OutputStreamTap(new TextLine(), os);

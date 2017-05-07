@@ -64,7 +64,7 @@ public class AbstractHiveSearchJsonTest {
     @Before
     public void before() throws Exception {
         provisionEsLib();
-        RestUtils.refresh("json-hive");
+        RestUtils.refresh("json-hive*");
     }
 
     @After
@@ -77,21 +77,21 @@ public class AbstractHiveSearchJsonTest {
     public void loadMultiNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10 20 ] } } }";
-        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive-nestedmap/data", StringUtils.toUTF(data));
         data = "{ \"data\" : { \"different\" : \"structure\" } } }";
-        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive-nestedmap/data", StringUtils.toUTF(data));
 
-        RestUtils.refresh("json-hive");
+        RestUtils.refresh("json-hive*");
 
         String createList = "CREATE EXTERNAL TABLE jsonnestedmaplistload" + testInstance + "("
                 + "nested   ARRAY<INT>) "
-                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.map.key'");
+                + tableProps("json-hive-nestedmap/data", "'es.mapping.names' = 'nested:data.map.key'");
 
         String selectList = "SELECT * FROM jsonnestedmaplistload" + testInstance;
 
         String createMap = "CREATE EXTERNAL TABLE jsonnestedmapmapload" + testInstance + "("
                 + "nested   MAP<STRING,ARRAY<INT>>) "
-                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.map'");
+                + tableProps("json-hive-nestedmap/data", "'es.mapping.names' = 'nested:data.map'");
 
         String selectMap = "SELECT * FROM jsonnestedmapmapload" + testInstance;
 
@@ -113,19 +113,19 @@ public class AbstractHiveSearchJsonTest {
     public void loadSingleNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
         String data = "{ \"data\" : { \"single\" : { \"key\" : [ 10 ] } } }";
-        RestUtils.postData("json-hive/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData("json-hive-nestedmap/data", StringUtils.toUTF(data));
 
-        RestUtils.refresh("json-hive");
+        RestUtils.refresh("json-hive*");
 
         String createList = "CREATE EXTERNAL TABLE jsonnestedsinglemaplistload" + testInstance + "("
                 + "nested   ARRAY<INT>) "
-                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.single.key'");
+                + tableProps("json-hive-nestedmap/data", "'es.mapping.names' = 'nested:data.single.key'");
 
         String selectList = "SELECT * FROM jsonnestedsinglemaplistload" + testInstance;
 
         String createMap = "CREATE EXTERNAL TABLE jsonnestedsinglemapmapload" + testInstance + "("
                 + "nested   MAP<STRING,ARRAY<INT>>) "
-                + tableProps("json-hive/nestedmap", "'es.mapping.names' = 'nested:data.single'");
+                + tableProps("json-hive-nestedmap/data", "'es.mapping.names' = 'nested:data.single'");
 
         String selectMap = "SELECT * FROM jsonnestedsinglemapmapload" + testInstance;
 
@@ -150,7 +150,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps("json-hive/artists");
+                + tableProps("json-hive-artists/data");
 
         String select = "SELECT * FROM jsonartistsload" + testInstance;
 
@@ -169,7 +169,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps("json-hive/artists");
+                + tableProps("json-hive-artists/data");
 
         String select = "SELECT count(*) FROM jsonartistscount" + testInstance;
 
@@ -203,7 +203,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps("json-hive/varcharsave");
+                + tableProps("json-hive-varcharsave/data");
 
         String select = "SELECT * FROM jsonvarcharload" + testInstance;
 
@@ -224,7 +224,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps("json-hive/child", "'es.index.read.missing.as.empty' = 'true'");
+                + tableProps("json-hive-pc/child", "'es.index.read.missing.as.empty' = 'true'");
 
         String select = "SELECT * FROM jsonchildload" + testInstance;
 
@@ -239,16 +239,16 @@ public class AbstractHiveSearchJsonTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-7"));
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-10"));
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-3"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-7/data"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-10/data"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-3/data"));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2007-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-hive/pattern-format-2000-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-format-2007-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-hive-pattern-format-2000-10-06/data"));
     }
 
     private static boolean containsNoNull(List<String> str) {

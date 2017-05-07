@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cascading.EsTap;
@@ -42,7 +43,7 @@ public class AbstractCascadingHadoopJsonSaveTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-hadoop/artists");
+        Tap out = new EsTap("json-cascading-hadoop-artists/data");
 
         Pipe pipe = new Pipe("copy");
         build(cfg(), in, out, pipe);
@@ -55,7 +56,7 @@ public class AbstractCascadingHadoopJsonSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-hadoop/non-existing", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop-non-existing/data", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(cfg, in, out, pipe);
     }
@@ -63,7 +64,7 @@ public class AbstractCascadingHadoopJsonSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-hadoop/pattern-{number}", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop-pattern-{number}/data", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(cfg(), in, out, pipe);
     }
@@ -71,7 +72,7 @@ public class AbstractCascadingHadoopJsonSaveTest {
     @Test
     public void testIndexPatternWithFormat() throws Exception {
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-hadoop/pattern-format-{@timestamp:YYYY-MM-dd}", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop-pattern-format-{@timestamp:YYYY-MM-dd}/data", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(cfg(), in, out, pipe);
     }

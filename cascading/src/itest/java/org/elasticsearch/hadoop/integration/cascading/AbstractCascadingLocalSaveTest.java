@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -58,7 +59,7 @@ public class AbstractCascadingLocalSaveTest {
     public void testWriteToES() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/artists", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-artists/data", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(new TestSettings().getProperties(), in, out, pipe);
@@ -66,17 +67,17 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/artists").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-artists/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("artists=[name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("artists=[name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
     public void testWriteToESWithAlias() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/alias", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-alias/data", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
@@ -89,10 +90,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/alias").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-alias/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("alias=[address=TEXT, name=TEXT, picture=TEXT]")
-                        : is("alias=[address=STRING, name=STRING, picture=STRING]"));
+                        ? is("data=[address=TEXT, name=TEXT, picture=TEXT]")
+                        : is("data=[address=STRING, name=STRING, picture=STRING]"));
     }
 
 
@@ -103,7 +104,7 @@ public class AbstractCascadingLocalSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/non-existing", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-non-existing/data", new Fields("name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
 
@@ -113,10 +114,11 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
+    @Ignore // TTL is removed.
     public void testFieldMapping() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/fieldmapping", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-fieldmapping/data", new Fields("name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
@@ -128,11 +130,12 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
+    @Ignore // TTL is removed.
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/fieldmapping").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-fieldmapping/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("fieldmapping=[name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("fieldmapping=[name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -141,17 +144,17 @@ public class AbstractCascadingLocalSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/pattern-{id}", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-pattern-{id}/data", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-12").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-pattern-12/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-12=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("pattern-12=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -160,7 +163,7 @@ public class AbstractCascadingLocalSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/pattern-format-{ts:YYYY-MM-dd}", new Fields("id", "name", "url", "picture", "ts"));
+        Tap out = new EsTap("cascading-local-pattern-format-{ts:YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
         Pipe pipe = new Pipe("copy");
 
         build(properties, in, out, pipe);
@@ -168,17 +171,17 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local/pattern-format-2012-10-06").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-pattern-format-2012-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-format-2012-10-06=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
-                        : is("pattern-format-2012-10-06=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
     @Test
     public void testUpdate() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-createwithid/data", new Fields("id", "name", "url", "picture"));
         Properties props = new TestSettings().getProperties();
         props.put(ConfigurationOptions.ES_MAPPING_ID, "id");
 
@@ -188,6 +191,7 @@ public class AbstractCascadingLocalSaveTest {
 
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpdateOnlyScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -200,13 +204,14 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-createwithid/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpdateOnlyParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -219,13 +224,14 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-createwithid/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpdateOnlyParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -238,7 +244,7 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/createwithid", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-createwithid/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
@@ -252,13 +258,14 @@ public class AbstractCascadingLocalSaveTest {
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
 
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local/upsert", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-upsert/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpsertScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -268,13 +275,14 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/upsert-script", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-upsert-script/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpsertParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -286,13 +294,14 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/upsert-param-script", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-upsert-param-script/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
+    @Ignore // Need to transition to painless
     public void testUpsertParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -304,7 +313,7 @@ public class AbstractCascadingLocalSaveTest {
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
-        Tap out = new EsTap("cascading-local/upsert-script-json-script", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-upsert-script-json-script/data", new Fields("id", "name", "url", "picture"));
 
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
@@ -316,7 +325,7 @@ public class AbstractCascadingLocalSaveTest {
         Properties cfg = new TestSettings().getProperties();
 
         FlowDef flow = new FlowDef().addSource(copy, sourceTap()).addTailSink(copy,
-                new EsTap("cascading-local/cascade-connector"));
+                new EsTap("cascading-local-cascade-connector/data"));
 
         FlowConnector connector = new LocalFlowConnector(cfg);
         Flow[] flows = new Flow[] { connector.connect(flow) };

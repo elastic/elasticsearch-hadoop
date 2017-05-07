@@ -1,5 +1,5 @@
 {
-    "date-as-long" : {
+    "data" : {
         "properties" : {
             "&t" : {
                 "type" : "date"

@@ -61,21 +61,20 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     @Before
     public void before() throws Exception {
-        RestUtils.touch("json-pig");
-        RestUtils.refresh("json-pig");
+        RestUtils.refresh("json-pig*");
     }
 
     //@Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" :  10  } } }";
-        RestUtils.postData("json-pig/nestedmap" + testInstance, StringUtils.toUTF(data));
-        RestUtils.refresh("json-pig");
+        RestUtils.postData("json-pig-nestedmap/data" + testInstance, StringUtils.toUTF(data));
+        RestUtils.refresh("json-pig*");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nested:data.map.key');" +
-                //"A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (nested:tuple(key:int));" +
-                "A = LOAD 'json-pig/nestedmap" + testInstance + "' USING EsStorage() AS (nested:chararray);" +
+                //"A = LOAD 'json-pig-nestedmap/data' USING EsStorage() AS (nested:tuple(key:int));" +
+                "A = LOAD 'json-pig-nestedmap/data" + testInstance + "' USING EsStorage() AS (nested:chararray);" +
                 "B = ORDER A BY nested DESC;" +
                 "X = LIMIT B 3;" +
                 "STORE A INTO '" + tmpPig() + "/testnestedfield';";
@@ -87,7 +86,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 //        script =
 //                "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
 //                "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.mapping.names=nested:data.map');" +
-//                "A = LOAD 'json-pig/nestedmap' USING EsStorage() AS (key:chararray, value:);" +
+//                "A = LOAD 'json-pig-nestedmap/data' USING EsStorage() AS (key:chararray, value:);" +
 //                "DESCRIBE A;" +
 //                "X = LIMIT A 3;" +
 //                "DUMP X;";
@@ -101,7 +100,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD 'json-pig/tupleartists' USING EsStorage();" +
+                "A = LOAD 'json-pig-tupleartists/data' USING EsStorage();" +
                 "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
                 "STORE A INTO '" + tmpPig() + "/testtuple';";
@@ -120,7 +119,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD 'json-pig/tupleartists' USING EsStorage() AS (name:chararray);" +
+                "A = LOAD 'json-pig-tupleartists/data' USING EsStorage() AS (name:chararray);" +
                 "B = ORDER A BY name DESC;" +
                 "X = LIMIT B 3;" +
                 "STORE B INTO '" + tmpPig() + "/testtupleschema';";
@@ -137,7 +136,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                        "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query="+ query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD 'json-pig/fieldalias' USING EsStorage();"
+                      + "A = LOAD 'json-pig-fieldalias/data' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testfieldalias';";
         pig.executeScript(script);
@@ -168,7 +167,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD 'json-pig/child' USING EsStorage();"
+                      + "A = LOAD 'json-pig-pc/child' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testparentchild';";
         pig.executeScript(script);
@@ -182,16 +181,16 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-500"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-990"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-1/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-500/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-990/data"));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2010-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2200-10-06"));
-        Assert.assertTrue(RestUtils.exists("json-pig/pattern-format-2873-10-06"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2010-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2200-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2873-10-06/data"));
     }
 
     private static String tmpPig() {

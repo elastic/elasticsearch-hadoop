@@ -123,7 +123,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex("sparksql-test/scala-basic-write")
+    val target = wrapIndex("spark-streaming-test-scala-basic-write/data")
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
 
@@ -139,7 +139,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val expected = ExpectingToThrow(classOf[SparkException]).from(ssc)
     val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())
     val batch = sc.makeRDD(Seq(doc))
-    runStream(batch)(_.saveToEs(wrapIndex("spark-test/nested-map"), cfg))
+    runStream(batch)(_.saveToEs(wrapIndex("spark-streaming-test-nested-map/data"), cfg))
     expected.assertExceptionFound()
   }
 
@@ -151,7 +151,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     val vals = ReflectionUtils.caseClassValues(caseClass2)
 
-    val target = wrapIndex("spark-test/scala-basic-write-objects")
+    val target = wrapIndex("spark-streaming-test-scala-basic-write-objects/data")
 
     val batch = sc.makeRDD(Seq(javaBean, caseClass1))
     runStreamRecoverably(batch)(_.saveToEs(target, cfg))
@@ -169,7 +169,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex("spark-test/scala-id-write")
+    val target = wrapIndex("spark-streaming-test-scala-id-write/data")
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
     runStream(batch)(_.saveToEs(target, Map(ES_MAPPING_ID -> "number")))
@@ -186,7 +186,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex("spark-test/scala-dyn-id-write")
+    val target = wrapIndex("spark-streaming-test-scala-dyn-id-write/data")
 
     val pairRDD = sc.makeRDD(Seq((3, doc1), (4, doc2)))
     runStream(pairRDD)(_.saveToEsWithMeta(target, cfg))
@@ -201,11 +201,12 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
+  @Ignore // TTL removed
   def testEsRDDWriteWithDynamicMapMapping(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex("spark-test/scala-dyn-id-write-map")
+    val target = wrapIndex("spark-streaming-test-scala-dyn-id-write-map/data")
 
     val metadata1 = Map(ID -> 5, TTL -> "1d")
     val metadata2 = Map(ID -> 6, TTL -> "2d", VERSION -> "23")
@@ -228,7 +229,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val trip1 = Map("reason" -> "business", "airport" -> "SFO")
     val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
-    val target = wrapIndex("spark-test/scala-write-exclude")
+    val target = wrapIndex("spark-streaming-test-scala-write-exclude/data")
 
     val batch = sc.makeRDD(Seq(trip1, trip2))
     runStream(batch)(_.saveToEs(target, Map(ES_MAPPING_EXCLUDE -> "airport")))
@@ -260,7 +261,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex("spark-test/scala-ingest-write")
+    val target = wrapIndex("spark-streaming-test-scala-ingest-write/data")
 
     val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> pipelineName) + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
 
@@ -274,69 +275,70 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsMultiIndexRDDWrite(): Unit = {
-    val trip1 = Map("reason" -> "business", "airport" -> "SFO")
-    val trip2 = Map("participants" -> 5, "airport" -> "OTP")
+    val trip1 = Map("reason" -> "business", "airport" -> "sfo")
+    val trip2 = Map("participants" -> 5, "airport" -> "otp")
 
-    val target = wrapIndex("spark-test/trip-{airport}")
+    val target = wrapIndex("spark-streaming-test-trip-{airport}/data")
     val batch = sc.makeRDD(Seq(trip1, trip2))
     runStream(batch)(_.saveToEs(target, cfg))
 
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/trip-OTP")))
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/trip-SFO")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-trip-otp/data")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-trip-sfo/data")))
 
-    assertThat(RestUtils.get(wrapIndex("spark-test/trip-SFO/_search?")), containsString("business"))
-    assertThat(RestUtils.get(wrapIndex("spark-test/trip-OTP/_search?")), containsString("participants"))
+    assertThat(RestUtils.get(wrapIndex("spark-streaming-test-trip-sfo/data/_search?")), containsString("business"))
+    assertThat(RestUtils.get(wrapIndex("spark-streaming-test-trip-otp/data/_search?")), containsString("participants"))
   }
 
   @Test
   def testEsWriteAsJsonMultiWrite(): Unit = {
-    val json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}"
-    val json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}"
+    val json1 = "{\"reason\" : \"business\",\"airport\" : \"sfo\"}"
+    val json2 = "{\"participants\" : 5,\"airport\" : \"otp\"}"
 
     val batch = sc.makeRDD(Seq(json1, json2))
-    runStreamRecoverably(batch)(_.saveJsonToEs(wrapIndex("spark-test/json-{airport}"), cfg))
+    runStreamRecoverably(batch)(_.saveJsonToEs(wrapIndex("spark-streaming-test-json-{airport}/data"), cfg))
 
     val json1BA = json1.getBytes()
     val json2BA = json2.getBytes()
 
     val batch2 = sc.makeRDD(Seq(json1BA, json2BA))
-    runStream(batch2)(_.saveJsonToEs(wrapIndex("spark-test/json-ba-{airport}"), cfg))
+    runStream(batch2)(_.saveJsonToEs(wrapIndex("spark-streaming-test-json-ba-{airport}/data"), cfg))
 
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/json-SFO")))
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/json-OTP")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-json-sfo/data")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-json-otp/data")))
 
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/json-ba-SFO")))
-    assertTrue(RestUtils.exists(wrapIndex("spark-test/json-ba-OTP")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-json-ba-sfo/data")))
+    assertTrue(RestUtils.exists(wrapIndex("spark-streaming-test-json-ba-otp/data")))
 
-    assertThat(RestUtils.get(wrapIndex("spark-test/json-SFO/_search?")), containsString("business"))
-    assertThat(RestUtils.get(wrapIndex("spark-test/json-OTP/_search?")), containsString("participants"))
+    assertThat(RestUtils.get(wrapIndex("spark-streaming-test-json-sfo/data/_search?")), containsString("business"))
+    assertThat(RestUtils.get(wrapIndex("spark-streaming-test-json-otp/data/_search?")), containsString("participants"))
   }
 
   @Test
+  @Ignore // Upgrade to Painless
   def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString(): Unit = {
     val mapping = """{
-                    |  "contact": {
+                    |  "data": {
                     |    "properties": {
                     |      "id": {
-                    |        "type": "string"
+                    |        "type": "keyword"
                     |      },
                     |      "note": {
-                    |        "type": "string",
+                    |        "type": "keyword",
                     |        "index": "not_analyzed"
                     |      },
                     |      "address": {
                     |        "type": "nested",
                     |        "properties": {
-                    |          "id":    { "type": "string"  },
-                    |          "zipcode": { "type": "string"  }
+                    |          "id":    { "type": "keyword"  },
+                    |          "zipcode": { "type": "keyword"  }
                     |        }
                     |      }
                     |    }
                     |  }
                     |}""".stripMargin
 
-    val index = "spark-test"
-    val target = s"$index/contact"
+    val index = "spark-streaming-test-contact"
+    val target = s"$index/data"
     RestUtils.touch(index)
     RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
@@ -374,7 +376,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
       Map("field2" -> "bar"),
       Map("field1" -> 0.0, "field2" -> "baz")
     )
-    val target = wrapIndex("spark-test/nullasempty")
+    val target = wrapIndex("spark-streaming-test-nullasempty/data")
     val batch = sc.makeRDD(data)
 
     runStream(batch)(_.saveToEs(target))

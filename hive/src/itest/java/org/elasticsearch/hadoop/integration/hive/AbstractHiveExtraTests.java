@@ -78,19 +78,19 @@ public class AbstractHiveExtraTests {
 
     @Test
     public void testDate() throws Exception {
-        String resource = "hive/date-as-long";
-        RestUtils.touch("hive");
+        String resource = "hive-date-as-long/data";
+        RestUtils.touch("hive-date-as-long");
         RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date.json");
 
         RestUtils.postData(resource + "/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
 
-        RestUtils.refresh("hive");
+        RestUtils.refresh("hive-date-as-long");
 
         String drop = "DROP TABLE IF EXISTS nixtime";
         String create = "CREATE EXTERNAL TABLE nixtime ("
                 + "type     BIGINT,"
                 + "dte     TIMESTAMP)"
-                + HiveSuite.tableProps("hive/date-as-long", null, "'es.mapping.names'='dte:&t'");
+                + HiveSuite.tableProps("hive-date-as-long/data", null, "'es.mapping.names'='dte:&t'");
 
         String query = "SELECT * from nixtime WHERE type = 1";
 
