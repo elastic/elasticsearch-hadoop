@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -36,12 +37,14 @@ public class LocalEs extends ExternalResource {
         if (Booleans.parseBoolean(HdpBootstrap.hadoopConfig().get("test.disable.local.es"))) {
             LogFactory.getLog(getClass()).warn(
                     "local ES disable; assuming an external instance and bailing out...");
+            setSingleNodeTemplate();
             return;
         }
 
         String host = HdpBootstrap.hadoopConfig().get(ConfigurationOptions.ES_NODES);
         if (StringUtils.hasText(host)) {
             LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance and bailing out...");
+            setSingleNodeTemplate();
             return;
         }
 
@@ -53,7 +56,14 @@ public class LocalEs extends ExternalResource {
 
             // force initialization of test properties
             new TestSettings();
+            setSingleNodeTemplate();
         }
+    }
+
+    private void setSingleNodeTemplate() throws Exception {
+        LogFactory.getLog(getClass()).warn("Installing single node template...");
+        RestUtils.put("_template/single-node-template",
+                "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
     }
 
     @Override

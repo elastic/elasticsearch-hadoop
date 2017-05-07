@@ -26,7 +26,10 @@ allprojects {
       maven { url "http://www.datanucleus.org/downloads/maven2" }
       maven { url "http://oss.sonatype.org/content/groups/public/" }
 
+      // For Elasticsearch snapshots.
       maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+      // For Lucene Snapshots. See org.elasticsearch.gradle.BuildPlugin#configureRepositories for why we may need this.
+      maven { url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/89f6d17" }
     }
 
     apply plugin: "java"
