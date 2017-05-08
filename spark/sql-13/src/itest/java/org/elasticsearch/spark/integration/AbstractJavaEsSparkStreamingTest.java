@@ -291,11 +291,10 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     }
 
     @Test
-    @Ignore // TTL removed
     public void testEsRDDWriteWithDynamicMapMapping() throws Exception {
         Map<String, Object> doc1 = new HashMap<>();
         doc1.put("id", 5);
-        doc1.put("ttl", "1d");
+        doc1.put("version", "3");
         doc1.put("one", null);
         Set<String> values = new HashSet<>();
         values.add("2");
@@ -304,7 +303,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
 
         Map<String, Object> doc2 = new HashMap<>();
         doc2.put("id", 6);
-        doc1.put("ttl", "2d");
+        doc1.put("version", "5");
         doc2.put("OTP", "Otopeni");
         doc2.put("SFO", "San Fran");
 
@@ -337,10 +336,10 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         @Override
         public Tuple2<Map<Metadata, Object>, Map<String, Object>> call(Map<String, Object> record) throws Exception {
             Integer key = (Integer) record.remove("id");
-            String ttl = (String) record.remove("ttl");
+            String version = (String) record.remove("version");
             Map<Metadata, Object> metadata = new HashMap<Metadata, Object>();
             metadata.put(Metadata.ID, key);
-            metadata.put(Metadata.TTL, ttl);
+            metadata.put(Metadata.VERSION, version);
             return new Tuple2<Map<Metadata, Object>, Map<String, Object>>(metadata, record);
         }
     }

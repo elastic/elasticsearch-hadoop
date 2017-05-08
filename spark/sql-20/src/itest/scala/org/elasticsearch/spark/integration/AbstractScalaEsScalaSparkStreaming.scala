@@ -201,15 +201,14 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   @Test
-  @Ignore // TTL removed
   def testEsRDDWriteWithDynamicMapMapping(): Unit = {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
     val target = wrapIndex("spark-streaming-test-scala-dyn-id-write-map/data")
 
-    val metadata1 = Map(ID -> 5, TTL -> "1d")
-    val metadata2 = Map(ID -> 6, TTL -> "2d", VERSION -> "23")
+    val metadata1 = Map(ID -> 5)
+    val metadata2 = Map(ID -> 6, VERSION -> "23")
 
     assertEquals(5, metadata1.getOrElse(ID, null))
     assertEquals(6, metadata2.getOrElse(ID, null))

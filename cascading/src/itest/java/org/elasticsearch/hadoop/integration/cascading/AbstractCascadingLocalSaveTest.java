@@ -114,7 +114,6 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // TTL is removed.
     public void testFieldMapping() throws Exception {
         // local file-system source
         Tap in = sourceTap();
@@ -125,12 +124,11 @@ public class AbstractCascadingLocalSaveTest {
         pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
 
         Properties props = new TestSettings().getProperties();
-        props.setProperty("es.mapping.ttl", "<1>");
+        props.setProperty("es.mapping.version", "<5>");
         build(props, in, out, pipe);
     }
 
     @Test
-    @Ignore // TTL is removed.
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
         assertThat(RestUtils.getMapping("cascading-local-fieldmapping/data").toString(),
                 VERSION.onOrAfter(V_5_X)

@@ -88,8 +88,7 @@ public class AbstractHiveSaveTest {
     }
 
     @Test
-    @Ignore // TTL no longer available
-    public void testMappingttl() throws Exception {
+    public void testMappingVersion() throws Exception {
         // load the raw data as a native, managed table
         // and then insert its content into the external one
 
