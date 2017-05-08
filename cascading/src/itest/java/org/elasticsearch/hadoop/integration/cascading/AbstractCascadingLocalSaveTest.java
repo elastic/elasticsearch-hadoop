@@ -163,7 +163,7 @@ public class AbstractCascadingLocalSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local-pattern-format-{ts:YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
+        Tap out = new EsTap("cascading-local-pattern-format-{ts|YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
         Pipe pipe = new Pipe("copy");
 
         build(properties, in, out, pipe);

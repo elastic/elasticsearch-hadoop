@@ -369,7 +369,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testIndexPatternWithFormatting() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-format-{@timestamp:YYYY-MM-dd}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-format-{@timestamp|YYYY-MM-dd}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

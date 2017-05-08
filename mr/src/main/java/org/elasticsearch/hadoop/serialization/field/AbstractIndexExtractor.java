@@ -31,6 +31,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class AbstractIndexExtractor implements IndexExtractor, SettingsAware {
 
+    private static final String FORMAT_SEPARATOR = "|";
+
     protected Settings settings;
     protected String pattern;
     protected boolean hasPattern = false;
@@ -65,7 +67,7 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
             int endPattern = string.indexOf("}");
             Assert.isTrue(endPattern > startPattern + 1, "Invalid pattern given " + string);
             String nestedString = string.substring(startPattern + 1, endPattern);
-            int separator = nestedString.indexOf(":");
+            int separator = nestedString.indexOf(FORMAT_SEPARATOR);
             if (separator > 0) {
                 Assert.isTrue(nestedString.length() > separator + 1, "Invalid format given " + nestedString);
                 String format = nestedString.substring(separator + 1);

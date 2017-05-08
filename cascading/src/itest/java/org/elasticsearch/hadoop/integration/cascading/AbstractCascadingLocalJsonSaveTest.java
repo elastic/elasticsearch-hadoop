@@ -80,7 +80,7 @@ public class AbstractCascadingLocalJsonSaveTest {
         properties.put(ConfigurationOptions.ES_INPUT_JSON, "yes");
 
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-local-pattern-format-{@timestamp:YYYY-MM-dd}/data", new Fields("line"));
+        Tap out = new EsTap("json-cascading-local-pattern-format-{@timestamp|YYYY-MM-dd}/data", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }

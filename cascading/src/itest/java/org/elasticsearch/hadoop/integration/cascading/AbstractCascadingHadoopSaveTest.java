@@ -116,7 +116,7 @@ public class AbstractCascadingHadoopSaveTest {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop-pattern-format-{ts:YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
+        Tap out = new EsTap("cascading-hadoop-pattern-format-{ts|YYYY-MM-dd}/data", new Fields("id", "name", "url", "picture", "ts"));
         Pipe pipe = new Pipe("copy");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }

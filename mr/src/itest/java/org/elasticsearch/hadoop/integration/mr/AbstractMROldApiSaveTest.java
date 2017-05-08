@@ -529,7 +529,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormatting() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp:YYYY-MM-dd}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -538,7 +538,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormattingAndId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp:YYYY-MM-dd}-with-id/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}-with-id/data");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
         runJob(conf);

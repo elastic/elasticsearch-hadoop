@@ -72,7 +72,7 @@ public class AbstractCascadingHadoopJsonSaveTest {
     @Test
     public void testIndexPatternWithFormat() throws Exception {
         Tap in = sourceTap();
-        Tap out = new EsTap("json-cascading-hadoop-pattern-format-{@timestamp:YYYY-MM-dd}/data", new Fields("line"));
+        Tap out = new EsTap("json-cascading-hadoop-pattern-format-{@timestamp|YYYY-MM-dd}/data", new Fields("line"));
         Pipe pipe = new Pipe("copy");
         build(cfg(), in, out, pipe);
     }
