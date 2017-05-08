@@ -38,6 +38,7 @@ public class LocalEs extends ExternalResource {
             LogFactory.getLog(getClass()).warn(
                     "local ES disable; assuming an external instance and bailing out...");
             setSingleNodeTemplate();
+            clearState();
             return;
         }
 
@@ -45,6 +46,7 @@ public class LocalEs extends ExternalResource {
         if (StringUtils.hasText(host)) {
             LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance and bailing out...");
             setSingleNodeTemplate();
+            clearState();
             return;
         }
 
@@ -57,6 +59,7 @@ public class LocalEs extends ExternalResource {
             // force initialization of test properties
             new TestSettings();
             setSingleNodeTemplate();
+            clearState();
         }
     }
 
@@ -64,6 +67,11 @@ public class LocalEs extends ExternalResource {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
         RestUtils.put("_template/single-node-template",
                 "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
+    }
+
+    private void clearState() throws Exception {
+        LogFactory.getLog(getClass()).warn("Wiping all existing indices from the node");
+        RestUtils.delete("/_all");
     }
 
     @Override
