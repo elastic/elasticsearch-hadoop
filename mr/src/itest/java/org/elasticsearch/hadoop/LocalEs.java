@@ -66,7 +66,7 @@ public class LocalEs extends ExternalResource {
     private void setSingleNodeTemplate() throws Exception {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
         RestUtils.put("_template/single-node-template",
-                "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
+                "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
     }
 
     private void clearState() throws Exception {
