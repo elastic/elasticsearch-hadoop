@@ -149,8 +149,6 @@ def uploadArtifactsToS3(target, toDir) {
         antlibs "net.java.dev.jets3t:jets3t:0.8.1"
     }
 
-    // see ant logging
-    target.logging.level = LogLevel.INFO
     ant {
         taskdef(resource: 'org/springframework/build/aws/ant/antlib.xml', classpath: configurations.antlibs.asPath)
         
