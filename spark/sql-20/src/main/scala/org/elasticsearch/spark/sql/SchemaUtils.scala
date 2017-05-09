@@ -53,6 +53,8 @@ import org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN
 import org.elasticsearch.hadoop.serialization.FieldType.BYTE
 import org.elasticsearch.hadoop.serialization.FieldType.DATE
 import org.elasticsearch.hadoop.serialization.FieldType.DOUBLE
+import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
+import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
@@ -145,22 +147,24 @@ private[sql] object SchemaUtils {
     val createArray = !arrayIncludes.isEmpty() && matched.matched
 
     var dataType = Utils.extractType(field) match {
-      case NULL      => NullType
-      case BINARY    => BinaryType
-      case BOOLEAN   => BooleanType
-      case BYTE      => ByteType
-      case SHORT     => ShortType
-      case INTEGER   => IntegerType
-      case LONG      => LongType
-      case FLOAT     => FloatType
-      case DOUBLE    => DoubleType
+      case NULL         => NullType
+      case BINARY       => BinaryType
+      case BOOLEAN      => BooleanType
+      case BYTE         => ByteType
+      case SHORT        => ShortType
+      case INTEGER      => IntegerType
+      case LONG         => LongType
+      case FLOAT        => FloatType
+      case DOUBLE       => DoubleType
+      case HALF_FLOAT   => FloatType
+      case SCALED_FLOAT => FloatType
       // String type
-      case STRING    => StringType
-      case TEXT      => StringType
-      case KEYWORD   => StringType
-      case DATE      => if (cfg.getMappingDateRich) TimestampType else StringType
-      case OBJECT    => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
-      case NESTED    => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
+      case STRING       => StringType
+      case TEXT         => StringType
+      case KEYWORD      => StringType
+      case DATE         => if (cfg.getMappingDateRich) TimestampType else StringType
+      case OBJECT       => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
+      case NESTED       => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
       
       // GEO
       case GEO_POINT => {
