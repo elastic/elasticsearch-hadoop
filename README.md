@@ -1,5 +1,5 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elastic/elasticsearch-hadoop.svg?branch=master)](https://travis-ci.org/elastic/elasticsearch-hadoop)
-Elasticsearch real-time search and analytics natively integrated with Hadoop.  
+Elasticsearch real-time search and analytics natively integrated with Hadoop.
 Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
 See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
@@ -9,6 +9,8 @@ Elasticsearch (__1.x__ or higher (2.x _highly_ recommended)) cluster accessible 
 Significant effort has been invested to create a small, dependency-free, self-contained jar that can be downloaded and put to use without any dependencies. Simply make it available to your job classpath and you're set.
 For a certain library, see the dedicated [chapter](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/requirements.html).
 
+ES-Hadoop 6.x and higher are compatible with Elasticsearch __1.X__, __2.X__, __5.X__, and __6.X__
+
 ES-Hadoop 5.x and higher are compatible with Elasticsearch __1.X__, __2.X__ and __5.X__
 
 ES-Hadoop 2.2.x and higher are compatible with Elasticsearch __1.X__ and __2.X__
@@ -17,14 +19,14 @@ ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
 
 ## Installation
 
-### Stable Release (currently `5.0.0`)
+### Stable Release (currently `6.0.0-alpha-1`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.0.0</version>
+  <version>6.0.0-alpha-1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -36,7 +38,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.0.1.BUILD-SNAPSHOT</version>
+  <version>6.0.0.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
