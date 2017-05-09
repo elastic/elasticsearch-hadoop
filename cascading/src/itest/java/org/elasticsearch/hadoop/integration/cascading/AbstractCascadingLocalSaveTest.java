@@ -117,13 +117,14 @@ public class AbstractCascadingLocalSaveTest {
     public void testFieldMapping() throws Exception {
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local-fieldmapping/data", new Fields("name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-fieldmapping/data", new Fields("id", "name", "url", "picture"));
         Pipe pipe = new Pipe("copy");
 
-        // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
+        // rename "ts" -> "garbage"
+        pipe = new Each(pipe, new Identity(new Fields("id", "name", "url", "picture", "garbage")));
 
         Properties props = new TestSettings().getProperties();
+        props.setProperty("es.mapping.id", "id");
         props.setProperty("es.mapping.version", "<5>");
         build(props, in, out, pipe);
     }
@@ -132,8 +133,8 @@ public class AbstractCascadingLocalSaveTest {
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
         assertThat(RestUtils.getMapping("cascading-local-fieldmapping/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
