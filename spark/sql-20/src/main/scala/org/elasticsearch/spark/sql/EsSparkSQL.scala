@@ -18,21 +18,22 @@
  */
 package org.elasticsearch.spark.sql
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
-import scala.collection.JavaConverters.propertiesAsScalaMapConverter
-import scala.collection.Map
-
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
-import org.elasticsearch.hadoop.rest.InitializationUtils
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.Dataset
+
+import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.collection.JavaConverters.propertiesAsScalaMapConverter
+import scala.collection.Map
 
 object EsSparkSQL {
 
@@ -46,7 +47,7 @@ object EsSparkSQL {
   def esDF(sc: SQLContext, resource: String): DataFrame = esDF(sc, Map(ES_RESOURCE_READ -> resource))
   def esDF(sc: SQLContext, resource: String, query: String): DataFrame = esDF(sc, Map(ES_RESOURCE_READ -> resource, ES_QUERY -> query))
   def esDF(sc: SQLContext, cfg: Map[String, String]): DataFrame = {
-    val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy();
+    val esConf = new SparkSettingsManager().load(sc.sparkContext.getConf).copy()
     esConf.merge(cfg.asJava)
 
     sc.read.format("org.elasticsearch.spark.sql").options(esConf.asProperties.asScala.toMap).load
@@ -80,6 +81,10 @@ object EsSparkSQL {
   }
   def saveToEs(srdd: Dataset[_], cfg: Map[String, String]): Unit = {
     if (srdd != null) {
+      if (srdd.isStreaming) {
+        throw new EsHadoopIllegalArgumentException("Streaming Datasets should not be saved with 'saveToEs()'. Instead, use " +
+          "the 'writeStream().format(\"es\").save()' methods.")
+      }
       val sparkCtx = srdd.sqlContext.sparkContext
       val sparkCfg = new SparkSettingsManager().load(sparkCtx.getConf)
       val esCfg = new PropertiesSettings().load(sparkCfg.save())

@@ -100,13 +100,13 @@ public abstract class RestService implements Serializable {
 
     public static class PartitionWriter implements Closeable {
         public final RestRepository repository;
-        public final int number;
+        public final long number;
         public final int total;
         public final Settings settings;
 
         private boolean closed = false;
 
-        PartitionWriter(Settings settings, int splitIndex, int splitsSize, RestRepository repository) {
+        PartitionWriter(Settings settings, long splitIndex, int splitsSize, RestRepository repository) {
             this.settings = settings;
             this.repository = repository;
             this.number = splitIndex;
@@ -565,7 +565,7 @@ public abstract class RestService implements Serializable {
         return new MultiReaderIterator(definitions, settings, log);
     }
 
-    public static PartitionWriter createWriter(Settings settings, int currentSplit, int totalSplits, Log log) {
+    public static PartitionWriter createWriter(Settings settings, long currentSplit, int totalSplits, Log log) {
         Version.logVersion();
 
         InitializationUtils.validateSettings(settings);
@@ -578,7 +578,7 @@ public abstract class RestService implements Serializable {
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
 
         // check invalid splits (applicable when running in non-MR environments) - in this case fall back to Random..
-        int selectedNode = (currentSplit < 0) ? new Random().nextInt(nodes.size()) : currentSplit % nodes.size();
+        int selectedNode = (currentSplit < 0) ? new Random().nextInt(nodes.size()) : (int)(currentSplit % nodes.size());
 
         // select the appropriate nodes first, to spread the load before-hand
         SettingsUtils.pinNode(settings, nodes.get(selectedNode));
@@ -596,7 +596,7 @@ public abstract class RestService implements Serializable {
         return new PartitionWriter(settings, currentSplit, totalSplits, repository);
     }
 
-    private static RestRepository initSingleIndex(Settings settings, int currentInstance, Resource resource, Log log) {
+    private static RestRepository initSingleIndex(Settings settings, long currentInstance, Resource resource, Log log) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Resource [%s] resolves as a single index", resource));
         }
@@ -645,7 +645,7 @@ public abstract class RestService implements Serializable {
         if (currentInstance <= 0) {
             currentInstance = new Random().nextInt(targetShards.size()) + 1;
         }
-        int bucket = currentInstance % targetShards.size();
+        int bucket = (int)(currentInstance % targetShards.size());
         ShardInfo chosenShard = orderedShards.get(bucket);
         NodeInfo targetNode = targetShards.get(chosenShard);
 
@@ -662,7 +662,7 @@ public abstract class RestService implements Serializable {
         return repository;
     }
 
-    private static RestRepository initMultiIndices(Settings settings, int currentInstance, Resource resource, Log log) {
+    private static RestRepository initMultiIndices(Settings settings, long currentInstance, Resource resource, Log log) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
         }
@@ -670,7 +670,7 @@ public abstract class RestService implements Serializable {
         return randomNodeWrite(settings, currentInstance, resource, log);
     }
 
-    private static RestRepository randomNodeWrite(Settings settings, int currentInstance, Resource resource, Log log) {
+    private static RestRepository randomNodeWrite(Settings settings, long currentInstance, Resource resource, Log log) {
         // multi-index write - since we don't know before hand what index will be used, pick a random node from the given list
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         String node = nodes.get(new Random().nextInt(nodes.size()));

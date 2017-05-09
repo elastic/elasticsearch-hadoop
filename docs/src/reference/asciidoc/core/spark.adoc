@@ -1618,6 +1618,252 @@ In addition to the table above, for Spark SQL 1.3 or higher, {eh} performs autom
 
 IMPORTANT: Since Spark SQL is strongly-typed, each geo field needs to have the same format across _all_ documents. Shy of that, the returned data will not fit the detected schema and thus lead to errors. 
 
+[[spark-sql-streaming]]
+[float]
+=== Spark Structured Streaming support [Alpha]
+
+added[6.0]
+
+[quote, Spark documentation]
+____
+
+http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html[Structured Streaming] provides fast,
+scalable, fault-tolerant, end-to-end exactly-once stream processing without the user having to reason about streaming.
+____
+
+Released as an alpha feature in Spark 2.0, Spark Structured Streaming provides a unified streaming and batch interface
+built into the Spark SQL integration. As of {eh} 6.0, we provide native functionality to index streaming data into {es}.
+
+NOTE: Spark Structured Streaming (available in Spark SQL 2.0+) is still in alpha as of 2.1.1. As such, {eh} support for
+Structured Streaming (available in {eh} 6.0+) is considered an alpha feature. It is not advised to use this for
+production code.
+
+IMPORTANT: Like Spark SQL, Structured Streaming works with _structured_ data. All entries are expected to have the
+_same_ structure (same number of fields, of the same type and name). Using unstructured data (documents with different
+structures) is _not_ supported and will cause problems. For such cases, use ++DStream++s.
+
+[float]
+[[spark-sql-streaming-versions]]
+==== Supported Spark Structured Streaming versions
+
+Spark Structured Streaming was introduced in Spark 2.0 and is still in alpha as of Spark 2.1.1. Similar to Spark SQL
+before it, Structured Streaming may be subject to significant changes between releases. While {eh} supports Spark
+versions 1.3-1.6 as compatibility releases, Spark Structured Streaming is only supported in the
++elasticsearch-spark-20-<version>.jar+ artifact.
+
+Spark Structured Streaming support is available under the +org.elasticsearch.spark.sql+ and
++org.elasticsearch.spark.sql.streaming+ packages. It shares a unified interface with Spark SQL in the form of the
+`Dataset[_]` api. Clients can interact with streaming ++Dataset++s in almost exactly the same way as regular batch
+++Dataset++s with only a
+http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#unsupported-operations[few exceptions].
+
+[float]
+[[spark-sql-streaming-write]]
+==== Writing Streaming +Datasets+ (Spark SQL 2.0+) to {es}
+
+With {eh}, Stream-backed ++Dataset++s can be indexed to {es}.
+
+[float]
+[[spark-sql-streaming-write-scala]]
+===== Scala
+
+In Scala, to save your streaming based ++Dataset++s and ++DataFrame++s to Elasticsearch, simply configure the stream to
+write out using the ++"es"++ format, like so:
+
+[source,scala]
+----
+import org.apache.spark.sql.SparkSession    <1>
+
+...
+
+val spark = SparkSession.builder()
+   .appName("EsStreamingExample")           <2>
+   .getOrCreate()
+
+// case class used to define the DataFrame
+case class Person(name: String, surname: String, age: Int)
+
+//  create DataFrame
+val people = spark.readStream                   <3>
+        .textFile("/path/to/people/files/*")    <4>
+        .map(_.split(","))
+        .map(p => Person(p(0), p(1), p(2).trim.toInt))
+
+people.writeStream
+      .option("checkpointLocation", "/save/location")      <5>
+      .format("es")
+      .start("spark/people")                               <6>
+----
+
+<1> Spark SQL import
+<2> Create +SparkSession+
+<3> Instead of calling +read+, call +readStream+ to get instance of +DataStreamReader+
+<4> Read a directory of text files continuously and convert them into +Person+ objects
+<5> Provide a location to save the offsets and commit logs for the streaming query
+<6> Start the stream using the +"es"+ format to index the contents of the +Dataset+ continuously to {es}
+
+WARNING: Spark makes no type-based differentiation between batch and streaming based ++Dataset++s. While you may be
+able to import the ++org.elasticsearch.spark.sql++ package to add ++saveToEs++ methods to your ++Dataset++ or
+++DataFrame++, it will throw an illegal argument exception if those methods are called on streaming based ++Dataset++s
+or ++DataFrame++s.
+
+[float]
+[[spark-sql-streaming-write-java]]
+===== Java
+
+In a similar fashion, the ++"es"++ format is available for Java usage as well:
+
+[source,java]
+----
+import org.apache.spark.sql.SparkSession    <1>
+
+...
+
+SparkSession spark = SparkSession
+  .builder()
+  .appName("JavaStructuredNetworkWordCount")     <2>
+  .getOrCreate();
+
+// java bean style class
+public static class PersonBean {
+  private String name;
+  private String surname;                        <3>
+  private int age;
+
+  ...
+}
+
+Dataset<PersonBean> people = spark.readStream()         <4>
+        .textFile("/path/to/people/files/*")
+        .map(new MapFunction<String, PersonBean>() {
+            @Override
+            public PersonBean call(String value) throws Exception {
+                return someFunctionThatParsesStringToJavaBeans(value.split(","));         <5>
+            }
+        }, Encoders.<PersonBean>bean(PersonBean.class));
+
+people.writeStream()
+    .option("checkpointLocation", "/save/location")       <6>
+    .format("es")
+    .start("spark/people");                               <7>
+----
+
+<1> Spark SQL Java imports. Can use the same session class as Scala
+<2> Create SparkSession. Can also use the legacy ++SQLContext++ api
+<3> We create a java bean class to be used as our data format
+<4> Use the ++readStream()++ method to get a ++DataStreamReader++ to begin building our stream
+<5> Convert our string data into our PersonBean
+<6> Set a place to save the state of our stream
+<7> Using the ++"es"++ format, we continuously index the ++Dataset++ in {es} under ++spark/people++
+
+[[spark-sql-streaming-json]]
+[float]
+==== Writing existing JSON to {es}
+
+When using Spark SQL, if the input data is in JSON format, simply convert it to a +Dataset+ (for Spark SQL 2.0) (as
+described in Spark
+http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html#input-sources[documentation]) through
+the ++DataStreamReader++'s +json+ format.
+
+[[spark-sql-streaming-commit-log]]
+[float]
+==== Sink commit log in Spark Structured Streaming
+
+Spark Structured Streaming advertises an end-to-end fault-tolerant exactly-once processing model that is made possible
+through the usage of offset checkpoints and maintaining commit logs for each streaming query. When executing a
+streaming query, most sources and sinks require you to specify a "checkpointLocation" in order to persist the state of
+your job. In the event of an interruption, launching a new streaming query with the same checkpoint location will
+recover the state of the job and pick up where it left off. We maintain a commit log for {eh}'s {es} sink
+implementation in a special directory under the configured checkpoint location:
+
+[source,sh]
+----
+$> ls /path/to/checkpoint/location
+metadata  offsets/  sinks/
+$> ls /path/to/checkpoint/location/sinks
+elasticsearch/
+$> ls /path/to/checkpoint/location/sinks/elasticsearch
+12.compact  13  14  15 16  17  18
+----
+
+Each file in the commit log directory corresponds to a batch id that has been committed. The log implementation
+periodically compacts the logs down to avoid clutter. You can set the location for the log directory a number of ways:
+
+. Set the explicit log location with `es.spark.sql.streaming.sink.log.path` (see below).
+. If that is not set, then the path specified by `checkpointLocation` will be used.
+. If that is not set, then a path will be constructed by combining the value of `spark.sql.streaming.checkpointLocation`
+from the SparkSession with the ++Dataset++'s given query name.
+. If no query name is present, then a random UUID will be used in the above case instead of the query name
+. If none of the above settings are provided then the +start+ call will throw an exception
+
+Here is a list of configurations that affect the behavior of {es}'s commit log:
+
+`es.spark.sql.streaming.sink.log.enabled` (default `true`)::
+Enables or disables the commit log for a streaming job. By default, the log is enabled, and output batches with the
+same batch id will be skipped to avoid double-writes. When this is set to `false`, the commit log is disabled, and
+all outputs will be sent to {es}, regardless if they have been sent in a previous execution.
+
+`es.spark.sql.streaming.sink.log.path`::
+Sets the location to store the log data for this streaming query. If this value is not set, then the {es} sink will
+store its commit logs under the path given in `checkpointLocation`. Any HDFS Client compatible URI is acceptable.
+
+`es.spark.sql.streaming.sink.log.cleanupDelay` (default `10m`)::
+The commit log is managed through Spark's HDFS Client. Some HDFS compatible filesystems (like Amazon's S3) propagate
+file changes in an asynchronous manner. To get around this, after a set of log files have been compacted, the client
+will wait for this amount of time before cleaning up the old files.
+
+`es.spark.sql.streaming.sink.log.deletion` (default `true`)::
+Determines if the log should delete old logs that are no longer needed. After every batch is committed, the client will
+check to see if there are any commit logs that have been compacted and are safe to be removed. If set to `false`, the
+log will skip this cleanup step, leaving behind a commit file for each batch.
+
+`es.spark.sql.streaming.sink.log.compactInterval` (default `10`)::
+Sets the number of batches to process before compacting the log files. By default, every 10 batches the commit log
+will be compacted down into a single file that contains all previously committed batch ids.
+
+[[spark-sql-streaming-type-conversion]]
+[float]
+==== Spark Structured Streaming Type conversion
+
+Structured Streaming uses the exact same type conversion rules as the Spark SQL integration.
+
+IMPORTANT: When dealing with multi-value/array fields, please see <<mapping-multi-values, this>> section and in
+particular <<cfg-field-info, these>> configuration options.
+
+IMPORTANT: If automatic index creation is used, please review <<auto-mapping-type-loss,this>> section for more
+information.
+
+{eh} automatically converts Spark built-in types to {es} {ref}/mapping-types.html[types] as shown in the
+table below:
+
+While Spark SQL https://spark.apache.org/docs/latest/sql-programming-guide.html#data-types[++DataType++s] have an
+equivalent in both Scala and Java and thus the <<spark-type-conversion, RDD>> conversion can apply, there are slightly
+different semantics - in particular with the `java.sql` types due to the way Spark SQL handles them:
+
+.Spark SQL 1.3+ Conversion Table
+
+[cols="^,^",options="header"]
+|===
+| Spark SQL `DataType` | {es} type
+
+| `null`               | `null`
+| `ByteType`           | `byte`
+| `ShortType`          | `short`
+| `IntegerType`        | `int`
+| `LongType`           | `long`
+| `FloatType`          | `float`
+| `DoubleType`         | `double`
+| `StringType`         | `string`
+| `BinaryType`         | `string` (BASE64)
+| `BooleanType`        | `boolean`
+| `DateType`           | `date` (`string` format)
+| `TimestampType`      | `long` (unix time)
+| `ArrayType`          | `array`
+| `MapType`            | `object`
+| `StructType`         | `object`
+
+|===
+
 [[spark-mr]]
 [float]
 === Using the {mr} layer

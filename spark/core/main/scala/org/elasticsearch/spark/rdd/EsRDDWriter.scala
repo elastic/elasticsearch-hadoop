@@ -18,32 +18,32 @@
  */
 package org.elasticsearch.spark.rdd
 
-import scala.reflect.ClassTag
-
+import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService
-import org.elasticsearch.hadoop.serialization.builder.ValueWriter
 import org.elasticsearch.hadoop.serialization.BytesConverter
-import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
-import org.elasticsearch.hadoop.util.SettingsUtils
-import org.elasticsearch.hadoop.util.ObjectUtils
+import org.elasticsearch.hadoop.serialization.builder.ValueWriter
+import org.elasticsearch.hadoop.serialization.field.FieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+
+import scala.reflect.ClassTag
 
 
 private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
                                               val runtimeMetadata: Boolean = false)
   extends Serializable {
 
-  @transient protected lazy val log = LogFactory.getLog(this.getClass())
+  @transient protected lazy val log: Log = LogFactory.getLog(this.getClass)
 
-  lazy val settings = {
-    val settings = new PropertiesSettings().load(serializedSettings);
+  lazy val settings: Settings = {
+    val settings = new PropertiesSettings().load(serializedSettings)
 
     InitializationUtils.setValueWriterIfNotSet(settings, valueWriter, log)
     InitializationUtils.setBytesConverterIfNeeded(settings, bytesConverter, log)
@@ -75,16 +75,10 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
   protected def processData(data: Iterator[T]): Any = {
     val next = data.next
     if (runtimeMetadata) {
-      //TODO: is there a better way to do this cast
-      next match {
-        case (k, v) =>
-          {
-            // use the key to extract metadata
-            metaExtractor.setObject(k);
-            // return the value to be used as the document
-            v
-          }
-      }
+      // use the key to extract metadata && return the value to be used as the document
+      val (key, value) = next
+      metaExtractor.setObject(key)
+      value
     } else {
       next
     }

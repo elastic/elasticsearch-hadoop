@@ -53,10 +53,10 @@ ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro")
 def java8 = org.gradle.api.JavaVersion.current().isJava8Compatible()
 
 // Hadoop aliases
-def hadoopStableVersion = hadoop12Version
+def hadoopStableVersion = hadoop22Version
 def hadoopYarnVersion = hadoop2Version
 def hadoopVersion = hadoopStableVersion 
-def hadoopMsg;
+def hadoopMsg
 
 switch (hadoopDistro) {
 
@@ -97,8 +97,7 @@ switch (hadoopDistro) {
   default:
     hadoopMsg = "Using Apache Hadoop Stable [$hadoopVersion]"
     hadoopVersion = hadoopStableVersion
-    hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
-              "org.apache.hadoop:hadoop-tools:$hadoopVersion"] 
+    hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
 }
 
 def boolean isYarn() {
