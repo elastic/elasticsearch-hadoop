@@ -1,0 +1,32 @@
+[[eshadoop-6.0.0-alpha-1]]
+== Elasticsearch for Apache Hadoop version 6.0.0-alpha-1
+May 09, 2017
+
+Tested against the latest and greatest Elasticsearch 6.0.0-alpha-1,
+the first alpha of ES-Hadoop for 6.0.0 includes much needed fixes
+to work in harmony with all the hearty changes landing in Elasticsearch 6.0.
+
+Please note that this is an alpha release and that we do not recommend running
+this in production! See our <<breaking-changes-6.0>> page for more information on what
+you might need to modify.
+
+[[known-issues-6.0.0-alpha-1]]
+=== Known Issues
+* Remove support for the TTL and Timestamp metafields
+http://github.com/elastic/elasticsearch-hadoop/issues/986[#986]
+
+[[breaking-6.0.0-alpha-1]]
+=== Breaking Changes
+* Timestamp formatting in index name breaks Cascading and Pig integrations
+http://github.com/elastic/elasticsearch-hadoop/issues/985[#985]
+
+[[enhancements-6.0.0-alpha-1]]
+=== Enhancements
+Build::
+* Elasticsearch is no longer started as an embedded process when running tests.
+
+[[bugs-6.0.0-alpha-1]]
+=== Bug Fixes
+Spark::
+* When overwriting data in a Spark Dataframe, the Dataframe will not attempt to
+delete data if the index already does not exist.
