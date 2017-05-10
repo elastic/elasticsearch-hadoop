@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -120,6 +121,12 @@ public abstract class AbstractBulkFactory implements BulkFactory {
 
                 pool.get().bytes(valueString);
             }
+            
+            else if (value instanceof Date) {
+                String valueString = (value == null ? "null": Long.toString(((Date) value).getTime()));
+                pool.get().bytes(valueString);
+            }
+            
             else if (value instanceof RawJson) {
                 pool.get().bytes(((RawJson) value).json());
             }
