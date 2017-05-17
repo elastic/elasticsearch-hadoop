@@ -19,9 +19,9 @@
 package org.elasticsearch.spark.sql
 
 import java.util.ArrayList
-import java.util.{LinkedHashSet => JHashSet}
-import java.util.{List => JList}
-import java.util.{Map => JMap}
+import java.util.{ LinkedHashSet => JHashSet }
+import java.util.{ List => JList }
+import java.util.{ Map => JMap }
 import java.util.Properties
 
 import scala.collection.JavaConverters.asScalaBufferConverter
