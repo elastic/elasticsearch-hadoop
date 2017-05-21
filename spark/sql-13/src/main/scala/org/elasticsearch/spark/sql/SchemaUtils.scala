@@ -277,17 +277,16 @@ private[sql] object SchemaUtils {
     val requiredFields = settings.getProperty(Utils.DATA_SOURCE_REQUIRED_COLUMNS)
     val sourceFields = SettingsUtils.determineSourceFields(settings)
 
-    // In case when user selected specific fields (we want to keep the same order in a spark sql row)
-    if (StringUtils.hasText(requiredFields))
+    if (StringUtils.hasText(requiredFields)) {
+      // In case when user selected specific fields (we want to keep the same order in a spark sql row)
       rowInfo._1.setProperty(ROOT_LEVEL_NAME, requiredFields)
-
-    // In case when we read all fields including metadata
-    else if (StringUtils.hasText(sourceFields) && settings.getReadMetadata)
+    } else if (StringUtils.hasText(sourceFields) && settings.getReadMetadata) {
+      // In case when we read all fields including metadata
       rowInfo._1.setProperty(ROOT_LEVEL_NAME, sourceFields + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
-
-    // In case when we read all fields without metadata
-    else if (StringUtils.hasText(sourceFields))
+    } else if (StringUtils.hasText(sourceFields)) {
+      // In case when we read all fields without metadata
       rowInfo._1.setProperty(ROOT_LEVEL_NAME, sourceFields)
+    }
     rowInfo
   }
 
