@@ -123,6 +123,7 @@ public class SearchRequestBuilder {
     }
 
     public SearchRequestBuilder fields(String fieldsCSV) {
+        Assert.isFalse(this.excludeSource, "Fields can't be requested because _source section is excluded");
         this.fields = fieldsCSV;
         return this;
     }
@@ -153,6 +154,9 @@ public class SearchRequestBuilder {
     }
 
     public SearchRequestBuilder excludeSource(boolean value) {
+        if (value) {
+            Assert.hasNoText(this.fields, String.format("_source section can't be excluded if fields [%s] are requested", this.fields));
+        }
         this.excludeSource = value;
         return this;
     }
