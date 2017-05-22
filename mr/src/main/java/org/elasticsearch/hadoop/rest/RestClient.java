@@ -73,6 +73,9 @@ public class RestClient implements Closeable, StatsAware {
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
+    // options to ignore some exceptions
+    private final boolean ignore404;
+    private final boolean ignoreExists;
 
     {
         mapper = new ObjectMapper();
@@ -101,6 +104,9 @@ public class RestClient implements Closeable, StatsAware {
         else if (ConfigurationOptions.ES_BATCH_WRITE_RETRY_POLICY_NONE.equals(retryPolicyName)) {
             retryPolicyName = NoHttpRetryPolicy.class.getName();
         }
+
+        ignore404 = settings.getUpdateIgnore404();
+        ignoreExists = settings.getCreateIgnoreExists();
 
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
@@ -233,6 +239,15 @@ public class RestClient implements Closeable, StatsAware {
 
                 String error = extractError(values);
                 if (error != null && !error.isEmpty()) {
+                    if (ignore404 && error.contains("DocumentMissingException")) {
+                        // ignore document missing exception
+                        continue;
+                    }
+                    if (ignoreExists && error.contains("DocumentAlreadyExistsException")) {
+                        // ignore document already exists exception
+                        continue;
+                    }
+
                     if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
                         if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
