@@ -211,6 +211,18 @@ public class RestClient implements Closeable, StatsAware {
         return processedResponse;
     }
 
+    private boolean isSafeException(String error) {
+        if (ignore404 && error.contains("DocumentMissingException")) {
+            // ignore document missing exception
+            return true;
+        } else if (ignoreExists && error.contains("DocumentAlreadyExistsException")) {
+            // ignore document already exists exception
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @SuppressWarnings("rawtypes")
     BulkResponse processBulkResponse(Response response, TrackingBytesArray data) {
         InputStream content = response.body();
@@ -238,16 +250,7 @@ public class RestClient implements Closeable, StatsAware {
                 Integer status = (Integer) values.get("status");
 
                 String error = extractError(values);
-                if (error != null && !error.isEmpty()) {
-                    if (ignore404 && error.contains("DocumentMissingException")) {
-                        // ignore document missing exception
-                        continue;
-                    }
-                    if (ignoreExists && error.contains("DocumentAlreadyExistsException")) {
-                        // ignore document already exists exception
-                        continue;
-                    }
-
+                if (error != null && !error.isEmpty() && !isSafeException(error)) {
                     if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
                         if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
