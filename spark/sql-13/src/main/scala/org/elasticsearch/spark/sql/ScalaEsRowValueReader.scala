@@ -133,6 +133,8 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
 
   def endSource(): Unit = {}
 
+  def excludeSource(): Unit = { rootLevel = true; sparkRowField = Utils.ROOT_LEVEL_NAME }
+
   def beginTrailMetadata(): Unit = {}
 
   def endTrailMetadata(): Unit = {}
