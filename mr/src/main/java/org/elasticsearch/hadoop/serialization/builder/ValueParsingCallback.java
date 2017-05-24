@@ -34,6 +34,8 @@ public interface ValueParsingCallback {
 	
 	void endSource();
 
+	void excludeSource();
+
 	void beginTrailMetadata();
 	
 	void endTrailMetadata();

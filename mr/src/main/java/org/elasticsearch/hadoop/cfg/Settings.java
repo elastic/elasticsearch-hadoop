@@ -152,6 +152,10 @@ public abstract class Settings {
         return getProperty(INTERNAL_ES_TARGET_FIELDS);
     }
 
+    public boolean getExcludeSource() {
+        return Booleans.parseBoolean(getProperty(INTERNAL_ES_EXCLUDE_SOURCE, INTERNAL_ES_EXCLUDE_SOURCE_DEFAULT));
+    }
+
     public String getSerializerValueWriterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
     }
