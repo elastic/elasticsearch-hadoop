@@ -475,6 +475,10 @@ public class ScrollReader {
         }
         else {
             if (readMetadata) {
+                if (parsingCallback != null) {
+                    parsingCallback.excludeSource();
+                }
+
                 data = reader.createMap();
                 reader.addToMap(data, reader.wrapString(metadataField), metadata);
             }

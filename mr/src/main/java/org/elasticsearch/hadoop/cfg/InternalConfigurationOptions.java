@@ -34,4 +34,8 @@ public interface InternalConfigurationOptions extends ConfigurationOptions {
     String INTERNAL_ES_VERSION = "es.internal.es.version";
     // used for isolating connection pools of multiple spark streaming jobs in the same app.
     String INTERNAL_TRANSPORT_POOLING_KEY = "es.internal.transport.pooling.key";
+
+    // don't fetch _source field during scroll queries
+    String INTERNAL_ES_EXCLUDE_SOURCE = "es.internal.exclude.source";
+    String INTERNAL_ES_EXCLUDE_SOURCE_DEFAULT = "false";
 }

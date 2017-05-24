@@ -156,9 +156,18 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       }
     }
 
-    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS ->
-                      StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER))
+    // Set fields to scroll over (_metadata is excluded, because it isn't a part of _source)
+    val sourceCSV = StringUtils.concatenate(filteredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER)
+    paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS -> sourceCSV)
 
+    // Keep the order of fields requested by user (we don't exclude _metadata here)
+    val requiredCSV = StringUtils.concatenate(requiredColumns.asInstanceOf[Array[Object]], StringUtils.DEFAULT_DELIMITER)
+    paramWithScan += (Utils.DATA_SOURCE_REQUIRED_COLUMNS -> requiredCSV)
+
+    // If the only field requested by user is metadata, we don't want to fetch the whole document source
+    if (requiredCSV == cfg.getReadMetadataField()) {
+      paramWithScan += (InternalConfigurationOptions.INTERNAL_ES_EXCLUDE_SOURCE -> "true")
+    }
     
     if (filters != null && filters.size > 0) {
       if (Utils.isPushDown(cfg)) {

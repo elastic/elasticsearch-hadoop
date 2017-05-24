@@ -44,6 +44,9 @@ abstract class Utils {
     // double filtering (run Spark filters) or not
     static final String DATA_SOURCE_KEEP_HANDLED_FILTERS = "es.internal.spark.sql.pushdown.keep.handled.filters";
 
+    // columns selected by Spark SQL query
+    static final String DATA_SOURCE_REQUIRED_COLUMNS = "es.internal.spark.sql.required.columns";
+
     static boolean isPushDown(Settings cfg) {
         return Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_PUSH_DOWN), true);
     }

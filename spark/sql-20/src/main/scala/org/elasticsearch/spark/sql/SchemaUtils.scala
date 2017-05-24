@@ -27,7 +27,6 @@ import java.util.Properties
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.JavaConverters.propertiesAsScalaMapConverter
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.sql.types.ArrayType
 import org.apache.spark.sql.types.BinaryType
 import org.apache.spark.sql.types.BooleanType
@@ -267,18 +266,13 @@ private[sql] object SchemaUtils {
   def detectRowInfo(settings: Settings, struct: StructType): (Properties, Properties) = {
     // tuple - 1 = columns (in simple names) for each row, 2 - what fields (in absolute names) are arrays
     val rowInfo = (new Properties, new Properties)
-
     doDetectInfo(rowInfo, ROOT_LEVEL_NAME, struct)
-    val csv = SettingsUtils.determineSourceFields(settings)
-    // if a projection is applied (filtering or projection) use that instead
-    if (StringUtils.hasText(csv)) {
-      if (settings.getReadMetadata) {
-        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv + StringUtils.DEFAULT_DELIMITER + settings.getReadMetadataField)
-      }
-      else {
-        rowInfo._1.setProperty(ROOT_LEVEL_NAME, csv)
-      }
+
+    val requiredFields = settings.getProperty(Utils.DATA_SOURCE_REQUIRED_COLUMNS)
+    if (StringUtils.hasText(requiredFields)) {
+      rowInfo._1.setProperty(ROOT_LEVEL_NAME, requiredFields)
     }
+
     rowInfo
   }
 

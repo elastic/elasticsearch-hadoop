@@ -66,6 +66,7 @@ public class SearchRequestBuilder {
     private String routing;
     private Slice slice;
     private boolean local = false;
+    private boolean excludeSource = false;
 
     public SearchRequestBuilder(EsMajorVersion version, boolean includeVersion) {
         this.version = version;
@@ -122,6 +123,7 @@ public class SearchRequestBuilder {
     }
 
     public SearchRequestBuilder fields(String fieldsCSV) {
+        Assert.isFalse(this.excludeSource, "Fields can't be requested because _source section is excluded");
         this.fields = fieldsCSV;
         return this;
     }
@@ -148,6 +150,14 @@ public class SearchRequestBuilder {
 
     public SearchRequestBuilder local(boolean value) {
         this.local = value;
+        return this;
+    }
+
+    public SearchRequestBuilder excludeSource(boolean value) {
+        if (value) {
+            Assert.hasNoText(this.fields, String.format("_source section can't be excluded if fields [%s] are requested", this.fields));
+        }
+        this.excludeSource = value;
         return this;
     }
 
@@ -184,6 +194,8 @@ public class SearchRequestBuilder {
         // override fields
         if (StringUtils.hasText(fields)) {
             uriParams.put("_source", HttpEncodingTools.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
+        } else if (excludeSource) {
+            uriParams.put("_source", "false");
         }
 
         // set shard preference

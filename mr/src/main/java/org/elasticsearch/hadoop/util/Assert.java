@@ -35,6 +35,16 @@ public abstract class Assert {
         hasText(sequence, "[Assertion failed] - this CharSequence argument must have text; it must not be null, empty, or blank");
     }
 
+    public static void hasNoText(CharSequence sequence, String message) {
+        if (StringUtils.hasText(sequence)) {
+            throw new EsHadoopIllegalArgumentException(message);
+        }
+    }
+
+    public static void hasNoText(CharSequence sequence) {
+        hasNoText(sequence, "[Assertion failed] - this CharSequence argument must be empty");
+    }
+
     public static void notNull(Object object, String message) {
         if (object == null) {
             throw new EsHadoopIllegalArgumentException(message);
@@ -53,5 +63,15 @@ public abstract class Assert {
 
     public static void isTrue(Boolean object) {
         isTrue(object, "[Assertion failed] - this argument must be true");
+    }
+
+    public static void isFalse(Boolean object, String message) {
+        if (!Boolean.FALSE.equals(object)) {
+            throw new EsHadoopIllegalArgumentException(message);
+        }
+    }
+
+    public static void isFalse(Boolean object) {
+        isFalse(object, "[Assertion failed] - this argument must be false");
     }
 }

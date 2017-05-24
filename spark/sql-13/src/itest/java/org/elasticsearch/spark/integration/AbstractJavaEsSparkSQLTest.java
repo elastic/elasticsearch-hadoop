@@ -148,6 +148,23 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		assertEquals(10, nameRDD.count());
 	}
 
+	@Test
+	public void testEsDataFrameReadMetadata() throws Exception {
+		DataFrame artists = artistsAsDataFrame();
+		String target = "sparksql-test/scala-dataframe-read-metadata";
+		JavaEsSparkSQL.saveToEs(artists, target);
+
+		DataFrame dataframe = sqc.read().format("es").option("es.read.metadata", "true").load(target).where("id = 1");
+
+		// Since _metadata field isn't a part of _source,
+		// we want to check that it could be fetched in any position.
+		assertEquals("sparksql-test", dataframe.selectExpr("_metadata['_index']").takeAsList(1).get(0).get(0));
+		assertEquals("sparksql-test", dataframe.selectExpr("_metadata['_index']", "name").takeAsList(1).get(0).get(0));
+		assertEquals("MALICE MIZER", dataframe.selectExpr("_metadata['_index']", "name").takeAsList(1).get(0).get(1));
+		assertEquals("MALICE MIZER", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(0));
+		assertEquals("sparksql-test", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(1));
+	}
+
 	private DataFrame artistsAsDataFrame() {
 		String input = TestUtils.sampleArtistsDat();
 		JavaRDD<String> data = sc.textFile(input);
