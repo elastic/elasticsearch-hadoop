@@ -141,14 +141,7 @@ public class RestUtils {
         return result;
     }
 
-    public static boolean touch(String indexAndType) throws IOException {
-        ExtendedRestClient rc = new ExtendedRestClient();
-        boolean result = rc.touch(indexAndType);
-        rc.close();
-        return result;
-    }
-
-    public static boolean flush(String index) throws IOException {
+    public static boolean touch(String index) throws IOException {
         ExtendedRestClient rc = new ExtendedRestClient();
         boolean result = rc.touch(index);
         rc.close();

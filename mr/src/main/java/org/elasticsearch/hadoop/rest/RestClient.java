@@ -539,24 +539,22 @@ public class RestClient implements Closeable, StatsAware {
         return (res.status() == HttpStatus.OK ? true : false);
     }
 
-    public boolean touch(String indexOrType) {
-        if (!exists(indexOrType)) {
-            Response response = execute(PUT, indexOrType, false);
-
-            if (response.hasFailed()) {
-                String msg = null;
-                // try to parse the answer
-                try {
-                    msg = parseContent(response.body(), "error");
-                } catch (Exception ex) {
-                    // can't parse message, move on
-                }
-
-                if (StringUtils.hasText(msg) && !msg.contains("IndexAlreadyExistsException")) {
-                    throw new EsHadoopIllegalStateException(msg);
+    public boolean touch(String index) {
+        String target = index;
+        int slash = index.indexOf("/");
+        if (slash > 0) {
+            // Remove the type if one is given...
+            target = index.substring(0, slash);
+        }
+        if (!exists(target)) {
+            try {
+                Response response = execute(PUT, target, true);
+                return response.hasSucceeded();
+            } catch (EsHadoopInvalidRequest invalidRequest) {
+                if (StringUtils.hasText(invalidRequest.getMessage()) && !invalidRequest.getMessage().contains("already exists")) {
+                    throw new EsHadoopIllegalStateException(invalidRequest.getMessage());
                 }
             }
-            return response.hasSucceeded();
         }
         return false;
     }
