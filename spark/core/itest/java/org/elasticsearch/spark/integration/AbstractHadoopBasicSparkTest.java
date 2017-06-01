@@ -62,6 +62,7 @@ public class AbstractHadoopBasicSparkTest implements Serializable {
 
     private transient final SparkConf conf = new SparkConf()
             .setAppName("basictest")
+            .set("spark.io.compression.codec", "lz4")
             .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
     private transient SparkConf cfg = null;
     private transient JavaSparkContext sc;

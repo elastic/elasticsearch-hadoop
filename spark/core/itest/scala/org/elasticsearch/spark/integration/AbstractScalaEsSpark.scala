@@ -72,6 +72,7 @@ import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
 object AbstractScalaEsScalaSpark {
   @transient val conf = new SparkConf()
               .setAppName("estest")
+              .set("spark.io.compression.codec", "lz4")
               .setAll(propertiesAsScalaMap(TestSettings.TESTING_PROPS));
   @transient var cfg: SparkConf = null
   @transient var sc: SparkContext = null

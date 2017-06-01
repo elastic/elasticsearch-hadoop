@@ -87,7 +87,10 @@ import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 
+import org.apache.commons.logging.impl.NoOpLog
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.rest.InitializationUtils
+import org.elasticsearch.hadoop.util.EsMajorVersion
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf()
@@ -98,11 +101,20 @@ object AbstractScalaEsScalaSparkSQL {
   @transient var sc: SparkContext = null
   @transient var sqc: SQLContext = null
 
+  @transient var keywordType: String = "keyword"
+  @transient var textType: String = "text"
+
   @BeforeClass
   def setup() {
     conf.setAll(TestSettings.TESTING_PROPS);
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
+
+    val version = InitializationUtils.discoverEsVersion(new TestSettings(), new NoOpLog())
+    if (version.before(EsMajorVersion.V_5_X)) {
+      keywordType = "string"
+      textType = "string"
+    }
   }
 
   @AfterClass
@@ -202,6 +214,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
                 "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString(),
                 "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
+  val keyword = AbstractScalaEsScalaSparkSQL.keywordType
+  val text = AbstractScalaEsScalaSparkSQL.textType
+
   @Test
   def test1KryoScalaEsRow() {
     val kryo = SparkUtils.sparkSerializer(sc.getConf)
@@ -232,15 +247,15 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testArrayMappingFirstLevel() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
       | "properties" : {
       |   "arr" : {
       |     "properties" : {
-      |          "one" : { "type" : "keyword" },
-      |          "two" : { "type" : "keyword" }
+      |          "one" : { "type" : "$keyword" },
+      |          "two" : { "type" : "$keyword" }
       |     }
       |   },
-      |   "top-level" : { "type" : "keyword" }
+      |   "top-level" : { "type" : "$keyword" }
       | }
       |}
       }""".stripMargin
@@ -289,7 +304,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     RestUtils.touch(index)
 
     // add some data
-    val jsonDoc = """{
+    val jsonDoc = s"""{
     |  "bar" : {
     |    "bar" : {
     |      "bar" : [{
@@ -305,9 +320,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     |    "level" : 1,
     |    "level2" : 2
     |  },
-    |  "foo1" : "text",
+    |  "foo1" : "$text",
     |  "level" : 0,
-    |  "level1" : "string"
+    |  "level1" : "$text"
     |}
     """.stripMargin
     RestUtils.postData(indexAndType, jsonDoc.getBytes(StringUtils.UTF_8))
@@ -1376,10 +1391,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoPointAsLatLonString() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_point"
@@ -1417,10 +1432,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   
   @Test
   def testGeoPointAsGeoHashString() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_point"
@@ -1452,10 +1467,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     
   @Test
   def testGeoPointAsArrayOfDoubles() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_point"
@@ -1489,10 +1504,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoPointAsObject() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_point"
@@ -1533,10 +1548,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoShapePoint() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1578,10 +1593,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoShapeLine() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1622,10 +1637,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoShapePolygon() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1670,10 +1685,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoShapePointMultiPoint() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1716,10 +1731,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testGeoShapeMultiLine() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1766,10 +1781,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   
   @Test
   def testGeoShapeMultiPolygon() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1819,10 +1834,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
           
   @Test
   def testGeoShapeEnvelope() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1863,10 +1878,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   
   @Test
   def testGeoShapeCircle() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
-    |          "type": "keyword"
+    |          "type": "$keyword"
     |        },
     |        "location": {
     |          "type": "geo_shape"
@@ -1907,13 +1922,13 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testNested() {
-    val mapping = """{ "data": {
+    val mapping = s"""{ "data": {
     |      "properties": {
-    |        "name": { "type": "keyword" },
+    |        "name": { "type": "$keyword" },
     |        "employees": {
     |          "type": "nested",
     |          "properties": {
-    |            "name": {"type": "keyword"},
+    |            "name": {"type": "$keyword"},
     |            "salary": {"type": "long"}
     |          }
     |        }

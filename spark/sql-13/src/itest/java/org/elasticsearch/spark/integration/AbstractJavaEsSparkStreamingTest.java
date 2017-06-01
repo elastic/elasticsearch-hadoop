@@ -84,6 +84,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     private static final transient SparkConf conf = new SparkConf()
             .setMaster("local")
             .setAppName("estest")
+            .set("spark.io.compression.codec", "lz4")
             .setJars(SparkUtils.ES_SPARK_TESTING_JAR);
 
     private static transient JavaSparkContext sc = null;

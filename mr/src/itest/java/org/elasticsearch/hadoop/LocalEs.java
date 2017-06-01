@@ -22,6 +22,8 @@ package org.elasticsearch.hadoop;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -65,8 +67,14 @@ public class LocalEs extends ExternalResource {
 
     private void setSingleNodeTemplate() throws Exception {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
-        RestUtils.put("_template/single-node-template",
-                "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
+        EsMajorVersion version = InitializationUtils.discoverEsVersion(new TestSettings(), LogFactory.getLog(this.getClass()));
+        if (version.onOrBefore(EsMajorVersion.V_1_X)) {
+            RestUtils.put("_template/single-node-template",
+                    "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
+        } else {
+            RestUtils.put("_template/single-node-template",
+                    "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
+        }
     }
 
     private void clearState() throws Exception {
