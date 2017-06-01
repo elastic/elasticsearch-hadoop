@@ -131,8 +131,10 @@ public class ScrollReader {
     }
 
     public static class Scroll {
-        static final Scroll EMPTY = new Scroll("", -1l, Collections.<Object[]> emptyList());
-        
+        static Scroll empty(String scrollId) {
+            return new Scroll(scrollId, -1L, Collections.<Object[]> emptyList());
+        }
+
         private final String scrollId;
         private final long total;
         private final List<Object[]> hits;
@@ -271,7 +273,7 @@ public class ScrollReader {
         long totalHits = hitsTotal();
         // check hits/total
         if (totalHits == 0) {
-            return Scroll.EMPTY;
+            return Scroll.empty(scrollId);
         }
 
         // move to hits/hits

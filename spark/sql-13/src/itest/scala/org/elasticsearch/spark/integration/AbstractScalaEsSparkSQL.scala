@@ -693,6 +693,27 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dataFrame = sqc.createDataFrame(rowRDD, schema)
     dataFrame
   }
+  
+  @Test
+  def test5ScrollLimitWithEmptyPartition(): Unit = {
+    val index = wrapIndex("scroll-limit")
+    val target = s"$index/data"
+
+    // Make index with two shards
+    RestUtils.delete(index)
+    RestUtils.put(index, """{"settings":{"number_of_shards":2,"number_of_replicas":0}}""".getBytes())
+    RestUtils.refresh(index)
+
+    // Write a single record to it (should have one empty shard)
+    val data = artistsAsDataFrame
+    val single = data.where(data("id").equalTo(1))
+    assertEquals(1L, single.count())
+    single.saveToEs(target)
+
+    // Make sure that the scroll limit works with both a shard that has data and a shard that has nothing
+    val count = sqc.read.format("es").option("es.scroll.limit", "10").load(target).count()
+    assertEquals(1L, count)
+  }
 
   @Test
   def testEsDataFrame50ReadAsDataSource() {
