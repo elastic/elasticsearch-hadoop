@@ -1,0 +1,30 @@
+[[eshadoop-6.0.0-alpha-2]]
+== Elasticsearch for Apache Hadoop version 6.0.0-alpha2
+June 6, 2017
+
+[[new-6.0.0-alpha-2]]
+=== New Features
+Section::
+* Spark 2.0 Stream Interfaces
+https://github.com/elastic/elasticsearch-hadoop/issues/818[#818]
+
+[[enhancements-6.0.0-alpha-2]]
+=== Enhancements
+Testing::
+* Convert tests to use Painless
+https://github.com/elastic/elasticsearch-hadoop/issues/987[#987]
+
+[[bugs-6.0.0-alpha-2]]
+=== Bug Fixes
+REST::
+* Scroll Id's are malformed for ES 1.x
+https://github.com/elastic/elasticsearch-hadoop/issues/1002[#1002]
+* ElasticsearchIllegalArgumentException[Malformed scrollId []] caused by es.scroll.limit
+https://github.com/elastic/elasticsearch-hadoop/issues/992[#992]
+Spark::
+* Add scaled and half float to schemautils
+https://github.com/elastic/elasticsearch-hadoop/pull/982[#982]
+https://github.com/elastic/elasticsearch-hadoop/issues/981[#981]
+* Support Date / Timestamp objects
+https://github.com/elastic/elasticsearch-hadoop/pull/934[#934]
+https://github.com/elastic/elasticsearch-hadoop/issues/931[#931]
