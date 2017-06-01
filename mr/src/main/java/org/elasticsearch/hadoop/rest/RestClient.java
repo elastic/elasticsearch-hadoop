@@ -510,9 +510,14 @@ public class RestClient implements Closeable, StatsAware {
         // NB: dynamically get the stats since the transport can change
         long start = network.transportStats().netTotalTime;
         try {
+            BytesArray body;
+            if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+                body = new BytesArray("{\"scroll_id\":\"" + scrollId + "\"}");
+            } else {
+                body = new BytesArray(scrollId);
+            }
             // use post instead of get to avoid some weird encoding issues (caused by the long URL)
-            InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(),
-                    new BytesArray("{\"scroll_id\":\"" + scrollId + "\"}")).body();
+            InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), body).body();
             stats.scrollTotal++;
             return is;
         } finally {
@@ -526,8 +531,13 @@ public class RestClient implements Closeable, StatsAware {
         return (res.status() == HttpStatus.OK ? true : false);
     }
     public boolean deleteScroll(String scrollId) {
-        Request req = new SimpleRequest(DELETE, null, "_search/scroll",
-                new BytesArray(("{\"scroll_id\":[\"" + scrollId + "\"]}").getBytes(StringUtils.UTF_8)));
+        BytesArray body;
+        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+            body = new BytesArray(("{\"scroll_id\":[\"" + scrollId + "\"]}").getBytes(StringUtils.UTF_8));
+        } else {
+            body = new BytesArray(scrollId.getBytes(StringUtils.UTF_8));
+        }
+        Request req = new SimpleRequest(DELETE, null, "_search/scroll", body);
         Response res = executeNotFoundAllowed(req);
         return (res.status() == HttpStatus.OK ? true : false);
     }
