@@ -1,0 +1,11 @@
+[[eshadoop-5.3.3]]
+== Elasticsearch for Apache Hadoop version 5.3.3
+June 1, 2017
+
+ES-Hadoop 5.3.3 is a version compatibility release, tested specifically against Elasticsearch 5.3.3.
+
+[[bugs-5.3.3]]
+=== Bug Fixes
+REST::
+* Scroll Id's are malformed for ES 1.x
+http://github.com/elastic/elasticsearch-hadoop/issues/1002[#1002]
