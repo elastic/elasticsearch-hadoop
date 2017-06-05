@@ -18,6 +18,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.elasticsearch.spark.sql.streaming.api.java.JavaStreamingQueryTestHarness;
 import org.junit.AfterClass;
@@ -76,6 +77,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     private String prefix;
     private String commitLogDir;
+    private EsMajorVersion version = TestUtils.getEsVersion();
 
     public AbstractJavaEsSparkStructuredStreamingTest(String prefix) throws Exception {
         this.prefix = prefix;
@@ -394,10 +396,18 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
     }
 
     @Test
-    @Ignore // Upgrade to Painless
+    @Ignore("Serialization issues in DataFrameValueWriter when trying to serialize an object for use in parameters")
     public void test3WriteWithUpsertScript() throws Exception {
+        // BWC
+        String keyword = "keyword";
+        String lang = "painless";
+        if (version.onOrBefore(EsMajorVersion.V_2_X)) {
+            keyword = "string";
+            lang = "groovy";
+        }
+
         // Init
-        String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\"keyword\"},\"note\":{\"type\":\"keyword\",\"index\":\"not_analyzed\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\"keyword\"},\"zipcode\":{\"type\":\"keyword\"}}}}}}";
+        String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}}";
         String index = wrapIndex("test-script-upsert");
         String target = index + "/data";
 
@@ -410,7 +420,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         Map<String, String> updateProperties = new HashMap<>();
         updateProperties.put("es.write.operation", "upsert");
         updateProperties.put("es.mapping.id", "id");
-        updateProperties.put("es.update.script.lang", "groovy");
+        updateProperties.put("es.update.script.lang", lang);
 
         // Run 1
         ContactBean doc1;
@@ -423,6 +433,13 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
             doc1.setAddress(address);
         }
 
+        String script1;
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            script1 = "ctx._source.address.add(params.new_address)";
+        } else {
+            script1 = "ctx._source.address+=new_address";
+        }
+
         JavaStreamingQueryTestHarness<ContactBean> test1 = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(ContactBean.class));
 
         test1
@@ -433,7 +450,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
                     .option("checkpointLocation", checkpoint(target))
                     .options(updateProperties)
                     .option("es.update.script.params", "new_address:address")
-                    .option("es.update.script", "ctx._source.address+=new_address")
+                    .option("es.update.script", script1)
                     .format("es"),
                 target
             );
@@ -446,6 +463,13 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
             doc2.setNote("Second");
         }
 
+        String script2;
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            script2 = "ctx._source.note = params.new_note";
+        } else {
+            script2 = "ctx._source.note=new_note";
+        }
+
         JavaStreamingQueryTestHarness<ContactBean> test2 = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(ContactBean.class));
 
         test2
@@ -456,7 +480,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
                     .option("checkpointLocation", checkpoint(target))
                     .options(updateProperties)
                     .option("es.update.script.params", "new_note:note")
-                    .option("es.update.script", "ctx._source.note=new_note")
+                    .option("es.update.script", script2)
                     .format("es"),
                 target
             );

@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.cascading;
 
 import java.util.Properties;
 
+import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
@@ -190,16 +191,20 @@ public class AbstractCascadingLocalSaveTest {
 
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpdateOnlyScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
         properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
 
+        if (VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 3");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
@@ -210,16 +215,21 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpdateOnlyParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
         properties.put(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:id ");
+
+        if (VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; String anothercounter = params.param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
@@ -230,16 +240,20 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpdateOnlyParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
         properties.put(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
-
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        if(VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = params.param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
@@ -264,13 +278,18 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpsertScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
 
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+        if (VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 1");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
@@ -281,15 +300,19 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpsertParamScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
-
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:id ");
+
+        if (VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed
@@ -300,15 +323,19 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     @Test
-    @Ignore // Need to transition to painless
     public void testUpsertParamJsonScript() throws Exception {
         Properties properties = new TestSettings().getProperties();
         properties.put(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         properties.put(ConfigurationOptions.ES_MAPPING_ID, "id");
-
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
-        properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        if (VERSION.onOrAfter(EsMajorVersion.V_5_X)) {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+            properties.put(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         Tap in = sourceTap();
         // use an existing id to allow the update to succeed

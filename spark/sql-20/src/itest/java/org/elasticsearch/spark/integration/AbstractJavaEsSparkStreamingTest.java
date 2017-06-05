@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.rdd.Metadata;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;
@@ -113,6 +114,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     private String prefix;
     private Map<String, String> cfg = new HashMap<>();
     private JavaStreamingContext ssc = null;
+    private EsMajorVersion version = TestUtils.getEsVersion();
 
     public AbstractJavaEsSparkStreamingTest(String prefix, boolean readMetadata) {
         this.prefix = prefix;
@@ -507,9 +509,13 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     }
 
     @Test
-    @Ignore // Upgrade to Painless
     public void testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() throws Exception {
-        String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\"keyword\"},\"note\":{\"type\":\"keyword\",\"index\":\"not_analyzed\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\"keyword\"},\"zipcode\":{\"type\":\"keyword\"}}}}}}";
+        String keyword = "keyword";
+        if (version.onOrBefore(EsMajorVersion.V_2_X)) {
+            keyword = "string";
+        }
+
+        String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}}";
         String index = wrapIndex("spark-streaming-test-contact");
         String target = index + "/data";
 
@@ -518,17 +524,26 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         RestUtils.postData(target+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
         RestUtils.postData(target+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
 
+        String lang = "painless";
+        if (version.onOrBefore(EsMajorVersion.V_2_X)) {
+            lang = "groovy";
+        }
         Map<String, String> props = new HashMap<>();
         props.put("es.write.operation", "upsert");
         props.put("es.input.json", "true");
         props.put("es.mapping.id", "id");
-        props.put("es.update.script.lang", "groovy");
+        props.put("es.update.script.lang", lang);
 
         String doc1 = "{\"id\":\"1\",\"address\":{\"zipcode\":\"12345\",\"id\":\"1\"}}";
         List<String> docs1 = new ArrayList<>();
         docs1.add(doc1);
         String upParams = "new_address:address";
-        String upScript = "ctx._source.address+=new_address";
+        String upScript;
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            upScript = "ctx._source.address+=new_address";
+        } else {
+            upScript = "ctx._source.address+=new_address";
+        }
 
         Map<String, String> localConf1 = new HashMap<>(props);
         localConf1.put("es.update.script.params", upParams);
@@ -548,7 +563,12 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         List<String> docs2 = new ArrayList<>();
         docs2.add(doc2);
         String noteUpParams = "new_note:note";
-        String noteUpScript = "ctx._source.note=new_note";
+        String noteUpScript;
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            noteUpScript = "ctx._source.note=new_note";
+        } else {
+            noteUpScript = "ctx._source.note=new_note";
+        }
 
         Map<String, String> localConf2 = new HashMap<>(props);
         localConf2.put("es.update.script.params", noteUpParams);

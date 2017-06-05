@@ -174,7 +174,6 @@ public class AbstractMROldApiSearchTest {
     }
 
     @Test
-    @Ignore // Convert to Painless
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
         String target = "mroldapi-createwitharrayupsert/data/1";
         Assert.assertTrue(RestUtils.exists(target));
