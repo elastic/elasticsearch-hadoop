@@ -39,7 +39,6 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ YarnTest.class })
-@Ignore("Classpath madness")
 public class YarnSuite {
 
     public static ClientRpc YC;
@@ -50,29 +49,29 @@ public class YarnSuite {
         CFG.setInt(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC, -1);
     }
 
-    public static YarnTestCluster CLUSTER = new YarnTestCluster(CFG);
-    public static DistributedFileSystem FS;
+//    public static YarnTestCluster CLUSTER = new YarnTestCluster(CFG);
+//    public static DistributedFileSystem FS;
     public static File CLIENT_JAR;
 
-    public static ExternalResource YARN_CLIENT = new ExternalResource() {
-
-        @Override
-        protected void before() throws Throwable {
-            YC = new ClientRpc(CFG);
-            YC.start();
-        }
-
-        @Override
-        protected void after() {
-            YC.close();
-        }
-    };
+//    public static ExternalResource YARN_CLIENT = new ExternalResource() {
+//
+//        @Override
+//        protected void before() throws Throwable {
+//            YC = new ClientRpc(CFG);
+//            YC.start();
+//        }
+//
+//        @Override
+//        protected void after() {
+//            YC.close();
+//        }
+//    };
 
     public static ExternalResource PROVISION_JARS = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
             // initialize FS (now that the cluster has started)
-            FS = CLUSTER.fs();
+//            FS = CLUSTER.fs();
 
             File libs = new File("build/libs");
             File[] clientLibs = libs.listFiles(new FilenameFilter() {
@@ -94,6 +93,7 @@ public class YarnSuite {
     };
 
     @ClassRule
-    public static ExternalResource RES = new ChainedExternalResource(CLUSTER, PROVISION_JARS, YARN_CLIENT);
+    public static ExternalResource RES = new ChainedExternalResource(PROVISION_JARS);
+//    public static ExternalResource RES = new ChainedExternalResource(CLUSTER, PROVISION_JARS, YARN_CLIENT);
 
 }

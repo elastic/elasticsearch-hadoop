@@ -37,7 +37,6 @@ import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.CLIENT_JAR;
 import static org.elasticsearch.hadoop.integration.yarn.YarnSuite.YC;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@Ignore("Classpath madness")
 public class YarnTest {
 
     private YarnBootstrap bootstrap;
@@ -57,11 +56,13 @@ public class YarnTest {
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void testStartup() throws Exception {
         System.out.println(YC.listApps());
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void test1InstallEsYarn() throws Exception {
         bootstrap.run(cmdArgs("-install"));
     }
@@ -72,11 +73,13 @@ public class YarnTest {
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void test3Install() throws Exception {
         bootstrap.run(cmdArgs("-install-es"));
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void test4Start() throws Exception {
         bootstrap.run(cmdArgs("-start", "loadConfig=" + getClass().getResource("/extra.properties").toURI().toString()));
         final List<ApplicationReport> apps = YC.listEsClusters();
@@ -87,12 +90,14 @@ public class YarnTest {
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void test5List() throws Exception {
         bootstrap.run(cmdArgs("-status"));
         //System.in.read();
     }
 
     @Test
+    @Ignore("Classpath madness")
     public void test6Stop() throws Exception {
         //System.in.read();
         bootstrap.run(cmdArgs("-stop"));

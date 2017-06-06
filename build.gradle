@@ -443,8 +443,10 @@ allprojects { project ->
         }
     }
 
-    // Only add cluster settings if it's not the root project
-    if (project != rootProject) {
+    // Only add cluster settings if it's not the root project or cluster-disabled
+    def clusterBlacklist = ["elasticsearch-storm", "elasticsearch-yarn"]
+
+    if (project != rootProject && !clusterBlacklist.contains(project.name)) {
         logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
         // Create the cluster fixture around the integration test.
         // There's probably a more elegant way to do this in Gradle
