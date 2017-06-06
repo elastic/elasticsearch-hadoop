@@ -232,6 +232,13 @@ public interface ConfigurationOptions {
     String ES_OPERATION_DELETE = "delete";
     String ES_WRITE_OPERATION_DEFAULT = ES_OPERATION_INDEX;
 
+    // ignore document already exists exception, like we don't want to overwrite document that already exists when batch insert docs from hive
+    String ES_CREATE_IGNORE_EXISTS = "es.create.ignore.exists";
+    String ES_CREATE_IGNORE_EXISTS_DEFAULT = "false";
+    // ignore document missing exception, like we don't care deleted docs when update statistical fields
+    String ES_UPDATE_IGNORE_404 = "es.update.ignore.document.missing";
+    String ES_UPDATE_IGNORE_404_DEFAULT = "false";
+
     String ES_UPDATE_RETRY_ON_CONFLICT = "es.update.retry.on.conflict";
     String ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT = "0";
 

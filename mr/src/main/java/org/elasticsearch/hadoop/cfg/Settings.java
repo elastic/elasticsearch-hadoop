@@ -283,6 +283,14 @@ public abstract class Settings {
         return Integer.parseInt(getProperty(ES_UPDATE_RETRY_ON_CONFLICT, ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT));
     }
 
+    public boolean getUpdateIgnore404() {
+        return Boolean.parseBoolean(getProperty(ES_UPDATE_IGNORE_404, ES_UPDATE_IGNORE_404_DEFAULT));
+    }
+
+    public boolean getCreateIgnoreExists() {
+        return Boolean.parseBoolean(getProperty(ES_CREATE_IGNORE_EXISTS, ES_CREATE_IGNORE_EXISTS_DEFAULT));
+    }
+
     public String getUpdateScript() {
         return getProperty(ES_UPDATE_SCRIPT);
     }
