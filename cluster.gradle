@@ -140,9 +140,15 @@ def createClusterFor(Task integrationTest) {
             "transport.tcp.port"           : "9600-9699",
             "transport.type"               : "netty4",
             "http.type"                    : "netty4",
-            "script.inline"                : "true",
             "node.ingest"                  : "true"
     ]
+
+    boolean versionIs6 = (esVersion.tokenize(".").get(0).toInteger() >= 6)
+    if (versionIs6) {
+        // By default all scripts are allowed.
+    } else {
+        esConfig.put("script.inline", "true")
+    }
 
     // we set min master nodes to the total number of nodes in the cluster and
     // basically skip initial state recovery to allow the cluster to form using a realistic master election
