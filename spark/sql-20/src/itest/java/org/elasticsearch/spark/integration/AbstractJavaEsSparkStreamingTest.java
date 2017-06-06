@@ -540,7 +540,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         String upParams = "new_address:address";
         String upScript;
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            upScript = "ctx._source.address+=new_address";
+            upScript = "ctx._source.address.add(params.new_address)";
         } else {
             upScript = "ctx._source.address+=new_address";
         }
@@ -565,7 +565,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         String noteUpParams = "new_note:note";
         String noteUpScript;
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            noteUpScript = "ctx._source.note=new_note";
+            noteUpScript = "ctx._source.note = params.new_note";
         } else {
             noteUpScript = "ctx._source.note=new_note";
         }
