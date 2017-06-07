@@ -20,13 +20,20 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.EnumMap;
 
+import org.elasticsearch.hadoop.EsHadoopUnsupportedOperationException;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 // specific implementation that relies on basic field extractors that are computed
 // lazy per entity. Both the pool and extractors are meant to be reused.
 public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtractor {
 
+    protected EsMajorVersion version;
     protected Object entity;
+
+    public PerEntityPoolingMetadataExtractor(EsMajorVersion version) {
+        this.version = version;
+    }
 
     private static class StaticFieldExtractor implements FieldExtractor {
         private Object field;
@@ -47,6 +54,28 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
         }
     }
 
+    /**
+     * A special field extractor meant to be used for metadata fields that are supported in
+     * some versions of Elasticsearch, but not others. In the case that a metadata field is
+     * unsupported for the configured version of Elasticsearch, this extractor which throws
+     * exceptions for using unsupported metadata tags is returned instead of the regular one.
+     */
+    private static class UnsupportedMetadataFieldExtractor extends StaticFieldExtractor {
+        private Metadata unsupportedMetadata;
+        private EsMajorVersion version;
+
+        public UnsupportedMetadataFieldExtractor(Metadata unsupportedMetadata, EsMajorVersion version) {
+            this.unsupportedMetadata = unsupportedMetadata;
+            this.version = version;
+        }
+
+        @Override
+        public Object field(Object target) {
+            throw new EsHadoopUnsupportedOperationException("Unsupported metadata tag [" + unsupportedMetadata.getName()
+                    + "] for Elasticsearch version [" + version.toString() + "]. Bailing out...");
+        }
+    }
+
     private final EnumMap<Metadata, StaticFieldExtractor> pool = new EnumMap<Metadata, StaticFieldExtractor>(Metadata.class);
 
     public void reset() {
@@ -63,7 +92,7 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
                 return null;
             }
             if (fieldExtractor == null) {
-                fieldExtractor = new StaticFieldExtractor();
+                fieldExtractor = createExtractorFor(metadata);
             }
             if (fieldExtractor.needsInit()) {
                 fieldExtractor.setField(value);
@@ -71,6 +100,23 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
             pool.put(metadata, fieldExtractor);
         }
         return fieldExtractor;
+    }
+
+    /**
+     * If a metadata tag is unsupported for this version of Elasticsearch then a
+     */
+    private StaticFieldExtractor createExtractorFor(Metadata metadata) {
+        // Boot metadata tags that are not supported in this version of Elasticsearch
+        if (version.onOrAfter(EsMajorVersion.V_6_X)) {
+            // 6.0 Removed support for TTL and Timestamp metadata on index and update requests.
+            switch (metadata) {
+                case TTL: // Fall through
+                case TIMESTAMP:
+                    return new UnsupportedMetadataFieldExtractor(metadata, version);
+            }
+        }
+
+        return new StaticFieldExtractor();
     }
 
     public abstract Object getValue(Metadata metadata);

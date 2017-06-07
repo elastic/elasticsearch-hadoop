@@ -22,12 +22,12 @@ import java.util.EnumMap
 import java.util.{Map => JMap}
 
 import scala.collection.{Map => SMap}
-
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.{Metadata => InternalMetadata}
 import org.elasticsearch.hadoop.serialization.bulk.PerEntityPoolingMetadataExtractor
+import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.spark.rdd.{Metadata => SparkMetadata}
 
-private[spark] class ScalaMetadataExtractor extends PerEntityPoolingMetadataExtractor {
+private[spark] class ScalaMetadataExtractor(version: EsMajorVersion) extends PerEntityPoolingMetadataExtractor(version) {
 
   override def getValue(metadata: InternalMetadata): AnyRef = {
     val sparkEnum = ScalaMetadataExtractor.toSparkEnum(metadata)

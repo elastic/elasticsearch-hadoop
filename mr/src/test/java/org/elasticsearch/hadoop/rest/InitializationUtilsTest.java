@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
@@ -117,5 +118,21 @@ public class InitializationUtilsTest {
         set.setProperty(ES_UPDATE_SCRIPT_INLINE, "test");
         set.setProperty(ES_UPDATE_SCRIPT_STORED, "test");
         validateSettings(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateWriteV6PlusTTLRemoved() throws Exception {
+        Settings set = new TestSettings();
+        set.setInternalVersion(EsMajorVersion.V_6_X);
+        set.setProperty(ES_MAPPING_TTL, "1000");
+        validateSettingsForWriting(set);
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testValidateWriteV6PlusTimestampRemoved() throws Exception {
+        Settings set = new TestSettings();
+        set.setInternalVersion(EsMajorVersion.V_6_X);
+        set.setProperty(ES_MAPPING_TIMESTAMP, "1000");
+        validateSettingsForWriting(set);
     }
 }

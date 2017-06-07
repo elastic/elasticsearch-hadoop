@@ -31,6 +31,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkException
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
+import org.elasticsearch.hadoop.EsHadoopUnsupportedOperationException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_AUTO_CREATE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY
@@ -50,6 +51,7 @@ import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata.ID
+import org.elasticsearch.spark.rdd.Metadata.TTL
 import org.elasticsearch.spark.rdd.Metadata.VERSION
 import org.elasticsearch.spark.serialization.Bean
 import org.elasticsearch.spark.serialization.ReflectionUtils
@@ -280,6 +282,33 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertTrue(RestUtils.exists(target + "/6"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
+  }
+
+  @Test(expected = classOf[EsHadoopUnsupportedOperationException])
+  def testEsRDDWriteWithUnsupportedMapping() {
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "TTL only removed in v6 and up.")
+
+    val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
+    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
+
+    val target = wrapIndex("spark-test-scala-dyn-id-write-fail/data")
+
+    val metadata1 = Map(ID -> 5)
+    val metadata2 = Map(ID -> 6, TTL -> "23")
+
+    assertEquals(5, metadata1.getOrElse(ID, null))
+    assertEquals(6, metadata2.getOrElse(ID, null))
+
+    val pairRDD = sc.makeRDD(Seq((metadata1, doc1), (metadata2, doc2)))
+
+    try {
+      pairRDD.saveToEsWithMeta(target, cfg)
+    } catch {
+      case s: SparkException => throw s.getCause
+      case t: Throwable => throw t
+    }
+
+    fail("Should not have ingested TTL on ES 6.x+")
   }
 
   @Test
