@@ -65,23 +65,29 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         SCRIPT_LANG_5X = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
         SCRIPT_LANG_1X = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
 
-        if (StringUtils.hasText(settings.getUpdateScriptInline())) {
-            // INLINE
-            SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScriptInline() + "\"";
-            SCRIPT_2X = SCRIPT_5X;
-            SCRIPT_1X = "\"script\":\"" + settings.getUpdateScriptInline() + "\"";
-        } else if (StringUtils.hasText(settings.getUpdateScriptFile())) {
-            // FILE
-            SCRIPT_5X = "{\"script\":{\"file\":\"" + settings.getUpdateScriptFile() + "\"";
-            SCRIPT_2X = SCRIPT_5X;
-            SCRIPT_1X = "\"script_file\":\"" + settings.getUpdateScriptFile() + "\"";
-        } else if (StringUtils.hasText(settings.getUpdateScriptStored())) {
-            // STORED
-            SCRIPT_5X = "{\"script\":{\"stored\":\"" + settings.getUpdateScriptStored() + "\"";
-            SCRIPT_2X = "{\"script\":{\"id\":\"" + settings.getUpdateScriptStored() + "\"";
-            SCRIPT_1X = "\"script_id\":\"" + settings.getUpdateScriptStored() + "\"";
+        if (HAS_SCRIPT) {
+            if (StringUtils.hasText(settings.getUpdateScriptInline())) {
+                // INLINE
+                SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScriptInline() + "\"";
+                SCRIPT_2X = SCRIPT_5X;
+                SCRIPT_1X = "\"script\":\"" + settings.getUpdateScriptInline() + "\"";
+            } else if (StringUtils.hasText(settings.getUpdateScriptFile())) {
+                // FILE
+                SCRIPT_5X = "{\"script\":{\"file\":\"" + settings.getUpdateScriptFile() + "\"";
+                SCRIPT_2X = SCRIPT_5X;
+                SCRIPT_1X = "\"script_file\":\"" + settings.getUpdateScriptFile() + "\"";
+            } else if (StringUtils.hasText(settings.getUpdateScriptStored())) {
+                // STORED
+                SCRIPT_5X = "{\"script\":{\"stored\":\"" + settings.getUpdateScriptStored() + "\"";
+                SCRIPT_2X = "{\"script\":{\"id\":\"" + settings.getUpdateScriptStored() + "\"";
+                SCRIPT_1X = "\"script_id\":\"" + settings.getUpdateScriptStored() + "\"";
+            } else {
+                throw new EsHadoopIllegalStateException("No update script found...");
+            }
         } else {
-            throw new EsHadoopIllegalStateException("No update script found...");
+            SCRIPT_5X = null;
+            SCRIPT_2X = null;
+            SCRIPT_1X = null;
         }
     }
 
