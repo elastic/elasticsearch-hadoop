@@ -22,7 +22,15 @@ public enum Metadata {
 	ID,
 	PARENT,
 	ROUTING,
+	/**
+	 * @deprecated TTL is not allowed on index or update requests in Elasticsearch 6.x
+	 */
+	@Deprecated
 	TTL,
+	/**
+	 * @deprecated Timestamp is not allowed on index or update requests in Elasticsearch 6.x
+	 */
+	@Deprecated
 	TIMESTAMP,
 	VERSION,
 	VERSION_TYPE;

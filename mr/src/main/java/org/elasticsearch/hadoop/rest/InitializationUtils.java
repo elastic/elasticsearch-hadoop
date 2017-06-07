@@ -46,6 +46,8 @@ import java.util.List;
 
 public abstract class InitializationUtils {
 
+    private static final Log LOG = LogFactory.getLog(InitializationUtils.class);
+
     public static void checkIdForOperation(Settings settings) {
         String operation = settings.getOperation();
 
@@ -249,6 +251,15 @@ public abstract class InitializationUtils {
         if (settings.getInputAsJson()) {
             Assert.isTrue(settings.getMappingIncludes().isEmpty(), "When writing data as JSON, the field inclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
             Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+        }
+
+        if (StringUtils.hasText(settings.getMappingTtl())) {
+            LOG.warn("Setting [" + ConfigurationOptions.ES_MAPPING_TTL + "] is deprecated! Support for [ttl] on " +
+                    "indexing and update requests has been removed in ES 6.x and above!");
+        }
+        if (StringUtils.hasText(settings.getMappingTimestamp())) {
+            LOG.warn("Setting [" + ConfigurationOptions.ES_MAPPING_TIMESTAMP + "] is deprecated! Support for " +
+                    "[timestamp] on indexing and update requests has been removed in ES 6.x and above!");
         }
 
         // Early attempt to catch the internal field filtering clashing with user specified field filtering

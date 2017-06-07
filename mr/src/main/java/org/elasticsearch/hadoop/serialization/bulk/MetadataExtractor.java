@@ -32,8 +32,19 @@ public interface MetadataExtractor {
         ID("_id"),
         PARENT("_parent"),
         ROUTING("_routing"),
+
+        /**
+         * @deprecated TTL is not allowed on index or update requests in Elasticsearch 6.x
+         */
+        @Deprecated
         TTL("_ttl"),
+
+        /**
+         * @deprecated Timestamp is not allowed on index or update requests in Elasticsearch 6.x
+         */
+        @Deprecated
         TIMESTAMP("_timestamp"),
+
         VERSION("_version"),
         VERSION_TYPE("_version_type"),
 
