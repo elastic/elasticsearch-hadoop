@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.serialization.field;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
@@ -30,6 +32,11 @@ import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public abstract class AbstractIndexExtractor implements IndexExtractor, SettingsAware {
+
+    private static final String FORMAT_SEPARATOR_PIPE = "|";
+    private static final String FORMAT_SEPARATOR_COLON = ":";
+
+    private static final Log LOG = LogFactory.getLog(AbstractIndexExtractor.class);
 
     protected Settings settings;
     protected String pattern;
@@ -65,7 +72,13 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
             int endPattern = string.indexOf("}");
             Assert.isTrue(endPattern > startPattern + 1, "Invalid pattern given " + string);
             String nestedString = string.substring(startPattern + 1, endPattern);
-            int separator = nestedString.indexOf(":");
+            int separator = nestedString.indexOf(FORMAT_SEPARATOR_COLON);
+            if (separator > 0) {
+                LOG.warn("Usage of the [:] character as a pattern separator is deprecated and will be removed in 6.0. " +
+                        "Please consider using the [|] character instead.");
+            } else {
+                separator = nestedString.indexOf(FORMAT_SEPARATOR_PIPE);
+            }
             if (separator > 0) {
                 Assert.isTrue(nestedString.length() > separator + 1, "Invalid format given " + nestedString);
                 String format = nestedString.substring(separator + 1);
