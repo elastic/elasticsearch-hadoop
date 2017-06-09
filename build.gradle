@@ -1,4 +1,3 @@
-import org.apache.tools.ant.DefaultLogger
 import org.gradle.internal.jvm.Jvm
 
 description = 'Elasticsearch for Apache Hadoop'
@@ -12,6 +11,8 @@ buildscript {
         classpath('org.springframework.build.gradle:propdeps-plugin:0.0.7')
     }
 }
+
+apply plugin: 'es.hadoop.build'
 
 allprojects {
     repositories {
@@ -42,6 +43,7 @@ allprojects {
     apply plugin: 'findbugs'
     apply plugin: 'pmd'
     apply plugin: 'jacoco'
+    apply plugin: 'es.hadoop.build'
     apply from: "$rootDir/dist.gradle"
 }
 
@@ -50,13 +52,13 @@ println "Building version [$version]"
 ext.hadoopClient = []
 ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
 
-def java8 = org.gradle.api.JavaVersion.current().isJava8Compatible()
+boolean java8 = org.gradle.api.JavaVersion.current().isJava8Compatible()
 
 // Hadoop aliases
-def hadoopStableVersion = hadoop22Version
-def hadoopYarnVersion = hadoop2Version
-def hadoopVersion = hadoopStableVersion 
-def hadoopMsg
+String hadoopStableVersion = hadoop22Version
+String hadoopYarnVersion = hadoop2Version
+String hadoopVersion = hadoopStableVersion
+String hadoopMsg
 
 switch (hadoopDistro) {
 
@@ -65,7 +67,7 @@ switch (hadoopDistro) {
     hadoopVersion = hadoopYarnVersion
     hadoopMsg = "Using Apache Hadoop YARN [$hadoopVersion]"
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
-    break;
+    break
 
   default:
     hadoopMsg = "Using Apache Hadoop Stable [$hadoopVersion]"
@@ -84,7 +86,7 @@ if (rootProject == project) {
     println hadoopMsg
 }
 
-def File gitBranch() {
+File gitBranch() {
     // parse the git files to find out the revision
     File gitHead =  file("$rootDir/.git/HEAD")
     if (gitHead != null && !gitHead.exists()) {
@@ -108,7 +110,7 @@ def File gitBranch() {
     return null
 }
 
-def String gitHash() {
+String gitHash() {
     String rev = "unknown"
 
     File gitHead =  gitBranch()
@@ -118,9 +120,9 @@ def String gitHash() {
     return rev
 }
 
-def revHash = gitHash()
+String revHash = gitHash()
 
-def nullLog4jConfig = file("$rootDir/mr/src/test/resources/log4jnull.properties").toURI().toURL().toString()
+String nullLog4jConfig = file("$rootDir/mr/src/test/resources/log4jnull.properties").toURI().toURL().toString()
 
 ext.manifestTemplate = manifest {
         attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
@@ -130,14 +132,14 @@ ext.manifestTemplate = manifest {
         attributes['Implementation-Vendor'] = "Elastic"
         attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
         
-        def build = System.env['ESHDP.BUILD']
+        String build = System.env['ESHDP.BUILD']
         if (build != null)
             attributes['Build'] = build
         
         attributes['Repository-Revision'] = revHash
 }
 
-allprojects { project ->
+allprojects { Project project ->
 
     compileJava {
         sourceCompatibility = 1.6
@@ -175,7 +177,7 @@ allprojects { project ->
 
     dependencies {
         // makes eclipse classpath easier
-        testCompile("org.elasticsearch:elasticsearch:$esVersion") {
+        testCompile("org.elasticsearch:elasticsearch:${elasticsearchVersion}") {
             exclude group: "org.apache.logging.log4j", module: "log4j-api"
         }
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
@@ -183,9 +185,7 @@ allprojects { project ->
         testRuntime "org.apache.logging.log4j:log4j-core:$log4jVersion"
         testRuntime "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion"
         testRuntime "net.java.dev.jna:jna:4.2.2"
-        //testCompile "org.elasticsearch.module:lang-groovy:$esVersion"
         testCompile "org.codehaus.groovy:groovy:$groovyVersion:indy"
-//        testCompile "org.elasticsearch.plugin:transport-netty4-client:$esVersion"
         testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
         testRuntime "com.vividsolutions:jts:1.13"
         
@@ -197,8 +197,8 @@ allprojects { project ->
     }
 
     // deal with the messy conflicts out there
-    configurations.all {
-      resolutionStrategy {
+    configurations.all { Configuration conf ->
+      conf.resolutionStrategy {
         
         // force the use of commons-http from Hadoop 1.x
         // to avoid SLF4J warnings, force only one version
@@ -322,6 +322,17 @@ allprojects { project ->
         from javadoc
     }
 
+    assemble {
+        doLast {
+            project.copy {
+                from jar.archivePath
+                from javadocJar.archivePath
+                from sourcesJar.archivePath
+                into "$buildDir/distributions"
+            }
+        }
+    }
+
     task pack(dependsOn: [jar, javadocJar, sourcesJar]) {
         outputs.files {
             jar.archivePath
@@ -342,7 +353,7 @@ allprojects { project ->
 }
 
 configure(rootProject) {
-    def eshModules = subprojects
+    Set<Project> eshModules = subprojects
 
     // jar used for testing Hadoop remotely (es-hadoop + tests)
     task hadoopTestingJar(type: Jar, dependsOn: jar) {
@@ -405,9 +416,9 @@ allprojects { project ->
         testClassesDir = sourceSets.itest.output.classesDir
         classpath = sourceSets.itest.runtimeClasspath
         excludes = ["**/Abstract*.class"]
-        
+
         ignoreFailures = true
-        
+
         minHeapSize = "256m"
         maxHeapSize = "2g"
         if (!java8)
@@ -424,15 +435,15 @@ allprojects { project ->
             minGranularity 2
             maxGranularity 2
         }
-        
+
         reports.html.enabled = false
-        
+
         jacoco {
             enabled = project.hasProperty("enableJacoco")
             append = true
             destinationFile = file("${rootProject.buildDir}/jacoco/jacocoTest.exec")
             excludes = ["org.elasticsearch.spark.*"]
-            
+
             if (enabled) {
                 System.setProperty("log4j.configuration", "$nullLog4jConfig")
             }
@@ -444,7 +455,7 @@ allprojects { project ->
         logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
         // Create the cluster fixture around the integration test.
         // There's probably a more elegant way to do this in Gradle
-        apply from: "$rootDir/cluster.gradle"
+        apply plugin: "es.hadoop.cluster"
     }
 }
 
@@ -465,7 +476,7 @@ project(":elasticsearch-hadoop-mr") {
         testCompile "org.elasticsearch:securemock:1.2"
     }
     
-    def generatedResources = "$buildDir/generated-resources/main"
+    String generatedResources = "$buildDir/generated-resources/main"
     
     sourceSets {
         main {
@@ -506,7 +517,7 @@ project(":elasticsearch-hadoop-mr") {
 }
 
 // reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
-def nestMRProject(target) {
+void nestMRProject(Project target) {
     target.evaluationDependsOn(':elasticsearch-hadoop-mr')
     
     target.dependencies {
@@ -584,8 +595,8 @@ project(":elasticsearch-hadoop-hive") {
 
 
 // reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
-def baseSparkProject(target, sparkVersion) {
-   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "211"
+void baseSparkProject(Project target, String sparkVersion) {
+   String scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "211"
 
     switch (scalaVer) {
     case "210":
@@ -643,7 +654,7 @@ def baseSparkProject(target, sparkVersion) {
       }
     }
     
-    def coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
+    String coreSrc = file("$target.projectDir/../core").absolutePath.replace('\\','/')
     
     target.sourceSets {
         main.scala.srcDirs += "$coreSrc/main/scala"
@@ -702,8 +713,7 @@ def baseSparkProject(target, sparkVersion) {
     }
     
     nestMRProject(target)
-    
-    
+
     // disable jacoco as it will fail
     test {
       jacoco {
@@ -732,8 +742,8 @@ project(":elasticsearch-spark-13") {
     }
 
     // deal with the messy conflicts out there
-    configurations.all {
-      resolutionStrategy {
+    configurations.all { Configuration conf ->
+      conf.resolutionStrategy {
         eachDependency { details ->
             // in a similar vein, change all javax.servlet artifacts to the one used by Spark
             // otherwise these will lead to SecurityException (signer information wrong)
@@ -743,7 +753,7 @@ project(":elasticsearch-spark-13") {
         }
       }
       
-      exclude group: "org.mortbay.jetty"
+      conf.exclude group: "org.mortbay.jetty"
     }
 }
 
@@ -786,7 +796,7 @@ configure(rootProject) {
     description = "Elasticsearch Hadoop"
     
     // include Spark 2.0 support in main jar
-    def eshModules = subprojects - project(":elasticsearch-spark-13")
+    Set<Project> eshModules = subprojects - project(":elasticsearch-spark-13")
     
     // build root project dependencies
     // extract optional and provided dependencies
@@ -912,7 +922,7 @@ configure(rootProject) {
 
 // reporting
 allprojects { project ->
-    
+
     findbugs {
       toolVersion = "3.0.1"
       ignoreFailures = true
@@ -954,6 +964,9 @@ allprojects { project ->
     }
 }
 
-// skip creation of javadoc jars 
-assemble.dependsOn = ['jar', 'hadoopTestingJar']
+// skip creation of javadoc jars
+//assemble.dependsOn = ['jar', 'hadoopTestingJar']
+build {
+    dependsOn 'hadoopTestingJar'
+}
 defaultTasks 'build'

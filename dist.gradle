@@ -12,16 +12,20 @@ if (enableArtifactSigning) {
 }
 
 
-def customizePom(pom, gradleProject) {
-    pom.whenConfigured { generatedPom ->
+MavenPom customizePom(MavenPom pom, Project gradleProject) {
+    pom.whenConfigured { MavenPom generatedPom ->
 
         // eliminate test-scoped dependencies (no need in maven central poms)
         generatedPom.dependencies.removeAll { dep ->
             dep.scope == 'test' || dep.artifactId == 'elasticsearch-hadoop-mr'
         }
+
+        generatedPom.dependencies.findAll { it.scope == 'optional' }.each {
+            it.optional = "true"
+        }
         
         // for es-hadoop optional is best served as provided/optional vs compile/optional
-        generatedPom.dependencies.findAll { it.optional == true }.each {
+        generatedPom.dependencies.findAll { it.optional == "true" }.each {
             it.scope = "provided"
         }
         
@@ -80,6 +84,7 @@ def customizePom(pom, gradleProject) {
         groupId = "org.elasticsearch"
         artifactId = project.archivesBaseName
     }
+    return pom
 }
 
 ext.deployUsername = { project.hasProperty("repoUsername") ? getProperty("repoUsername") : "" }
@@ -90,6 +95,17 @@ repositories {
         name "fileRepo"
         dirs "repo"
     }
+}
+
+task writePom() {
+    doLast() {
+        MavenPom mavenPom = pom {}
+        customizePom(mavenPom, project).writeTo("$buildDir/distributions/${project.archivesBaseName}-${project.version}.xml")
+    }
+}
+
+assemble {
+    dependsOn writePom
 }
 
 uploadArchives {
@@ -141,7 +157,7 @@ task uploadToS3() {
         }
     }
 }
-def uploadArtifactsToS3(target, toDir) {
+void uploadArtifactsToS3(Project target, String toDir) {
     
     configurations { antlibs }
     dependencies {
@@ -150,27 +166,27 @@ def uploadArtifactsToS3(target, toDir) {
     }
 
     ant {
-        taskdef(resource: 'org/springframework/build/aws/ant/antlib.xml', classpath: configurations.antlibs.asPath)
+        ant.taskdef(resource: 'org/springframework/build/aws/ant/antlib.xml', classpath: configurations.antlibs.asPath)
         
-        s3(accessKey: s3AccessKey, secretKey: s3SecretAccessKey) {
-          target.configurations["s3"].artifacts.each { artifact ->
-            def archive = artifact.archiveTask
-        
-            upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath,
-                    toFile: toDir + "/${archive.archiveName}", 
-                    publicRead: 'false') {
-                metadata(name: 'project.name', value: project)
-                metadata(name: 'package.file.name', value: archive.archiveName)
+        ant.s3(accessKey: s3AccessKey, secretKey: s3SecretAccessKey) {
+            target.configurations["s3"].artifacts.each { artifact ->
+                AbstractArchiveTask archive = artifact.archiveTask
+
+                ant.upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath,
+                        toFile: toDir + "/${archive.archiveName}",
+                        publicRead: 'false') {
+                    metadata(name: 'project.name', value: project)
+                    metadata(name: 'package.file.name', value: archive.archiveName)
+                }
+
+                // checksum
+                File checksum = file(archive.archivePath.absolutePath + ".sha1.txt")
+                if (checksum.exists()) {
+                    ant.upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath.absolutePath + ".sha1.txt",
+                            toFile: toDir + "/${archive.archiveName}" + ".sha1.txt",
+                            publicRead: 'false')
+                }
             }
-            
-            // checksum
-            def checksum = file(archive.archivePath.absolutePath + ".sha1.txt")
-            if (checksum.exists()) {
-            upload(bucketName: 'download.elasticsearch.org', file: archive.archivePath.absolutePath + ".sha1.txt",
-                    toFile: toDir + "/${archive.archiveName}" + ".sha1.txt",
-                    publicRead: 'false')
-            }
-          }
         }
     }
 }
