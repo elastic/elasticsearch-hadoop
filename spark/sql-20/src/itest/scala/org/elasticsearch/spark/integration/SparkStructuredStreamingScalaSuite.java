@@ -10,6 +10,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({ AbstractScalaEsSparkStructuredStreaming.class })
 public class SparkStructuredStreamingScalaSuite {
 
-//    @ClassRule
-//    public static ExternalResource resource = new LocalEs();
+    @ClassRule
+    public static ExternalResource resource = new LocalEs();
 }

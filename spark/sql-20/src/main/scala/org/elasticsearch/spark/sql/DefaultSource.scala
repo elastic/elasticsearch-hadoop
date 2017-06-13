@@ -78,6 +78,7 @@ import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 import org.elasticsearch.spark.sql.streaming.EsSparkSqlStreamingSink
 import org.elasticsearch.spark.sql.streaming.SparkSqlStreamingConfigs
+import org.elasticsearch.spark.sql.streaming.StructuredStreamingVersionLock
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.mutable.LinkedHashMap
@@ -112,6 +113,11 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
   }
 
   override def createSink(sqlContext: SQLContext, parameters: Map[String, String], partitionColumns: Seq[String], outputMode: OutputMode): Sink = {
+    val sparkSession = sqlContext.sparkSession
+
+    // Verify compatiblity versions for alpha:
+    StructuredStreamingVersionLock.checkCompatibility(sparkSession)
+
     // For now we only support Append style output mode
     if (outputMode != OutputMode.Append()) {
       throw new EsHadoopIllegalArgumentException("Append is only supported OutputMode for Elasticsearch. " +
@@ -125,8 +131,6 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
       throw new EsHadoopIllegalArgumentException("Partition columns are not supported for Elasticsearch. " +
         "If you need to partition your data by column values on Elasticsearch, please use an index pattern instead.")
     }
-
-    val sparkSession = sqlContext.sparkSession
 
     // Add in the transport pooling key for this job
     val mapConfig = MutableMap(parameters.toSeq: _*) += (INTERNAL_TRANSPORT_POOLING_KEY -> UUID.randomUUID().toString)
