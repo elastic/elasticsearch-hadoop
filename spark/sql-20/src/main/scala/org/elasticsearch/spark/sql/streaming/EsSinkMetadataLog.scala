@@ -9,7 +9,7 @@ import org.elasticsearch.hadoop.cfg.Settings
  * state between batch executions for the [[EsSparkSqlStreamingSink]]
  */
 class EsSinkMetadataLog(settings: Settings, sparkSession: SparkSession, path: String)
-  extends CompactibleFileStreamLog[EsSinkStatus](EsSinkMetadataLog.SINK_VERSION, sparkSession, path) {
+  extends CompactibleFileStreamLog[EsSinkStatus](EsSinkMetadataLog.VERSION_NUMBER, sparkSession, path) {
 
   override protected def fileCleanupDelayMs: Long = SparkSqlStreamingConfigs.getFileCleanupDelayMs(settings)
 
@@ -24,7 +24,5 @@ class EsSinkMetadataLog(settings: Settings, sparkSession: SparkSession, path: St
  * Companion object for [[EsSinkMetadataLog]].
  */
 object EsSinkMetadataLog {
-  private [this] val VERSION_NUMBER = 1
-  private [this] val PREFIX = "es-spark-log-"
-  val SINK_VERSION: String = PREFIX + "v" + VERSION_NUMBER
+  private [sql] val VERSION_NUMBER = 1
 }
