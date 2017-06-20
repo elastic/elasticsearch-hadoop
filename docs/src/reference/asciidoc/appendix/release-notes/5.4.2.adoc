@@ -1,0 +1,5 @@
+[[eshadoop-5.4.2]]
+== Elasticsearch for Apache Hadoop version 5.4.2
+June 20, 2017
+
+ES-Hadoop 5.4.2 is a version compatibility release, tested specifically against Elasticsearch 5.4.2.
