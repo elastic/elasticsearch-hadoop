@@ -132,7 +132,6 @@ task uploadToS3() {
     group = "Distribution"
     description = "Upload ZIPs to S3"
 
-    logging.level = LogLevel.INFO
     // execution phase only
     doLast() {
         // distZip might not create an s3 config so check its existence first
@@ -150,7 +149,6 @@ def uploadArtifactsToS3(target, toDir) {
     }
 
     // see ant logging
-    target.logging.level = LogLevel.INFO
     ant {
         taskdef(resource: 'org/springframework/build/aws/ant/antlib.xml', classpath: configurations.antlibs.asPath)
         
