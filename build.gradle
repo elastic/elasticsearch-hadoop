@@ -207,9 +207,10 @@ allprojects { project ->
 
     dependencies {
         // makes eclipse classpath easier
-        testCompile "org.elasticsearch:elasticsearch:$esVersion"
+        testCompile("org.elasticsearch:elasticsearch:$esVersion") {
+            exclude group: "org.apache.logging.log4j", module: "log4j-api"
+        }
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
-//        testRuntime "log4j:log4j:$log4jVersion"
         testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
         testRuntime "org.apache.logging.log4j:log4j-core:$log4jVersion"
         testRuntime "org.apache.logging.log4j:log4j-1.2-api:$log4jVersion"
@@ -239,11 +240,15 @@ allprojects { project ->
         force "org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion", "org.codehaus.jackson:jackson-core-asl:$jacksonVersion"
         // used when using Elastic non-shaded version
         force "commons-cli:commons-cli:1.2"
-        
+
         eachDependency { details ->
             // for slf4j use each dependency since there are so many variants
             if (details.requested.name.contains("slf4j-")) {
                     details.useVersion "1.7.6"
+            }
+            // log4j needs careful tending with the version
+            if (details.requested.name.contains("org.apache.logging.log4j") && details.requested.name.contains("log4j-")) {
+                details.useVersion log4jVersion
             }
             if (details.requested.name.equals("servlet-api")) {
                 details.useTarget group: "org.eclipse.jetty.orbit", name: "javax.servlet", version: "3.0.0.v201112011016"
