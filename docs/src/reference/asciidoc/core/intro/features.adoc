@@ -9,7 +9,7 @@ REST based:: {eh} uses {es} REST interface for communication, allowing for flexi
 
 Self contained:: the library has been designed to be small and efficient. At around 300KB and _no_ extra dependencies outside Hadoop itself, distributing {eh} within your cluster is simple and fast.
 
-Universal jar:: whether you are using Hadoop 1.x or Hadoop 2.x, vanilla Apache Hadoop or a certain distro, the _same_ {eh} jar works transparently across all of them.
+Universal jar:: whether you are using vanilla Apache Hadoop or a certain distro, the _same_ {eh} jar works transparently across all of them.
 
 Memory and I/O efficient:: {eh} is focused on performance. From pull-based parsing, to bulk updates and direct conversion to/of native types, {eh} keeps its memory and network I/O usage finely-tuned.
 
@@ -18,8 +18,6 @@ Adaptive I/O:: {eh} detects transport errors and retries automatically. If the {
 Facilitates data co-location:: {eh} fully integrates with Hadoop exposing its network access information, allowing co-located {es} and Hadoop clusters to be aware of each other and reduce network IO.
 
 {mr} API support:: At its core, {eh} uses the low-level {mr} API to read and write data to {es} allowing for maximum integration flexibility and performance.
-
-'old'(`mapred`) & 'new'(`mapreduce`) {mr} APIs supported:: {eh} automatically adjusts to your environment; one does not have to change between using the `mapred` or `mapreduce` APIs - both are supported, by the same classes, at the same time.
 
 Apache Hive support:: Run Hive queries against {es} for advanced analystics and _real_time_ responses. {eh} exposes {es} as a Hive table so your scripts can crunch through data faster then ever.
 
