@@ -1,5 +1,10 @@
 # Elasticsearch YARN - Beta Status
 
+## Warning: Deprecated in 5.5.0
+Elasticsearch YARN is deprecated and will be removed in 6.0
+
+## Overview
+
 Elasticsearch YARN project allows Elasticsearch to run within a Hadoop YARN cluster, handling the provisioning and life-cycle of the Elasticsearch cluster the command-line interface (CLI).
 Note the project is in Beta status.
 
