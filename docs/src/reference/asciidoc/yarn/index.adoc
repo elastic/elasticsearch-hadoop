@@ -4,6 +4,8 @@
 [[es-yarn-intro]]
 [partintro]
 --
+deprecated[5.5.0,"Elasticsearch on YARN is deprecated and will be removed in 6.0"]
+
 Distributed as part of {ehtm}, {ey} is a separate, stand-alone, self-contained CLI (command-line interface) that allows {es} to run (and thus be managed) within a http://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html[YARN] environment. 
 
 In other words, {es} can use YARN to allocate its resources and be started and stopped, on said resources, through YARN infrastructure.
