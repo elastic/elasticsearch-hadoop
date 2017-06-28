@@ -385,7 +385,11 @@ public class RestRepository implements Closeable, StatsAware {
     public boolean indexExists(boolean read) {
         Resource res = (read ? resourceR : resourceW);
         // cheap hit
-        boolean exists = client.exists(res.indexAndType());
+        boolean exists = client.indexExists(res.index());
+        if (exists && StringUtils.hasText(res.type())) {
+            exists = client.typeExists(res.index(), res.type());
+        }
+
         // could be a _all or a pattern which is valid for read
         // try again by asking the mapping - could be expensive
         if (!exists && read) {
@@ -470,7 +474,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     public boolean isEmpty(boolean read) {
         Resource res = (read ? resourceR : resourceW);
-        boolean exists = client.exists(res.indexAndType());
+        boolean exists = client.indexExists(res.index());
         return (exists ? count(read) <= 0 : true);
     }
 

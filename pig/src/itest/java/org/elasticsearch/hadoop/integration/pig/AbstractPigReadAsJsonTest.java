@@ -23,6 +23,8 @@ import com.google.common.collect.Lists;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +45,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     private static int testInstance = 0;
     private static String previousQuery;
     private boolean readMetadata;
+    private EsMajorVersion testVersion;
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -54,6 +57,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     public AbstractPigReadAsJsonTest(String query, boolean metadata) {
         this.query = query;
         this.readMetadata = metadata;
+        this.testVersion = TestUtils.getEsVersion();
 
         if (!query.equals(previousQuery)) {
             previousQuery = query;
@@ -219,7 +223,9 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
             doc1.add("\",\"_score\":");
-            doc1.add("\"_routing\":\"12\",\"_parent\":\"12\"");
+            if (testVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+                doc1.add("\"_routing\":\"12\",\"_parent\":\"12\"");
+            }
         }
 
         List<String> doc2 = Lists.newArrayList(
@@ -228,7 +234,9 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
             doc2.add("\",\"_score\":");
-            doc2.add("\"_routing\":\"918\",\"_parent\":\"918\"");
+            if (testVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+                doc2.add("\"_routing\":\"918\",\"_parent\":\"918\"");
+            }
         }
 
         List<String> doc3 = Lists.newArrayList(
@@ -237,7 +245,9 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig\",\"_type\":\"child\",\"_id\":\"");
             doc3.add("\",\"_score\":");
-            doc3.add("\"_routing\":\"982\",\"_parent\":\"982\"");
+            if (testVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+                doc3.add("\"_routing\":\"982\",\"_parent\":\"982\"");
+            }
         }
 
         assertThat(results, stringContainsInOrder(doc1));

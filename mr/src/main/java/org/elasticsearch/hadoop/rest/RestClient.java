@@ -542,16 +542,34 @@ public class RestClient implements Closeable, StatsAware {
         return (res.status() == HttpStatus.OK ? true : false);
     }
 
-    public boolean exists(String indexOrType) {
+    public boolean documentExists(String index, String type, String id) {
+        return exists(index + "/" + type + "/" + id);
+    }
+
+    public boolean typeExists(String index, String type) {
+        String indexType;
+        if (internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
+            indexType = index + "/_mapping/" + type;
+        } else {
+            indexType = index + "/" + type;
+        }
+        return exists(indexType);
+    }
+
+    public boolean indexExists(String index) {
+        return exists(index);
+    }
+
+    private boolean exists(String indexOrType) {
         Request req = new SimpleRequest(HEAD, null, indexOrType);
         Response res = executeNotFoundAllowed(req);
 
         return (res.status() == HttpStatus.OK ? true : false);
     }
 
-    public boolean touch(String indexOrType) {
-        if (!exists(indexOrType)) {
-            Response response = execute(PUT, indexOrType, false);
+    public boolean touch(String index) {
+        if (!indexExists(index)) {
+            Response response = execute(PUT, index, false);
 
             if (response.hasFailed()) {
                 String msg = null;
