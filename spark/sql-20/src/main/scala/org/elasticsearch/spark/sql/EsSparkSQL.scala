@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.spark.sql
 
+import org.apache.commons.logging.LogFactory
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SQLContext
@@ -38,6 +39,8 @@ import scala.collection.Map
 object EsSparkSQL {
 
   private val init = { ObjectUtils.loadClass("org.elasticsearch.spark.rdd.CompatUtils", classOf[ObjectUtils].getClassLoader) }
+
+  @transient private[this] val LOG = LogFactory.getLog(EsSparkSQL.getClass)
 
   //
   // Read
@@ -90,6 +93,8 @@ object EsSparkSQL {
       val esCfg = new PropertiesSettings().load(sparkCfg.save())
       esCfg.merge(cfg.asJava)
 
+      // Need to discover ES Version before checking index existence
+      InitializationUtils.discoverEsVersion(esCfg, LOG)
       InitializationUtils.checkIdForOperation(esCfg)
       InitializationUtils.checkIndexExistence(esCfg)
 

@@ -542,7 +542,25 @@ public class RestClient implements Closeable, StatsAware {
         return (res.status() == HttpStatus.OK ? true : false);
     }
 
-    public boolean exists(String indexOrType) {
+    public boolean documentExists(String index, String type, String id) {
+        return exists(index + "/" + type + "/" + id);
+    }
+
+    public boolean typeExists(String index, String type) {
+        String indexType;
+        if (internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
+            indexType = index + "/_mapping/" + type;
+        } else {
+            indexType = index + "/" + type;
+        }
+        return exists(indexType);
+    }
+
+    public boolean indexExists(String index) {
+        return exists(index);
+    }
+
+    private boolean exists(String indexOrType) {
         Request req = new SimpleRequest(HEAD, null, indexOrType);
         Response res = executeNotFoundAllowed(req);
 
@@ -550,21 +568,23 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public boolean touch(String index) {
-        String target = index;
-        int slash = index.indexOf("/");
-        if (slash > 0) {
-            // Remove the type if one is given...
-            target = index.substring(0, slash);
-        }
-        if (!exists(target)) {
-            try {
-                Response response = execute(PUT, target, true);
-                return response.hasSucceeded();
-            } catch (EsHadoopInvalidRequest invalidRequest) {
-                if (StringUtils.hasText(invalidRequest.getMessage()) && !invalidRequest.getMessage().contains("already exists")) {
-                    throw new EsHadoopIllegalStateException(invalidRequest.getMessage());
+        if (!indexExists(index)) {
+            Response response = execute(PUT, index, false);
+
+            if (response.hasFailed()) {
+                String msg = null;
+                // try to parse the answer
+                try {
+                    msg = parseContent(response.body(), "error");
+                } catch (Exception ex) {
+                    // can't parse message, move on
+                }
+
+                if (StringUtils.hasText(msg) && !msg.contains("IndexAlreadyExistsException")) {
+                    throw new EsHadoopIllegalStateException(msg);
                 }
             }
+            return response.hasSucceeded();
         }
         return false;
     }

@@ -34,6 +34,9 @@ import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.InitializationUtils
 
 object EsSpark {
+
+  @transient private[this] val LOG = LogFactory.getLog(EsSpark.getClass)
+
   //
   // Load methods
   //
@@ -96,6 +99,8 @@ object EsSpark {
     val config = new PropertiesSettings().load(sparkCfg.save())
     config.merge(cfg.asJava)
 
+    // Need to discover the EsVersion here before checking if the index exists
+    InitializationUtils.discoverEsVersion(config, LOG)
     InitializationUtils.checkIdForOperation(config)
     InitializationUtils.checkIndexExistence(config)
 
