@@ -52,64 +52,20 @@ $ curl -XGET http://localhost:9200
 [[requirements-hadoop]]
 === Hadoop
 
-Hadoop 1.x (ideally the latest stable version in the 1.x line, currently 1.2.1) or 2.x (ideally the latest stable version, currently 2.4.1). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
+Hadoop 2.x (ideally the latest stable version, currently 2.7.3). {eh} is tested daily against Apache Hadoop; any distro compatible with Apache Hadoop should work just fine.
 
 To check the version of Hadoop, one can refer either to its folder or jars (which contain the version in their names) or from the command line:
 
 [source, bash]
 ----
 $ bin/hadoop version
-Hadoop 1.2.1
+Hadoop 2.4.1
 ----
-
-As a guide, the table below lists the Hadoop-based distributions against with this version has been tested against at various points in time:
-
-|===
-| Distribution      | Release
-
-| Apache Hadoop     | 2.7.x
-| Apache Hadoop     | 2.6.x
-| Apache Hadoop     | 2.4.x
-| Apache Hadoop     | 2.2.x
-| Apache Hadoop     | 1.2.x
-| Apache Hadoop     | 1.1.x
-
-| Amazon EMR        | 4.5.x
-| Amazon EMR        | 4.4.x
-| Amazon EMR        | 4.3.x
-| Amazon EMR        | 4.2.x
-| Amazon EMR        | 4.1.x
-| Amazon EMR        | 4.0.x
-| Amazon EMR        | 3.11.x
-| Amazon EMR        | 3.10.x
-| Amazon EMR        | 3.9.x
-| Amazon EMR        | 3.8.x
-| Amazon EMR        | 3.7.x
-| Amazon EMR        | 3.6.x
-| Amazon EMR        | 3.5.x
-| Amazon EMR        | 3.4.x
-| Amazon EMR        | 3.3.x
-| Amazon EMR        | 3.2.x
-
-| Cloudera CDH      | 5.7.x
-| Cloudera CDH      | 5.6.x
-| Cloudera CDH      | 5.5.x
-| Cloudera CDH      | 5.4.x
-
-| Hortonworks HDP   | 2.4.x
-| Hortonworks HDP   | 2.3.x
-
-| MapR              | 5.x
-| MapR              | 4.1.x
-| MapR              | 4.0.x
-|===
-
-IMPORTANT: Use the table above for guidance only; if your distro (or its version) is not there, it does not mean {eh} is not compatible with it; rather go ahead and try it out and let us know how it went.
 
 [[requirements-yarn]]
 === Apache YARN / Hadoop 2.x
 
-{eh} binary can run transparently on both Hadoop 1.x and Yarn / Hadoop 2.x without any changes or modifications.
+{eh} binary can run on Yarn / Hadoop 2.x without any changes or modifications.
 
 [[requirements-cascading]]
 === Cascading
