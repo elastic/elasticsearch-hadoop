@@ -56,9 +56,10 @@ or [build](#building-the-source) the project yourself.
 
 We do build and test the code on _each_ commit.
 
-### Hadoop 2.0/YARN
+### Supported Hadoop Versions
 
-Already supported - it does not matter if you are using Hadoop 1.x or 2.x, the same jar works across both Hadoop environments.
+Running against Hadoop 1.x is deprecated in 5.5 and will no longer be tested against in 6.0.
+ES-Hadoop is developed for and tested against Hadoop 2.x and YARN.
 More information in this [section](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/install.html).
 
 ## Feedback / Q&A

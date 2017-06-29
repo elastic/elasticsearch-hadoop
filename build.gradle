@@ -65,43 +65,12 @@ switch (hadoopDistro) {
     hadoopVersion = hadoopYarnVersion
     hadoopMsg = "Using Apache Hadoop YARN [$hadoopVersion]"
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
-
-    break;
-  // Hadoop 1.2.x
-  case "hadoop12":
-    hadoopVersion = hadoop12Version
-    hadoopMsg =  "Using Apache Hadoop 1.2.x [$hadoopVersion]"
-    hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
-              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
-
-    break;
-    
-  // Hadoop 1.1.x
-  case "hadoop11":
-    hadoopVersion = hadoop11Version
-    hadoopMsg = "Using Apache Hadoop 1.1.x [$hadoopVersion]"
-    hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
-              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
-
-    break;
-
-  // Hadoop 1.0.x
-  case "hadoop10":
-    hadoopVersion = hadoop10Version
-    hadoopMsg = "Using Apache Hadoop 1.0.x [$hadoopVersion]"
-    hadoopClient = ["org.apache.hadoop:hadoop-streaming:$hadoopVersion",
-              "org.apache.hadoop:hadoop-tools:$hadoopVersion"]
-
     break;
 
   default:
     hadoopMsg = "Using Apache Hadoop Stable [$hadoopVersion]"
     hadoopVersion = hadoopStableVersion
     hadoopClient = ["org.apache.hadoop:hadoop-client:$hadoopVersion"]
-}
-
-def boolean isYarn() {
-    return !(hadoopDistro == "hadoop12" || hadoopDistro == "hadoop11" || hadoopDistro == "hadoop10")
 }
 
 allprojects {
@@ -585,7 +554,7 @@ project(":elasticsearch-hadoop-pig") {
     description = "Elasticsearch Hadoop Pig"
     nestMRProject(project)
     
-    ext.pigClassifier = isYarn() ? "h2" : ""
+    ext.pigClassifier = "h2"
 
     dependencies {
         provided("org.apache.pig:pig:$pigVersion:$pigClassifier")
