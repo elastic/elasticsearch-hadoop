@@ -666,7 +666,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         """.stripMargin
 
     println(aliases)
-    RestUtils.postData("_aliases", aliases.getBytes());
+    RestUtils.postData("_aliases", aliases.getBytes())
     RestUtils.refresh(alias)
 
     val aliasRDD = EsSpark.esJsonRDD(sc, alias + "/type", cfg)

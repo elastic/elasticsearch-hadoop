@@ -68,7 +68,7 @@ public class LocalEs extends ExternalResource {
     private void setSingleNodeTemplate() throws Exception {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
         EsMajorVersion version = InitializationUtils.discoverEsVersion(new TestSettings(), LogFactory.getLog(this.getClass()));
-        if (version.onOrBefore(EsMajorVersion.V_1_X)) {
+        if (version.onOrBefore(EsMajorVersion.V_5_X)) {
             RestUtils.put("_template/single-node-template",
                     "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
         } else {

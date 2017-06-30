@@ -68,7 +68,11 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         if (HAS_SCRIPT) {
             if (StringUtils.hasText(settings.getUpdateScriptInline())) {
                 // INLINE
-                SCRIPT_5X = "{\"script\":{\"inline\":\"" + settings.getUpdateScriptInline() + "\"";
+                String source = "inline";
+                if (esMajorVersion.onOrAfter(EsMajorVersion.V_6_X)) {
+                    source = "source";
+                }
+                SCRIPT_5X = "{\"script\":{\"" + source + "\":\"" + settings.getUpdateScriptInline() + "\"";
                 SCRIPT_2X = SCRIPT_5X;
                 SCRIPT_1X = "\"script\":\"" + settings.getUpdateScriptInline() + "\"";
             } else if (StringUtils.hasText(settings.getUpdateScriptFile())) {

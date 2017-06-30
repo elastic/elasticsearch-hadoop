@@ -47,7 +47,7 @@ public class GetAliasesRequestBuilder extends RequestBuilder<GetAliasesRequestBu
         } else {
             path.append("_all");
         }
-        path.append("/_aliases");
+        path.append("/_alias");
         return new Response((Map<String, Object>) client.get(path.toString(), null));
     }
 
