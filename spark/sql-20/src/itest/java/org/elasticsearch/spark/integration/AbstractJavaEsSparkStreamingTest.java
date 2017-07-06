@@ -37,6 +37,7 @@ import org.apache.spark.streaming.scheduler.StreamingListenerOutputOperationStar
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverError;
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted;
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped;
+import org.apache.spark.streaming.scheduler.StreamingListenerStreamingStarted;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
@@ -629,6 +630,11 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
             if (foundException) {
                 exceptionType = exceptionName;
             }
+        }
+
+        @Override
+        public void onStreamingStarted(StreamingListenerStreamingStarted streamingStarted) {
+            // not implemented
         }
 
         @Override
