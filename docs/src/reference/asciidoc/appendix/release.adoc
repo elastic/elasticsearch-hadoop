@@ -5,6 +5,7 @@
 --
 This section summarizes the changes in each release.
 
+* <<eshadoop-5.5.0>>
 * <<eshadoop-5.4.2>>
 * <<eshadoop-5.4.1>>
 * <<eshadoop-5.4.0>>
@@ -28,6 +29,11 @@ This section summarizes the changes in each release.
 [[eshadoop-5.3.1]]
 == Elasticsearch for Apache Hadoop version 5.3.1
 Month 00, 2017
+
+[[deprecation-5.3.1]]
+=== Deprecations
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 [[breaking-5.3.1]]
 === Breaking Changes
@@ -65,6 +71,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/5.5.0.adoc[]
 include::release-notes/5.4.2.adoc[]
 include::release-notes/5.4.1.adoc[]
 include::release-notes/5.4.0.adoc[]
