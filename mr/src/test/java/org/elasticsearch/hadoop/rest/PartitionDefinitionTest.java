@@ -21,7 +21,8 @@ package org.elasticsearch.hadoop.rest;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -45,7 +46,7 @@ public class PartitionDefinitionTest {
                 .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Field mapping = Field.parseField(map);
+        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -63,7 +64,7 @@ public class PartitionDefinitionTest {
                 .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Field mapping = Field.parseField(map);
+        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -81,7 +82,7 @@ public class PartitionDefinitionTest {
                 .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Field mapping = Field.parseField(map);
+        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -99,7 +100,7 @@ public class PartitionDefinitionTest {
                 .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Field mapping = Field.parseField(map);
+        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");

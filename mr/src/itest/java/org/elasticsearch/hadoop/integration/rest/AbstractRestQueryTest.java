@@ -35,7 +35,7 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
@@ -91,9 +91,9 @@ public class AbstractRestQueryTest {
                         .limit(settings.getScrollLimit())
                         .fields(SettingsUtils.determineSourceFields(settings))
                         .filters(QueryUtils.parseFilters(settings));
-        Field mapping = client.getMapping();
+        MappingSet mappingSet = client.getMappings();
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mapping, true, "_metadata", false, false);
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mappingSet.getResolvedView(), true, "_metadata", false, false);
         ScrollReader reader = new ScrollReader(scrollReaderConfig);
 
         int count = 0;

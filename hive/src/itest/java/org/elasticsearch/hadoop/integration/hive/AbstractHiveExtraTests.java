@@ -80,7 +80,7 @@ public class AbstractHiveExtraTests {
     public void testDate() throws Exception {
         String resource = "hive/date-as-long";
         RestUtils.touch("hive");
-        RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date.json");
+        RestUtils.putMapping(resource, "org/elasticsearch/hadoop/hive/hive-date-mapping.json");
 
         RestUtils.postData(resource + "/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
 

@@ -35,8 +35,6 @@ import org.elasticsearch.hadoop.cfg.FieldPresenceValidation;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
-import org.elasticsearch.hadoop.serialization.field.FieldFilter;
-import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 @SuppressWarnings("rawtypes")
@@ -49,13 +47,13 @@ public abstract class MappingUtils {
                 "_parent", "_routing", "_index", "_size", "_timestamp", "_ttl", "_field_names", "_meta"));
     }
 
-    public static void validateMapping(String fields, Field mapping, FieldPresenceValidation validation, Log log) {
+    public static void validateMapping(String fields, Mapping mapping, FieldPresenceValidation validation, Log log) {
         if (StringUtils.hasText(fields)) {
             validateMapping(StringUtils.tokenize(fields), mapping, validation, log);
         }
     }
 
-    public static void validateMapping(Collection<String> fields, Field mapping, FieldPresenceValidation validation, Log log) {
+    public static void validateMapping(Collection<String> fields, Mapping mapping, FieldPresenceValidation validation, Log log) {
         if (mapping == null || fields == null || fields.isEmpty() || validation == null || FieldPresenceValidation.IGNORE == validation) {
             return;
         }
@@ -77,8 +75,8 @@ public abstract class MappingUtils {
     }
 
     // return a tuple for proper messages
-    static List[] findTypos(Collection<String> fields, Field mapping) {
-        Set<String> keys = Field.toLookupMap(mapping).keySet();
+    static List[] findTypos(Collection<String> fields, Mapping mapping) {
+        Set<String> keys = mapping.flatten().keySet();
 
         // find missing
         List<String> missing = new ArrayList<String>(fields.size());
@@ -133,63 +131,21 @@ public abstract class MappingUtils {
         return col.toString();
     }
 
-    public static Field filter(Field field, Collection<String> includes, Collection<String> excludes) {
-        if (field == null) {
-            return field;
-        }
-        if (includes.isEmpty() && excludes.isEmpty()) {
-            return field;
-        }
-
-        List<Field> filtered = new ArrayList<Field>();
-        List<NumberedInclude> convertedIncludes = FieldFilter.toNumberedFilter(includes);
-
-        boolean intact = true;
-        for (Field fl : field.properties()) {
-            intact &= processField(fl, null, filtered, convertedIncludes, excludes);
-        }
-
-        return (intact ? field : new Field(field.name(), field.type(), filtered));
-    }
-
-    private static boolean processField(Field field, String parentName, List<Field> filtered, Collection<NumberedInclude> includes, Collection<String> excludes) {
-        String fieldName = (parentName != null ? parentName + "." + field.name() : field.name());
-
-        boolean intact = true;
-
-        if (FieldFilter.filter(fieldName, includes, excludes).matched) {
-            if (FieldType.isCompound(field.type())) {
-                List<Field> nested = new ArrayList<Field>();
-                for (Field nestedField : field.properties()) {
-                    intact &= processField(nestedField, field.name(), nested, includes, excludes);
-                }
-                filtered.add(new Field(field.name(), field.type(), nested));
-            }
-            else {
-                filtered.add(field);
-            }
-        }
-        else {
-            intact = false;
-        }
-        return intact;
-    }
-
-    public static Field filterMapping(Field mapping, Settings cfg) {
+    public static Mapping filterMapping(Mapping mapping, Settings cfg) {
         String readIncludeCfg = cfg.getReadFieldInclude();
         String readExcludeCfg = cfg.getReadFieldExclude();
 
-        return filter(mapping, StringUtils.tokenize(readIncludeCfg), StringUtils.tokenize(readExcludeCfg));
+        return mapping.filter(StringUtils.tokenize(readIncludeCfg), StringUtils.tokenize(readExcludeCfg));
     }
 
-    public static Map<String, GeoType> geoFields(Field rootMapping) {
+    public static Map<String, GeoType> geoFields(Mapping rootMapping) {
         if (rootMapping == null) {
             return Collections.emptyMap();
         }
 
         Map<String, GeoType> geoFields = new LinkedHashMap<String, GeoType>();
         // ignore the root field
-        for (Field nestedField : rootMapping.properties()) {
+        for (Field nestedField : rootMapping.getFields()) {
             findGeo(nestedField, null, geoFields);
         }
         return geoFields;

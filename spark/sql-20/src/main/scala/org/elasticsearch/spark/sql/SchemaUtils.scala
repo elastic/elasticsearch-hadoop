@@ -19,9 +19,9 @@
 package org.elasticsearch.spark.sql
 
 import java.util.ArrayList
-import java.util.{ LinkedHashSet => JHashSet }
-import java.util.{ List => JList }
-import java.util.{ Map => JMap }
+import java.util.{LinkedHashSet => JHashSet}
+import java.util.{List => JList}
+import java.util.{Map => JMap}
 import java.util.Properties
 
 import scala.collection.JavaConverters.asScalaBufferConverter
@@ -71,6 +71,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoPointType
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoShapeType
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils
 import org.elasticsearch.hadoop.serialization.field.FieldFilter
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude
@@ -83,35 +84,36 @@ import org.elasticsearch.spark.sql.Utils.ROW_INFO_ARRAY_PROPERTY
 import org.elasticsearch.spark.sql.Utils.ROW_INFO_ORDER_PROPERTY
 
 private[sql] object SchemaUtils {
-  case class Schema(field: Field, struct: StructType)
+  case class Schema(mapping: Mapping, struct: StructType)
 
   def discoverMapping(cfg: Settings): Schema = {
-    val (field, geoInfo) = discoverMappingAsField(cfg)
-    val struct = convertToStruct(field, geoInfo, cfg)
-    Schema(field, struct)
+    val (mapping, geoInfo) = discoverMappingAndGeoFields(cfg)
+    val struct = convertToStruct(mapping, geoInfo, cfg)
+    Schema(mapping, struct)
   }
 
-  def discoverMappingAsField(cfg: Settings): (Field, JMap[String, GeoField]) = {
-    InitializationUtils.validateSettings(cfg);
-    InitializationUtils.discoverEsVersion(cfg, Utils.LOGGER);
+  def discoverMappingAndGeoFields(cfg: Settings): (Mapping, JMap[String, GeoField]) = {
+    InitializationUtils.validateSettings(cfg)
+    InitializationUtils.discoverEsVersion(cfg, Utils.LOGGER)
 
     val repo = new RestRepository(cfg)
     try {
       if (repo.indexExists(true)) {
-        var field = repo.getMapping
-        if (field == null) {
+        var mappingSet = repo.getMappings
+        if (mappingSet == null || mappingSet.isEmpty) {
           throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
         }
-        field = MappingUtils.filterMapping(field, cfg);
-        val geoInfo = repo.sampleGeoFields(field)
+        var mapping = mappingSet.getResolvedView
+        mapping = MappingUtils.filterMapping(mapping, cfg)
+        val geoInfo = repo.sampleGeoFields(mapping)
         
         // apply mapping filtering only when present to minimize configuration settings (big when dealing with large mappings)
         if (StringUtils.hasText(cfg.getReadFieldInclude) || StringUtils.hasText(cfg.getReadFieldExclude)) {
           // NB: metadata field is synthetic so it doesn't have to be filtered
           // its presence is controlled through the dedicated config setting
-          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(Field.toLookupMap(field).keySet(), StringUtils.DEFAULT_DELIMITER))
+          cfg.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(mapping.flatten().keySet(), StringUtils.DEFAULT_DELIMITER))
         }
-        (field, geoInfo)
+        (mapping, geoInfo)
       }
       else {
         throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")
@@ -121,11 +123,11 @@ private[sql] object SchemaUtils {
     }
   }
 
-  def convertToStruct(rootField: Field, geoInfo: JMap[String, GeoField], cfg: Settings): StructType = {
+  def convertToStruct(mapping: Mapping, geoInfo: JMap[String, GeoField], cfg: Settings): StructType = {
     val arrayIncludes = SettingsUtils.getFieldArrayFilterInclude(cfg)
     val arrayExcludes = StringUtils.tokenize(cfg.getReadFieldAsArrayExclude)
 
-    var fields = for (fl <- rootField.properties()) yield convertField(fl, geoInfo, null, arrayIncludes, arrayExcludes, cfg)
+    var fields = for (fl <- mapping.getFields) yield convertField(fl, geoInfo, null, arrayIncludes, arrayExcludes, cfg)
     if (cfg.getReadMetadata) {
       // enrich structure
       val metadataMap = DataTypes.createStructField(cfg.getReadMetadataField, DataTypes.createMapType(StringType, StringType, true), true)

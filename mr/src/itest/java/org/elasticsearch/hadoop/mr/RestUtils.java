@@ -26,7 +26,9 @@ import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestClient.Health;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
@@ -96,9 +98,20 @@ public class RestUtils {
         putMapping(parts.get(0), parts.get(1), content);
     }
 
-    public static Field getMapping(String index) throws Exception {
+    public static Mapping getMapping(String indexAndType) throws Exception {
+        int slash = indexAndType.indexOf('/');
+        if (slash != -1) {
+            String index = indexAndType.substring(0, slash);
+            String type = indexAndType.substring(slash+1);
+            return getMappings(index).getMapping(index, type);
+        } else {
+            return getMappings(indexAndType).getResolvedView();
+        }
+    }
+
+    public static MappingSet getMappings(String index) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
-        Field parseField = Field.parseField(rc.getMapping(index + "/_mapping"));
+        MappingSet parseField = FieldParser.parseMapping(rc.getMapping(index + "/_mapping"));
         rc.close();
         return parseField;
     }

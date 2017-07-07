@@ -36,7 +36,8 @@ import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -80,7 +81,8 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
             // will be closed by the query is finished
             RestRepository client = new RestRepository(settings);
-            Field mapping = client.getMapping();
+            MappingSet mappings = client.getMappings();
+            Mapping mapping = mappings.isEmpty() ? null : mappings.getResolvedView();
             Collection<String> fields = CascadingUtils.fieldToAlias(settings, getSourceFields());
 
             String userFilter = settings.getReadSourceFilter();

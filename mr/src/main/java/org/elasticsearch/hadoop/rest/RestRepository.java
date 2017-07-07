@@ -35,9 +35,11 @@ import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
@@ -341,11 +343,11 @@ public class RestRepository implements Closeable, StatsAware {
         return shards;
     }
 
-    public Field getMapping() {
-        return Field.parseField(client.getMapping(resourceR.mapping()));
+    public MappingSet getMappings() {
+        return FieldParser.parseMapping(client.getMapping(resourceR.mapping()));
     }
 
-    public Map<String, GeoField> sampleGeoFields(Field mapping) {
+    public Map<String, GeoField> sampleGeoFields(Mapping mapping) {
         Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
         Map<String, Object> geoMapping = client.sampleForFields(resourceR.indexAndType(), fields.keySet());
 

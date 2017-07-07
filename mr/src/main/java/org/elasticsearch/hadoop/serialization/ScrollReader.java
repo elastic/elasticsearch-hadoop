@@ -35,8 +35,7 @@ import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
 import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
-import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
@@ -165,9 +164,9 @@ public class ScrollReader {
         public boolean ignoreUnmappedFields;
         public List<String> includeFields;
         public List<String> excludeFields;
-        public Field rootField;
+        public Mapping resolvedMapping;
 
-        public ScrollReaderConfig(ValueReader reader, Field rootField, boolean readMetadata, String metadataName,
+        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName,
                 boolean returnRawJson, boolean ignoreUnmappedFields, List<String> includeFields,
                 List<String> excludeFields) {
             super();
@@ -178,19 +177,19 @@ public class ScrollReader {
             this.ignoreUnmappedFields = ignoreUnmappedFields;
             this.includeFields = includeFields;
             this.excludeFields = excludeFields;
-            this.rootField = rootField;
+            this.resolvedMapping = resolvedMapping;
         }
 
-        public ScrollReaderConfig(ValueReader reader, Field rootField, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
-            this(reader, rootField, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList());
+        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
+            this(reader, resolvedMapping, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList());
         }
 
         public ScrollReaderConfig(ValueReader reader) {
             this(reader, null, false, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList());
         }
 
-        public ScrollReaderConfig(ValueReader reader, Field field, Settings cfg) {
-            this(reader, field, cfg.getReadMetadata(), cfg.getReadMetadataField(),
+        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
+            this(reader, resolvedMapping, cfg.getReadMetadata(), cfg.getReadMetadataField(),
                     cfg.getOutputAsJson(), cfg.getReadMappingMissingFieldsIgnore(),
                     StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()));
         }
@@ -232,13 +231,16 @@ public class ScrollReader {
         this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.includeFields);
         this.excludeFields = scrollConfig.excludeFields;
 
-        Field mapping = scrollConfig.rootField;
-        // optimize filtering
-        if (ignoreUnmappedFields) {
-            mapping = MappingUtils.filter(mapping, scrollConfig.includeFields, scrollConfig.excludeFields);
+        Mapping mapping = scrollConfig.resolvedMapping;
+        if (mapping != null) {
+            // optimize filtering
+            if (ignoreUnmappedFields) {
+                mapping = mapping.filter(scrollConfig.includeFields, scrollConfig.excludeFields);
+            }
+            this.esMapping = mapping.flatten();
+        } else {
+            this.esMapping = Collections.emptyMap();
         }
-
-        this.esMapping = Field.toLookupMap(mapping);
     }
 
     public Scroll read(InputStream content) throws IOException {

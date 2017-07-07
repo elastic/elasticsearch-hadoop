@@ -26,7 +26,8 @@ import org.apache.hadoop.io.Text;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -37,7 +38,7 @@ public class HiveValueReaderTest {
 
     @Test
     public void testDateMapping() throws Exception {
-        ScrollReader reader = new ScrollReader(new ScrollReaderConfig(new HiveValueReader(), mapping("hive-date.json"), false, "_mapping", false, false));
+        ScrollReader reader = new ScrollReader(new ScrollReaderConfig(new HiveValueReader(), mapping("hive-date-mappingresponse.json"), false, "_mapping", false, false));
         InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
@@ -48,8 +49,8 @@ public class HiveValueReaderTest {
         assertTrue(map.get(new Text("&t")).toString().contains("2014-08-05"));
     }
 
-    private Field mapping(String resource) throws Exception {
+    private Mapping mapping(String resource) throws Exception {
         InputStream stream = getClass().getResourceAsStream(resource);
-        return Field.parseField(new ObjectMapper().readValue(stream, Map.class));
+        return FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class)).getResolvedView();
     }
 }

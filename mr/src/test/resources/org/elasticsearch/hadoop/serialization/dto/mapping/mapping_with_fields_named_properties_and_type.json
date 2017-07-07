@@ -1,7 +1,7 @@
 {
-  "es_index_name" : {
+  "index" : {
     "mappings" : {
-      "es_type_name" : {
+      "type" : {
         "properties" : {
           "field1" : {
             "type" : "string"

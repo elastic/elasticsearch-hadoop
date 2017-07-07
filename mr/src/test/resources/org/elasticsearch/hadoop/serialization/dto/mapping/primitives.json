@@ -1,5 +1,5 @@
 {
-  "index_name" : {
+  "index" : {
     "mappings" : {
       "primitives" : {
         "properties" : {

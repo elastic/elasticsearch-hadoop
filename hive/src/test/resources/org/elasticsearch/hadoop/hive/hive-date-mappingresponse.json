@@ -1,9 +1,11 @@
 {
     "index": {
         "mappings": {
-            "person" : {
+            "data" : {
                 "properties" : {
-                    "my_attachment" : { "type" : "attachment" }
+                    "&t" : {
+                        "type" : "date"
+                    }
                 }
             }
         }
