@@ -27,16 +27,19 @@ import org.elasticsearch.hadoop.serialization.SettingsAware;
 public interface FieldExtractor {
 
     Object NOT_FOUND = new Object();
+    Object SKIP = new Object();
 
     /**
-    * Returns the associated JSON representation for the given target.
-    * If the target cannot be handled, {@value #NOT_FOUND} should be returned.
-    *
-    * Take into account JSON formatting - either the value is raw and escaped down the stream or already returned in the appropriate format.
-    * If it is returned as a String, apply escaping otherwise make sure the processor is aware of it.
-    *
-    * @param target
-    * @return
-    */
+     * Returns the associated JSON representation for the given target.
+     * If the target cannot be handled, {@value #NOT_FOUND} should be returned.
+     * If the target cannot be handled, but is ok to skip then {@value #SKIP} should be returned.
+     *
+     *
+     * Take into account JSON formatting - either the value is raw and escaped down the stream or already returned in the appropriate format.
+     * If it is returned as a String, apply escaping otherwise make sure the processor is aware of it.
+     *
+     * @param target
+     * @return
+     */
     Object field(Object target);
 }

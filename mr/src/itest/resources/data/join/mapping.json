@@ -1,0 +1,15 @@
+{
+  "join":{
+    "properties": {
+      "id": {"type": "keyword"},
+      "company": {"type": "text"},
+      "name": {"type": "text"},
+      "joiner": {
+        "type": "join",
+        "relations": {
+          "company": "employee"
+        }
+      }
+    }
+  }
+}

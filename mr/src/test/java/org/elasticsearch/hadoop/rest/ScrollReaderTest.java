@@ -20,20 +20,16 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +38,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -137,6 +134,127 @@ public class ScrollReaderTest {
         Map map = (Map) read.get(0)[1];
         List links = (List) map.get("links");
         assertTrue(links.contains(null));
+    }
+
+    @Test
+    public void testScrollWithJoinField() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("scroll-join-source-mapping.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+        // Make our own scroll reader, that ignores unmapped values like the rest of the code
+        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
+
+        InputStream stream = getClass().getResourceAsStream("scroll-join-source.json");
+        List<Object[]> read = myReader.read(stream).getHits();
+        assertEquals(7, read.size());
+
+        // Elastic
+        {
+            Object[] row1 = read.get(0);
+            assertTrue(((Map) row1[1]).containsKey("id"));
+            assertEquals("1", ((Map) row1[1]).get("id"));
+            assertTrue(((Map) row1[1]).containsKey("company"));
+            assertEquals("Elastic", ((Map) row1[1]).get("company"));
+            assertTrue(((Map) row1[1]).containsKey("joiner"));
+            Object joinfield1 = ((Map) row1[1]).get("joiner");
+            assertTrue(joinfield1 instanceof Map);
+            assertTrue(((Map) joinfield1).containsKey("name"));
+            assertEquals("company", ((Map) joinfield1).get("name"));
+            assertFalse(((Map) joinfield1).containsKey("parent"));
+        }
+
+        // kimchy
+        {
+            Object[] row2 = read.get(1);
+            assertTrue(((Map) row2[1]).containsKey("id"));
+            assertEquals("10", ((Map) row2[1]).get("id"));
+            assertTrue(((Map) row2[1]).containsKey("name"));
+            assertEquals("kimchy", ((Map) row2[1]).get("name"));
+            assertTrue(((Map) row2[1]).containsKey("joiner"));
+            Object joinfield2 = ((Map) row2[1]).get("joiner");
+            assertTrue(joinfield2 instanceof Map);
+            assertTrue(((Map) joinfield2).containsKey("name"));
+            assertEquals("employee", ((Map) joinfield2).get("name"));
+            assertTrue(((Map) joinfield2).containsKey("parent"));
+            assertEquals("1", ((Map) joinfield2).get("parent"));
+        }
+
+        // Fringe Cafe
+        {
+            Object[] row3 = read.get(2);
+            assertTrue(((Map) row3[1]).containsKey("id"));
+            assertEquals("2", ((Map) row3[1]).get("id"));
+            assertTrue(((Map) row3[1]).containsKey("company"));
+            assertEquals("Fringe Cafe", ((Map) row3[1]).get("company"));
+            assertTrue(((Map) row3[1]).containsKey("joiner"));
+            Object joinfield3 = ((Map) row3[1]).get("joiner");
+            assertTrue(joinfield3 instanceof Map);
+            assertTrue(((Map) joinfield3).containsKey("name"));
+            assertEquals("company", ((Map) joinfield3).get("name"));
+            assertFalse(((Map) joinfield3).containsKey("parent"));
+        }
+
+        // April Ryan
+        {
+            Object[] row4 = read.get(3);
+            assertTrue(((Map) row4[1]).containsKey("id"));
+            assertEquals("20", ((Map) row4[1]).get("id"));
+            assertTrue(((Map) row4[1]).containsKey("name"));
+            assertEquals("April Ryan", ((Map) row4[1]).get("name"));
+            assertTrue(((Map) row4[1]).containsKey("joiner"));
+            Object joinfield4 = ((Map) row4[1]).get("joiner");
+            assertTrue(joinfield4 instanceof Map);
+            assertTrue(((Map) joinfield4).containsKey("name"));
+            assertEquals("employee", ((Map) joinfield4).get("name"));
+            assertTrue(((Map) joinfield4).containsKey("parent"));
+            assertEquals("2", ((Map) joinfield4).get("parent"));
+        }
+
+        // Charlie
+        {
+            Object[] row5 = read.get(4);
+            assertTrue(((Map) row5[1]).containsKey("id"));
+            assertEquals("21", ((Map) row5[1]).get("id"));
+            assertTrue(((Map) row5[1]).containsKey("name"));
+            assertEquals("Charlie", ((Map) row5[1]).get("name"));
+            assertTrue(((Map) row5[1]).containsKey("joiner"));
+            Object joinfield5 = ((Map) row5[1]).get("joiner");
+            assertTrue(joinfield5 instanceof Map);
+            assertTrue(((Map) joinfield5).containsKey("name"));
+            assertEquals("employee", ((Map) joinfield5).get("name"));
+            assertTrue(((Map) joinfield5).containsKey("parent"));
+            assertEquals("2", ((Map) joinfield5).get("parent"));
+        }
+
+        // WATI corp
+        {
+            Object[] row6 = read.get(5);
+            assertTrue(((Map) row6[1]).containsKey("id"));
+            assertEquals("3", ((Map) row6[1]).get("id"));
+            assertTrue(((Map) row6[1]).containsKey("company"));
+            assertEquals("WATIcorp", ((Map) row6[1]).get("company"));
+            assertTrue(((Map) row6[1]).containsKey("joiner"));
+            Object joinfield6 = ((Map) row6[1]).get("joiner");
+            assertTrue(joinfield6 instanceof Map);
+            assertTrue(((Map) joinfield6).containsKey("name"));
+            assertEquals("company", ((Map) joinfield6).get("name"));
+            assertFalse(((Map) joinfield6).containsKey("parent"));
+        }
+
+        // Alvin Peats
+        {
+            Object[] row7 = read.get(6);
+            assertTrue(((Map) row7[1]).containsKey("id"));
+            assertEquals("30", ((Map) row7[1]).get("id"));
+            assertTrue(((Map) row7[1]).containsKey("name"));
+            assertEquals("Alvin Peats", ((Map) row7[1]).get("name"));
+            assertTrue(((Map) row7[1]).containsKey("joiner"));
+            Object joinfield5 = ((Map) row7[1]).get("joiner");
+            assertTrue(joinfield5 instanceof Map);
+            assertTrue(((Map) joinfield5).containsKey("name"));
+            assertEquals("employee", ((Map) joinfield5).get("name"));
+            assertTrue(((Map) joinfield5).containsKey("parent"));
+            assertEquals("3", ((Map) joinfield5).get("parent"));
+        }
     }
 
     @Test

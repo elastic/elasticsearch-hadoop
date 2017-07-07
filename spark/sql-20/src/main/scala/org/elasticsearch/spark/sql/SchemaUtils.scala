@@ -59,6 +59,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.JOIN
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
 import org.elasticsearch.hadoop.serialization.FieldType.LONG
 import org.elasticsearch.hadoop.serialization.FieldType.NESTED
@@ -167,6 +168,7 @@ private[sql] object SchemaUtils {
       case DATE         => if (cfg.getMappingDateRich) TimestampType else StringType
       case OBJECT       => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       case NESTED       => DataTypes.createArrayType(convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg))
+      case JOIN         => convertToStruct(field, geoInfo, absoluteName, arrayIncludes, arrayExcludes, cfg)
       
       // GEO
       case GEO_POINT => {

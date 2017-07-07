@@ -46,6 +46,7 @@ public enum FieldType {
     // compound types
     OBJECT,
     NESTED,
+    JOIN,
 
     // not supported yet
     IP,
@@ -77,8 +78,11 @@ public enum FieldType {
         return true;
     }
 
+    /**
+     * Compound fields are fields that contain subfields underneath them.
+     */
     public static boolean isCompound(FieldType fieldType) {
-        return (OBJECT == fieldType || NESTED == fieldType);
+        return (OBJECT == fieldType || NESTED == fieldType || JOIN == fieldType);
     }
 
     public static boolean isGeo(FieldType fieldType) {

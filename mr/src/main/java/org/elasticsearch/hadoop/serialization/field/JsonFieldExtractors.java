@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -100,7 +101,11 @@ public class JsonFieldExtractors {
 
         id = init(settings.getMappingId(), jsonPaths);
         parent = init(settings.getMappingParent(), jsonPaths);
-        routing = init(settings.getMappingRouting(), jsonPaths);
+        // Routing is a special case in that it can be set by two properties
+        List<FieldExtractor> routings = new ArrayList<FieldExtractor>(2);
+        initAndAdd(settings.getMappingRouting(), jsonPaths, routings);
+        initAndAdd(MappingUtils.joinParentField(settings), jsonPaths, routings);
+        routing = (routings.size() != 0) ? new ChainedFieldExtractor(routings) : null;
         ttl = init(settings.getMappingTtl(), jsonPaths);
         version = init(settings.getMappingVersion(), jsonPaths);
         timestamp = init(settings.getMappingTimestamp(), jsonPaths);
@@ -130,6 +135,13 @@ public class JsonFieldExtractors {
         }
 
         paths = jsonPaths.toArray(new String[jsonPaths.size()]);
+    }
+
+    private void initAndAdd(String fieldName, List<String> pathList, List<FieldExtractor> results) {
+        FieldExtractor result = init(fieldName, pathList);
+        if (result != null) {
+            results.add(result);
+        }
     }
 
     private FieldExtractor init(String fieldName, List<String> pathList) {

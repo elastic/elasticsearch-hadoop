@@ -71,6 +71,11 @@ public final class FieldParser {
                 }
             }
 
+            // check if it's a join field since these are special
+            if (FieldType.JOIN == fieldType) {
+                return new Field(key, fieldType, new Field[]{new Field("name", FieldType.KEYWORD), new Field("parent", FieldType.KEYWORD)});
+            }
+
             // compound type - iterate through types
             List<Field> fields = new ArrayList<Field>(content.size());
             for (Map.Entry<String, Object> e : content.entrySet()) {

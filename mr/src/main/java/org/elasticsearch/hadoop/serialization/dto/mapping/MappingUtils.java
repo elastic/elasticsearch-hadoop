@@ -209,4 +209,16 @@ public abstract class MappingUtils {
         }
         throw new EsHadoopIllegalArgumentException(String.format(Locale.ROOT, "Unknown GeoShape [%s]", parsedContent));
     }
+
+    /**
+     * If "es.mapping.join" is set, this returns the field name for the join field's parent sub-field.
+     * @param settings to pull info from
+     * @return the parent sub-field to pull routing information from.
+     */
+    public static String joinParentField(Settings settings) {
+        if (StringUtils.hasText(settings.getMappingJoin())) {
+            return settings.getMappingJoin().concat(".parent");
+        }
+        return null;
+    }
 }

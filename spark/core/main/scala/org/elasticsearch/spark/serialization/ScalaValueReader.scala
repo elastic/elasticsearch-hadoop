@@ -37,6 +37,7 @@ import org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.FLOAT
 import org.elasticsearch.hadoop.serialization.FieldType.INTEGER
+import org.elasticsearch.hadoop.serialization.FieldType.JOIN
 import org.elasticsearch.hadoop.serialization.FieldType.KEYWORD
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT
 import org.elasticsearch.hadoop.serialization.FieldType.GEO_SHAPE
@@ -96,6 +97,13 @@ class ScalaValueReader extends ValueReader with SettingsAware {
         // GEO is ambiguous so use the JSON type instead to differentiate between doubles (a lot in GEO_SHAPE) and strings
         case GEO_POINT | GEO_SHAPE => {
           if (parser.currentToken() == VALUE_NUMBER) doubleValue(value, parser) else textValue(value, parser)
+        }
+        // JOIN field is special. Only way that we could have reached here is if the join value we're reading is
+        // the short-hand format of the join field for parent documents. Make a container and put the value under it.
+        case JOIN => {
+          val container = createMap()
+          addToMap(container, "name", textValue(value, parser))
+          container
         }
         // everything else (IP, GEO) gets translated to strings
         case _ => textValue(value, parser)

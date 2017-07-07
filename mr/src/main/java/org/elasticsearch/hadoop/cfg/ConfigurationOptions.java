@@ -153,6 +153,8 @@ public interface ConfigurationOptions {
     String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
     String ES_MAPPING_PARENT = "es.mapping.parent";
     String ES_MAPPING_PARENT_EXTRACTOR_CLASS = "es.mapping.parent.extractor.class";
+    String ES_MAPPING_JOIN = "es.mapping.join";
+    String ES_MAPPING_JOIN_EXTRACTOR_CLASS = "es.mapping.join.extractor.class";
     String ES_MAPPING_VERSION = "es.mapping.version";
     String ES_MAPPING_VERSION_EXTRACTOR_CLASS = "es.mapping.version.extractor.class";
     String ES_MAPPING_ROUTING = "es.mapping.routing";

@@ -85,7 +85,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     protected void writeObjectHeader(List<Object> list) {
         super.writeObjectHeader(list);
 
-        Object paramExtractor = getExtractorOrDynamicValue(Metadata.PARAMS, getParamExtractor());
+        Object paramExtractor = getMetadataExtractorOrFallback(Metadata.PARAMS, getParamExtractor());
 
         if (esMajorVersion.after(EsMajorVersion.V_1_X)) {
             writeStrictFormatting(list, paramExtractor);
