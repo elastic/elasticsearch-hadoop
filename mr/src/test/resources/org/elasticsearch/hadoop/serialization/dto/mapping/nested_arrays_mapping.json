@@ -1,24 +1,28 @@
 {
-  "nested-array-exclude" : {
-    "properties" : {
-      "foo" : {
-        "type" : "long"
-      },
-      "nested" : {
+  "index": {
+    "mappings": {
+      "nested-array-exclude" : {
         "properties" : {
-          "bar" : {
+          "foo" : {
+            "type" : "long"
+          },
+          "nested" : {
             "properties" : {
-              "date" : {
-                "type" : "date",
-                "format" : "strict_date_optional_time||epoch_millis"
+              "bar" : {
+                "properties" : {
+                  "date" : {
+                    "type" : "date",
+                    "format" : "strict_date_optional_time||epoch_millis"
+                  },
+                  "scores" : {
+                    "type" : "long"
+                  }
+                }
               },
-              "scores" : {
-                "type" : "long"
+              "what" : {
+                "type" : "string"
               }
             }
-          },
-          "what" : {
-            "type" : "string"
           }
         }
       }

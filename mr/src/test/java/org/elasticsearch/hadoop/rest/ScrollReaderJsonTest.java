@@ -29,7 +29,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -91,8 +92,8 @@ public class ScrollReaderJsonTest {
     @Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
-        Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
-        scrollCfg.rootField = fl;
+        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
+        scrollCfg.resolvedMapping = fl.getResolvedView();
         reader = new ScrollReader(scrollCfg);
         stream = getClass().getResourceAsStream("scroll-source.json");
 
@@ -167,8 +168,8 @@ public class ScrollReaderJsonTest {
     @Test(expected = EsHadoopParsingException.class)
     public void testScrollWithParsingValueException() throws IOException {
         InputStream stream = getClass().getResourceAsStream("numbers-as-strings-mapping.json");
-        Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
-        scrollCfg.rootField = fl;
+        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
+        scrollCfg.resolvedMapping = fl.getResolvedView();
         scrollCfg.returnRawJson = false;
         // parsing the doc (don't just read it as json) yields parsing exception
         reader = new ScrollReader(scrollCfg);

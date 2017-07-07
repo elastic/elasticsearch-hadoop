@@ -123,7 +123,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testIndexPatternWithFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-format-2012-10-06").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-format-2012-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
                         ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
                         : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));

@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
 
+import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import static org.hamcrest.Matchers.contains;
@@ -35,14 +36,15 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 
-public class FieldTest {
+public class MappingTest {
 
     @Test
     public void testNestedObjectParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("artiststimestamp", fl.name());
-        Field[] properties = fl.properties();
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
+        assertEquals("artiststimestamp", mapping.getName());
+        Field[] properties = mapping.getFields();
         Field first = properties[0];
         assertEquals("date", first.name());
         assertEquals(FieldType.DATE, first.type());
@@ -57,15 +59,16 @@ public class FieldTest {
     @Test
     public void testBasicParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("basic.json"), Map.class);
-        Field fl = Field.parseField(value);
+        MappingSet fl = parseMapping(value);
     }
 
     @Test
     public void testPrimitivesParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("primitives.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("primitives", fl.name());
-        Field[] props = fl.properties();
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "primitives");
+        assertEquals("primitives", mapping.getName());
+        Field[] props = mapping.getFields();
         assertEquals(14, props.length);
         assertEquals("field01", props[0].name());
         assertEquals(FieldType.BOOLEAN, props[0].type());
@@ -100,10 +103,11 @@ public class FieldTest {
     @Test
     public void testGeoParsingWithOptions() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
-        Field fl = Field.parseField(value);
-        System.out.println(fl);
-        assertEquals("restaurant", fl.name());
-        Field[] props = fl.properties();
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "restaurant");
+        System.out.println(mapping);
+        assertEquals("restaurant", mapping.getName());
+        Field[] props = mapping.getFields();
         assertEquals(1, props.length);
         assertEquals("location", props[0].name());
         assertEquals(FieldType.GEO_POINT, props[0].type());
@@ -112,9 +116,10 @@ public class FieldTest {
     @Test
     public void testCompletionParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("completion.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("song", fl.name());
-        Field[] props = fl.properties();
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "song");
+        assertEquals("song", mapping.getName());
+        Field[] props = mapping.getFields();
         assertEquals(1, props.length);
         assertEquals("name", props[0].name());
     }
@@ -122,50 +127,53 @@ public class FieldTest {
     @Test
     public void testIpParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("ip.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals(1, fl.properties().length);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "client");
+        assertEquals(1, mapping.getFields().length);
     }
 
     @Test
     public void testUnsupportedParsing() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("attachment.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("person", fl.name());
-        assertEquals(0, fl.properties().length);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "person");
+        assertEquals("person", mapping.getName());
+        assertEquals(0, mapping.getFields().length);
     }
 
     @Test
     public void testFieldValidation() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        Field fl = Field.parseField(value);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
 
-        List<String>[] findFixes = MappingUtils.findTypos(Collections.singletonList("nam"), fl);
+        List<String>[] findFixes = MappingUtils.findTypos(Collections.singletonList("nam"), mapping);
         assertThat(findFixes[1], contains("name"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("link.url"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("link.url"), mapping);
         assertThat(findFixes[1], contains("links.url"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("ulr"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("ulr"), mapping);
         assertThat(findFixes[1], contains("links.url"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("likn"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("likn"), mapping);
         assertThat(findFixes[1], contains("links"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), fl);
+        findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), mapping);
         assertThat(findFixes, is(nullValue()));
     }
 
     @Test
     public void testFieldInclude() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        Field fl = Field.parseField(value);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
 
-        Field filtered = MappingUtils.filter(fl, Collections.singleton("*a*e"), Collections.<String> emptyList());
+        Mapping filtered = mapping.filter(Collections.singleton("*a*e"), Collections.<String> emptyList());
 
-        assertThat(fl.name(), is(filtered.name()));
-        assertThat(fl.type(), is(filtered.type()));
+        assertThat(mapping.getName(), is(filtered.getName()));
 
-        Field[] props = filtered.properties();
+        Field[] props = filtered.getFields();
 
         assertThat(props.length, is(2));
         assertThat(props[0].name(), is("date"));
@@ -175,14 +183,14 @@ public class FieldTest {
     @Test
     public void testFieldExclude() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested_arrays_mapping.json"), Map.class);
-        Field fl = Field.parseField(value);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "nested-array-exclude");
 
-        Field filtered = MappingUtils.filter(fl, Collections.<String> emptyList(), Collections.singleton("nested.bar"));
+        Mapping filtered = mapping.filter(Collections.<String> emptyList(), Collections.singleton("nested.bar"));
 
-        assertThat(fl.name(), is(filtered.name()));
-        assertThat(fl.type(), is(filtered.type()));
+        assertThat(mapping.getName(), is(filtered.getName()));
 
-        Field[] props = filtered.properties();
+        Field[] props = filtered.getFields();
 
         assertThat(props.length, is(2));
         assertThat(props[0].name(), is("foo"));
@@ -194,10 +202,11 @@ public class FieldTest {
     @Test
     public void testNestedMapping() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested-mapping.json"), Map.class);
-        Field fl = Field.parseField(value);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "company");
 
-        assertEquals("company", fl.name());
-        Field[] properties = fl.properties();
+        assertEquals("company", mapping.getName());
+        Field[] properties = mapping.getFields();
         assertEquals(3, properties.length);
         Field first = properties[0];
         assertEquals("name", first.name());
@@ -216,32 +225,68 @@ public class FieldTest {
     @Test
     public void testMappingWithFieldsNamedPropertiesAndType() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("mapping_with_fields_named_properties_and_type.json"), Map.class);
-        Field fl = Field.parseField(value);
-        assertEquals("es_type_name", fl.name());
-        assertEquals(FieldType.OBJECT, fl.type());
-        assertEquals("field1", fl.properties()[0].name());
-        assertEquals(FieldType.STRING, fl.properties()[0].type());
-        assertEquals("properties", fl.properties()[1].name());
-        assertEquals(FieldType.OBJECT, fl.properties()[1].type());
-        assertEquals("subfield1", fl.properties()[1].properties()[0].name());
-        assertEquals(FieldType.STRING, fl.properties()[1].properties()[0].type());
-        assertEquals("subfield2", fl.properties()[1].properties()[1].name());
-        assertEquals(FieldType.STRING, fl.properties()[1].properties()[1].type());
-        assertEquals("field2", fl.properties()[2].name());
-        assertEquals(FieldType.OBJECT, fl.properties()[2].type());
-        assertEquals("subfield3", fl.properties()[2].properties()[0].name());
-        assertEquals(FieldType.STRING, fl.properties()[2].properties()[0].type());
-        assertEquals("properties", fl.properties()[2].properties()[1].name());
-        assertEquals(FieldType.STRING, fl.properties()[2].properties()[1].type());
-        assertEquals("type", fl.properties()[2].properties()[2].name());
-        assertEquals(FieldType.OBJECT, fl.properties()[2].properties()[2].type());
-        assertEquals("properties", fl.properties()[2].properties()[2].properties()[0].name());
-        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[1].type());
-        assertEquals("subfield5", fl.properties()[2].properties()[2].properties()[1].name());
-        assertEquals(FieldType.OBJECT, fl.properties()[2].properties()[2].properties()[0].type());
-        assertEquals("properties", fl.properties()[2].properties()[2].properties()[0].properties()[0].name());
-        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[0].properties()[0].type());
-        assertEquals("subfield4", fl.properties()[2].properties()[2].properties()[0].properties()[1].name());
-        assertEquals(FieldType.STRING, fl.properties()[2].properties()[2].properties()[0].properties()[1].type());
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "type");
+        assertEquals("type", mapping.getName());
+        assertEquals("field1", mapping.getFields()[0].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[0].type());
+        assertEquals("properties", mapping.getFields()[1].name());
+        assertEquals(FieldType.OBJECT, mapping.getFields()[1].type());
+        assertEquals("subfield1", mapping.getFields()[1].properties()[0].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[1].properties()[0].type());
+        assertEquals("subfield2", mapping.getFields()[1].properties()[1].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[1].properties()[1].type());
+        assertEquals("field2", mapping.getFields()[2].name());
+        assertEquals(FieldType.OBJECT, mapping.getFields()[2].type());
+        assertEquals("subfield3", mapping.getFields()[2].properties()[0].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[0].type());
+        assertEquals("properties", mapping.getFields()[2].properties()[1].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[1].type());
+        assertEquals("type", mapping.getFields()[2].properties()[2].name());
+        assertEquals(FieldType.OBJECT, mapping.getFields()[2].properties()[2].type());
+        assertEquals("properties", mapping.getFields()[2].properties()[2].properties()[0].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[1].type());
+        assertEquals("subfield5", mapping.getFields()[2].properties()[2].properties()[1].name());
+        assertEquals(FieldType.OBJECT, mapping.getFields()[2].properties()[2].properties()[0].type());
+        assertEquals("properties", mapping.getFields()[2].properties()[2].properties()[0].properties()[0].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[0].type());
+        assertEquals("subfield4", mapping.getFields()[2].properties()[2].properties()[0].properties()[1].name());
+        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[1].type());
+    }
+
+    @Test
+    public void testMultipleFields() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-types.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        assertNotNull(mappings.getMapping("index", "type1"));
+        assertNotNull(mappings.getMapping("index", "type2"));
+
+        Mapping mapping = mappings.getResolvedView();
+        assertEquals("*", mapping.getName());
+        assertEquals("field1", mapping.getFields()[0].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals("field2", mapping.getFields()[1].name());
+        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals("field3", mapping.getFields()[2].name());
+        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
+    }
+
+    @Test
+    public void testMultipleIndexMultipleFields() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-types.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        assertNotNull(mappings.getMapping("index1", "type1"));
+        assertNotNull(mappings.getMapping("index2", "type2"));
+
+        Mapping mapping = mappings.getResolvedView();
+        assertEquals("*", mapping.getName());
+        assertEquals("field1", mapping.getFields()[0].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals("field2", mapping.getFields()[1].name());
+        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals("field3", mapping.getFields()[2].name());
+        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
     }
 }

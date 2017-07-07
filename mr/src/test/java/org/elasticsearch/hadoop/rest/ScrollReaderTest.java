@@ -20,21 +20,27 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.serialization.FieldType;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -77,9 +83,9 @@ public class ScrollReaderTest {
     @Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
-        Field fl = Field.parseField(new ObjectMapper().readValue(stream, Map.class));
+        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
 
-        scrollReaderConfig.rootField = fl;
+        scrollReaderConfig.resolvedMapping = fl.getResolvedView();
         reader = new ScrollReader(scrollReaderConfig);
 
         stream = getClass().getResourceAsStream("scroll-source.json");
@@ -133,6 +139,30 @@ public class ScrollReaderTest {
         assertTrue(links.contains(null));
     }
 
+    @Test
+    public void testScrollWithMultipleTypes() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("scroll-multi-type-source-mapping.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+        // Make our own scroll reader, that ignores unmapped values like the rest of the code
+        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
+
+        InputStream stream = getClass().getResourceAsStream("scroll-multi-type-source.json");
+        List<Object[]> read = myReader.read(stream).getHits();
+        assertEquals(3, read.size());
+        Object[] row1 = read.get(0);
+        assertTrue(((Map) row1[1]).containsKey("field1"));
+        assertEquals("value1", ((Map) row1[1]).get("field1"));
+        assertTrue(((Map) row1[1]).containsKey("field2"));
+        assertEquals("value2", ((Map) row1[1]).get("field2"));
+
+        Object[] row2 = read.get(1);
+        assertTrue(((Map) row2[1]).containsKey("field3"));
+        assertEquals("value3", ((Map) row2[1]).get("field3"));
+
+        Object[] row3 = read.get(2);
+        assertTrue(((Map) row3[1]).containsKey("field4"));
+        assertEquals("value4", ((Map) row3[1]).get("field4"));
+    }
 
     @Parameters
     public static Collection<Object[]> data() {

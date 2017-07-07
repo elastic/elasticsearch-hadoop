@@ -1,19 +1,23 @@
 {
-    "artiststimestamp" : {
-        "properties" : {
-            "date" : {
-                "type" : "date",
-                "format" : "dateOptionalTime"
-            },
-            "links" : {
+    "index": {
+        "mappings": {
+            "artiststimestamp" : {
                 "properties" : {
-                    "url" : {
+                    "date" : {
+                        "type" : "date",
+                        "format" : "dateOptionalTime"
+                    },
+                    "links" : {
+                        "properties" : {
+                            "url" : {
+                                "type" : "string"
+                            }
+                        }
+                    },
+                    "name" : {
                         "type" : "string"
                     }
                 }
-            },
-            "name" : {
-                "type" : "string"
             }
         }
     }

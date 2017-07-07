@@ -35,7 +35,8 @@ import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.IndicesAliases;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.util.Assert;
@@ -245,17 +246,16 @@ public abstract class RestService implements Serializable {
 
             log.info(String.format("Reading from [%s]", settings.getResourceRead()));
 
-            Field mapping = null;
+            MappingSet mapping = null;
             if (!shards.isEmpty()) {
-                mapping = client.getMapping();
+                mapping = client.getMappings();
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Discovered mapping {%s} for [%s]", mapping, settings.getResourceRead()));
+                    log.debug(String.format("Discovered resolved mapping {%s} for [%s]", mapping.getResolvedView(), settings.getResourceRead()));
                 }
                 // validate if possible
                 FieldPresenceValidation validation = settings.getReadFieldExistanceValidation();
                 if (validation.isRequired()) {
-//                    MappingUtils.validateMapping(settings.getScrollFields(), mapping, validation, log);
-                    MappingUtils.validateMapping(SettingsUtils.determineSourceFields(settings), mapping, validation, log);
+                    MappingUtils.validateMapping(SettingsUtils.determineSourceFields(settings), mapping.getResolvedView(), validation, log);
                 }
             }
             final Map<String, NodeInfo> nodesMap = new HashMap<String, NodeInfo>();
@@ -280,8 +280,9 @@ public abstract class RestService implements Serializable {
     /**
      * Create one {@link PartitionDefinition} per shard for each requested index.
      */
-    static List<PartitionDefinition> findShardPartitions(Settings settings, Field mapping, Map<String, NodeInfo> nodes,
+    static List<PartitionDefinition> findShardPartitions(Settings settings, MappingSet mappingSet, Map<String, NodeInfo> nodes,
                                                          List<List<Map<String, Object>>> shards, Log log) {
+        Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
             String index = null;
@@ -306,7 +307,7 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                PartitionDefinition partition = new PartitionDefinition(settings, mapping, index, shardId,
+                PartitionDefinition partition = new PartitionDefinition(settings, resolvedMapping, index, shardId,
                         locationList.toArray(new String[0]));
                 partitions.add(partition);
             }
@@ -317,11 +318,12 @@ public abstract class RestService implements Serializable {
     /**
      * Partitions the query based on the max number of documents allowed per partition {@link Settings#getMaxDocsPerPartition()}.
      */
-    static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, Field mapping,
+    static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, MappingSet mappingSet,
                                                          Map<String, NodeInfo> nodes, List<List<Map<String, Object>>> shards, Log log) {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
         int maxDocsPerPartition = settings.getMaxDocsPerPartition();
         String types = new Resource(settings, true).type();
+        Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
 
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
         for (List<Map<String, Object>> group : shards) {
@@ -358,7 +360,7 @@ public abstract class RestService implements Serializable {
                 int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
-                    partitions.add(new PartitionDefinition(settings, mapping, index, shardId, slice, locations));
+                    partitions.add(new PartitionDefinition(settings, resolvedMapping, index, shardId, slice, locations));
                 }
             }
         }
@@ -415,7 +417,7 @@ public abstract class RestService implements Serializable {
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
         // initialize REST client
         RestRepository repository = new RestRepository(settings);
-        Field fieldMapping = null;
+        Mapping fieldMapping = null;
         if (StringUtils.hasText(partition.getSerializedMapping())) {
             fieldMapping = IOUtils.deserializeFromBase64(partition.getSerializedMapping());
         }

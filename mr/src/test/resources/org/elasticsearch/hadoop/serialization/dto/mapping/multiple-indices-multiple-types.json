@@ -1,0 +1,22 @@
+{
+  "index1": {
+    "mappings": {
+      "type1": {
+        "properties": {
+          "field1": { "type": "keyword" },
+          "field2": { "type": "float" }
+        }
+      }
+    }
+  },
+  "index2": {
+    "mappings": {
+      "type2": {
+        "properties": {
+          "field1": { "type": "keyword" },
+          "field3": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

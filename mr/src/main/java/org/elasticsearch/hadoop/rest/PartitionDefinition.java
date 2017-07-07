@@ -20,7 +20,7 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -42,15 +42,15 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
     private final String serializedSettings, serializedMapping;
     private final String[] locations;
 
-    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId) {
+    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId) {
         this(settings, mapping, index, shardId, null, EMPTY_ARRAY);
     }
 
-    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, String[] locations) {
+    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, String[] locations) {
         this(settings, mapping, index, shardId, null, locations);
     }
 
-    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, Slice slice) {
+    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, Slice slice) {
         this(settings, mapping, index, shardId, slice, EMPTY_ARRAY);
     }
 
@@ -63,7 +63,7 @@ public class PartitionDefinition implements Serializable, Comparable<PartitionDe
      * @param slice The slice the partition will be executed on or null
      * @param locations The locations where to find nodes (hostname:port or ip:port) that can execute the partition locally
      */
-    public PartitionDefinition(Settings settings, Field mapping, String index, int shardId, Slice slice, String[] locations) {
+    public PartitionDefinition(Settings settings, Mapping mapping, String index, int shardId, Slice slice, String[] locations) {
         this.index = index;
         this.shardId = shardId;
         if (settings != null) {

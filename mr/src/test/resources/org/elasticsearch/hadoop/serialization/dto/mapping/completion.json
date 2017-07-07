@@ -1,11 +1,17 @@
 {
-  "song" : {
+  "index": {
+    "mappings": {
+      "song" : {
         "properties" : {
-            "name" : { "type" : "string" },
-            "suggest" : { "type" : "completion",
-                          "index_analyzer" : "simple",
-                          "search_analyzer" : "simple",
-                          "payloads" : true }
+          "name" : { "type" : "string" },
+          "suggest" : {
+            "type" : "completion",
+            "index_analyzer" : "simple",
+            "search_analyzer" : "simple",
+            "payloads" : true
+          }
         }
+      }
     }
+  }
 }
