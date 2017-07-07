@@ -115,6 +115,9 @@ public class TestUtils {
         return (HadoopCfgUtils.isLocal(cfg) ? localResource("/gibberish.json") : "/gibberish.json");
     }
 
+    public static String sampleJoinDat() {
+        return localResource("/data/join/data/all.dat");
+    }
 
     private static String localResource(String resource) {
         return TestSettings.class.getResource(resource).getFile();

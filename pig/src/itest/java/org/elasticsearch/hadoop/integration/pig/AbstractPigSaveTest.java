@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -65,7 +66,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "SET mapred.map.tasks 2;" +
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 // "A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name:chararray, links:tuple(url:chararray, picture: chararray));" +
-                loadSource() +
+                loadArtistSource() +
                 //"ILLUSTRATE A;" +
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 "DESCRIBE B;" +
@@ -95,7 +96,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig-bagartists/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
@@ -116,7 +117,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS date, url;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig-timestamp/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
@@ -136,7 +137,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 //"A = LOAD 'src/test/resources/artists.dat' USING PigStorage() AS (id:long, name, links:bag{t:(url:chararray, picture: chararray)});" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
                 "STORE B INTO 'pig-fieldalias/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
@@ -177,7 +178,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testEmptyComplexStructures() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "AL = LIMIT A 10;" +
                 "B = FOREACH AL GENERATE (), [], {};" +
                 "STORE B INTO 'pig-emptyconst/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
@@ -194,7 +195,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testCreateWithId() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig-createwithid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
@@ -219,7 +220,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testUpdateWithoutId() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig-updatewoid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update');";
@@ -230,7 +231,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testUpdateWithId() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig-update/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
@@ -250,7 +251,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testUpdateWithoutUpsert() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig-updatewoupsert/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
@@ -265,7 +266,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
                 "STORE B INTO 'pig-pc/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=id','"
@@ -282,6 +283,28 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     }
 
     @Test
+    @Ignore("Pig can't really create objects for insertion, so transforming this " +
+            "data field into a joiner is bunk right now. Fix this when we figure " +
+            "out how to handle tuples well in Pig...")
+    public void testJoin() throws Exception {
+        RestUtils.putMapping("pig-join", "join", "data/join/mapping.json");
+        RestUtils.refresh("pig-join");
+
+        String script =
+                "REGISTER " + Provisioner.ESHADOOP_TESTING_JAR + ";" +
+                        loadJoinSource()
+                        + "CHILDREN = FILTER A BY NOT(parent IS NULL);"
+//                        + "CHILDREN = FOREACH A GENERATE id, name, company, TOTUPLE(relation, parent) as joiner;"
+                        + "DUMP A;"
+                        + "DUMP CHILDREN;"
+//                        + "STORE CHILDREN INTO 'pig-join/join' USING org.elasticsearch.hadoop.pig.EsStorage('"
+//                        + ConfigurationOptions.ES_MAPPING_JOIN + "=joiner','"
+//                        + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no');"
+                ;
+        pig.executeScript(script);
+    }
+
+    @Test
     public void testNestedTuple() throws Exception {
         RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
         RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
@@ -293,7 +316,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testIndexPattern() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "STORE A INTO 'pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
@@ -311,7 +334,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testIndexPatternFormat() throws Exception {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
-                loadSource() +
+                loadArtistSource() +
                 "STORE A INTO 'pig-pattern-format-{timestamp|YYYY-MM-dd}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
@@ -325,7 +348,15 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                         : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
-    private String loadSource() {
-        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
+    private String loadArtistSource() {
+        return loadSource(TestUtils.sampleArtistsDat()) + " AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
+    }
+
+    private String loadJoinSource() {
+        return loadSource(TestUtils.sampleJoinDat()) + " AS (id:long, company:chararray, name:chararray, relation:chararray, parent:chararray);";
+    }
+
+    private String loadSource(String source) {
+        return "A = LOAD '" + source + "' USING PigStorage()";
     }
 }

@@ -255,6 +255,28 @@ public class MappingTest {
     }
 
     @Test
+    public void testJoinField() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("join-type.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        Mapping mapping = mappings.getMapping("index", "join");
+        assertEquals("join", mapping.getName());
+        assertEquals("id", mapping.getFields()[0].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals("company", mapping.getFields()[1].name());
+        assertEquals(FieldType.TEXT, mapping.getFields()[1].type());
+        assertEquals("name", mapping.getFields()[2].name());
+        assertEquals(FieldType.TEXT, mapping.getFields()[2].type());
+        assertEquals("joiner", mapping.getFields()[3].name());
+        assertEquals(FieldType.JOIN, mapping.getFields()[3].type());
+        assertEquals("name", mapping.getFields()[3].properties()[0].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[3].properties()[0].type());
+        assertEquals("parent", mapping.getFields()[3].properties()[1].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[3].properties()[1].type());
+    }
+
+
+    @Test
     public void testMultipleFields() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-types.json"), Map.class);
         MappingSet mappings = parseMapping(value);

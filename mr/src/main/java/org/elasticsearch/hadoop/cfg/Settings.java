@@ -196,6 +196,10 @@ public abstract class Settings {
         return getProperty(ES_MAPPING_PARENT);
     }
 
+    public String getMappingJoin() {
+        return getProperty(ES_MAPPING_JOIN);
+    }
+
     public String getMappingVersion() {
         return getProperty(ES_MAPPING_VERSION);
     }
@@ -231,6 +235,10 @@ public abstract class Settings {
 
     public String getMappingParentExtractorClassName() {
         return getProperty(ES_MAPPING_PARENT_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
+    }
+
+    public String getMappingJoinExtractorClassName() {
+        return getProperty(ES_MAPPING_JOIN_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());
     }
 
     public String getMappingVersionExtractorClassName() {

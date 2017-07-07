@@ -38,6 +38,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INDEX_READ_MISSING_A
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_INPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_EXCLUDE
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_ID
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_JOIN
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_MAPPING_TIMESTAMP
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_READ_METADATA
@@ -323,6 +324,86 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target + "/_search?"), containsString("business"))
     assertThat(RestUtils.get(target +  "/_search?"), containsString("participants"))
     assertThat(RestUtils.get(target +  "/_search?"), not(containsString("airport")))
+  }
+
+  @Test
+  def testEsRDDWriteJoinField(): Unit = {
+    // test mix of short-form and long-form joiner values
+    val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
+    val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
+    val company3 = Map("id" -> "3", "company" -> "WATIcorp", "joiner" -> Map("name" -> "company"))
+
+    val employee1 = Map("id" -> "10", "name" -> "kimchy", "joiner" -> Map("name" -> "employee", "parent" -> "1"))
+    val employee2 = Map("id" -> "20", "name" -> "April Ryan", "joiner" -> Map("name" -> "employee", "parent" -> "2"))
+    val employee3 = Map("id" -> "21", "name" -> "Charlie", "joiner" -> Map("name" -> "employee", "parent" -> "2"))
+    val employee4 = Map("id" -> "30", "name" -> "Alvin Peats", "joiner" -> Map("name" -> "employee", "parent" -> "3"))
+
+    val parents = Seq(company1, company2, company3)
+    val children = Seq(employee1, employee2, employee3, employee4)
+    val docs = parents ++ children
+
+    {
+      val index = wrapIndex("spark-test-scala-write-join-separate")
+      val typename = "join"
+      val target = s"$index/$typename"
+      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+
+      sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+      sc.makeRDD(children).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+
+      val data = sc.esRDD(target).collectAsMap()
+
+      {
+        assertTrue(data.contains("1"))
+        val record10 = data("1")
+        assertTrue(record10.contains("joiner"))
+        val joiner = record10("joiner").asInstanceOf[collection.mutable.Map[String, Object]]
+        assertTrue(joiner.contains("name"))
+      }
+
+      {
+        assertTrue(data.contains("10"))
+        val record10 = data("10")
+        assertTrue(record10.contains("joiner"))
+        val joiner = record10("joiner").asInstanceOf[collection.mutable.Map[String, Object]]
+        assertTrue(joiner.contains("name"))
+        assertTrue(joiner.contains("parent"))
+      }
+
+    }
+    {
+      val index = wrapIndex("spark-test-scala-write-join-combined")
+      val typename = "join"
+      val target = s"$index/$typename"
+      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+
+      sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+
+      val data = sc.esRDD(target).collectAsMap()
+
+      {
+        assertTrue(data.contains("1"))
+        val record10 = data("1")
+        assertTrue(record10.contains("joiner"))
+        val joiner = record10("joiner").asInstanceOf[collection.mutable.Map[String, Object]]
+        assertTrue(joiner.contains("name"))
+      }
+
+      {
+        assertTrue(data.contains("10"))
+        val record10 = data("10")
+        assertTrue(record10.contains("joiner"))
+        val joiner = record10("joiner").asInstanceOf[collection.mutable.Map[String, Object]]
+        assertTrue(joiner.contains("name"))
+        assertTrue(joiner.contains("parent"))
+      }
+    }
   }
 
   @Test

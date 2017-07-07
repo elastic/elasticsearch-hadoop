@@ -151,6 +151,36 @@ class SchemaUtilsTest {
   }
 
   @Test
+  def testConvertToStructWithJoinField() {
+    val mapping =
+      """{
+        |  "join": {
+        |    "properties": {
+        |      "my_join": {
+        |        "type": "join",
+        |        "relations": {
+        |          "my_parent": "my_child"
+        |        }
+        |      }
+        |    }
+        |  }
+        |}
+      """.stripMargin
+
+    val struct = getStruct(mapping)
+    assertTrue(struct.fieldNames.contains("my_join"))
+
+    val nested = struct("my_join").dataType
+    assertEquals("struct", nested.typeName)
+
+    val arr = nested.asInstanceOf[StructType]
+    assertTrue(arr.fieldNames.contains("name"))
+    assertTrue(arr.fieldNames.contains("parent"))
+    assertEquals(StringType, arr("name").dataType)
+    assertEquals(StringType, arr("parent").dataType)
+  }
+
+  @Test
   def testDetectRowInfoSimple() {
     val mapping = """{ "array-mapping-top-level": {
     | "properties" : {

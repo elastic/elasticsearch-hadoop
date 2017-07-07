@@ -1,0 +1,99 @@
+{
+  "_scroll_id" : "c2NhbjsxOzE6MjBLOXo0S1RTcktPNmtmSU44YjJZUTsxO3RvdGFsX2hpdHM6MTk2Ow==",
+  "took" : 30,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : 196,
+    "max_score" : 0.0,
+    "hits" : [
+      {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "23hrGo7VRCyao8lB9Uu5Kw",
+        "_score" : 0.0,
+        "_source" : {
+          "id": "1",
+          "company": "Elastic",
+          "joiner": "company"
+        }
+      }, {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
+        "_score" : 0.0,
+        "_source" : {
+          "id": "10",
+          "name": "kimchy",
+          "joiner": {
+            "name": "employee",
+            "parent": "1"
+          }
+        }
+      }, {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "H2opSUi0RAm_WrHUkSSjIA",
+        "_score" : 0.0,
+        "_source" : {
+          "id": "2",
+          "company": "Fringe Cafe",
+          "joiner": "company"
+        }
+      }, {
+        "_index": "index",
+        "_type": "join",
+        "_id": "PTi2NxdDRxmXhv6S8DgIeQ",
+        "_score": 0.0,
+        "_source": {
+          "id": "20",
+          "name": "April Ryan",
+          "joiner": {
+            "name": "employee",
+            "parent": "2"
+          }
+        }
+      }, {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
+        "_score" : 0.0,
+        "_source": {
+          "id": "21",
+          "name": "Charlie",
+          "joiner": {
+            "name": "employee",
+            "parent": "2"
+          }
+        }
+      }, {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
+        "_score" : 0.0,
+        "_source": {
+          "id": "3",
+          "company": "WATIcorp",
+          "joiner": "company"
+        }
+      }, {
+        "_index" : "index",
+        "_type" : "join",
+        "_id" : "PTi2NxdDRxmXhv6S8DgIeQ",
+        "_score" : 0.0,
+        "_source": {
+          "id": "30",
+          "name": "Alvin Peats",
+          "joiner": {
+            "name": "employee",
+            "parent": "3"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -89,6 +89,13 @@ public class JdkValueReader implements SettingsAware, ValueReader {
             return binaryValue(binValue);
         case DATE:
             return date(value, parser);
+        case JOIN:
+            // In the case of a join field reaching this point it is because it is the short-hand form for a parent.
+            // construct a container and place the short form name into the name subfield.
+            Object container = createMap();
+            addToMap(container, "name", textValue(value));
+            return container;
+
             // catch-all - exists really for the other custom types that might be introduced
             // compound types should have been handled earlier in the stream
         default:

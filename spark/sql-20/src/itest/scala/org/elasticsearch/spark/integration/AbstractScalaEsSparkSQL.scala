@@ -91,6 +91,8 @@ import org.apache.commons.logging.impl.NoOpLog
 import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
+import org.junit.Assert
+import org.junit.Assert.assertNotNull
 
 object AbstractScalaEsScalaSparkSQL {
   @transient val conf = new SparkConf()
@@ -1408,6 +1410,84 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val vals = first.getStruct(0).getSeq[Seq[Long]](0)(0)
     assertEquals(50, vals(0))
     assertEquals(32, vals(1))
+  }
+
+  @Test
+  def testJoinField(): Unit = {
+    // test mix of short-form and long-form joiner values
+    val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
+    val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
+    val company3 = Map("id" -> "3", "company" -> "WATIcorp", "joiner" -> Map("name" -> "company"))
+
+    val employee1 = Map("id" -> "10", "name" -> "kimchy", "joiner" -> Map("name" -> "employee", "parent" -> "1"))
+    val employee2 = Map("id" -> "20", "name" -> "April Ryan", "joiner" -> Map("name" -> "employee", "parent" -> "2"))
+    val employee3 = Map("id" -> "21", "name" -> "Charlie", "joiner" -> Map("name" -> "employee", "parent" -> "2"))
+    val employee4 = Map("id" -> "30", "name" -> "Alvin Peats", "joiner" -> Map("name" -> "employee", "parent" -> "3"))
+
+    val parents = Seq(company1, company2, company3)
+    val children = Seq(employee1, employee2, employee3, employee4)
+    val docs = parents ++ children
+
+    {
+      val index = wrapIndex("sparksql-test-scala-write-join-separate")
+      val typename = "join"
+      val target = s"$index/$typename"
+      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+
+      sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+      sc.makeRDD(children).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+
+      val df = sqc.read.format("es").load(target)
+      val data = df.where(df("id").equalTo("1").or(df("id").equalTo("10"))).sort(df("id")).collect()
+
+      {
+        val record1 = data(0)
+        assertNotNull(record1.getStruct(record1.fieldIndex("joiner")))
+        val joiner = record1.getStruct(record1.fieldIndex("joiner"))
+        assertNotNull(joiner.getString(joiner.fieldIndex("name")))
+      }
+
+      {
+        val record10 = data(1)
+        assertNotNull(record10.getStruct(record10.fieldIndex("joiner")))
+        val joiner = record10.getStruct(record10.fieldIndex("joiner"))
+        assertNotNull(joiner.getString(joiner.fieldIndex("name")))
+        assertNotNull(joiner.getString(joiner.fieldIndex("parent")))
+      }
+
+    }
+    {
+      val index = wrapIndex("sparksql-test-scala-write-join-combined")
+      val typename = "join"
+      val target = s"$index/$typename"
+      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+
+      sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
+
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+
+      val df = sqc.read.format("es").load(target)
+      val data = df.where(df("id").equalTo("1").or(df("id").equalTo("10"))).sort(df("id")).collect()
+
+      {
+        val record1 = data(0)
+        assertNotNull(record1.getStruct(record1.fieldIndex("joiner")))
+        val joiner = record1.getStruct(record1.fieldIndex("joiner"))
+        assertNotNull(joiner.getString(joiner.fieldIndex("name")))
+      }
+
+      {
+        val record10 = data(1)
+        assertNotNull(record10.getStruct(record10.fieldIndex("joiner")))
+        val joiner = record10.getStruct(record10.fieldIndex("joiner"))
+        assertNotNull(joiner.getString(joiner.fieldIndex("name")))
+        assertNotNull(joiner.getString(joiner.fieldIndex("parent")))
+      }
+    }
   }
 
   @Test

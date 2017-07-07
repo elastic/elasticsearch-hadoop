@@ -21,7 +21,6 @@ package org.elasticsearch.hadoop.serialization.bulk;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
-import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +29,8 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor.Metadata;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.serialization.field.ChainedFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.FieldExplainer;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
@@ -82,10 +83,17 @@ public abstract class AbstractBulkFactory implements BulkFactory {
     private final ValueWriter valueWriter;
 
     class FieldWriter {
+        final String headerValue;
         final FieldExtractor extractor;
         final BytesArrayPool pool = new BytesArrayPool();
 
         FieldWriter(FieldExtractor extractor) {
+            this.headerValue = null;
+            this.extractor = extractor;
+        }
+
+        FieldWriter(String header, FieldExtractor extractor) {
+            this.headerValue = header;
             this.extractor = extractor;
         }
 
@@ -96,6 +104,13 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             if (value == FieldExtractor.NOT_FOUND) {
                 String obj = (extractor instanceof FieldExplainer ? ((FieldExplainer) extractor).toString(object) : object.toString());
                 throw new EsHadoopIllegalArgumentException(String.format("[%s] cannot extract value from entity [%s] | instance [%s]", extractor, obj.getClass(), obj));
+            } else if (value == FieldExtractor.SKIP) {
+                // Skip it
+                return pool;
+            }
+
+            if (headerValue != null) {
+                pool.get().bytes(headerValue);
             }
 
             if (value instanceof List) {
@@ -210,11 +225,28 @@ public abstract class AbstractBulkFactory implements BulkFactory {
                 parentExtractor = ObjectUtils.<FieldExtractor> instantiate(
                         settings.getMappingParentExtractorClassName(), settings);
             }
+            // Two different properties can satisfy the routing field extraction
+            ChainedFieldExtractor.NoValueHandler routingResponse = ChainedFieldExtractor.NoValueHandler.SKIP;
+            List<FieldExtractor> routings = new ArrayList<FieldExtractor>(2);
             if (settings.getMappingRouting() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingRouting());
-                routingExtractor = ObjectUtils.<FieldExtractor> instantiate(
+                FieldExtractor extractor = ObjectUtils.<FieldExtractor> instantiate(
                         settings.getMappingRoutingExtractorClassName(), settings);
+                // If we specify a routing field, return NOT_FOUND if we ultimately cannot find one instead of skipping
+                routingResponse = ChainedFieldExtractor.NoValueHandler.NOT_FOUND;
+                routings.add(extractor);
             }
+            if (settings.getMappingJoin() != null) {
+                // make sure to append the parent sub-field
+                settings.setProperty(ConstantFieldExtractor.PROPERTY, MappingUtils.joinParentField(settings));
+                FieldExtractor extractor = ObjectUtils.<FieldExtractor>instantiate(
+                        settings.getMappingJoinExtractorClassName(), settings);
+                routings.add(extractor);
+            }
+            if (routings.size() != 0) {
+                routingExtractor = new ChainedFieldExtractor(routings, routingResponse);
+            }
+
             if (settings.getMappingTtl() != null) {
                 settings.setProperty(ConstantFieldExtractor.PROPERTY, settings.getMappingTtl());
                 ttlExtractor = ObjectUtils.<FieldExtractor> instantiate(settings.getMappingTtlExtractorClassName(),
@@ -332,16 +364,16 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         // flag indicating whether a comma needs to be added between fields
         boolean commaMightBeNeeded = false;
 
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.INDEX, indexExtractor), "", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TYPE, typeExtractor), "\"_type\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.INDEX, indexExtractor), "", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TYPE, typeExtractor), "\"_type\":", commaMightBeNeeded);
         commaMightBeNeeded = id(list, commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.PARENT, parentExtractor), "\"_parent\":", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.ROUTING, routingExtractor), "\"_routing\":", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TTL, ttlExtractor), "\"_ttl\":", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.TIMESTAMP, timestampExtractor), "\"_timestamp\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.PARENT, parentExtractor), "\"_parent\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValueAsFieldWriter(list, getMetadataExtractorOrFallback(Metadata.ROUTING, routingExtractor), "\"_routing\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TTL, ttlExtractor), "\"_ttl\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TIMESTAMP, timestampExtractor), "\"_timestamp\":", commaMightBeNeeded);
 
         // version & version_type fields
-        Object versionField = getExtractorOrDynamicValue(Metadata.VERSION, versionExtractor);
+        Object versionField = getMetadataExtractorOrFallback(Metadata.VERSION, versionExtractor);
         if (versionField != null) {
             if (commaMightBeNeeded) {
                 list.add(",");
@@ -352,7 +384,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
             list.add(versionField);
 
             // version_type - only needed when a version is specified
-            Object versionTypeField = getExtractorOrDynamicValue(Metadata.VERSION_TYPE, versionTypeExtractor);
+            Object versionTypeField = getMetadataExtractorOrFallback(Metadata.VERSION_TYPE, versionTypeExtractor);
             if (versionTypeField != null) {
                 if (commaMightBeNeeded) {
                     list.add(",");
@@ -370,10 +402,15 @@ public abstract class AbstractBulkFactory implements BulkFactory {
     }
 
     protected boolean id(List<Object> list, boolean commaMightBeNeeded) {
-        return addExtractorOrDynamicValue(list, getExtractorOrDynamicValue(Metadata.ID, idExtractor), "\"_id\":", commaMightBeNeeded);
+        return addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.ID, idExtractor), "\"_id\":", commaMightBeNeeded);
     }
 
-    // trivial utility that adds a comma before the current field alongside but only if the extractor is present
+    /**
+     * If extractor is present, this will add the header to the template, followed by the extractor.
+     * If a comma is needed, the comma will be inserted before the header.
+     *
+     * @return true if a comma may be needed on the next call.
+     */
     private boolean addExtractorOrDynamicValue(List<Object> list, Object extractor, String header, boolean commaMightBeNeeded) {
         if (extractor != null) {
             if (commaMightBeNeeded) {
@@ -386,12 +423,35 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         return commaMightBeNeeded;
     }
 
+    /**
+     * If extractor is present, this will combine the header and extractor into a FieldWriter,
+     * allowing the FieldWriter to determine when and if to write the header value based on the
+     * given document's data. If a comma is needed, it is appended to the header string before
+     * being passed to the FieldWriter.
+     *
+     * @return true if a comma may be needed on the next call
+     */
+    private boolean addExtractorOrDynamicValueAsFieldWriter(List<Object> list, FieldExtractor extractor, String header, boolean commaMightBeNeeded) {
+        if (extractor != null) {
+            String head = header;
+            if (commaMightBeNeeded) {
+                head = "," + head;
+            }
+            list.add(new FieldWriter(head, extractor));
+            return true;
+        }
+        return commaMightBeNeeded;
+    }
+
     protected void otherHeader(List<Object> list, boolean commaMightBeNeeded) {
         // no-op
     }
 
-    // get the extractor for a given field, trying first the dynamic one, with a fallback on the 'static' one
-    protected Object getExtractorOrDynamicValue(Metadata meta, FieldExtractor fallbackExtractor) {
+    /**
+     * Get the extractor for a given field, trying first one from a MetadataExtractor, and failing that,
+     * falling back to the provided 'static' one
+     */
+    protected FieldExtractor getMetadataExtractorOrFallback(Metadata meta, FieldExtractor fallbackExtractor) {
         if (metaExtractor != null) {
             FieldExtractor metaFE = metaExtractor.get(meta);
             if (metaFE != null) {
@@ -409,6 +469,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
 
     // optimization method used when dealing with 'static' extractors
     // concatenates all the strings to minimize the amount of data needed for construction
+    // TODO This does not compact a list of objects - it is COMPILLING it, and changing the structure. Make this more explicit
     private List<Object> compact(List<Object> list) {
         if (list == null || list.isEmpty()) {
             return null;
@@ -417,7 +478,16 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         List<Object> compacted = new ArrayList<Object>();
         StringBuilder stringAccumulator = new StringBuilder();
         for (Object object : list) {
-            if (object instanceof FieldExtractor) {
+            if (object instanceof FieldWriter) {
+                // If a field writer is in the stream, then something may have specific writing logic tied to it.
+                // pass it along same as field extractor
+                if (stringAccumulator.length() > 0) {
+                    compacted.add(new BytesArray(stringAccumulator.toString()));
+                    stringAccumulator.setLength(0);
+                }
+                compacted.add(object);
+            }
+            else if (object instanceof FieldExtractor) {
                 if (stringAccumulator.length() > 0) {
                     compacted.add(new BytesArray(stringAccumulator.toString()));
                     stringAccumulator.setLength(0);
