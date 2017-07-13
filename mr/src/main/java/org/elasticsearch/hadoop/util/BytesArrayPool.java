@@ -35,7 +35,7 @@ public class BytesArrayPool implements ByteSequence {
     public int length() {
         int size = 0;
         for (int i = 0; i < inUse; i++) {
-            size += pool.get(inUse).length();
+            size += pool.get(i).length();
         }
         return size;
     }
@@ -65,6 +65,7 @@ public class BytesArrayPool implements ByteSequence {
     }
 
     public List<BytesArray> inUse() {
+        // don't need to sublist since pool is reset between uses.
         return pool;
     }
 
