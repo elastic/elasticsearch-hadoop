@@ -40,15 +40,15 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertThat;
-
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSearchTest {
@@ -74,13 +74,13 @@ public class AbstractMROldApiSearchTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "mroldapi");
+        RestUtils.refresh(indexPrefix + "mroldapi*");
     }
 
     @Test
     public void testBasicReadWithConstantRouting() throws Exception {
-        String type = "savewithconstantrouting";
-        String target = "mroldapi/" + type;
+        String type = "data";
+        String target = "mroldapi-savewithconstantrouting/" + type;
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
@@ -92,7 +92,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicSearch() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-save/data");
 
         JobClient.runJob(conf);
     }
@@ -101,7 +101,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicSearchWithWildCard() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrold*/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mrold*-save/data");
 
         JobClient.runJob(conf);
     }
@@ -109,7 +109,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/savewithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-savewithid/data");
 
         JobClient.runJob(conf);
     }
@@ -126,7 +126,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-createwithid/data");
 
         JobClient.runJob(conf);
     }
@@ -134,7 +134,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-update/data");
 
         JobClient.runJob(conf);
     }
@@ -143,7 +143,7 @@ public class AbstractMROldApiSearchTest {
     public void testSearchUpdatedWithoutUpsertMeaningNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, false);
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-updatewoupsert/data");
 
         JobClient.runJob(conf);
     }
@@ -151,7 +151,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testParentChild() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/child");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-pc/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
@@ -161,21 +161,21 @@ public class AbstractMROldApiSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-500"));
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-990"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-1/data"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2936-10-06"));
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2051-10-06"));
-        Assert.assertTrue(RestUtils.exists("mroldapi/pattern-format-2945-10-06"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("mroldapi-pattern-format-2017-10-06/data"));
     }
 
     @Test
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
-        String target = "mroldapi/createwitharrayupsert/1";
+        String target = "mroldapi-createwitharrayupsert/data/1";
         Assert.assertTrue(RestUtils.exists(target));
         String result = RestUtils.get(target);
         assertThat(result, not(containsString("ArrayWritable@")));
@@ -184,7 +184,7 @@ public class AbstractMROldApiSearchTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi/nested");
+        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-nested/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         //conf.set(Stream.class.getName(), "OUT");

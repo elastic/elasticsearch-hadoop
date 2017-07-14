@@ -57,6 +57,7 @@ import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
 import org.junit.Assume;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -68,6 +69,8 @@ import static org.junit.Assume.assumeFalse;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSaveTest {
+
+    private EsMajorVersion version = TestUtils.getEsVersion();
 
     public static class TabMapper extends MapReduceBase implements Mapper {
 
@@ -81,18 +84,14 @@ public class AbstractMROldApiSaveTest {
             entry.put("url", st.nextToken());
             entry.put("list", Arrays.asList("quick", "brown", "fox"));
 
-            if (st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 String str = st.nextToken();
                 if (str.startsWith("http")) {
                     entry.put("picture", str);
-
-                    if (st.hasMoreTokens()) {
-                        String token = st.nextToken();
-                        entry.put("@timestamp", token);
-                    }
-                }
-                else {
+                } else if (str.startsWith("20")) {
                     entry.put("@timestamp", str);
+                } else if (str.startsWith("1") || str.startsWith("2") || str.startsWith("5") || str.startsWith("9") || str.startsWith("10")) {
+                    entry.put("tag", str);
                 }
             }
 
@@ -163,7 +162,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testBasicMultiSave() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi/multi-save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "oldapi-multi-save/data");
 
         MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
         MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
@@ -184,7 +183,7 @@ public class AbstractMROldApiSaveTest {
 
         // use only when dealing with constant input
         assumeFalse(conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true"));
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/constant");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-constant/data");
         conf.setMapperClass(ConstantMapper.class);
 
         runJob(conf);
@@ -193,7 +192,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testBasicIndex() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/save");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-save/data");
 
         runJob(conf);
     }
@@ -202,17 +201,17 @@ public class AbstractMROldApiSaveTest {
     public void testBasicIndexWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-savewithid/data");
 
         runJob(conf);
     }
 
     @Test
     public void testBasicIndexWithExtractedRouting() throws Exception {
-        String type = "savewithdynamicrouting";
-        String target = "mroldapi/" + type;
+        String type = "data";
+        String target = "mroldapi-savewithdynamicrouting/" + type;
 
-        RestUtils.touch(indexPrefix + "mroldapi");
+        RestUtils.touch(indexPrefix + "mroldapi-savewithdynamicrouting");
         RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
 
         JobConf conf = createJobConf();
@@ -224,15 +223,15 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testBasicIndexWithConstantRouting() throws Exception {
-        String type = "savewithconstantrouting";
-        String target = "mroldapi/" + type;
+        String type = "data";
+        String target = "mroldapi-savewithconstantrouting/" + type;
 
-        RestUtils.touch(indexPrefix + "mroldapi");
+        RestUtils.touch(indexPrefix + "mroldapi-savewithconstantrouting");
         RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/savewithconstantrouting");
+        conf.set(ConfigurationOptions.ES_RESOURCE, target);
 
         runJob(conf);
     }
@@ -242,7 +241,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwithid/data");
 
         runJob(conf);
     }
@@ -267,7 +266,7 @@ public class AbstractMROldApiSaveTest {
         client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
         client.close();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/ingested");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-ingested/data");
         conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mroldapi-pipeline");
         conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
 
@@ -279,7 +278,7 @@ public class AbstractMROldApiSaveTest {
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-update/data");
 
         runJob(conf);
     }
@@ -289,7 +288,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/update");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-update/data");
 
         runJob(conf);
     }
@@ -299,7 +298,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/updatewoupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-updatewoupsert/data");
 
         runJob(conf);
     }
@@ -308,14 +307,20 @@ public class AbstractMROldApiSaveTest {
     public void testUpdateOnlyScript() throws Exception {
         JobConf conf = createJobConf();
         // use an existing id to allow the update to succeed
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwithid/data");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
     }
@@ -323,14 +328,20 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwithid/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; String anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
     }
@@ -338,14 +349,20 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwithid/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
     }
@@ -353,14 +370,20 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScriptWithArray() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwithid");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwithid/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet list = new HashSet(); list.add(ctx._source.list); list.add(params.some_list); ctx._source.list = list.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "list = new HashSet(); list.add(ctx._source.list); list.add(some_list); ctx._source.list= list.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
 
@@ -370,7 +393,7 @@ public class AbstractMROldApiSaveTest {
         //
         //        conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         //        conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
+        //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "list = new HashSet(); list.add(ctx._source.picture); list.addAll(some_list); ctx._source.picture = list.toArray()");
         //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         //        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
         //
@@ -380,20 +403,26 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
-        String index = indexPrefix + "mroldapi/createwitharray";
+        String index = indexPrefix + "mroldapi-createwitharray/data";
         RestUtils.postData(index + "/1", docWithArray.getBytes());
-        RestUtils.refresh(indexPrefix + "mroldapi");
-        RestUtils.waitForYellow(indexPrefix + "mroldapi");
+        RestUtils.refresh(indexPrefix + "mroldapi-createwitharray");
+        RestUtils.waitForYellow(indexPrefix + "mroldapi-createwitharray");
 
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwitharray");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwitharray/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"new_date\": [\"add me\", \"and me\"]}");
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(params.new_date); ctx._source.tags = tmp.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(new_date); ctx._source.tags = tmp.toArray()");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
     }
@@ -402,11 +431,11 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-upsert-script/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 1");
 
         runJob(conf);
     }
@@ -414,11 +443,11 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertParamScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-param");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-upsert-script-param/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, "param2:name , param3:number, param1:<1>");
 
@@ -428,11 +457,11 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/upsert-script-json-param");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-upsert-script-json-param/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
@@ -442,20 +471,26 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
-        String index = indexPrefix + "mroldapi/createwitharrayupsert";
+        String index = indexPrefix + "mroldapi-createwitharrayupsert/data";
         RestUtils.postData(index + "/1", docWithArray.getBytes());
-        RestUtils.refresh(indexPrefix + "mroldapi");
-        RestUtils.waitForYellow(indexPrefix + "mroldapi");
+        RestUtils.refresh(indexPrefix + "mroldapi-createwitharrayupsert");
+        RestUtils.waitForYellow(indexPrefix + "mroldapi-createwitharrayupsert");
 
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/createwitharrayupsert");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-createwitharrayupsert/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "ctx._source.tags = update_tags");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, (conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true") ? "update_tags:name" :"update_tags:list"));
+
+        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.tags = params.update_tags");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
+        } else {
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.tags = update_tags");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
+        }
 
         runJob(conf);
     }
@@ -464,7 +499,7 @@ public class AbstractMROldApiSaveTest {
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/non-existing");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-non-existing/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         runJob(conf);
@@ -473,7 +508,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/external-version-implied");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-external-version-implied/data");
         // an id must be provided if version type or value are set
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
@@ -486,20 +521,24 @@ public class AbstractMROldApiSaveTest {
         // in ES 2.x, the parent/child relationship needs to be created fresh
         // hence why we reindex everything again
 
-        String childIndex = indexPrefix + "child";
-        String parentIndex = indexPrefix + "mr_parent";
+        String index = indexPrefix + "mroldapi-pc";
+        String parentResource = index + "/parent";
+        String childResource = index + "/child";
 
-        //String mapping = "{ \"" + parentIndex + "\" : {}, \"" + childIndex + "\" : { \"_parent\" : { \"type\" : \"" + parentIndex + "\" }}}";
-        //RestUtils.putMapping(indexPrefix + "mroldapi/child", StringUtils.toUTF(mapping));
-        RestUtils.putMapping(indexPrefix + "mroldapi/child", "org/elasticsearch/hadoop/integration/mr-child.json");
-        RestUtils.putMapping(indexPrefix + "mroldapi/parent", StringUtils.toUTF("{\"parent\":{}}"));
+        System.out.println(indexPrefix + "mroldapi-pc");
+        System.out.println(parentResource);
+        System.out.println(childResource);
+
+        RestUtils.createMultiTypeIndex(index);
+        RestUtils.putMapping(childResource, "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping(parentResource, StringUtils.toUTF("{\"parent\":{}}"));
 
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/mr-parent");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pc/parent");
         runJob(conf);
 
         conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/child");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pc/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
         conf.set(ConfigurationOptions.ES_MAPPING_PARENT, "number");
 
@@ -509,7 +548,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "/mroldapi/pattern-{number}");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-{tag}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -518,7 +557,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormatting() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -527,7 +566,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormattingAndId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/pattern-format-{@timestamp:YYYY-MM-dd}-with-id");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}-with-id/data");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
         runJob(conf);
@@ -536,7 +575,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexWithEscapedJson() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/simple-escaped-fields");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-simple-escaped-fields/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -546,10 +585,10 @@ public class AbstractMROldApiSaveTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi/nested");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-nested/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
-        RestUtils.putMapping(indexPrefix + "mroldapi/nested", "org/elasticsearch/hadoop/integration/mr-nested.json");
+        RestUtils.putMapping(indexPrefix + "mroldapi-nested/data", "org/elasticsearch/hadoop/integration/mr-nested.json");
 
         runJob(conf);
     }

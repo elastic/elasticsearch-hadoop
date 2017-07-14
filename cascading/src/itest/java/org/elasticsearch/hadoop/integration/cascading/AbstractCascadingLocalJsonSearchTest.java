@@ -70,13 +70,13 @@ public class AbstractCascadingLocalJsonSearchTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "cascading-local");
+        RestUtils.refresh(indexPrefix + "cascading-local*");
     }
 
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-local/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-local-artists/data");
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
@@ -93,14 +93,14 @@ public class AbstractCascadingLocalJsonSearchTest {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.postData(indexPrefix + "cascading-local/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData(indexPrefix + "cascading-local-nestedmap/data", StringUtils.toUTF(data));
 
-        RestUtils.refresh(indexPrefix + "cascading-local");
+        RestUtils.refresh(indexPrefix + "cascading-local-nestedmap");
 
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "nested:data.map.key");
 
-        Tap in = new EsTap(indexPrefix + "cascading-local/nestedmap", new Fields("nested"));
+        Tap in = new EsTap(indexPrefix + "cascading-local-nestedmap/data", new Fields("nested"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
@@ -112,16 +112,16 @@ public class AbstractCascadingLocalJsonSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-1"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-500"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-990"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-1/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2198-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local/pattern-format-2890-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-local-pattern-format-2017-10-06/data"));
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {

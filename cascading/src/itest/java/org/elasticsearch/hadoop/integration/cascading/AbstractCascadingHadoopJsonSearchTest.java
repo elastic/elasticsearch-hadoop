@@ -75,7 +75,7 @@ public class AbstractCascadingHadoopJsonSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop-artists/data");
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
@@ -92,14 +92,14 @@ public class AbstractCascadingHadoopJsonSearchTest {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.postData(indexPrefix + "cascading-hadoop/nestedmap", StringUtils.toUTF(data));
+        RestUtils.postData(indexPrefix + "cascading-hadoop-nestedmap/data", StringUtils.toUTF(data));
 
-        RestUtils.refresh(indexPrefix + "cascading-hadoop");
+        RestUtils.refresh(indexPrefix + "cascading-hadoop*");
 
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "nested:data.map.key");
 
-        Tap in = new EsTap(indexPrefix + "cascading-hadoop/nestedmap", new Fields("nested"));
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop-nestedmap/data", new Fields("nested"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
@@ -111,16 +111,16 @@ public class AbstractCascadingHadoopJsonSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-1"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-500"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-990"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-1/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2198-10-06"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop/pattern-format-2890-10-06"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2017-10-06/data"));
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {

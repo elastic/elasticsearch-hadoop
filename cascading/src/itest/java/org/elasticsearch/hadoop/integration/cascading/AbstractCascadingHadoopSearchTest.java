@@ -70,7 +70,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists", query);
+        Tap in = new EsTap("cascading-hadoop-artists/data", query);
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -86,7 +86,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithFields() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists", query, new Fields("url", "name"));
+        Tap in = new EsTap("cascading-hadoop-artists/data", query, new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -98,7 +98,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESAliasedField() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/alias", query, new Fields("address"));
+        Tap in = new EsTap("cascading-hadoop-alias/data", query, new Fields("address"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
@@ -109,7 +109,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithFieldAlias() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/alias", query, new Fields("url"));
+        Tap in = new EsTap("cascading-hadoop-alias/data", query, new Fields("url"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
 
@@ -123,13 +123,13 @@ public class AbstractCascadingHadoopSearchTest {
     @Test
     public void testNestedField() throws Exception {
         String data = "{ \"data\" : { \"map\" : { \"key\" : [ 10, 20 ] } } }";
-        RestUtils.postData("cascading-hadoop/nestedmap", StringUtils.toUTF(data));
-        RestUtils.refresh("cascading-hadoop");
+        RestUtils.postData("cascading-hadoop-nestedmap/data", StringUtils.toUTF(data));
+        RestUtils.refresh("cascading-hadoop*");
 
         Properties cfg = cfg();
         cfg.setProperty("es.mapping.names", "nested:data.map.key");
 
-        Tap in = new EsTap("cascading-hadoop/nestedmap", new Fields("nested"));
+        Tap in = new EsTap("cascading-hadoop-nestedmap/data", new Fields("nested"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, new FilterNotNull());
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(2));
@@ -141,7 +141,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test
     public void testReadFromESWithSourceFiltering() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists", query);
+        Tap in = new EsTap("cascading-hadoop-artists/data", query);
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeLessThan(5));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -157,7 +157,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testReadFromESWithSourceFilteringCollision() throws Exception {
-        Tap in = new EsTap("cascading-hadoop/artists", query, new Fields("url", "name"));
+        Tap in = new EsTap("cascading-hadoop-artists/data", query, new Fields("url", "name"));
         Pipe pipe = new Pipe("copy");
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertSizeEquals(2));
         pipe = new Each(pipe, AssertionLevel.STRICT, new AssertNotNull());
@@ -171,18 +171,18 @@ public class AbstractCascadingHadoopSearchTest {
         build(cfg, in, out, pipe);
     }
 
-//    @Test
+    @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-1"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-500"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-990"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-1/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-9/data"));
     }
 
-//    @Test
+    @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-format-2001-10-06"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-format-2500-10-06"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop/pattern-format-2990-10-06"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2017-10-06/data"));
     }
 
     private Properties cfg() {

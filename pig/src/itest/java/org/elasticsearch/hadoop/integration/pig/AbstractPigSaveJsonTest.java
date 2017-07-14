@@ -39,7 +39,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         // initialize Pig in local mode
         RestClient client = new RestClient(new TestSettings());
         try {
-            client.delete("json-pig");
+            client.delete("json-pig*");
         } catch (Exception ex) {
             // ignore
         }
@@ -52,7 +52,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 //"ILLUSTRATE A;" +
-                "STORE A INTO 'json-pig/tupleartists' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO 'json-pig-tupleartists/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
         //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         pig.executeScript(script);
     }
@@ -62,7 +62,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/fieldalias' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true','es.mapping.names=data:@json');";
+                "STORE A INTO 'json-pig-fieldalias/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true','es.mapping.names=data:@json');";
 
         pig.executeScript(script);
     }
@@ -72,7 +72,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/createwithid' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO 'json-pig-createwithid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -89,7 +89,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/updatewoid' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO 'json-pig-updatewoid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update',"
                                 + "'es.input.json=true');";
         pig.executeScript(script);
@@ -100,7 +100,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/update' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO 'json-pig-update/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -112,7 +112,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO 'json-pig-updatewoupsert/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -121,12 +121,13 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
 
     @Test
     public void testParentChild() throws Exception {
-        RestUtils.putMapping("json-pig/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.createMultiTypeIndex("json-pig-pc");
+        RestUtils.putMapping("json-pig-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO 'json-pig-pc/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=number','"
                                 + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no',"
                                 + "'es.input.json=true');";
@@ -138,7 +139,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/pattern-{number}' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO 'json-pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
         pig.executeScript(script);
     }
@@ -148,7 +149,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig/pattern-format-{@timestamp:YYYY-MM-dd}' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO 'json-pig-pattern-format-{@timestamp|YYYY-MM-dd}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
         pig.executeScript(script);
     }

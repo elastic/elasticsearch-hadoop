@@ -70,7 +70,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 "DESCRIBE B;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/tupleartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO 'pig-tupleartists/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
         //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         //"DUMP es_total;" +
         //"bartists = FILTER B BY name MATCHES 'me.*';" +
@@ -84,10 +84,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTupleMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/tupleartists").toString(),
+        assertThat(RestUtils.getMapping("pig-tupleartists/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("tupleartists=[links=TEXT, name=TEXT]")
-                        : is("tupleartists=[links=STRING, name=STRING]"));
+                        ? is("data=[links=TEXT, name=TEXT]")
+                        : is("data=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -98,16 +98,16 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadSource() +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/bagartists' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO 'pig-bagartists/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
     }
 
     @Test
     public void testBagMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/bagartists").toString(),
+        assertThat(RestUtils.getMapping("pig-bagartists/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("bagartists=[links=TEXT, name=TEXT]")
-                        : is("bagartists=[links=STRING, name=STRING]"));
+                        ? is("data=[links=TEXT, name=TEXT]")
+                        : is("data=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -119,14 +119,14 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS date, url;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/timestamp' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO 'pig-timestamp/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testTimestampMapping() throws Exception {
-        String mapping = RestUtils.getMapping("pig/timestamp").toString();
+        String mapping = RestUtils.getMapping("pig-timestamp/data").toString();
         assertThat(mapping, containsString("date=DATE"));
     }
 
@@ -139,17 +139,17 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/fieldalias' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
+                "STORE B INTO 'pig-fieldalias/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/fieldalias").toString(),
+        assertThat(RestUtils.getMapping("pig-fieldalias/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("fieldalias=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("fieldalias=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("data=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -160,17 +160,17 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, Name:chararray, uRL:chararray, pIctUre: chararray, timestamp: chararray); " +
                 "B = FOREACH A GENERATE Name, uRL, pIctUre;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig/casesensitivity' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO 'pig-casesensitivity/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testCaseSensitivityMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/casesensitivity").toString(),
+        assertThat(RestUtils.getMapping("pig-casesensitivity/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("casesensitivity=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]")
-                        : is("casesensitivity=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
+                        ? is("data=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]")
+                        : is("data=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
     }
 
     @Test
@@ -180,14 +180,14 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadSource() +
                 "AL = LIMIT A 10;" +
                 "B = FOREACH AL GENERATE (), [], {};" +
-                "STORE B INTO 'pig/emptyconst' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO 'pig-emptyconst/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testEmptyComplexStructuresMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/emptyconst").toString(), is("emptyconst=[]"));
+        assertThat(RestUtils.getMapping("pig-emptyconst/data").toString(), is("data=[]"));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/createwithid' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO 'pig-createwithid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -204,10 +204,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCreateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/createwithid").toString(),
+        assertThat(RestUtils.getMapping("pig-createwithid/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("createwithid=[id=LONG, links=TEXT, name=TEXT]")
-                        : is("createwithid=[id=LONG, links=STRING, name=STRING]"));
+                        ? is("data=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("data=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -221,7 +221,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/updatewoid' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO 'pig-updatewoid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update');";
         pig.executeScript(script);
     }
@@ -232,7 +232,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/update' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO 'pig-update/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -240,10 +240,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/update").toString(),
+        assertThat(RestUtils.getMapping("pig-update/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("update=[id=LONG, links=TEXT, name=TEXT]")
-                        : is("update=[id=LONG, links=STRING, name=STRING]"));
+                        ? is("data=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("data=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -252,7 +252,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/updatewoupsert' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO 'pig-updatewoupsert/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -260,13 +260,14 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testParentChild() throws Exception {
-        RestUtils.putMapping("pig/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.createMultiTypeIndex("pig-pc");
+        RestUtils.putMapping("pig-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO 'pig-pc/child' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_MAPPING_PARENT + "=id','"
                                 + ConfigurationOptions.ES_INDEX_AUTO_CREATE + "=no');";
         pig.executeScript(script);
@@ -274,7 +275,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testParentChildMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/child").toString(),
+        assertThat(RestUtils.getMapping("pig-pc/child").toString(),
                 VERSION.onOrAfter(V_5_X)
                         ? is("child=[id=LONG, links=TEXT, name=TEXT]")
                         : is("child=[id=LONG, links=STRING, name=STRING]"));
@@ -282,9 +283,9 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testNestedTuple() throws Exception {
-        RestUtils.postData("pig/nestedtuple", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
-        RestUtils.postData("pig/nestedtuple", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
-        RestUtils.waitForYellow("pig");
+        RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.waitForYellow("pig-nestedtuple");
     }
 
 
@@ -293,17 +294,17 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'pig/pattern-{id}' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE A INTO 'pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-123").toString(),
+        assertThat(RestUtils.getMapping("pig-pattern-9/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-123=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
-                        : is("pattern-123=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     @Test
@@ -311,20 +312,20 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'pig/pattern-format-{timestamp:YYYY-MM-dd}' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE A INTO 'pig-pattern-format-{timestamp|YYYY-MM-dd}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig/pattern-format-2001-10-06").toString(),
+        assertThat(RestUtils.getMapping("pig-pattern-format-2001-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("pattern-format-2001-10-06=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
-                        : is("pattern-format-2001-10-06=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     private String loadSource() {
-        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray);";
+        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
     }
 }
