@@ -365,7 +365,7 @@ public class RestClient implements Closeable, StatsAware {
         return (Map<String, Object>) get(query, null);
     }
 
-    public Map<String, Object> sampleForFields(String indexAndType, Collection<String> fields) {
+    public Map<String, Object> sampleForFields(String index, String type, Collection<String> fields) {
         if (fields == null || fields.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -401,7 +401,12 @@ public class RestClient implements Closeable, StatsAware {
 
         sb.append("}}");
 
-        Map<String, List<Map<String, Object>>> hits = parseContent(execute(GET, indexAndType + "/_search", new BytesArray(sb.toString())).body(), "hits");
+        String endpoint = index;
+        if (StringUtils.hasText(type)) {
+            endpoint = index + "/" + type;
+        }
+
+        Map<String, List<Map<String, Object>>> hits = parseContent(execute(GET, endpoint + "/_search", new BytesArray(sb.toString())).body(), "hits");
         List<Map<String, Object>> docs = hits.get("hits");
         if (docs == null || docs.isEmpty()) {
             return Collections.emptyMap();

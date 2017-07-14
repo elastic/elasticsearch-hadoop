@@ -32,32 +32,32 @@ public class ResourceTest {
     @Test
     public void testJustIndex() throws Exception {
         Resource res = createResource("foo/_all");
-        assertEquals("foo/_all", res.indexAndType());
+        assertEquals("foo/_all", res.toString());
     }
 
     @Test
     public void testJustType() throws Exception {
         Resource res = createResource("_all/foo");
-        assertEquals("_all/foo", res.indexAndType());
+        assertEquals("_all/foo", res.toString());
     }
 
     @Test
     public void testIndexAndType() throws Exception {
         Resource res = createResource("foo/bar");
-        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("foo/bar", res.toString());
     }
 
     @Test
     public void testUnderscore() throws Exception {
         Resource res = createResource("fo_o/ba_r");
-        assertEquals("fo_o/ba_r", res.indexAndType());
+        assertEquals("fo_o/ba_r", res.toString());
     }
 
     @Test
     public void testQueryUri() throws Exception {
         Settings s = new TestSettings();
         Resource res = createResource("foo/bar/_search=?somequery", s);
-        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("foo/bar", res.toString());
         assertEquals("?somequery", s.getQuery());
     }
 
@@ -65,7 +65,7 @@ public class ResourceTest {
     public void testQueryUriWithParams() throws Exception {
         Settings s = new TestSettings();
         Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
-        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("foo/bar", res.toString());
         assertEquals("?somequery&bla=bla", s.getQuery());
     }
 
@@ -74,7 +74,7 @@ public class ResourceTest {
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/bar/_search=?somequery", s);
-        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("foo/bar", res.toString());
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
@@ -82,7 +82,7 @@ public class ResourceTest {
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
-        assertEquals("foo/bar", res.indexAndType());
+        assertEquals("foo/bar", res.toString());
     }
 
     @Test
@@ -116,7 +116,7 @@ public class ResourceTest {
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
         Resource res = createResource("pipeline/test", settings);
-        assertEquals("pipeline/test", res.indexAndType());
+        assertEquals("pipeline/test", res.toString());
         assertEquals("pipeline/test/_mapping", res.mapping());
         assertEquals("pipeline/_aliases", res.aliases());
         assertEquals("pipeline/test/_bulk?pipeline=ingest-pipeline", res.bulk());

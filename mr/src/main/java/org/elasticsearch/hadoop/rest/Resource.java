@@ -42,17 +42,17 @@ public class Resource {
     public Resource(Settings settings, boolean read) {
         String resource = (read ? settings.getResourceRead() : settings.getResourceWrite());
 
+        // 1) Resource must not be null
         String errorMessage = "invalid resource given; expecting [index]/[type] - received ";
         Assert.hasText(resource, errorMessage + resource);
 
-        // add compatibility for now
+        // 2) Resource may contain a query, so retrieve it and complain if it's already set
         if (resource.contains("?") || resource.contains("&")) {
             if (StringUtils.hasText(settings.getQuery())) {
                 throw new EsHadoopIllegalArgumentException(String.format(
                         "Cannot specify a query in the target index AND through %s", ConfigurationOptions.ES_QUERY));
             }
 
-            // extract query
             int index = resource.indexOf("?");
             if (index > 0) {
                 String query = resource.substring(index);
@@ -69,8 +69,17 @@ public class Resource {
 
         String res = StringUtils.sanitizeResource(resource);
 
+        // 3) Resource must contain an index, but may not necessarily contain a type
         int slash = res.indexOf("/");
         if (slash < 0) {
+            // No type is fine for reads since we assume reading from all mappings found for the given index pattern.
+            // No type is fatal for writes since we need a type to hand the bulk api.
+            if (read == false) {
+                throw new EsHadoopIllegalArgumentException(String.format(
+                        "No type found; Types are required when writing. Expected [index]/[type], but got [%s]",
+                        resource
+                ));
+            }
             index = res;
             type = StringUtils.EMPTY;
         }
@@ -85,6 +94,7 @@ public class Resource {
         
         indexAndType = index + "/" + type;
 
+        // 4) Render the other endpoints
         String bulkEndpoint = "/_bulk";
 
         String ingestPipeline = settings.getIngestPipeline();
@@ -111,16 +121,12 @@ public class Resource {
         return index + "/_aliases";
     }
 
-    String indexAndType() {
-        return indexAndType;
+    public String index() {
+        return index;
     }
 
     public String type() {
         return type;
-    }
-
-    public String index() {
-        return index;
     }
 
     @Override

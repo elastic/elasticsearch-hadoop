@@ -109,7 +109,7 @@ object AbstractScalaEsScalaSpark {
   def testParams(): ju.Collection[Array[jl.Object]] = {
     val list = new ju.ArrayList[Array[jl.Object]]()
     list.add(Array("default-", jl.Boolean.FALSE))
-    list.add(Array("with-meta-", jl.Boolean.TRUE))
+//    list.add(Array("with-meta-", jl.Boolean.TRUE))
     list
   }
 
@@ -667,6 +667,23 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertTrue(messages.count() == 2)
     assertNotNull(messages.take(10))
     assertNotNull(messages)
+  }
+
+  @Test
+  def testEsRDDReadNoType(): Unit = {
+    val doc =
+      """{
+        |  "id": 1,
+        |  "data": [],
+        |  "event": "acknowledge"
+        |}
+      """.stripMargin
+    val target = wrapIndex("spark-test-scala-basic-read-notype")
+    RestUtils.put("spark-test-scala-basic-read/events/1", doc.getBytes())
+
+    val noType = sc.esRDD("toto").first.toString
+    val typed = sc.esRDD("toto/events").first.toString
+    assertEquals(typed, noType)
   }
 
   @Test

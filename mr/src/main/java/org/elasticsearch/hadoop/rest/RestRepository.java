@@ -349,7 +349,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     public Map<String, GeoField> sampleGeoFields(Mapping mapping) {
         Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
-        Map<String, Object> geoMapping = client.sampleForFields(resourceR.indexAndType(), fields.keySet());
+        Map<String, Object> geoMapping = client.sampleForFields(resourceR.index(), resourceR.type(), fields.keySet());
 
         Map<String, GeoField> geoInfo = new LinkedHashMap<String, GeoField>();
         for (Entry<String, GeoType> geoEntry : fields.entrySet()) {
@@ -421,12 +421,13 @@ public class RestRepository implements Closeable, StatsAware {
     public void delete() {
         if (client.internalVersion.on(EsMajorVersion.V_1_X)) {
             // ES 1.x - delete as usual
-            client.delete(resourceW.indexAndType());
+            // Delete just the mapping
+            client.delete(resourceW.index() + "/" + resourceW.type());
         }
         else {
             // try first a blind delete by query (since the plugin might be installed)
             try {
-                client.delete(resourceW.indexAndType() + "/_query?q=*");
+                client.delete(resourceW.index() + "/" + resourceW.type() + "/_query?q=*");
             } catch (EsHadoopInvalidRequest ehir) {
                 log.info("Skipping delete by query as the plugin is not installed...");
             }
@@ -439,7 +440,7 @@ public class RestRepository implements Closeable, StatsAware {
             // 250 results
 
             int batchSize = 500;
-            StringBuilder sb = new StringBuilder(resourceW.indexAndType());
+            StringBuilder sb = new StringBuilder(resourceW.index() + "/" + resourceW.type());
             sb.append("/_search?scroll=10m&_source=false&size=");
             sb.append(batchSize);
             if (client.internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
@@ -482,7 +483,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     public long count(boolean read) {
         Resource res = (read ? resourceR : resourceW);
-        return client.count(res.indexAndType(), QueryUtils.parseQuery(settings));
+        return client.count(res.index() + "/" + res.type(), QueryUtils.parseQuery(settings));
     }
 
     public boolean waitForYellow() {
