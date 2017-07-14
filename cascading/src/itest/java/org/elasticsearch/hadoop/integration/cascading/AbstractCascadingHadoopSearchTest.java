@@ -171,18 +171,18 @@ public class AbstractCascadingHadoopSearchTest {
         build(cfg, in, out, pipe);
     }
 
-//    @Test
+    @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-9/data"));
     }
 
-//    @Test
+    @Test
     public void testDynamicPatternFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2001-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2500-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2990-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-hadoop-pattern-format-2017-10-06/data"));
     }
 
     private Properties cfg() {

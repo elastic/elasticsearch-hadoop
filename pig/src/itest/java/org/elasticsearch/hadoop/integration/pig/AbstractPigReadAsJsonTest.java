@@ -87,7 +87,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testtuple");
 
         List<String> doc1 = Lists.newArrayList(
-                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2011-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -95,7 +95,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc2 = Lists.newArrayList(
-                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2871-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -103,7 +103,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc3 = Lists.newArrayList(
-                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2933-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -127,7 +127,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testtupleschema");
 
         List<String> doc1 = Lists.newArrayList(
-                "{\"number\":\"999\",\"name\":\"Thompson Twins\",\"url\":\"http://www.last.fm/music/Thompson+Twins\",\"picture\":\"http://userserve-ak.last.fm/serve/252/6943589.jpg\",\"@timestamp\":\"2950-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"999\",\"name\":\"Thompson Twins\",\"url\":\"http://www.last.fm/music/Thompson+Twins\",\"picture\":\"http://userserve-ak.last.fm/serve/252/6943589.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -135,7 +135,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc2 = Lists.newArrayList(
-                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2011-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -143,7 +143,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc3 = Lists.newArrayList(
-                "{\"number\":\"230\",\"name\":\"Green Day\",\"url\":\"http://www.last.fm/music/Green+Day\",\"picture\":\"http://userserve-ak.last.fm/serve/252/15291249.jpg\",\"@timestamp\":\"2215-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"230\",\"name\":\"Green Day\",\"url\":\"http://www.last.fm/music/Green+Day\",\"picture\":\"http://userserve-ak.last.fm/serve/252/15291249.jpg\",\"@timestamp\":\"2005-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\"data\",\"_id\":\"");
@@ -166,7 +166,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testfieldalias");
 
         List<String> doc1 = Lists.newArrayList(
-                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2011-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\"data\",\"_id\":\"");
@@ -174,7 +174,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc2 = Lists.newArrayList(
-                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2871-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\"data\",\"_id\":\"");
@@ -182,7 +182,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc3 = Lists.newArrayList(
-                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2933-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\"data\",\"_id\":\"");
@@ -217,7 +217,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testparentchild");
 
         List<String> doc1 = Lists.newArrayList(
-                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2011-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc1.add(",\"_metadata\":{\"_index\":\"json-pig-pc\",\"_type\":\"child\",\"_id\":\"");
@@ -228,7 +228,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc2 = Lists.newArrayList(
-                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2871-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc2.add(",\"_metadata\":{\"_index\":\"json-pig-pc\",\"_type\":\"child\",\"_id\":\"");
@@ -239,7 +239,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         }
 
         List<String> doc3 = Lists.newArrayList(
-                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2933-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
+                "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
             doc3.add(",\"_metadata\":{\"_index\":\"json-pig-pc\",\"_type\":\"child\",\"_id\":\"");
@@ -257,15 +257,15 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("json-pig-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists("json-pig-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists("json-pig-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2010-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2200-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2873-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("json-pig-pattern-format-2017-10-06/data"));
     }
 
     private static String tmpPig() {

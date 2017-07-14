@@ -136,15 +136,15 @@ public class AbstractCascadingLocalSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-local-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists("cascading-local-pattern-format-2001-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-format-2198-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-format-2900-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("cascading-local-pattern-format-2017-10-06/data"));
     }
 
     private Properties cfg() {

@@ -141,15 +141,15 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2936-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2051-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2945-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("mrnewapi-pattern-format-2017-10-06/data"));
     }
 
 

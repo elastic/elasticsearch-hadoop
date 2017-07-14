@@ -294,17 +294,17 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'pig-pattern-{id}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE A INTO 'pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-pattern-123/data").toString(),
+        assertThat(RestUtils.getMapping("pig-pattern-9/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
-                        : is("data=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     @Test
@@ -321,11 +321,11 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testIndexPatternFormatMapping() throws Exception {
         assertThat(RestUtils.getMapping("pig-pattern-format-2001-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, timestamp=DATE, url=TEXT]")
-                        : is("data=[id=LONG, name=STRING, picture=STRING, timestamp=DATE, url=STRING]"));
+                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     private String loadSource() {
-        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray);";
+        return "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, name:chararray, url:chararray, picture: chararray, timestamp: chararray, tag:long);";
     }
 }

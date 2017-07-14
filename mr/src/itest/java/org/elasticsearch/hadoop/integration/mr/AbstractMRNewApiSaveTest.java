@@ -74,18 +74,14 @@ public class AbstractMRNewApiSaveTest {
             entry.put("name", st.nextToken());
             entry.put("url", st.nextToken());
 
-            if (st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 String str = st.nextToken();
                 if (str.startsWith("http")) {
                     entry.put("picture", str);
-
-                    if (st.hasMoreTokens()) {
-                        String token = st.nextToken();
-                        entry.put("@timestamp", token);
-                    }
-                }
-                else {
+                } else if (str.startsWith("20")) {
                     entry.put("@timestamp", str);
+                } else if (str.startsWith("1") || str.startsWith("2") || str.startsWith("5") || str.startsWith("9") || str.startsWith("10")) {
+                    entry.put("tag", str);
                 }
             }
 
@@ -392,7 +388,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-{number}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-{tag}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

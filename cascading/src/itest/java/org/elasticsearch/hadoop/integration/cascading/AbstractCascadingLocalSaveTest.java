@@ -80,7 +80,7 @@ public class AbstractCascadingLocalSaveTest {
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts", "tag")));
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.names", "url:address");
@@ -120,7 +120,7 @@ public class AbstractCascadingLocalSaveTest {
         Pipe pipe = new Pipe("copy");
 
         // rename "ts" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("id", "name", "url", "picture", "garbage")));
+        pipe = new Each(pipe, new Identity(new Fields("id", "name", "url", "picture", "garbage", "tag")));
 
         Properties props = new TestSettings().getProperties();
         props.setProperty("es.mapping.id", "id");
@@ -142,17 +142,17 @@ public class AbstractCascadingLocalSaveTest {
 
         // local file-system source
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-local-pattern-{id}/data", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-local-pattern-{tag}/data", new Fields("id", "name", "url", "picture", "tag"));
         Pipe pipe = new Pipe("copy");
         build(properties, in, out, pipe);
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-pattern-12/data").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-pattern-5/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, tag=TEXT, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, tag=STRING, url=STRING]"));
     }
 
     @Test
@@ -169,7 +169,7 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-pattern-format-2012-10-06/data").toString(),
+        assertThat(RestUtils.getMapping("cascading-local-pattern-format-2017-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
                         ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
                         : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
@@ -359,7 +359,7 @@ public class AbstractCascadingLocalSaveTest {
     }
 
     private Tap sourceTap() {
-        return new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
+        return new FileTap(new TextDelimited(new Fields("id", "name", "url", "picture", "ts", "tag")), INPUT);
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {

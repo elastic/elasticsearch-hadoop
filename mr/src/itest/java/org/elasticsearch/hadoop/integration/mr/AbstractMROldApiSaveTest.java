@@ -84,18 +84,14 @@ public class AbstractMROldApiSaveTest {
             entry.put("url", st.nextToken());
             entry.put("list", Arrays.asList("quick", "brown", "fox"));
 
-            if (st.hasMoreTokens()) {
+            while (st.hasMoreTokens()) {
                 String str = st.nextToken();
                 if (str.startsWith("http")) {
                     entry.put("picture", str);
-
-                    if (st.hasMoreTokens()) {
-                        String token = st.nextToken();
-                        entry.put("@timestamp", token);
-                    }
-                }
-                else {
+                } else if (str.startsWith("20")) {
                     entry.put("@timestamp", str);
+                } else if (str.startsWith("1") || str.startsWith("2") || str.startsWith("5") || str.startsWith("9") || str.startsWith("10")) {
+                    entry.put("tag", str);
                 }
             }
 
@@ -552,7 +548,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-{number}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pattern-{tag}/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);

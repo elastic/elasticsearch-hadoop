@@ -139,7 +139,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-pattern-{number}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO 'json-pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
         pig.executeScript(script);
     }

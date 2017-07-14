@@ -78,7 +78,7 @@ public class AbstractCascadingHadoopSaveTest {
         Pipe pipe = new Pipe("copy");
 
         // rename "id" -> "garbage"
-        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts")));
+        pipe = new Each(pipe, new Identity(new Fields("garbage", "name", "url", "picture", "ts", "tag")));
 
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
         props.setProperty("es.mapping.names", "url:address");
@@ -98,17 +98,17 @@ public class AbstractCascadingHadoopSaveTest {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 
         Tap in = sourceTap();
-        Tap out = new EsTap("cascading-hadoop-pattern-{id}/data", new Fields("id", "name", "url", "picture"));
+        Tap out = new EsTap("cascading-hadoop-pattern-{tag}/data", new Fields("id", "name", "url", "picture", "tag"));
         Pipe pipe = new Pipe("copy");
         StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
     }
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-12/data").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-5/data").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, tag=TEXT, url=TEXT]")
+                        : is("data=[id=STRING, name=STRING, picture=STRING, tag=STRING, url=STRING]"));
     }
 
     @Test
@@ -123,7 +123,7 @@ public class AbstractCascadingHadoopSaveTest {
 
     @Test
     public void testIndexPatternWithFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-format-2012-10-06/data").toString(),
+        assertThat(RestUtils.getMapping("cascading-hadoop-pattern-format-2017-10-06/data").toString(),
                 VERSION.onOrAfter(V_5_X)
                         ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
                         : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
@@ -145,6 +145,6 @@ public class AbstractCascadingHadoopSaveTest {
     }
 
     private Tap sourceTap() {
-        return new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture", "ts")), INPUT);
+        return new Hfs(new TextDelimited(new Fields("id", "name", "url", "picture", "ts", "tag")), INPUT);
     }
 }

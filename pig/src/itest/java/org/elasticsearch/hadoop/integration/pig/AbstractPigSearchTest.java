@@ -247,15 +247,15 @@ public class AbstractPigSearchTest extends AbstractPigTests {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("pig-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists("pig-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists("pig-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists("pig-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists("pig-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2010-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2500-10-06/data"));
-        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2990-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2001-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists("pig-pattern-format-2017-10-06/data"));
     }
 
     @Test

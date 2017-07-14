@@ -112,15 +112,15 @@ public class AbstractCascadingHadoopJsonSearchTest {
     @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-1/data"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-500/data"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-990/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-5/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-9/data"));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
         Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2001-10-06/data"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2198-10-06/data"));
-        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2890-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2005-10-06/data"));
+        Assert.assertTrue(RestUtils.exists(indexPrefix + "cascading-hadoop-pattern-format-2017-10-06/data"));
     }
 
     private void build(Properties cfg, Tap in, Tap out, Pipe pipe) {
