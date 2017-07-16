@@ -37,6 +37,10 @@ def createClusterFor(Task integrationTest, String version) {
     // Version settings
     def majorVersion = version.tokenize(".").get(0).toInteger()
 
+    // In rare occasions ES nodes will refuse to close. Try to keep
+    // Elasticsearch from forming clusters with these broken processes.
+    def uniqueRunId = UUID.randomUUID().toString()
+
     // General settings
     def clusterName = "elasticsearch-fixture"
     def nodeName = "node-1"
@@ -137,7 +141,7 @@ def createClusterFor(Task integrationTest, String version) {
 
     // Write the contents of the node's configuration file
     Map esConfig = [
-            'cluster.name'                 : clusterName,
+            'cluster.name'                 : "$clusterName-$uniqueRunId",
             'node.name'                    : "node-1",
             'pidfile'                      : pidFile.toString(),
             'path.home'                    : homeDir.toString(),
