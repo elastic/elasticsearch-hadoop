@@ -1,0 +1,29 @@
+{
+  "index": {
+    "mappings": {
+      "friend": {
+        "dynamic_templates": [
+          {
+            "long_to_int": {
+              "match_mapping_type": "long",
+              "mapping": {
+                "type": "integer"
+              }
+            }
+          }
+        ],
+        "properties": {
+          "hobbies": {
+            "type": "text"
+          },
+          "job": {
+            "type": "text"
+          },
+          "name": {
+            "type": "text"
+          }
+        }
+      }
+    }
+  }
+}

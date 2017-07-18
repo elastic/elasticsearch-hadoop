@@ -311,4 +311,19 @@ public class MappingTest {
         assertEquals("field3", mapping.getFields()[2].name());
         assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
     }
+
+    @Test
+    public void testDynamicTemplateIndex() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("dynamic-template.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        Mapping mapping = mappings.getMapping("index", "friend");
+        assertEquals("friend", mapping.getName());
+        assertEquals("hobbies", mapping.getFields()[0].name());
+        assertEquals(FieldType.TEXT, mapping.getFields()[0].type());
+        assertEquals("job", mapping.getFields()[1].name());
+        assertEquals(FieldType.TEXT, mapping.getFields()[1].type());
+        assertEquals("name", mapping.getFields()[2].name());
+        assertEquals(FieldType.TEXT, mapping.getFields()[2].type());
+    }
 }
