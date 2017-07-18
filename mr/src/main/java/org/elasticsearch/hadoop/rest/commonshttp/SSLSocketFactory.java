@@ -42,6 +42,9 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -87,6 +90,8 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
             return chain.length == 1;
         }
     }
+
+    private static final Log LOG = LogFactory.getLog(SSLSocketFactory.class);
 
     private SSLContext sslContext = null;
 
@@ -175,7 +180,15 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         InputStream in = null;
         try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loading keystore located at [" + location + "]");
+            }
             in = IOUtils.open(location);
+            if (in == null) {
+                throw new EsHadoopIllegalArgumentException(String.format("Expected to find keystore file at [%s] but " +
+                        "was unable to. Make sure that it is available on the classpath, or if not, that you have " +
+                        "specified a valid URI.", location));
+            }
             keyStore.load(in, pass);
         }
         finally {
@@ -186,6 +199,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
 
     private KeyManager[] loadKeyManagers() throws GeneralSecurityException, IOException {
         if (!StringUtils.hasText(keyStoreLocation)) {
+            LOG.warn("No keystore location specified! SSL is continuing with no keystore.");
             return null;
         }
 
@@ -202,6 +216,8 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
         if (StringUtils.hasText(trustStoreLocation)) {
             char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
             keyStore = loadKeyStore(trustStoreLocation, pass);
+        } else {
+            LOG.warn("No truststore location specified! SSL is continuing with no truststore.");
         }
 
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
