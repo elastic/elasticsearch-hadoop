@@ -177,7 +177,7 @@ public abstract class IOUtils {
             }
             return new URL(resource).openStream();
         } catch (IOException ex) {
-            throw new EsHadoopIllegalArgumentException(String.format("Cannot open stream (inlined queries need to be marked as such through `?` and `{}`) for resource %s", resource));
+            throw new EsHadoopIllegalArgumentException(String.format("Cannot open stream for resource %s", resource), ex);
         }
     }
 
