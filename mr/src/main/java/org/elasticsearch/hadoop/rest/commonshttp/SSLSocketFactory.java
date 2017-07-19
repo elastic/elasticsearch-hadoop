@@ -183,12 +183,18 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Loading keystore located at [" + location + "]");
             }
-            in = IOUtils.open(location);
-            if (in == null) {
+
+            try {
+                in = IOUtils.open(location);
+                if (in == null) {
+                    throw new EsHadoopIllegalArgumentException(String.format("Could not locate [%s] on classpath", location));
+                }
+            } catch (Exception e) {
                 throw new EsHadoopIllegalArgumentException(String.format("Expected to find keystore file at [%s] but " +
                         "was unable to. Make sure that it is available on the classpath, or if not, that you have " +
                         "specified a valid URI.", location));
             }
+
             keyStore.load(in, pass);
         }
         finally {
