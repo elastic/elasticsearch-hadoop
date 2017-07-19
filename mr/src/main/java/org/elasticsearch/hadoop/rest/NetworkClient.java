@@ -124,8 +124,7 @@ public class NetworkClient implements StatsAware, Closeable {
                     throw new EsHadoopTransportException(ex);
                 }
                 // check for fatal, non-recoverable network exceptions
-
-                if (ex instanceof BindException || ex instanceof NoRouteToHostException || ex instanceof UnknownHostException) {
+                if (ex instanceof BindException) {
                     throw new EsHadoopTransportException(ex);
                 }
 
