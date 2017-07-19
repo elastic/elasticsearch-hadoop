@@ -19,26 +19,42 @@
 package org.elasticsearch.spark.serialization
 
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
-import org.junit.Assert._
 import org.junit.Test
 import org.junit.Assert._
-import org.hamcrest.Matchers._
 import java.io.ByteArrayOutputStream
+
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
+import org.elasticsearch.hadoop.cfg.Settings
+import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
+import org.elasticsearch.hadoop.util.TestSettings
+import org.elasticsearch.spark.serialization.testbeans.Contact
+import org.elasticsearch.spark.serialization.testbeans.ContactBook
 
 class ScalaValueWriterTest {
 
-  private def serialize(value: AnyRef): String = {
+  private def serialize(value: AnyRef): String = serialize(value, null)
+
+  private def serialize(value: AnyRef, settings: Settings): String = {
     val out = new ByteArrayOutputStream()
     val generator = new JacksonJsonGenerator(out)
 
     val writer = new ScalaValueWriter()
-    writer.write(value, generator)
+    if (settings != null) {
+      writer.setSettings(settings)
+    }
+    val result = writer.write(value, generator)
+    if (result.isSuccesful == false) {
+      throw new EsHadoopSerializationException("Could not serialize [" + result.getUnknownValue + "]")
+    }
     generator.flush()
 
     new String(out.toByteArray)
   }
 
   case class SimpleCaseClass(s: String)
+  class Garbage(i: Int) {
+    def doNothing(): Unit = ()
+  }
 
   @Test
   def testSimpleMap() {
@@ -73,6 +89,21 @@ class ScalaValueWriterTest {
   @Test
   def testNestedMap(){
     assertEquals("""{"p":{"s":"bar"}}""", serialize(Map("p" -> SimpleCaseClass("bar"))))
+  }
+
+  @Test
+  def testNestedJavaBean(): Unit = {
+    val contacts = new java.util.LinkedHashMap[String, Contact]()
+    contacts.put("Benny", new Contact("Benny", "Some guy"))
+    contacts.put("The Jets", new Contact("The Jets", "Benny's associates"))
+    assertEquals("""{"contacts":{"Benny":{"name":"Benny","relation":"Some guy"},"The Jets":{"name":"The Jets","relation":"Benny's associates"}},"owner":"me"}""", serialize(new ContactBook("me", contacts)))
+  }
+
+  @Test(expected = classOf[EsHadoopSerializationException])
+  def testMapWithInvalidObject(): Unit = {
+    val map = new java.util.HashMap[String, Object]()
+    map.put("test", new Garbage(42))
+    serialize(map)
   }
 
 }

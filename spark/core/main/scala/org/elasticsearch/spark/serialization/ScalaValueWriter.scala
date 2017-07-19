@@ -37,13 +37,18 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
     doWrite(value, generator, true)
   }
 
+
+  override protected def doWrite(value: Any, generator: Generator, parentField: String): Result = {
+    doWrite(value, generator, true)
+  }
+
   private def doWrite(value: Any, generator: Generator, acceptsJavaBeans: Boolean): Result = {
     value match {
       case null | None | () => generator.writeNull()
       case Nil =>
         generator.writeBeginArray(); generator.writeEndArray()
 
-      case Some(s: AnyRef) => return doWrite(s, generator, false)
+      case Some(s: AnyRef) => return doWrite(s, generator, true)
 
       case m: Map[_, _] => {
         generator.writeBeginObject()
@@ -62,7 +67,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Traversable[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, false)
+          val result = doWrite(v, generator, true)
           if (!result.isSuccesful()) {
             return result
           }
@@ -77,7 +82,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Array[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, false)
+          val result = doWrite(v, generator, true)
           if (!result.isSuccesful()) {
             return result
           }
@@ -88,7 +93,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case p: Product => {
         // handle case class
         if (RU.isCaseClass(p)) {
-          val result = doWrite(RU.caseClassValues(p), generator, false)
+          val result = doWrite(RU.caseClassValues(p), generator, true)
           if (!result.isSuccesful()) {
             return result
           }
@@ -96,7 +101,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         else {
           generator.writeBeginArray()
           for (t <- p.productIterator) {
-            val result = doWrite(t.asInstanceOf[AnyRef], generator, false)
+            val result = doWrite(t.asInstanceOf[AnyRef], generator, true)
             if (!result.isSuccesful()) {
               return result
             }
@@ -111,13 +116,23 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
           throw new EsHadoopIllegalArgumentException("Spark SQL types are not handled through basic RDD saveToEs() calls; typically this is a mistake(as the SQL schema will be ignored). Use 'org.elasticsearch.spark.sql' package instead")
         }
 
-        // normal JDK types failed, try the JavaBean last
-        val result = super.write(value, generator)
-        if (!result.isSuccesful()) {
+        val result = super.doWrite(value, generator, generator.getParentPath)
+
+        // Normal JDK types failed, try the JavaBean last. The JavaBean logic accepts just about
+        // anything, even if it's not a real java bean. Check to see if the value that failed
+        // is the same value we're about to treat as a bean. If the failed value is not the current
+        // value, then the last call probably failed on a subfield of the current value that
+        // couldn't be serialized; There's a chance that we could treat a container object (map,
+        // list) like a java bean, which is improper. In these cases we should skip the javabean
+        // handling and just return the result
+        if (!result.isSuccesful() && result.getUnknownValue == value) {
           if (acceptsJavaBeans && RU.isJavaBean(value)) {
-            return doWrite(RU.javaBeanAsMap(value), generator, false)
-          } else
+            return doWrite(RU.javaBeanAsMap(value), generator, true)
+          } else {
             return result
+          }
+        } else {
+          return result
         }
       }
     }

@@ -40,6 +40,10 @@ public interface ValueWriter<T> {
             return SUCCESFUL == this;
         }
 
+        public Object getUnknownValue() {
+            return unknownValue;
+        }
+
         public static Result SUCCESFUL() {
             return SUCCESFUL;
         }
