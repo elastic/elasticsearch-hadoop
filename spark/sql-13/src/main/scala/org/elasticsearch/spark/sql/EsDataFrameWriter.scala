@@ -18,11 +18,9 @@
  */
 package org.elasticsearch.spark.sql
 
-//import org.apache.spark.sql.catalyst.expressions.Row
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 import org.elasticsearch.spark.rdd.EsRDDWriter
-import org.elasticsearch.spark.serialization.ScalaValueWriter
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor

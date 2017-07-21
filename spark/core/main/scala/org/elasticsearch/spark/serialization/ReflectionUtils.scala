@@ -86,6 +86,7 @@ private[spark] object ReflectionUtils {
       if (!isCaseClazz) {
         isCaseClazz = isCaseClassInsideACompanionModule(p.getClass, p.productArity)
         if (isCaseClazz) {
+          // Todo: Fix this logger usage
           LogFactory.getLog(classOf[ScalaValueWriter]).warn(
               String.format("[%s] is detected as a case class in Java but not in Scala and thus " +
                   "its properties might be detected incorrectly - make sure the @ScalaSignature is available within the class bytecode " +

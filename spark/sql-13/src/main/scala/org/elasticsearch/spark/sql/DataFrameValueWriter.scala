@@ -49,7 +49,6 @@ import org.elasticsearch.hadoop.serialization.SettingsAware
 import org.elasticsearch.hadoop.serialization.builder.FilteringValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 import org.elasticsearch.hadoop.util.unit.Booleans
-import org.elasticsearch.spark.serialization.ScalaValueWriter
 
 
 class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends FilteringValueWriter[(Row, StructType)] with SettingsAware {
@@ -58,7 +57,6 @@ class DataFrameValueWriter(writeUnknownTypes: Boolean = false) extends Filtering
     this(false)
   }
 
-  private val scalaValueWriter = new ScalaValueWriter(writeUnknownTypes)
   private var writeNullValues: Boolean = Booleans.parseBoolean(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT)
 
   override def setSettings(settings: Settings): Unit = {

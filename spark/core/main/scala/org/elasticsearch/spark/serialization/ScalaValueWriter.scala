@@ -24,7 +24,6 @@ import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
 import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
-import org.elasticsearch.spark.rdd.CompatUtils
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
@@ -34,29 +33,29 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
   }
 
   override def write(value: AnyRef, generator: Generator): Result = {
-    doWrite(value, generator, true)
+    doWrite(value, generator, null, true)
   }
 
 
   override protected def doWrite(value: Any, generator: Generator, parentField: String): Result = {
-    doWrite(value, generator, true)
+    doWrite(value, generator, parentField, true)
   }
 
-  private def doWrite(value: Any, generator: Generator, acceptsJavaBeans: Boolean): Result = {
+  private def doWrite(value: Any, generator: Generator, parentField:String, acceptsJavaBeans: Boolean): Result = {
     value match {
       case null | None | () => generator.writeNull()
       case Nil =>
         generator.writeBeginArray(); generator.writeEndArray()
 
-      case Some(s: AnyRef) => return doWrite(s, generator, true)
+      case Some(s: AnyRef) => return doWrite(s, generator, parentField, true)
 
       case m: Map[_, _] => {
         generator.writeBeginObject()
         for ((k, v) <- m) {
-          if (shouldKeep(generator.getParentPath(), k.toString())) {
-            generator.writeFieldName(k.toString())
-            val result = doWrite(v, generator, false)
-            if (!result.isSuccesful()) {
+          if (shouldKeep(parentField, k.toString)) {
+            generator.writeFieldName(k.toString)
+            val result = doWrite(v, generator, k.toString, true)
+            if (!result.isSuccesful) {
               return result
             }
           }
@@ -67,8 +66,8 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Traversable[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, true)
-          if (!result.isSuccesful()) {
+          val result = doWrite(v, generator, parentField, true)
+          if (!result.isSuccesful) {
             return result
           }
         }
@@ -76,14 +75,14 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       }
 
       case b: Array[Byte] => {
-        generator.writeBinary(b);
+        generator.writeBinary(b)
       }
-      
+
       case i: Array[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, true)
-          if (!result.isSuccesful()) {
+          val result = doWrite(v, generator, parentField, true)
+          if (!result.isSuccesful) {
             return result
           }
         }
@@ -93,16 +92,16 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case p: Product => {
         // handle case class
         if (RU.isCaseClass(p)) {
-          val result = doWrite(RU.caseClassValues(p), generator, true)
-          if (!result.isSuccesful()) {
+          val result = doWrite(RU.caseClassValues(p), generator, parentField, true)
+          if (!result.isSuccesful) {
             return result
           }
         } // normal product - treat it as a list/array
         else {
           generator.writeBeginArray()
           for (t <- p.productIterator) {
-            val result = doWrite(t.asInstanceOf[AnyRef], generator, true)
-            if (!result.isSuccesful()) {
+            val result = doWrite(t.asInstanceOf[AnyRef], generator, parentField, true)
+            if (!result.isSuccesful) {
               return result
             }
           }
@@ -116,7 +115,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
           throw new EsHadoopIllegalArgumentException("Spark SQL types are not handled through basic RDD saveToEs() calls; typically this is a mistake(as the SQL schema will be ignored). Use 'org.elasticsearch.spark.sql' package instead")
         }
 
-        val result = super.doWrite(value, generator, generator.getParentPath)
+        val result = super.doWrite(value, generator, parentField)
 
         // Normal JDK types failed, try the JavaBean last. The JavaBean logic accepts just about
         // anything, even if it's not a real java bean. Check to see if the value that failed
@@ -127,7 +126,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         // handling and just return the result
         if (!result.isSuccesful() && result.getUnknownValue == value) {
           if (acceptsJavaBeans && RU.isJavaBean(value)) {
-            return doWrite(RU.javaBeanAsMap(value), generator, true)
+            return doWrite(RU.javaBeanAsMap(value), generator, parentField, true)
           } else {
             return result
           }

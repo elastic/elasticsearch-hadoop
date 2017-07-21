@@ -99,6 +99,8 @@ public class JacksonJsonGenerator implements Generator {
             generator.writeStartObject();
             if (currentName != null) {
                 currentPath.addLast(currentName);
+                currentName = null;
+                currentPathCached = null;
             }
             return this;
         } catch (IOException ex) {
@@ -110,7 +112,7 @@ public class JacksonJsonGenerator implements Generator {
     public Generator writeEndObject() {
         try {
             generator.writeEndObject();
-            currentPath.pollLast();
+            currentName = currentPath.pollLast();
             currentPathCached = null;
             return this;
         } catch (IOException ex) {

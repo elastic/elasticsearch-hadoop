@@ -106,4 +106,21 @@ class ScalaValueWriterTest {
     serialize(map)
   }
 
+  @Test
+  def testIgnoreScalaToJavaToScalaFieldExclusion(): Unit = {
+    val someValue = "value"
+    val javaMap = new java.util.LinkedHashMap[String, Object]()
+    javaMap.put("jkey", someValue)
+    javaMap.put("ignoreme", someValue)
+    val scalaMap = scala.collection.immutable.Map("skey" -> javaMap)
+
+    val settings = new TestSettings()
+    settings.setProperty(ConfigurationOptions.ES_MAPPING_EXCLUDE, "skey.ignoreme")
+
+    val serialized = serialize(scalaMap, settings)
+    println(serialized)
+    assertEquals("""{"skey":{"jkey":"value"}}""", serialized)
+  }
+
+
 }
