@@ -229,15 +229,24 @@ public class PigValueWriter extends FilteringValueWriter<PigTuple> {
         }
 
         for (int i = 0; i < nestedFields.length; i++) {
+            // Do this based on if the field name is included.
             if (writeAsObject) {
                 String name = nestedFields[i].getName();
                 // handle schemas without names
-                name = (StringUtils.hasText(name) ? alias.toES(name) : Integer.toString(i));
-                generator.writeFieldName(name);
-            }
-            Result res = write(tuples.get(i), nestedFields[i], generator);
-            if (!res.isSuccesful()) {
-                return res;
+                boolean fieldHasName = StringUtils.hasText(name);
+                String actualName = (fieldHasName ? alias.toES(name) : Integer.toString(i));
+                if (shouldKeep(generator.getParentPath(), actualName)) {
+                    generator.writeFieldName(actualName);
+                    Result res = write(tuples.get(i), nestedFields[i], generator);
+                    if (!res.isSuccesful()) {
+                        return res;
+                    }
+                }
+            } else {
+                Result res = write(tuples.get(i), nestedFields[i], generator);
+                if (!res.isSuccesful()) {
+                    return res;
+                }
             }
         }
         if (writeAsObject) {

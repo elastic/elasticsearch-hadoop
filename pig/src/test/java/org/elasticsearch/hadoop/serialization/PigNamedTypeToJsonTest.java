@@ -28,10 +28,13 @@ import org.apache.pig.data.DefaultDataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.Utils;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.pig.PigTuple;
 import org.elasticsearch.hadoop.pig.PigValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -242,6 +245,15 @@ public class PigNamedTypeToJsonTest {
                 createSchema("{t:(chararray, chararray)}"))), is(expected));
     }
 
+    @Test
+    public void testNamedTupleWithExclusion() {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_MAPPING_EXCLUDE, "namedtuple.second");
+        String expected = "{\"namedtuple\":[{\"first\":\"one\"}]}";
+        assertThat(pigTypeToJson(createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two" })),
+                createSchema("namedtuple: (first:chararray, second:chararray)")), settings), is(expected));
+    }
+
     private ResourceSchema createSchema(String schema) {
         try {
             return new ResourceSchema(Utils.getSchemaFromString(schema));
@@ -257,7 +269,17 @@ public class PigNamedTypeToJsonTest {
     }
 
     private String pigTypeToJson(PigTuple obj) {
-        ContentBuilder.generate(out, new PigValueWriter(true)).value(obj).flush().close();
+        return pigTypeToJson(obj, null);
+    }
+
+    private String pigTypeToJson(PigTuple obj, Settings settings) {
+        PigValueWriter writer = new PigValueWriter(true);
+        if (settings != null) {
+            // Make sure to write with use.field.names as true
+            settings.setProperty("es.mapping.pig.tuple.use.field.names", "true");
+            writer.setSettings(settings);
+        }
+        ContentBuilder.generate(out, writer).value(obj).flush().close();
         return out.bytes().toString();
     }
 }
