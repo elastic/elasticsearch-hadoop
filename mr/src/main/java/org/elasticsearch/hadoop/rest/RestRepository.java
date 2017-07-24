@@ -90,27 +90,53 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean hadWriteErrors = false;
 
     private RestClient client;
-    private Resource resourceR;
-    private Resource resourceW;
     private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
     private MetadataExtractor metaExtractor;
 
+    // Internal
+    private static class Resources {
+        private final Settings resourceSettings;
+        private Resource resourceRead;
+        private Resource resourceWrite;
+
+        public Resources(Settings resourceSettings) {
+            this.resourceSettings = resourceSettings;
+        }
+
+        public Resource getResourceRead() {
+            if (resourceRead == null) {
+                if (StringUtils.hasText(resourceSettings.getResourceRead())) {
+                    resourceRead = new Resource(resourceSettings, true);
+                }
+            }
+            return resourceRead;
+        }
+
+        public Resource getResourceWrite() {
+            if (resourceWrite == null) {
+                if (StringUtils.hasText(resourceSettings.getResourceWrite())) {
+                    resourceWrite = new Resource(resourceSettings, false);
+                }
+            }
+            return resourceWrite;
+        }
+    }
+
     private final Settings settings;
+    private Resources resources;
     private final Stats stats = new Stats();
 
     public RestRepository(Settings settings) {
         this.settings = settings;
+        this.resources = new Resources(settings);
 
-        if (StringUtils.hasText(settings.getResourceRead())) {
-            this.resourceR = new Resource(settings, true);
-        }
-
-        if (StringUtils.hasText(settings.getResourceWrite())) {
-            this.resourceW = new Resource(settings, false);
-        }
-
-        Assert.isTrue(resourceR != null || resourceW != null, "Invalid configuration - No read or write resource specified");
+        // Check if we have a read resource first, and if not, THEN check the write resource
+        // The write resource has more strict parsing rules, and if the process is only reading
+        // with a resource that isn't good for writing, then eagerly parsing the resource as a
+        // write resource can erroneously throw an error. Instead, we should just get the write
+        // resource lazily as needed.
+        Assert.isTrue(resources.getResourceRead() != null || resources.getResourceWrite() != null, "Invalid configuration - No read or write resource specified");
 
         this.client = new RestClient(settings);
     }
@@ -219,7 +245,7 @@ public class RestRepository implements Closeable, StatsAware {
                     log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
                 }
 
-                bulkResult = client.bulk(resourceW, data);
+                bulkResult = client.bulk(resources.getResourceWrite(), data);
                 executedBulkWrite = true;
             } else {
                 bulkResult = BulkResponse.ok(0);
@@ -275,10 +301,10 @@ public class RestRepository implements Closeable, StatsAware {
 
             if (requiresRefreshAfterBulk && executedBulkWrite) {
                 // refresh batch
-                client.refresh(resourceW);
+                client.refresh(resources.getResourceWrite());
 
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resourceW));
+                    log.debug(String.format("Refreshing index [%s]", resources.getResourceWrite()));
                 }
             }
         } finally {
@@ -303,7 +329,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     protected List<List<Map<String, Object>>> doGetReadTargetShards() {
-        return client.targetShards(resourceR.index(), SettingsUtils.getFixedRouting(settings));
+        return client.targetShards(resources.getResourceRead().index(), SettingsUtils.getFixedRouting(settings));
     }
 
     public Map<ShardInfo, NodeInfo> getWriteTargetPrimaryShards(boolean clientNodesOnly) {
@@ -317,7 +343,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     protected Map<ShardInfo, NodeInfo> doGetWriteTargetPrimaryShards(boolean clientNodesOnly) {
-        List<List<Map<String, Object>>> info = client.targetShards(resourceW.index(), SettingsUtils.getFixedRouting(settings));
+        List<List<Map<String, Object>>> info = client.targetShards(resources.getResourceWrite().index(), SettingsUtils.getFixedRouting(settings));
         Map<ShardInfo, NodeInfo> shards = new LinkedHashMap<ShardInfo, NodeInfo>();
         List<NodeInfo> nodes = client.getHttpNodes(clientNodesOnly);
         Map<String, NodeInfo> nodeMap = new HashMap<String, NodeInfo>(nodes.size());
@@ -344,12 +370,12 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public MappingSet getMappings() {
-        return FieldParser.parseMapping(client.getMapping(resourceR.mapping()));
+        return FieldParser.parseMapping(client.getMapping(resources.getResourceRead().mapping()));
     }
 
     public Map<String, GeoField> sampleGeoFields(Mapping mapping) {
         Map<String, GeoType> fields = MappingUtils.geoFields(mapping);
-        Map<String, Object> geoMapping = client.sampleForFields(resourceR.index(), resourceR.type(), fields.keySet());
+        Map<String, Object> geoMapping = client.sampleForFields(resources.getResourceRead().index(), resources.getResourceRead().type(), fields.keySet());
 
         Map<String, GeoField> geoInfo = new LinkedHashMap<String, GeoField>();
         for (Entry<String, GeoType> geoEntry : fields.entrySet()) {
@@ -385,7 +411,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public boolean indexExists(boolean read) {
-        Resource res = (read ? resourceR : resourceW);
+        Resource res = (read ? resources.getResourceRead() : resources.getResourceWrite());
         // cheap hit
         boolean exists = client.indexExists(res.index());
         if (exists && StringUtils.hasText(res.type())) {
@@ -406,28 +432,28 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private boolean isReadIndexConcrete() {
-        String index = resourceR.index();
-        return !(index.contains(",") || index.contains("*") || client.isAlias(resourceR.aliases()));
+        String index = resources.getResourceRead().index();
+        return !(index.contains(",") || index.contains("*") || client.isAlias(resources.getResourceRead().aliases()));
     }
 
     public void putMapping(BytesArray mapping) {
-        client.putMapping(resourceW.index(), resourceW.mapping(), mapping.bytes());
+        client.putMapping(resources.getResourceWrite().index(), resources.getResourceWrite().mapping(), mapping.bytes());
     }
 
     public boolean touch() {
-        return client.touch(resourceW.index());
+        return client.touch(resources.getResourceWrite().index());
     }
 
     public void delete() {
         if (client.internalVersion.on(EsMajorVersion.V_1_X)) {
             // ES 1.x - delete as usual
             // Delete just the mapping
-            client.delete(resourceW.index() + "/" + resourceW.type());
+            client.delete(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type());
         }
         else {
             // try first a blind delete by query (since the plugin might be installed)
             try {
-                client.delete(resourceW.index() + "/" + resourceW.type() + "/_query?q=*");
+                client.delete(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type() + "/_query?q=*");
             } catch (EsHadoopInvalidRequest ehir) {
                 log.info("Skipping delete by query as the plugin is not installed...");
             }
@@ -440,7 +466,7 @@ public class RestRepository implements Closeable, StatsAware {
             // 250 results
 
             int batchSize = 500;
-            StringBuilder sb = new StringBuilder(resourceW.index() + "/" + resourceW.type());
+            StringBuilder sb = new StringBuilder(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type());
             sb.append("/_search?scroll=10m&_source=false&size=");
             sb.append(batchSize);
             if (client.internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
@@ -467,7 +493,7 @@ public class RestRepository implements Closeable, StatsAware {
 
                 flush();
                 // once done force a refresh
-                client.refresh(resourceW);
+                client.refresh(resources.getResourceWrite());
             } finally {
                 stats.aggregate(sq.stats());
                 sq.close();
@@ -476,18 +502,18 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public boolean isEmpty(boolean read) {
-        Resource res = (read ? resourceR : resourceW);
+        Resource res = (read ? resources.getResourceRead() : resources.getResourceWrite());
         boolean exists = client.indexExists(res.index());
         return (exists ? count(read) <= 0 : true);
     }
 
     public long count(boolean read) {
-        Resource res = (read ? resourceR : resourceW);
+        Resource res = (read ? resources.getResourceRead() : resources.getResourceWrite());
         return client.count(res.index() + "/" + res.type(), QueryUtils.parseQuery(settings));
     }
 
     public boolean waitForYellow() {
-        return client.waitForHealth(resourceW.index(), RestClient.Health.YELLOW, TimeValue.timeValueSeconds(10));
+        return client.waitForHealth(resources.getResourceWrite().index(), RestClient.Health.YELLOW, TimeValue.timeValueSeconds(10));
     }
 
     @Override
