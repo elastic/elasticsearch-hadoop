@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.spark.integration
 
-import java.awt.Polygon
 import java.util.concurrent.TimeUnit
 import java.{lang => jl, util => ju}
 
@@ -158,7 +157,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   @Test
   def testNestedUnknownCharacter(): Unit = {
     val expected = ExpectingToThrow(classOf[SparkException]).from(ssc)
-    val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())
+    val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(5))
     val batch = sc.makeRDD(Seq(doc))
     runStream(batch)(_.saveToEs(wrapIndex("spark-streaming-test-nested-map/data"), cfg))
     expected.assertExceptionFound()

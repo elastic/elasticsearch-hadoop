@@ -30,6 +30,8 @@ import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.spark.serialization.testbeans.Contact
 import org.elasticsearch.spark.serialization.testbeans.ContactBook
 
+import scala.beans.BeanProperty
+
 class ScalaValueWriterTest {
 
   private def serialize(value: AnyRef): String = serialize(value, null)
@@ -54,6 +56,11 @@ class ScalaValueWriterTest {
   case class SimpleCaseClass(s: String)
   class Garbage(i: Int) {
     def doNothing(): Unit = ()
+  }
+
+  class Node(@BeanProperty var info: String) {
+    @BeanProperty
+    var node: Node = _
   }
 
   @Test
@@ -106,6 +113,12 @@ class ScalaValueWriterTest {
     serialize(map)
   }
 
+  @Test(expected = classOf[EsHadoopSerializationException])
+  def testNestedUnknownValue(): Unit = {
+    val map = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(0))
+    serialize(map)
+  }
+
   @Test
   def testIgnoreScalaToJavaToScalaFieldExclusion(): Unit = {
     val someValue = "value"
@@ -122,5 +135,22 @@ class ScalaValueWriterTest {
     assertEquals("""{"skey":{"jkey":"value"}}""", serialized)
   }
 
+  @Test
+  def testReentrantData(): Unit = {
+    val node = new Node("value")
+    node.node = node
+    assertEquals("""{"info":"value"}""", serialize(node))
+  }
+
+  @Test(expected = classOf[EsHadoopSerializationException])
+  def testRingOfData(): Unit = {
+    val node1 = new Node("value1")
+    val node2 = new Node("value2")
+
+    node1.node = node2
+    node2.node = node1
+
+    println(serialize(node1))
+  }
 
 }

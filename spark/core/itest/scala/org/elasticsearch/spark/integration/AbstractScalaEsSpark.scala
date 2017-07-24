@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.spark.integration;
 
-import java.awt.Polygon
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -122,6 +121,10 @@ case class Trip(departure: String, arrival: String) {
   var extra = math.Pi
 }
 
+class Garbage(i: Int) {
+  def doNothing(): Unit = ()
+}
+
 @RunWith(classOf[Parameterized])
 class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extends Serializable {
 
@@ -178,7 +181,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test(expected = classOf[SparkException])
   def testNestedUnknownCharacter() {
-    val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Polygon())
+    val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(0))
     sc.makeRDD(Seq(doc)).saveToEs(wrapIndex("spark-test-nested-map/data"), cfg)
   }
 

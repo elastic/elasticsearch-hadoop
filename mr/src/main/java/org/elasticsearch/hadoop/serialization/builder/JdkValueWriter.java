@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.serialization.builder;
 
-import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;

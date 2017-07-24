@@ -23,38 +23,47 @@ import scala.collection.immutable.Nil
 import org.elasticsearch.hadoop.serialization.Generator
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter.Result
-import org.elasticsearch.spark.serialization.{ ReflectionUtils => RU }
+import org.elasticsearch.spark.serialization.{ReflectionUtils => RU}
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 
+import scala.collection.mutable
+
 class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWriter(writeUnknownTypes) {
+
+  /**
+   * Used for tracking the serialization of nested POJOs that are treated
+   * as JavaBeans. Alias for a mutable HashSet of type Any
+   */
+  type BeanTracker = mutable.HashSet[Any]
 
   def this() {
     this(false)
   }
 
-  override def write(value: AnyRef, generator: Generator): Result = {
-    doWrite(value, generator, null, true)
-  }
+  private[this] val beanTracker = new BeanTracker
 
+  override def write(value: AnyRef, generator: Generator): Result = {
+    doWriteScala(value, generator, null)
+  }
 
   override protected def doWrite(value: Any, generator: Generator, parentField: String): Result = {
-    doWrite(value, generator, parentField, true)
+    doWriteScala(value, generator, parentField)
   }
 
-  private def doWrite(value: Any, generator: Generator, parentField:String, acceptsJavaBeans: Boolean): Result = {
+  private def doWriteScala(value: Any, generator: Generator, parentField:String): Result = {
     value match {
       case null | None | () => generator.writeNull()
       case Nil =>
         generator.writeBeginArray(); generator.writeEndArray()
 
-      case Some(s: AnyRef) => return doWrite(s, generator, parentField, true)
+      case Some(s: AnyRef) => return doWrite(s, generator, parentField)
 
       case m: Map[_, _] => {
         generator.writeBeginObject()
         for ((k, v) <- m) {
           if (shouldKeep(parentField, k.toString)) {
             generator.writeFieldName(k.toString)
-            val result = doWrite(v, generator, k.toString, true)
+            val result = doWrite(v, generator, k.toString)
             if (!result.isSuccesful) {
               return result
             }
@@ -66,7 +75,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Traversable[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, parentField, true)
+          val result = doWrite(v, generator, parentField)
           if (!result.isSuccesful) {
             return result
           }
@@ -81,7 +90,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case i: Array[_] => {
         generator.writeBeginArray()
         for (v <- i) {
-          val result = doWrite(v, generator, parentField, true)
+          val result = doWrite(v, generator, parentField)
           if (!result.isSuccesful) {
             return result
           }
@@ -92,7 +101,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
       case p: Product => {
         // handle case class
         if (RU.isCaseClass(p)) {
-          val result = doWrite(RU.caseClassValues(p), generator, parentField, true)
+          val result = doWrite(RU.caseClassValues(p), generator, parentField)
           if (!result.isSuccesful) {
             return result
           }
@@ -100,7 +109,7 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         else {
           generator.writeBeginArray()
           for (t <- p.productIterator) {
-            val result = doWrite(t.asInstanceOf[AnyRef], generator, parentField, true)
+            val result = doWrite(t.asInstanceOf[AnyRef], generator, parentField)
             if (!result.isSuccesful) {
               return result
             }
@@ -124,9 +133,28 @@ class ScalaValueWriter(writeUnknownTypes: Boolean = false) extends JdkValueWrite
         // couldn't be serialized; There's a chance that we could treat a container object (map,
         // list) like a java bean, which is improper. In these cases we should skip the javabean
         // handling and just return the result
-        if (!result.isSuccesful() && result.getUnknownValue == value) {
-          if (acceptsJavaBeans && RU.isJavaBean(value)) {
-            return doWrite(RU.javaBeanAsMap(value), generator, parentField, true)
+        if (!result.isSuccesful && result.getUnknownValue == value) {
+          if (!beanTracker.contains(value) && RU.isJavaBean(value)) {
+
+            // Recursion warning:
+            // There's a chance that when we are handed an object, that object has a getter method
+            // that returns itself, or an object that contains itself, or any level of self nesting.
+            // This can cause stack overflow errors when serializing. Guard against this:
+
+            // First, keep track of objects we've seen, and don't try to serialize them while we're
+            // already serializing them
+            beanTracker.add(value)
+            try {
+              // Second, Try to sense the immediate case of self reference and break out early to avoid
+              // stack overflow.
+              val asMap = RU.javaBeanAsMap(value).filterNot(e => e._2 == value)
+              val beanResult = doWrite(asMap, generator, parentField)
+              return beanResult
+            } finally {
+              // Third, Allow usage of the same bean only if it doesn't recurse into itself.
+              // This doubles as clean-up logic to avoid having to clear the set every write call.
+              beanTracker.remove(value)
+            }
           } else {
             return result
           }
