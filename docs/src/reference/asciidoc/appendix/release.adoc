@@ -5,6 +5,7 @@
 --
 This section summarizes the changes in each release.
 
+* <<eshadoop-5.5.1>>
 * <<eshadoop-5.5.0>>
 * <<eshadoop-5.4.2>>
 * <<eshadoop-5.4.1>>
@@ -71,6 +72,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/5.5.1.adoc[]
 include::release-notes/5.5.0.adoc[]
 include::release-notes/5.4.2.adoc[]
 include::release-notes/5.4.1.adoc[]
