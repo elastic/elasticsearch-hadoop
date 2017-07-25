@@ -10,6 +10,19 @@ versions (e.g. 5.x to 6.y).
 For clarity, we always list any breaking changes at the top of the
 <<release-notes,release notes>> for each version.
 
+[[breaking-changes-5.5]]
+=== Breaking Changes in 5.5
+
+This section discusses the changes that you should be aware of if you
+upgrade Elasticsearch from version 5.4 to 5.5.
+
+==== Removed Deprecated
+
+In 5.5, Elasticsearch has removed a deprecated way of checking the existance
+of types. ES-Hadoop was previously using this deprecated endpoint up until
+the 5.4.x releases. If you have upgraded to Elasticsearch 5.5.0, you will
+need to upgrade ES-Hadoop to version 5.5.0.
+
 [[breaking-changes-5.0]]
 === Breaking Changes in 5.0
 
