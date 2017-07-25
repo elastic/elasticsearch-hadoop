@@ -386,6 +386,34 @@ configure(rootProject) {
         
         logger.info("Created Remote Testing Jar")
     }
+
+    // Simple utility task to help with downloading artifacts and jars
+    if (project.hasProperty("find-artifact")) {
+        String artifact = project.getProperty("find-artifact")
+
+        configurations {
+            findJar
+        }
+
+        dependencies {
+            findJar artifact
+        }
+
+        task find(type: Copy) {
+            dependsOn configurations.findJar
+            from configurations.findJar.first()
+            into new File(rootProject.buildDir, 'found/')
+            doLast {
+                if (configurations.findJar.files.size() > 0) {
+                    String artifactName = configurations.findJar.first().name
+                    File found = new File(rootProject.buildDir, 'found/')
+                    logger.lifecycle("Found [$artifactName] and stored it in [$found]")
+                } else {
+                    logger.lifecycle("Could not find artifact [$artifact]")
+                }
+            }
+        }
+    }
 }
 
 static String findJavaHome() {
