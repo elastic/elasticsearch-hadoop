@@ -1,0 +1,22 @@
+[[eshadoop-5.5.0]]
+== Elasticsearch for Apache Hadoop version 5.5.0
+July 06, 2017
+
+[[deprecation-5.5.0]]
+=== Deprecations
+* Hadoop 1.x Integration and APIs are deprecated and will be removed in 6.0
+https://github.com/elastic/elasticsearch-hadoop/pull/1009[#1009]
+* Elasticsearch on YARN Integration is now deprecated and will be removed in 6.0
+https://github.com/elastic/elasticsearch-hadoop/pull/1008[#1008]
+* TTL and Timestamp metadata fields will log warnings on use as they are removed in ES 6.0
+https://github.com/elastic/elasticsearch-hadoop/issues/986[#986]
+* Index pattern formatting using the colon character `:` is deprecated. Use the pipe character `|` instead.
+https://github.com/elastic/elasticsearch-hadoop/issues/985[#985]
+
+[[bugs-5.5.0]]
+=== Bug Fixes
+Section::
+* Fixed "Malformed scrollId" caused by es.scroll.limit being set
+https://github.com/elastic/elasticsearch-hadoop/issues/992[#992]
+* Fixed "scrollId is missing" when es.scroll.limit=10000
+https://github.com/elastic/elasticsearch-hadoop/issues/935[#935]

@@ -42,6 +42,11 @@ This section summarizes the changes in each release.
 == Elasticsearch for Apache Hadoop version 5.3.1
 Month 00, 2017
 
+[[deprecation-5.3.1]]
+=== Deprecations
+* Summary
+http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
+
 [[breaking-5.3.1]]
 === Breaking Changes
 * Summary
