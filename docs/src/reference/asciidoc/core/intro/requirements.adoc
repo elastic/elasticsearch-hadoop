@@ -65,7 +65,7 @@ Hadoop 2.4.1
 [[requirements-yarn]]
 === Apache YARN / Hadoop 2.x
 
-{eh} binary can run on Yarn / Hadoop 2.x without any changes or modifications.
+{eh} binary is tested against Hadoop 2.x and designed to run on Yarn without any changes or modifications.
 
 [[requirements-cascading]]
 === Cascading

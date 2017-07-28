@@ -43,7 +43,7 @@ Simply use the configuration object when constructing the Hadoop job and you are
 [float]
 === Writing data to {es}
 
-With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#glossary-index[indexes]. {eh} supports only the http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
+With {eh}, {mr} jobs can write data to {es} making it searchable through {ref}/glossary.html#glossary-index[indexes]. {eh} supports both (so-called)  http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapred/package-use.html['old'] and http://hadoop.apache.org/docs/r1.2.1/api/org/apache/hadoop/mapreduce/package-use.html['new'] Hadoop APIs.
 
 `EsOutputFormat` expects a `Map<Writable, Writable>` representing a _document_ value that is converted internally into a JSON document and indexed in {es}.
 Hadoop `OutputFormat` requires implementations to expect a key and a value however, since for {es} only the document (that is the value) is necessary, `EsOutputFormat`
@@ -51,7 +51,6 @@ ignores the key.
 
 [float]
 ==== 'Old' (`org.apache.hadoop.mapred`) API
-deprecated[5.5.0,"Hadoop old api library support is deprecated and will be removed in 6.0"]
 
 To write data to ES, use `org.elasticsearch.hadoop.mr.EsOutputFormat` on your job along with the relevant configuration <<configuration,properties>>:
 
@@ -104,8 +103,6 @@ At runtime, {eh} will extract the value from each document and use it accordingl
 [[writing-json-old-api]]
 ==== Writing existing JSON to {es}
 
-deprecated[5.5.0,"Hadoop old api library support is deprecated and will be removed in 6.0"]
-
 For cases where the job input data is already in JSON, {eh} allows direct indexing _without_ applying any transformation; the data is taken as is and sent directly to {es}. In such cases, one needs to indicate the json input by setting
 the `es.input.json` parameter. As such, in this case {eh} expects either a `Text` or `BytesWritable` (preferred as it requires no `String` conversion) object as output; if these types are not used, the library will simply fall back to the `toString` representation of the target object.
 
@@ -153,8 +150,6 @@ public class MyMapper extends MapReduceBase implements Mapper {
 [float]
 [[writing-dyn-index-old-api]]
 ==== Writing to dynamic/multi-resources
-
-deprecated[5.5.0,"Hadoop old api library support is deprecated and will be removed in 6.0"]
 
 For cases when the data being written to {es} needs to be indexed under different buckets (based on the data content) one can use the `es.resource.write` field which accepts pattern that are resolved from the document content, at runtime.
 Following the aforementioned <<cfg-multi-writes,media example>>, one could configure it as follows:
@@ -275,8 +270,6 @@ TIP: If one needs the document structure returned from {es} to be preserved, con
 
 [float]
 ==== 'Old' (`org.apache.hadoop.mapred`) API
-
-deprecated[5.5.0,"Hadoop old api library support is deprecated and will be removed in 6.0"]
 
 Following our example above on radio artists, to get a hold of all the artists that start with 'me', one could use the following snippet:
 

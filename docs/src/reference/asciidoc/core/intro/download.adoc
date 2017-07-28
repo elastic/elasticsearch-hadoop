@@ -16,7 +16,7 @@ The jar above contains all the features of {eh} and does not require any other d
 
 [[yarn]]
 {eh} binary is suitable for Hadoop 2.x (also known as YARN) environments.
-Support for Hadoop 1.x environments as well as the old mapred packages are deprecated in 5.5 and will be removed in 6.0.
+Support for Hadoop 1.x environments are deprecated in 5.5 and will no longer be tested against in 6.0.
 
 === Minimalistic binaries
 
