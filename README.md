@@ -54,9 +54,10 @@ or [build](#building-the-source) the project yourself.
 
 We do build and test the code on _each_ commit.
 
-### Supported Hadoop Version
+### Supported Hadoop Versions
 
-Hadoop 1.x as well as the "old" api (mapred) are deprecated in 5.5 and will be removed in 6.0.
+Running against Hadoop 1.x is deprecated in 5.5 and will no longer be tested against in 6.0.
+ES-Hadoop is developed for and tested against Hadoop 2.x and YARN.
 More information in this [section](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/install.html).
 
 ## Feedback / Q&A
@@ -93,12 +94,9 @@ For basic, low-level or performance-sensitive environments, ES-Hadoop provides d
 (either by bundling the library along - it's ~300kB and there are no-dependencies), using the [DistributedCache][] or by provisioning the cluster manually.
 See the [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for more information.
 
-Note that support of the (old) 'mapred' API is deprecated as of 5.5 and will be removed in 6.0. 
+Note that es-hadoop supports both the so-called 'old' and the 'new' API through its `EsInputFormat` and `EsOutputFormat` classes.
 
 ### 'Old' (`org.apache.hadoop.mapred`) API
-
-#### !!! DEPRECATED IN 5.5 !!!
-Support of the (old) 'mapred' API is deprecated as of 5.5 and will be removed in 6.0.
 
 ### Reading
 To read data from ES, configure the `EsInputFormat` on your job configuration along with the relevant [properties](#configuration-properties):

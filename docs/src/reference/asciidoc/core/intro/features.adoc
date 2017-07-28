@@ -19,6 +19,8 @@ Facilitates data co-location:: {eh} fully integrates with Hadoop exposing its ne
 
 {mr} API support:: At its core, {eh} uses the low-level {mr} API to read and write data to {es} allowing for maximum integration flexibility and performance.
 
+'old'(`mapred`) & 'new'(`mapreduce`) {mr} APIs supported:: {eh} automatically adjusts to your environment; one does not have to change between using the `mapred` or `mapreduce` APIs - both are supported, by the same classes, at the same time.
+
 Apache Hive support:: Run Hive queries against {es} for advanced analystics and _real_time_ responses. {eh} exposes {es} as a Hive table so your scripts can crunch through data faster then ever.
 
 Apache Pig support:: {eh} supports Apache Pig exposing {es} as a _native_ Pig `Storage`. Run your Pig scripts against {es} without any modifications to your configuration or the Pig client.
