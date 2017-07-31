@@ -1,0 +1,58 @@
+[[eshadoop-6.0.0-beta-1]]
+== Elasticsearch for Apache Hadoop version 6.0.0-beta1
+July 31, 2017
+
+Tested against the latest and greatest Elasticsearch 6.0.0-beta1, the first beta of ES-Hadoop for 6.0.0 includes much
+needed fixes and features to work in harmony with all the hearty changes landing in Elasticsearch 6.0.
+
+Please note that this is a beta release and that we do not recommend running this in production! See our
+<<breaking-changes-6.0>> page for more information on what you might need to modify.
+
+[[breaking-6.0.0-beta-1]]
+=== Breaking Changes
+* Elasticsearch on YARN is deprecated as of 5.5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+* Using Hadoop versions 1.x is deprecated as of 5.5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+
+[[new-6.0.0-beta-1]]
+=== New Features
+Serialization::
+* Support Elasticsearch "join" types
+http://github.com/elastic/elasticsearch-hadoop/issues/1012[#1012]
+
+[[enhancements-6.0.0-beta-1]]
+=== Enhancements
+Spark::
+* Spark 2.1.1 and 2.2.0 Support
+http://github.com/elastic/elasticsearch-hadoop/issues/978[#978]
+http://github.com/elastic/elasticsearch-hadoop/issues/1013[#1013]
+Scripting::
+* Allow users to use file based scripts during updates
+http://github.com/elastic/elasticsearch-hadoop/issues/918[#918]
+* Support script id/file/inline options
+http://github.com/elastic/elasticsearch-hadoop/issues/538[#538]
+REST::
+* Remove uses of features deprecated in 5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/881[#881]
+
+[[bugs-6.0.0-beta-1]]
+=== Bug Fixes
+Serialization::
+* Support nested collections of Java Bean classes in Spark
+http://github.com/elastic/elasticsearch-hadoop/issues/1021[#1021]
+* Not able to use kryoserializer for writing data into Elasticsearch
+http://github.com/elastic/elasticsearch-hadoop/issues/1019[#1019]
+* JacksonJsonGenerator.getParentPath will always be empty
+http://github.com/elastic/elasticsearch-hadoop/issues/1006[#1006]
+Pig::
+* Using es.mapping.exclude/include and still getting StrictDynamicMappingException on excluded fields
+http://github.com/elastic/elasticsearch-hadoop/issues/1015[#1015]
+Spark::
+* Spark JavaRDD give partial documents
+http://github.com/elastic/elasticsearch-hadoop/issues/946[#946]
+
+[[docs-6.0.0-beta-1]]
+=== Documentation
+* Unclear Docs (about multi-resource writes)
+http://github.com/elastic/elasticsearch-hadoop/issues/990[#990]
