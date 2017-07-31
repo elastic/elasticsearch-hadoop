@@ -32,10 +32,12 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
@@ -150,6 +152,8 @@ public class AbstractMROldApiSearchTest {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
+
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-pc/child");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");

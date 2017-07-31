@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.integration.hive;
 
 import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -548,6 +549,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         RestUtils.createMultiTypeIndex("hive-pc");
         RestUtils.putMapping("hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
@@ -581,6 +583,7 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testParentChildMapping() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         assertThat(RestUtils.getMapping("hive-pc/child").toString(),
                 targetVersion.onOrAfter(V_5_X)
                         ? is("child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
