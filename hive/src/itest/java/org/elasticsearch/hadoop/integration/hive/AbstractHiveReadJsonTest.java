@@ -22,7 +22,9 @@ package org.elasticsearch.hadoop.integration.hive;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,6 +133,7 @@ public class AbstractHiveReadJsonTest {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         String create = "CREATE EXTERNAL TABLE jsonchildread" + testInstance + " (data STRING) "
                 + tableProps("json-hive-pc/child", "'es.index.read.missing.as.empty' = 'true'", "'es.output.json' = 'true'");
 

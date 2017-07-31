@@ -21,8 +21,10 @@ package org.elasticsearch.hadoop.integration.pig;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -121,6 +123,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         RestUtils.createMultiTypeIndex("json-pig-pc");
         RestUtils.putMapping("json-pig-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 

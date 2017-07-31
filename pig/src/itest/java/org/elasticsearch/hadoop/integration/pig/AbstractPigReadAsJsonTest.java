@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.integration.pig;
 import com.google.common.collect.Lists;
 import org.elasticsearch.hadoop.Provisioner;
 import org.elasticsearch.hadoop.QueryTestParams;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -208,6 +209,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         String script = scriptHead
                       + "A = LOAD 'json-pig-pc/child' USING EsStorage();"
                       + "X = LIMIT A 3;"

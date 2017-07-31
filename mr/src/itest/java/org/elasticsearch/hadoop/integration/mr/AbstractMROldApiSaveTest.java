@@ -45,6 +45,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.Stream;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
@@ -520,6 +521,7 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testParentChild() throws Exception {
+        EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         // in ES 2.x, the parent/child relationship needs to be created fresh
         // hence why we reindex everything again
 
