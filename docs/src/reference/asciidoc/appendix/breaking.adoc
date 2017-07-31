@@ -40,6 +40,20 @@ Elasticsearch 6.0 is seeing the removal of the TTL and Timestamp meta-fields fro
 being allowed on document index and update requests. Because of this, we will be
 removing the ability to specify them in 6.0 and deprecating their usage in 5.x.
 
+==== Hadoop 1.x Support
+
+As of 6.0.0 we will no longer be testing on Hadoop 1.x versions. These versions
+have been considered end of life for quite a while. While the connector may
+continue to work for those versions, we no longer officially support them.
+Use these versions at your own risk!
+
+==== YARN Integration Discontinued
+
+Due to the limitations in YARN for support of long running processes, we have decided
+to cease development and discontinue the YARN integration in ES-Hadoop. We thank the
+community for participating in the beta. If you have any questions or concerns about
+this, please feel free to discuss them on our https://discuss.elastic.co/c/elasticsearch-and-hadoop[forums].
+
 [[breaking-changes-5.0]]
 === Breaking Changes in 5.0
 
