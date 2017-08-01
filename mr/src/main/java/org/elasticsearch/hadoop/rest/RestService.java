@@ -408,7 +408,7 @@ public abstract class RestService implements Serializable {
             String pinAddress = checkLocality(partition.getLocations(), log);
             if (pinAddress != null) {
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Partition reader instance [%s] assigned to [%s]:[%s]", partition, pinAddress));
+                    log.debug(String.format("Partition reader instance [%s] assigned to [%s]", partition, pinAddress));
                 }
                 SettingsUtils.pinNode(settings, pinAddress);
             }
