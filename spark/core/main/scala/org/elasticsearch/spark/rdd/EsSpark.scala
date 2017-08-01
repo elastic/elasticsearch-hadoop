@@ -71,24 +71,24 @@ object EsSpark {
   //
   // Save methods
   //
-  def saveToEs(rdd: RDD[_], resource: String) { saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
-  def saveToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]) {
+  def saveToEs(rdd: RDD[_], resource: String): Unit = { saveToEs(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
+  def saveToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEs(rdd: RDD[_], cfg: Map[String, String]) {
+  def saveToEs(rdd: RDD[_], cfg: Map[String, String]): Unit =  {
     doSaveToEs(rdd, cfg, false)
   }
 
   // Save with metadata
-  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String) { saveToEsWithMeta(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
-  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String, cfg: Map[String, String]) {
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String): Unit = { saveToEsWithMeta(rdd, Map(ES_RESOURCE_WRITE -> resource)) }
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], resource: String, cfg: Map[String, String]): Unit = {
     saveToEsWithMeta(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]) {
+  def saveToEsWithMeta[K,V](rdd: RDD[(K,V)], cfg: Map[String, String]): Unit = {
     doSaveToEs(rdd, cfg, true)
   }
 
-  private[spark] def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean) {
+  private[spark] def doSaveToEs(rdd: RDD[_], cfg: Map[String, String], hasMeta: Boolean): Unit = {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
     if (rdd == null || rdd.partitions.length == 0) {
@@ -108,11 +108,11 @@ object EsSpark {
   }
 
   // JSON variant
-  def saveJsonToEs(rdd: RDD[_], resource: String) { saveToEs(rdd, resource, Map(ES_INPUT_JSON -> true.toString)) }
-  def saveJsonToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]) {
+  def saveJsonToEs(rdd: RDD[_], resource: String): Unit = { saveToEs(rdd, resource, Map(ES_INPUT_JSON -> true.toString)) }
+  def saveJsonToEs(rdd: RDD[_], resource: String, cfg: Map[String, String]): Unit = {
     saveToEs(rdd, resource, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
-  def saveJsonToEs(rdd: RDD[_], cfg: Map[String, String]) {
+  def saveJsonToEs(rdd: RDD[_], cfg: Map[String, String]): Unit = {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 }
