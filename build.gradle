@@ -585,17 +585,22 @@ project(":elasticsearch-hadoop-hive") {
 
 // reusable method to nest Map/Reduce module in the rest of the projects to make them usable stand-alone
 def baseSparkProject(target, sparkVersion) {
-   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "210"
+   def scalaVer = project.hasProperty("scala") ? project.getProperty("scala") : "211"
 
     switch (scalaVer) {
+    case "210":
+        ext.scalaVersion = scala210Version
+        ext.scalaMajorVersion = scala210MajorVersion
+        break
+
       case "211":
         ext.scalaVersion = scala211Version
         ext.scalaMajorVersion = scala211MajorVersion
-        break;
+        break
 
       default:
-        ext.scalaVersion = scala210Version
-        ext.scalaMajorVersion = scala210MajorVersion
+        ext.scalaVersion = scala211Version
+        ext.scalaMajorVersion = scala211MajorVersion
     }
     
     target.archivesBaseName += "_$scalaMajorVersion"
@@ -623,13 +628,13 @@ def baseSparkProject(target, sparkVersion) {
     
     println "Spark $sparkVersion compiled using Scala $scalaMajorVersion [$scalaVersion]"
 
-    // when using Scala 2.11 use a different folder to cache the artifacts between builds
-    if (scalaVer == "211") {
+    // when using Scala 2.10 use a different folder to cache the artifacts between builds
+    if (scalaVer == "210") {
       target.sourceSets.each { 
-        it.output.classesDir = file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.211"))
+        it.output.classesDir = file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.210"))
       }
       target.javadoc {
-        destinationDir = file("$project.docsDir/javadoc-211")
+        destinationDir = file("$project.docsDir/javadoc-210")
       }
       target.integrationTest {
         // update test target
@@ -815,6 +820,9 @@ configure(rootProject) {
                 exclude "META-INF/**"
                 include "**/*"
             }
+        }
+        doLast {
+            logger.lifecycle("Writing core JAR with sub projects: ${eshModules.collect {sub -> sub.jar.archivePath}}")
         }
     }
     
