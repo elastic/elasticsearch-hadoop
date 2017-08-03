@@ -14,8 +14,6 @@ While the official name of the project is {ehtm} throughout the documentation th
 include::intro/typos.adoc[]
 
 TIP: If you are looking for {es} HDFS Snapshot/Restore plugin (a separate project), please refer to its https://github.com/elasticsearch/elasticsearch-hadoop/tree/master/repository-hdfs[home page].
-
-TIP: If you are looking for {es} on YARN (a separate project), please refer to its dedicated <<es-yarn,section>>. 
 --
 
 [[doc-sections]]

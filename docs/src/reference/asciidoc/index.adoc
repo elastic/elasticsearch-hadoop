@@ -27,18 +27,26 @@
 
 {ehtm} is an `umbrella' project consisting of three similar, yet independent sub-projects with their own, dedicated, section in the documentation:
 
-{eh} proper:: interact with {es} from within a Hadoop environment. If you are using {mr}, Hive, Pig, {sp}, {st}, or Cascading, this project is for you. For feature requests or bugs, please open an issue in the https://github.com/elastic/elasticsearch-hadoop/issues[Elasticsearch-Hadoop repository].
+{eh} proper::
+Interact with {es} from within a Hadoop environment. If you are using {mr}, Hive, Pig, {sp}, {st}, or Cascading, this
+project is for you. For feature requests or bugs, please open an issue in the
+https://github.com/elastic/elasticsearch-hadoop/issues[Elasticsearch-Hadoop repository].
 
-repository-hdfs:: use HDFS as a back-end repository for doing snapshot/restore from/to {es}. For more information, refer to its https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html[home page]. For feature requests or bugs, please open an issue in the https://github.com/elastic/elasticsearch/issues[Elasticsearch repository] with the ":Plugin Repository HDFS" tag.
+repository-hdfs::
+Use HDFS as a back-end repository for doing snapshot/restore from/to {es}. For more information, refer to its
+https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.html[home page]. For feature requests or
+bugs, please open an issue in the https://github.com/elastic/elasticsearch/issues[Elasticsearch repository] with the
+":Plugin Repository HDFS" tag.
 
-{ey}:: run {es} on top of YARN - see <<es-yarn>>. This project is in beta.
+{ey} [DISCONTINUED]::
+Run {es} on top of YARN. Due to the limitations in YARN regarding long running services, we have decided to discontinue
+our development and support of the {ey} integration. If you are searching for documentation on {ey}, you can find the
+documentation for the last released beta version https://www.elastic.co/guide/en/elasticsearch/hadoop/5.6/es-yarn.html[here].
 
 
 Thus, while all projects fall under the Hadoop umbrella, each is covering a certain aspect of it so please be sure to read the appropriate documentation. For general questions around any of these projects, the https://discuss.elastic.co/c/elasticsearch-and-hadoop[Elastic Discuss forum] is a great place to interact with other users in the community.
 
 include::core/index.adoc[]
-
-include::yarn/index.adoc[]
 
 include::appendix/index.adoc[]
 

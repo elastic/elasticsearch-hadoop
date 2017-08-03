@@ -891,7 +891,7 @@ configure(rootProject) {
         afterEvaluate {
             classDirectories = files(classDirectories.files.collect {
                 // We're excluding Spark since the Scala bytecode trips Jacoco over and the plugin can't import yet filters
-                fileTree(dir: it, excludes: [ "org/elasticsearch/hadoop/yarn/**", "org/apache/hadoop/hive/**", "org/elasticsearch/spark/**", "org/elasticsearch/plugin/hadoop/**"])
+                fileTree(dir: it, excludes: [ "org/apache/hadoop/hive/**", "org/elasticsearch/spark/**", "org/elasticsearch/plugin/hadoop/**"])
             })
         }
     }
