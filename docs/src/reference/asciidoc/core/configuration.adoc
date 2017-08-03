@@ -179,6 +179,18 @@ The document field/property name containing the document id.
 `es.mapping.parent` (default none)::
 The document field/property name containing the document parent. To specify a constant, use the `<CONSTANT>` format.
 
+added[5.6.0]
+`es.mapping.join` (default none)::
+The document field/property name containing the document's join field. Constants are not accepted. Join fields on a
+document must contain either the parent relation name as a string, or an object that contains the child relation name
+and the id of its parent. If a child document is identified when using this setting, the document's routing is
+automatically set to the parent id if no other routing is configured in `es.mapping.routing`.
+
+`es.mapping.routing` (default depends on +es.mapping.join+)::
+The document field/property name containing the document routing. To specify a constant, use the `<CONSTANT>` format.
+If a join field is specified with `es.mapping.join`, then this defaults to the value of the join field's parent id. If
+a join field is not specified, then this defaults to none.
+
 `es.mapping.version` (default none)::
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
@@ -186,14 +198,15 @@ The document field/property name containing the document version. To specify a c
 Indicates the {ref}/docs-index_.html#_version_types[type of versioning] used.
 If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
 
-`es.mapping.routing` (default none)::
-The document field/property name containing the document routing. To specify a constant, use the `<CONSTANT>` format.
-
+deprecated[6.0.0]
 `es.mapping.ttl` (default none)::
 The document field/property name containing the document time-to-live. To specify a constant, use the `<CONSTANT>` format.
+Will not work on Elasticsearch 6.0+ index versions, but support will continue for 5.x index versions and below.
 
+deprecated[6.0.0]
 `es.mapping.timestamp` (default none)::
 The document field/property name containing the document timestamp. To specify a constant, use the `<CONSTANT>` format.
+Will not work on Elasticsearch 6.0+ index versions, but support will continue for 5.x index versions and below.
 
 added[2.1]
 `es.mapping.include` (default none)::
