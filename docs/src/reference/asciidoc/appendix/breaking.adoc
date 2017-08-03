@@ -54,6 +54,12 @@ to cease development and discontinue the YARN integration in ES-Hadoop. We thank
 community for participating in the beta. If you have any questions or concerns about
 this, please feel free to discuss them on our https://discuss.elastic.co/c/elasticsearch-and-hadoop[forums].
 
+==== Default Supported Scala Version is now 2.11
+
+In 6.0.0, our ES-Hadoop jar will ship with Spark compiled against Scala 2.11 by default. We will
+continue to support Scala 2.10 in compatibility artifacts, but the main project
+artifact will target Scala 2.11 by default.
+
 [[breaking-changes-5.0]]
 === Breaking Changes in 5.0
 
