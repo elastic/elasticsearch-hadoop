@@ -288,7 +288,7 @@ def createClusterFor(Task integrationTest, String version) {
     wait.doLast {
         // Make sure to put "ant." in front of the conditions. Without it, in some weird
         // cases it uses calls on the Project object instead of the AntBuilder object.
-        project.ant.waitfor(maxwait: '30', maxwaitunit: 'second', checkevery: '500', checkeveryunit: 'millisecond', timeoutproperty: "failed${name}") {
+        project.ant.waitfor(maxwait: '60', maxwaitunit: 'second', checkevery: '500', checkeveryunit: 'millisecond', timeoutproperty: "failed${name}") {
             ant.or {
                 ant.resourceexists {
                     ant.file(file: failedMarker.toString())
