@@ -10,9 +10,12 @@ Please note that this is a beta release and that we do not recommend running thi
 
 [[breaking-6.0.0-beta-1]]
 === Breaking Changes
-* Elasticsearch on YARN is deprecated as of 5.5.0
+* Elasticsearch on YARN integration has been removed
 http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+http://github.com/elastic/elasticsearch-hadoop/pull/1027[#1027]
 * Using Hadoop versions 1.x is deprecated as of 5.5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+* ES-Hadoop will support Scala 2.11 by default in 6.0.0
 http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
 
 [[new-6.0.0-beta-1]]
@@ -51,6 +54,9 @@ http://github.com/elastic/elasticsearch-hadoop/issues/1015[#1015]
 Spark::
 * Spark JavaRDD give partial documents
 http://github.com/elastic/elasticsearch-hadoop/issues/946[#946]
+REST::
+* Remove unmatched format specifier from Restservice
+http://github.com/elastic/elasticsearch-hadoop/pull/1029[#1029]
 
 [[docs-6.0.0-beta-1]]
 === Documentation
