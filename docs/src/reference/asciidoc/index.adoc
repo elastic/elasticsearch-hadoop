@@ -38,12 +38,6 @@ https://www.elastic.co/guide/en/elasticsearch/plugins/master/repository-hdfs.htm
 bugs, please open an issue in the https://github.com/elastic/elasticsearch/issues[Elasticsearch repository] with the
 ":Plugin Repository HDFS" tag.
 
-{ey} [DISCONTINUED]::
-Run {es} on top of YARN. Due to the limitations in YARN regarding long running services, we have decided to discontinue
-our development and support of the {ey} integration. If you are searching for documentation on {ey}, you can find the
-documentation for the last released beta version https://www.elastic.co/guide/en/elasticsearch/hadoop/5.6/es-yarn.html[here].
-
-
 Thus, while all projects fall under the Hadoop umbrella, each is covering a certain aspect of it so please be sure to read the appropriate documentation. For general questions around any of these projects, the https://discuss.elastic.co/c/elasticsearch-and-hadoop[Elastic Discuss forum] is a great place to interact with other users in the community.
 
 include::core/index.adoc[]
