@@ -264,7 +264,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     public void testParentChild() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         RestUtils.createMultiTypeIndex("pig-pc");
-        RestUtils.putMapping("pig-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping("pig-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +

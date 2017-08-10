@@ -519,10 +519,11 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
 
         String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}}";
         String index = wrapIndex("spark-test-contact");
-        String target = index + "/data";
+        String type = "data";
+        String target = index + "/" + type;
 
         RestUtils.touch(index);
-        RestUtils.putMapping(target, mapping.getBytes());
+        RestUtils.putMapping(index, type, mapping.getBytes());
         RestUtils.postData(target+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
         RestUtils.postData(target+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
 

@@ -259,7 +259,7 @@ public class AbstractHiveSaveJsonTest {
     public void testParentChild() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         RestUtils.createMultiTypeIndex("json-hive-pc");
-        RestUtils.putMapping("json-hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping("json-hive-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String localTable = createTable("jsonchildsource");
         String load = loadData("jsonchildsource");

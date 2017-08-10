@@ -551,7 +551,7 @@ public class AbstractHiveSaveTest {
     public void testParentChild() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         RestUtils.createMultiTypeIndex("hive-pc");
-        RestUtils.putMapping("hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping("hive-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String localTable = createTable("childsource");
         String load = loadData("childsource");

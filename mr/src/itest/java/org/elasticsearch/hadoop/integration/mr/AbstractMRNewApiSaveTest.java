@@ -373,8 +373,8 @@ public class AbstractMRNewApiSaveTest {
         // hence why we reindex everything again
 
         RestUtils.createMultiTypeIndex(indexPrefix + "mrnewapi-pc");
-        RestUtils.putMapping(indexPrefix + "mrnewapi-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
-        RestUtils.putMapping(indexPrefix + "mrnewapi-pc/parent", StringUtils.toUTF("{\"parent\":{}}"));
+        RestUtils.putMapping(indexPrefix + "mrnewapi-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping(indexPrefix + "mrnewapi-pc", "parent", StringUtils.toUTF("{\"parent\":{}}"));
 
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pc/parent");

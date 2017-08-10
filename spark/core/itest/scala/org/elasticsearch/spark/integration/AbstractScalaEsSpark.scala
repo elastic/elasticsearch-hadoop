@@ -229,9 +229,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       }""".stripMargin
 
     val index = "spark-test-scala-timestamp-write"
-    val target = s"$index/data"
+    val typed = "data"
+    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
     
     
     val doc1 = Map("one" -> null, "two" -> Set("2"), "number" -> 1, "date" -> "2016-05-18T16:39:39.317Z")
@@ -512,9 +513,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
          |}""".stripMargin
 
     val index = wrapIndex("spark-test-stored")
-    val target = s"$index/data"
+    val typed = "data"
+    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
     RestUtils.refresh(index)
     RestUtils.put(s"$target/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
 
@@ -562,9 +564,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         |}""".stripMargin
 
     val index = wrapIndex("spark-test-stored")
-    val target = s"$index/data"
+    val typed = "data"
+    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
     RestUtils.put(s"$target/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
 
     val scriptName = "increment"
@@ -612,9 +615,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
                     |}""".stripMargin
 
     val index = wrapIndex("spark-test-contact")
-    val target = s"$index/data"
+    val typed = "data"
+    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$target/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
