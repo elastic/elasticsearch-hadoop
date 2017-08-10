@@ -208,11 +208,12 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testBasicIndexWithExtractedRouting() throws Exception {
+        String index = indexPrefix + "mroldapi-savewithdynamicrouting";
         String type = "data";
-        String target = "mroldapi-savewithdynamicrouting/" + type;
+        String target = index + "/" + type;
 
-        RestUtils.touch(indexPrefix + "mroldapi-savewithdynamicrouting");
-        RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        RestUtils.touch(index);
+        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
@@ -223,11 +224,12 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testBasicIndexWithConstantRouting() throws Exception {
+        String index = indexPrefix + "mroldapi-savewithconstantrouting";
         String type = "data";
-        String target = "mroldapi-savewithconstantrouting/" + type;
+        String target = index + "/" + type;
 
-        RestUtils.touch(indexPrefix + "mroldapi-savewithconstantrouting");
-        RestUtils.putMapping(indexPrefix + target, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        RestUtils.touch(index);
+        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
@@ -522,16 +524,19 @@ public class AbstractMROldApiSaveTest {
         // hence why we reindex everything again
 
         String index = indexPrefix + "mroldapi-pc";
-        String parentResource = index + "/parent";
-        String childResource = index + "/child";
+        String parentType = "parent";
+        String childType = "child";
+
+        String parentResource = index + "/" + parentType;
+        String childResource = index + "/" + childType;
 
         System.out.println(indexPrefix + "mroldapi-pc");
         System.out.println(parentResource);
         System.out.println(childResource);
 
         RestUtils.createMultiTypeIndex(index);
-        RestUtils.putMapping(childResource, "org/elasticsearch/hadoop/integration/mr-child.json");
-        RestUtils.putMapping(parentResource, StringUtils.toUTF("{\"parent\":{}}"));
+        RestUtils.putMapping(index, childType, "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping(index, parentType, StringUtils.toUTF("{\"parent\":{}}"));
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-pc/parent");
@@ -588,7 +593,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-nested/data");
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
-        RestUtils.putMapping(indexPrefix + "mroldapi-nested/data", "org/elasticsearch/hadoop/integration/mr-nested.json");
+        RestUtils.putMapping(indexPrefix + "mroldapi-nested", "data", "org/elasticsearch/hadoop/integration/mr-nested.json");
 
         runJob(conf);
     }

@@ -356,9 +356,10 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
                     |}""".stripMargin
 
     val index = "spark-streaming-test-contact"
-    val target = s"$index/data"
+    val typed = "data"
+    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(target, mapping.getBytes(StringUtils.UTF_8))
+    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$target/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 

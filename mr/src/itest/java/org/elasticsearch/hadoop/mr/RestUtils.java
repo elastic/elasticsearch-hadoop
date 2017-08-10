@@ -91,17 +91,6 @@ public class RestUtils {
         rc.close();
     }
 
-    /**
-     * @deprecated use putMapping(index, type, content) instead
-     */
-    public static void putMapping(String indexAndType, byte[] content) throws Exception {
-        List<String> parts = StringUtils.tokenize(indexAndType, "/");
-        if (parts.size() != 2) {
-            throw new IllegalArgumentException("Expected index/type, got [" + indexAndType + "] instead.");
-        }
-        putMapping(parts.get(0), parts.get(1), content);
-    }
-
     public static Mapping getMapping(String indexAndType) throws Exception {
         int slash = indexAndType.indexOf('/');
         if (slash != -1) {
@@ -129,13 +118,6 @@ public class RestUtils {
 
     public static void putMapping(String index, String type, String location) throws Exception {
         putMapping(index, type, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
-    }
-
-    /**
-     * @deprecated use putMapping(index, type, location) instead
-     */
-    public static void putMapping(String index, String location) throws Exception {
-        putMapping(index, TestUtils.fromInputStream(RestUtils.class.getClassLoader().getResourceAsStream(location)));
     }
 
     public static void postData(String index, String location) throws Exception {

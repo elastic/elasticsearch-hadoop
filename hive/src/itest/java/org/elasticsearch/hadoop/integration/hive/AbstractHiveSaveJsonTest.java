@@ -256,7 +256,7 @@ public class AbstractHiveSaveJsonTest {
     @Test
     public void testParentChild() throws Exception {
         RestUtils.createMultiTypeIndex("json-hive-pc");
-        RestUtils.putMapping("json-hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping("json-hive-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String localTable = createTable("jsonchildsource");
         String load = loadData("jsonchildsource");

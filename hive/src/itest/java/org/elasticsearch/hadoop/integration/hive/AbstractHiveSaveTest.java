@@ -549,7 +549,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testParentChild() throws Exception {
         RestUtils.createMultiTypeIndex("hive-pc");
-        RestUtils.putMapping("hive-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
+        RestUtils.putMapping("hive-pc", "child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String localTable = createTable("childsource");
         String load = loadData("childsource");
