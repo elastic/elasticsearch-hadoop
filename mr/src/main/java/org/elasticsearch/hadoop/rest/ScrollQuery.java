@@ -98,11 +98,6 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
                 throw new EsHadoopIllegalStateException(String.format("Cannot create scroll for query [%s/%s]", query, body), ex);
             }
 
-            if (batch.isEmpty()) {
-                finished = true;
-                return false;
-            }
-
             // no longer needed
             body = null;
             query = null;
