@@ -619,7 +619,8 @@ def baseSparkProject(target, sparkVersion) {
             "-Xfuture",
             "-Yno-adapted-args",
             "-Ywarn-dead-code",
-            "-Ywarn-numeric-widen"
+            "-Ywarn-numeric-widen",
+            "-Xfatal-warnings"
         ]
 
         sourceCompatibility = 1.6

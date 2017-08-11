@@ -31,8 +31,10 @@ import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.RestRepository
 
+import scala.annotation.meta.param
+
 private[spark] abstract class AbstractEsRDD[T: ClassTag](
-  @transient sc: SparkContext,
+  @(transient @param) sc: SparkContext,
   val params: scala.collection.Map[String, String] = Map.empty)
   extends RDD[T](sc, Nil) {
 
@@ -51,7 +53,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
     esSplit.esPartition.getHostNames
   }
 
-  override def checkpoint() {
+  override def checkpoint(): Unit = {
     // Do nothing. Elasticsearch RDD should not be checkpointed.
   }
 

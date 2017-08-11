@@ -28,8 +28,10 @@ import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
 
+import scala.annotation.meta.param
+
 private[spark] class JavaEsRDD[T](
-  @transient sc: SparkContext,
+  @(transient @param) sc: SparkContext,
   config: scala.collection.Map[String, String] = scala.collection.Map.empty)
   extends AbstractEsRDD[(String, T)](sc, config) {
 
