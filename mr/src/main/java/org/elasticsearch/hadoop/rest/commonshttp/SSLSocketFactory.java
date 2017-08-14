@@ -205,7 +205,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
 
     private KeyManager[] loadKeyManagers() throws GeneralSecurityException, IOException {
         if (!StringUtils.hasText(keyStoreLocation)) {
-            LOG.warn("No keystore location specified! SSL is continuing with no keystore.");
+            LOG.debug("No keystore location specified! SSL is continuing with no keystore.");
             return null;
         }
 
@@ -223,7 +223,7 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
             char[] pass = (StringUtils.hasText(trustStorePass) ? trustStorePass.trim().toCharArray() : null);
             keyStore = loadKeyStore(trustStoreLocation, pass);
         } else {
-            LOG.warn("No truststore location specified! SSL is continuing with no truststore.");
+            LOG.debug("No truststore location specified! SSL is continuing with no truststore.");
         }
 
         TrustManagerFactory tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
