@@ -65,7 +65,7 @@ public class AbstractCascadingHadoopSearchTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh("cascading-hadoop");
+        RestUtils.refresh("cascading-hadoop*");
     }
 
     @Test

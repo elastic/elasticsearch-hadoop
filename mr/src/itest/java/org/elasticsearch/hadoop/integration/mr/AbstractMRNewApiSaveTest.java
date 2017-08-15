@@ -251,10 +251,10 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = 3");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 3");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 3");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -273,10 +273,10 @@ public class AbstractMRNewApiSaveTest {
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; String anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; String anothercounter = params.param2");
         } else {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
         }
 
         runJob(conf);
@@ -293,10 +293,10 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = param1; anothercounter = param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = param1; anothercounter = param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -310,7 +310,7 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter = 1");
+        conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter = 1");
 
         runJob(conf);
     }
@@ -325,10 +325,10 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = Integer.parseInt(params.param2)");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -345,10 +345,10 @@ public class AbstractMRNewApiSaveTest {
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
         if (version.onOrAfter(EsMajorVersion.V_5_X)) {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "int counter = params.param1; int anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
-            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "counter += param1; anothercounter += param2");
+            conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT, "counter += param1; anothercounter += param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "groovy");
         }
 
@@ -368,8 +368,6 @@ public class AbstractMRNewApiSaveTest {
     public void testParentChild() throws Exception {
         // in ES 2.x, the parent/child relationship needs to be created fresh
         // hence why we reindex everything again
-
-        RestUtils.createMultiTypeIndex(indexPrefix + "mrnewapi-pc");
         RestUtils.putMapping(indexPrefix + "mrnewapi-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
         RestUtils.putMapping(indexPrefix + "mrnewapi-pc/parent", StringUtils.toUTF("{\"parent\":{}}"));
 

@@ -71,12 +71,12 @@ public class AbstractCascadingHadoopJsonReadTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "cascading-hadoop");
+        RestUtils.refresh(indexPrefix + "cascading-hadoop*");
     }
 
     @Test
     public void testReadFromES() throws Exception {
-        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop-artists/data");
         Pipe pipe = new Pipe("copy");
 
         Tap out = new HadoopPrintStreamTap(Stream.NULL);
@@ -86,7 +86,7 @@ public class AbstractCascadingHadoopJsonReadTest {
     @Test
     public void testReadFromESWithSourceFilter() throws Exception {
 //        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists", new Fields("data"));
-        Tap in = new EsTap(indexPrefix + "cascading-hadoop/artists");
+        Tap in = new EsTap(indexPrefix + "cascading-hadoop-artists/data");
         Pipe pipe = new Pipe("copy");
 
         Tap out = new HadoopPrintStreamTap(Stream.NULL);

@@ -69,7 +69,7 @@ public class AbstractCascadingHadoopJsonSearchTest {
 
     @Before
     public void before() throws Exception {
-        RestUtils.refresh(indexPrefix + "cascading-hadoop");
+        RestUtils.refresh(indexPrefix + "cascading-hadoop*");
     }
 
 

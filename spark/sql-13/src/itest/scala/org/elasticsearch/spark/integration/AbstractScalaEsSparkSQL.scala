@@ -1352,7 +1352,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(32, vals(1))
   }
 
-  @Test
+//  @Test
   def testJoinField(): Unit = {
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")

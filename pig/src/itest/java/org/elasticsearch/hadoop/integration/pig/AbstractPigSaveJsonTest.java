@@ -121,7 +121,6 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
 
     @Test
     public void testParentChild() throws Exception {
-        RestUtils.createMultiTypeIndex("json-pig-pc");
         RestUtils.putMapping("json-pig-pc/child", "org/elasticsearch/hadoop/integration/mr-child.json");
 
         String script =

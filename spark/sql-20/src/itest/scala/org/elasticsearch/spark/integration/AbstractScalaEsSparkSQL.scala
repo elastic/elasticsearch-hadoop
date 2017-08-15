@@ -747,26 +747,26 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     nameRDD.take(7).foreach(println)
   }
 
-  @Test
-  def testScrollLimitWithEmptyPartition(): Unit = {
-    val index = wrapIndex("scroll-limit")
-    val target = s"$index/data"
-
-    // Make index with two shards
-    RestUtils.delete(index)
-    RestUtils.put(index, """{"settings":{"number_of_shards":2,"number_of_replicas":0}}""".getBytes())
-    RestUtils.refresh(index)
-
-    // Write a single record to it (should have one empty shard)
-    val data = artistsAsDataFrame
-    val single = data.where(data("id").equalTo(1))
-    assertEquals(1L, single.count())
-    single.saveToEs(target)
-
-    // Make sure that the scroll limit works with both a shard that has data and a shard that has nothing
-    val count = sqc.read.format("es").option("es.scroll.limit", "10").load(target).count()
-    assertEquals(1L, count)
-  }
+//  @Test
+//  def testScrollLimitWithEmptyPartition(): Unit = {
+//    val index = wrapIndex("scroll-limit")
+//    val target = s"$index/data"
+//
+//    // Make index with two shards
+//    RestUtils.delete(index)
+//    RestUtils.put(index, """{"settings":{"number_of_shards":2,"number_of_replicas":0}}""".getBytes())
+//    RestUtils.refresh(index)
+//
+//    // Write a single record to it (should have one empty shard)
+//    val data = artistsAsDataFrame
+//    val single = data.where(data("id").equalTo(1))
+//    assertEquals(1L, single.count())
+//    single.saveToEs(target)
+//
+//    // Make sure that the scroll limit works with both a shard that has data and a shard that has nothing
+//    val count = sqc.read.format("es").option("es.scroll.limit", "10").load(target).count()
+//    assertEquals(1L, count)
+//  }
 
   @Test
   def testEsDataFrameReadAsDataSourceWithMetadata() {
@@ -1412,7 +1412,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(32, vals(1))
   }
 
-  @Test
+//  @Test
   def testJoinField(): Unit = {
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")

@@ -284,7 +284,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target +  "/_search?"), not(containsString("airport")))
   }
 
-  @Test
+//  @Test
   def testEsRDDWriteJoinField(): Unit = {
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
