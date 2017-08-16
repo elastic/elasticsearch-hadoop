@@ -284,7 +284,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target +  "/_search?"), not(containsString("airport")))
   }
 
-//  @Test
+  @Test
   def testEsRDDWriteJoinField(): Unit = {
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
@@ -304,6 +304,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       val index = wrapIndex("spark-test-scala-write-join-separate")
       val typename = "join"
       val target = s"$index/$typename"
+      RestUtils.put(index, """{"settings":{"index.mapping.single_type":"true"}}""".getBytes())
       RestUtils.putMapping(index, typename, "data/join/mapping.json")
 
       sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
@@ -336,6 +337,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       val index = wrapIndex("spark-test-scala-write-join-combined")
       val typename = "join"
       val target = s"$index/$typename"
+      RestUtils.put(index, """{"settings":{"index.mapping.single_type":"true"}}""".getBytes())
       RestUtils.putMapping(index, typename, "data/join/mapping.json")
 
       sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))

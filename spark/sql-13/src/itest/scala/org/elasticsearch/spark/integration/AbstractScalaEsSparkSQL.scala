@@ -1352,7 +1352,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(32, vals(1))
   }
 
-//  @Test
+  @Test
   def testJoinField(): Unit = {
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
@@ -1372,6 +1372,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-separate")
       val typename = "join"
       val target = s"$index/$typename"
+      RestUtils.put(index, """{"settings":{"index.mapping.single_type":"true"}}""".getBytes())
       RestUtils.putMapping(index, typename, "data/join/mapping.json")
 
       sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
@@ -1403,6 +1404,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-combined")
       val typename = "join"
       val target = s"$index/$typename"
+      RestUtils.put(index, """{"settings":{"index.mapping.single_type":"true"}}""".getBytes())
       RestUtils.putMapping(index, typename, "data/join/mapping.json")
 
       sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
