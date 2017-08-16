@@ -59,7 +59,7 @@ public class CommandTest {
     public static Collection<Object[]> data() {
 
         // make sure all versions are tested. Throw if a new one is seen:
-        if (EsMajorVersion.LATEST != EsMajorVersion.V_6_X) {
+        if (EsMajorVersion.LATEST != EsMajorVersion.V_7_X) {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
@@ -88,6 +88,12 @@ public class CommandTest {
                 { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_6_X },
                 { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_6_X },
                 { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_6_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X },
         });
     }
 

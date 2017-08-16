@@ -29,7 +29,8 @@ public class EsMajorVersion {
     public static final EsMajorVersion V_2_X = new EsMajorVersion((byte) 2, "2.x");
     public static final EsMajorVersion V_5_X = new EsMajorVersion((byte) 5, "5.x");
     public static final EsMajorVersion V_6_X = new EsMajorVersion((byte) 6, "6.x");
-    public static final EsMajorVersion LATEST = V_6_X;
+    public static final EsMajorVersion V_7_X = new EsMajorVersion((byte) 7, "7.x");
+    public static final EsMajorVersion LATEST = V_7_X;
 
     public final byte major;
     private final String version;
@@ -79,7 +80,11 @@ public class EsMajorVersion {
         if (version.startsWith("6.")) {
             return new EsMajorVersion((byte) 6, version);
         }
-        throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version " + version);
+        if (version.startsWith("7.")) {
+            return new EsMajorVersion((byte) 7, version);
+        }
+        throw new EsHadoopIllegalArgumentException("Unsupported/Unknown Elasticsearch version [" + version + "]." +
+                "Highest supported version is [" + LATEST.version + "]. You may need to upgrade ES-Hadoop.");
     }
 
     @Override
