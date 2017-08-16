@@ -15,6 +15,10 @@ This section summarizes the changes in each release.
 [float]
 [[release-notes-5]]
 ===== 5.x
+* <<eshadoop-5.5.2>>
+* <<eshadoop-5.5.1>>
+* <<eshadoop-5.5.0>>
+* <<eshadoop-5.4.2>>
 * <<eshadoop-5.4.1>>
 * <<eshadoop-5.4.0>>
 * <<eshadoop-5.3.3>>
@@ -77,6 +81,10 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 include::release-notes/6.0.0-beta-1.adoc[]
 include::release-notes/6.0.0-alpha-2.adoc[]
 include::release-notes/6.0.0-alpha-1.adoc[]
+include::release-notes/5.5.2.adoc[]
+include::release-notes/5.5.1.adoc[]
+include::release-notes/5.5.0.adoc[]
+include::release-notes/5.4.2.adoc[]
 include::release-notes/5.4.1.adoc[]
 include::release-notes/5.4.0.adoc[]
 include::release-notes/5.3.3.adoc[]
