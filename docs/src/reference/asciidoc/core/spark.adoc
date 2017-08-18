@@ -1620,7 +1620,7 @@ IMPORTANT: Since Spark SQL is strongly-typed, each geo field needs to have the s
 
 [[spark-sql-streaming]]
 [float]
-=== Spark Structured Streaming support [Alpha]
+=== Spark Structured Streaming support
 
 added[6.0]
 
@@ -1631,12 +1631,9 @@ http://spark.apache.org/docs/latest/structured-streaming-programming-guide.html[
 scalable, fault-tolerant, end-to-end exactly-once stream processing without the user having to reason about streaming.
 ____
 
-Released as an alpha feature in Spark 2.0, Spark Structured Streaming provides a unified streaming and batch interface
-built into the Spark SQL integration. As of {eh} 6.0, we provide native functionality to index streaming data into {es}.
-
-NOTE: Spark Structured Streaming (available in Spark SQL 2.0+) is still in alpha as of 2.1.1. As such, {eh} support for
-Structured Streaming (available in {eh} 6.0+) is considered an alpha feature. It is not advised to use this for
-production code.
+Released as an experimental feature in Spark 2.0, Spark Structured Streaming provides a unified streaming and batch
+interface built into the Spark SQL integration. As of {eh} 6.0, we provide native functionality to index streaming data
+into {es}.
 
 IMPORTANT: Like Spark SQL, Structured Streaming works with _structured_ data. All entries are expected to have the
 _same_ structure (same number of fields, of the same type and name). Using unstructured data (documents with different
@@ -1646,10 +1643,10 @@ structures) is _not_ supported and will cause problems. For such cases, use ++DS
 [[spark-sql-streaming-versions]]
 ==== Supported Spark Structured Streaming versions
 
-Spark Structured Streaming was introduced in Spark 2.0 and is still in alpha as of Spark 2.1.1. Similar to Spark SQL
-before it, Structured Streaming may be subject to significant changes between releases. While {eh} supports Spark
-versions 1.3-1.6 as compatibility releases, Spark Structured Streaming is only supported in the
-+elasticsearch-spark-20-<version>.jar+ artifact.
+Spark Structured Streaming is considered _generally available_ as of Spark v2.2.0. As such, {eh} support
+for Structured Streaming (available in {eh} 6.0+) is only compatible with Spark versions 2.2.0 and onward. Similar
+to Spark SQL before it, Structured Streaming may be subject to significant changes between releases before its
+interfaces are considered _stable_.
 
 Spark Structured Streaming support is available under the +org.elasticsearch.spark.sql+ and
 +org.elasticsearch.spark.sql.streaming+ packages. It shares a unified interface with Spark SQL in the form of the
