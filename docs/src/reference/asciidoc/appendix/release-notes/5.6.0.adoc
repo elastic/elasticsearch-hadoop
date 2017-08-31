@@ -1,0 +1,18 @@
+[[eshadoop-5.6.0]]
+== Elasticsearch for Apache Hadoop version 5.6.0
+September 05, 2017
+
+[[new-5.3.1]]
+=== New Features
+Rest::
+* Support Elasticsearch "join" types
+https://github.com/elastic/elasticsearch-hadoop/issues/1012[#1012]
+
+[[bugs-5.6.0]]
+=== Bug Fixes
+Rest::
+* Allow for more leniency in Network Client failover
+https://github.com/elastic/elasticsearch-hadoop/issues/993[#993]
+YARN::
+* YARN Integration Download Link Changes Between Major Releases
+https://github.com/elastic/elasticsearch-hadoop/issues/887[#887]
