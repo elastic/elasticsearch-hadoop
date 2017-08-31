@@ -1,0 +1,17 @@
+[[eshadoop-6.0.0-beta-2]]
+== Elasticsearch for Apache Hadoop version 6.0.0-beta2
+August 31, 2017
+
+Please note that this is a beta release and that we do not recommend running this in production! See our
+<<breaking-changes-6.0>> page for more information on what you might need to modify.
+
+[[bugs-6.0.0-beta-2]]
+=== Bug Fixes
+REST::
+* Scroll Id regression on Elasticsearch 2.4.5
+https://github.com/elastic/elasticsearch-hadoop/issues/1034[#1034]
+* A new set of logging commands added for SSL debugging have been reduced in severity to avoid spamming streaming users.
+
+[[docs-6.0.0-beta-2]]
+=== Documentation
+* Spark Structured Streaming is no longer an experimental feature in the docs.
