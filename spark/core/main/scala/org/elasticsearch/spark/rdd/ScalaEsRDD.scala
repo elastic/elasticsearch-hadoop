@@ -19,7 +19,6 @@
 package org.elasticsearch.spark.rdd
 
 import scala.collection.Map
-
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
@@ -30,8 +29,10 @@ import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.spark.serialization.ScalaValueReader
 
+import scala.annotation.meta.param
+
 private[spark] class ScalaEsRDD[T](
-  @transient sc: SparkContext,
+  @(transient @param) sc: SparkContext,
   params: Map[String, String] = Map.empty)
   extends AbstractEsRDD[(String, T)](sc, params) {
 

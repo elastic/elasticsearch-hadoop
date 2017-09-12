@@ -45,7 +45,7 @@ private[spark] object ReflectionUtils {
 
   private def doGetCaseClassInfo(clazz: Class[_]): Iterable[String] = {
     ReflectionLock.synchronized {
-      runtimeMirror(clazz.getClassLoader()).classSymbol(clazz).toType.declarations.collect {
+      runtimeMirror(clazz.getClassLoader()).classSymbol(clazz).toType.decls.collect {
         case m: MethodSymbol if m.isCaseAccessor => m.name.toString()
       }
     }
