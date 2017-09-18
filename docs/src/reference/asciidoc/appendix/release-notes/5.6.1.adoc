@@ -1,0 +1,5 @@
+[[eshadoop-5.6.1]]
+== Elasticsearch for Apache Hadoop version 5.6.1
+September 18, 2017
+
+ES-Hadoop 5.6.1 is a version compatibility release, tested specifically against Elasticsearch 5.6.1.
