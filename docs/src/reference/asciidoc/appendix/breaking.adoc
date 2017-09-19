@@ -23,8 +23,8 @@ of types. ES-Hadoop was previously using this deprecated endpoint up until
 the 5.4.x releases. If you have upgraded to Elasticsearch 5.5.0, you will
 need to upgrade ES-Hadoop to version 5.5.0.
 
-The new endpoint is available since Elasticsearch 5.x. It makes the ES-Hadoop
-library no more backward compatible with Elasticsearch 2.x.
+The new endpoint is available since Elasticsearch 5.x. In case you are running
+Elasticsearch 2.x, the correct endpoint will be used.
 
 [[breaking-changes-5.0]]
 === Breaking Changes in 5.0
