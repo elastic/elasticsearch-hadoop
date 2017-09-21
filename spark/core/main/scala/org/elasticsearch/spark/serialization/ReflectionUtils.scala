@@ -22,10 +22,7 @@ import java.beans.Introspector
 import java.lang.reflect.Method
 
 import scala.collection.mutable.HashMap
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-
-
 import org.apache.commons.logging.LogFactory
 
 private[spark] object ReflectionUtils {
@@ -45,7 +42,15 @@ private[spark] object ReflectionUtils {
 
   private def doGetCaseClassInfo(clazz: Class[_]): Iterable[String] = {
     ReflectionLock.synchronized {
-      runtimeMirror(clazz.getClassLoader()).classSymbol(clazz).toType.decls.collect {
+      val t = runtimeMirror(clazz.getClassLoader()).classSymbol(clazz).toType
+      val decls = try {
+        t.getClass.getMethod("decls")
+      } catch {
+        case _: Throwable => t.getClass.getMethod("declarations")
+      }
+
+      val scopes : Iterable[Symbol] = decls.invoke(t).asInstanceOf[Iterable[Symbol]]
+      scopes.collect {
         case m: MethodSymbol if m.isCaseAccessor => m.name.toString()
       }
     }
