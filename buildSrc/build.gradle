@@ -19,7 +19,7 @@ version = props.getProperty('eshadoop')
 boolean snapshot = "true".equals(System.getProperty("build.snapshot", "true"))
 if (snapshot) {
     // we update the version property to reflect if we are building a snapshot or a release build
-    version += ".BUILD-SNAPSHOT"
+    version += "-SNAPSHOT"
     props.put("eshadoop", version)
 }
 
