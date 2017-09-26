@@ -13,7 +13,7 @@
 :ver:	7.0.0-alpha1
 :ver-d: 7.0.0-alpha1-SNAPSHOT
 :es-v:	7.0.0-alpha1-SNAPSHOT
-:sp-v:	1.6.2
+:sp-v:	2.2.0
 :st-v:	1.0.1
 :pg-v:	0.15.0
 :hv-v:	1.2.1
