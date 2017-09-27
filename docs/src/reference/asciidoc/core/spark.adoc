@@ -1387,7 +1387,7 @@ Note the push down operations apply even when one specifies a query - the connec
 
 As a side note, {eh} supports _all_ the `Filter`s available in Spark (1.3.0 and higher) while retaining backwards binary-compatibility with Spark 1.3.0, pushing down to full extent the SQL operations to {es} without any user interference.
 
-Operators those have been optimized as pushdown filters.
+Operators those have been optimized as pushdown filters:
 
 [cols="^,^,^",options="header"]
 |===
@@ -1403,11 +1403,13 @@ Operators those have been optimized as pushdown filters.
 | and | and.filters | bool.filter 
 | or | or.filters | bool.should [bool.filter]  
 | not | not.filter | bool.must_not 
-| StringStartsWith | wildcard(arg\*) | wildcard(arg\*) 
-| StringEndsWith | wildcard(\*arg) | wildcard(\*arg) 
-| StringContains | wildcard(\*arg\*) | wildcard(\*arg\*) 
+| StringStartsWith | wildcard(arg*) | wildcard(arg*) 
+| StringEndsWith | wildcard(*arg) | wildcard(*arg) 
+| StringContains | wildcard(\*arg*) | wildcard(\*arg*) 
 | EqualNullSafe (strict) | term | term 
 | EqualNullSafe (not strict) | match | match 
+
+|===
 
 
 To wit, consider the following Spark SQL:
