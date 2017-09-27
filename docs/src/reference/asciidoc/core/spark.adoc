@@ -1391,23 +1391,23 @@ Operators those have been optimized as pushdown filters.
 
 [cols="^,^,^",options="header"]
 |===
-|SQL syntax | ES 1.x/2.x syntax| ES 5.x syntax |
+|SQL syntax | ES 1.x/2.x syntax| ES 5.x syntax 
 
-| = null , is_null | missing | must_not.exists |
-| = (strict) | term | term |
-| = (not strict) | match | match |
-| > , < , >= , <= | range | range |
-| is_not_null | exists | exists |
-| in (strict) | terms | terms |
-| in (not strict) | or.filters | bool.should |
-| and | and.filters | bool.filter |
-| or | or.filters | bool.should [bool.filter]  |
-| not | not.filter | bool.must_not |
-| StringStartsWith | wildcard(arg\*) | wildcard(arg\*) |
-| StringEndsWith | wildcard(\*arg) | wildcard(\*arg) |
-| StringContains | wildcard(\*arg\*) | wildcard(\*arg\*) |
-| EqualNullSafe (strict) | term | term | 
-| EqualNullSafe (not strict) | match | match |
+| = null , is_null | missing | must_not.exists 
+| = (strict) | term | term 
+| = (not strict) | match | match 
+| > , < , >= , <= | range | range 
+| is_not_null | exists | exists 
+| in (strict) | terms | terms 
+| in (not strict) | or.filters | bool.should 
+| and | and.filters | bool.filter 
+| or | or.filters | bool.should [bool.filter]  
+| not | not.filter | bool.must_not 
+| StringStartsWith | wildcard(arg\*) | wildcard(arg\*) 
+| StringEndsWith | wildcard(\*arg) | wildcard(\*arg) 
+| StringContains | wildcard(\*arg\*) | wildcard(\*arg\*) 
+| EqualNullSafe (strict) | term | term 
+| EqualNullSafe (not strict) | match | match 
 
 
 To wit, consider the following Spark SQL:
