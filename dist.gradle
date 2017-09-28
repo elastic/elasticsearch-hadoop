@@ -100,7 +100,7 @@ repositories {
 task writePom() {
     doLast() {
         MavenPom mavenPom = pom {}
-        customizePom(mavenPom, project).writeTo("$buildDir/distributions/${project.archivesBaseName}-${project.version}.xml")
+        customizePom(mavenPom, project).writeTo("$buildDir/distributions/${project.archivesBaseName}-${project.version}.pom")
     }
 }
 
