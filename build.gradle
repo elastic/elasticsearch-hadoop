@@ -388,6 +388,9 @@ configure(rootProject) {
                     String artifactName = configurations.findJar.first().name
                     File found = new File(rootProject.buildDir, 'found/')
                     logger.lifecycle("Found [$artifactName] and stored it in [$found]")
+                    if (configurations.findJar.size() > 1) {
+                        configurations.findJar.each { logger.lifecycle("Also found other dependencies: [${ it.name }]") }
+                    }
                 } else {
                     logger.lifecycle("Could not find artifact [$artifact]")
                 }
