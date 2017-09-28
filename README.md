@@ -26,7 +26,7 @@ Available through any Maven-compatible tool:
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>6.0.0-beta2</version>
+  <version>6.0.0-rc1</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
