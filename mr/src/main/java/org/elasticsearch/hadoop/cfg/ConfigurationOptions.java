@@ -234,6 +234,9 @@ public interface ConfigurationOptions {
     String ES_OPERATION_DELETE = "delete";
     String ES_WRITE_OPERATION_DEFAULT = ES_OPERATION_INDEX;
 
+    String ES_WRITE_CONFLICT_IGNORE = "es.write.conflict.ignore";
+    String ES_WRITE_CONFLICT_IGNORE_DEFAULT = "false";
+
     String ES_UPDATE_RETRY_ON_CONFLICT = "es.update.retry.on.conflict";
     String ES_UPDATE_RETRY_ON_CONFLICT_DEFAULT = "0";
 

@@ -72,6 +72,7 @@ public class RestClient implements Closeable, StatsAware {
     private final ObjectMapper mapper;
     private final TimeValue scrollKeepAlive;
     private final boolean indexReadMissingAsEmpty;
+    private final boolean writeConflictIgnore;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
 
@@ -93,6 +94,7 @@ public class RestClient implements Closeable, StatsAware {
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+        writeConflictIgnore = settings.getWriteConflictIgnore();
 
         String retryPolicyName = settings.getBatchWriteRetryPolicy();
 
@@ -233,7 +235,7 @@ public class RestClient implements Closeable, StatsAware {
                 Integer status = (Integer) values.get("status");
 
                 String error = extractError(values);
-                if (error != null && !error.isEmpty()) {
+                if (error != null && !error.isEmpty() && !(writeConflictIgnore && status != null && status == HttpStatus.CONFLICT)) {
                     if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
                         if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
