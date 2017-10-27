@@ -615,8 +615,14 @@ public abstract class RestService implements Serializable {
             }
         }
 
+        // if WAN mode is used, use an already selected node
         if (settings.getNodesWANOnly()) {
-            return randomNodeWrite(settings, currentInstance, resource, log);
+            String node = SettingsUtils.getPinnedNode(settings);
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, node));
+            }
+
+            return repository;
         }
 
         // if client-nodes are used, simply use the underlying nodes
@@ -673,16 +679,8 @@ public abstract class RestService implements Serializable {
             log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
         }
 
-        return randomNodeWrite(settings, currentInstance, resource, log);
-    }
-
-    private static RestRepository randomNodeWrite(Settings settings, long currentInstance, Resource resource, Log log) {
-        // multi-index write - since we don't know before hand what index will be used, pick a random node from the given list
-        List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
-        String node = nodes.get(new Random().nextInt(nodes.size()));
-        // override the global settings to communicate directly with the target node
-        SettingsUtils.pinNode(settings, node);
-
+        // multi-index write - since we don't know before hand what index will be used, use an already selected node
+        String node = SettingsUtils.getPinnedNode(settings);
         if (log.isDebugEnabled()) {
             log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, node));
         }
