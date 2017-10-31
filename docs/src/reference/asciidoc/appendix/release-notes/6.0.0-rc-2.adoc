@@ -1,0 +1,11 @@
+[[eshadoop-6.0.0-rc-2]]
+== Elasticsearch for Apache Hadoop version 6.0.0-rc2
+October 31, 2017
+
+Please note that this is an RC release and that we do not recommend running this in production! See our
+<<breaking-changes-6.0>> page for more information on what you might need to modify.
+
+[[enhancements-6.0.0-rc-2]]
+=== Enhancements
+Build::
+* New buildSrc layout for integration testing and one-click-builds.
