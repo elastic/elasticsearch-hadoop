@@ -33,6 +33,16 @@ object StructuredStreamingVersionLockTest {
     list.add(Array("2.5.1", TRUE))
     list.add(Array("3.0.0", TRUE))
 
+    list.add(Array("2.1.3.extra", FALSE))
+    list.add(Array("2.2.0.extra", TRUE))
+    list.add(Array("2.3.1.extra", TRUE))
+    list.add(Array("3.0.0.extra", TRUE))
+
+    list.add(Array("2.1.3-extra", FALSE))
+    list.add(Array("2.2.0-extra", TRUE))
+    list.add(Array("2.3.1-extra", TRUE))
+    list.add(Array("3.0.0-extra", TRUE))
+
     list
   }
 
