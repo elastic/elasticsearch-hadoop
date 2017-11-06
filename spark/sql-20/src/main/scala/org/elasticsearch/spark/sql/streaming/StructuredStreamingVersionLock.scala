@@ -17,7 +17,7 @@ object StructuredStreamingVersionLock {
 
   private [this] val LOG = LogFactory.getLog(getClass)
 
-  private [this] val supported = """(2.[2-9].[0-9]|[3-9].[0-9].[0-9])""".r
+  private [this] val supported = """(2.[2-9].[0-9]|[3-9].[0-9].[0-9]).*""".r
 
   /**
    * Checks the spark session to make sure that it contains a compatible
