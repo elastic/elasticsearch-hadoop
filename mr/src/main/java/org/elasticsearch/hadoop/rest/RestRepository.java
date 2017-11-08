@@ -184,6 +184,7 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
+        //TODO: Perform error handling for serialization here
         doWriteToIndex(command.write(object));
     }
 
@@ -267,6 +268,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void flush() {
+        // TODO: Begin here for determining rest response code handling for bulk operations.
         BulkResponse bulk = tryFlush();
         if (!bulk.getLeftovers().isEmpty()) {
             String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getLeftovers().cardinality(), bulk.getTotalWrites(), bulk.getErrorExamples().size());
