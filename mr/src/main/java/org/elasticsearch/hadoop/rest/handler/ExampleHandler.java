@@ -4,14 +4,17 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.HttpStatus;
 
 /**
- * Created by james.baiera on 11/8/17.
+ * EXAMPLE - Simple example error handler that logs and drops conflicts, retries on overload, and otherwise passes
+ * evaluation on to the next handler.
  */
-public class ExampleHandler implements WriteErrorHandler {
+public class ExampleHandler extends BulkWriteErrorHandler {
 
-    private static final Log errorLog = LogFactory.getLog("bulkerror");
+    private static final Log errorLog = LogFactory.getLog("bulk.error");
 
     private static final String CONF_KEY = "some.configuration.key";
 
@@ -23,9 +26,10 @@ public class ExampleHandler implements WriteErrorHandler {
         localState = properties.getProperty(CONF_KEY, "default value");
     }
 
-    public HandlerResult onError(BulkWriteFailure entry, ErrorCollector collector) {
+    @Override
+    public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) {
         if (entry.getResponseCode() == HttpStatus.CONFLICT) {
-            errorLog.error(entry.toString(), entry.getReason());
+            errorLog.error("DROPPING ["+entry.toString()+"] due to CONFLICT response.", entry.getReason());
             return HandlerResult.HANDLED;
         } else if (entry.getResponseCode() == HttpStatus.TOO_MANY_REQUESTS) {
             return collector.retry(entry.getEntryContents());

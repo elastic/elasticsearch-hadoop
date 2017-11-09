@@ -6,9 +6,9 @@ package org.elasticsearch.hadoop.rest.handler;
 public class BulkWriteFailure {
 
     private final int response;
-    private final Throwable reason;
+    private final Exception reason;
 
-    public BulkWriteFailure(int response, Throwable reason) {
+    public BulkWriteFailure(int response, Exception reason) {
         this.response = response;
         this.reason = reason;
     }
@@ -17,7 +17,7 @@ public class BulkWriteFailure {
         return response;
     }
 
-    public Throwable getReason() {
+    public Exception getReason() {
         return reason;
     }
 
@@ -25,6 +25,4 @@ public class BulkWriteFailure {
         //TODO: PULL THIS FROM THE TRACKING BYTES ARRAY
         return null;
     }
-
-
 }
