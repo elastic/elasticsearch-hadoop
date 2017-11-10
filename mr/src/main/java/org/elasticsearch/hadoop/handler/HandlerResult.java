@@ -17,5 +17,15 @@ public enum HandlerResult {
      * Signals to the connector that the given {@link ErrorHandler} was unable to handle the failure scenario.
      * In this case, the failure information is passed on to the next configured handler in the chain.
      */
-    PASS
+    PASS,
+
+    /**
+     * Signals to the connector that the given {@link ErrorHandler} determined that the given failure scenario
+     * is grounds to abort the job. In this case, the original exception information will be extracted and thrown
+     * with no further handlers in the chain being called. Alternatively, a handler can simply rethrow the original
+     * exception included with its input or throw a completely different exception. Any thrown exception from an
+     * {@link ErrorHandler#onError(Exceptional, ErrorCollector)}) call is implicitly treated as an
+     * {@link HandlerResult#ABORT} result.
+     */
+    ABORT
 }
