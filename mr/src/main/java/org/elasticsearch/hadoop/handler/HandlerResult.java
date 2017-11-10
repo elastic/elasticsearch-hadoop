@@ -1,10 +1,21 @@
 package org.elasticsearch.hadoop.handler;
 
 /**
- * TODO: FILL OUT
+ * Values that denote the result of an action taken by an {@link ErrorHandler}.
  */
 public enum HandlerResult {
-    // TODO: Make Javadocs
-    PASS, // This connector cannot handle this error and the handling of the error should move on to the next handler
-    HANDLED // This connector has handled this failure. No further handlers are needed to be called.
+
+    /**
+     * Signals to the connector that the given {@link ErrorHandler} was successfully able to handle the failure
+     * scenario, either by swallowing the failure, persisting the operation for examination, or attempting to
+     * retry the operation. In this case, the handling for this failure instance is stopped and no further handlers
+     * in the chain will be called.
+     */
+    HANDLED,
+
+    /**
+     * Signals to the connector that the given {@link ErrorHandler} was unable to handle the failure scenario.
+     * In this case, the failure information is passed on to the next configured handler in the chain.
+     */
+    PASS
 }
