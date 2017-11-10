@@ -29,7 +29,7 @@ public class ExampleHandler extends BulkWriteErrorHandler {
     @Override
     public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) {
         if (entry.getResponseCode() == HttpStatus.CONFLICT) {
-            errorLog.error("DROPPING ["+entry.toString()+"] due to CONFLICT response.", entry.getReason());
+            errorLog.error("DROPPING ["+entry.toString()+"] due to CONFLICT response.", entry.getException());
             return HandlerResult.HANDLED;
         } else if (entry.getResponseCode() == HttpStatus.TOO_MANY_REQUESTS) {
             return collector.retry(entry.getEntryContents());

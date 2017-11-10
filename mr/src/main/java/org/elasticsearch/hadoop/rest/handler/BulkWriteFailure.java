@@ -1,9 +1,11 @@
 package org.elasticsearch.hadoop.rest.handler;
 
+import org.elasticsearch.hadoop.handler.Exceptional;
+
 /**
- * Todo: Fill Out
+ * Encapsulates all available information pertaining to an unhandled bulk indexing operation failure.
  */
-public class BulkWriteFailure {
+public class BulkWriteFailure implements Exceptional {
 
     private final int response;
     private final Exception reason;
@@ -13,14 +15,21 @@ public class BulkWriteFailure {
         this.reason = reason;
     }
 
+    /**
+     * @return HTTP Response code for entry
+     */
     public int getResponseCode() {
         return response;
     }
 
-    public Exception getReason() {
+    @Override
+    public Exception getException() {
         return reason;
     }
 
+    /**
+     * @return serialized bulk entry in byte array format
+     */
     public byte[] getEntryContents() {
         //TODO: PULL THIS FROM THE TRACKING BYTES ARRAY
         return null;

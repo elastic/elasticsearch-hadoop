@@ -12,7 +12,7 @@ public class ThrowOnFailure extends BulkWriteErrorHandler {
 
     @Override
     public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) throws Exception {
-        throw entry.getReason();
+        throw entry.getException();
     }
 
 }
