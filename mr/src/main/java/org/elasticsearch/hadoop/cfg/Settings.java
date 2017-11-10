@@ -591,6 +591,10 @@ public abstract class Settings {
 
     public abstract void setProperty(String name, String value);
 
+    public Settings getSettingsView(String name) {
+        return new SettingsView(this, name);
+    }
+
     public Settings merge(Properties properties) {
         if (properties == null || properties.isEmpty()) {
             return this;
