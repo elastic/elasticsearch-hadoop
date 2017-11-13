@@ -23,7 +23,9 @@ java version "1.8.0_45"
 [[requirements-es]]
 === {es}
 
-We *highly* recommend using the latest Elasticsearch (currently {es-v}), but {eh} is also backwards compatible with the *1.X* and *2.X* versions of {es}. {es} versions lower than 1.X are not supported as {eh} uses new features added in 1.X for distributed parallel interactions with {es}. We strongly recommend using the latest, stable version of Elasticsearch.
+We *highly* recommend using the latest Elasticsearch (currently {es-v}). While {eh} maintains backwards compatibility
+with previous versions of {es}, we strongly recommend using the latest, stable version of Elasticsearch. You can
+find a matrix of supported versions https://www.elastic.co/support/matrix#matrix_compatibility[here].
 
 The {es} version is shown in its folder name:
 

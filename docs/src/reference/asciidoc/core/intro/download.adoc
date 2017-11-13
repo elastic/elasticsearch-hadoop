@@ -154,3 +154,17 @@ but also enable the dedicated snapshots repository :
 
 <1> add snapshot repository
 <2> enable 'snapshots' capability on the repository otherwise these will not be found by Maven
+
+[[upgrading]]
+=== Upgrading Your Stack
+
+{ehtm} is a client library for {es}, albeit one with extended functionality for supporting operations on Hadoop/Spark. When upgrading Hadoop/Spark versions, it is best to check
+to make sure that your new versions are supported by the connector, upgrading your {eh} version as appropriate.
+
+{ehtm} maintains backwards compatibility with the most recent minor version of {es}'s previous major release (5.X supports back to 2.4.X, 6.X supports back to 5.6.X, etc...). When you are upgrading
+your version of {es}, it is best to upgrade {eh} to the new version (or higher) first. The new {eh} version should continue to work for your previous
+{es} version, allowing you to upgrade as normal.
+
+NOTE: {ehtm} does not support rolling upgrades well. During a rolling upgrade, nodes that {eh} is communicating with will be regularly disappearing and coming back online. Due to the constant connection
+failures that {eh} will experience during the time frame of a rolling upgrade there is high probability that your jobs will fail. Thus, it is recommended that you disable
+any {eh} based write or read jobs against {es} during your rolling upgrade process.
