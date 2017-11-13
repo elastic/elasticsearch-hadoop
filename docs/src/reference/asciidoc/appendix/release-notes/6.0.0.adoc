@@ -1,0 +1,101 @@
+[[eshadoop-6.0.0]]
+== Elasticsearch for Apache Hadoop version 6.0.0
+November 14, 2017
+
+[[breaking-6.0.0]]
+=== Breaking Changes
+* Elasticsearch on YARN integration has been removed
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+http://github.com/elastic/elasticsearch-hadoop/pull/1027[#1027]
+* Using Hadoop versions 1.x is deprecated as of 5.5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+* ES-Hadoop will support Scala 2.11 by default in 6.0.0
+http://github.com/elastic/elasticsearch-hadoop/issues/1001[#1001]
+* New timestamp formatting
+http://github.com/elastic/elasticsearch-hadoop/issues/985[#985]
+
+[[new-6.0.0]]
+=== New Features
+Spark::
+* Spark 2.0 Stream Interfaces
+https://github.com/elastic/elasticsearch-hadoop/issues/818[#818]
+Serialization::
+* Support Elasticsearch "join" types
+http://github.com/elastic/elasticsearch-hadoop/issues/1012[#1012]
+
+[[enhancements-6.0.0]]
+=== Enhancements
+Spark::
+* Spark 2.1.1 and 2.2.0 Support
+http://github.com/elastic/elasticsearch-hadoop/issues/978[#978]
+http://github.com/elastic/elasticsearch-hadoop/issues/1013[#1013]
+* Spark JavaRDD give partial documents
+http://github.com/elastic/elasticsearch-hadoop/issues/946[#946]
+Scripting::
+* Allow users to use file based scripts during updates
+http://github.com/elastic/elasticsearch-hadoop/issues/918[#918]
+* Support script id/file/inline options
+http://github.com/elastic/elasticsearch-hadoop/issues/538[#538]
+REST::
+* Remove uses of features deprecated in 5.0
+http://github.com/elastic/elasticsearch-hadoop/issues/881[#881]
+* Remove unmatched format specifier from Restservice
+http://github.com/elastic/elasticsearch-hadoop/pull/1029[#1029]
+Serialization::
+* Support nested collections of Java Bean classes in Spark
+http://github.com/elastic/elasticsearch-hadoop/issues/1021[#1021]
+* Not able to use kryoserializer for writing data into Elasticsearch
+http://github.com/elastic/elasticsearch-hadoop/issues/1019[#1019]
+* JacksonJsonGenerator.getParentPath will always be empty
+http://github.com/elastic/elasticsearch-hadoop/issues/1006[#1006]
+Pig::
+* Using es.mapping.exclude/include and still getting StrictDynamicMappingException on excluded fields
+http://github.com/elastic/elasticsearch-hadoop/issues/1015[#1015]
+Build::
+* Elasticsearch is no longer started as an embedded process when running tests.
+* New buildSrc layout for integration testing and one-click-builds.
+* Fix implicit conversion warnings in Spark
+http://github.com/elastic/elasticsearch-hadoop/issues/973[#973]
+https://github.com/elastic/elasticsearch-hadoop/pull/980[#980]
+* Fix remaining Scala warnings
+http://github.com/elastic/elasticsearch-hadoop/issues/970[#970]
+https://github.com/elastic/elasticsearch-hadoop/pull/1011[#1011]
+Testing::
+* Convert tests to use Painless
+https://github.com/elastic/elasticsearch-hadoop/issues/987[#987]
+
+[[bugs-6.0.0]]
+=== Bug Fixes
+Spark::
+* Add scaled and half float to schemautils
+https://github.com/elastic/elasticsearch-hadoop/pull/982[#982]
+https://github.com/elastic/elasticsearch-hadoop/issues/981[#981]
+* Support Date / Timestamp objects
+https://github.com/elastic/elasticsearch-hadoop/pull/934[#934]
+https://github.com/elastic/elasticsearch-hadoop/issues/931[#931]
+* When overwriting data in a Spark Dataframe, the Dataframe will not attempt to
+delete data if the index already does not exist.
+* version mismatch exception
+https://github.com/elastic/elasticsearch-hadoop/issues/1070[#1070]
+REST::
+* Scroll Id's are malformed for ES 1.x
+https://github.com/elastic/elasticsearch-hadoop/issues/1002[#1002]
+* ElasticsearchIllegalArgumentException[Malformed scrollId []] caused by es.scroll.limit
+https://github.com/elastic/elasticsearch-hadoop/issues/992[#992]
+* Scroll Id regression on Elasticsearch 2.4.5
+https://github.com/elastic/elasticsearch-hadoop/issues/1034[#1034]
+* A new set of logging commands added for SSL debugging have been reduced in severity to avoid spamming streaming users.
+
+[[docs-6.0.0]]
+=== Documentation
+* fixed reference to maven dependency
+https://github.com/elastic/elasticsearch-hadoop/pull/1016#1016]
+* wrong variable saved in java streaming example
+https://github.com/elastic/elasticsearch-hadoop/pull/961[#961]
+* Unclear Docs (about multi-resource writes)
+http://github.com/elastic/elasticsearch-hadoop/issues/990[#990]
+* Adding comment on breaking change
+https://github.com/elastic/elasticsearch-hadoop/pull/1048[#1048]
+* Document best practices for stack upgrades that use ES-Hadoop
+https://github.com/elastic/elasticsearch-hadoop/issues/1053[#1053]
+
