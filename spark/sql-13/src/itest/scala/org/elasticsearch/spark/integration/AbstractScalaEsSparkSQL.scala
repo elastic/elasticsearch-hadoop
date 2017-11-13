@@ -74,6 +74,7 @@ import javax.xml.bind.DatatypeConverter
 import org.apache.commons.logging.impl.NoOpLog
 import org.elasticsearch.hadoop.{EsHadoopIllegalArgumentException, EsHadoopIllegalStateException}
 import org.apache.spark.sql.types.DoubleType
+import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 
@@ -1392,6 +1393,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testJoinField(): Unit = {
+    // Join added in 6.0.
+    // TODO: Available in 5.6, but we only track major version ids in the connector.
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "Join added in 6.0.")
+
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
     val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
