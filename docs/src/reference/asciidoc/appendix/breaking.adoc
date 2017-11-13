@@ -60,9 +60,6 @@ In 6.0.0, our ES-Hadoop jar will ship with Spark compiled against Scala 2.11 by 
 continue to support Scala 2.10 in compatibility artifacts, but the main project
 artifact will target Scala 2.11 by default.
 
-The new endpoint is available since Elasticsearch 5.x. In case you are running
-Elasticsearch 2.x, the correct endpoint will be used.
-
 [[breaking-changes-5.0]]
 === Breaking Changes in 5.0
 
