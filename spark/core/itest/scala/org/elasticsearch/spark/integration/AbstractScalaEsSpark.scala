@@ -332,6 +332,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDWriteJoinField(): Unit = {
+    // Join added in 6.0.
+    // TODO: Available in 5.6, but we only track major version ids in the connector.
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "Join added in 6.0.")
+
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
     val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
@@ -594,20 +598,20 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
-    val mapping = """{
+    val mapping = s"""{
                     |  "data": {
                     |    "properties": {
                     |      "id": {
-                    |        "type": "keyword"
+                    |        "type": "$keyword"
                     |      },
                     |      "note": {
-                    |        "type": "keyword"
+                    |        "type": "$keyword"
                     |      },
                     |      "address": {
                     |        "type": "nested",
                     |        "properties": {
-                    |          "id":    { "type": "keyword"  },
-                    |          "zipcode": { "type": "keyword"  }
+                    |          "id":    { "type": "$keyword"  },
+                    |          "zipcode": { "type": "$keyword"  }
                     |        }
                     |      }
                     |    }
@@ -797,7 +801,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = wrapIndex("spark-template-index/alias")
 
     val template = """
-      |{"template" : """".stripMargin + "spark-template-*" + """",
+       |{"template" : """".stripMargin + "spark-template-*" + s"""",
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
@@ -805,7 +809,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         |"mappings" : {
         |  "alias" : {
         |    "properties" : {
-        |      "name" : { "type" : "keyword" },
+        |      "name" : { "type" : "$keyword" },
         |      "number" : { "type" : "long" },
         |      "@ImportDate" : { "type" : "date" }
         |     }

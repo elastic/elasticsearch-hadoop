@@ -502,6 +502,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
+      InitializationUtils.discoverEsVersion(cfgCopy, Utils.LOGGER)
       InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
       InitializationUtils.setFieldExtractorIfNotSet(cfgCopy, classOf[ConstantFieldExtractor], null) //throw away extractor
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false")

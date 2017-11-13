@@ -87,8 +87,12 @@ import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 
+import org.apache.commons.logging.impl.NoOpLog
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.mr.EsAssume
+import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
+import org.junit.Assert
 import org.junit.Assert.assertNotNull
 
 object AbstractScalaEsScalaSparkSQL {
@@ -1446,6 +1450,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
   @Test
   def testJoinField(): Unit = {
+    // Join added in 6.0.
+    // TODO: Available in 5.6, but we only track major version ids in the connector.
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "Join added in 6.0.")
+
     // test mix of short-form and long-form joiner values
     val company1 = Map("id" -> "1", "company" -> "Elastic", "joiner" -> "company")
     val company2 = Map("id" -> "2", "company" -> "Fringe Cafe", "joiner" -> Map("name" -> "company"))
