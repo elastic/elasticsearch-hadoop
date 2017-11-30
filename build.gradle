@@ -30,7 +30,7 @@ allprojects {
       // For Elasticsearch snapshots.
       maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
       // For Lucene Snapshots. See org.elasticsearch.gradle.BuildPlugin#configureRepositories for why we may need this.
-      maven { url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/f33ed4ba12a" }
+      maven { url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/8c94404" }
     }
 
     apply plugin: "java"
@@ -179,6 +179,7 @@ allprojects { Project project ->
         // makes eclipse classpath easier
         testCompile("org.elasticsearch:elasticsearch:${elasticsearchVersion}") {
             exclude group: "org.apache.logging.log4j", module: "log4j-api"
+            exclude group: "org.elasticsearch", module: "elasticsearch-cli"
         }
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
