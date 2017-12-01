@@ -39,6 +39,7 @@ import org.elasticsearch.hadoop.serialization.field.JsonFieldExtractors;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesArrayPool;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -48,6 +49,9 @@ public abstract class AbstractBulkFactory implements BulkFactory {
     private static Log log = LogFactory.getLog(AbstractBulkFactory.class);
 
     protected Settings settings;
+    protected EsMajorVersion esMajorVersion;
+
+    protected RequestParameterNames requestParameterNames;
 
     private final boolean jsonInput;
     private final boolean isStatic;
@@ -185,15 +189,48 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         }
     }
 
+    /**
+     * The set of JSON based field labels for bulk requests. In 7.0 we no longer prefix these fields with underscores.
+     */
+    class RequestParameterNames {
+        final String parent;
+        final String retryOnConflict;
+        final String routing;
+        final String version;
+        final String versionType;
 
-    AbstractBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
+        public RequestParameterNames(EsMajorVersion majorVersion) {
+            if (majorVersion.onOrAfter(EsMajorVersion.V_7_X)) {
+                this.parent = "\"parent\":";
+                this.retryOnConflict = "\"retry_on_conflict\":";
+                this.routing = "\"routing\":";
+                this.version = "\"version\":";
+                this.versionType = "\"version_type\":";
+            } else {
+                this.parent = "\"_parent\":";
+                this.retryOnConflict = "\"_retry_on_conflict\":";
+                this.routing = "\"_routing\":";
+                this.version = "\"_version\":";
+                this.versionType = "\"_version_type\":";
+            }
+        }
+    }
+
+
+    AbstractBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
         this.settings = settings;
+        this.esMajorVersion = esMajorVersion;
+        this.requestParameterNames = new RequestParameterNames(esMajorVersion);
         this.valueWriter = ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
         this.metaExtractor = metaExtractor;
 
         jsonInput = settings.getInputAsJson();
         isStatic = metaExtractor == null;
         initExtractorsFromSettings(settings);
+    }
+
+    protected RequestParameterNames getRequestParameterNames() {
+        return requestParameterNames;
     }
 
     private void initExtractorsFromSettings(final Settings settings) {
@@ -367,8 +404,8 @@ public abstract class AbstractBulkFactory implements BulkFactory {
         commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.INDEX, indexExtractor), "", commaMightBeNeeded);
         commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TYPE, typeExtractor), "\"_type\":", commaMightBeNeeded);
         commaMightBeNeeded = id(list, commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.PARENT, parentExtractor), "\"_parent\":", commaMightBeNeeded);
-        commaMightBeNeeded = addExtractorOrDynamicValueAsFieldWriter(list, getMetadataExtractorOrFallback(Metadata.ROUTING, routingExtractor), "\"_routing\":", commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.PARENT, parentExtractor), requestParameterNames.parent, commaMightBeNeeded);
+        commaMightBeNeeded = addExtractorOrDynamicValueAsFieldWriter(list, getMetadataExtractorOrFallback(Metadata.ROUTING, routingExtractor), requestParameterNames.routing, commaMightBeNeeded);
         commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TTL, ttlExtractor), "\"_ttl\":", commaMightBeNeeded);
         commaMightBeNeeded = addExtractorOrDynamicValue(list, getMetadataExtractorOrFallback(Metadata.TIMESTAMP, timestampExtractor), "\"_timestamp\":", commaMightBeNeeded);
 
@@ -380,7 +417,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
                 commaMightBeNeeded = false;
             }
             commaMightBeNeeded = true;
-            list.add("\"_version\":");
+            list.add(requestParameterNames.version);
             list.add(versionField);
 
             // version_type - only needed when a version is specified
@@ -391,7 +428,7 @@ public abstract class AbstractBulkFactory implements BulkFactory {
                     commaMightBeNeeded = false;
                 }
                 commaMightBeNeeded = true;
-                list.add("\"_version_type\":");
+                list.add(requestParameterNames.versionType);
                 list.add(versionTypeField);
             }
         }

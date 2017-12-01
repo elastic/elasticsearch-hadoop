@@ -44,20 +44,16 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     private final boolean HAS_SCRIPT, HAS_LANG;
     private final boolean UPSERT;
 
-    private final EsMajorVersion esMajorVersion;
-
     public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
         this(settings, false, metaExtractor, esMajorVersion);
     }
 
     public UpdateBulkFactory(Settings settings, boolean upsert, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
-        super(settings, metaExtractor);
-
-        this.esMajorVersion = esMajorVersion;
+        super(settings, metaExtractor, esMajorVersion);
 
         UPSERT = upsert;
         RETRY_ON_FAILURE = settings.getUpdateRetryOnConflict();
-        RETRY_HEADER = "\"_retry_on_conflict\":" + RETRY_ON_FAILURE + "";
+        RETRY_HEADER = getRequestParameterNames().retryOnConflict + RETRY_ON_FAILURE + "";
 
         HAS_SCRIPT = settings.hasUpdateScript();
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());

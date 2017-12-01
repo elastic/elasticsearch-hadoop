@@ -34,10 +34,10 @@ public abstract class BulkCommands {
         BulkFactory factory = null;
 
         if (ConfigurationOptions.ES_OPERATION_CREATE.equals(operation)) {
-            factory = new CreateBulkFactory(settings, metaExtractor);
+            factory = new CreateBulkFactory(settings, metaExtractor, version);
         }
         else if (ConfigurationOptions.ES_OPERATION_INDEX.equals(operation)) {
-            factory = new IndexBulkFactory(settings, metaExtractor);
+            factory = new IndexBulkFactory(settings, metaExtractor, version);
         }
         else if (ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation)) {
             factory = new UpdateBulkFactory(settings, metaExtractor, version);

@@ -20,11 +20,12 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 class IndexBulkFactory extends AbstractBulkFactory {
 
-    public IndexBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
-        super(settings, metaExtractor);
+    public IndexBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
+        super(settings, metaExtractor, esMajorVersion);
     }
 
     @Override

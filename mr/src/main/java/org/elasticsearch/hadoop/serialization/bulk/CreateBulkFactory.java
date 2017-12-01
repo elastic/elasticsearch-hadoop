@@ -20,11 +20,12 @@ package org.elasticsearch.hadoop.serialization.bulk;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 public class CreateBulkFactory extends AbstractBulkFactory {
 
-    public CreateBulkFactory(Settings settings, MetadataExtractor metaExtractor) {
-        super(settings, metaExtractor);
+    public CreateBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
+        super(settings, metaExtractor, esMajorVersion);
     }
 
     @Override
