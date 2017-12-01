@@ -168,7 +168,6 @@ public class ScrollReader {
         public List<String> includeFields;
         public List<String> excludeFields;
         public List<String> includeArrayFields;
-        public List<String> excludeArrayFields;
         public Mapping resolvedMapping;
 
         public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName,
