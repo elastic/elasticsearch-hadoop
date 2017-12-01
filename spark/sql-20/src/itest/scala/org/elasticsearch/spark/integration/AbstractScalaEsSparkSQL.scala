@@ -87,11 +87,8 @@ import com.esotericsoftware.kryo.io.{Input => KryoInput}
 import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 
-import org.apache.commons.logging.impl.NoOpLog
 import org.apache.spark.sql.SparkSession
-import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
-import org.junit.Assert
 import org.junit.Assert.assertNotNull
 
 object AbstractScalaEsScalaSparkSQL {
@@ -383,6 +380,40 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val array = first.getSeq[Long](0)
     assertEquals(1l, array(0))
     assertEquals(4l, array(2))
+  }
+
+  @Test
+  def testSometimesArrayValue {
+    val index = wrapIndex("sparksql-test-sometimes-array-value")
+    val indexAndType = s"$index/data"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc1 = """{"array" : [1, 2, 4, 5] }"""
+    val jsonDoc2 = """{"array" : 6 }"""
+    sc.makeRDD(Seq(jsonDoc1, jsonDoc2)).saveJsonToEs(indexAndType)
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_AS_ARRAY_INCLUDE -> "array")
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql").load(indexAndType)
+
+    assertEquals("array", df.schema("array").dataType.typeName)
+    assertEquals("long", df.schema("array").dataType.asInstanceOf[ArrayType].elementType.typeName)
+    assertEquals(2, df.count())
+
+    val arrays = df.collect().map(_.getSeq[Long](0)).sortBy(_.head)
+
+    {
+      val array = arrays(0)
+      assertEquals(1l, array(0))
+      assertEquals(4l, array(2))
+    }
+
+    {
+      val array = arrays(1)
+      assertEquals(6l, array(0))
+    }
   }
 
   @Test

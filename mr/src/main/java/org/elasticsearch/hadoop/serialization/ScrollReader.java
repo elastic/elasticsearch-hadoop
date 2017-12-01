@@ -44,6 +44,7 @@ import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.elasticsearch.hadoop.util.regex.Regex;
 
 /**
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
@@ -164,11 +165,12 @@ public class ScrollReader {
         public boolean ignoreUnmappedFields;
         public List<String> includeFields;
         public List<String> excludeFields;
+        public List<String> includeArrayFields;
         public Mapping resolvedMapping;
 
         public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName,
                 boolean returnRawJson, boolean ignoreUnmappedFields, List<String> includeFields,
-                List<String> excludeFields) {
+                List<String> excludeFields, List<String> includeArrayFields) {
             super();
             this.reader = reader;
             this.readMetadata = readMetadata;
@@ -177,21 +179,23 @@ public class ScrollReader {
             this.ignoreUnmappedFields = ignoreUnmappedFields;
             this.includeFields = includeFields;
             this.excludeFields = excludeFields;
+            this.includeArrayFields = includeArrayFields;
             this.resolvedMapping = resolvedMapping;
         }
 
         public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
-            this(reader, resolvedMapping, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList());
+            this(reader, resolvedMapping, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
         }
 
         public ScrollReaderConfig(ValueReader reader) {
-            this(reader, null, false, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList());
+            this(reader, null, false, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
         }
 
         public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
             this(reader, resolvedMapping, cfg.getReadMetadata(), cfg.getReadMetadataField(),
                     cfg.getOutputAsJson(), cfg.getReadMappingMissingFieldsIgnore(),
-                    StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()));
+                    StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()),
+                    StringUtils.tokenize(cfg.getReadFieldAsArrayInclude()));
         }
     }
 
@@ -211,6 +215,7 @@ public class ScrollReader {
 
     private final List<NumberedInclude> includeFields;
     private final List<String> excludeFields;
+    private final List<NumberedInclude> includeArrayFields;
 
     private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
@@ -230,6 +235,7 @@ public class ScrollReader {
         this.ignoreUnmappedFields = scrollConfig.ignoreUnmappedFields;
         this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.includeFields);
         this.excludeFields = scrollConfig.excludeFields;
+        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.includeArrayFields);
 
         Mapping mapping = scrollConfig.resolvedMapping;
         if (mapping != null) {
@@ -706,12 +712,50 @@ public class ScrollReader {
         if (t.isValue()) {
             String rawValue = parser.text();
             try {
+                if (isArrayField(fieldMapping)) {
+                    return singletonList(fieldMapping, parseValue(esType));
+                } else {
+                    return parseValue(esType);
+                }
+            } catch (Exception ex) {
+                throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
+            }
+        }
+        return null;
+    }
+
+    // Same as read(String, Token, String) above, but does not include checking the current field name to see if it's an array.
+    protected Object readListItem(String fieldName, Token t, String fieldMapping) {
+        if (t == Token.START_ARRAY) {
+            return list(fieldName, fieldMapping);
+        }
+
+        // handle nested nodes first
+        else if (t == Token.START_OBJECT) {
+            return map(fieldMapping);
+        }
+        FieldType esType = mapping(fieldMapping);
+
+        if (t.isValue()) {
+            String rawValue = parser.text();
+            try {
                 return parseValue(esType);
             } catch (Exception ex) {
                 throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
             }
         }
         return null;
+    }
+
+    private boolean isArrayField(String fieldName) {
+        // Test if the current field is marked as an array field in the include array property
+        for (NumberedInclude includeArrayField : includeArrayFields) {
+            String pattern = includeArrayField.filter;
+            if (Regex.simpleMatch(pattern, fieldName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Object parseValue(FieldType esType) {
@@ -741,12 +785,21 @@ public class ScrollReader {
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         for (; parser.currentToken() != Token.END_ARRAY;) {
-            content.add(read(fieldName, parser.currentToken(), fieldMapping));
+            content.add(readListItem(fieldName, parser.currentToken(), fieldMapping));
         }
 
         // eliminate END_ARRAY
         parser.nextToken();
 
+        array = reader.addToArray(array, content);
+        return array;
+    }
+
+    protected Object singletonList(String fieldMapping, Object value) {
+        Object array = reader.createArray(mapping(fieldMapping));
+        // create only one element since with fields, we always get arrays which create unneeded allocations
+        List<Object> content = new ArrayList<Object>(1);
+        content.add(value);
         array = reader.addToArray(array, content);
         return array;
     }
