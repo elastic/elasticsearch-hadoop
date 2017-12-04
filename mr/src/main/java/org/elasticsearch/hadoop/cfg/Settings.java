@@ -323,6 +323,10 @@ public abstract class Settings {
         return getProperty(ES_UPDATE_SCRIPT_PARAMS_JSON);
     }
 
+    public boolean getUpdateDoc() {
+        return Booleans.parseBoolean(getProperty(ES_UPDATE_DOC, ES_UPDATE_DOC_DEFAULT));
+    }
+
     public boolean hasUpdateScript() {
         String op = getOperation();
         boolean hasScript = false;

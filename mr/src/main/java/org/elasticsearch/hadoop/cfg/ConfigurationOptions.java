@@ -245,6 +245,9 @@ public interface ConfigurationOptions {
     String ES_UPDATE_SCRIPT_PARAMS = "es.update.script.params";
     String ES_UPDATE_SCRIPT_PARAMS_JSON = "es.update.script.params.json";
 
+    String ES_UPDATE_DOC = "es.update.doc";
+    String ES_UPDATE_DOC_DEFAULT = "no";
+    
     /** Output options **/
     String ES_OUTPUT_JSON = "es.output.json";
     String ES_OUTPUT_JSON_DEFAULT = "no";
