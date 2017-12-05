@@ -1,0 +1,9 @@
+[[eshadoop-5.6.5]]
+== Elasticsearch for Apache Hadoop version 5.6.5
+December 06, 2017
+
+[[bugs-5.6.5]]
+=== Bug Fixes
+REST::
+* Support fields that are sometimes arrays
+https://github.com/elastic/elasticsearch-hadoop/issues/856[#856]
