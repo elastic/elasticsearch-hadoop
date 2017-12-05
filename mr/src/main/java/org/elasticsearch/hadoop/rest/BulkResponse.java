@@ -19,9 +19,10 @@
 
 package org.elasticsearch.hadoop.rest;
 
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+
+import org.elasticsearch.hadoop.util.BytesArray;
 
 /**
  * Simple response object that tracks useful information about a bulk indexing response.
@@ -30,43 +31,95 @@ import java.util.List;
  */
 public class BulkResponse {
 
-    static BulkResponse ok(int totalWrites) {
-        return new BulkResponse(totalWrites);
+    static BulkResponse complete(int httpStatus, int totalWrites) {
+        return new BulkResponse(BulkStatus.COMPLETE, httpStatus, null, totalWrites, Collections.<BulkError>emptyList());
     }
 
+    static BulkResponse partial(int httpStatus, int totalWrites, List<BulkError> errors) {
+        return new BulkResponse(BulkStatus.PARTIAL, httpStatus, null, totalWrites, errors);
+    }
+
+    static BulkResponse failed(int httpStatus, String errorMessage, int totalDroppedWrites) {
+        return new BulkResponse(BulkStatus.FAILED, httpStatus, errorMessage, totalDroppedWrites, Collections.<BulkError>emptyList());
+    }
+
+    public enum BulkStatus {
+        /**
+         * The bulk operation was completed successfully with all documents accepted
+         */
+        COMPLETE,
+        /**
+         * The bulk operation was completed partially, with some documents containing failures
+         */
+        PARTIAL,
+        /**
+         * The bulk operation itself failed, potentially due to non-document related errors
+         */
+        FAILED
+    }
+
+    public static class BulkError {
+
+        private final int position;
+        private final BytesArray document;
+        private final int documentStatus;
+        private final String errorMessage;
+
+        public BulkError(int position, BytesArray document, int documentStatus, String errorMessage) {
+            this.position = position;
+            this.document = document;
+            this.documentStatus = documentStatus;
+            this.errorMessage = errorMessage;
+        }
+
+        public int getPosition() {
+            return position;
+        }
+
+        public BytesArray getDocument() {
+            return document;
+        }
+
+        public int getDocumentStatus() {
+            return documentStatus;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+    }
+
+    private final BulkStatus status;
     private final int httpStatus;
-    private final int totalWrites;
-    private final BitSet leftovers;
-    private final List<String> errorExamples;
+    private final int totalDocs;
+    private final List<BulkError> documentErrors;
+    private final String errorMessage;
 
-    /**
-     * Creates a bulk response denoting that everything is OK
-     * @param totalWrites
-     */
-    private BulkResponse(int totalWrites) {
-        this(HttpStatus.OK, totalWrites, new BitSet(), Collections.<String>emptyList());
+    private BulkResponse(BulkStatus status, int httpStatus, String errorMessage, int totalDocs, List<BulkError> documentErrors) {
+        this.status = status;
+        this.httpStatus = httpStatus;
+        this.errorMessage = errorMessage;
+        this.totalDocs = totalDocs;
+        this.documentErrors = documentErrors;
     }
 
-    public BulkResponse(int httpStatus, int totalWrites, BitSet leftovers, List<String> errorExamples) {
-        this.httpStatus = httpStatus;
-        this.totalWrites = totalWrites;
-        this.leftovers = leftovers;
-        this.errorExamples = errorExamples;
+    public BulkStatus getStatus() {
+        return status;
     }
 
     public int getHttpStatus() {
         return httpStatus;
     }
 
-    public int getTotalWrites() {
-        return totalWrites;
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
-    public BitSet getLeftovers() {
-        return leftovers;
+    public int getTotalDocs() {
+        return totalDocs;
     }
 
-    public List<String> getErrorExamples() {
-        return errorExamples;
+    public List<BulkError> getDocumentErrors() {
+        return documentErrors;
     }
 }

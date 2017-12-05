@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -174,9 +175,18 @@ public class RestClient implements Closeable, StatsAware {
         return (T) (string != null ? map.get(string) : map);
     }
 
+    /**
+     * Executes a bulk operation against the provided resource, using the passed data as the request body.
+     * This method will retry bulk requests if the entire bulk request fails, but will not retry singular
+     * document failures.
+     *
+     * @param resource target of the bulk request.
+     * @param data bulk request body. This body will be cleared of entries on any successful bulk request.
+     * @return a BulkResponse object that will detail if there were failing documents that should be retried.
+     */
     public BulkResponse bulk(Resource resource, TrackingBytesArray data) {
         Retry retry = retryPolicy.init();
-        BulkResponse processedResponse;
+        BulkResponse bulkResponse;
 
         boolean isRetry = false;
 
@@ -200,69 +210,70 @@ public class RestClient implements Closeable, StatsAware {
 
             isRetry = true;
 
-            processedResponse = processBulkResponse(response, data);
-        } while (data.length() > 0 && retry.retry(processedResponse.getHttpStatus()));
+            bulkResponse = processBulkResponse(response, data);
 
-        return processedResponse;
+            // We'll retry the entire request if the bulk itself failed.
+        } while (retry.retry(bulkResponse.getHttpStatus()));
+
+        return bulkResponse;
     }
 
     @SuppressWarnings("rawtypes")
     BulkResponse processBulkResponse(Response response, TrackingBytesArray data) {
         InputStream content = response.body();
-        try {
-            ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
-            JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+
+        // Check entire response status first.
+        if (response.hasFailed()) {
+            countStreamStats(content);
             try {
-                if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
-                    // recorded bytes are ack here
-                    stats.bytesAccepted += data.length();
-                    stats.docsAccepted += data.entries();
-                    return BulkResponse.ok(data.entries());
-                }
-            } finally {
-                countStreamStats(content);
+                return BulkResponse.failed(response.status(), IOUtils.asString(content), data.entries());
+            } catch (IOException ex) {
+                throw new EsHadoopParsingException(ex);
             }
-
-            int docsSent = data.entries();
-            List<String> errorMessageSample = new ArrayList<String>(MAX_BULK_ERROR_MESSAGES);
-            int errorMessagesSoFar = 0;
-            int entryToDeletePosition = 0; // head of the list
-            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
-                Map map = iterator.next();
-                Map values = (Map) map.values().iterator().next();
-                Integer status = (Integer) values.get("status");
-
-                String error = extractError(values);
-                if (error != null && !error.isEmpty()) {
-                    if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
-                        entryToDeletePosition++;
-                        if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
-                            // We don't want to spam the log with the same error message 1000 times.
-                            // Chances are that the error message is the same across all failed writes
-                            // and if it is not, then there are probably only a few different errors which
-                            // this should pick up.
-                            errorMessageSample.add(error);
-                            errorMessagesSoFar++;
-                        }
+        } else {
+            // Check for failed writes
+            try {
+                ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
+                JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+                try {
+                    if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
+                        // If no items on response, assume all documents made it in.
+                        // recorded bytes are ack here
+                        stats.bytesAccepted += data.length();
+                        stats.docsAccepted += data.entries();
+                        return BulkResponse.complete(response.status(), data.entries());
                     }
-                    else {
-                        String message = (status != null ?
-                                String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
-                        throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
+                } finally {
+                    countStreamStats(content);
+                }
+                int docsSent = data.entries();
+                int position = 0;
+                List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
+                for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
+                    Map map = iterator.next();
+                    Map values = (Map) map.values().iterator().next();
+                    Integer docStatus = (Integer) values.get("status");
+                    String error = extractError(values);
+                    if (error != null && !error.isEmpty()) {
+                        // Found failed write
+                        BytesArray document = data.pop();
+                        int status = docStatus == null ? -1 : docStatus;
+                        bulkErrors.add(position, new BulkResponse.BulkError(position, document, status, error));
+                    } else {
+                        stats.bytesAccepted += data.length(0);
+                        stats.docsAccepted += 1;
+                        data.remove(0);
                     }
+                    position++;
                 }
-                else {
-                    stats.bytesAccepted += data.length(entryToDeletePosition);
-                    stats.docsAccepted += 1;
-                    data.remove(entryToDeletePosition);
+                if (bulkErrors.isEmpty()) {
+                    return BulkResponse.complete(response.status(), docsSent);
+                } else {
+                    return BulkResponse.partial(response.status(), docsSent, bulkErrors);
                 }
+            } catch (IOException ex) {
+                throw new EsHadoopParsingException(ex);
             }
-
-            int httpStatusToReport = entryToDeletePosition > 0 ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
-            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), errorMessageSample);
-            // catch IO/parsing exceptions
-        } catch (IOException ex) {
-            throw new EsHadoopParsingException(ex);
         }
     }
 

@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.rest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonParser;
@@ -87,13 +88,17 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es2x.json"), "");
-        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(3, inputData.entries());
-        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
-        String string = inputData.toString();
-        assertTrue(string.contains("B"));
-        assertTrue(string.contains("D"));
-        assertTrue(string.contains("E"));
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
+        assertEquals(0, inputData.entries());
+        assertEquals(3, bulkResponse.getDocumentErrors().size());
+        List<BulkResponse.BulkError> bulkErrors = bulkResponse.getDocumentErrors();
+        assertTrue(bulkErrors.get(0).getDocument().toString().contains("B"));
+        assertTrue(bulkErrors.get(0).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(1).getDocument().toString().contains("D"));
+        assertTrue(bulkErrors.get(1).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(2).getDocument().toString().contains("E"));
+        assertTrue(bulkErrors.get(2).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
     }
 
     @Test
@@ -112,13 +117,17 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es1x.json"), "");
-        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(3, inputData.entries());
-        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
-        String string = inputData.toString();
-        assertTrue(string.contains("B"));
-        assertTrue(string.contains("D"));
-        assertTrue(string.contains("E"));
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
+        assertEquals(0, inputData.entries());
+        assertEquals(3, bulkResponse.getDocumentErrors().size());
+        List<BulkResponse.BulkError> bulkErrors = bulkResponse.getDocumentErrors();
+        assertTrue(bulkErrors.get(0).getDocument().toString().contains("B"));
+        assertTrue(bulkErrors.get(0).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(1).getDocument().toString().contains("D"));
+        assertTrue(bulkErrors.get(1).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(2).getDocument().toString().contains("E"));
+        assertTrue(bulkErrors.get(2).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
     }
 
     @Test
@@ -137,13 +146,17 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es10x.json"), "");
-        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(3, inputData.entries());
-        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
-        String string = inputData.toString();
-        assertTrue(string.contains("B"));
-        assertTrue(string.contains("D"));
-        assertTrue(string.contains("E"));
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
+        assertEquals(0, inputData.entries());
+        assertEquals(3, bulkResponse.getDocumentErrors().size());
+        List<BulkResponse.BulkError> bulkErrors = bulkResponse.getDocumentErrors();
+        assertTrue(bulkErrors.get(0).getDocument().toString().contains("B"));
+        assertTrue(bulkErrors.get(0).getDocumentStatus() == HttpStatus.SERVICE_UNAVAILABLE);
+        assertTrue(bulkErrors.get(1).getDocument().toString().contains("D"));
+        assertTrue(bulkErrors.get(1).getDocumentStatus() == HttpStatus.SERVICE_UNAVAILABLE);
+        assertTrue(bulkErrors.get(2).getDocument().toString().contains("E"));
+        assertTrue(bulkErrors.get(2).getDocumentStatus() == HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @Test
@@ -162,13 +175,17 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es090x.json"), "");
-        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(3, inputData.entries());
-        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
-        String string = inputData.toString();
-        assertTrue(string.contains("B"));
-        assertTrue(string.contains("D"));
-        assertTrue(string.contains("E"));
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
+        assertEquals(0, inputData.entries());
+        assertEquals(3, bulkResponse.getDocumentErrors().size());
+        List<BulkResponse.BulkError> bulkErrors = bulkResponse.getDocumentErrors();
+        assertTrue(bulkErrors.get(0).getDocument().toString().contains("B"));
+        assertTrue(bulkErrors.get(0).getDocumentStatus() == -1);
+        assertTrue(bulkErrors.get(1).getDocument().toString().contains("D"));
+        assertTrue(bulkErrors.get(1).getDocumentStatus() == -1);
+        assertTrue(bulkErrors.get(2).getDocument().toString().contains("E"));
+        assertTrue(bulkErrors.get(2).getDocumentStatus() == -1);
     }
 
     @Test
@@ -187,14 +204,17 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es5x.json"), "");
-        assertTrue(rc.processBulkResponse(response, inputData).getHttpStatus() == HttpStatus.SERVICE_UNAVAILABLE);
-        assertEquals(3, inputData.entries());
-        assertEquals("{1, 3, 4}", inputData.leftoversPosition().toString());
-        String string = inputData.toString();
-        assertTrue(string.contains("B"));
-        assertTrue(string.contains("D"));
-        assertTrue(string.contains("E"));
-
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
+        assertEquals(0, inputData.entries());
+        assertEquals(3, bulkResponse.getDocumentErrors().size());
+        List<BulkResponse.BulkError> bulkErrors = bulkResponse.getDocumentErrors();
+        assertTrue(bulkErrors.get(0).getDocument().toString().contains("B"));
+        assertTrue(bulkErrors.get(0).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(1).getDocument().toString().contains("D"));
+        assertTrue(bulkErrors.get(1).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
+        assertTrue(bulkErrors.get(2).getDocument().toString().contains("E"));
+        assertTrue(bulkErrors.get(2).getDocumentStatus() == HttpStatus.TOO_MANY_REQUESTS);
     }
 
 }

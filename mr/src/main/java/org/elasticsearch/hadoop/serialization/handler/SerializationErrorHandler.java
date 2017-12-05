@@ -4,12 +4,13 @@ import java.util.Properties;
 
 import org.elasticsearch.hadoop.handler.ErrorHandler;
 import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 
 /**
  * TODO: FIll out
  */
-public abstract class SerializationErrorHandler<T> implements ErrorHandler<T, T> {
+public abstract class SerializationErrorHandler<T extends Exceptional> implements ErrorHandler<T, T> {
 
     public void init(Properties properties) { }
 

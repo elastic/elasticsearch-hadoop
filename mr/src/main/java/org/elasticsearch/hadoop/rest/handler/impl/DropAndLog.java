@@ -52,7 +52,7 @@ public class DropAndLog extends BulkWriteErrorHandler {
 
     @Override
     public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) throws Exception {
-        logger.warn(entry, entry.getReason());
+//        logger.warn(entry, entry.getReason());
         return HandlerResult.HANDLED;
     }
 }

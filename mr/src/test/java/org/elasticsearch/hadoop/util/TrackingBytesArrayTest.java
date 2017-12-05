@@ -97,4 +97,20 @@ public class TrackingBytesArrayTest {
         data.writeTo(out);
         assertEquals("accc", out.toString());
     }
+
+    @Test
+    public void testPopData() throws Exception {
+        assertEquals(0, data.length());
+        data.copyFrom(new BytesArray("a"));
+        data.copyFrom(new BytesArray("bb"));
+        data.copyFrom(new BytesArray("ccc"));
+        data.copyFrom(new BytesArray("dddd"));
+        assertEquals(10, data.length());
+        BytesArray entry = data.pop();
+        assertEquals(9, data.length());
+        assertEquals(1, entry.length());
+        entry = data.pop();
+        assertEquals(7, data.length());
+        assertEquals(2, entry.length());
+    }
 }
