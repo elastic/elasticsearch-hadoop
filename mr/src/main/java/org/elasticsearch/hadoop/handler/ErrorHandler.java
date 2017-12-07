@@ -5,7 +5,7 @@ import java.util.Properties;
 /**
  * Handler interface to be notified of and handle recoverable errors during connector execution.
  */
-public interface ErrorHandler<I extends Exceptional, O> {
+public interface ErrorHandler<I extends Exceptional, O, C extends ErrorCollector<O>> {
 
     /**
      * Called at the handler creation time to initialize any internal state or resources.
@@ -22,7 +22,7 @@ public interface ErrorHandler<I extends Exceptional, O> {
      * @throws Exception In the event that the current failure should not be handled, and should halt the connector
      * processing.
      */
-    HandlerResult onError(I entry, ErrorCollector<O> collector) throws Exception;
+    HandlerResult onError(I entry, C collector) throws Exception;
 
     /**
      * Called at the close of the connector to clean up any internal resources.

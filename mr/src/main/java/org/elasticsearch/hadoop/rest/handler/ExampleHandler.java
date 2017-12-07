@@ -4,7 +4,6 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.HttpStatus;
 
@@ -27,7 +26,7 @@ public class ExampleHandler extends BulkWriteErrorHandler {
     }
 
     @Override
-    public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) {
+    public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) {
         if (entry.getResponseCode() == HttpStatus.CONFLICT) {
             errorLog.error("DROPPING ["+entry.toString()+"] due to CONFLICT response.", entry.getException());
             return HandlerResult.HANDLED;

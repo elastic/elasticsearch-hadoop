@@ -13,4 +13,14 @@ public interface ErrorCollector<T> {
      */
     public HandlerResult retry(T retryData);
 
+    /**
+     * Signal that a failure could not be handled by this handler and pass the record on to the next handler.
+     * An optional string can be provided explaining the reason for passing on handling the error.
+     * @param reason optional reason for passing on data. Reasons are used in the final report if an error could not be
+     *               handled.
+     * @return Appropriate handler result value stating the failure should be passed on to the next handler. In
+     * most cases this is {@link HandlerResult#PASS} but can vary depending on the use case.
+     */
+    public HandlerResult pass(String reason);
+
 }

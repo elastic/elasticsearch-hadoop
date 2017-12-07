@@ -5,10 +5,10 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
 import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.handler.DelayableErrorCollector;
 
 /**
  * Drops and logs any given error messages.
@@ -51,7 +51,7 @@ public class DropAndLog extends BulkWriteErrorHandler {
     }
 
     @Override
-    public HandlerResult onError(BulkWriteFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+    public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
 //        logger.warn(entry, entry.getReason());
         return HandlerResult.HANDLED;
     }
