@@ -31,16 +31,16 @@ import org.elasticsearch.hadoop.util.BytesArray;
  */
 public class BulkResponse {
 
-    static BulkResponse complete(int httpStatus, int totalWrites) {
-        return new BulkResponse(BulkStatus.COMPLETE, httpStatus, null, totalWrites, Collections.<BulkError>emptyList());
+    static BulkResponse complete() {
+        return complete(HttpStatus.OK, 0L, 0);
     }
 
-    static BulkResponse partial(int httpStatus, int totalWrites, List<BulkError> errors) {
-        return new BulkResponse(BulkStatus.PARTIAL, httpStatus, null, totalWrites, errors);
+    static BulkResponse complete(int httpStatus, long spent, int totalWrites) {
+        return new BulkResponse(BulkStatus.COMPLETE, httpStatus, spent, totalWrites, Collections.<BulkError>emptyList());
     }
 
-    static BulkResponse failed(int httpStatus, String errorMessage, int totalDroppedWrites) {
-        return new BulkResponse(BulkStatus.FAILED, httpStatus, errorMessage, totalDroppedWrites, Collections.<BulkError>emptyList());
+    static BulkResponse partial(int httpStatus, long spent, int totalWrites, List<BulkError> errors) {
+        return new BulkResponse(BulkStatus.PARTIAL, httpStatus, spent, totalWrites, errors);
     }
 
     public enum BulkStatus {
@@ -51,11 +51,7 @@ public class BulkResponse {
         /**
          * The bulk operation was completed partially, with some documents containing failures
          */
-        PARTIAL,
-        /**
-         * The bulk operation itself failed, potentially due to non-document related errors
-         */
-        FAILED
+        PARTIAL
     }
 
     public static class BulkError {
@@ -91,14 +87,14 @@ public class BulkResponse {
 
     private final BulkStatus status;
     private final int httpStatus;
+    private final long spent;
     private final int totalDocs;
-    private final List<BulkError> documentErrors;
-    private final String errorMessage;
+    private List<BulkError> documentErrors;
 
-    private BulkResponse(BulkStatus status, int httpStatus, String errorMessage, int totalDocs, List<BulkError> documentErrors) {
+    private BulkResponse(BulkStatus status, int httpStatus, long spent, int totalDocs, List<BulkError> documentErrors) {
         this.status = status;
         this.httpStatus = httpStatus;
-        this.errorMessage = errorMessage;
+        this.spent = spent;
         this.totalDocs = totalDocs;
         this.documentErrors = documentErrors;
     }
@@ -111,8 +107,8 @@ public class BulkResponse {
         return httpStatus;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public long getClientTimeSpent() {
+        return spent;
     }
 
     public int getTotalDocs() {

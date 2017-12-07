@@ -185,95 +185,73 @@ public class RestClient implements Closeable, StatsAware {
      * @return a BulkResponse object that will detail if there were failing documents that should be retried.
      */
     public BulkResponse bulk(Resource resource, TrackingBytesArray data) {
-        Retry retry = retryPolicy.init();
         BulkResponse bulkResponse;
 
-        boolean isRetry = false;
+        // NB: dynamically get the stats since the transport can change
+        long start = network.transportStats().netTotalTime;
+        Response response = execute(PUT, resource.bulk(), data);
+        long spent = network.transportStats().netTotalTime - start;
 
-        do {
-            // NB: dynamically get the stats since the transport can change
-            long start = network.transportStats().netTotalTime;
-            Response response = execute(PUT, resource.bulk(), data);
-            long spent = network.transportStats().netTotalTime - start;
+        stats.bulkTotal++;
+        stats.docsSent += data.entries();
+        stats.bulkTotalTime += spent;
+        // bytes will be counted by the transport layer
 
-            stats.bulkTotal++;
-            stats.docsSent += data.entries();
-            stats.bulkTotalTime += spent;
-            // bytes will be counted by the transport layer
-
-            if (isRetry) {
-                stats.docsRetried += data.entries();
-                stats.bytesRetried += data.length();
-                stats.bulkRetries++;
-                stats.bulkRetriesTotalTime += spent;
-            }
-
-            isRetry = true;
-
-            bulkResponse = processBulkResponse(response, data);
-
-            // We'll retry the entire request if the bulk itself failed.
-        } while (retry.retry(bulkResponse.getHttpStatus()));
+        bulkResponse = processBulkResponse(response, data, spent);
 
         return bulkResponse;
     }
 
     @SuppressWarnings("rawtypes")
-    BulkResponse processBulkResponse(Response response, TrackingBytesArray data) {
+    BulkResponse processBulkResponse(Response response, TrackingBytesArray data, long timeSpent) {
         InputStream content = response.body();
+        // Check for failed writes
+        try {
+            ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
+            JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+            try {
+                if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
+                    // If no items on response, assume all documents made it in.
+                    // recorded bytes are ack here
+                    stats.bytesAccepted += data.length();
+                    stats.docsAccepted += data.entries();
+                    return BulkResponse.complete(response.status(), timeSpent, data.entries());
+                }
+            } finally {
+                countStreamStats(content);
+            }
 
-        // Check entire response status first.
-        if (response.hasFailed()) {
-            countStreamStats(content);
-            try {
-                return BulkResponse.failed(response.status(), IOUtils.asString(content), data.entries());
-            } catch (IOException ex) {
-                throw new EsHadoopParsingException(ex);
-            }
-        } else {
-            // Check for failed writes
-            try {
-                ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
-                JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
-                try {
-                    if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
-                        // If no items on response, assume all documents made it in.
-                        // recorded bytes are ack here
-                        stats.bytesAccepted += data.length();
-                        stats.docsAccepted += data.entries();
-                        return BulkResponse.complete(response.status(), data.entries());
-                    }
-                } finally {
-                    countStreamStats(content);
-                }
-                int docsSent = data.entries();
-                int position = 0;
-                List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
-                for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
-                    Map map = iterator.next();
-                    Map values = (Map) map.values().iterator().next();
-                    Integer docStatus = (Integer) values.get("status");
-                    String error = extractError(values);
-                    if (error != null && !error.isEmpty()) {
-                        // Found failed write
-                        BytesArray document = data.pop();
-                        int status = docStatus == null ? -1 : docStatus;
-                        bulkErrors.add(position, new BulkResponse.BulkError(position, document, status, error));
-                    } else {
-                        stats.bytesAccepted += data.length(0);
-                        stats.docsAccepted += 1;
-                        data.remove(0);
-                    }
-                    position++;
-                }
-                if (bulkErrors.isEmpty()) {
-                    return BulkResponse.complete(response.status(), docsSent);
+            int docsSent = data.entries();
+            int position = 0;
+            List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
+            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
+                // The array of maps are (operation -> document info) maps:
+                Map map = iterator.next();
+                // get the underlying document information as a map:
+                Map values = (Map) map.values().iterator().next();
+                Integer docStatus = (Integer) values.get("status");
+                String error = extractError(values);
+                if (error != null && !error.isEmpty()) {
+                    // Found failed write
+                    // Todo: Find a way to reuse the data in the tracking array as much as possible instead of forcing large array copies.
+                    BytesArray document = data.pop();
+                    int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
+                    bulkErrors.add(new BulkResponse.BulkError(position, document, status, error));
                 } else {
-                    return BulkResponse.partial(response.status(), docsSent, bulkErrors);
+                    stats.bytesAccepted += data.length(0);
+                    stats.docsAccepted += 1;
+                    data.remove(0);
                 }
-            } catch (IOException ex) {
-                throw new EsHadoopParsingException(ex);
+                position++;
             }
+
+            if (bulkErrors.isEmpty()) {
+                return BulkResponse.complete(response.status(), timeSpent, docsSent);
+            } else {
+                return BulkResponse.partial(response.status(), timeSpent, docsSent, bulkErrors);
+            }
+        } catch (IOException ex) {
+            throw new EsHadoopParsingException(ex);
         }
     }
 

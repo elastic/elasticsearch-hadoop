@@ -23,6 +23,12 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
+import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorCollector;
+import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
+import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.handler.impl.BulkWriteHandlerLoader;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -53,6 +59,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -93,6 +100,9 @@ public class RestRepository implements Closeable, StatsAware {
     private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
     private MetadataExtractor metaExtractor;
+
+    // bulk request document error handlers
+    private List<BulkWriteErrorHandler> documentBulkErrorHandlers;
 
     // Internal
     private static class Resources {
@@ -139,6 +149,13 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.isTrue(resources.getResourceRead() != null || resources.getResourceWrite() != null, "Invalid configuration - No read or write resource specified");
 
         this.client = new RestClient(settings);
+
+        // TODO: Add retry handler
+        this.documentBulkErrorHandlers = new ArrayList<BulkWriteErrorHandler>();
+
+        BulkWriteHandlerLoader handlerLoader = new BulkWriteHandlerLoader();
+        handlerLoader.setSettings(settings);
+        this.documentBulkErrorHandlers.addAll(handlerLoader.loadHandlers());
     }
 
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
@@ -242,24 +259,74 @@ public class RestRepository implements Closeable, StatsAware {
         try {
             // double check data - it might be a false flush (called on clean-up)
             if (data.length() > 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
-                }
+                boolean retryOperation = false;
 
-                bulkResult = client.bulk(resources.getResourceWrite(), data);
-                executedBulkWrite = true;
+                do {
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
+                    }
 
-                // Handle bulk write failures
-                if (HttpStatus.isSuccess(bulkResult.getHttpStatus()) == false) {
-                    // Full request failed.
-                    // TODO: THROW? OR RETRY DOCUMENTS?
-                } else if (bulkResult.getDocumentErrors().isEmpty() == false) {
-                    // Documents failed. Pass to retry handler.
-                    // TODO: RETRY
-                }
+                    bulkResult = client.bulk(resources.getResourceWrite(), data);
+                    executedBulkWrite = true;
 
+                    if (retryOperation) {
+                        stats.docsRetried += data.entries();
+                        stats.bytesRetried += data.length();
+                        stats.bulkRetries++;
+                        stats.bulkRetriesTotalTime += bulkResult.getClientTimeSpent();
+                    }
+
+                    // Handle bulk write failures
+                    if (!bulkResult.getDocumentErrors().isEmpty()) {
+                        // Some documents failed. Pass them to retry handler.
+
+                        // Clear out the tracking bytes array and wrap it for the retry collector.
+                        // At this point, all documents we care about are persisted in the list of document failures.
+                        // TODO: Find a way to reuse documents in the tracking bytes array as best as possible without growing the underlying array too large in case of retries.
+                        discard();
+                        BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector(data);
+
+                        // Iterate over all errors, and for each error, attempt to handle the problem.
+                        for (BulkResponse.BulkError bulkError : bulkResult.getDocumentErrors()) {
+                            // TODO: Pick a better Exception type?
+                            BulkWriteFailure failure = new BulkWriteFailure(bulkError.getDocumentStatus(), new Exception(bulkError.getErrorMessage()), bulkError.getDocument());
+                            for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
+                                HandlerResult result;
+                                try {
+                                    result = errorHandler.onError(failure, errorCollector);
+                                } catch (EsHadoopAbortHandlerException ahe) {
+                                    throw new EsHadoopException(ahe.getMessage());
+                                } catch (Exception e) {
+                                    throw new EsHadoopException("Encountered exception during error handler. Treating it as an ABORT result.", e);
+                                }
+
+                                switch (result) {
+                                    case HANDLED:
+                                        break;
+                                    case PASS:
+                                        continue;
+                                    case ABORT:
+                                        throw new EsHadoopException("Error Handler returned an ABORT result for failed bulk document. HTTP Status [" +
+                                                bulkError.getDocumentStatus() + "], Error Message [" + bulkError.getErrorMessage() + "], Document Entry [" +
+                                                bulkError.getDocument().toString() + "]");
+                                }
+                            }
+                        }
+
+                        // Check for document retries
+                        if (errorCollector.receivedRetries()) {
+                            retryOperation = true;
+                            dataEntries = data.entries();
+                        } else {
+                            retryOperation = false;
+                        }
+                    } else {
+                        // Everything is good to go!
+                        retryOperation = false;
+                    }
+                } while (retryOperation);
             } else {
-                bulkResult = BulkResponse.complete(HttpStatus.OK, 0);
+                bulkResult = BulkResponse.complete();
             }
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
@@ -328,6 +395,9 @@ public class RestRepository implements Closeable, StatsAware {
             client.close();
             stats.aggregate(client.stats());
             client = null;
+            for (BulkWriteErrorHandler handler : documentBulkErrorHandlers) {
+                handler.close();
+            }
         }
     }
 
