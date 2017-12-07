@@ -68,6 +68,9 @@ public class BulkResponse {
             this.errorMessage = errorMessage;
         }
 
+        /**
+         * @return location in tracking bytes array that the document existed in for this request.
+         */
         public int getPosition() {
             return position;
         }

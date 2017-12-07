@@ -61,6 +61,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -262,9 +263,8 @@ public class RestRepository implements Closeable, StatsAware {
             // double check data - it might be a false flush (called on clean-up)
             if (data.length() > 0) {
                 boolean retryOperation = false;
-                // TODO: Make this per document
-                int requestAttempt = 0;
                 long waitTime = 0L;
+                List<Integer> attempts = null;
 
                 do {
                     if (retryOperation) {
@@ -304,16 +304,25 @@ public class RestRepository implements Closeable, StatsAware {
                     // Handle bulk write failures
                     if (!bulkResult.getDocumentErrors().isEmpty()) {
                         // Some documents failed. Pass them to retry handler.
-                        requestAttempt += 1;
+
+                        List<Integer> previousAttempts = attempts;
 
                         // Clear out the tracking bytes array and wrap it for the retry collector.
                         // At this point, all documents we care about are persisted in the list of document failures.
                         // TODO: Find a way to reuse documents in the tracking bytes array as best as possible without growing the underlying array too large in case of retries.
                         discard();
-                        BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector(data);
+                        attempts = new ArrayList<Integer>();
+                        BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector();
 
                         // Iterate over all errors, and for each error, attempt to handle the problem.
                         for (BulkResponse.BulkError bulkError : bulkResult.getDocumentErrors()) {
+                            int requestAttempt;
+                            if (previousAttempts == null) {
+                                requestAttempt = 1;
+                            } else {
+                                requestAttempt = previousAttempts.get(bulkError.getPosition()) + 1;
+                            }
+
                             List<String> bulkErrorPassReasons = new ArrayList<String>();
                             BulkWriteFailure failure = new BulkWriteFailure(
                                     bulkError.getDocumentStatus(),
@@ -339,6 +348,20 @@ public class RestRepository implements Closeable, StatsAware {
                                         Assert.isTrue(errorCollector.getAndClearMessage() == null,
                                                 "Found pass message with Handled response. Be sure to return the value " +
                                                         "returned from pass(String) call.");
+                                        // Check for document retries
+                                        if (errorCollector.receivedRetries()) {
+                                            BytesArray original = bulkError.getDocument();
+                                            BytesArray retry = new BytesArray(errorCollector.getAndClearRetryValue());
+                                            if (original.length() == retry.length() && Arrays.equals(original.bytes(), retry.bytes())) {
+                                                // same document, continue tracking previous attempts
+                                                attempts.add(requestAttempt);
+                                            } else {
+                                                // new document, track new attempts
+                                                attempts.add(0);
+                                            }
+                                            data.copyFrom(retry);
+                                            dataEntries++;
+                                        }
                                         break;
                                     case PASS:
                                         String reason = errorCollector.getAndClearMessage();
@@ -356,11 +379,9 @@ public class RestRepository implements Closeable, StatsAware {
                             }
                         }
 
-                        // Check for document retries
-                        if (errorCollector.receivedRetries()) {
+                        if (!attempts.isEmpty()) {
                             retryOperation = true;
                             waitTime = errorCollector.getDelayTimeBetweenRetries();
-                            dataEntries = data.entries();
                         } else {
                             retryOperation = false;
                         }

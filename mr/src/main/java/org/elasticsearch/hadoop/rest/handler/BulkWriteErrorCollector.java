@@ -4,8 +4,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.TrackingBytesArray;
 
 /**
  * An error collector that collects responses from code that handles document level bulk failures.
@@ -13,15 +11,14 @@ import org.elasticsearch.hadoop.util.TrackingBytesArray;
 public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> {
 
     private long delayTimeInMillis;
-    private boolean receivedRetries;
-    private TrackingBytesArray retryBuffer;
 
+    private byte[] currentRetry;
     private String currentMessage;
 
-    public BulkWriteErrorCollector(TrackingBytesArray retryBuffer) {
-        this.receivedRetries = false;
-        this.retryBuffer = retryBuffer;
+    public BulkWriteErrorCollector() {
         this.delayTimeInMillis = 0L;
+        this.currentRetry = null;
+        this.currentMessage = null;
     }
 
     @Override
@@ -35,8 +32,7 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
 
     @Override
     public HandlerResult retry(byte[] retryData) {
-        receivedRetries = true;
-        retryBuffer.copyFrom(new BytesArray(retryData));
+        currentRetry = retryData;
         return HandlerResult.HANDLED;
     }
 
@@ -53,11 +49,13 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
     }
 
     public boolean receivedRetries() {
-        return receivedRetries;
+        return currentRetry != null;
     }
 
-    public TrackingBytesArray getBuffer() {
-        return retryBuffer;
+    public byte[] getAndClearRetryValue() {
+        byte[] data = currentRetry;
+        currentRetry = null;
+        return data;
     }
 
     public String getAndClearMessage() {
