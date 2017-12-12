@@ -106,8 +106,14 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
             // Only set the fields if we aren't asking for raw JSON
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
         }
-        // set read resource
-        settings.setResourceRead(settings.getResourceRead());
+
+        // set read resource, with es.resource in Hive TBLPROPERTIES
+        // avoid resourceRead to read dirty data when exist the union-all opeartor in sql.  
+	String esResource = job.get("es.resource");
+        if (StringUtils.hasLength(esResource)) {
+            settings.setResourceRead(esResource);
+        }
+
         HiveUtils.init(settings, log);
 
         // decorate original splits as FileSplit
