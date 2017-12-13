@@ -1,0 +1,9 @@
+[[eshadoop-6.1.0]]
+== Elasticsearch for Apache Hadoop version 6.1.0
+December 13, 2017
+
+[[bugs-6.1.0]]
+=== Bug Fixes
+Serialization::
+* Support fields that are sometimes arrays
+http://github.com/elastic/elasticsearch-hadoop/issues/856[#856]
