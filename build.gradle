@@ -179,6 +179,7 @@ allprojects { Project project ->
         // makes eclipse classpath easier
         testCompile("org.elasticsearch:elasticsearch:${elasticsearchVersion}") {
             exclude group: "org.apache.logging.log4j", module: "log4j-api"
+            exclude group: "org.elasticsearch", module: "elasticsearch-cli"
         }
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
