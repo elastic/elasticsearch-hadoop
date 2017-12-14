@@ -1,10 +1,12 @@
 package org.elasticsearch.hadoop.rest.handler;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
 import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
 /**
  * Encapsulates all available information pertaining to an unhandled bulk indexing operation failure.
@@ -45,9 +47,8 @@ public class BulkWriteFailure implements Exceptional {
     /**
      * @return serialized bulk entry in byte array format
      */
-    public byte[] getEntryContents() {
-        // TODO: Can we source this from tracking bytes array? Maybe as a fast byte array input stream?
-        return contents.bytes();
+    public InputStream getEntryContents() {
+        return new FastByteArrayInputStream(contents);
     }
 
     /**

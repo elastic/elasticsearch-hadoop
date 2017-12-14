@@ -1,11 +1,13 @@
 package org.elasticsearch.hadoop.rest.handler;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.HttpStatus;
+import org.elasticsearch.hadoop.util.IOUtils;
 
 /**
  * EXAMPLE - Simple example error handler that logs and drops conflicts, retries on overload, and otherwise passes
@@ -31,7 +33,11 @@ public class ExampleHandler extends BulkWriteErrorHandler {
             errorLog.error("DROPPING ["+entry.toString()+"] due to CONFLICT response.", entry.getException());
             return HandlerResult.HANDLED;
         } else if (entry.getResponseCode() == HttpStatus.TOO_MANY_REQUESTS) {
-            return collector.retry(entry.getEntryContents());
+            try {
+                return collector.retry(IOUtils.asBytes(entry.getEntryContents()).bytes());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return HandlerResult.PASS;
     }

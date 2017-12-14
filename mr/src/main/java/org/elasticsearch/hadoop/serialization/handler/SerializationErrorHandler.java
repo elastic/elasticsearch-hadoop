@@ -8,7 +8,7 @@ import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 
 /**
- * TODO: FIll out
+ * FIXHERE: FIll out
  */
 public abstract class SerializationErrorHandler<T extends Exceptional> implements ErrorHandler<T, T, ErrorCollector<T>> {
 

@@ -56,25 +56,37 @@ public class BulkResponse {
 
     public static class BulkError {
 
-        private final int position;
+        private final int originalPosition;
+        private final int currentArrayPosition;
         private final BytesArray document;
         private final int documentStatus;
         private final String errorMessage;
 
-        public BulkError(int position, BytesArray document, int documentStatus, String errorMessage) {
-            this.position = position;
+        public BulkError(int originalPosition, int currentArrayPosition, BytesArray document, int documentStatus, String errorMessage) {
+            this.originalPosition = originalPosition;
+            this.currentArrayPosition = currentArrayPosition;
             this.document = document;
             this.documentStatus = documentStatus;
             this.errorMessage = errorMessage;
         }
 
         /**
-         * @return location in tracking bytes array that the document existed in for this request.
+         * @return original location in tracking bytes array that the document existed in for this request.
          */
-        public int getPosition() {
-            return position;
+        public int getOriginalPosition() {
+            return originalPosition;
         }
 
+        /**
+         * @return current location in the tracking bytes array that the document source exists in for this request.
+         */
+        public int getCurrentArrayPosition() {
+            return currentArrayPosition;
+        }
+
+        /**
+         * @return the document in original form, backed by the tracking bytes array.
+         */
         public BytesArray getDocument() {
             return document;
         }

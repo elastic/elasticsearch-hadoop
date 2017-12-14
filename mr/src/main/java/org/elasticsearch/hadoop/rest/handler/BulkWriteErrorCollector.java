@@ -12,13 +12,36 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
 
     private long delayTimeInMillis;
 
+    private boolean isRetry;
     private byte[] currentRetry;
     private String currentMessage;
 
     public BulkWriteErrorCollector() {
         this.delayTimeInMillis = 0L;
+        this.isRetry = false;
         this.currentRetry = null;
         this.currentMessage = null;
+    }
+
+    @Override
+    public HandlerResult retry() {
+        isRetry = true;
+        return HandlerResult.HANDLED;
+    }
+
+    @Override
+    public HandlerResult retry(long timeAmount, TimeUnit timeUnits) {
+        long givenDelayTimeInMillis = timeUnits.toMillis(timeAmount);
+        if (givenDelayTimeInMillis > delayTimeInMillis) {
+            delayTimeInMillis = givenDelayTimeInMillis;
+        }
+        return retry();
+    }
+
+    @Override
+    public HandlerResult retry(byte[] retryData) {
+        currentRetry = retryData;
+        return retry();
     }
 
     @Override
@@ -28,12 +51,6 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
             delayTimeInMillis = givenDelayTimeInMillis;
         }
         return retry(retryData);
-    }
-
-    @Override
-    public HandlerResult retry(byte[] retryData) {
-        currentRetry = retryData;
-        return HandlerResult.HANDLED;
     }
 
     @Override
@@ -49,13 +66,21 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
     }
 
     public boolean receivedRetries() {
-        return currentRetry != null;
+        return isRetry;
     }
 
     public byte[] getAndClearRetryValue() {
-        byte[] data = currentRetry;
-        currentRetry = null;
-        return data;
+        if (isRetry) {
+            byte[] data = null;
+            if (currentRetry != null) {
+                data = currentRetry;
+                currentRetry = null;
+            }
+            isRetry = false;
+            return data;
+        } else {
+            return null;
+        }
     }
 
     public String getAndClearMessage() {

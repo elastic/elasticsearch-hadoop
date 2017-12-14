@@ -63,6 +63,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -204,7 +205,7 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        //TODO: Perform error handling for serialization here
+        //FIXHERE: Perform error handling for serialization here
         doWriteToIndex(command.write(object));
     }
 
@@ -226,6 +227,7 @@ public class RestRepository implements Closeable, StatsAware {
     private void doWriteToIndex(BytesRef payload) {
         // check space first
         // ba is the backing array for data
+        // FIXHERE: If a retry is performed with new data, this byte array will potentially grow in size.
         if (payload.length() > ba.available()) {
             if (autoFlush) {
                 flush();
@@ -264,7 +266,7 @@ public class RestRepository implements Closeable, StatsAware {
             if (data.length() > 0) {
                 boolean retryOperation = false;
                 long waitTime = 0L;
-                List<Integer> attempts = null;
+                List<Integer> attempts = Collections.emptyList();
 
                 do {
                     if (retryOperation) {
@@ -307,26 +309,25 @@ public class RestRepository implements Closeable, StatsAware {
 
                         List<Integer> previousAttempts = attempts;
 
-                        // Clear out the tracking bytes array and wrap it for the retry collector.
-                        // At this point, all documents we care about are persisted in the list of document failures.
-                        // TODO: Find a way to reuse documents in the tracking bytes array as best as possible without growing the underlying array too large in case of retries.
-                        discard();
+                        // FIXHERE: Find a way to retry documents without growing the original backing array, or track bytes separately.
                         attempts = new ArrayList<Integer>();
                         BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector();
 
                         // Iterate over all errors, and for each error, attempt to handle the problem.
                         for (BulkResponse.BulkError bulkError : bulkResult.getDocumentErrors()) {
                             int requestAttempt;
-                            if (previousAttempts == null) {
+                            if (previousAttempts.isEmpty() || (bulkError.getOriginalPosition() + 1) > previousAttempts.size()) {
+                                // We don't have an attempt, assume first attempt
                                 requestAttempt = 1;
                             } else {
-                                requestAttempt = previousAttempts.get(bulkError.getPosition()) + 1;
+                                // Get and increment previous attempt value
+                                requestAttempt = previousAttempts.get(bulkError.getOriginalPosition()) + 1;
                             }
 
                             List<String> bulkErrorPassReasons = new ArrayList<String>();
                             BulkWriteFailure failure = new BulkWriteFailure(
                                     bulkError.getDocumentStatus(),
-                                    // TODO: Pick a better Exception type?
+                                    // FIXHERE: Pick a better Exception type?
                                     new Exception(bulkError.getErrorMessage()),
                                     bulkError.getDocument(),
                                     requestAttempt,
@@ -351,16 +352,35 @@ public class RestRepository implements Closeable, StatsAware {
                                         // Check for document retries
                                         if (errorCollector.receivedRetries()) {
                                             BytesArray original = bulkError.getDocument();
-                                            BytesArray retry = new BytesArray(errorCollector.getAndClearRetryValue());
-                                            if (original.length() == retry.length() && Arrays.equals(original.bytes(), retry.bytes())) {
-                                                // same document, continue tracking previous attempts
+                                            byte[] retryDataBuffer = errorCollector.getAndClearRetryValue();
+                                            if (retryDataBuffer == null) {
+                                                // Retry the same data.
+                                                // Continue to track the previous attempts.
+                                                attempts.add(requestAttempt);
+                                            } else if (original.bytes() == retryDataBuffer) {
+                                                // If we receive an array that is identity equal to the tracking bytes
+                                                // array, then we'll use the same document from the tracking bytes array
+                                                // as there have been no changes to it.
+                                                // We will continue tracking previous attempts though.
                                                 attempts.add(requestAttempt);
                                             } else {
-                                                // new document, track new attempts
-                                                attempts.add(0);
+                                                // Check document contents to see if it was deserialized and reserialized.
+                                                byte[] originalContent = new byte[original.length()];
+                                                System.arraycopy(original.bytes(), original.offset(), originalContent, 0, original.length());
+                                                if (Arrays.equals(originalContent, retryDataBuffer)) {
+                                                    // Same document content. Leave the data as is in tracking buffer,
+                                                    // and continue tracking previous attempts.
+                                                    attempts.add(requestAttempt);
+                                                } else {
+                                                    // Document has changed.
+                                                    // Track new attempts.
+                                                    // FIXHERE: This removal operation "shifts" all entries, so each removal will be off by one.
+                                                    int currentPosition = bulkError.getCurrentArrayPosition();
+                                                    data.remove(currentPosition);
+                                                    data.copyFrom(new BytesArray(retryDataBuffer));
+                                                    // Don't add item to attempts. When it's exhausted we'll assume 1's.
+                                                }
                                             }
-                                            data.copyFrom(retry);
-                                            dataEntries++;
                                         }
                                         break;
                                     case PASS:
@@ -410,7 +430,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void flush() {
-        // TODO: Begin here for determining rest response code handling for bulk operations.
+        // FIXHERE: Begin here for determining rest response code handling for bulk operations.
         BulkResponse bulk = tryFlush();
         if (!bulk.getDocumentErrors().isEmpty()) {
             String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getDocumentErrors().size(), bulk.getTotalDocs(), 5);

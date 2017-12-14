@@ -148,7 +148,7 @@ public class EsBolt implements IRichBolt {
             List<BulkResponse.BulkError> documentErrors = writer.repository.tryFlush().getDocumentErrors();
             // get set of document positions that failed.
             for (BulkResponse.BulkError documentError : documentErrors) {
-                flush.set(documentError.getPosition());
+                flush.set(documentError.getOriginalPosition());
             }
         } catch (EsHadoopException ex) {
             // fail all recorded tuples

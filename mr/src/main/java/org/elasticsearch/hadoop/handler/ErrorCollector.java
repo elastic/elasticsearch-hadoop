@@ -6,6 +6,13 @@ package org.elasticsearch.hadoop.handler;
 public interface ErrorCollector<T> {
 
     /**
+     * Retry an operation using the same data from the previous operation.
+     * @return Appropriate handler result value stating the failure has been retried. In
+     * most cases this is {@link HandlerResult#HANDLED} but can vary depending on the use case.
+     */
+    public HandlerResult retry();
+
+    /**
      * Retry an operation using the given retry data
      * @param retryData operation/data to retry
      * @return Appropriate handler result value stating the failure has been retried. In

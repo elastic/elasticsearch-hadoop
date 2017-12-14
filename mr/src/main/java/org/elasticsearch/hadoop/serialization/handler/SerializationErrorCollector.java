@@ -4,7 +4,7 @@ import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 
 /**
- * TODO FILL IN
+ * FIXHERE FILL IN
  */
 public class SerializationErrorCollector<T> implements ErrorCollector<T> {
 
@@ -17,8 +17,18 @@ public class SerializationErrorCollector<T> implements ErrorCollector<T> {
     }
 
     @Override
+    public HandlerResult retry() {
+        return HandlerResult.HANDLED;
+    }
+
+    @Override
     public HandlerResult retry(T retryData) {
         retryValue = retryData;
         return HandlerResult.HANDLED;
+    }
+
+    @Override
+    public HandlerResult pass(String reason) {
+        return HandlerResult.PASS;
     }
 }

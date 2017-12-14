@@ -221,8 +221,10 @@ public class RestClient implements Closeable, StatsAware {
                 countStreamStats(content);
             }
 
+            // Keep track of where the doc was originally, and where we are in removing/keeping data.
+            int originalPosition = 0;
+            int workingPosition = 0;
             int docsSent = data.entries();
-            int position = 0;
             List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
             for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
                 // The array of maps are (operation -> document info) maps:
@@ -233,16 +235,17 @@ public class RestClient implements Closeable, StatsAware {
                 String error = extractError(values);
                 if (error != null && !error.isEmpty()) {
                     // Found failed write
-                    // Todo: Find a way to reuse the data in the tracking array as much as possible instead of forcing large array copies.
-                    BytesArray document = data.pop();
+                    BytesArray document = data.entry(workingPosition);
                     int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
-                    bulkErrors.add(new BulkResponse.BulkError(position, document, status, error));
+                    // FIXHERE: Does it make sense to move the error handling logic to here?
+                    bulkErrors.add(new BulkResponse.BulkError(originalPosition, workingPosition, document, status, error));
+                    workingPosition++;
                 } else {
-                    stats.bytesAccepted += data.length(0);
+                    stats.bytesAccepted += data.length(workingPosition);
                     stats.docsAccepted += 1;
-                    data.remove(0);
+                    data.remove(workingPosition);
                 }
-                position++;
+                originalPosition++;
             }
 
             if (bulkErrors.isEmpty()) {

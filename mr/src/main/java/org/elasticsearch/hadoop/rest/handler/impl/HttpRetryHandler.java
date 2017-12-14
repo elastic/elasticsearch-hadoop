@@ -50,9 +50,10 @@ public class HttpRetryHandler extends BulkWriteErrorHandler {
 
     @Override
     public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
-        if (retry.retry(entry.getResponseCode())){
+        // FIXHERE: On 1.x versions, this should be changed to check the error message for the exception name.
+        if (retry.retry(entry.getResponseCode())) {
             if (entry.getNumberOfAttempts() <= retryLimit) {
-                return collector.retry(entry.getEntryContents(), retryTime, TimeUnit.MILLISECONDS);
+                return collector.retry(retryTime, TimeUnit.MILLISECONDS);
             } else {
                 return collector.pass("Document bulk write attempts [" + entry.getNumberOfAttempts() +
                         "] exceeds retry limit of [" + retryLimit + "]");

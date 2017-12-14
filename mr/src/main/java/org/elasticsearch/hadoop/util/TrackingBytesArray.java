@@ -116,6 +116,11 @@ public class TrackingBytesArray implements ByteSequence {
         size -= entry.length;
     }
 
+    public BytesArray entry(int index) {
+        Entry entry = entries.get(index);
+        return new BytesArray(data.bytes, entry.offset, entry.length);
+    }
+
     public BytesArray pop() {
         Entry entry = entries.remove(0);
         size -= entry.length;

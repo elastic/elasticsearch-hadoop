@@ -88,7 +88,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es2x.json"), "");
-        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData, 0L);
         assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
         assertEquals(0, inputData.entries());
         assertEquals(3, bulkResponse.getDocumentErrors().size());
@@ -117,7 +117,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es1x.json"), "");
-        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData, 0L);
         assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
         assertEquals(0, inputData.entries());
         assertEquals(3, bulkResponse.getDocumentErrors().size());
@@ -146,7 +146,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es10x.json"), "");
-        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData, 0L);
         assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
         assertEquals(0, inputData.entries());
         assertEquals(3, bulkResponse.getDocumentErrors().size());
@@ -175,7 +175,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es090x.json"), "");
-        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData, 0L);
         assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
         assertEquals(0, inputData.entries());
         assertEquals(3, bulkResponse.getDocumentErrors().size());
@@ -204,7 +204,7 @@ public class ParseBulkErrorsTest {
         assertEquals("{0, 1, 2, 3, 4}", inputData.leftoversPosition().toString());
 
         Response response = new SimpleResponse(HttpStatus.OK, getClass().getResourceAsStream("bulk-retry-output-es5x.json"), "");
-        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData);
+        BulkResponse bulkResponse = rc.processBulkResponse(response, inputData, 0L);
         assertTrue(bulkResponse.getHttpStatus() == HttpStatus.OK);
         assertEquals(0, inputData.entries());
         assertEquals(3, bulkResponse.getDocumentErrors().size());
