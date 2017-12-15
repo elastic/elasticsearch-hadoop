@@ -1,0 +1,9 @@
+[[eshadoop-5.5.3]]
+== Elasticsearch for Apache Hadoop version 5.5.3
+September 05, 2017
+
+[[bugs-5.5.3]]
+=== Bug Fixes
+Rest::
+* Allow for more leniency in Network Client failover
+https://github.com/elastic/elasticsearch-hadoop/issues/993[#993]
