@@ -109,10 +109,10 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
 
         // set read resource, with es.resource in Hive TBLPROPERTIES
         // avoid resourceRead to read dirty data when exist the union-all opeartor in sql.  
-	String esResource = job.get("es.resource");
-        if (StringUtils.hasLength(esResource)) {
-            settings.setResourceRead(esResource);
-        }
+//	String esResource = job.get(ConfigurationOptions.ES_RESOURCE);
+//        if (StringUtils.hasLength(esResource)) {
+//            settings.setResourceRead(esResource);
+//        }
 
         HiveUtils.init(settings, log);
 
