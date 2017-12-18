@@ -31,15 +31,15 @@ import org.elasticsearch.hadoop.util.BytesArray;
  */
 public class BulkResponse {
 
-    static BulkResponse complete() {
+    public static BulkResponse complete() {
         return complete(HttpStatus.OK, 0L, 0);
     }
 
-    static BulkResponse complete(int httpStatus, long spent, int totalWrites) {
+    public static BulkResponse complete(int httpStatus, long spent, int totalWrites) {
         return new BulkResponse(BulkStatus.COMPLETE, httpStatus, spent, totalWrites, Collections.<BulkError>emptyList());
     }
 
-    static BulkResponse partial(int httpStatus, long spent, int totalWrites, List<BulkError> errors) {
+    public static BulkResponse partial(int httpStatus, long spent, int totalWrites, List<BulkError> errors) {
         return new BulkResponse(BulkStatus.PARTIAL, httpStatus, spent, totalWrites, errors);
     }
 

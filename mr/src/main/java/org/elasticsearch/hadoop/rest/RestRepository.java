@@ -20,16 +20,9 @@ package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
-import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorCollector;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
-import org.elasticsearch.hadoop.rest.handler.impl.BulkWriteHandlerLoader;
-import org.elasticsearch.hadoop.rest.handler.impl.HttpRetryHandler;
+import org.elasticsearch.hadoop.rest.bulk.BulkProcessor;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -54,16 +47,11 @@ import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,39 +61,23 @@ import java.util.Map.Entry;
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
 /**
- * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
+ * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it
+ * is used to perform updates against the same index.
  */
 public class RestRepository implements Closeable, StatsAware {
 
     private static Log log = LogFactory.getLog(RestRepository.class);
-    private static final BitSet EMPTY = new BitSet();
 
-    // serialization artifacts
-    private int bufferEntriesThreshold;
-
-    // raw data
-    private final BytesArray ba = new BytesArray(0);
-    // tracking array (backed by the BA above)
-    private final TrackingBytesArray data = new TrackingBytesArray(ba);
-    private int dataEntries = 0;
-    private boolean requiresRefreshAfterBulk = false;
-    private boolean executedBulkWrite = false;
     // wrapper around existing BA (for cases where the serialization already occurred)
     private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
-    private boolean autoFlush = true;
-
-    // indicates whether there were writes errors or not
-    // flag indicating whether to flush the batch at close-time or not
-    private boolean hadWriteErrors = false;
 
     private RestClient client;
     private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
     private MetadataExtractor metaExtractor;
 
-    // bulk request document error handlers
-    private List<BulkWriteErrorHandler> documentBulkErrorHandlers;
+    private BulkProcessor bulkProcessor;
 
     // Internal
     private static class Resources {
@@ -157,23 +129,10 @@ public class RestRepository implements Closeable, StatsAware {
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
     private void lazyInitWriting() {
         if (!writeInitialized) {
-            writeInitialized = true;
-
-            autoFlush = !settings.getBatchFlushManual();
-            ba.bytes(new byte[settings.getBatchSizeInBytes()], 0);
-            trivialBytesRef = new BytesRef();
-            bufferEntriesThreshold = settings.getBatchSizeInEntries();
-            requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
-
+            this.writeInitialized = true;
+            this.bulkProcessor = new BulkProcessor(client, resources.getResourceWrite(), settings);
+            this.trivialBytesRef = new BytesRef();
             this.command = BulkCommands.create(settings, metaExtractor, client.internalVersion);
-
-            this.documentBulkErrorHandlers = new ArrayList<BulkWriteErrorHandler>();
-
-            documentBulkErrorHandlers.add(new HttpRetryHandler(settings));
-
-            BulkWriteHandlerLoader handlerLoader = new BulkWriteHandlerLoader();
-            handlerLoader.setSettings(settings);
-            documentBulkErrorHandlers.addAll(handlerLoader.loadHandlers());
         }
     }
 
@@ -225,227 +184,16 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private void doWriteToIndex(BytesRef payload) {
-        // check space first
-        // ba is the backing array for data
-        // FIXHERE: If a retry is performed with new data, this byte array will potentially grow in size.
-        if (payload.length() > ba.available()) {
-            if (autoFlush) {
-                flush();
-            }
-            else {
-                throw new EsHadoopIllegalStateException(
-                        String.format("Auto-flush disabled and bulk buffer full; disable manual flush or increase capacity [current size %s]; bailing out", ba.capacity()));
-            }
-        }
-
-        data.copyFrom(payload);
+        bulkProcessor.add(payload);
         payload.reset();
-
-        dataEntries++;
-        if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
-            if (autoFlush) {
-                flush();
-            }
-            else {
-                // handle the corner case of manual flush that occurs only after the buffer is completely full (think size of 1)
-                if (dataEntries > bufferEntriesThreshold) {
-                    throw new EsHadoopIllegalStateException(
-                            String.format(
-                                    "Auto-flush disabled and maximum number of entries surpassed; disable manual flush or increase capacity [current size %s]; bailing out",
-                                    bufferEntriesThreshold));
-                }
-            }
-        }
     }
 
     public BulkResponse tryFlush() {
-        BulkResponse bulkResult;
-
-        try {
-            // double check data - it might be a false flush (called on clean-up)
-            if (data.length() > 0) {
-                boolean retryOperation = false;
-                long waitTime = 0L;
-                List<Integer> attempts = Collections.emptyList();
-
-                do {
-                    if (retryOperation) {
-                        if (waitTime > 0L) {
-                            if (log.isDebugEnabled()) {
-                                log.debug(String.format("Retrying failed bulk documents after backing off for [%s] ms",
-                                        TimeValue.timeValueMillis(waitTime)));
-                            }
-                            try {
-                                Thread.sleep(waitTime);
-                            } catch (InterruptedException e) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Thread interrupted - giving up on retrying...");
-                                }
-                                throw new EsHadoopException("Thread interrupted - giving up on retrying...", e);
-                            }
-                        } else {
-                            if (log.isDebugEnabled()) {
-                                log.debug(String.format("Retrying failed bulk documents immediately (without backoff)",
-                                        TimeValue.timeValueMillis(waitTime)));
-                            }
-                        }
-                    } else if (log.isDebugEnabled()) {
-                        log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
-                    }
-
-                    bulkResult = client.bulk(resources.getResourceWrite(), data);
-                    executedBulkWrite = true;
-
-                    if (retryOperation) {
-                        stats.docsRetried += data.entries();
-                        stats.bytesRetried += data.length();
-                        stats.bulkRetries++;
-                        stats.bulkRetriesTotalTime += bulkResult.getClientTimeSpent();
-                    }
-
-                    // Handle bulk write failures
-                    if (!bulkResult.getDocumentErrors().isEmpty()) {
-                        // Some documents failed. Pass them to retry handler.
-
-                        List<Integer> previousAttempts = attempts;
-
-                        // FIXHERE: Find a way to retry documents without growing the original backing array, or track bytes separately.
-                        attempts = new ArrayList<Integer>();
-                        BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector();
-
-                        // Iterate over all errors, and for each error, attempt to handle the problem.
-                        for (BulkResponse.BulkError bulkError : bulkResult.getDocumentErrors()) {
-                            int requestAttempt;
-                            if (previousAttempts.isEmpty() || (bulkError.getOriginalPosition() + 1) > previousAttempts.size()) {
-                                // We don't have an attempt, assume first attempt
-                                requestAttempt = 1;
-                            } else {
-                                // Get and increment previous attempt value
-                                requestAttempt = previousAttempts.get(bulkError.getOriginalPosition()) + 1;
-                            }
-
-                            List<String> bulkErrorPassReasons = new ArrayList<String>();
-                            BulkWriteFailure failure = new BulkWriteFailure(
-                                    bulkError.getDocumentStatus(),
-                                    // FIXHERE: Pick a better Exception type?
-                                    new Exception(bulkError.getErrorMessage()),
-                                    bulkError.getDocument(),
-                                    requestAttempt,
-                                    bulkErrorPassReasons
-                            );
-                            for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
-                                HandlerResult result;
-                                try {
-                                    result = errorHandler.onError(failure, errorCollector);
-                                } catch (EsHadoopAbortHandlerException ahe) {
-                                    throw new EsHadoopException(ahe.getMessage());
-                                } catch (Exception e) {
-                                    throw new EsHadoopException("Encountered exception during error handler. Treating " +
-                                            "it as an ABORT result.", e);
-                                }
-
-                                switch (result) {
-                                    case HANDLED:
-                                        Assert.isTrue(errorCollector.getAndClearMessage() == null,
-                                                "Found pass message with Handled response. Be sure to return the value " +
-                                                        "returned from pass(String) call.");
-                                        // Check for document retries
-                                        if (errorCollector.receivedRetries()) {
-                                            BytesArray original = bulkError.getDocument();
-                                            byte[] retryDataBuffer = errorCollector.getAndClearRetryValue();
-                                            if (retryDataBuffer == null) {
-                                                // Retry the same data.
-                                                // Continue to track the previous attempts.
-                                                attempts.add(requestAttempt);
-                                            } else if (original.bytes() == retryDataBuffer) {
-                                                // If we receive an array that is identity equal to the tracking bytes
-                                                // array, then we'll use the same document from the tracking bytes array
-                                                // as there have been no changes to it.
-                                                // We will continue tracking previous attempts though.
-                                                attempts.add(requestAttempt);
-                                            } else {
-                                                // Check document contents to see if it was deserialized and reserialized.
-                                                byte[] originalContent = new byte[original.length()];
-                                                System.arraycopy(original.bytes(), original.offset(), originalContent, 0, original.length());
-                                                if (Arrays.equals(originalContent, retryDataBuffer)) {
-                                                    // Same document content. Leave the data as is in tracking buffer,
-                                                    // and continue tracking previous attempts.
-                                                    attempts.add(requestAttempt);
-                                                } else {
-                                                    // Document has changed.
-                                                    // Track new attempts.
-                                                    // FIXHERE: This removal operation "shifts" all entries, so each removal will be off by one.
-                                                    int currentPosition = bulkError.getCurrentArrayPosition();
-                                                    data.remove(currentPosition);
-                                                    data.copyFrom(new BytesArray(retryDataBuffer));
-                                                    // Don't add item to attempts. When it's exhausted we'll assume 1's.
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case PASS:
-                                        String reason = errorCollector.getAndClearMessage();
-                                        if (reason != null) {
-                                            bulkErrorPassReasons.add(reason);
-                                        }
-                                        continue;
-                                    case ABORT:
-                                        errorCollector.getAndClearMessage(); // Sanity clearing
-                                        throw new EsHadoopException("Error Handler returned an ABORT result for failed " +
-                                                "bulk document. HTTP Status [" + bulkError.getDocumentStatus() +
-                                                "], Error Message [" + bulkError.getErrorMessage() + "], Document Entry [" +
-                                                bulkError.getDocument().toString() + "]");
-                                }
-                            }
-                        }
-
-                        if (!attempts.isEmpty()) {
-                            retryOperation = true;
-                            waitTime = errorCollector.getDelayTimeBetweenRetries();
-                        } else {
-                            retryOperation = false;
-                        }
-                    } else {
-                        // Everything is good to go!
-                        retryOperation = false;
-                    }
-                } while (retryOperation);
-            } else {
-                bulkResult = BulkResponse.complete();
-            }
-        } catch (EsHadoopException ex) {
-            hadWriteErrors = true;
-            throw ex;
-        }
-
-        // always discard data since there's no code path that uses the in flight data
-        discard();
-
-        return bulkResult;
-    }
-
-    public void discard() {
-        data.reset();
-        dataEntries = 0;
+        return bulkProcessor.tryFlush();
     }
 
     public void flush() {
-        // FIXHERE: Begin here for determining rest response code handling for bulk operations.
-        BulkResponse bulk = tryFlush();
-        if (!bulk.getDocumentErrors().isEmpty()) {
-            String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getDocumentErrors().size(), bulk.getTotalDocs(), 5);
-            StringBuilder message = new StringBuilder(header);
-            int i = 0;
-            for (BulkResponse.BulkError errors : bulk.getDocumentErrors()) {
-                if (i >=5 ) {
-                    break;
-                }
-                message.append("\t").append(errors.getErrorMessage()).append("\n");
-                i++;
-            }
-            message.append("Bailing out...");
-            throw new EsHadoopException(message.toString());
-        }
+        bulkProcessor.flush();
     }
 
     @Override
@@ -460,29 +208,17 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         try {
-            if (!hadWriteErrors) {
-                flush();
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Dirty close; ignoring last existing write batch...");
-                }
-            }
-
-            if (requiresRefreshAfterBulk && executedBulkWrite) {
-                // refresh batch
-                client.refresh(resources.getResourceWrite());
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resources.getResourceWrite()));
-                }
+            if (bulkProcessor != null) {
+                bulkProcessor.close();
+                // Aggregate stats before discarding them.
+                stats.aggregate(bulkProcessor.stats());
+                bulkProcessor = null;
             }
         } finally {
             client.close();
+            // Aggregate stats before discarding them.
             stats.aggregate(client.stats());
             client = null;
-            for (BulkWriteErrorHandler handler : documentBulkErrorHandlers) {
-                handler.close();
-            }
         }
     }
 
@@ -692,7 +428,12 @@ public class RestRepository implements Closeable, StatsAware {
     public Stats stats() {
         Stats copy = new Stats(stats);
         if (client != null) {
+            // Aggregate stats if it's not already discarded
             copy.aggregate(client.stats());
+        }
+        if (bulkProcessor != null) {
+            // Aggregate stats if it's not already discarded
+            copy.aggregate(bulkProcessor.stats());
         }
         return copy;
     }
