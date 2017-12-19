@@ -25,7 +25,7 @@
 [preface]
 == Preface
 
-{ehtm} is an `umbrella' project consisting of three similar, yet independent sub-projects with their own, dedicated, section in the documentation:
+{ehtm} is an `umbrella' project consisting of two similar, yet independent sub-projects with their own, dedicated, section in the documentation:
 
 {eh} proper::
 Interact with {es} from within a Hadoop environment. If you are using {mr}, Hive, Pig, {sp}, {st}, or Cascading, this
