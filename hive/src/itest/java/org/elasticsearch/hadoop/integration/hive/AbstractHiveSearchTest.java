@@ -372,13 +372,13 @@ public class AbstractHiveSearchTest {
     @Test
     public void basicUnion() throws Exception {
         //table unionA and table uinonB should be from difference es index/type
-        String unionA = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
+        String unionA = "CREATE EXTERNAL TABLE uniona" + testInstance + " ("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
                 + tableProps("hive-artists/data");
 
-        String unionB = "CREATE EXTERNAL TABLE varcharload" + testInstance + " ("
+        String unionB = "CREATE EXTERNAL TABLE unionb" + testInstance + " ("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
