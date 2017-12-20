@@ -370,6 +370,46 @@ public class AbstractHiveSearchTest {
     }
 
     @Test
+    public void basicUnion() throws Exception {
+        //table unionA and table uinonB should be from difference es index/type
+        String unionA = "CREATE EXTERNAL TABLE artistscount" + testInstance + " ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive-artists/data");
+
+        String unionB = "CREATE EXTERNAL TABLE varcharload" + testInstance + " ("
+                + "id       BIGINT, "
+                + "name     STRING, "
+                + "links    STRUCT<url:STRING, picture:STRING>) "
+                + tableProps("hive-varcharsave/data");
+
+        //create two external table
+        server.execute(unionA);
+        server.execute(unionB);
+
+        // select alone
+        String selectA = "SELECT id,name FROM uniona" + testInstance;
+        String selectB = "SELECT id,name FROM unionb" + testInstance;
+
+        List<String> resultA = server.execute(selectA);
+        List<String> resultB = server.execute(selectB);
+
+        //select union
+        String selectUnion = selectA + " UNION ALL " + selectB;
+        List<String> resultUnion = server.execute(selectUnion);
+
+        System.out.println(server.execute("SHOW CREATE TABLE uniona" + testInstance));
+        System.out.println(server.execute("SHOW CREATE TABLE unionb" + testInstance));
+        assertTrue("Hive returned null", containsNoNull(resultA));
+        assertTrue("Hive returned null", containsNoNull(resultB));
+        assertTrue("Hive returned null", containsNoNull(resultUnion));
+        //union all operation don't remove the same elements,
+        //so the total is equal to the sum of all the subqueries.
+        assertTrue(resultA.size() + resultB.size() == resultUnion.size());
+    }
+
+    @Test
     public void testDynamicPattern() throws Exception {
         Assert.assertTrue(RestUtils.exists("hive-pattern-7/data"));
         Assert.assertTrue(RestUtils.exists("hive-pattern-10/data"));
