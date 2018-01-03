@@ -300,7 +300,7 @@ JavaSparkContext jsc = new JavaSparkContext(conf);
 Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
-JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); 
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports)); 
 JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 ```
 
