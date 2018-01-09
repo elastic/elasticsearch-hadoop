@@ -82,14 +82,14 @@ For example assuming the data contains a +@timestamp+ field, one can group the d
 [source,ini]
 ----
 # index the documents based on their date
-es.resource.write = my-collection/{@timestamp:YYYY.MM.dd} <1>
+es.resource.write = my-collection/{@timestamp:yyyy.MM.dd} <1>
 ----
 
-<1> +@timestamp+ field formatting - in this case +YYYY.MM.dd+
+<1> +@timestamp+ field formatting - in this case +yyyy.MM.dd+
 
 The same configuration property is used (+es.resource.write+) however, through the special +:+ characters a formatting pattern is specified.
 Please refer to the http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDateFormat] javadocs for more information on the syntax supported.
-In this case +YYYY.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
+In this case +yyyy.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
 
 http://logstash.net/[Logstash] users will find this _pattern_ quite http://logstash.net/docs/latest/filters/date[familiar].
 
