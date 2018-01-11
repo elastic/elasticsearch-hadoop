@@ -75,6 +75,7 @@ public class RestClient implements Closeable, StatsAware {
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
+    private final ErrorExtractor errorExtractor;
 
     {
         mapper = new ObjectMapper();
@@ -107,6 +108,7 @@ public class RestClient implements Closeable, StatsAware {
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
         internalVersion = settings.getInternalVersionOrLatest();
+        errorExtractor = new ErrorExtractor(internalVersion);
     }
 
     public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
@@ -175,18 +177,40 @@ public class RestClient implements Closeable, StatsAware {
         return (T) (string != null ? map.get(string) : map);
     }
 
+    public static class BulkActionResponse {
+        private Iterator<Map> entries;
+        private long timeSpent;
+        private int responseCode;
+
+        public BulkActionResponse(Iterator<Map> entries, int responseCode, long timeSpent) {
+            this.entries = entries;
+            this.timeSpent = timeSpent;
+            this.responseCode = responseCode;
+        }
+
+        public Iterator<Map> getEntries() {
+            return entries;
+        }
+
+        public long getTimeSpent() {
+            return timeSpent;
+        }
+
+        public int getResponseCode() {
+            return responseCode;
+        }
+    }
+
     /**
-     * Executes a bulk operation against the provided resource, using the passed data as the request body.
+     * Executes a single bulk operation against the provided resource, using the passed data as the request body.
      * This method will retry bulk requests if the entire bulk request fails, but will not retry singular
      * document failures.
      *
      * @param resource target of the bulk request.
      * @param data bulk request body. This body will be cleared of entries on any successful bulk request.
-     * @return a BulkResponse object that will detail if there were failing documents that should be retried.
+     * @return a BulkActionResponse object that will detail if there were failing documents that should be retried.
      */
-    public BulkResponse bulk(Resource resource, TrackingBytesArray data) {
-        BulkResponse bulkResponse;
-
+    public BulkActionResponse bulk(Resource resource, TrackingBytesArray data) {
         // NB: dynamically get the stats since the transport can change
         long start = network.transportStats().netTotalTime;
         Response response = execute(PUT, resource.bulk(), data);
@@ -197,13 +221,11 @@ public class RestClient implements Closeable, StatsAware {
         stats.bulkTotalTime += spent;
         // bytes will be counted by the transport layer
 
-        bulkResponse = processBulkResponse(response, data, spent);
-
-        return bulkResponse;
+        return new BulkActionResponse(parseBulkActionResponse(response), response.status(), spent);
     }
 
     @SuppressWarnings("rawtypes")
-    BulkResponse processBulkResponse(Response response, TrackingBytesArray data, long timeSpent) {
+    Iterator<Map> parseBulkActionResponse(Response response) {
         InputStream content = response.body();
         // Check for failed writes
         try {
@@ -211,117 +233,138 @@ public class RestClient implements Closeable, StatsAware {
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
             try {
                 if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
-                    // If no items on response, assume all documents made it in.
-                    // recorded bytes are ack here
-                    stats.bytesAccepted += data.length();
-                    stats.docsAccepted += data.entries();
-                    return BulkResponse.complete(response.status(), timeSpent, data.entries());
+                    return Collections.<Map>emptyList().iterator();
+                } else {
+                    return r.readValues(parser);
                 }
             } finally {
                 countStreamStats(content);
-            }
-
-            // Keep track of where the doc was originally, and where we are in removing/keeping data.
-            int originalPosition = 0;
-            int workingPosition = 0;
-            int docsSent = data.entries();
-            List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
-            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
-                // The array of maps are (operation -> document info) maps:
-                Map map = iterator.next();
-                // get the underlying document information as a map:
-                Map values = (Map) map.values().iterator().next();
-                Integer docStatus = (Integer) values.get("status");
-                String error = extractError(values);
-                if (error != null && !error.isEmpty()) {
-                    // Found failed write
-                    BytesArray document = data.entry(workingPosition);
-                    int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
-                    // FIXHERE: Does it make sense to move the error handling logic to here?
-                    bulkErrors.add(new BulkResponse.BulkError(originalPosition, workingPosition, document, status, error));
-                    workingPosition++;
-                } else {
-                    stats.bytesAccepted += data.length(workingPosition);
-                    stats.docsAccepted += 1;
-                    data.remove(workingPosition);
-                }
-                originalPosition++;
-            }
-
-            if (bulkErrors.isEmpty()) {
-                return BulkResponse.complete(response.status(), timeSpent, docsSent);
-            } else {
-                return BulkResponse.partial(response.status(), timeSpent, docsSent, bulkErrors);
             }
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
     }
 
-    private String extractError(Map jsonMap) {
-        Object err = jsonMap.get("error");
-        String error = "";
-        if (err != null) {
-            // part of ES 2.0
-            if (err instanceof Map) {
-                Map m = ((Map) err);
-                err = m.get("root_cause");
-                if (err == null) {
-                    if (m.containsKey("reason")) {
-                        error = m.get("reason").toString();
-                    }
-                    else if (m.containsKey("caused_by")) {
-                        error += ";" + ((Map) m.get("caused_by")).get("reason");
-                    }
-                    else {
-                        error = m.toString();
-                    }
-                }
-                else {
-                    if (err instanceof List) {
-                        Object nested = ((List) err).get(0);
-                        if (nested instanceof Map) {
-                            Map nestedM = (Map) nested;
-                            if (nestedM.containsKey("reason")) {
-                                error = nestedM.get("reason").toString();
-                            }
-                            else {
-                                error = nested.toString();
-                            }
-                        }
-                        else {
-                            error = nested.toString();
-                        }
-                    }
-                    else {
-                        error = err.toString();
-                    }
-                }
-            }
-            else {
-                error = err.toString();
-            }
-        }
-        return error;
-    }
+//    @SuppressWarnings("rawtypes")
+//    BulkResponse processBulkResponse(Response response, TrackingBytesArray data, long timeSpent) {
+//        InputStream content = response.body();
+//        // Check for failed writes
+//        try {
+//            ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
+//            JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
+//            try {
+//                if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
+//                    // If no items on response, assume all documents made it in.
+//                    // recorded bytes are ack here
+//                    stats.bytesAccepted += data.length();
+//                    stats.docsAccepted += data.entries();
+//                    return BulkResponse.complete(response.status(), timeSpent, data.entries());
+//                }
+//            } finally {
+//                countStreamStats(content);
+//            }
+//
+//            // Keep track of where the doc was originally, and where we are in removing/keeping data.
+//            int originalPosition = 0;
+//            int workingPosition = 0;
+//            int docsSent = data.entries();
+//            List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
+//            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext(); ) {
+//                // The array of maps are (operation -> document info) maps:
+//                Map map = iterator.next();
+//                // get the underlying document information as a map:
+//                Map values = (Map) map.values().iterator().next();
+//                Integer docStatus = (Integer) values.get("status");
+//                String error = extractError(values);
+//                if (error != null && !error.isEmpty()) {
+//                    // Found failed write
+//                    BytesArray document = data.entry(workingPosition);
+//                    int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
+//                    // FIXHERE: Does it make sense to move the error handling logic to here?
+//                    bulkErrors.add(new BulkResponse.BulkError(originalPosition, workingPosition, document, status, error));
+//                    workingPosition++;
+//                } else {
+//                    stats.bytesAccepted += data.length(workingPosition);
+//                    stats.docsAccepted += 1;
+//                    data.remove(workingPosition);
+//                }
+//                originalPosition++;
+//            }
+//
+//            if (bulkErrors.isEmpty()) {
+//                return BulkResponse.complete(response.status(), timeSpent, docsSent);
+//            } else {
+//                return BulkResponse.partial(response.status(), timeSpent, docsSent, bulkErrors);
+//            }
+//        } catch (IOException ex) {
+//            throw new EsHadoopParsingException(ex);
+//        }
+//    }
 
-    private String prettify(String error) {
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
-            return error;
-        }
-
-        String invalidFragment = ErrorUtils.extractInvalidXContent(error);
-        String header = (invalidFragment != null ? "Invalid JSON fragment received[" + invalidFragment + "]" : "");
-        return header + "[" + error + "]";
-    }
-
-    private String prettify(String error, ByteSequence body) {
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
-            return error;
-        }
-        String message = ErrorUtils.extractJsonParse(error, body);
-        return (message != null ? error + "; fragment[" + message + "]" : error);
-    }
+//    private String extractError(Map jsonMap) {
+//        Object err = jsonMap.get("error");
+//        String error = "";
+//        if (err != null) {
+//            // part of ES 2.0
+//            if (err instanceof Map) {
+//                Map m = ((Map) err);
+//                err = m.get("root_cause");
+//                if (err == null) {
+//                    if (m.containsKey("reason")) {
+//                        error = m.get("reason").toString();
+//                    }
+//                    else if (m.containsKey("caused_by")) {
+//                        error += ";" + ((Map) m.get("caused_by")).get("reason");
+//                    }
+//                    else {
+//                        error = m.toString();
+//                    }
+//                }
+//                else {
+//                    if (err instanceof List) {
+//                        Object nested = ((List) err).get(0);
+//                        if (nested instanceof Map) {
+//                            Map nestedM = (Map) nested;
+//                            if (nestedM.containsKey("reason")) {
+//                                error = nestedM.get("reason").toString();
+//                            }
+//                            else {
+//                                error = nested.toString();
+//                            }
+//                        }
+//                        else {
+//                            error = nested.toString();
+//                        }
+//                    }
+//                    else {
+//                        error = err.toString();
+//                    }
+//                }
+//            }
+//            else {
+//                error = err.toString();
+//            }
+//        }
+//        return error;
+//    }
+//
+//    private String prettify(String error) {
+//        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+//            return error;
+//        }
+//
+//        String invalidFragment = ErrorUtils.extractInvalidXContent(error);
+//        String header = (invalidFragment != null ? "Invalid JSON fragment received[" + invalidFragment + "]" : "");
+//        return header + "[" + error + "]";
+//    }
+//
+//    private String prettify(String error, ByteSequence body) {
+//        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+//            return error;
+//        }
+//        String message = ErrorUtils.extractJsonParse(error, body);
+//        return (message != null ? error + "; fragment[" + message + "]" : error);
+//    }
 
     public void refresh(Resource resource) {
         execute(POST, resource.refresh());
@@ -482,12 +525,12 @@ public class RestClient implements Closeable, StatsAware {
             String msg = null;
             // try to parse the answer
             try {
-                msg = extractError(this.<Map> parseContent(response.body(), null));
+                msg = errorExtractor.extractError(this.<Map> parseContent(response.body(), null));
                 if (response.isClientError()) {
                     msg = msg + "\n" + request.body();
                 }
                 else {
-                    msg = prettify(msg, request.body());
+                    msg = errorExtractor.prettify(msg, request.body());
                 }
             } catch (Exception ex) {
                 // can't parse message, move on

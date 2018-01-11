@@ -30,7 +30,7 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
     }
 
     @Override
-    public HandlerResult retry(long timeAmount, TimeUnit timeUnits) {
+    public HandlerResult backoffAndRetry(long timeAmount, TimeUnit timeUnits) {
         long givenDelayTimeInMillis = timeUnits.toMillis(timeAmount);
         if (givenDelayTimeInMillis > delayTimeInMillis) {
             delayTimeInMillis = givenDelayTimeInMillis;
@@ -45,7 +45,7 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
     }
 
     @Override
-    public HandlerResult retry(byte[] retryData, long timeAmount, TimeUnit timeUnits) {
+    public HandlerResult backoffAndRetry(byte[] retryData, long timeAmount, TimeUnit timeUnits) {
         long givenDelayTimeInMillis = timeUnits.toMillis(timeAmount);
         if (givenDelayTimeInMillis > delayTimeInMillis) {
             delayTimeInMillis = givenDelayTimeInMillis;

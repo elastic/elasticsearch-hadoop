@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+// FIXHERE: This logic has moved. Update this test.
 public class ParseBulkErrorsTest {
 
     private RestClient rc;

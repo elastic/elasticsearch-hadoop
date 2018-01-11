@@ -4,7 +4,10 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,6 +17,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.BulkResponse;
+import org.elasticsearch.hadoop.rest.ErrorExtractor;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorCollector;
@@ -40,6 +44,7 @@ public class BulkProcessor implements Closeable, StatsAware {
     private final RestClient restClient;
     private final Resource resource;
     private final Stats stats = new Stats();
+    private final ErrorExtractor errorExtractor;
 
     // Buffers and state of content
     private final BytesArray ba;
@@ -80,6 +85,9 @@ public class BulkProcessor implements Closeable, StatsAware {
         this.documentBulkErrorHandlers = new ArrayList<BulkWriteErrorHandler>();
         this.documentBulkErrorHandlers.add(httpRetryHandler);
         this.documentBulkErrorHandlers.addAll(handlerLoader.loadHandlers());
+
+        // Error Extractor
+        this.errorExtractor = new ErrorExtractor(settings.getInternalVersionOrThrow());
     }
 
     /**
@@ -129,7 +137,7 @@ public class BulkProcessor implements Closeable, StatsAware {
      * @throws EsHadoopException in the event that the bulk operation fails or is aborted.
      */
     public BulkResponse tryFlush() {
-        BulkResponse bulkResult;
+//        BulkResponse bulkResult;
 
         try {
             // double check data - it might be a false flush (called on clean-up)
@@ -139,42 +147,63 @@ public class BulkProcessor implements Closeable, StatsAware {
                 List<Integer> attempts = Collections.emptyList();
 
                 do {
-                    if (retryOperation) {
-                        if (waitTime > 0L) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug(String.format("Retrying failed bulk documents after backing off for [%s] ms",
-                                        TimeValue.timeValueMillis(waitTime)));
-                            }
-                            try {
-                                Thread.sleep(waitTime);
-                            } catch (InterruptedException e) {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Thread interrupted - giving up on retrying...");
-                                }
-                                throw new EsHadoopException("Thread interrupted - giving up on retrying...", e);
-                            }
-                        } else {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Retrying failed bulk documents immediately (without backoff)");
-                            }
-                        }
-                    } else if (LOG.isDebugEnabled()) {
-                        LOG.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
-                    }
+                    initFlushOperation(retryOperation, waitTime);
 
-                    // FIXHERE: Combine response parsing with the error handling logic for greater clarity.
-                    bulkResult = restClient.bulk(resource, data);
-                    executedBulkWrite = true;
+                    // Exec bulk operation to ES, get response.
+                    RestClient.BulkActionResponse bar = restClient.bulk(resource, data);
 
+                    // Log retry stats if relevant
                     if (retryOperation) {
                         stats.docsRetried += data.entries();
                         stats.bytesRetried += data.length();
                         stats.bulkRetries++;
-                        stats.bulkRetriesTotalTime += bulkResult.getClientTimeSpent();
+                        stats.bulkRetriesTotalTime += bar.getTimeSpent();
                     }
+                    executedBulkWrite = true;
 
                     // Handle bulk write failures
-                    if (!bulkResult.getDocumentErrors().isEmpty()) {
+                    List<BulkResponse.BulkError> bulkErrors = new LinkedList<BulkResponse.BulkError>();
+                    int docsSent = data.entries();
+                    if (!bar.getEntries().hasNext()) {
+                        // If no items on response, assume all documents made it in.
+                        // recorded bytes are ack here
+                        stats.bytesAccepted += data.length();
+                        stats.docsAccepted += data.entries();
+                    } else {
+                        // Keep track of where the doc was originally, and where we are in removing/keeping data.
+                        int originalPosition = 0;
+                        int workingPosition = 0;
+                        for (Iterator<Map> iterator = bar.getEntries(); iterator.hasNext(); ) {
+                            // The array of maps are (operation -> document info) maps:
+                            Map map = iterator.next();
+                            // get the underlying document information as a map:
+                            Map values = (Map) map.values().iterator().next();
+                            Integer docStatus = (Integer) values.get("status");
+                            String error = errorExtractor.extractError(values);
+                            if (error != null && !error.isEmpty()) {
+                                // Found failed write
+                                BytesArray document = data.entry(workingPosition);
+                                int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
+                                // FIXHERE: Does it make sense to move the error handling logic to here?
+                                bulkErrors.add(new BulkResponse.BulkError(originalPosition, workingPosition, document, status, error));
+                                workingPosition++;
+                            } else {
+                                stats.bytesAccepted += data.length(workingPosition);
+                                stats.docsAccepted += 1;
+                                data.remove(workingPosition);
+                            }
+                            originalPosition++;
+                        }
+                    }
+
+//                    if (bulkErrors.isEmpty()) {
+//                        bulkResult = BulkResponse.complete(bar.getResponseCode(), bar.getTimeSpent(), docsSent);
+//                    } else {
+//                        bulkResult = BulkResponse.partial(bar.getResponseCode(), bar.getTimeSpent(), docsSent, bulkErrors);
+//                    }
+
+                    // Handle bulk write failures
+                    if (!bulkErrors.isEmpty()) {
                         // Some documents failed. Pass them to retry handler.
 
                         List<Integer> previousAttempts = attempts;
@@ -184,7 +213,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                         BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector();
 
                         // Iterate over all errors, and for each error, attempt to handle the problem.
-                        for (BulkResponse.BulkError bulkError : bulkResult.getDocumentErrors()) {
+                        for (BulkResponse.BulkError bulkError : bulkErrors) {
                             int requestAttempt;
                             if (previousAttempts.isEmpty() || (bulkError.getOriginalPosition() + 1) > previousAttempts.size()) {
                                 // We don't have an attempt, assume first attempt
@@ -281,7 +310,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                     }
                 } while (retryOperation);
             } else {
-                bulkResult = BulkResponse.complete();
+//                bulkResult = BulkResponse.complete();
             }
         } catch (EsHadoopException ex) {
             hadWriteErrors = true;
@@ -292,7 +321,35 @@ public class BulkProcessor implements Closeable, StatsAware {
         data.reset();
         dataEntries = 0;
 
-        return bulkResult;
+//        return bulkResult;
+    }
+
+    /**
+     * Logs flushing messages and performs backoff waiting if there is a wait time for retry.
+     */
+    private void initFlushOperation(boolean retryOperation, long waitTime) {
+        if (retryOperation) {
+            if (waitTime > 0L) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(String.format("Retrying failed bulk documents after backing off for [%s] ms",
+                            TimeValue.timeValueMillis(waitTime)));
+                }
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException e) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Thread interrupted - giving up on retrying...");
+                    }
+                    throw new EsHadoopException("Thread interrupted - giving up on retrying...", e);
+                }
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Retrying failed bulk documents immediately (without backoff)");
+                }
+            }
+        } else if (LOG.isDebugEnabled()) {
+            LOG.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
+        }
     }
 
     /**

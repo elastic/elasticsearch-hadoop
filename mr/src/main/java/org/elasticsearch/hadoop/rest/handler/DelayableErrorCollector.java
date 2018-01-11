@@ -19,7 +19,7 @@ public interface DelayableErrorCollector<T> extends ErrorCollector<T> {
      * @return Appropriate handler result value stating the failure has been retried. In
      * most cases this is {@link HandlerResult#HANDLED} but can vary depending on the use case.
      */
-    public HandlerResult retry(long timeAmount, TimeUnit timeUnits);
+    public HandlerResult backoffAndRetry(long timeAmount, TimeUnit timeUnits);
 
     /**
      * Retry an operation (after the given backoff period) using the given retry data. Documents retried through
@@ -30,5 +30,5 @@ public interface DelayableErrorCollector<T> extends ErrorCollector<T> {
      * @return Appropriate handler result value stating the failure has been retried. In
      * most cases this is {@link HandlerResult#HANDLED} but can vary depending on the use case.
      */
-    public HandlerResult retry(T retryData, long timeAmount, TimeUnit timeUnits);
+    public HandlerResult backoffAndRetry(T retryData, long timeAmount, TimeUnit timeUnits);
 }
