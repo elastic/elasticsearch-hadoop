@@ -32,15 +32,15 @@ import org.elasticsearch.hadoop.util.BytesArray;
 public class BulkResponse {
 
     public static BulkResponse complete() {
-        return complete(HttpStatus.OK, 0L, 0);
+        return complete(HttpStatus.OK, 0L, 0, 0, 0);
     }
 
-    public static BulkResponse complete(int httpStatus, long spent, int totalWrites) {
-        return new BulkResponse(BulkStatus.COMPLETE, httpStatus, spent, totalWrites, Collections.<BulkError>emptyList());
+    public static BulkResponse complete(int httpStatus, long spent, int totalWrites, int docsSent, int docsSkipped) {
+        return new BulkResponse(BulkStatus.COMPLETE, httpStatus, spent, totalWrites, docsSent, docsSkipped, 0, Collections.<BulkError>emptyList());
     }
 
-    public static BulkResponse partial(int httpStatus, long spent, int totalWrites, List<BulkError> errors) {
-        return new BulkResponse(BulkStatus.PARTIAL, httpStatus, spent, totalWrites, errors);
+    public static BulkResponse partial(int httpStatus, long spent, int totalWrites, int docsSent, int docsSkipped, int docsAborted, List<BulkError> errors) {
+        return new BulkResponse(BulkStatus.PARTIAL, httpStatus, spent, totalWrites, docsSent, docsSkipped, docsAborted, errors);
     }
 
     public enum BulkStatus {
@@ -57,31 +57,22 @@ public class BulkResponse {
     public static class BulkError {
 
         private final int originalPosition;
-        private final int currentArrayPosition;
         private final BytesArray document;
         private final int documentStatus;
         private final String errorMessage;
 
-        public BulkError(int originalPosition, int currentArrayPosition, BytesArray document, int documentStatus, String errorMessage) {
+        public BulkError(int originalPosition, BytesArray document, int documentStatus, String errorMessage) {
             this.originalPosition = originalPosition;
-            this.currentArrayPosition = currentArrayPosition;
             this.document = document;
             this.documentStatus = documentStatus;
             this.errorMessage = errorMessage;
         }
 
         /**
-         * @return original location in tracking bytes array that the document existed in for this request.
+         * @return original location in tracking bytes array that the document existed in for the very first request.
          */
         public int getOriginalPosition() {
             return originalPosition;
-        }
-
-        /**
-         * @return current location in the tracking bytes array that the document source exists in for this request.
-         */
-        public int getCurrentArrayPosition() {
-            return currentArrayPosition;
         }
 
         /**
@@ -104,13 +95,19 @@ public class BulkResponse {
     private final int httpStatus;
     private final long spent;
     private final int totalDocs;
+    private final int docsSent;
+    private final int docsSkipped;
+    private final int docsAborted;
     private List<BulkError> documentErrors;
 
-    private BulkResponse(BulkStatus status, int httpStatus, long spent, int totalDocs, List<BulkError> documentErrors) {
+    private BulkResponse(BulkStatus status, int httpStatus, long spent, int totalDocs, int docsSent, int docsSkipped, int docsAborted, List<BulkError> documentErrors) {
         this.status = status;
         this.httpStatus = httpStatus;
         this.spent = spent;
         this.totalDocs = totalDocs;
+        this.docsSent = docsSent;
+        this.docsSkipped = docsSkipped;
+        this.docsAborted = docsAborted;
         this.documentErrors = documentErrors;
     }
 
@@ -128,6 +125,22 @@ public class BulkResponse {
 
     public int getTotalDocs() {
         return totalDocs;
+    }
+
+    public long getSpent() {
+        return spent;
+    }
+
+    public int getDocsSent() {
+        return docsSent;
+    }
+
+    public int getDocsSkipped() {
+        return docsSkipped;
+    }
+
+    public int getDocsAborted() {
+        return docsAborted;
     }
 
     public List<BulkError> getDocumentErrors() {

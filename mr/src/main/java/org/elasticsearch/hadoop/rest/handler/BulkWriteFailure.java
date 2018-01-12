@@ -34,6 +34,7 @@ public class BulkWriteFailure implements Exceptional {
         return response;
     }
 
+    // TODO: Use a better exception type?
     @Override
     public Exception getException() {
         return reason;
