@@ -24,7 +24,7 @@ Available through any Maven-compatible tool:
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.6.5</version>
+  <version>5.6.6</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -36,7 +36,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.6.6.BUILD-SNAPSHOT</version>
+  <version>5.6.7.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
