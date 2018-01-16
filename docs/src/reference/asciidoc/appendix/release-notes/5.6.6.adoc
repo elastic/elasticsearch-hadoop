@@ -1,0 +1,12 @@
+[[eshadoop-5.6.6]]
+== Elasticsearch for Apache Hadoop version 5.6.6
+January 16, 2018
+
+ES-Hadoop 5.6.6 is a version compatibility release, tested specifically against Elasticsearch 5.6.6.
+
+[[docs-5.6.6]]
+=== Documentation
+* Docs for index pattern formatting should be updated to use the new pipe separator character
+https://github.com/elastic/elasticsearch-hadoop/issues/1091[#1091]
+* Fix the document error time to format the sample format
+https://github.com/elastic/elasticsearch-hadoop/issues/1088[#1088]
