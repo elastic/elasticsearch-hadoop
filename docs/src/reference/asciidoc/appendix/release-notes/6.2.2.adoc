@@ -1,0 +1,15 @@
+[[eshadoop-6.2.2]]
+== Elasticsearch for Apache Hadoop version 6.2.2
+February 20, 2018
+
+[[enhancements-6.2.2]]
+=== Enhancements
+Build::
+* Upgrade to Gradle 4.5
+https://github.com/elastic/elasticsearch-hadoop/issues/1106[#1106]
+
+[[bugs-5.3.1]]
+=== Bug Fixes
+Spark::
+* DefaultSource wrongly parses 'es.resource' (spark2.2)
+https://github.com/elastic/elasticsearch-hadoop/issues/1082[#1082]
