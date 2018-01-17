@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.rest.handler.impl;
+package org.elasticsearch.hadoop.rest.bulk.handler.impl;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,9 +10,9 @@ import org.elasticsearch.hadoop.rest.HttpRetryPolicy;
 import org.elasticsearch.hadoop.rest.NoHttpRetryPolicy;
 import org.elasticsearch.hadoop.rest.Retry;
 import org.elasticsearch.hadoop.rest.SimpleHttpRetryPolicy;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
-import org.elasticsearch.hadoop.rest.handler.DelayableErrorCollector;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.bulk.handler.DelayableErrorCollector;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 
 /**

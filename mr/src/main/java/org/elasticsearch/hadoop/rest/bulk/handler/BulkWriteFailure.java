@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.rest.handler;
+package org.elasticsearch.hadoop.rest.bulk.handler;
 
 import java.io.InputStream;
 import java.util.Collections;

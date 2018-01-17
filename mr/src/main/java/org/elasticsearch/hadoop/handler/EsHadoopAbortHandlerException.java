@@ -3,9 +3,10 @@ package org.elasticsearch.hadoop.handler;
 import org.elasticsearch.hadoop.EsHadoopException;
 
 /**
- * Denotes that a handler has decided to abort the job on a potentially retryable value. Instead of "inferring"
- * that a record should be aborted from an exception and including the original exception, this allows a handler
- * to return a message to the handling code that should be used instead of throwing multiple nested exceptions.
+ * Denotes that a handler has decided to abort the job on a potentially retryable value. Instead of displaying the
+ * original error as the reason for aborting the operation, the message specified from this exception is used.
+ *
+ * Fixhere: Add exception cause - and log exception cause in bulk processor before treating as abort.
  */
 public class EsHadoopAbortHandlerException extends EsHadoopException {
 

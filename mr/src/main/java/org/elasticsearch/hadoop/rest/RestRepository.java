@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.bulk.BulkProcessor;
+import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;

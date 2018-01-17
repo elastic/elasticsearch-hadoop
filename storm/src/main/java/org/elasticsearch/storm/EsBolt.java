@@ -32,7 +32,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.hadoop.EsHadoopException;
-import org.elasticsearch.hadoop.rest.BulkResponse;
+import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;

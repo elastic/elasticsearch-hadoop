@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.rest.handler;
+package org.elasticsearch.hadoop.rest.bulk.handler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -55,7 +55,7 @@ public class BulkWriteErrorCollector implements DelayableErrorCollector<byte[]> 
 
     @Override
     public HandlerResult pass(String reason) {
-        if (currentMessage != null) {
+        if (currentMessage == null) {
             currentMessage = reason;
         } else {
             throw new EsHadoopIllegalStateException("Error Handler is attempting to pass with a reason, but a " +

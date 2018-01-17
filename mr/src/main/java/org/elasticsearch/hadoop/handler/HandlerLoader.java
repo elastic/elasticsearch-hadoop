@@ -74,12 +74,22 @@ public abstract class HandlerLoader<E extends ErrorHandler> implements SettingsA
 
                 if (failureHandlerAdded && !handlerName.equals(NamedHandlers.FAIL.name)) {
                     // Handler added after failure handler will most likely never be called.
-                    LOG.warn("");
+                    LOG.warn(String.format("Found error handler named [%s] ordered after the built in failure handler. This handler " +
+                            "will never be called as the failure handler preceding it will consume any and all errors. " +
+                            "Consider reordering your handlers in the [%s] property.", handlerName, handlerListPropertyName));
                 }
 
                 handler.init(handlerSettings.asProperties());
                 handlers.add(handler);
             }
+        }
+
+        if (!failureHandlerAdded) {
+            // Add the failure handler at the very end of the list as a fail safe.
+            E handler = loadBuiltInHandler(NamedHandlers.FAIL);
+            Settings handlerSettings = settings.getSettingsView(handlerPropertyPrefix + "." + NamedHandlers.FAIL.name);
+            handler.init(handlerSettings.asProperties());
+            handlers.add(handler);
         }
 
         return handlers;

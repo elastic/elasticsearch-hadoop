@@ -1,4 +1,4 @@
-package org.elasticsearch.hadoop.rest.handler.impl;
+package org.elasticsearch.hadoop.rest.bulk.handler.impl;
 
 import java.util.Properties;
 
@@ -6,17 +6,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
-import org.elasticsearch.hadoop.rest.handler.DelayableErrorCollector;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.bulk.handler.DelayableErrorCollector;
 
 /**
  * Drops and logs any given error messages.
  */
 public class DropAndLog extends BulkWriteErrorHandler {
 
-    private final String CONF_LOGGER_NAME = "logger.name";
-    private final String CONF_LOGGER_CLASS = "logger.class";
+    public static final String CONF_LOGGER_NAME = "logger.name";
+    public static final String CONF_LOGGER_CLASS = "logger.class";
 
     private String loggerName;
     private Class loggerClass;
@@ -52,7 +52,8 @@ public class DropAndLog extends BulkWriteErrorHandler {
 
     @Override
     public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
-//        logger.warn(entry, entry.getReason());
+        // FixHere: Logging Message instead of entry
+        logger.warn(entry, entry.getException());
         return HandlerResult.HANDLED;
     }
 }

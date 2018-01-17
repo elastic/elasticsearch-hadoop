@@ -17,11 +17,12 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.rest.bulk;
 
 import java.util.Collections;
 import java.util.List;
 
+import org.elasticsearch.hadoop.rest.HttpStatus;
 import org.elasticsearch.hadoop.util.BytesArray;
 
 /**

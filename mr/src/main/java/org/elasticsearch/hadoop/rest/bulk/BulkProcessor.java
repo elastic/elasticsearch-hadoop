@@ -2,10 +2,8 @@ package org.elasticsearch.hadoop.rest.bulk;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,15 +14,14 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.rest.BulkResponse;
 import org.elasticsearch.hadoop.rest.ErrorExtractor;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorCollector;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteErrorHandler;
-import org.elasticsearch.hadoop.rest.handler.BulkWriteFailure;
-import org.elasticsearch.hadoop.rest.handler.impl.BulkWriteHandlerLoader;
-import org.elasticsearch.hadoop.rest.handler.impl.HttpRetryHandler;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorCollector;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.bulk.handler.impl.BulkWriteHandlerLoader;
+import org.elasticsearch.hadoop.rest.bulk.handler.impl.HttpRetryHandler;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.util.ArrayUtils;
@@ -185,8 +182,10 @@ public class BulkProcessor implements Closeable, StatsAware {
                         int documentNumber = 0;
                         int trackingBytesPosition = 0;
 
+                        // Fixhere: These lists are confusing and probably easy to mess up. They're good candidates to be merged together with an object.
                         List<Integer> previousAttempts = attempts;
                         List<Integer> previousOriginalPositions = originalPositions;
+                        List<Integer> tailAttempts = new ArrayList<Integer>();
                         List<Integer> tailOriginalPositions = new ArrayList<Integer>();
                         attempts = new ArrayList<Integer>();
                         originalPositions = new ArrayList<Integer>();
@@ -234,15 +233,17 @@ public class BulkProcessor implements Closeable, StatsAware {
                                         bulkErrorPassReasons
                                 );
 
-                                for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
+                                handlerLoop: for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
                                     HandlerResult result;
                                     try {
                                         result = errorHandler.onError(failure, errorCollector);
                                     } catch (EsHadoopAbortHandlerException ahe) {
-                                        throw new EsHadoopException(ahe.getMessage());
+                                        // Count this as an abort operation, but capture the error message from the
+                                        // exception as the reason.
+                                        result = HandlerResult.ABORT;
+                                        error = ahe.getMessage();
                                     } catch (Exception e) {
-                                        throw new EsHadoopException("Encountered exception during error handler. Treating " +
-                                                "it as an ABORT result.", e);
+                                        throw new EsHadoopException("Encountered exception during error handler.", e);
                                     }
 
                                     switch (result) {
@@ -270,11 +271,12 @@ public class BulkProcessor implements Closeable, StatsAware {
                                                     } else {
                                                         // Document has changed.
                                                         // Track new attempts.
+                                                        // FixHere: We should probably verify the format of the new entry a little bit (like checking new lines at the least)
                                                         data.remove(trackingBytesPosition);
                                                         data.copyFrom(new BytesArray(retryDataBuffer));
                                                         trackingArrayExpanded = true;
+                                                        tailAttempts.add(0);
                                                         tailOriginalPositions.add(originalPosition);
-                                                        // Don't add item to attempts. When the attempts list is exhausted we'll assume attempt values of 1.
                                                     }
                                                 }
                                             } else {
@@ -282,18 +284,19 @@ public class BulkProcessor implements Closeable, StatsAware {
                                                 data.remove(trackingBytesPosition);
                                                 docsSkipped += 1;
                                             }
-                                            break;
+                                            break handlerLoop;
                                         case PASS:
                                             String reason = errorCollector.getAndClearMessage();
                                             if (reason != null) {
                                                 bulkErrorPassReasons.add(reason);
                                             }
-                                            continue;
+                                            continue handlerLoop;
                                         case ABORT:
                                             errorCollector.getAndClearMessage(); // Sanity clearing
                                             data.remove(trackingBytesPosition);
                                             docsAborted += 1;
                                             abortErrors.add(new BulkResponse.BulkError(originalPosition, document, status, error));
+                                            break handlerLoop;
                                     }
                                 }
                             } else {
@@ -305,10 +308,11 @@ public class BulkProcessor implements Closeable, StatsAware {
                             documentNumber++;
                         }
 
-                        if (!attempts.isEmpty()) {
+                        if (!attempts.isEmpty() || !tailOriginalPositions.isEmpty() || !tailAttempts.isEmpty()) {
                             retryOperation = true;
                             firstRun = false;
                             waitTime = errorCollector.getDelayTimeBetweenRetries();
+                            attempts.addAll(tailAttempts);
                             originalPositions.addAll(tailOriginalPositions);
                         } else {
                             retryOperation = false;
@@ -330,6 +334,8 @@ public class BulkProcessor implements Closeable, StatsAware {
 
         // always discard data since there's no code path that uses the in flight data
         // during retry operations, the tracking bytes array may grow. In that case, do a hard reset.
+        // Fixhere : Check to see if we've actually expanded the byte array when doing this.
+        // TODO: Perhaps open an issue to limit the expansion
         if (trackingArrayExpanded) {
             ba = new BytesArray(new byte[settings.getBatchSizeInBytes()], 0);
             data = new TrackingBytesArray(ba);
@@ -376,16 +382,13 @@ public class BulkProcessor implements Closeable, StatsAware {
     public void flush() {
         BulkResponse bulk = tryFlush();
         if (!bulk.getDocumentErrors().isEmpty()) {
-//            "Error Handler returned an ABORT result for failed " +
-//            "bulk document. HTTP Status [" + status +
-//            "], Error Message [" + error + "], Document Entry [" +
-//            document.toString() + "]"
-            String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error " +
-                    "sample (first [%s] error messages):\n", bulk.getDocumentErrors().size(), bulk.getTotalDocs(), 5);
+            int maxErrors = 5;
+            String header = String.format("Could not write all entries for bulk operation [%s/%s]. Error " +
+                    "sample (first [%s] error messages):\n", bulk.getDocumentErrors().size(), bulk.getTotalDocs(), maxErrors);
             StringBuilder message = new StringBuilder(header);
             int i = 0;
             for (BulkResponse.BulkError errors : bulk.getDocumentErrors()) {
-                if (i >=5 ) {
+                if (i >=maxErrors ) {
                     break;
                 }
                 message.append("\t").append(errors.getErrorMessage()).append("\n");
