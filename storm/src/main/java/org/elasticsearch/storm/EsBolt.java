@@ -145,6 +145,7 @@ public class EsBolt implements IRichBolt {
         BitSet flush = new BitSet();
 
         try {
+            // FixHere: Should we not ack documents that are skipped?
             List<BulkResponse.BulkError> documentErrors = writer.repository.tryFlush().getDocumentErrors();
             // get set of document positions that failed.
             for (BulkResponse.BulkError documentError : documentErrors) {

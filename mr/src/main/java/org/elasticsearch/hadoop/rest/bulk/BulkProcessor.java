@@ -97,8 +97,6 @@ public class BulkProcessor implements Closeable, StatsAware {
     public void add(BytesRef payload) {
         // check space first
         // ba is the backing array for data
-        // FIXHERE: If a retry is performed with new data, this byte array will potentially grow in size.
-        // Maybe track contents differently or just hard reset the byte array if it grew.
         if (payload.length() > ba.available()) {
             if (autoFlush) {
                 flush();
@@ -131,6 +129,20 @@ public class BulkProcessor implements Closeable, StatsAware {
     }
 
     /**
+     * Keeps track of a given document entry's position in the original bulk request, as well as how many
+     * attempts to write the entry have been performed.
+     */
+    private class BulkAttempt {
+        public BulkAttempt(int attemptNumber, int originalPosition) {
+            this.attemptNumber = attemptNumber;
+            this.originalPosition = originalPosition;
+        }
+
+        private int attemptNumber;
+        private int originalPosition;
+    }
+
+    /**
      * Attempts a flush operation, handling failed documents based on configured error listeners.
      * @return A result object detailing the success or failure of the request, including information about any
      * failed documents.
@@ -147,11 +159,9 @@ public class BulkProcessor implements Closeable, StatsAware {
                 int docsSent = 0;
                 int docsSkipped = 0;
                 int docsAborted = 0;
-                boolean firstRun = true;
                 boolean retryOperation = false;
                 long waitTime = 0L;
-                List<Integer> attempts = Collections.emptyList();
-                List<Integer> originalPositions = new ArrayList<Integer>();
+                List<BulkAttempt> retries = new ArrayList<BulkAttempt>();
                 List<BulkResponse.BulkError> abortErrors = new ArrayList<BulkResponse.BulkError>();
 
                 do {
@@ -171,75 +181,88 @@ public class BulkProcessor implements Closeable, StatsAware {
 
                     // Handle bulk write failures
                     if (!bar.getEntries().hasNext()) {
+                        // Legacy Case:
                         // If no items on response, assume all documents made it in.
-                        // recorded bytes are ack here
+                        // Recorded bytes are ack'd here
                         stats.bytesAccepted += data.length();
                         stats.docsAccepted += data.entries();
                         retryOperation = false;
                         bulkResult = BulkResponse.complete(bar.getResponseCode(), bar.getTimeSpent(), totalDocs, totalDocs, 0);
                     } else {
-                        // Keep track of where the doc was originally, and where we are in removing/keeping data.
+                        // Base Case:
+                        // Iterate over the response and the data in the tracking bytes array at the same time, passing
+                        // errors to error handlers for resolution.
+
+                        // Keep track of which document we are on as well as where we are in the tracking bytes array.
                         int documentNumber = 0;
                         int trackingBytesPosition = 0;
 
-                        // Fixhere: These lists are confusing and probably easy to mess up. They're good candidates to be merged together with an object.
-                        List<Integer> previousAttempts = attempts;
-                        List<Integer> previousOriginalPositions = originalPositions;
-                        List<Integer> tailAttempts = new ArrayList<Integer>();
-                        List<Integer> tailOriginalPositions = new ArrayList<Integer>();
-                        attempts = new ArrayList<Integer>();
-                        originalPositions = new ArrayList<Integer>();
+                        // Hand off the previous list of retries so that we can track the next set of retries (if any).
+                        List<BulkAttempt> previousRetries = retries;
+                        retries = new ArrayList<BulkAttempt>();
+
+                        // If a document is edited and retried then it is added at the end of the buffer. Keep a tail list of these new retry attempts.
+                        List<BulkAttempt> newDocumentRetries = new ArrayList<BulkAttempt>();
+
                         BulkWriteErrorCollector errorCollector = new BulkWriteErrorCollector();
 
                         // Iterate over all entries, and for each error found, attempt to handle the problem.
                         for (Iterator<Map> iterator = bar.getEntries(); iterator.hasNext(); ) {
 
-                            // The array of maps are (operation -> document info) maps:
+                            // The array of maps are (operation -> document info) maps
                             Map map = iterator.next();
-                            // get the underlying document information as a map:
+                            // Get the underlying document information as a map and extract the error information.
                             Map values = (Map) map.values().iterator().next();
                             Integer docStatus = (Integer) values.get("status");
                             String error = errorExtractor.extractError(values);
-                            if (error != null && !error.isEmpty()) {
-                                // Found failed write
+
+                            if (error == null || error.isEmpty()){
+                                // Write operation for this entry succeeded
+                                stats.bytesAccepted += data.length(trackingBytesPosition);
+                                stats.docsAccepted += 1;
+                                docsSent += 1;
+                                data.remove(trackingBytesPosition);
+                            } else {
+                                // Found a failed write
                                 BytesArray document = data.entry(trackingBytesPosition);
-                                int status = docStatus == null ? -1 : docStatus; // In pre-2.x ES versions, the status is not included.
 
-                                // Figure out which attempt number sending this document was.
-                                int requestAttempt;
-                                if (previousAttempts.isEmpty() || documentNumber >= previousAttempts.size()) {
-                                    // We don't have an attempt, assume first attempt
-                                    requestAttempt = 1;
-                                } else {
-                                    // Get and increment previous attempt value
-                                    requestAttempt = previousAttempts.get(documentNumber) + 1;
-                                }
+                                // In pre-2.x ES versions, the status is not included.
+                                int status = docStatus == null ? -1 : docStatus;
 
-                                // Figure out which position the doc was in
-                                int originalPosition;
-                                if (firstRun) {
-                                    originalPosition = documentNumber;
+                                // Figure out which attempt number sending this document was and which position the doc was in
+                                BulkAttempt previousAttempt;
+                                if (previousRetries.isEmpty()) {
+                                    // No previous retries, create an attempt for the first run
+                                    previousAttempt = new BulkAttempt(1, documentNumber);
                                 } else {
-                                    originalPosition = previousOriginalPositions.get(documentNumber);
+                                    // Grab the previous attempt for the document we're processing, and bump the attempt number.
+                                    previousAttempt = previousRetries.get(documentNumber);
+                                    previousAttempt.attemptNumber++;
                                 }
 
                                 // Handle bulk write failures
+                                // Todo: We should really do more with these bulk error pass reasons if the final outcome is an ABORT.
                                 List<String> bulkErrorPassReasons = new ArrayList<String>();
                                 BulkWriteFailure failure = new BulkWriteFailure(
                                         status,
                                         new Exception(error),
                                         document,
-                                        requestAttempt,
+                                        previousAttempt.attemptNumber,
                                         bulkErrorPassReasons
                                 );
 
+                                // Label the loop since we'll be breaking to/from it within a switch block.
                                 handlerLoop: for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
                                     HandlerResult result;
                                     try {
                                         result = errorHandler.onError(failure, errorCollector);
                                     } catch (EsHadoopAbortHandlerException ahe) {
                                         // Count this as an abort operation, but capture the error message from the
-                                        // exception as the reason.
+                                        // exception as the reason. Log any cause since it will be swallowed.
+                                        Throwable cause = ahe.getCause();
+                                        if (cause != null) {
+                                            LOG.error("Bulk write error handler abort exception caught with underlying cause:", cause);
+                                        }
                                         result = HandlerResult.ABORT;
                                         error = ahe.getMessage();
                                     } catch (Exception e) {
@@ -257,16 +280,14 @@ public class BulkProcessor implements Closeable, StatsAware {
                                                 if (retryDataBuffer == null || document.bytes() == retryDataBuffer) {
                                                     // Retry the same data.
                                                     // Continue to track the previous attempts.
-                                                    attempts.add(requestAttempt);
-                                                    originalPositions.add(originalPosition);
+                                                    retries.add(previousAttempt);
                                                     trackingBytesPosition++;
                                                 } else {
                                                     // Check document contents to see if it was deserialized and reserialized.
                                                     if (ArrayUtils.sliceEquals(document.bytes(), document.offset(), document.length(), retryDataBuffer, 0, retryDataBuffer.length)) {
                                                         // Same document content. Leave the data as is in tracking buffer,
                                                         // and continue tracking previous attempts.
-                                                        attempts.add(requestAttempt);
-                                                        originalPositions.add(originalPosition);
+                                                        retries.add(previousAttempt);
                                                         trackingBytesPosition++;
                                                     } else {
                                                         // Document has changed.
@@ -274,9 +295,12 @@ public class BulkProcessor implements Closeable, StatsAware {
                                                         // FixHere: We should probably verify the format of the new entry a little bit (like checking new lines at the least)
                                                         data.remove(trackingBytesPosition);
                                                         data.copyFrom(new BytesArray(retryDataBuffer));
-                                                        trackingArrayExpanded = true;
-                                                        tailAttempts.add(0);
-                                                        tailOriginalPositions.add(originalPosition);
+                                                        // Determine if our tracking bytes array is going to expand.
+                                                        if (ba.available() < retryDataBuffer.length) {
+                                                            trackingArrayExpanded = true;
+                                                        }
+                                                        previousAttempt.attemptNumber = 0;
+                                                        newDocumentRetries.add(previousAttempt);
                                                     }
                                                 }
                                             } else {
@@ -295,25 +319,20 @@ public class BulkProcessor implements Closeable, StatsAware {
                                             errorCollector.getAndClearMessage(); // Sanity clearing
                                             data.remove(trackingBytesPosition);
                                             docsAborted += 1;
-                                            abortErrors.add(new BulkResponse.BulkError(originalPosition, document, status, error));
+                                            abortErrors.add(new BulkResponse.BulkError(previousAttempt.originalPosition, document, status, error));
                                             break handlerLoop;
                                     }
                                 }
-                            } else {
-                                stats.bytesAccepted += data.length(trackingBytesPosition);
-                                stats.docsAccepted += 1;
-                                docsSent += 1;
-                                data.remove(trackingBytesPosition);
                             }
                             documentNumber++;
                         }
 
-                        if (!attempts.isEmpty() || !tailOriginalPositions.isEmpty() || !tailAttempts.isEmpty()) {
+                        // Place any new documents that have been added at the end of the data buffer at the end of the retry list.
+                        retries.addAll(newDocumentRetries);
+
+                        if (!retries.isEmpty()) {
                             retryOperation = true;
-                            firstRun = false;
                             waitTime = errorCollector.getDelayTimeBetweenRetries();
-                            attempts.addAll(tailAttempts);
-                            originalPositions.addAll(tailOriginalPositions);
                         } else {
                             retryOperation = false;
                             if (docsAborted > 0) {
@@ -334,8 +353,7 @@ public class BulkProcessor implements Closeable, StatsAware {
 
         // always discard data since there's no code path that uses the in flight data
         // during retry operations, the tracking bytes array may grow. In that case, do a hard reset.
-        // Fixhere : Check to see if we've actually expanded the byte array when doing this.
-        // TODO: Perhaps open an issue to limit the expansion
+        // TODO: Perhaps open an issue to limit the expansion of a single byte array (for repeated rewrite-retries)
         if (trackingArrayExpanded) {
             ba = new BytesArray(new byte[settings.getBatchSizeInBytes()], 0);
             data = new TrackingBytesArray(ba);
