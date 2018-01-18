@@ -2,7 +2,6 @@ package org.elasticsearch.hadoop.rest.bulk;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +9,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
@@ -292,11 +292,11 @@ public class BulkProcessor implements Closeable, StatsAware {
                                                     } else {
                                                         // Document has changed.
                                                         // Track new attempts.
-                                                        // FixHere: We should probably verify the format of the new entry a little bit (like checking new lines at the least)
+                                                        BytesRef newEntry = validateEditedEntry(retryDataBuffer);
                                                         data.remove(trackingBytesPosition);
-                                                        data.copyFrom(new BytesArray(retryDataBuffer));
+                                                        data.copyFrom(newEntry);
                                                         // Determine if our tracking bytes array is going to expand.
-                                                        if (ba.available() < retryDataBuffer.length) {
+                                                        if (ba.available() < newEntry.length()) {
                                                             trackingArrayExpanded = true;
                                                         }
                                                         previousAttempt.attemptNumber = 0;
@@ -363,6 +363,50 @@ public class BulkProcessor implements Closeable, StatsAware {
         }
 
         return bulkResult;
+    }
+
+    /**
+     * Validate the byte contents of a bulk entry that has been edited before being submitted for retry.
+     * @param retryDataBuffer The new entry contents
+     * @return A BytesRef that contains the entry contents, potentially cleaned up.
+     * @throws EsHadoopIllegalArgumentException In the event that the document data cannot be simply cleaned up.
+     */
+    private BytesRef validateEditedEntry(byte[] retryDataBuffer) {
+        BytesRef result = new BytesRef();
+
+        byte closeBrace = '}';
+        byte newline = '\n';
+
+        int newlines = 0;
+        for (byte b : retryDataBuffer) {
+            if (b == newline) {
+                newlines++;
+            }
+        }
+
+        result.add(retryDataBuffer);
+
+        // Check to make sure that either the last byte is a closed brace or a new line.
+        byte lastByte = retryDataBuffer[retryDataBuffer.length - 1];
+        if (lastByte == newline) {
+            // If last byte is a newline, make sure there are two newlines present in the data
+            if (newlines != 2) {
+                throw new EsHadoopIllegalArgumentException("Encountered malformed data entry for bulk write retry. " +
+                        "Data contains [" + newlines + "] newline characters (\\n) but expected to have [2].");
+            }
+        } else if (lastByte == closeBrace) {
+            // If the last byte is a closed brace, make sure there is only one newline in the data
+            if (newlines != 1) {
+                throw new EsHadoopIllegalArgumentException("Encountered malformed data entry for bulk write retry. " +
+                        "Data contains [" + newlines + "] newline characters (\\n) but expected to have [1].");
+            }
+
+            // Add a newline to the entry in this case.
+            byte[] trailingNewline = new byte[]{newline};
+            result.add(trailingNewline);
+        }
+        // Further checks are probably intrusive to performance
+        return result;
     }
 
     /**

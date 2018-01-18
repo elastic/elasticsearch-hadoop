@@ -56,7 +56,7 @@ public class HttpRetryHandler extends BulkWriteErrorHandler {
                 return collector.backoffAndRetry(retryTime, TimeUnit.MILLISECONDS);
             } else {
                 return collector.pass("Document bulk write attempts [" + entry.getNumberOfAttempts() +
-                        "] exceeds retry limit of [" + retryLimit + "]");
+                        "] exceeds configured automatic retry limit of [" + retryLimit + "]");
             }
         } else {
             return collector.pass("Non retryable code [" + entry.getResponseCode() + "] encountered.");
