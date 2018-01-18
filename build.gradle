@@ -5,7 +5,7 @@ description = 'Elasticsearch for Apache Hadoop'
 buildscript {
     repositories {
         mavenCentral()
-        maven { url 'http://repo.spring.io/plugins-release' }
+        maven { url 'https://repo.spring.io/plugins-release' }
     }
     dependencies {
         classpath('org.springframework.build.gradle:propdeps-plugin:0.0.7')
@@ -20,17 +20,15 @@ allprojects {
       // cascading
       maven { url "http://conjars.org/repo" }
       // storm dependencies
-      maven { url "http://clojars.org/repo" }
-      maven { url 'http://repo.spring.io/plugins-release' }
+      maven { url "https://clojars.org/repo" }
+      maven { url 'https://repo.spring.io/plugins-release' }
       
-      // Hive depends on JDO ec2 missing from Maven Central
-      maven { url "http://www.datanucleus.org/downloads/maven2" }
-      maven { url "http://oss.sonatype.org/content/groups/public/" }
+      maven { url "https://oss.sonatype.org/content/groups/public/" }
 
       // For Elasticsearch snapshots.
       maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
       // For Lucene Snapshots. See org.elasticsearch.gradle.BuildPlugin#configureRepositories for why we may need this.
-      maven { url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/7deca62" }
+      maven { url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/7deca62" }
     }
 
     apply plugin: "java"
@@ -128,7 +126,7 @@ ext.manifestTemplate = manifest {
         attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
         attributes['Implementation-Title'] = project.name
         attributes['Implementation-Version'] = project.version
-        attributes['Implementation-URL'] = "http://github.com/elastic/elasticsearch-hadoop"
+        attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
         attributes['Implementation-Vendor'] = "Elastic"
         attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
         
@@ -180,6 +178,7 @@ allprojects { Project project ->
         testCompile("org.elasticsearch:elasticsearch:${elasticsearchVersion}") {
             exclude group: "org.apache.logging.log4j", module: "log4j-api"
             exclude group: "org.elasticsearch", module: "elasticsearch-cli"
+            exclude group: "org.elasticsearch", module: "elasticsearch-core"
         }
         testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
         testRuntime "org.apache.logging.log4j:log4j-api:$log4jVersion"
@@ -294,16 +293,14 @@ allprojects { Project project ->
             ]
 
             links = [
-                "http://docs.oracle.com/javase/6/docs/api/",
-                "http://commons.apache.org/proper/commons-logging/apidocs/",
-                "http://hadoop.apache.org/docs/stable2/api/",
-                //"http://hbase.apache.org/apidocs/",
-                "http://pig.apache.org/docs/r0.15.0/api/",
-                // r0.13.1 is invalid as it does not provide the package list
-                "http://hive.apache.org/javadocs/r1.2.1/api/",
+                "https://docs.oracle.com/javase/6/docs/api/",
+                "https://commons.apache.org/proper/commons-logging/apidocs/",
+                "https://hadoop.apache.org/docs/stable2/api/",
+                "https://pig.apache.org/docs/r0.15.0/api/",
+                "https://hive.apache.org/javadocs/r1.2.1/api/",
                 "http://docs.cascading.org/cascading/2.6/javadoc/",
-                "http://spark.apache.org/docs/latest/api/java/",
-                "http://storm.apache.org/releases/current/javadocs/"
+                "https://spark.apache.org/docs/latest/api/java/",
+                "https://storm.apache.org/releases/current/javadocs/"
             ]
 
             excludes = [
