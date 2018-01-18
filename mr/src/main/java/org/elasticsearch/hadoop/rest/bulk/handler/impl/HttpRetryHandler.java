@@ -50,8 +50,10 @@ public class HttpRetryHandler extends BulkWriteErrorHandler {
 
     @Override
     public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
-        // FIXHERE: On 1.x versions, this should be changed to check the error message for the exception name.
-        if (retry.retry(entry.getResponseCode())) {
+        // BWC: Versions before 2.x have no status on failure. In those cases we check the error message contents.
+        boolean legacyRetry = entry.getResponseCode() == -1 && entry.getException().getMessage().contains("EsRejectedExecutionException");
+
+        if (legacyRetry || retry.retry(entry.getResponseCode())) {
             if (entry.getNumberOfAttempts() <= retryLimit) {
                 return collector.backoffAndRetry(retryTime, TimeUnit.MILLISECONDS);
             } else {
