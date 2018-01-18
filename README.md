@@ -260,7 +260,7 @@ sc.makeRDD(Seq(numbers, airports)).saveToEs("spark/docs")
 import org.elasticsearch.spark.sql._
 
 val df = sqlContext.read.json("examples/people.json")
-df.saveToES("spark/people")
+df.saveToEs("spark/people")
 ```
 
 ### Java
@@ -310,7 +310,7 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 
 DataFrame df = sqlContext.read.json("examples/people.json")
-JavaEsSparkSQL.saveToES(df, "spark/docs")
+JavaEsSparkSQL.saveToEs(df, "spark/docs")
 ```
 
 
