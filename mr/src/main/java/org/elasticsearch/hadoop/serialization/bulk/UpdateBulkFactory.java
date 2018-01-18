@@ -41,7 +41,7 @@ class UpdateBulkFactory extends AbstractBulkFactory {
     private final String SCRIPT_1X;
     private final String SCRIPT_LANG_1X;
 
-    private final boolean HAS_SCRIPT, HAS_LANG;
+    private final boolean UPDATE_DOC, HAS_SCRIPT, HAS_LANG;
     private final boolean UPSERT;
 
     public UpdateBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion esMajorVersion) {
@@ -55,13 +55,15 @@ class UpdateBulkFactory extends AbstractBulkFactory {
         RETRY_ON_FAILURE = settings.getUpdateRetryOnConflict();
         RETRY_HEADER = getRequestParameterNames().retryOnConflict + RETRY_ON_FAILURE + "";
 
+        UPDATE_DOC = settings.getUpdateDoc();
+
         HAS_SCRIPT = settings.hasUpdateScript();
         HAS_LANG = StringUtils.hasText(settings.getUpdateScriptLang());
 
         SCRIPT_LANG_5X = ",\"lang\":\"" + settings.getUpdateScriptLang() + "\"";
         SCRIPT_LANG_1X = "\"lang\":\"" + settings.getUpdateScriptLang() + "\",";
 
-        if (HAS_SCRIPT) {
+        if (!UPDATE_DOC&&HAS_SCRIPT) {
             if (StringUtils.hasText(settings.getUpdateScriptInline())) {
                 // INLINE
                 String source = "inline";
@@ -136,7 +138,14 @@ class UpdateBulkFactory extends AbstractBulkFactory {
             list.add("{");
         }
 
-        if (HAS_SCRIPT) {
+        if(UPDATE_DOC){
+            /*
+             * {
+             *   "upsert": {},
+             *   "doc": {...}
+             * }
+             */
+        }else if (HAS_SCRIPT) {
             /*
              * {
              *   "params": ...,
@@ -173,7 +182,14 @@ class UpdateBulkFactory extends AbstractBulkFactory {
      * @param paramExtractor Extracts parameters from documents or constants
      */
     private void writeStrictFormatting(List<Object> list, Object paramExtractor, String scriptToUse) {
-        if (HAS_SCRIPT) {
+        if(UPDATE_DOC){
+            /*
+             * {
+             *   "upsert": {},
+             *   "doc": {...}
+             * }
+             */
+        }else if (HAS_SCRIPT) {
             /*
              * {
              *   "script":{
