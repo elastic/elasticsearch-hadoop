@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import org.mockito.stubbing.OngoingStubbing;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -724,6 +725,57 @@ public class BulkProcessorTest {
         assertEquals(2, stats.bulkRetries);
         assertEquals(2, stats.docsRetried);
         assertEquals(4, stats.docsAccepted);
+    }
+
+    /**
+     * Case: Evil or incorrect handler causes infinite loop.
+     */
+    public static class NeverSurrenderHandler extends BulkWriteErrorHandler {
+        @Override
+        public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
+            return collector.retry(); // NEVER GIVE UP
+        }
+    }
+
+    @Test(expected = EsHadoopException.class)
+    public void testBulk08_HandlerLoopsForever() throws Exception {
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLERS, "looper");
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLER + ".looper", NeverSurrenderHandler.class.getName());
+        testSettings.setProperty(ConfigurationOptions.ES_BATCH_WRITE_RETRY_LIMIT, "6");
+
+        BulkProcessor processor = getBulkProcessor(
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addRejection("index")
+                        .generate()
+        );
+
+        processData(processor);
+
+        processor.tryFlush();
+
+        fail("This should fail with too many bulk requests.");
     }
 
     private BulkProcessor getBulkProcessor(RestClient.BulkActionResponse... responses) {

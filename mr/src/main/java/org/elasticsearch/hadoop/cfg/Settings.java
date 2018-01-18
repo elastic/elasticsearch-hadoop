@@ -120,6 +120,10 @@ public abstract class Settings {
         return Integer.parseInt(getProperty(ES_BATCH_WRITE_RETRY_COUNT, ES_BATCH_WRITE_RETRY_COUNT_DEFAULT));
     }
 
+    public int getBatchWriteRetryLimit() {
+        return Integer.parseInt(getProperty(ES_BATCH_WRITE_RETRY_LIMIT, ES_BATCH_WRITE_RETRY_LIMIT_DEFAULT));
+    }
+
     public long getBatchWriteRetryWait() {
         return TimeValue.parseTimeValue(getProperty(ES_BATCH_WRITE_RETRY_WAIT, ES_BATCH_WRITE_RETRY_WAIT_DEFAULT)).getMillis();
     }

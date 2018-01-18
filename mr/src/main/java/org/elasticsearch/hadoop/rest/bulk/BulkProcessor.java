@@ -11,6 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
@@ -53,6 +54,7 @@ public class BulkProcessor implements Closeable, StatsAware {
     // Configs
     private int bufferEntriesThreshold;
     private boolean autoFlush = true;
+    private int retryLimit;
 
     // Processor writing state flags
     private boolean executedBulkWrite = false;
@@ -71,6 +73,7 @@ public class BulkProcessor implements Closeable, StatsAware {
         this.autoFlush = !settings.getBatchFlushManual();
         this.bufferEntriesThreshold = settings.getBatchSizeInEntries();
         this.requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
+        this.retryLimit = settings.getBatchWriteRetryLimit();
 
         // Backing data array
         this.ba = new BytesArray(new byte[settings.getBatchSizeInBytes()], 0);
@@ -88,6 +91,7 @@ public class BulkProcessor implements Closeable, StatsAware {
 
         // Error Extractor
         this.errorExtractor = new ErrorExtractor(settings.getInternalVersionOrThrow());
+
     }
 
     /**
@@ -160,15 +164,26 @@ public class BulkProcessor implements Closeable, StatsAware {
                 int docsSkipped = 0;
                 int docsAborted = 0;
                 boolean retryOperation = false;
+                int totalAttempts = 0;
                 long waitTime = 0L;
                 List<BulkAttempt> retries = new ArrayList<BulkAttempt>();
                 List<BulkResponse.BulkError> abortErrors = new ArrayList<BulkResponse.BulkError>();
 
                 do {
+                    if (totalAttempts > retryLimit) {
+                        throw new EsHadoopException("Executed too many bulk requests without success. Attempted [" +
+                                totalAttempts + "] write operations, which exceeds the bulk request retry limit specified" +
+                                "by [" + ConfigurationOptions.ES_BATCH_WRITE_RETRY_LIMIT + "], and found data still " +
+                                "not accepted. Perhaps there is an error handler that is not terminating? Bailing out..."
+                        );
+                    }
+
+                    // Log messages, and if wait time is set, perform the thread sleep.
                     initFlushOperation(retryOperation, waitTime);
 
                     // Exec bulk operation to ES, get response.
                     RestClient.BulkActionResponse bar = restClient.bulk(resource, data);
+                    totalAttempts++;
 
                     // Log retry stats if relevant
                     if (retryOperation) {
