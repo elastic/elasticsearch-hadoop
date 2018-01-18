@@ -131,7 +131,8 @@ public class DropAndLog extends BulkWriteErrorHandler {
         // Log the failure
         return String.format(
                 "Dropping failed bulk entry (response [%s] from server) after [%s] attempts due to error [%s]:%n" +
-                        "Entry Contents: %s" +
+                        "Entry Contents:%n" +
+                        "%s" +
                         "%s",
                 entry.getResponseCode(),
                 entry.getNumberOfAttempts(),

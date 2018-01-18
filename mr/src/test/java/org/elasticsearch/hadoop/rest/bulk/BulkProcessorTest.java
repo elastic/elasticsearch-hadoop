@@ -778,6 +778,113 @@ public class BulkProcessorTest {
         fail("This should fail with too many bulk requests.");
     }
 
+    /**
+     * Case: Handler returns data missing a new line, or invalid data all together.
+     */
+    public static class NewlineDroppingHandler extends BulkWriteErrorHandler {
+        @Override
+        public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
+            byte[] data = copyDocumentBytes(entry);
+            byte[] sansNewline = new byte[data.length - 1];
+            System.arraycopy(data, 0, sansNewline, 0, sansNewline.length);
+            return collector.retry(sansNewline);
+        }
+    }
+
+    public static class GarbageHandler extends BulkWriteErrorHandler {
+        @Override
+        public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
+            byte[] garbage = "{\"element\": \"A\"}".getBytes();
+            return collector.retry(garbage);
+        }
+    }
+
+    public static class StillGarbageHandler extends BulkWriteErrorHandler {
+        @Override
+        public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
+            byte[] garbage = "{\"element\": \"A\"}\n".getBytes();
+            return collector.retry(garbage);
+        }
+    }
+
+    @Test
+    public void testBulk09_HandlerDropsNewline() throws Exception {
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLERS, "drop");
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLER + ".drop", NewlineDroppingHandler.class.getName());
+
+        BulkProcessor processor = getBulkProcessor(
+                generator.setInfo(resource, 56)
+                        .addFailure("index", 401, "invalid", "some failure")
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .generate(),
+                generator.setInfo(resource, 56)
+                        .addSuccess("index", 201)
+                        .generate()
+        );
+
+        processData(processor);
+
+        BulkResponse bulkResponse = processor.tryFlush();
+
+        assertEquals(5, bulkResponse.getDocsSent());
+        assertEquals(0, bulkResponse.getDocsSkipped());
+        assertEquals(0, bulkResponse.getDocsAborted());
+
+        processor.close();
+        Stats stats = processor.stats();
+
+        assertEquals(1, stats.bulkRetries);
+        assertEquals(1, stats.docsRetried);
+        assertEquals(5, stats.docsAccepted);
+    }
+
+    @Test(expected = EsHadoopException.class)
+    public void testBulk09_HandlerReturnsGarbage() throws Exception {
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLERS, "garbage");
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLER + ".garbage", GarbageHandler.class.getName());
+
+        BulkProcessor processor = getBulkProcessor(
+                generator.setInfo(resource, 56)
+                        .addFailure("index", 401, "invalid", "some failure")
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .generate()
+        );
+
+        processData(processor);
+
+        processor.tryFlush();
+
+        fail("This should fail since the retry handler returned garbage");
+    }
+
+    @Test(expected = EsHadoopException.class)
+    public void testBulk09_HandlerStillReturnsGarbage() throws Exception {
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLERS, "garbage");
+        testSettings.setProperty(BulkWriteHandlerLoader.ES_WRITE_REST_ERROR_HANDLER + ".garbage", StillGarbageHandler.class.getName());
+
+        BulkProcessor processor = getBulkProcessor(
+                generator.setInfo(resource, 56)
+                        .addFailure("index", 401, "invalid", "some failure")
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .addSuccess("index", 201)
+                        .generate()
+        );
+
+        processData(processor);
+
+        processor.tryFlush();
+
+        fail("This should fail since the retry handler returned garbage");
+    }
+
     private BulkProcessor getBulkProcessor(RestClient.BulkActionResponse... responses) {
         return new BulkProcessor(mockClientResponses(responses), resource, testSettings);
     }
