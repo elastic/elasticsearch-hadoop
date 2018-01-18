@@ -165,7 +165,6 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        //FIXHERE: Perform error handling for serialization here
         doWriteToIndex(command.write(object));
     }
 
