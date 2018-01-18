@@ -49,13 +49,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.DELETE;
@@ -74,6 +68,7 @@ public class RestClient implements Closeable, StatsAware {
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
+    private final Set<Integer> dropErrorStatuses;
 
     {
         mapper = new ObjectMapper();
@@ -106,6 +101,8 @@ public class RestClient implements Closeable, StatsAware {
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
         internalVersion = settings.getInternalVersionOrLatest();
+
+        dropErrorStatuses = settings.getDropErrorStatuses();
     }
 
     public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
@@ -234,16 +231,20 @@ public class RestClient implements Closeable, StatsAware {
 
                 String error = extractError(values);
                 if (error != null && !error.isEmpty()) {
-                    if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
+                    if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
+                        // We don't want to spam the log with the same error message 1000 times.
+                        // Chances are that the error message is the same across all failed writes
+                        // and if it is not, then there are probably only a few different errors which
+                        // this should pick up.
+                        errorMessageSample.add(error);
+                        errorMessagesSoFar++;
+                    }
+
+                    if (dropErrorStatuses.contains(status)) {
+                        data.remove(entryToDeletePosition);
+                    }
+                    else if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
                         entryToDeletePosition++;
-                        if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
-                            // We don't want to spam the log with the same error message 1000 times.
-                            // Chances are that the error message is the same across all failed writes
-                            // and if it is not, then there are probably only a few different errors which
-                            // this should pick up.
-                            errorMessageSample.add(error);
-                            errorMessagesSoFar++;
-                        }
                     }
                     else {
                         String message = (status != null ?

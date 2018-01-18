@@ -268,14 +268,21 @@ public class RestRepository implements Closeable, StatsAware {
 
     public void flush() {
         BulkResponse bulk = tryFlush();
-        if (!bulk.getLeftovers().isEmpty()) {
+        StringBuilder errorMessage = new StringBuilder();
+
+        if (!bulk.getErrorExamples().isEmpty()) {
             String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getLeftovers().cardinality(), bulk.getTotalWrites(), bulk.getErrorExamples().size());
-            StringBuilder message = new StringBuilder(header);
+            errorMessage.append(header);
             for (String errors : bulk.getErrorExamples()) {
-                message.append("\t").append(errors).append("\n");
+                errorMessage.append("\t").append(errors).append("\n");
             }
-            message.append("Bailing out...");
-            throw new EsHadoopException(message.toString());
+        }
+
+        if (!bulk.getLeftovers().isEmpty()) {
+            errorMessage.append("Bailing out...");
+            throw new EsHadoopException(errorMessage.toString());
+        } else if (!bulk.getErrorExamples().isEmpty()) {
+            log.error(errorMessage.toString());
         }
     }
 

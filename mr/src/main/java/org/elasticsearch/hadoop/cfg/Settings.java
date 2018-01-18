@@ -19,11 +19,8 @@
 package org.elasticsearch.hadoop.cfg;
 
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
@@ -573,6 +570,22 @@ public abstract class Settings {
 
     public boolean getDataFrameWriteNullValues() {
         return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
+    }
+
+    public Set<Integer> getDropErrorStatuses() {
+        String dropErrorStatuses = getProperty(ES_BATCH_WRITE_DROP_ERROR_STATUSES, StringUtils.EMPTY);
+
+        if (!StringUtils.hasText(dropErrorStatuses)) {
+            return Collections.emptySet();
+        }
+        else {
+            Set<Integer> statuses = new HashSet<Integer>();
+            for (String statusString : dropErrorStatuses.split(",")) {
+                statuses.add(Integer.parseInt(statusString.trim()));
+            }
+
+            return statuses;
+        }
     }
 
     public abstract InputStream loadResource(String location);
