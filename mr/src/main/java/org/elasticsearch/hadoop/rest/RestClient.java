@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -74,6 +75,7 @@ public class RestClient implements Closeable, StatsAware {
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
+    private final ErrorExtractor errorExtractor;
 
     {
         mapper = new ObjectMapper();
@@ -106,6 +108,7 @@ public class RestClient implements Closeable, StatsAware {
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
         internalVersion = settings.getInternalVersionOrLatest();
+        errorExtractor = new ErrorExtractor(internalVersion);
     }
 
     public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
@@ -174,161 +177,72 @@ public class RestClient implements Closeable, StatsAware {
         return (T) (string != null ? map.get(string) : map);
     }
 
-    public BulkResponse bulk(Resource resource, TrackingBytesArray data) {
-        Retry retry = retryPolicy.init();
-        BulkResponse processedResponse;
+    public static class BulkActionResponse {
+        private Iterator<Map> entries;
+        private long timeSpent;
+        private int responseCode;
 
-        boolean isRetry = false;
+        public BulkActionResponse(Iterator<Map> entries, int responseCode, long timeSpent) {
+            this.entries = entries;
+            this.timeSpent = timeSpent;
+            this.responseCode = responseCode;
+        }
 
-        do {
-            // NB: dynamically get the stats since the transport can change
-            long start = network.transportStats().netTotalTime;
-            Response response = execute(PUT, resource.bulk(), data);
-            long spent = network.transportStats().netTotalTime - start;
+        public Iterator<Map> getEntries() {
+            return entries;
+        }
 
-            stats.bulkTotal++;
-            stats.docsSent += data.entries();
-            stats.bulkTotalTime += spent;
-            // bytes will be counted by the transport layer
+        public long getTimeSpent() {
+            return timeSpent;
+        }
 
-            if (isRetry) {
-                stats.docsRetried += data.entries();
-                stats.bytesRetried += data.length();
-                stats.bulkRetries++;
-                stats.bulkRetriesTotalTime += spent;
-            }
+        public int getResponseCode() {
+            return responseCode;
+        }
+    }
 
-            isRetry = true;
+    /**
+     * Executes a single bulk operation against the provided resource, using the passed data as the request body.
+     * This method will retry bulk requests if the entire bulk request fails, but will not retry singular
+     * document failures.
+     *
+     * @param resource target of the bulk request.
+     * @param data bulk request body. This body will be cleared of entries on any successful bulk request.
+     * @return a BulkActionResponse object that will detail if there were failing documents that should be retried.
+     */
+    public BulkActionResponse bulk(Resource resource, TrackingBytesArray data) {
+        // NB: dynamically get the stats since the transport can change
+        long start = network.transportStats().netTotalTime;
+        Response response = execute(PUT, resource.bulk(), data);
+        long spent = network.transportStats().netTotalTime - start;
 
-            processedResponse = processBulkResponse(response, data);
-        } while (data.length() > 0 && retry.retry(processedResponse.getHttpStatus()));
+        stats.bulkTotal++;
+        stats.docsSent += data.entries();
+        stats.bulkTotalTime += spent;
+        // bytes will be counted by the transport layer
 
-        return processedResponse;
+        return new BulkActionResponse(parseBulkActionResponse(response), response.status(), spent);
     }
 
     @SuppressWarnings("rawtypes")
-    BulkResponse processBulkResponse(Response response, TrackingBytesArray data) {
+    Iterator<Map> parseBulkActionResponse(Response response) {
         InputStream content = response.body();
+        // Check for failed writes
         try {
             ObjectReader r = JsonFactory.objectReader(mapper, Map.class);
             JsonParser parser = mapper.getJsonFactory().createJsonParser(content);
             try {
                 if (ParsingUtils.seek(new JacksonJsonParser(parser), "items") == null) {
-                    // recorded bytes are ack here
-                    stats.bytesAccepted += data.length();
-                    stats.docsAccepted += data.entries();
-                    return BulkResponse.ok(data.entries());
+                    return Collections.<Map>emptyList().iterator();
+                } else {
+                    return r.readValues(parser);
                 }
             } finally {
                 countStreamStats(content);
             }
-
-            int docsSent = data.entries();
-            List<String> errorMessageSample = new ArrayList<String>(MAX_BULK_ERROR_MESSAGES);
-            int errorMessagesSoFar = 0;
-            int entryToDeletePosition = 0; // head of the list
-            for (Iterator<Map> iterator = r.readValues(parser); iterator.hasNext();) {
-                Map map = iterator.next();
-                Map values = (Map) map.values().iterator().next();
-                Integer status = (Integer) values.get("status");
-
-                String error = extractError(values);
-                if (error != null && !error.isEmpty()) {
-                    if ((status != null && HttpStatus.canRetry(status)) || error.contains("EsRejectedExecutionException")) {
-                        entryToDeletePosition++;
-                        if (errorMessagesSoFar < MAX_BULK_ERROR_MESSAGES) {
-                            // We don't want to spam the log with the same error message 1000 times.
-                            // Chances are that the error message is the same across all failed writes
-                            // and if it is not, then there are probably only a few different errors which
-                            // this should pick up.
-                            errorMessageSample.add(error);
-                            errorMessagesSoFar++;
-                        }
-                    }
-                    else {
-                        String message = (status != null ?
-                                String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
-                        throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
-                    }
-                }
-                else {
-                    stats.bytesAccepted += data.length(entryToDeletePosition);
-                    stats.docsAccepted += 1;
-                    data.remove(entryToDeletePosition);
-                }
-            }
-
-            int httpStatusToReport = entryToDeletePosition > 0 ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
-            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), errorMessageSample);
-            // catch IO/parsing exceptions
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
-    }
-
-    private String extractError(Map jsonMap) {
-        Object err = jsonMap.get("error");
-        String error = "";
-        if (err != null) {
-            // part of ES 2.0
-            if (err instanceof Map) {
-                Map m = ((Map) err);
-                err = m.get("root_cause");
-                if (err == null) {
-                    if (m.containsKey("reason")) {
-                        error = m.get("reason").toString();
-                    }
-                    else if (m.containsKey("caused_by")) {
-                        error += ";" + ((Map) m.get("caused_by")).get("reason");
-                    }
-                    else {
-                        error = m.toString();
-                    }
-                }
-                else {
-                    if (err instanceof List) {
-                        Object nested = ((List) err).get(0);
-                        if (nested instanceof Map) {
-                            Map nestedM = (Map) nested;
-                            if (nestedM.containsKey("reason")) {
-                                error = nestedM.get("reason").toString();
-                            }
-                            else {
-                                error = nested.toString();
-                            }
-                        }
-                        else {
-                            error = nested.toString();
-                        }
-                    }
-                    else {
-                        error = err.toString();
-                    }
-                }
-            }
-            else {
-                error = err.toString();
-            }
-        }
-        return error;
-    }
-
-    private String prettify(String error) {
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
-            return error;
-        }
-
-        String invalidFragment = ErrorUtils.extractInvalidXContent(error);
-        String header = (invalidFragment != null ? "Invalid JSON fragment received[" + invalidFragment + "]" : "");
-        return header + "[" + error + "]";
-    }
-
-    private String prettify(String error, ByteSequence body) {
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
-            return error;
-        }
-        String message = ErrorUtils.extractJsonParse(error, body);
-        return (message != null ? error + "; fragment[" + message + "]" : error);
     }
 
     public void refresh(Resource resource) {
@@ -490,12 +404,12 @@ public class RestClient implements Closeable, StatsAware {
             String msg = null;
             // try to parse the answer
             try {
-                msg = extractError(this.<Map> parseContent(response.body(), null));
+                msg = errorExtractor.extractError(this.<Map> parseContent(response.body(), null));
                 if (response.isClientError()) {
                     msg = msg + "\n" + request.body();
                 }
                 else {
-                    msg = prettify(msg, request.body());
+                    msg = errorExtractor.prettify(msg, request.body());
                 }
             } catch (Exception ex) {
                 // can't parse message, move on

@@ -20,9 +20,10 @@ package org.elasticsearch.hadoop.rest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.bulk.BulkProcessor;
+import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -47,13 +48,11 @@ import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,36 +62,23 @@ import java.util.Map.Entry;
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
 
 /**
- * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it is used to perform updates against the same index.
+ * Rest client performing high-level operations using buffers to improve performance. Stateful in that once created, it
+ * is used to perform updates against the same index.
  */
 public class RestRepository implements Closeable, StatsAware {
 
     private static Log log = LogFactory.getLog(RestRepository.class);
-    private static final BitSet EMPTY = new BitSet();
 
-    // serialization artifacts
-    private int bufferEntriesThreshold;
-
-    // raw data
-    private final BytesArray ba = new BytesArray(0);
-    // tracking array (backed by the BA above)
-    private final TrackingBytesArray data = new TrackingBytesArray(ba);
-    private int dataEntries = 0;
-    private boolean requiresRefreshAfterBulk = false;
-    private boolean executedBulkWrite = false;
     // wrapper around existing BA (for cases where the serialization already occurred)
     private BytesRef trivialBytesRef;
     private boolean writeInitialized = false;
-    private boolean autoFlush = true;
-
-    // indicates whether there were writes errors or not
-    // flag indicating whether to flush the batch at close-time or not
-    private boolean hadWriteErrors = false;
 
     private RestClient client;
     private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
     private MetadataExtractor metaExtractor;
+
+    private BulkProcessor bulkProcessor;
 
     // Internal
     private static class Resources {
@@ -144,14 +130,9 @@ public class RestRepository implements Closeable, StatsAware {
     /** postpone writing initialization since we can do only reading so there's no need to allocate buffers */
     private void lazyInitWriting() {
         if (!writeInitialized) {
-            writeInitialized = true;
-
-            autoFlush = !settings.getBatchFlushManual();
-            ba.bytes(new byte[settings.getBatchSizeInBytes()], 0);
-            trivialBytesRef = new BytesRef();
-            bufferEntriesThreshold = settings.getBatchSizeInEntries();
-            requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
-
+            this.writeInitialized = true;
+            this.bulkProcessor = new BulkProcessor(client, resources.getResourceWrite(), settings);
+            this.trivialBytesRef = new BytesRef();
             this.command = BulkCommands.create(settings, metaExtractor, client.internalVersion);
         }
     }
@@ -203,80 +184,16 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private void doWriteToIndex(BytesRef payload) {
-        // check space first
-        // ba is the backing array for data
-        if (payload.length() > ba.available()) {
-            if (autoFlush) {
-                flush();
-            }
-            else {
-                throw new EsHadoopIllegalStateException(
-                        String.format("Auto-flush disabled and bulk buffer full; disable manual flush or increase capacity [current size %s]; bailing out", ba.capacity()));
-            }
-        }
-
-        data.copyFrom(payload);
+        bulkProcessor.add(payload);
         payload.reset();
-
-        dataEntries++;
-        if (bufferEntriesThreshold > 0 && dataEntries >= bufferEntriesThreshold) {
-            if (autoFlush) {
-                flush();
-            }
-            else {
-                // handle the corner case of manual flush that occurs only after the buffer is completely full (think size of 1)
-                if (dataEntries > bufferEntriesThreshold) {
-                    throw new EsHadoopIllegalStateException(
-                            String.format(
-                                    "Auto-flush disabled and maximum number of entries surpassed; disable manual flush or increase capacity [current size %s]; bailing out",
-                                    bufferEntriesThreshold));
-                }
-            }
-        }
     }
 
     public BulkResponse tryFlush() {
-        BulkResponse bulkResult;
-
-        try {
-            // double check data - it might be a false flush (called on clean-up)
-            if (data.length() > 0) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
-                }
-
-                bulkResult = client.bulk(resources.getResourceWrite(), data);
-                executedBulkWrite = true;
-            } else {
-                bulkResult = BulkResponse.ok(0);
-            }
-        } catch (EsHadoopException ex) {
-            hadWriteErrors = true;
-            throw ex;
-        }
-
-        // always discard data since there's no code path that uses the in flight data
-        discard();
-
-        return bulkResult;
-    }
-
-    public void discard() {
-        data.reset();
-        dataEntries = 0;
+        return bulkProcessor.tryFlush();
     }
 
     public void flush() {
-        BulkResponse bulk = tryFlush();
-        if (!bulk.getLeftovers().isEmpty()) {
-            String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getLeftovers().cardinality(), bulk.getTotalWrites(), bulk.getErrorExamples().size());
-            StringBuilder message = new StringBuilder(header);
-            for (String errors : bulk.getErrorExamples()) {
-                message.append("\t").append(errors).append("\n");
-            }
-            message.append("Bailing out...");
-            throw new EsHadoopException(message.toString());
-        }
+        bulkProcessor.flush();
     }
 
     @Override
@@ -291,24 +208,15 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         try {
-            if (!hadWriteErrors) {
-                flush();
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Dirty close; ignoring last existing write batch...");
-                }
-            }
-
-            if (requiresRefreshAfterBulk && executedBulkWrite) {
-                // refresh batch
-                client.refresh(resources.getResourceWrite());
-
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Refreshing index [%s]", resources.getResourceWrite()));
-                }
+            if (bulkProcessor != null) {
+                bulkProcessor.close();
+                // Aggregate stats before discarding them.
+                stats.aggregate(bulkProcessor.stats());
+                bulkProcessor = null;
             }
         } finally {
             client.close();
+            // Aggregate stats before discarding them.
             stats.aggregate(client.stats());
             client = null;
         }
@@ -520,7 +428,12 @@ public class RestRepository implements Closeable, StatsAware {
     public Stats stats() {
         Stats copy = new Stats(stats);
         if (client != null) {
+            // Aggregate stats if it's not already discarded
             copy.aggregate(client.stats());
+        }
+        if (bulkProcessor != null) {
+            // Aggregate stats if it's not already discarded
+            copy.aggregate(bulkProcessor.stats());
         }
         return copy;
     }
