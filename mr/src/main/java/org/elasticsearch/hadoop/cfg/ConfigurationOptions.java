@@ -87,6 +87,9 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_RETRY_COUNT = "es.batch.write.retry.count";
     String ES_BATCH_WRITE_RETRY_COUNT_DEFAULT = "3";
 
+    String ES_BATCH_WRITE_RETRY_LIMIT = "es.batch.write.retry.limit";
+    String ES_BATCH_WRITE_RETRY_LIMIT_DEFAULT = "50";
+
     String ES_BATCH_WRITE_RETRY_WAIT = "es.batch.write.retry.wait";
     String ES_BATCH_WRITE_RETRY_WAIT_DEFAULT = "10s";
 

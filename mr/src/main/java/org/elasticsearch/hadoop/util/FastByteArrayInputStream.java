@@ -21,7 +21,8 @@ package org.elasticsearch.hadoop.util;
 import java.io.InputStream;
 
 /**
- * Taken from Elasticsearch - copy of org.elasticsearch.common.io.FastByteArrayInputStream with some enhancements, mainly in allowing access to the underlying byte[].
+ * Taken from Elasticsearch - copy of org.elasticsearch.common.io.FastByteArrayInputStream with some enhancements,
+ * mainly in allowing access to the underlying byte[] and in respecting slicing of an underlying BytesArray.
  *
  * Similar to {@link java.io.ByteArrayInputStream} just not synced.
  */
@@ -36,6 +37,12 @@ public class FastByteArrayInputStream extends InputStream {
      * the next byte to be read.
      */
     protected BytesArray data;
+
+    /**
+     * The initial starting place of the array buffer passed in to this
+     * input stream.
+     */
+    protected int offset;
 
     /**
      * The index of the next character to read from the input stream buffer.
@@ -78,20 +85,21 @@ public class FastByteArrayInputStream extends InputStream {
 
     /**
      * Creates a <code>ByteArrayInputStream</code>
-     * so that it  uses <code>buf</code> as its
+     * so that it uses <code>data</code> as its
      * buffer array.
      * The buffer array is not copied.
      * The initial value of <code>pos</code>
-     * is <code>0</code> and the initial value
-     * of  <code>count</code> is the length of
-     * <code>buf</code>.
+     * is set to the bytes array's offset and the
+     * initial value of <code>count</code> is the
+     * logical size of the bytes array.
      *
      * @param data the input buffer.
      */
     public FastByteArrayInputStream(BytesArray data) {
         this.data = data;
-        this.pos = 0;
-        this.count = data.size;
+        this.pos = data.offset;
+        this.offset = data.offset;
+        this.count = data.offset + data.size;
     }
 
     /**
@@ -198,8 +206,11 @@ public class FastByteArrayInputStream extends InputStream {
         return count - pos;
     }
 
+    /**
+     * @return the relative position of the stream in regards to the underlying buffer.
+     */
     public int position() {
-        return pos;
+        return pos - offset;
     }
 
     /**

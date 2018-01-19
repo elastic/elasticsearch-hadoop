@@ -120,6 +120,10 @@ public abstract class Settings {
         return Integer.parseInt(getProperty(ES_BATCH_WRITE_RETRY_COUNT, ES_BATCH_WRITE_RETRY_COUNT_DEFAULT));
     }
 
+    public int getBatchWriteRetryLimit() {
+        return Integer.parseInt(getProperty(ES_BATCH_WRITE_RETRY_LIMIT, ES_BATCH_WRITE_RETRY_LIMIT_DEFAULT));
+    }
+
     public long getBatchWriteRetryWait() {
         return TimeValue.parseTimeValue(getProperty(ES_BATCH_WRITE_RETRY_WAIT, ES_BATCH_WRITE_RETRY_WAIT_DEFAULT)).getMillis();
     }
@@ -590,6 +594,10 @@ public abstract class Settings {
     public abstract String getProperty(String name);
 
     public abstract void setProperty(String name, String value);
+
+    public Settings getSettingsView(String name) {
+        return new SettingsView(this, name);
+    }
 
     public Settings merge(Properties properties) {
         if (properties == null || properties.isEmpty()) {

@@ -18,21 +18,12 @@
  */
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
-import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
 
-    private static Log log = LogFactory.getLog(SimpleHttpRetryPolicy.class);
-
-    private int retryLimit;
-    private long retryTime;
-
     private class SimpleRetry implements Retry {
-        private int retryCount = 0;
 
         @Override
         public boolean retry(int httpStatus) {
@@ -45,23 +36,7 @@ public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
             // ES is busy, allow retries
             case HttpStatus.TOO_MANY_REQUESTS:
             case HttpStatus.SERVICE_UNAVAILABLE:
-                if (retryLimit < 0 || ++retryCount < retryLimit) {
-                    try {
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("Elasticsearch service unavailable - retrying in %s",
-                                    TimeValue.timeValueMillis((retryTime))));
-                        }
-                        Thread.sleep(retryTime);
-                        return true;
-                    } catch (InterruptedException e) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(String.format("Thread interrupted - giving up on retrying..."));
-                        }
-
-                        return false;
-                    }
-                }
-                return false;
+                return true;
             default:
                 return false;
             }
@@ -75,7 +50,6 @@ public class SimpleHttpRetryPolicy implements HttpRetryPolicy, SettingsAware {
 
     @Override
     public void setSettings(Settings settings) {
-        retryLimit = settings.getBatchWriteRetryCount();
-        retryTime = settings.getBatchWriteRetryWait();
+        // Nothing.
     }
 }

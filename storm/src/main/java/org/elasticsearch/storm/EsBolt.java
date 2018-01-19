@@ -32,6 +32,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
@@ -141,10 +142,14 @@ public class EsBolt implements IRichBolt {
     }
 
     private void flushWithAck() {
-        BitSet flush = null;
+        BitSet flush = new BitSet();
 
         try {
-            flush = writer.repository.tryFlush().getLeftovers();
+            List<BulkResponse.BulkError> documentErrors = writer.repository.tryFlush().getDocumentErrors();
+            // get set of document positions that failed.
+            for (BulkResponse.BulkError documentError : documentErrors) {
+                flush.set(documentError.getOriginalPosition());
+            }
         } catch (EsHadoopException ex) {
             // fail all recorded tuples
             for (Tuple input : inflightTuples) {
