@@ -37,6 +37,7 @@ public class BulkResponse {
     private final int httpStatus;
     private final int totalWrites;
     private final BitSet leftovers;
+    private final BitSet rejected;
     private final List<String> errorExamples;
 
     /**
@@ -44,13 +45,14 @@ public class BulkResponse {
      * @param totalWrites
      */
     private BulkResponse(int totalWrites) {
-        this(HttpStatus.OK, totalWrites, new BitSet(), Collections.<String>emptyList());
+        this(HttpStatus.OK, totalWrites, new BitSet(), new BitSet(), Collections.<String>emptyList());
     }
 
-    public BulkResponse(int httpStatus, int totalWrites, BitSet leftovers, List<String> errorExamples) {
+    public BulkResponse(int httpStatus, int totalWrites, BitSet leftovers, BitSet rejected, List<String> errorExamples) {
         this.httpStatus = httpStatus;
         this.totalWrites = totalWrites;
         this.leftovers = leftovers;
+        this.rejected = rejected;
         this.errorExamples = errorExamples;
     }
 
@@ -64,6 +66,10 @@ public class BulkResponse {
 
     public BitSet getLeftovers() {
         return leftovers;
+    }
+
+    public BitSet getRejected() {
+        return rejected;
     }
 
     public List<String> getErrorExamples() {

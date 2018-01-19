@@ -115,4 +115,51 @@ object EsSpark {
   def saveJsonToEs(rdd: RDD[_], cfg: Map[String, String]) {
     saveToEs(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
+
+
+
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String)  : RDD[String] = {
+    saveToEsAndCreateRejectedRDD(rdd, Map(ES_RESOURCE_WRITE -> resource))
+  }
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String])  : RDD[String] = {
+    saveToEsAndCreateRejectedRDD(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
+  }
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[String] = {
+    doSaveToEsAndCreateRejectedRDD(rdd, cfg, false)
+  }
+
+  // Save methods returning RDD of rejected records
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String) : RDD[String] = {
+    saveToEsAndCreateRejectedRDD(rdd, resource, Map(ES_INPUT_JSON -> true.toString))
+  }
+
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String]) : RDD[String] = {
+    saveToEsAndCreateRejectedRDD(rdd, resource, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
+  }
+
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[String] = {
+    saveToEsAndCreateRejectedRDD(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
+  }
+
+  private[spark] def doSaveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String], hasMeta: Boolean)  : RDD[String] = {
+    CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
+
+
+     if (rdd == null || rdd.partitions.length == 0) {
+            return rdd.sparkContext.emptyRDD
+     }
+
+    val sparkCfg = new SparkSettingsManager().load(rdd.sparkContext.getConf)
+    val config = new PropertiesSettings().load(sparkCfg.save())
+    config.merge(cfg.asJava)
+
+    // Need to discover the EsVersion here before checking if the index exists
+    InitializationUtils.discoverEsVersion(config, LOG)
+    InitializationUtils.checkIdForOperation(config)
+    InitializationUtils.checkIndexExistence(config)
+
+    val w: EsRDDWriter[String] = new EsRDDWriter[String](config.save(), hasMeta)
+    val x: FuncRDD[String] = new FuncRDD( rdd.asInstanceOf[RDD[String]], w.writeExt _)
+    x
+  }
 }

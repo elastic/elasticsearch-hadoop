@@ -55,6 +55,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -96,6 +97,11 @@ public class RestRepository implements Closeable, StatsAware {
 
     private final Settings settings;
     private final Stats stats = new Stats();
+    private Map<Integer, Object> rawObjects = new LinkedHashMap<Integer, Object>();
+    private int lastOffset = 0;
+    private int nextInsert =0;
+    private final boolean failOnLeftOvers;
+
 
     public RestRepository(Settings settings) {
         this.settings = settings;
@@ -109,7 +115,8 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         Assert.isTrue(resourceR != null || resourceW != null, "Invalid configuration - No read or write resource specified");
-
+        failOnLeftOvers =  settings.getProperty("es.internal.client.failOnLeftOvers") == null || "true".equals(settings.getProperty("es.internal.client.failOnLeftOvers"));
+        log.info(String.format("Fail on left overs: %s", failOnLeftOvers));
         this.client = new RestClient(settings);
     }
 
@@ -175,6 +182,10 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private void doWriteToIndex(BytesRef payload) {
+        doWriteToIndex(payload, null);
+    }
+
+    private void doWriteToIndex(BytesRef payload, Object raw) {
         // check space first
         // ba is the backing array for data
         if (payload.length() > ba.available()) {
@@ -188,6 +199,7 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         data.copyFrom(payload);
+        rawObjects.put(nextInsert++, raw);
         payload.reset();
 
         dataEntries++;
@@ -228,18 +240,38 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         // always discard data since there's no code path that uses the in flight data
-        discard();
+        discard(bulkResult.getRejected(), bulkResult.getLeftovers());
 
         return bulkResult;
     }
 
-    public void discard() {
+    public void discard(BitSet rejected, BitSet leftOvers) {
+        for (int i = 0; i < dataEntries; i ++) {
+            if( leftOvers.get(i) && !failOnLeftOvers) {
+                rejected.set(i);
+            }
+            if( ! rejected.get(i) ) {
+                rawObjects.remove(lastOffset + i);
+            }
+        }
+        lastOffset = nextInsert;
         data.reset();
         dataEntries = 0;
     }
 
     public void flush() {
+        int bulkSize = data.entries();
         BulkResponse bulk = tryFlush();
+
+        BitSet rejected = bulk.getRejected();
+        for (int i = rejected.nextSetBit(0); i >= 0; i = rejected.nextSetBit(i+1)) {
+            log.info(String.format("ES rejected entry at position [%d] of [%d] in batch of entries", i, bulkSize) );
+        }
+        BitSet leftOver = bulk.getLeftovers();
+        for (int i = leftOver.nextSetBit(0); i >= 0; i = leftOver.nextSetBit(i+1)) {
+            log.info(String.format("Retries exhausted for entry at position [%d] of [%d] in the batch of entries", i, bulkSize) );
+        }
+
         StringBuilder errorMessage = new StringBuilder();
 
         if (!bulk.getErrorExamples().isEmpty()) {
@@ -250,9 +282,12 @@ public class RestRepository implements Closeable, StatsAware {
             }
         }
 
-        if (!bulk.getLeftovers().isEmpty()) {
-            errorMessage.append("Bailing out...");
-            throw new EsHadoopException(errorMessage.toString());
+        if (!bulk.getLeftovers().isEmpty() ) {
+            if( failOnLeftOvers ) {
+                errorMessage.append("Bailing out...");
+                throw new EsHadoopException(errorMessage.toString());
+            }
+            // Otherwise, we already added the leftovers to the bulk response as a rejected . See discard() method
         } else if (!bulk.getErrorExamples().isEmpty()) {
             log.error(errorMessage.toString());
         }
@@ -477,6 +512,38 @@ public class RestRepository implements Closeable, StatsAware {
                 sq.close();
             }
         }
+    }
+    /**
+     * Writes the objects to index.
+     *
+     * @param object object to add to the index
+     */
+    public void writeToIndex(Object object, Object raw) {
+        Assert.notNull(object, "no object data given");
+
+        lazyInitWriting();
+        doWriteToIndex(command.write(object), raw);
+    }
+
+    /**
+     * Writes the objects to index.
+     *
+     * @param ba The data as a bytes array
+     */
+    public void writeProcessedToIndex(BytesArray ba, Object raw) {
+        Assert.notNull(ba, "no data given");
+        Assert.isTrue(ba.length() > 0, "no data given");
+
+        lazyInitWriting();
+        trivialBytesRef.reset();
+        trivialBytesRef.add(ba);
+        doWriteToIndex(trivialBytesRef, raw);
+    }
+
+    public List rejectedObjects() {
+        ArrayList lst = new ArrayList();
+        lst.addAll(rawObjects.values());
+        return lst;
     }
 
     public boolean isEmpty(boolean read) {

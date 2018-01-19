@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaPairRDD
 import org.apache.spark.api.java.JavaPairRDD.fromRDD
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.api.java.JavaSparkContext
+import org.apache.spark.rdd.RDD
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_JSON
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
@@ -66,4 +67,8 @@ object JavaEsSpark {
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String) = EsSpark.saveJsonToEs(jrdd.rdd, resource)
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String, cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, resource, cfg.asScala)
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, cfg.asScala)
+
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource)
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String, cfg: JMap[String, String]) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource, cfg.asScala)
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], cfg: JMap[String, String]) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, cfg.asScala)
 }

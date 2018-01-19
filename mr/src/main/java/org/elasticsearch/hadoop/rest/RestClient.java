@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -60,6 +62,7 @@ import static org.elasticsearch.hadoop.rest.Request.Method.PUT;
 
 public class RestClient implements Closeable, StatsAware {
 
+    private static Log log = LogFactory.getLog(RestClient.class);
     private final static int MAX_BULK_ERROR_MESSAGES = 5;
 
     private NetworkClient network;
@@ -69,6 +72,7 @@ public class RestClient implements Closeable, StatsAware {
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
     private final Set<Integer> dropErrorStatuses;
+    private final boolean failOnRejected;
 
     {
         mapper = new ObjectMapper();
@@ -101,7 +105,8 @@ public class RestClient implements Closeable, StatsAware {
         retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
         internalVersion = settings.getInternalVersionOrLatest();
-
+        failOnRejected =  settings.getProperty("es.internal.client.failOnRejected")== null || "true".equals(settings.getProperty("es.internal.client.failOnRejected"));
+        log.info(String.format("Fail on rejected: %s", failOnRejected));
         dropErrorStatuses = settings.getDropErrorStatuses();
     }
 
@@ -247,9 +252,12 @@ public class RestClient implements Closeable, StatsAware {
                         entryToDeletePosition++;
                     }
                     else {
-                        String message = (status != null ?
-                                String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
-                        throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
+                        if(failOnRejected) {
+                            String message = (status != null ?
+                                    String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
+                            throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
+                        }
+                        data.reject(entryToDeletePosition);
                     }
                 }
                 else {
@@ -260,7 +268,7 @@ public class RestClient implements Closeable, StatsAware {
             }
 
             int httpStatusToReport = entryToDeletePosition > 0 ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
-            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), errorMessageSample);
+            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), data.rejectedPositions(), errorMessageSample);
             // catch IO/parsing exceptions
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);

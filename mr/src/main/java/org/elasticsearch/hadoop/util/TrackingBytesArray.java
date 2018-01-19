@@ -72,6 +72,7 @@ public class TrackingBytesArray implements ByteSequence {
     private int maxEntries = 0;
     private int size = 0;
     private List<Entry> entries = new LinkedList<TrackingBytesArray.Entry>();
+    private BitSet rejected = new BitSet();
 
     public TrackingBytesArray(BytesArray data) {
         this.data = data;
@@ -100,7 +101,12 @@ public class TrackingBytesArray implements ByteSequence {
         for (Entry entry : entries) {
             bitSet.set(entry.initialPosition);
         }
+        return bitSet;
+    }
 
+    public BitSet rejectedPositions() {
+        BitSet bitSet = new BitSet(maxEntries);
+        bitSet.or(rejected);
         return bitSet;
     }
 
@@ -114,6 +120,12 @@ public class TrackingBytesArray implements ByteSequence {
     public void remove(int index) {
         Entry entry = entries.remove(index);
         size -= entry.length;
+    }
+
+    public void reject(int index) {
+        Entry entry = entries.remove(index);
+        size -= entry.length;
+        rejected.set(entry.initialPosition);
     }
 
     public int length(int index) {
@@ -135,6 +147,7 @@ public class TrackingBytesArray implements ByteSequence {
         size = 0;
         maxEntries = 0;
         entries.clear();
+        rejected.clear();
         data.reset();
     }
 
