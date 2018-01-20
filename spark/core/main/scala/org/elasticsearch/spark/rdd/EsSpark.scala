@@ -118,30 +118,30 @@ object EsSpark {
 
 
 
-  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String)  : RDD[String] = {
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String)  : RDD[(String,String)] = {
     saveToEsAndCreateRejectedRDD(rdd, Map(ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String])  : RDD[String] = {
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String])   : RDD[(String,String)] = {
     saveToEsAndCreateRejectedRDD(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_RESOURCE_WRITE -> resource))
   }
-  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[String] = {
+  def saveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[(String,String)] = {
     doSaveToEsAndCreateRejectedRDD(rdd, cfg, false)
   }
 
   // Save methods returning RDD of rejected records
-  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String) : RDD[String] = {
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String) : RDD[(String,String)] = {
     saveToEsAndCreateRejectedRDD(rdd, resource, Map(ES_INPUT_JSON -> true.toString))
   }
 
-  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String]) : RDD[String] = {
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], resource: String, cfg: Map[String, String]) : RDD[(String,String)] = {
     saveToEsAndCreateRejectedRDD(rdd, resource, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 
-  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[String] = {
+  def saveJsonToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String])  : RDD[(String,String)] = {
     saveToEsAndCreateRejectedRDD(rdd, collection.mutable.Map(cfg.toSeq: _*) += (ES_INPUT_JSON -> true.toString))
   }
 
-  private[spark] def doSaveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String], hasMeta: Boolean)  : RDD[String] = {
+  private[spark] def doSaveToEsAndCreateRejectedRDD(rdd: RDD[String], cfg: Map[String, String], hasMeta: Boolean)  : RDD[(String,String)] = {
     CompatUtils.warnSchemaRDD(rdd, LogFactory.getLog("org.elasticsearch.spark.rdd.EsSpark"))
 
 
@@ -159,7 +159,7 @@ object EsSpark {
     InitializationUtils.checkIndexExistence(config)
 
     val w: EsRDDWriter[String] = new EsRDDWriter[String](config.save(), hasMeta)
-    val x: FuncRDD[String] = new FuncRDD( rdd.asInstanceOf[RDD[String]], w.writeExt _)
+    val x: RDD[(String,String)] = new FuncRDD[(String,String),String]( rdd, w.writeExt _)
     x
   }
 }

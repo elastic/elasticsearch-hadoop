@@ -1,6 +1,3 @@
-import org.apache.tools.ant.DefaultLogger
-import org.gradle.internal.jvm.Jvm
-
 description = 'Elasticsearch for Apache Hadoop'
 
 buildscript {
@@ -458,7 +455,8 @@ project(":elasticsearch-hadoop-mr") {
     dependencies {
         provided(hadoopClient)
         provided("org.codehaus.jackson:jackson-mapper-asl:$jacksonVersion")
-        
+        compile( "org.apache.commons:commons-lang3:$commonsLang3Version")
+
         // Testing
         if (hadoopVersion.contains("1.0.")) {
             // missing dependency in Hadoop 1.0.3/1.0.4
@@ -516,7 +514,7 @@ def nestMRProject(target) {
     target.dependencies {
         provided(project(":elasticsearch-hadoop-mr"))
         provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
-        
+
         testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
         itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
     }

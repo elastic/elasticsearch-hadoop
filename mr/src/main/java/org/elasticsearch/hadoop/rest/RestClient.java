@@ -252,12 +252,12 @@ public class RestClient implements Closeable, StatsAware {
                         entryToDeletePosition++;
                     }
                     else {
+                        String message = (status != null ?
+                                String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
                         if(failOnRejected) {
-                            String message = (status != null ?
-                                    String.format("[%s] returned %s(%s) - %s", response.uri(), HttpStatus.getText(status), status, prettify(error)) : prettify(error));
                             throw new EsHadoopInvalidRequest(String.format("Found unrecoverable error %s; Bailing out..", message));
                         }
-                        data.reject(entryToDeletePosition);
+                        data.reject(entryToDeletePosition, message);
                     }
                 }
                 else {
@@ -268,7 +268,7 @@ public class RestClient implements Closeable, StatsAware {
             }
 
             int httpStatusToReport = entryToDeletePosition > 0 ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.OK;
-            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), data.rejectedPositions(), errorMessageSample);
+            return new BulkResponse(httpStatusToReport, docsSent, data.leftoversPosition(), data.rejectedPositions(), data.rejectionMessages(), errorMessageSample);
             // catch IO/parsing exceptions
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);

@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
@@ -39,24 +40,13 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
-import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.BytesRef;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.SettingsUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TrackingBytesArray;
+import org.elasticsearch.hadoop.util.*;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
@@ -97,7 +87,7 @@ public class RestRepository implements Closeable, StatsAware {
 
     private final Settings settings;
     private final Stats stats = new Stats();
-    private Map<Integer, Object> rawObjects = new LinkedHashMap<Integer, Object>();
+    private Map<Integer, MutablePair<String,Object>> rawObjects = new TreeMap<Integer, MutablePair<String,Object>>();
     private int lastOffset = 0;
     private int nextInsert =0;
     private final boolean failOnLeftOvers;
@@ -199,7 +189,7 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         data.copyFrom(payload);
-        rawObjects.put(nextInsert++, raw);
+        rawObjects.put(nextInsert++, new MutablePair<String, Object>(null, raw) );
         payload.reset();
 
         dataEntries++;
@@ -240,15 +230,21 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         // always discard data since there's no code path that uses the in flight data
-        discard(bulkResult.getRejected(), bulkResult.getLeftovers());
+        discard(bulkResult);
 
         return bulkResult;
     }
 
-    public void discard(BitSet rejected, BitSet leftOvers) {
+    public void discard(final BulkResponse bulkResult) {
+        BitSet rejected = bulkResult.getRejected();
+        BitSet leftOvers = bulkResult.getLeftovers();
         for (int i = 0; i < dataEntries; i ++) {
+            if( rejected.get(i) ) {
+                rawObjects.get(lastOffset + i).setLeft( bulkResult.getRejectedErrorMessages().get(i) );
+            }
             if( leftOvers.get(i) && !failOnLeftOvers) {
                 rejected.set(i);
+                rawObjects.get(lastOffset + i).setLeft("Rejected entry. Perhaps ES was overloaded");
             }
             if( ! rejected.get(i) ) {
                 rawObjects.remove(lastOffset + i);
@@ -540,8 +536,8 @@ public class RestRepository implements Closeable, StatsAware {
         doWriteToIndex(trivialBytesRef, raw);
     }
 
-    public List rejectedObjects() {
-        ArrayList lst = new ArrayList();
+    public List<MutablePair<String, Object>> rejectedObjects() {
+        ArrayList<MutablePair<String, Object>> lst = new ArrayList<MutablePair<String, Object>>();
         lst.addAll(rawObjects.values());
         return lst;
     }

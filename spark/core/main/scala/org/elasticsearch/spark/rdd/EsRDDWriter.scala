@@ -35,6 +35,7 @@ import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 import scala.collection.JavaConverters._
+import org.apache.commons.lang3.tuple.MutablePair
 
 
 private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
@@ -91,7 +92,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     }
   }
 
-  def writeExt(taskContext: TaskContext, data: Iterator[T]) : Iterator[T] = {
+  def writeExt(taskContext: TaskContext, data: Iterator[T]) : Iterator[(String,T)] = {
     val settingsCopy = settings.copy();
     settingsCopy.setProperty("es.internal.client.failOnRejected", "false");
     settingsCopy.setProperty("es.internal.client.failOnLeftOvers", "true");
@@ -111,7 +112,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     writer.repository.flush();
     // Return all the rejected objects
 
-    val lst: Seq[T] = writer.repository.rejectedObjects().asScala.toList.map(x => x.asInstanceOf[T]);
+    val lst: Seq[(String, T)] = writer.repository.rejectedObjects().asScala.toList.map(x => (x.getLeft(), x.getRight().asInstanceOf[T]));
     lst.iterator
   }
 

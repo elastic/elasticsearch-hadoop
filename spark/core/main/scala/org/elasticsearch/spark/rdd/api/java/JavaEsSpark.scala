@@ -68,7 +68,7 @@ object JavaEsSpark {
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], resource: String, cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, resource, cfg.asScala)
   def saveJsonByteArrayToEs(jrdd: JavaRDD[Array[Byte]], cfg: JMap[String, String]) = EsSpark.saveJsonToEs(jrdd.rdd, cfg.asScala)
 
-  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource)
-  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String, cfg: JMap[String, String]) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource, cfg.asScala)
-  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], cfg: JMap[String, String]) : RDD[String] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, cfg.asScala)
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String) : RDD[(String,String)] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource)
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], resource: String, cfg: JMap[String, String]) : RDD[(String,String)] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, resource, cfg.asScala)
+  def saveJsonToEsAndCreateRejectedRDD(jrdd: JavaRDD[String], cfg: JMap[String, String]) : RDD[(String,String)] = EsSpark.saveJsonToEsAndCreateRejectedRDD(jrdd.rdd, cfg.asScala)
 }

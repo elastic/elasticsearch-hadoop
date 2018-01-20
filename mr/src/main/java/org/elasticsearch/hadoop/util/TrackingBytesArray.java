@@ -20,9 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.BitSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  *  Wrapper class around a {@link BytesArray} with 'awareness' around the underlying content.
@@ -73,6 +71,7 @@ public class TrackingBytesArray implements ByteSequence {
     private int size = 0;
     private List<Entry> entries = new LinkedList<TrackingBytesArray.Entry>();
     private BitSet rejected = new BitSet();
+    private Map<Integer, String> errorMessages = new HashMap<Integer,String>();
 
     public TrackingBytesArray(BytesArray data) {
         this.data = data;
@@ -110,6 +109,10 @@ public class TrackingBytesArray implements ByteSequence {
         return bitSet;
     }
 
+    public Map<Integer, String> rejectionMessages() {
+        return errorMessages;
+    }
+
     private void addEntry(int length) {
         // implied offset - data.size
         entries.add(new Entry(data.size, length, entries.size()));
@@ -122,10 +125,11 @@ public class TrackingBytesArray implements ByteSequence {
         size -= entry.length;
     }
 
-    public void reject(int index) {
+    public void reject(int index, String message) {
         Entry entry = entries.remove(index);
         size -= entry.length;
         rejected.set(entry.initialPosition);
+        errorMessages.put(entry.initialPosition, message);
     }
 
     public int length(int index) {
@@ -149,6 +153,7 @@ public class TrackingBytesArray implements ByteSequence {
         entries.clear();
         rejected.clear();
         data.reset();
+        errorMessages.clear();
     }
 
     @Override
