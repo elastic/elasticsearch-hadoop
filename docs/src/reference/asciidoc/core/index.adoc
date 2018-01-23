@@ -18,6 +18,8 @@ include::storm.adoc[]
 
 include::mapping.adoc[]
 
+include::errorhandlers.adoc[]
+
 include::metrics.adoc[]
 
 include::performance.adoc[]
