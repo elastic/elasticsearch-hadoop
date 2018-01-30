@@ -1,0 +1,10 @@
+[[eshadoop-5.6.7]]
+== Elasticsearch for Apache Hadoop version 5.6.7
+January 30, 2018
+
+ES-Hadoop 5.6.7 is a version compatibility release, tested specifically against Elasticsearch 5.6.7.
+
+[[docs-5.6.7]]
+=== Documentation
+* fix misspelling saveToEs in Spark SQL
+https://github.com/elastic/elasticsearch-hadoop/issues/1094[#1094]
