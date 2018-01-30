@@ -1,0 +1,10 @@
+[[eshadoop-6.1.3]]
+== Elasticsearch for Apache Hadoop version 6.1.3
+January 30, 2018
+
+ES-Hadoop 6.1.3 is a version compatibility release, tested specifically against Elasticsearch 6.1.3.
+
+[[docs-6.1.3]]
+=== Documentation
+* Fix misspelling saveToEs in SparkSQL
+https://github.com/elastic/elasticsearch-hadoop/issues/1094[#1094]
