@@ -102,7 +102,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         Log log = LogFactory.getLog(getClass());
         // move on to initialization
         InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
-        if (settings.getOutputAsJson()) {
+        if (!settings.getOutputAsJson()) {
             // Only set the fields if we aren't asking for raw JSON
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
         }
