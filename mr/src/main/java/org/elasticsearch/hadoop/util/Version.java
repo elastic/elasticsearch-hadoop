@@ -52,10 +52,12 @@ public abstract class Version {
 
         if (res != null) {
             List<URL> urls = Collections.list(res);
-            Set<String> normalized = new LinkedHashSet<String>();
-
-            for (URL url : urls) {
-                normalized.add(StringUtils.normalize(url.toString()));
+            try {
+                Set<String> normalized = StringUtils.normalize(urls);
+            } catch (IOException ex) {
+                StringBuilder sb = new StringBuilder("Fail to normalize urls of jars.");
+                LogFactory.getLog(Version.class).fatal(sb);
+                throw new Error(sb.toString());
             }
 
             int foundJars = 0;

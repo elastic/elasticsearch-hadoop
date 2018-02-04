@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Test;
@@ -37,16 +40,18 @@ public class VersionTest {
         List<URL> urls = new ArrayList<URL>();
         urls.add(new URL("jar:file:/tmp/mesos/slaves/3014350f-cd05-44af-9c9c-3974bdeed86e-S1/frameworks/3014350f-cd05-44af-9c9c-3974bdeed86e-0016/executors/3014350f-cd05-44af-9c9c-3974bdeed86e-S1/runs/3697bc14-f0bd-48b9-8599-9683867eec63/elasticsearch-spark_2.10-2.2.0-m1.jar!/"));
         urls.add(new URL("jar:file:/tmp/mesos/slaves/3014350f-cd05-44af-9c9c-3974bdeed86e-S1/frameworks/3014350f-cd05-44af-9c9c-3974bdeed86e-0016/executors/3014350f-cd05-44af-9c9c-3974bdeed86e-S1/runs/3697bc14-f0bd-48b9-8599-9683867eec63/./elasticsearch-spark_2.10-2.2.0-m1.jar!/"));
-
-        Set<String> normalized = new LinkedHashSet<String>();
-
-        for (URL url : urls) {
-            // try normalization first
-            String norm = StringUtils.normalize(url.toString());
-            System.out.println(norm);
-            normalized.add(norm);
+        String originPath = url.get(0).toString();
+        File file = new File(originPath);
+        if (file.createNewFile()){
+          System.out.println("File is created!");
+        } else {
+          System.out.println("File already exists.");
         }
+        Path existingFilePath = Paths.get(originPath);
+        Path symLinkPath = Paths.get(System.getProperty("java.io.tmpdir") + File.separator + "elasticsearch-spark_2.10-2.2.0-m1.jar");
+        Files.createSymbolicLink(symLinkPath, existingFilePath);
 
+        Set<String> normalized = StringUtils.normalize(urls);
         System.out.println(normalized);
         assertEquals(1, normalized.size());
     }

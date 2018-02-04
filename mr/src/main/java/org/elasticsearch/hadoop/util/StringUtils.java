@@ -22,6 +22,8 @@ import org.codehaus.jackson.io.JsonStringEncoder;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.serialization.json.BackportedJsonStringEncoder;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 
@@ -409,57 +413,13 @@ public abstract class StringUtils {
         return new IpAndPort(httpAddr);
     }
 
-    public static String normalize(String path) {
-        if (path == null) {
-            return null;
+    public static Set<String> normalize(List<URL> urls) throws IOException {
+        Set<String> normalized = new LinkedHashSet<String>();
+        for (URL url : urls) {
+            File file = new File(url.toString());
+            paths.add(file.getCanonicalPath());
         }
-        String pathToUse = path.replace("\\", SLASH);
-
-        int prefixIndex = pathToUse.indexOf(":");
-        String prefix = "";
-        if (prefixIndex != -1) {
-            prefix = pathToUse.substring(0, prefixIndex + 1);
-            if (prefix.contains(SLASH)) {
-                prefix = "";
-            }
-            else {
-                pathToUse = pathToUse.substring(prefixIndex + 1);
-            }
-        }
-        if (pathToUse.startsWith(SLASH)) {
-            prefix = prefix + SLASH;
-            pathToUse = pathToUse.substring(1);
-        }
-
-        List<String> pathList = tokenize(pathToUse, SLASH);
-        List<String> pathTokens = new LinkedList<String>();
-        int tops = 0;
-
-        for (int i = pathList.size() - 1; i >= 0; i--) {
-            String element = pathList.get(i);
-            if (PATH_CURRENT.equals(element)) {
-                // current folder, ignore it
-            }
-            else if (PATH_TOP.equals(element)) {
-                // top folder, skip previous element
-                tops++;
-            }
-            else {
-                if (tops > 0) {
-                    // should it be skipped?
-                    tops--;
-                }
-                else {
-                    pathTokens.add(0, element);
-                }
-            }
-        }
-
-        for (int i = 0; i < tops; i++) {
-            pathTokens.add(0, PATH_TOP);
-        }
-
-        return prefix + concatenate(pathTokens, SLASH);
+        return normalized;
     }
 
     public static String stripFieldNameSourcePrefix(String fieldName) {
