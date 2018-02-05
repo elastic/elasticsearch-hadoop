@@ -157,10 +157,10 @@ Following the aforementioned <<cfg-multi-writes,media example>>, one could confi
 [source,java]
 ----
 JobConf conf = new JobConf();
-conf.set("es.resource.write","my-collection/{media-type}");
+conf.set("es.resource.write","my-collection-{media-type}/doc");
 ----
 
-If `Writable` objects are used, for each `MapWritable` {eh} will extract the value under `media-type` key and use that as the {es} type. If raw JSON is used, then {eh} will parse the document, extract the field `media-type` and use its value accordingly.
+If `Writable` objects are used, for each `MapWritable` {eh} will extract the value under `media-type` key and use that as the {es} index suffix. If raw JSON is used, then {eh} will parse the document, extract the field `media-type` and use its value accordingly.
 
 [float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
@@ -251,7 +251,7 @@ As expected, the difference between the `old` and `new` API are minimal (to be r
 [source,java]
 ----
 Configuration conf = new Configuration();
-conf.set("es.resource.write","my-collection/{media-type}");
+conf.set("es.resource.write","my-collection-{media-type}/doc");
 ...
 ----
 

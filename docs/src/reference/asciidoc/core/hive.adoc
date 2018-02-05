@@ -170,7 +170,7 @@ CREATE EXTERNAL TABLE media (
     type    STRING,<1>
     year    STRING,
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'my-collection/{type}'<2>);
+TBLPROPERTIES('es.resource' = 'my-collection-{type}/doc'<2>);
 ----
 
 <1> Table field used by the resource pattern. Any of the declared fields can be used.
@@ -197,7 +197,7 @@ the table declaration can be as follows:
 ----
 CREATE EXTERNAL TABLE json (data STRING<1>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'my-collection/{media_type}'<2>,
+TBLPROPERTIES('es.resource' = 'my-collection-{media_type}/doc'<2>,
               'es.input.json` = 'yes');
 ----
 

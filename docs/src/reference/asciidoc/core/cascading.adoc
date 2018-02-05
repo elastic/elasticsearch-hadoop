@@ -140,7 +140,7 @@ One can index the data to a different resource, depending on the tuple being rea
 
 [source,java]
 ----
-Tap out = new EsTap("my-collection/{media.type}" <1>, 
+Tap out = new EsTap("my-collection-{media.type}/doc" <1>,
                     new Fields("name", "media.type", "year") <2>);
 ----
 
@@ -167,7 +167,7 @@ the `Tap` declaration can be as follows:
 ----
 props.setProperty("es.input.json", "true");                                     
 Tap in = new Lfs(new TextLine(new Fields("line")),"/archives/collection.json");
-Tap out = new EsTap("my-collection/{media_type}" <1>, new Fields("line") <2>);
+Tap out = new EsTap("my-collection-{media_type}/doc" <1>, new Fields("line") <2>);
 ----
 
 <1> Resource pattern relying on fields _within_ the JSON document and _not_ on the `Tap` schema
