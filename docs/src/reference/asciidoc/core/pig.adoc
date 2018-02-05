@@ -236,11 +236,11 @@ One can index the data to a different resource, depending on the 'row' being rea
 ----
 A = LOAD 'src/test/resources/media.dat' USING PigStorage()
             AS (name:chararray, type:chararray <1>, year: chararray);
-STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.hadoop.pig.EsStorage();
+STORE B INTO 'my-collection-{type}/doc'<2> USING org.elasticsearch.hadoop.pig.EsStorage();
 ----
 
 <1> Tuple field used by the resource pattern. Any of the declared fields can be used.
-<2> Resource pattern using field `type` - note the pattern can be used _anywhere_ in the resource (on the index, on the type, in both places, etc...)
+<2> Resource pattern using field `type` - note that patterns should only be used in the index name
 
 
 For each tuple about to be written, {eh} will extract the `type` field and use its value to determine the target resource.
@@ -263,7 +263,7 @@ the table declaration can be as follows:
 [source,sql]
 ----
 A = LOAD '/resources/media.json' USING PigStorage() AS (json:chararray<1>);"
-STORE B INTO 'my-collection/{media_type}'<2>
+STORE B INTO 'my-collection-{media_type}/doc'<2>
     USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');
 ----
 

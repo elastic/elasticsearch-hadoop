@@ -258,7 +258,7 @@ val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
 val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
 val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
 
-sc.makeRDD(Seq(game, book, cd)).saveToEs("my-collection/{media_type}")  <2>
+sc.makeRDD(Seq(game, book, cd)).saveToEs("my-collection-{media_type}/doc")  <2>
 ----
 
 <1> Document _key_ used for splitting the data. Any field can be declared (but make sure it is available in all documents)
@@ -281,7 +281,7 @@ Map<String, ?> cd = ...
 
 JavaRDD<Map<String, ?>> javaRDD =
                 jsc.parallelize(ImmutableList.of(game, book, cd));
-saveToEs(javaRDD, "my-collection/{media_type}");  <1>
+saveToEs(javaRDD, "my-collection-{media_type}/doc");  <1>
 ----
 
 <1> Save each object based on its resource pattern, +media_type+ in this example
@@ -876,7 +876,7 @@ val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
 
 val batch = sc.makeRDD(Seq(game, book, cd))
 val microbatches = mutable.Queue(batch)
-ssc.queueStream(microbatches).saveToEs("my-collection/{media_type}")  <2>
+ssc.queueStream(microbatches).saveToEs("my-collection-{media_type}/doc")  <2>
 ssc.start()
 ----
 
@@ -904,7 +904,7 @@ Queue<JavaRDD<Map<String, ?>>> microbatches = ...
 JavaDStream<Map<String, ?>> javaDStream =
                 jssc.queueStream(microbatches);
 
-saveToEs(javaDStream, "my-collection/{media_type}");  <1>
+saveToEs(javaDStream, "my-collection-{media_type}/doc");  <1>
 jssc.start();
 ----
 
