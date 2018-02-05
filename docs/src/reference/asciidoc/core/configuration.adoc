@@ -85,14 +85,14 @@ For example assuming the data contains a +@timestamp+ field, one can group the d
 [source,ini]
 ----
 # index the documents based on their date
-es.resource.write = my-collection/{@timestamp:YYYY.MM.dd} <1>
+es.resource.write = my-collection/{@timestamp|yyyy.MM.dd} <1>
 ----
 
-<1> +@timestamp+ field formatting - in this case +YYYY.MM.dd+
+<1> +@timestamp+ field formatting - in this case +yyyy.MM.dd+
 
-The same configuration property is used (+es.resource.write+) however, through the special +:+ characters a formatting pattern is specified.
+The same configuration property is used (+es.resource.write+) however, through the special +|+ characters a formatting pattern is specified.
 Please refer to the http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html[SimpleDateFormat] javadocs for more information on the syntax supported.
-In this case +YYYY.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
+In this case +yyyy.MM.dd+ translates the date into the year (specified by four digits), month by 2 digits followed by the day by two digits (such as +2015.01.28+).
 
 http://logstash.net/[Logstash] users will find this _pattern_ quite http://logstash.net/docs/latest/filters/date[familiar].
 
@@ -565,7 +565,7 @@ Whether to invoke an {ref}/indices-refresh.html[index refresh] or not after a bu
 Number of retries for a given batch in case {es} is overloaded and data is rejected. Note that only the rejected data is retried. If there is still data rejected after the retries have been performed, the Hadoop job is cancelled (and fails). A negative value indicates infinite retries; be careful in setting this value as it can have unwanted side effects.
 
 `es.batch.write.retry.wait` (default 10s)::
-Time to wait between batch write retries.
+Time to wait between batch write retries that are caused by bulk rejections.
 
 `es.ser.reader.value.class` (default _depends on the library used_)::
 Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.

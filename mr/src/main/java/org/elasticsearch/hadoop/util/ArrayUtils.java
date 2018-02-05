@@ -21,7 +21,49 @@ package org.elasticsearch.hadoop.util;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 
 // taken from org.apache.lucene.util
-abstract class ArrayUtils {
+public abstract class ArrayUtils {
+
+    /**
+     * Returns <tt>true</tt> if the two specified array slices of bytes are
+     * <i>equal</i> to one another.  Two array slices are considered equal if both
+     * slices contain the same number of elements, and all corresponding pairs
+     * of elements in the two slices are equal.  In other words, two slices
+     * are equal if they contain the same elements in the same order.  Also,
+     * two slice references are considered equal if both are <tt>null</tt>.<p>
+     *
+     * Adapted from the JVM runtime's Array.equals for use with array slices.
+     *
+     * @param a one array to be tested for equality
+     * @param b the other array to be tested for equality
+     * @return <tt>true</tt> if the two arrays are equal
+     */
+    public static boolean sliceEquals(byte[] a, int offa, int lena, byte[] b, int offb, int lenb) {
+        if (a==b)
+            return true;
+        if (a==null || b==null)
+            return false;
+
+        if (lena > a.length || lenb > b.length) {
+            throw new ArrayIndexOutOfBoundsException("Given length is greater than array length");
+        }
+
+        if (offa >= a.length || offb >= b.length) {
+            throw new ArrayIndexOutOfBoundsException("Given offset is is out of bounds");
+        }
+
+        if (offa + lena > a.length || offb + lenb > b.length) {
+            throw new ArrayIndexOutOfBoundsException("Given offset and length is out of array bounds");
+        }
+
+        if (lenb != lena)
+            return false;
+
+        for (int i=0; i<lena; i++)
+            if (a[offa + i] != b[offb + i])
+                return false;
+
+        return true;
+    }
 
     static byte[] grow(byte[] array, int minSize) {
         assert minSize >= 0 : "size must be positive (got " + minSize + "): likely integer overflow?";

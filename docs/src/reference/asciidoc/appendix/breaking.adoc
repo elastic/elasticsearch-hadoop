@@ -28,10 +28,10 @@ tests were migrated to using single types where possible. This migration
 unearthed a problem with Pig and Cascading in regards to how those frameworks
 interact with the provided index/type names. During setup, Pig and Cascading
 attempt to parse these index names as paths, and when the index has a formatted
-pattern in it (like `index-{event:YYYY.MM.dd}/type`) the path parsing breaks.
+pattern in it (like `index-{event:yyyy.MM.dd}/type`) the path parsing breaks.
 Going forward, the colon character `:` that delimits the field name from the
 format will be changed to the pipe character `|`. An example of the new patterned
-index names is `index-{event|YYYY.MM.dd}/type`. 5.x will support both separators,
+index names is `index-{event|yyyy.MM.dd}/type`. 5.x will support both separators,
 but will log a deprecation message when a colon `:` is encountered.
 
 ==== TTL and Timestamp Meta-fields

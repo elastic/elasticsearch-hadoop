@@ -260,7 +260,7 @@ sc.makeRDD(Seq(numbers, airports)).saveToEs("spark/docs")
 import org.elasticsearch.spark.sql._
 
 val df = sqlContext.read.json("examples/people.json")
-df.saveToES("spark/people")
+df.saveToEs("spark/people")
 ```
 
 ### Java
@@ -300,7 +300,7 @@ JavaSparkContext jsc = new JavaSparkContext(conf);
 Map<String, ?> numbers = ImmutableMap.of("one", 1, "two", 2);     
 Map<String, ?> airports = ImmutableMap.of("OTP", "Otopeni", "SFO", "San Fran");
 
-JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(doc1, doc2)); 
+JavaRDD<Map<String, ?>> javaRDD = jsc.parallelize(ImmutableList.of(numbers, airports)); 
 JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 ```
 
@@ -310,7 +310,7 @@ JavaEsSpark.saveToEs(javaRDD, "spark/docs");
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
 
 DataFrame df = sqlContext.read.json("examples/people.json")
-JavaEsSparkSQL.saveToES(df, "spark/docs")
+JavaEsSparkSQL.saveToEs(df, "spark/docs")
 ```
 
 
