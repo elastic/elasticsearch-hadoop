@@ -154,7 +154,7 @@ In cases where the data needs to be indexed based on its content, one can choose
 [source, java]
 ----
 builder.setBolt("es-bolt", 
-    new EsBolt("my-collection/{media_type}"<1>)).shuffleGrouping("spout");
+    new EsBolt("my-collection-{media_type}/doc"<1>)).shuffleGrouping("spout");
 ----
 
 <1> Resource pattern using field +type+
@@ -182,11 +182,11 @@ Map conf = new HashMap();
 conf.put("es.input.json", "true"); <1>
 
 builder.setBolt("es-bolt", 
-    new EsBolt("my-collection-{media_type}/{year}"<2>, conf<3>)).shuffleGrouping("spout");
+    new EsBolt("my-collection-{media_type}-{year}/doc"<2>, conf<3>)).shuffleGrouping("spout");
 ----
 
 <1> Option indicating the input is in JSON format
-<2> Resource pattern - notice how the pattern is used both in the index and the type
+<2> Resource pattern
 <3> Pass configuration to +EsBolt+ to indicate the JSON input
 
 
