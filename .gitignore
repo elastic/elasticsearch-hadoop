@@ -18,3 +18,4 @@ metastore_db
 /spark/keyvaluerdd.parquet
 /spark/sql-13/default_*
 /spark/sql-13/with_meta_*
+out/
