@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.cfg.PropertiesSettings
 class SparkConfigTest {
 
   @Test
-  def testProperties() {
+  def testProperties(): Unit = {
     val cfg = new SparkConf().set("type", "onegative")
     val settings = new SparkSettingsManager().load(cfg)
     val props = new PropertiesSettings().load(settings.save())
@@ -36,7 +36,7 @@ class SparkConfigTest {
   }
   
   @Test
-  def testSparkProperties() {
+  def testSparkProperties(): Unit = {
     val cfg = new SparkConf().set("spark.type", "onegative")
     val settings = new SparkSettingsManager().load(cfg)
     val props = new PropertiesSettings().load(settings.save())
@@ -44,7 +44,7 @@ class SparkConfigTest {
   }
 
   @Test
-  def testSparkPropertiesOverride() {
+  def testSparkPropertiesOverride(): Unit = {
     val cfg = new SparkConf().set("spark.type", "fail").set("type", "win")
     val settings = new SparkSettingsManager().load(cfg)
     val props = new PropertiesSettings().load(settings.save())
