@@ -10,9 +10,9 @@ class VersionProperties {
     public static final Map<String, String> VERSIONS
     static {
         Properties versionProperties = new Properties()
-        InputStream propertyStream = VersionProperties.class.getResourceAsStream('/version.properties')
+        InputStream propertyStream = VersionProperties.class.getResourceAsStream('/esh-version.properties')
         if (propertyStream == null) {
-            throw new RuntimeException("Could not locate the version.properties file!")
+            throw new RuntimeException("Could not locate the esh-version.properties file!")
         }
         versionProperties.load(propertyStream)
         ESHADOOP_VERSION = versionProperties.getProperty('eshadoop')
