@@ -27,8 +27,16 @@ allprojects {
 
       // For Elasticsearch snapshots.
       maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-      // For Lucene Snapshots. See org.elasticsearch.gradle.BuildPlugin#configureRepositories for why we may need this.
-      maven { url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/7deca62" }
+
+      // For Lucene Snapshots, Use the lucene version interpreted from build source
+      if (luceneVersion.contains('-snapshot')) {
+        // extract the revision number from the version with a regex matcher
+        String revision = (luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
+        maven {
+          name 'lucene-snapshots'
+          url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
+        }
+      }
     }
 
     apply plugin: "java"

@@ -28,6 +28,7 @@ class BuildSettingsPlugin implements Plugin<Project> {
             project.rootProject.version = VersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.eshadoopVersion = VersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.elasticsearchVersion = VersionProperties.ELASTICSEARCH_VERSION
+            project.rootProject.ext.luceneVersion = org.elasticsearch.gradle.VersionProperties.lucene
             project.rootProject.ext.versions = VersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
         }
