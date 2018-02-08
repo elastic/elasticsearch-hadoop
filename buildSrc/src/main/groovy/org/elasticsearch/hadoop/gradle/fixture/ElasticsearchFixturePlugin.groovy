@@ -258,6 +258,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
                 argsPasser = '%*'
                 exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
             }
+            wrapperScript.createNewFile()
             wrapperScript.setText("\"${esScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
 
             // Debugging multi line string to be logged explaining the node's information
