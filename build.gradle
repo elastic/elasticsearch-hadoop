@@ -420,7 +420,7 @@ project.ext.runtimeJavaHome = javaHome
 
 allprojects { project ->
     task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
-        testClassesDir = sourceSets.itest.output.classesDir
+        testClassesDirs = sourceSets.itest.output.classesDirs
         classpath = sourceSets.itest.runtimeClasspath
         excludes = ["**/Abstract*.class"]
 
@@ -656,7 +656,7 @@ void baseSparkProject(Project target, String sparkVersion) {
       }
       target.integrationTest {
         // update test target
-        testClassesDir = target.sourceSets.itest.output.classesDir
+        testClassesDirs = target.sourceSets.itest.output.classesDirs
       }
     }
     
