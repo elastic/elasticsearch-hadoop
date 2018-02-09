@@ -32,13 +32,12 @@ import org.junit.rules.ExternalResource;
 
 public class LocalEs extends ExternalResource {
 
-    private static EsEmbeddedServer master;
+    private static EsEmbeddedCluster embeddedCluster;
 
     @Override
     protected void before() throws Throwable {
-        if (Booleans.parseBoolean(HdpBootstrap.hadoopConfig().get("test.disable.local.es"))) {
-            LogFactory.getLog(getClass()).warn(
-                    "local ES disable; assuming an external instance and bailing out...");
+        if (Booleans.parseBoolean(HdpBootstrap.hadoopConfig().get(EsEmbeddedCluster.DISABLE_LOCAL_ES))) {
+            LogFactory.getLog(getClass()).warn("local ES disable; assuming an external instance...");
             setSingleNodeTemplate();
             clearState();
             return;
@@ -46,17 +45,19 @@ public class LocalEs extends ExternalResource {
 
         String host = HdpBootstrap.hadoopConfig().get(ConfigurationOptions.ES_NODES);
         if (StringUtils.hasText(host)) {
-            LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance and bailing out...");
+            LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance...");
             setSingleNodeTemplate();
             clearState();
             return;
         }
 
-        if (master == null) {
-            System.out.println("Locating Elasticsearch Node...");
-            master = new EsEmbeddedServer();
-            System.out.println("Found Elasticsearch Node on port " + master.getIpAndPort().port);
-            System.setProperty(TestUtils.ES_LOCAL_PORT, String.valueOf(master.getIpAndPort().port));
+        if (embeddedCluster == null) {
+            System.out.println("Locating Embedded Elasticsearch Cluster...");
+            embeddedCluster = new EsEmbeddedCluster();
+            for (StringUtils.IpAndPort ipAndPort : embeddedCluster.getIpAndPort()) {
+                System.out.println("Found Elasticsearch Node on port " + ipAndPort.port);
+            }
+            System.setProperty(TestUtils.ES_LOCAL_PORT, String.valueOf(embeddedCluster.getIpAndPort().get(0).port));
 
             // force initialization of test properties
             new TestSettings();
@@ -84,13 +85,13 @@ public class LocalEs extends ExternalResource {
 
     @Override
     protected void after() {
-        if (master != null) {
+        if (embeddedCluster != null) {
             try {
                 System.clearProperty(TestUtils.ES_LOCAL_PORT);
             } catch (Exception ex) {
                 // ignore
             }
-            master = null;
+            embeddedCluster = null;
         }
     }
 }
