@@ -416,6 +416,7 @@ static String findJavaHome() {
 }
 
 project.ext.javaHome = findJavaHome()
+project.ext.runtimeJavaHome = javaHome
 
 allprojects { project ->
     task integrationTest(type: Test, dependsOn: rootProject.hadoopTestingJar) {
