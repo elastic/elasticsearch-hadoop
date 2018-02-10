@@ -27,7 +27,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.metastore.HiveMetaHook;
 import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
+import org.apache.hadoop.hive.ql.metadata.HiveStoragePredicateHandler;
+import org.apache.hadoop.hive.ql.plan.ExprNodeDesc;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
+import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -49,18 +52,16 @@ import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ClusterInfo;
 
-import static org.elasticsearch.hadoop.hive.HiveConstants.COLUMNS;
-import static org.elasticsearch.hadoop.hive.HiveConstants.COLUMNS_TYPES;
-import static org.elasticsearch.hadoop.hive.HiveConstants.TABLE_LOCATION;
+import static org.elasticsearch.hadoop.hive.HiveConstants.*;
 
 /**
  * Hive storage for writing data into an ElasticSearch index.
  *
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
- * or passed to {@link EsStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
+ * or passed to {@link #EsStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
  */
-@SuppressWarnings({ "deprecation", "rawtypes" })
-public class EsStorageHandler extends DefaultStorageHandler {
+@SuppressWarnings({"deprecation", "rawtypes"})
+public class EsStorageHandler extends DefaultStorageHandler implements HiveStoragePredicateHandler {
 
     private static Log log = LogFactory.getLog(EsStorageHandler.class);
 
@@ -135,6 +136,12 @@ public class EsStorageHandler extends DefaultStorageHandler {
         }
     }
 
+
+    // add pushdown optimizer from hive to es
+    @Override
+    public DecomposedPredicate decomposePredicate(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
+        return new EsStoragePredicateHandler().decomposePredicate(jobConf, deserializer, exprNodeDesc);
+    }
 
     @Override
     @Deprecated

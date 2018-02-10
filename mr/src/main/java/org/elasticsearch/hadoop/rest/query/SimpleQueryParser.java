@@ -87,7 +87,7 @@ public class SimpleQueryParser {
         } else  if (name.equals("lenient") || name.equals("lenient")) {
             builder.lenient(Boolean.parseBoolean(value.trim()));
         } else {
-            throw new IllegalArgumentException("Unknown " + name + " parameter; please change the URI query into a Query DLS (see 'Query String Query')");
+            throw new IllegalArgumentException("Unknown " + name + " parameter; please change the URI query into a Query DSL (see 'Query String Query')");
         }
     }
 }
