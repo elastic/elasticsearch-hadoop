@@ -198,6 +198,9 @@ public interface ConfigurationOptions {
     String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES = "es.spark.dataframe.write.null";
     String ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT = "false";
 
+    String ES_SPARK_FIND_SLICE_PARTITIONS = "es.find.slice.partitions";
+    String ES_SPARK_FIND_SLICE_PARTITIONS_DEFAULT = "true";
+
     /** Read settings */
 
     /** Field options **/
