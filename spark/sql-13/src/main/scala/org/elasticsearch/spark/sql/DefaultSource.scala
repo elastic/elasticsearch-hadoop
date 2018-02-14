@@ -100,21 +100,45 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
     relation
   }
 
-  private def params(parameters: Map[String, String]) = {
+  private[sql] def params(parameters: Map[String, String]) = {
     // '.' seems to be problematic when specifying the options
-    val params = parameters.map { case (k, v) => (k.replace('_', '.'), v)}. map { case (k, v) =>
+    val dottedParams = parameters.map { case (k, v) => (k.replace('_', '.'), v)}
+
+    // You can set the resource by using the "path", "resource", or "es.resource"/"es_resource" config keys.
+    // In rare circumstances (cough Hive+Spark integration cough) these settings can all be specified, and be set to different
+    // values. Instead of relying on the map's entry order to set the value, we will proactively retrieve the settings
+    // in the following order, falling back as needed:
+    //
+    // 1. "es.resource"
+    // 2. "resource"
+    // 3. "path"
+    //
+    // See https://github.com/elastic/elasticsearch-hadoop/issues/1082
+    val preferredResource = dottedParams.get(ConfigurationOptions.ES_RESOURCE)
+      .orElse(dottedParams.get("resource"))
+      .orElse(dottedParams.get("path"))
+
+    // Convert simple parameters into internal properties, and prefix other parameters
+    val processedParams = dottedParams.map { case (k, v) =>
       if (k.startsWith("es.")) (k, v)
-      else if (k == "path") (ConfigurationOptions.ES_RESOURCE, v)
+      else if (k == "path") (ConfigurationOptions.ES_RESOURCE, v) // This may not be the final value for this setting.
       else if (k == "pushdown") (Utils.DATA_SOURCE_PUSH_DOWN, v)
       else if (k == "strict") (Utils.DATA_SOURCE_PUSH_DOWN_STRICT, v)
       else if (k == "double.filtering") (Utils.DATA_SOURCE_KEEP_HANDLED_FILTERS, v)
       else ("es." + k, v)
     }
+
+    // Set the preferred resource if it was specified originally
+    val finalParams = preferredResource match {
+      case Some(resource) => processedParams + (ConfigurationOptions.ES_RESOURCE -> resource)
+      case None => processedParams
+    }
+
     // validate path
-    params.getOrElse(ConfigurationOptions.ES_RESOURCE_READ, 
-        params.getOrElse(ConfigurationOptions.ES_RESOURCE, throw new EsHadoopIllegalArgumentException("resource must be specified for Elasticsearch resources.")))
-        
-    params
+    finalParams.getOrElse(ConfigurationOptions.ES_RESOURCE_READ,
+      finalParams.getOrElse(ConfigurationOptions.ES_RESOURCE, throw new EsHadoopIllegalArgumentException("resource must be specified for Elasticsearch resources.")))
+
+    finalParams
   }
 }
 
@@ -122,7 +146,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   extends BaseRelation with PrunedFilteredScan with InsertableRelation
   {
 
-  @transient lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
+  @transient private[sql] lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
 
   @transient lazy val lazySchema = { SchemaUtils.discoverMapping(cfg) }
 
