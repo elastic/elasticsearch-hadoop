@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.hive.pushdown.HiveTreeBuilder;
 import org.elasticsearch.hadoop.hive.pushdown.PredicateHandler;
 import org.elasticsearch.hadoop.hive.pushdown.SargableParser;
+import org.elasticsearch.hadoop.hive.pushdown.Utils;
 import org.elasticsearch.hadoop.hive.pushdown.function.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
@@ -52,28 +53,34 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
 
     @Override
     public Pair<Node, JsonObj> optimizePushdown(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
-        if (exprNodeDesc == null)
+        if (exprNodeDesc == null) {
             return new Pair<Node, JsonObj>(null, null);
+        }
 
         // get settings
         Settings settings = HadoopSettingsManager.loadFrom(jobConf);
         boolean isES50 = SettingsUtils.isEs50(settings);
         log.info("[PushDown][isES50] : " + isES50);
 
-        // if exists es.query then pass the predicate filter pushdown
-        //todo abel.chan delete 开启
-        JsonObj groupJson = null;
+        SargableParser sargableParser = Utils.getSargableParser(settings);
+        if (sargableParser == null) {
+            return new Pair<Node, JsonObj>(null, null);
+        }
+
+        //create a hive tree builder for converting ExprNodeDesc to OpNode.
+        HiveTreeBuilder hiveTreeBuilder = new HiveTreeBuilder(sargableParser);
+
+        //create a es tree parser for converting OpNode to JsonObj.
+        EsTreeParser parser = new EsTreeParser(sargableParser, isES50);
+
+        // if exists es.query prop, then it is a necessary condition to add to the pushdown optimization plan
         if (jobConf != null && jobConf.get(ES_QUERY) != null) {
             String rawQuery = jobConf.get(ES_QUERY);
             log.info("[PushDown][Raw " + ES_QUERY + "] : " + rawQuery);
-            groupJson = new EsQueryParser(jobConf, isES50).parse(rawQuery);
+            JsonObj preFilterJson = new EsQueryParser(jobConf, isES50).parse(rawQuery);
+            //add a pre filter condition.
+            parser.setPreFilterJson(preFilterJson);
         }
-
-        SargableParser sargableParser = SargableParser.DEFAULT;
-        HiveTreeBuilder hiveTreeBuilder = new HiveTreeBuilder();
-
-        EsTreeParser parser = new EsTreeParser(sargableParser, isES50);
-        parser.setGroupJson(groupJson);
 
 
         String esMappingNameProps = jobConf.get(HiveConstants.MAPPING_NAMES);
@@ -108,11 +115,4 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
         return new Pair<Node, JsonObj>(null, null);
     }
 
-    @Override
-    public void pushdown2Job(JsonObj ppd, JobConf job) {
-        if (ppd != null) {
-            String query = ppd.toString();
-            job.set("es.query", query);
-        }
-    }
 }

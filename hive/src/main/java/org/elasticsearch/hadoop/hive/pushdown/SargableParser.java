@@ -21,15 +21,14 @@ package org.elasticsearch.hadoop.hive.pushdown;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import org.apache.hadoop.hive.ql.udf.UDFRegExp;
+import org.elasticsearch.hadoop.cfg.Settings;
 
 import java.util.*;
 
 /**
- * Sargable Parser
+ * Sargable Parser class
  */
 public class SargableParser {
-
-    public static final SargableParser DEFAULT = new SargableParser();
 
     /**
      * All sargable operators

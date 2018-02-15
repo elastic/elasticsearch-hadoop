@@ -39,11 +39,9 @@ import java.util.List;
  */
 public abstract class PredicateHandler<T> implements HiveStoragePredicateHandler {
 
-    public static Log log = LogFactory.getLog(PredicateHandler.class);
+    protected static final Log log = LogFactory.getLog(PredicateHandler.class);
 
     public abstract Pair<Node, T> optimizePushdown(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc);
-
-    public abstract void pushdown2Job(T ppd, JobConf job);
 
     public ExprNodeGenericFuncDesc translate2ExprNodeGenericFuncDesc(ExprNodeDesc desc) {
         if (desc instanceof ExprNodeGenericFuncDesc)
@@ -63,8 +61,6 @@ public abstract class PredicateHandler<T> implements HiveStoragePredicateHandler
     public DecomposedPredicate decomposePredicate(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
         if (exprNodeDesc == null)
             return null;
-
-        //
         Pair<Node, T> pair = this.optimizePushdown(jobConf, deserializer, exprNodeDesc);
 
         OpNode root = (OpNode) pair.getFirst();
@@ -88,13 +84,19 @@ public abstract class PredicateHandler<T> implements HiveStoragePredicateHandler
             return decomposedPredicate;
     }
 
-    public ExprNodeGenericFuncDesc findResidual(OpNode now) {
-        if (now.getExprNode().getGenericUDF().getClass().equals(GenericUDFOPAnd.class)) {
+    /**
+     * recursively traverses all nodes
+     *
+     * @param node
+     * @return
+     */
+    public ExprNodeGenericFuncDesc findResidual(OpNode node) {
+        if (node.getExprNode().getGenericUDF().getClass().equals(GenericUDFOPAnd.class)) {
             List<ExprNodeDesc> childrenExprs = new ArrayList<ExprNodeDesc>();
             List<Node> childrenNodes = new ArrayList<Node>();
 
-            if (now.getChildren() != null && !now.getChildren().isEmpty()) {
-                for (Node child : now.getChildren()) {
+            if (node.getChildren() != null && !node.getChildren().isEmpty()) {
+                for (Node child : node.getChildren()) {
                     if (child instanceof OpNode) {
                         if (!((OpNode) child).isAllOptimizable()) {
                             childrenExprs.add(child.getExprNode());
@@ -107,11 +109,11 @@ public abstract class PredicateHandler<T> implements HiveStoragePredicateHandler
             if (childrenExprs.isEmpty()) {
                 return null;
             } else if (childrenExprs.size() == 2) {
-                return now.getExprNode();
+                return node.getExprNode();
             } else {
                 return findResidual((OpNode) childrenNodes.get(0));
             }
         } else
-            return now.getExprNode();
+            return node.getExprNode();
     }
 }

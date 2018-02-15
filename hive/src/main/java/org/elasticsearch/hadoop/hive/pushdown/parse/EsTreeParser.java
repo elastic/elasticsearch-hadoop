@@ -32,7 +32,7 @@ import org.elasticsearch.hadoop.hive.pushdown.util.JsonObjUtil;
 import java.util.*;
 
 public class EsTreeParser extends TreeParser<JsonObj> {
-    JsonObj groupJson = null;
+    JsonObj preFilterJson = null;
     List<JsonObj> queries = new LinkedList<JsonObj>();
     final boolean isES50;
 
@@ -41,8 +41,13 @@ public class EsTreeParser extends TreeParser<JsonObj> {
         this.isES50 = isES50;
     }
 
-    public void setGroupJson(JsonObj groupJson) {
-        this.groupJson = groupJson;
+    /**
+     * user-defined filter conditions, from the es.query property when creating the table
+     *
+     * @param preFilterJson
+     */
+    public void setPreFilterJson(JsonObj preFilterJson) {
+        this.preFilterJson = preFilterJson;
     }
 
     private boolean isStrictType(FieldNode node) {
@@ -56,8 +61,8 @@ public class EsTreeParser extends TreeParser<JsonObj> {
         if (isES50) {
             BoolJson wrapper = new BoolJson();
 
-            if (groupJson != null && !groupJson.isEmpty())
-                wrapper.filter(groupJson);
+            if (preFilterJson != null && !preFilterJson.isEmpty())
+                wrapper.filter(preFilterJson);
             if (pushdown != null && !pushdown.isEmpty())
                 wrapper.filter(pushdown);
 
@@ -80,8 +85,8 @@ public class EsTreeParser extends TreeParser<JsonObj> {
                 return null;
         } else {
             AndJson andJson = new AndJson();
-            if (groupJson != null && !groupJson.isEmpty())
-                andJson.filters(groupJson);
+            if (preFilterJson != null && !preFilterJson.isEmpty())
+                andJson.filters(preFilterJson);
             if (pushdown != null && !pushdown.isEmpty())
                 andJson.filters(pushdown);
 

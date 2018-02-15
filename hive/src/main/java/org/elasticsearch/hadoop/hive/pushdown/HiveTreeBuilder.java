@@ -50,10 +50,6 @@ public class HiveTreeBuilder {
         this.sargableParser = sargableParser;
     }
 
-    public HiveTreeBuilder() {
-        sargableParser = SargableParser.DEFAULT;
-    }
-
     public void setMappingNames(Map<String, String> mappingNames) {
         this.mappingNames = mappingNames;
     }
@@ -172,16 +168,5 @@ public class HiveTreeBuilder {
             ExprNodeGenericFuncDesc genericFuncDesc = (ExprNodeGenericFuncDesc) desc;
             return genericFuncDesc.getGenericUDF().getUdfName();
         }
-    }
-
-    /**
-     * @return
-     */
-    protected String findUdfOp(String udfName) {
-        String op = sargableParser.sargableOpUDFClassMapping.get(udfName);
-        if (op == null)
-            return udfName;
-        else
-            return op;
     }
 }
