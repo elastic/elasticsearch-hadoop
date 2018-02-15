@@ -18,102 +18,55 @@
  */
 package org.elasticsearch.hadoop.hive.pushdown;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import org.apache.hadoop.hive.ql.udf.UDFRegExp;
-import org.elasticsearch.hadoop.cfg.Settings;
-
-import java.util.*;
-
 /**
  * Sargable Parser class
  */
-public class SargableParser {
+public interface SargableParser {
 
     /**
-     * All sargable operators
+     * is range operator
+     *
+     * @param op
+     * @return
      */
-    public Set<String> sargableOp = new HashSet<String>(Arrays.asList(
-            "=", "<", ">", "<=", ">=", "between", "is null", "is not null"
-    ));
+    boolean isRangeOp(String op);
 
     /**
-     * Semantic conversion from hive udf to es
+     * is sarageble operator
+     *
+     * @param op
+     * @return
      */
-    public BiMap<String, String> sargableOpUDFClassMapping = HashBiMap.create();
-
-    public Set<String> rangeOp = new HashSet<String>(Arrays.asList(
-            "<", ">", "<=", ">=", "between"
-    ));
-    public Map<String, String> reverseOps = new HashMap<String, String>();
+    boolean isSargableOp(String op);
 
     /**
-     * Semantic conversion from hive to es
+     * @param op
+     * @return
      */
-    public Map<String, String> synonymOps = new HashMap<String, String>();
+    boolean isLogicOp(String op);
 
-    public Set<String> logicOp = new HashSet<String>(Arrays.asList(
-            "and", "or", "not"
-    ));
+    /**
+     * reverse operator to become a new operator
+     *
+     * @param op
+     * @return
+     */
+    String reverseOp(String op);
 
-    protected SargableParser() {
-        init();
-    }
+    /**
+     * hive udf convert to es operator
+     *
+     * @param op
+     * @return
+     */
+    String udfOp(String op);
 
-    public void init() {
-        reverseOps.put(">", "<");
-        reverseOps.put(">=", "<=");
-        reverseOps.put("<", ">");
-        reverseOps.put("<=", ">=");
-        reverseOps.put("=", "!=");
-        reverseOps.put("!=", "=");
+    /**
+     * tranform synonym operator
+     *
+     * @param op
+     * @return
+     */
+    String synonymOp(String op);
 
-        synonymOps.put("==", "=");
-        synonymOps.put("<>", "!=");
-        synonymOps.put("!", "not");
-        synonymOps.put("&&", "and");
-        synonymOps.put("||", "or");
-        synonymOps.put("rlike", "regex");
-
-        sargableOpUDFClassMapping.put("GenericUDFOPAnd", "and");
-        sargableOpUDFClassMapping.put("GenericUDFOPOr", "or");
-        sargableOpUDFClassMapping.put("GenericUDFOPNot", "not");
-        sargableOpUDFClassMapping.put("GenericUDFOPEqual", "=");
-        sargableOpUDFClassMapping.put("GenericUDFOPEqualOrGreaterThan", ">=");
-        sargableOpUDFClassMapping.put("GenericUDFOPEqualOrLessThan", "<=");
-        sargableOpUDFClassMapping.put("GenericUDFOPGreaterThan", ">");
-        sargableOpUDFClassMapping.put("GenericUDFOPLessThan", "<");
-        sargableOpUDFClassMapping.put("GenericUDFOPNotEqual", "!=");
-        sargableOpUDFClassMapping.put("GenericUDFBetween", "between");
-        sargableOpUDFClassMapping.put("GenericUDFOPNull", "is null");
-        sargableOpUDFClassMapping.put("GenericUDFOPNotNull", "is not null");
-        sargableOpUDFClassMapping.put("GenericUDFIn", "in");
-        sargableOpUDFClassMapping.put(UDFRegExp.class.getSimpleName(), "regex");
-    }
-
-    public boolean isRangeOp(String op) {
-        return rangeOp.contains(op);
-    }
-
-    public boolean isSargableOp(String op) {
-        return op != null && (sargableOp.contains(op) || sargableOp.contains(sargableOpUDFClassMapping.get(op))) && !isLogicOp(op);
-    }
-
-    public boolean isLogicOp(String op) {
-        return op != null && (logicOp.contains(op) || logicOp.contains(sargableOpUDFClassMapping.get(op)));
-    }
-
-    public String reverseOp(String op) {
-        if (op == null) return null;
-        String rop = reverseOps.get(op);
-        return rop;
-    }
-
-    public String cleanSynonymOp(String op) {
-        String sop = synonymOps.get(op);
-        if (sop == null)
-            return op.toLowerCase();
-        else
-            return sop;
-    }
 }

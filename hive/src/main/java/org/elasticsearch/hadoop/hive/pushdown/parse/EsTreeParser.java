@@ -162,7 +162,7 @@ public class EsTreeParser extends TreeParser<JsonObj> {
                     }
                 }
             }
-        } else if (sargableParser.rangeOp.contains(op)) {
+        } else if (sargableParser.isRangeOp(op)) {
             RangeJson rangeJson = new RangeJson();
             if ("between".equals(op)) {
                 Pair<String, List<Object>> pair = simpleExtractFieldNVals(opNode, "false");

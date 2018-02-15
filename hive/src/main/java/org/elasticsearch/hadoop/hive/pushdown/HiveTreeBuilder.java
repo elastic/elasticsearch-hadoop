@@ -154,11 +154,11 @@ public class HiveTreeBuilder {
 
         String[] arr = udfName.split("\\.");
         udfName = arr[arr.length - 1];
-        String op = sargableParser.sargableOpUDFClassMapping.get(udfName);
+        String op = sargableParser.udfOp(udfName);
         if (op == null)
             return udfName;
         else
-            return sargableParser.cleanSynonymOp(op);
+            return sargableParser.synonymOp(op);
     }
 
     public String getGenericUDFNameFromExprDesc(ExprNodeDesc desc) {

@@ -54,7 +54,7 @@ public class Utils {
             String sargbleClass = cfg.getProperty(DATA_SOURCE_SARGABLE_CLASS_PATH);
 
             if (sargbleClass == null) {
-                sargbleClass = SargableParser.class.getCanonicalName();
+                sargbleClass = EsSargableParser.class.getCanonicalName();
             }
             Class<?> aClass = Class.forName(sargbleClass);
 
