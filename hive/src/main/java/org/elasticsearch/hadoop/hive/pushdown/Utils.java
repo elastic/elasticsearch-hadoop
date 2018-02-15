@@ -45,7 +45,7 @@ public class Utils {
 
     public static boolean isPushDown(Settings cfg) {
         boolean isPushdown = Booleans.parseBoolean(cfg.getProperty(DATA_SOURCE_PUSH_DOWN), true);
-        log.info("[Pushdown] " + DATA_SOURCE_PUSH_DOWN + ":" + isPushdown);
+        log.info("[Pushdown] " + DATA_SOURCE_PUSH_DOWN + " : " + isPushdown);
         return isPushdown;
     }
 
@@ -58,7 +58,7 @@ public class Utils {
             }
             Class<?> aClass = Class.forName(sargbleClass);
 
-            log.info("[Pushdown][CLASSPATH] " + DATA_SOURCE_SARGABLE_CLASS_PATH + ":" + sargbleClass);
+            log.info("[Pushdown][CLASSPATH] " + DATA_SOURCE_SARGABLE_CLASS_PATH + " : " + sargbleClass);
             return (SargableParser) aClass.newInstance();
         } catch (Exception e) {
             log.info("[Pushdown] " + e.getMessage(), e);
@@ -74,7 +74,7 @@ public class Utils {
                 pushdownClass = EsStoragePredicateHandler.class.getCanonicalName();
             }
             Class<?> aClass = Class.forName(pushdownClass);
-            log.info("[Pushdown][CLASSPATH] " + DATA_SOURCE_PUSH_DOWN_CLASS + ":" + pushdownClass);
+            log.info("[Pushdown][CLASSPATH] " + DATA_SOURCE_PUSH_DOWN_CLASS + " : " + pushdownClass);
             return (PredicateHandler) aClass.newInstance();
         } catch (Exception e) {
             log.info("[Pushdown] " + e.getMessage(), e);

@@ -45,7 +45,7 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY;
 
 
 /**
- * EsStoragePredicateHandler is an entrance class,for implementing pushdown optimization.
+ * EsStoragePredicateHandler is an entrance class for implementing pushdown optimization.
  */
 public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
 
@@ -75,14 +75,14 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
 
         // if exists es.query prop, then it is a necessary condition to add to the pushdown optimization plan
         if (jobConf != null && jobConf.get(ES_QUERY) != null) {
-            String rawQuery = jobConf.get(ES_QUERY);
-            log.info("[PushDown][Raw " + ES_QUERY + "] : " + rawQuery);
-            JsonObj preFilterJson = new EsQueryParser(jobConf, isES50).parse(rawQuery);
+            String preFilterQuery = jobConf.get(ES_QUERY);
+            log.info("[PushDown][Pre Filter " + ES_QUERY + "] : " + preFilterQuery);
+            JsonObj preFilterJson = new EsQueryParser(jobConf, isES50).parse(preFilterQuery);
             //add a pre filter condition.
             parser.setPreFilterJson(preFilterJson);
         }
 
-
+        // getting hive to es alias mapping
         String esMappingNameProps = jobConf.get(HiveConstants.MAPPING_NAMES);
         if (StringUtils.isNotEmpty(esMappingNameProps)) {
             //set es mapping name
@@ -107,7 +107,7 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
         if (root != null) {
             JsonObj esQuery = parser.parse(root);
             if (esQuery != null) {
-                log.info("[PushDown][Final " + ES_QUERY + "] : " + esQuery.toQuery());
+                log.info("[PushDown][Final Filter " + ES_QUERY + "] : " + esQuery.toQuery());
             }
             return new Pair<Node, JsonObj>(root, esQuery);
         }
