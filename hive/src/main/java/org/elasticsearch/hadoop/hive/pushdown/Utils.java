@@ -39,7 +39,7 @@ public class Utils {
     static String DATA_SOURCE_PUSH_DOWN_CLASS = "es.internal.hive.pushdown.class";
 
     /**
-     * sargable parser class path, default org.elasticsearch.hadoop.hive.pushdown.SargableParser
+     * sargable parser class path, default org.elasticsearch.hadoop.hive.EsStoragePredicateHandler
      */
     static String DATA_SOURCE_SARGABLE_CLASS_PATH = "es.internal.hive.sargable.class";
 
