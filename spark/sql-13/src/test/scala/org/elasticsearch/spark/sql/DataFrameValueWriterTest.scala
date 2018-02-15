@@ -46,35 +46,35 @@ class DataFrameValueWriterTest {
   }
 
   @Test
-  def testSimpleRow() {
+  def testSimpleRow(): Unit = {
     val schema = StructType(Seq(StructField("a", StringType)))
     val row = Row("b")
     assertEquals("""{"a":"b"}""", serialize(row, schema))
   }
 
   @Test
-  def testPrimitiveArray() {
+  def testPrimitiveArray(): Unit = {
     val schema = StructType(Seq(StructField("a", ArrayType(IntegerType))))
     val row = Row(Array(1,2,3))
     assertEquals("""{"a":[1,2,3]}""", serialize(row, schema))
   }
 
   @Test
-  def testPrimitiveSeq() {
+  def testPrimitiveSeq(): Unit = {
     val schema = StructType(Seq(StructField("a", ArrayType(IntegerType))))
     val row = Row(Seq(1,2,3))
     assertEquals("""{"a":[1,2,3]}""", serialize(row, schema))
   }
 
   @Test
-  def testMapInArray() {
+  def testMapInArray(): Unit = {
     val schema = StructType(Seq(StructField("s", ArrayType(MapType(StringType, StringType)))))
     val row = Row(Array(Map("a" -> "b")))
     assertEquals("""{"s":[{"a":"b"}]}""", serialize(row, schema))
   }
 
   @Test
-  def testMapInSeq() {
+  def testMapInSeq(): Unit = {
     val schema = StructType(Seq(StructField("s", ArrayType(MapType(StringType, StringType)))))
     val row = Row(Seq(Map("a" -> "b")))
     assertEquals("""{"s":[{"a":"b"}]}""", serialize(row, schema))
@@ -82,7 +82,7 @@ class DataFrameValueWriterTest {
 
   @Test
   @Ignore("SparkSQL uses encoders internally to convert a case class into a Row object. We wont ever see this case.")
-  def testCaseClass(){
+  def testCaseClass(): Unit = {
     val schema = StructType(Seq(StructField("a", ScalaReflection.schemaFor[SimpleCaseClass].dataType.asInstanceOf[StructType])))
     val row = Row(SimpleCaseClass("foo"))
     assertEquals("""{"a":{"s":"foo"}}""", serialize(row, schema))

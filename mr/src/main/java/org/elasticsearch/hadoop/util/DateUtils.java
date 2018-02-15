@@ -39,7 +39,7 @@ public abstract class DateUtils {
     private static abstract class Jdk6 {
         // Parses ISO date through the JDK XML bind class. However the spec doesn't support all ISO8601 formats which this class tries to address
         // in particular Time offsets from UTC are available in 3 forms:
-        // The offset from UTC is appended to the time in the same way that 'Z' was above, in the form ±[hh]:[mm], ±[hh][mm], or ±[hh].
+        // The offset from UTC is appended to the time in the same way that 'Z' was above, in the form [hh]:[mm], [hh][mm], or [hh].
         //
         // XML Bind supports only the first one.
         public static Calendar parseDate(String value) {

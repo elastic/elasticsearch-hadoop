@@ -152,7 +152,7 @@ class SchemaUtilsTest {
   }
 
   @Test
-  def testConvertToStructWithJoinField() {
+  def testConvertToStructWithJoinField(): Unit = {
     val mapping =
       """{
         |  "join": {

@@ -1,18 +1,17 @@
 package org.elasticsearch.hadoop.gradle.fixture
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
+import org.elasticsearch.gradle.test.ClusterConfiguration
+import org.elasticsearch.gradle.test.ClusterFormationTasks
+import org.elasticsearch.gradle.test.NodeInfo
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.apache.tools.ant.DefaultLogger
-import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.Task
-import org.gradle.api.logging.Logger
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Delete
-import org.gradle.api.tasks.Exec
+import org.gradle.api.execution.TaskExecutionAdapter
+import org.gradle.api.tasks.TaskState
 
-import java.nio.file.Paths
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.util.stream.Stream
 
 /**
  * Plugin that adds the ability to stand up an Elasticsearch cluster for tests.
@@ -28,22 +27,14 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        project.configurations {
-            esfixture
-        }
-
         def version = project.hasProperty("es.version") ? project.getProperty("es.version") : project.elasticsearchVersion
-
-        project.dependencies {
-            esfixture group: 'org.elasticsearch.distribution.zip', name: 'elasticsearch', version: version, ext: "zip"
-        }
 
         // Optionally allow user to disable the fixture
         def useFixture = Boolean.parseBoolean(project.hasProperty("tests.fixture.es.enable") ? project.getProperty("tests.fixture.es.enable") : "true")
 
         if (useFixture) {
             // Depends on project already containing an "integrationTest"
-            // task, as well as javaHome configured
+            // task, as well as javaHome+runtimeJavaHome configured
             createClusterFor(project.tasks.getByName("integrationTest"), project, version)
         } else {
             project.tasks.getByName("integrationTest") {
@@ -52,387 +43,120 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         }
     }
 
-    def createClusterFor(Task integrationTest, Project project, String version) {
-
+    private static def createClusterFor(Task integrationTest, Project project, String version) {
         // Version settings
         def majorVersion = version.tokenize(".").get(0).toInteger()
 
-        // In rare occasions ES nodes will refuse to close. Try to keep
-        // Elasticsearch from forming clusters with these broken processes.
-        def uniqueRunId = UUID.randomUUID().toString()
+        // Init task can be used to prepare cluster
+        Task clusterInit = project.tasks.create(name: "esCluster#init", dependsOn: project.testClasses)
+        integrationTest.dependsOn(clusterInit)
 
-        // General settings
-        def clusterName = "elasticsearch-fixture"
-        def nodeName = "node-1"
-        def numNodes = 1
-        def useMinimumMasterNodes = true
+        ClusterConfiguration clusterConfig = project.extensions.create("esCluster", ClusterConfiguration.class, project)
 
-        // Executable information
-        def executable = Os.isFamily(Os.FAMILY_WINDOWS) ? "cmd" : "sh"
-        def buffer = new ByteArrayOutputStream()
+        // default settings:
+        clusterConfig.clusterName = "elasticsearch-fixture"
+        clusterConfig.numNodes = 1
+        clusterConfig.httpPort = 9500
+        clusterConfig.transportPort = 9600
+        clusterConfig.distribution = "zip" // Full Distribution
 
-        // Elasticsearch settings
-        def esEnvVariables = [ 'JAVA_HOME' : project.javaHome ]
-        def esArgs = []
-
-        // Directories & Files (indented to illustrate layout)
-        def baseDir = new File(project.rootProject.buildDir, "$clusterName-$version")
-        def pidFile = new File(baseDir, "es.pid")
-        def homeDir = new File(baseDir, "$nodeName")
-        def confDir = new File(homeDir, "config")
-        def scriptsDir = new File(confDir, 'scripts')
-        def configFile = new File(confDir, 'elasticsearch.yml')
-        def logsDir = new File(homeDir, 'logs')
-        def httpPortsFile = new File(logsDir, 'http.ports')
-        def transportPortsFile = new File(logsDir, 'transport.ports')
-        def cwd = new File(baseDir, "cwd")
-        def startLog = new File(cwd, 'run.log')
-        def failedMarker = new File(cwd, 'run.failed')
-
-
-        // Clean out the working directory as well as any installed nodes
-        Task cleanESDir = project.tasks.create(name: 'cleanESDirectory', type: Delete) {
-            delete homeDir
-            delete cwd
-            doLast {
-                cwd.mkdirs()
-            }
+        // Set BWC if not current ES version:
+        if (version != project.elasticsearchVersion) {
+            clusterConfig.bwcVersion = version
+            clusterConfig.numBwcNodes = 1
         }
-
-        // Check to make sure that any previous nodes aren't still around
-        // Makes sure that if the pidFile exists it's actually tied to an ES Node
-        Task checkPrevious = project.tasks.create(name: "checkPrevious", type: Exec, dependsOn: cleanESDir) {
-            onlyIf { pidFile.exists() }
-            // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString
-            ext.pid = "${ -> pidFile.getText('UTF-8').trim()}"
-            File jps
-            def jpsCommand = Os.isFamily(Os.FAMILY_WINDOWS) ? "jps.exe" : "jps"
-            jps = Paths.get(project.javaHome.toString(), "bin/" + jpsCommand).toFile()
-            if (!jps.exists()) {
-                throw new GradleException("jps executable not found; ensure that you're running Gradle with the JDK rather than the JRE")
-            }
-            commandLine jps, '-l'
-            standardOutput = new ByteArrayOutputStream()
-            doLast {
-                String out = standardOutput.toString()
-                if (out.contains("${pid} org.elasticsearch.bootstrap.Elasticsearch") == false) {
-                    logger.error('jps -l')
-                    logger.error(out)
-                    logger.error("pid file: ${pidFile}")
-                    logger.error("pid: ${pid}")
-                    throw new GradleException("jps -l did not report any process with org.elasticsearch.bootstrap.Elasticsearch\n" +
-                            "Did you run gradle clean? Maybe an old pid file is still lying around.")
-                } else {
-                    logger.info(out)
-                }
-            }
-        }
-
-        // Stop any previously running nodes
-        Task stopPrevious = project.tasks.create(name: "stopPrevious", type: Exec, dependsOn: checkPrevious) {
-            onlyIf { pidFile.exists() }
-            ext.pid = "${ -> pidFile.getText('UTF-8').trim()}"
-            doFirst {
-                logger.info("Shutting down external node with pid ${pid}")
-            }
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                setExecutable('Taskkill')
-                args '/PID', pid, '/F'
-            } else {
-                setExecutable('kill')
-                args '-9', pid
-            }
-            doLast {
-                project.delete(pidFile)
-            }
-        }
-
-        // Extract the contents of the Elasticsearch zip file to the node's directory
-        Task extractES = project.tasks.create(name: "extractES", type: Copy, dependsOn: stopPrevious) {
-            dependsOn project.configurations.esfixture
-            from {
-                project.zipTree(project.configurations.esfixture.singleFile)
-            }
-            into baseDir
-            doLast {
-                new File(baseDir, "elasticsearch-$version").renameTo(homeDir)
-            }
-        }
-
-        // Write the contents of the node's configuration file
-        Map esConfig = [
-                'cluster.name'                 : "$clusterName-$uniqueRunId",
-                'node.name'                    : "node-1",
-                'pidfile'                      : pidFile.toString(),
-                'path.home'                    : homeDir.toString(),
-                "path.data"                    : new File(homeDir, "data").toString(),
-                "http.port"                    : "9500-9599",
-                "transport.tcp.port"           : "9600-9699",
-                "node.ingest"                  : "true"
-        ]
 
         // Version specific configurations
         if (majorVersion <= 2) {
-            esConfig.put("transport.type","local")
-            esConfig.put("http.type","netty3")
-            esConfig.put("script.inline", "true")
-            esConfig.put("script.indexed", "true")
+            clusterConfig.setting("transport.type","local")
+            clusterConfig.setting("http.type","netty3")
+            clusterConfig.setting("script.inline", "true")
+            clusterConfig.setting("script.indexed", "true")
         } else if (majorVersion == 5) {
-            esConfig.put("transport.type","netty4")
-            esConfig.put("http.type","netty4")
-            esConfig.put("script.inline", "true")
+            clusterConfig.setting("transport.type","netty4")
+            clusterConfig.setting("http.type","netty4")
+            clusterConfig.setting("script.inline", "true")
+            clusterConfig.setting("node.ingest", "true")
         } else if (majorVersion >= 6) {
-            esConfig.put("transport.type","netty4")
-            esConfig.put("http.type","netty4")
+            clusterConfig.setting("transport.type","netty4")
+            clusterConfig.setting("http.type","netty4")
+            clusterConfig.setting("node.ingest", "true")
         }
 
-        // we set min master nodes to the total number of nodes in the cluster and
-        // basically skip initial state recovery to allow the cluster to form using a realistic master election
-        if (useMinimumMasterNodes && numNodes > 1) {
-            esConfig['discovery.zen.minimum_master_nodes'] = "$numNodes"
-            esConfig['discovery.initial_state_timeout'] = '0s' // don't wait for state.. just start up quickly
+        // Also write a script to a file for use in tests
+        File scriptsDir = new File(project.buildDir, 'scripts')
+        scriptsDir.mkdirs()
+        File script
+        if (majorVersion <= 2) {
+            scriptsDir.mkdirs()
+            script = new File(scriptsDir, "increment.groovy").setText("ctx._source.counter+=1", 'UTF-8')
+        } else if (majorVersion == 5) {
+            scriptsDir.mkdirs()
+            script = new File(scriptsDir, "increment.painless").setText("ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1", 'UTF-8')
         }
-        esConfig['node.max_local_storage_nodes'] = "$numNodes"
-        // Default the watermarks to absurdly low to prevent the tests from failing on nodes without enough disk space
-        esConfig['cluster.routing.allocation.disk.watermark.low'] = '1b'
-        esConfig['cluster.routing.allocation.disk.watermark.high'] = '1b'
-        if (majorVersion >= 6) {
-            esConfig['cluster.routing.allocation.disk.watermark.flood_stage'] = '1b'
-        }
+        clusterConfig.extraConfigFile("script", script)
 
-        Task writeConfig = project.tasks.create(name: "writeConfig", type: DefaultTask, dependsOn: extractES)
-        writeConfig.doFirst {
-            logger.info("Configuring ${configFile}")
-            configFile.setText(esConfig.collect { key, value -> "${key}: ${value}" }.join('\n'), 'UTF-8')
-
-            // Also write a script to a file for use in tests
-            if (majorVersion <= 2) {
-                scriptsDir.mkdirs()
-                new File(scriptsDir, "increment.groovy").setText("ctx._source.counter+=1", 'UTF-8')
-            } else if (majorVersion == 5) {
-                scriptsDir.mkdirs()
-                new File(scriptsDir, "increment.painless").setText("ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1", 'UTF-8')
-            }
-        }
-
-        // Start the node up
-        // this closure is converted into ant nodes by groovy's AntBuilder
-        Closure antRunner = { AntBuilder ant ->
-            ant.exec(executable: executable, spawn: true, dir: cwd, taskname: 'elasticsearch') {
-                esEnvVariables.each { key, value -> env(key: key, value: value) }
-                esArgs.each { arg(value: it) }
-            }
-        }
-
-        // this closure is the actual code to run elasticsearch
-        Task start = project.tasks.create(name: "startES", type: DefaultTask, dependsOn: writeConfig)
-        start.doLast {
-            // Wrap elasticsearch start command inside another shell script which redirects
-            // output of the real script to keep the streams open
-            def wrapperScript
-            def esScript
-
-            // output script data to a file
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                executable = 'cmd'
-                esArgs.add('/C')
-                esArgs.add('"') // quote the entire command
-                wrapperScript = new File(cwd, "run.bat")
-                esScript = new File(homeDir, 'bin/elasticsearch.bat')
-            } else {
-                executable = 'sh'
-                wrapperScript = new File(cwd, "run")
-                esScript = new File(homeDir, 'bin/elasticsearch')
-            }
-            esArgs.add("${wrapperScript}")
-
-            if (majorVersion < 5) {
-                esArgs.addAll("--node.portsfile=true")
-            } else {
-                esArgs.addAll("-E", "node.portsfile=true")
+        project.gradle.projectsEvaluated {
+            List<NodeInfo> nodes = ClusterFormationTasks.setup(project, "esCluster", integrationTest, clusterConfig)
+            project.tasks.getByPath("esCluster#wait").doLast {
+                integrationTest.systemProperty('tests.rest.cluster', "${nodes.collect{it.httpUri()}.join(",")}")
             }
 
-            String argsPasser = '"$@"'
-            String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                argsPasser = '%*'
-                exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
-            }
-            wrapperScript.setText("\"${esScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
-
-            // Debugging multi line string to be logged explaining the node's information
-            String esCommandString = "\nNode 1 configuration:\n"
-            esCommandString += "|-----------------------------------------\n"
-            esCommandString += "|  cwd: ${cwd}\n"
-            esCommandString += "|  command: ${executable} ${esArgs.join(' ')}\n"
-            esCommandString += '|  environment:\n'
-            esEnvVariables.each { k, v -> esCommandString += "|    ${k}: ${v}\n" }
-
-            esCommandString += "|\n|  [${wrapperScript.name}]\n"
-            wrapperScript.eachLine('UTF-8', { line -> esCommandString += "    ${line}\n"})
-
-            esCommandString += '|\n|  [elasticsearch.yml]\n'
-            configFile.eachLine('UTF-8', { line -> esCommandString += "|    ${line}\n" })
-            esCommandString += "|-----------------------------------------"
-            esCommandString.eachLine { line -> logger.info(line) }
-
-
-            if (logger.isInfoEnabled()) {
-                runAntCommand(project, antRunner, System.out, System.err)
-            } else {
-                // buffer the output, we may not need to print it
-                PrintStream captureStream = new PrintStream(buffer, true, "UTF-8")
-                runAntCommand(project, antRunner, captureStream, captureStream)
-            }
-        }
-
-        // Task to stop the node
-        Task stop = project.tasks.create(name: "stopES", type: Exec) {
-            onlyIf { pidFile.exists() }
-            // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString
-            ext.pid = "${ -> pidFile.getText('UTF-8').trim()}"
-            doFirst {
-                logger.info("Shutting down external node with pid ${pid}")
-            }
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                setExecutable('Taskkill')
-                args '/PID', pid, '/F'
-            } else {
-                setExecutable('kill')
-                args '-9', pid
-            }
-            doLast {
-                project.delete(pidFile)
-            }
-        }
-
-        // Task to wait for the node to be available
-        Task wait = project.tasks.create(name: 'waitForCluster', dependsOn: start)
-        wait.doLast {
-            // Make sure to put "ant." in front of the conditions. Without it, in some weird
-            // cases it uses calls on the Project object instead of the AntBuilder object.
-            project.ant.waitfor(maxwait: '60', maxwaitunit: 'second', checkevery: '500', checkeveryunit: 'millisecond', timeoutproperty: "failed${name}") {
-                ant.or {
-                    ant.resourceexists {
-                        ant.file(file: failedMarker.toString())
-                    }
-                    ant.and {
-                        ant.resourceexists {
-                            ant.file(file: pidFile.toString())
-                        }
-                        ant.resourceexists {
-                            ant.file(file: httpPortsFile.toString())
-                        }
-                        ant.resourceexists {
-                            ant.file(file: transportPortsFile.toString())
+            // dump errors and warnings from cluster log on failure
+            TaskExecutionAdapter logDumpListener = new TaskExecutionAdapter() {
+                @Override
+                void afterExecute(Task task, TaskState state) {
+                    if (state.failure != null) {
+                        for (NodeInfo nodeInfo : nodes) {
+                            printLogExcerpt(nodeInfo)
                         }
                     }
                 }
             }
-
-            boolean anyNodeFailed = failedMarker.exists()
-            if (ant.properties.containsKey("failed${name}".toString()) || anyNodeFailed) {
-                def failureInfo = new FailureInfo(failedMarker, pidFile, httpPortsFile, transportPortsFile, startLog, buffer)
-                waitFailed(project, failureInfo, logger, 'Failed to start elasticsearch')
+            integrationTest.doFirst {
+                project.gradle.addListener(logDumpListener)
             }
-
-            Closure waitChecker = { AntBuilder ant ->
-                File tmpFile = new File(cwd, 'wait.success')
-                String waitUrl = "http://${httpPortsFile.readLines("UTF-8").get(0)}/_cluster/health?wait_for_status=yellow"
-                ant.echo(message: "==> [${new Date()}] checking health: ${waitUrl}",
-                        level: 'info')
-                // checking here for wait_for_nodes to be >= the number of nodes because its possible
-                // this cluster is attempting to connect to nodes created by another task (same cluster name),
-                // so there will be more nodes in that case in the cluster state
-                ant.get(src: waitUrl,
-                        dest: tmpFile.toString(),
-                        ignoreerrors: true, // do not fail on error, so logging buffers can be flushed by the wait task
-                        retries: 10)
-                return tmpFile.exists()
+            integrationTest.doLast {
+                project.gradle.removeListener(logDumpListener)
             }
-
-            boolean success
-            if (logger.isInfoEnabled()) {
-                success = runAntCommand(project, waitChecker, System.out, System.err)
-            } else {
-                PrintStream captureStream = new PrintStream(buffer, true, "UTF-8")
-                success = runAntCommand(project, waitChecker, captureStream, captureStream)
-            }
-
-            if (success == false) {
-                def failureInfo = new FailureInfo(failedMarker, pidFile, httpPortsFile, transportPortsFile, startLog, buffer)
-                waitFailed(project, failureInfo, logger, 'Elasticsearch cluster failed to pass wait condition')
-            }
-        }
-
-        // Configure the integration test with the ports file, and
-        // surround it with the es fixture.
-        integrationTest.configure {
-            // Configure the integration tests with a system property describing where the ports file is
-            systemProperty 'es.test.ports.file.location', httpPortsFile.toString()
-        }
-        integrationTest.dependsOn(wait)
-        integrationTest.finalizedBy(stop)
-    }
-
-    static Object runAntCommand(Project project, Closure command, PrintStream outputStream, PrintStream errorStream) {
-        DefaultLogger listener = new DefaultLogger(
-                errorPrintStream: errorStream,
-                outputPrintStream: outputStream,
-                messageOutputLevel: org.apache.tools.ant.Project.MSG_INFO)
-
-        project.ant.project.addBuildListener(listener)
-        Object retVal = command(project.ant)
-        project.ant.project.removeBuildListener(listener)
-        return retVal
-    }
-
-    class FailureInfo {
-        File failedMarker
-        File pidFile
-        File httpPortsFile
-        File transportPortsFile
-        File startLog
-        ByteArrayOutputStream buffer
-
-        FailureInfo(File failedMarker, File pidFile, File httpPortsFile, File transportPortsFile,
-                    File startLog, ByteArrayOutputStream buffer) {
-            this.failedMarker = failedMarker
-            this.pidFile = pidFile
-            this.httpPortsFile = httpPortsFile
-            this.transportPortsFile = transportPortsFile
-            this.startLog = startLog
-            this.buffer = buffer
         }
     }
 
-    static void waitFailed(Project project, FailureInfo node, Logger logger, String msg) {
-        logger.error("Node 1 output:")
-        logger.error("|-----------------------------------------")
-        logger.error("|  failure marker exists: ${node.failedMarker.exists()}")
-        logger.error("|  pid file exists: ${node.pidFile.exists()}")
-        logger.error("|  http ports file exists: ${node.httpPortsFile.exists()}")
-        logger.error("|  transport ports file exists: ${node.transportPortsFile.exists()}")
-        // the waitfor failed, so dump any output we got (if info logging this goes directly to stdout)
-        logger.error("|\n|  [ant output]")
-        node.buffer.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
-        // also dump the log file for the startup script (which will include ES logging output to stdout)
-        if (node.startLog.exists()) {
-            logger.error("|\n|  [log]")
-            node.startLog.eachLine { line -> logger.error("|    ${line}") }
-        }
-        if (node.pidFile.exists() && node.failedMarker.exists() == false &&
-                (node.httpPortsFile.exists() == false || node.transportPortsFile.exists() == false)) {
-            logger.error("|\n|  [jstack]")
-            String pid = node.pidFile.getText('UTF-8')
-            ByteArrayOutputStream output = new ByteArrayOutputStream()
-            project.exec {
-                commandLine = ["${project.javaHome}/bin/jstack", pid]
-                standardOutput = output
+    /** Print out an excerpt of the log from the given node. */
+    protected static void printLogExcerpt(NodeInfo nodeInfo) {
+        File logFile = new File(nodeInfo.homeDir, "logs/${nodeInfo.clusterName}.log")
+        println("\nCluster ${nodeInfo.clusterName} - node ${nodeInfo.nodeNum} log excerpt:")
+        println("(full log at ${logFile})")
+        println('-----------------------------------------')
+        Stream<String> stream = Files.lines(logFile.toPath(), StandardCharsets.UTF_8)
+        try {
+            boolean inStartup = true
+            boolean inExcerpt = false
+            int linesSkipped = 0
+            for (String line : stream) {
+                if (line.startsWith("[")) {
+                    inExcerpt = false // clear with the next log message
+                }
+                if (line =~ /(\[WARN *\])|(\[ERROR *\])/) {
+                    inExcerpt = true // show warnings and errors
+                }
+                if (inStartup || inExcerpt) {
+                    if (linesSkipped != 0) {
+                        println("... SKIPPED ${linesSkipped} LINES ...")
+                    }
+                    println(line)
+                    linesSkipped = 0
+                } else {
+                    ++linesSkipped
+                }
+                if (line =~ /recovered \[\d+\] indices into cluster_state/) {
+                    inStartup = false
+                }
             }
-            output.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
+        } finally {
+            stream.close()
         }
-        logger.error("|-----------------------------------------")
-        throw new GradleException(msg)
+        println('=========================================')
+
     }
 }

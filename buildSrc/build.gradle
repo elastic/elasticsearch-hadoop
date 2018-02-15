@@ -2,18 +2,28 @@ import java.nio.file.Files
 
 apply plugin: 'groovy'
 
-dependencies {
-    compile gradleApi()
-    compile localGroovy()
-}
-
 /*
  * Configure Project Versions
  */
 
 Properties props = new Properties()
-props.load(project.file('version.properties').newDataInputStream())
+props.load(project.file('esh-version.properties').newDataInputStream())
 version = props.getProperty('eshadoop')
+String esVersion = props.getProperty('elasticsearch')
+
+repositories {
+    jcenter()
+    mavenCentral()
+
+    // For Elasticsearch snapshots.
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+}
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: esVersion
+}
 
 // determine if we're building a snapshot or not (by default we will be)
 boolean snapshot = "true".equals(System.getProperty("build.snapshot", "true"))
@@ -24,7 +34,7 @@ if (snapshot) {
 }
 
 // write the updated properties to a temp property file
-File tempPropertiesFile = new File(project.buildDir, "version.properties")
+File tempPropertiesFile = new File(project.buildDir, "esh-version.properties")
 task writeVersionProperties {
     inputs.properties(props)
     outputs.file(tempPropertiesFile)

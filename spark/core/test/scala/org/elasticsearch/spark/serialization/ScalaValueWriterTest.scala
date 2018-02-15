@@ -64,37 +64,37 @@ class ScalaValueWriterTest {
   }
 
   @Test
-  def testSimpleMap() {
+  def testSimpleMap(): Unit = {
     assertEquals("""{"a":"b"}""", serialize(Map("a" -> "b")))
   }
 
   @Test
-  def testPrimitiveArray() {
+  def testPrimitiveArray(): Unit = {
     assertEquals("""[1,2,3]""", serialize(Array(1,2,3)))
   }
 
   @Test
-  def testPrimitiveSeq() {
+  def testPrimitiveSeq(): Unit = {
     assertEquals("""[1,2,3]""", serialize(Seq(1,2,3)))
   }
 
   @Test
-  def testMapInArray() {
+  def testMapInArray(): Unit = {
     assertEquals("""[{"a":"b"}]""", serialize(Array(Map("a" -> "b"))))
   }
 
   @Test
-  def testMapInSeq() {
+  def testMapInSeq(): Unit = {
     assertEquals("""[{"a":"b"}]""", serialize(Seq(Map("a" -> "b"))))
   }
 
   @Test
-  def testCaseClass(){
+  def testCaseClass(): Unit = {
     assertEquals("""{"s":"foo"}""", serialize(SimpleCaseClass("foo")))
   }
 
   @Test
-  def testNestedMap(){
+  def testNestedMap(): Unit = {
     assertEquals("""{"p":{"s":"bar"}}""", serialize(Map("p" -> SimpleCaseClass("bar"))))
   }
 
@@ -115,7 +115,7 @@ class ScalaValueWriterTest {
 
   @Test(expected = classOf[EsHadoopSerializationException])
   def testNestedUnknownValue(): Unit = {
-    val map = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(0))
+    val map = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A" -> "B" -> "C"), "unknown" -> new Garbage(0))
     serialize(map)
   }
 
