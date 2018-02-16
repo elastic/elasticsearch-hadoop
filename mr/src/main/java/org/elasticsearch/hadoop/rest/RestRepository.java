@@ -394,12 +394,7 @@ public class RestRepository implements Closeable, StatsAware {
 
                 // delete each retrieved batch, keep routing in mind:
                 String baseFormat = "{\"delete\":{\"_id\":\"%s\"}}\n";
-                String routedFormat;
-                if (client.internalVersion.onOrAfter(EsMajorVersion.V_7_X)) {
-                    routedFormat = "{\"delete\":{\"_id\":\"%s\", \"routing\":\"%s\"}}\n";
-                } else {
-                    routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";
-                }
+                String routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";
                 while (sq.hasNext()) {
                     entry.reset();
                     Object[] kv = sq.next();
