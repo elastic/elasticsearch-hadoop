@@ -116,7 +116,10 @@ public class EsSargableParser implements SargableParser {
 
     public String synonymOp(String op) {
         String sop = synonymOps.get(op);
-        return sop;
+        if (sop == null)
+            return op.toLowerCase();
+        else
+            return sop;
     }
 
 }

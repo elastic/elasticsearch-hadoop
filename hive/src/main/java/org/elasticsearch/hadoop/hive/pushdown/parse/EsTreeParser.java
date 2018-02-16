@@ -26,8 +26,6 @@ import org.elasticsearch.hadoop.hive.pushdown.node.FieldNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.*;
-import org.elasticsearch.hadoop.hive.pushdown.util.CollectionUtil;
-import org.elasticsearch.hadoop.hive.pushdown.util.JsonObjUtil;
 
 import java.util.*;
 
@@ -122,18 +120,18 @@ public class EsTreeParser extends TreeParser<JsonObj> {
                         return null;
                     }
                 } else {
-                    JsonObjUtil.add(filters, childRes);
+                    JsonObjManager.add(filters, childRes);
                 }
             }
         }
 
         if (!filters.isEmpty()) {
             if ("and".equals(op)) {
-                return JsonObjUtil.and(isES50, filters);
+                return JsonObjManager.and(isES50, filters);
             } else if ("or".equals(op)) {
-                return JsonObjUtil.or(isES50, filters);
+                return JsonObjManager.or(isES50, filters);
             } else if ("not".equals(op)) {
-                return JsonObjUtil.not(isES50, filters.get(0));
+                return JsonObjManager.not(isES50, filters.get(0));
             }
         }
 
@@ -148,7 +146,7 @@ public class EsTreeParser extends TreeParser<JsonObj> {
             FieldNode fieldNode = (FieldNode) opNode.getChildren().get(0);
             Pair<String, List<Object>> pair = simpleExtractFieldNVals(opNode);
             String field = pair.getFirst();
-            Object val = CollectionUtil.safeget(pair.getSecond(), 0);
+            Object val = safeget(pair.getSecond(), 0);
             String value = val.toString();
 
             if (isAllNotNull(field, val)) {
@@ -168,14 +166,14 @@ public class EsTreeParser extends TreeParser<JsonObj> {
                 Pair<String, List<Object>> pair = simpleExtractFieldNVals(opNode, "false");
                 String field = pair.getFirst();
                 boolean not = false;
-                Object val1 = CollectionUtil.safeget(pair.getSecond(), 0);
+                Object val1 = safeget(pair.getSecond(), 0);
                 Object val2;
                 if (val1.toString().equals("true")) {
                     not = true;
-                    val1 = CollectionUtil.safeget(pair.getSecond(), 1);
-                    val2 = CollectionUtil.safeget(pair.getSecond(), 2);
+                    val1 = safeget(pair.getSecond(), 1);
+                    val2 = safeget(pair.getSecond(), 2);
                 } else {
-                    val2 = CollectionUtil.safeget(pair.getSecond(), 1);
+                    val2 = safeget(pair.getSecond(), 1);
                 }
 
                 if (isAllNotNull(field, val1, val2)) {
@@ -189,7 +187,7 @@ public class EsTreeParser extends TreeParser<JsonObj> {
             } else {
                 Pair<String, List<Object>> pair = simpleExtractFieldNVals(opNode);
                 String field = pair.getFirst();
-                Object val = CollectionUtil.safeget(pair.getSecond(), 0);
+                Object val = safeget(pair.getSecond(), 0);
                 if (isAllNotNull(field, val)) {
                     return rangeJson.singleRange(op, field, val);
                 }

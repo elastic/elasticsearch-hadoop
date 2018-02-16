@@ -36,10 +36,8 @@ import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
 import org.elasticsearch.hadoop.hive.pushdown.parse.EsQueryParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.EsTreeParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
+import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY;
 
@@ -67,44 +65,29 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
             return new Pair<Node, JsonObj>(null, null);
         }
 
+        //get hive to es field alias mapping
+        FieldAlias fieldAlias = HiveUtils.alias(settings);
+
         //create a hive tree builder for converting ExprNodeDesc to OpNode.
-        HiveTreeBuilder hiveTreeBuilder = new HiveTreeBuilder(sargableParser);
+        HiveTreeBuilder hiveTreeBuilder = new HiveTreeBuilder(fieldAlias, sargableParser);
 
         //create a es tree parser for converting OpNode to JsonObj.
         EsTreeParser parser = new EsTreeParser(sargableParser, isES50);
 
+        String preFilterQuery = settings.getQuery();
         // if exists es.query prop, then it is a necessary condition to add to the pushdown optimization plan
-        if (jobConf != null && jobConf.get(ES_QUERY) != null) {
-            String preFilterQuery = jobConf.get(ES_QUERY);
+        if (StringUtils.isNotEmpty(preFilterQuery)) {
             log.info("[PushDown][Pre Filter " + ES_QUERY + "] : " + preFilterQuery);
             JsonObj preFilterJson = new EsQueryParser(jobConf, isES50).parse(preFilterQuery);
             //add a pre filter condition.
             parser.setPreFilterJson(preFilterJson);
         }
 
-        // getting hive to es alias mapping
-        String esMappingNameProps = jobConf.get(HiveConstants.MAPPING_NAMES);
-        if (StringUtils.isNotEmpty(esMappingNameProps)) {
-            //set es mapping name
-            Map<String, String> mappingNames = new HashMap<String, String>();
-
-            String[] split = esMappingNameProps.split(",");
-            for (String value : split) {
-                if (StringUtils.isEmpty(value)) continue;
-                String[] hiveToEsField = value.split(":");
-                if (hiveToEsField.length == 2) {
-                    mappingNames.put(hiveToEsField[0].trim(), hiveToEsField[1].trim());
-                }
-            }
-
-            if (mappingNames.size() > 0) {
-                hiveTreeBuilder.setMappingNames(mappingNames);
-            }
-        }
-
+        //build a operator node tree
         OpNode root = hiveTreeBuilder.build(exprNodeDesc);
 
         if (root != null) {
+            //parser the operator node tree and get a json format elasticsearch-query.
             JsonObj esQuery = parser.parse(root);
             if (esQuery != null) {
                 log.info("[PushDown][Final Filter " + ES_QUERY + "] : " + esQuery.toQuery());

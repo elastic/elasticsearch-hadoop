@@ -18,16 +18,20 @@
  */
 package org.elasticsearch.hadoop.hive.pushdown.parse;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.BoolJson;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObjManager;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.TermJson;
-import org.elasticsearch.hadoop.hive.pushdown.util.HdfsUtil;
-import org.elasticsearch.hadoop.hive.pushdown.util.JsonObjUtil;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,7 +53,6 @@ public class EsQueryParser {
     }
 
     /**
-     *
      * parse es.query,
      * <p>
      * then choose and execute the appropriate method according to the es.query props
@@ -113,7 +116,7 @@ public class EsQueryParser {
                 wrapper.put("filter", filters);
                 return wrapper;
             } else {
-                JsonObj and = JsonObjUtil.and(isES50, filters);
+                JsonObj and = JsonObjManager.and(isES50, filters);
                 return and;
             }
         } catch (Exception e) {
@@ -137,7 +140,7 @@ public class EsQueryParser {
     protected JsonObj parseAsHdfsPath(String hdfsPath) {
 
         try {
-            String rawQuery = HdfsUtil.getFileContent(hdfsPath, this.conf);
+            String rawQuery = parseAsHdfsPath(hdfsPath, this.conf);
 
             if (rawQuery == null)
                 return null;
@@ -153,6 +156,30 @@ public class EsQueryParser {
         } catch (Exception e) {
             log.error("[parseAsHdfsPath] " + e.getMessage() + ", " + hdfsPath, e);
             return null;
+        }
+    }
+
+    /**
+     * load hdfs path and return file content
+     *
+     * @param hdfsPath
+     * @param conf
+     * @return
+     * @throws IOException
+     */
+    private String parseAsHdfsPath(String hdfsPath, Configuration conf) throws IOException {
+        FileSystem fs = FileSystem.get(conf);
+
+        InputStream in = null;
+        try {
+            //1.open hdfs file stream
+            //2.transform stream to string.
+            in = fs.open(new Path(hdfsPath));
+            return IOUtils.toString(in);
+        } finally {
+            if (in != null) {
+                in.close();
+            }
         }
     }
 

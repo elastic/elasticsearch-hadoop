@@ -22,9 +22,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
-import org.elasticsearch.hadoop.hive.pushdown.util.CollectionUtil;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Parse The structure of the tree parse ,and get a new type about T.
@@ -74,7 +74,7 @@ public abstract class TreeParser<T> implements Serializable {
      * @return
      */
     protected T parseRootNode(OpNode root) {
-        Node wn = CollectionUtil.safeget(root.getChildren(), 0);
+        Node wn = safeget(root.getChildren(), 0);
         if (wn != null && wn instanceof OpNode) {
             return _parse((OpNode) wn);
         } else
@@ -96,4 +96,15 @@ public abstract class TreeParser<T> implements Serializable {
      * @return
      */
     protected abstract T parseSargableOp(OpNode op);
+
+    public <T> T safeget(List<T> list, int index) {
+        if (list != null && list.size() > index)
+            try {
+                return list.get(index);
+            } catch (Exception e) {
+                return null;
+            }
+        else
+            return null;
+    }
 }

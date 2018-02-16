@@ -18,20 +18,18 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.exec.Utilities;
+import org.apache.hadoop.hive.ql.plan.TableScanDesc;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -39,6 +37,10 @@ import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 /**
  * Hive specific InputFormat. Since Hive code base makes a lot of assumptions about the tables being actual files in HDFS (using instanceof checks without proper else) this class tries to 'fix' this by
@@ -49,6 +51,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
 // {@link org.apache.hadoop.mapred.FileSplit}, returns an invalid Path.
 
 public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
+    protected static final Log log = LogFactory.getLog(EsHiveInputFormat.class);
 
     static class EsHiveSplit extends FileSplit {
         InputSplit delegate;
@@ -111,6 +114,17 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
 
         HiveUtils.init(settings, log);
 
+        // read filter obj str and deserialize it as pushdown optimization result,
+        // then the result write es.query prop.
+        String filterObjectStr = job.get(TableScanDesc.FILTER_OBJECT_CONF_STR);
+        if (filterObjectStr != null && filterObjectStr.length() > 0) {
+            String esQuery = Utilities.deserializeObject(filterObjectStr, String.class);
+            if (esQuery != null && esQuery.length() > 0) {
+                log.info("[EsHiveInputFormat][Pushdown][Es.query] : " + esQuery);
+                settings.setQuery(esQuery);
+            }
+        }
+
         // decorate original splits as FileSplit
         InputSplit[] shardSplits = super.getSplits(job, numSplits);
         FileSplit[] wrappers = new FileSplit[shardSplits.length];
@@ -121,9 +135,10 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         return wrappers;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public AbstractWritableEsInputRecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) {
+
         InputSplit delegate = ((EsHiveSplit) split).delegate;
         return isOutputAsJson(job) ? new JsonWritableEsInputRecordReader(delegate, job, reporter) : new WritableEsInputRecordReader(delegate, job, reporter);
     }

@@ -26,11 +26,10 @@ import org.elasticsearch.hadoop.hive.pushdown.node.ConstantNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.FieldNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
+import org.elasticsearch.hadoop.util.FieldAlias;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Build parse from Hive {@link ExprNodeDesc} to a tree
@@ -44,14 +43,11 @@ public class HiveTreeBuilder {
     /**
      * load es.mapping,names ,then get the field mmaping of hive to elasticsearch
      */
-    protected Map<String, String> mappingNames = new HashMap<String, String>();
+    protected FieldAlias fieldAlias = null;
 
-    public HiveTreeBuilder(SargableParser sargableParser) {
+    public HiveTreeBuilder(FieldAlias fieldAlias, SargableParser sargableParser) {
         this.sargableParser = sargableParser;
-    }
-
-    public void setMappingNames(Map<String, String> mappingNames) {
-        this.mappingNames = mappingNames;
+        this.fieldAlias = fieldAlias;
     }
 
     /**
@@ -61,7 +57,8 @@ public class HiveTreeBuilder {
      * @return when mapping contain filed, return the mapping value. otherwise return itself.
      */
     private String getMappingField(String field) {
-        String mappingField = mappingNames.get(field);
+        if (fieldAlias == null) return field;
+        String mappingField = fieldAlias.toES(field);
         if (mappingField == null)
             return field;
         else
