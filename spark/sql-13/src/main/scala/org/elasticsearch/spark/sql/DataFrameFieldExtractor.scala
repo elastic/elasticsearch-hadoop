@@ -35,12 +35,20 @@ class DataFrameFieldExtractor extends ScalaMapFieldExtractor {
           if (index < 0) {
             FieldExtractor.NOT_FOUND
           } else {
-            row(index).asInstanceOf[AnyRef]
+            row(index) match {
+              case nestedRow: Row => (nestedRow, struct.fields(index).dataType)
+              case anythingElse => anythingElse.asInstanceOf[AnyRef]
+            }
           }
         }
         case _ => super.extractField(target)
       }
     }
-    obj
+
+    // Return the value or unpack the value if it's a row-schema tuple
+    obj match {
+      case (row: Row, _: StructType) => row
+      case any => any
+    }
   }
 }
