@@ -47,7 +47,7 @@ class DataFrameFieldExtractor extends ScalaMapFieldExtractor {
 
     // Return the value or unpack the value if it's a row-schema tuple
     obj match {
-      case (row: Row, struct: StructType) => row
+      case (row: Row, _: StructType) => row
       case any => any
     }
   }

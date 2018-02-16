@@ -384,18 +384,35 @@ public class RestRepository implements Closeable, StatsAware {
                 sb.append("&search_type=scan");
             }
             String scanQuery = sb.toString();
-            ScrollReader scrollReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader()));
+            ScrollReaderConfig readerConf = new ScrollReaderConfig(true, new JdkValueReader());
+            ScrollReader scrollReader = new ScrollReader(readerConf);
 
             // start iterating
             ScrollQuery sq = scanAll(scanQuery, null, scrollReader);
             try {
                 BytesArray entry = new BytesArray(0);
 
-                // delete each retrieved batch
-                String format = "{\"delete\":{\"_id\":\"%s\"}}\n";
+                // delete each retrieved batch, keep routing in mind:
+                String baseFormat = "{\"delete\":{\"_id\":\"%s\"}}\n";
+                String routedFormat;
+                if (client.internalVersion.onOrAfter(EsMajorVersion.V_7_X)) {
+                    routedFormat = "{\"delete\":{\"_id\":\"%s\", \"routing\":\"%s\"}}\n";
+                } else {
+                    routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";
+                }
                 while (sq.hasNext()) {
                     entry.reset();
-                    entry.add(StringUtils.toUTF(String.format(format, sq.next()[0])));
+                    Object[] kv = sq.next();
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> value = (Map<String, Object>) kv[1];
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> metadata = (Map<String, Object>) value.get("_metadata");
+                    String routing = (String) metadata.get("_routing");
+                    if (StringUtils.hasText(routing)) {
+                        entry.add(StringUtils.toUTF(String.format(routedFormat, kv[0], routing)));
+                    } else {
+                        entry.add(StringUtils.toUTF(String.format(baseFormat, kv[0])));
+                    }
                     writeProcessedToIndex(entry);
                 }
 

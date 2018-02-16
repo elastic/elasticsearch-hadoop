@@ -190,7 +190,11 @@ public class ScrollReader {
         }
 
         public ScrollReaderConfig(ValueReader reader) {
-            this(reader, null, false, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
+            this(false, reader);
+        }
+
+        public ScrollReaderConfig(boolean readMetadata, ValueReader reader) {
+            this(reader, null, readMetadata, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
         }
 
         public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
