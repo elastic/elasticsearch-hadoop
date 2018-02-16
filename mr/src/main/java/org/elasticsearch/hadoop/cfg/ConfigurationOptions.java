@@ -139,6 +139,9 @@ public interface ConfigurationOptions {
     String ES_INPUT_JSON = "es.input.json";
     String ES_INPUT_JSON_DEFAULT = "no";
 
+    String ES_INPUT_USE_SLICED_PARTITIONS = "es.input.use.sliced.partitions";
+    String ES_INPUT_USE_SLICED_PARTITIONS_DEFAULT = "true";
+
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
