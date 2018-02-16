@@ -579,8 +579,8 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
     }
 
-    public boolean getFindSlicePartitions() {
-        return Booleans.parseBoolean(getProperty(ES_SPARK_FIND_SLICE_PARTITIONS, ES_SPARK_FIND_SLICE_PARTITIONS_DEFAULT));
+    public boolean getInputUseSlicedPartitions() {
+        return Booleans.parseBoolean(getProperty(ES_INPUT_USE_SLICED_PARTITIONS, ES_INPUT_USE_SLICED_PARTITIONS_DEFAULT));
     }
 
     public abstract InputStream loadResource(String location);

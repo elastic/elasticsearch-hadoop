@@ -265,7 +265,7 @@ public abstract class RestService implements Serializable {
                 }
             }
             final List<PartitionDefinition> partitions;
-            if (version.onOrAfter(EsMajorVersion.V_5_X) && settings.getFindSlicePartitions()) {
+            if (version.onOrAfter(EsMajorVersion.V_5_X) && settings.getInputUseSlicedPartitions()) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
                 partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
