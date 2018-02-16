@@ -106,8 +106,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
             // Only set the fields if we aren't asking for raw JSON
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));
         }
-        // set read resource
-        settings.setResourceRead(settings.getResourceRead());
+
         HiveUtils.init(settings, log);
 
         // decorate original splits as FileSplit
