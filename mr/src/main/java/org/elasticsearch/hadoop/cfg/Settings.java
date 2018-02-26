@@ -133,6 +133,26 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_BATCH_FLUSH_MANUAL, ES_BATCH_FLUSH_MANUAL_DEFAULT));
     }
 
+    public boolean getAwsSigner() {
+        return Booleans.parseBoolean(getProperty(ES_AWS_SIGNER, ES_AWS_SIGNER_DEFAULT));
+    }
+
+    public String getAwsKey() {
+        return getProperty(ES_AWS_KEY);
+    }
+
+    public String getAwsSecret() {
+        return getProperty(ES_AWS_SECRET);
+    }
+
+    public String getAwsRegion() {
+        return getProperty(ES_AWS_REGION, ES_AWS_REGION_DEFAULT);
+    }
+
+    public String getAwsService() {
+        return getProperty(ES_AWS_SERVICE, ES_AWS_SERVICE_DEFAULT);
+    }
+
     public long getScrollKeepAlive() {
         return TimeValue.parseTimeValue(getProperty(ES_SCROLL_KEEPALIVE, ES_SCROLL_KEEPALIVE_DEFAULT)).getMillis();
     }

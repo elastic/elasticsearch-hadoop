@@ -27,12 +27,16 @@ import org.elasticsearch.hadoop.util.ByteSequence;
 /**
  * Wrapper around byte arrays that are not fully filled up.
  */
-class BytesArrayRequestEntity implements RequestEntity {
+public class BytesArrayRequestEntity implements RequestEntity {
 
     private final ByteSequence bs;
 
     public BytesArrayRequestEntity(ByteSequence bs) {
         this.bs = bs;
+    }
+
+    public ByteSequence getContent() {
+        return bs;
     }
 
     @Override

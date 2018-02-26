@@ -95,6 +95,18 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_RETRY_POLICY_SIMPLE = "simple";
     String ES_BATCH_WRITE_RETRY_POLICY_DEFAULT = ES_BATCH_WRITE_RETRY_POLICY_SIMPLE;
 
+    /** Elasticsearch aws signer */
+    String ES_AWS_SIGNER = "es.aws.signer";
+    String ES_AWS_SIGNER_DEFAULT = "false";
+
+    /** Elasticsearch aws key */
+    String ES_AWS_KEY = "es.aws.key";
+    String ES_AWS_SECRET = "es.aws.secret";
+    String ES_AWS_REGION = "es.aws.region";
+    String ES_AWS_REGION_DEFAULT = "";
+    String ES_AWS_SERVICE = "es.aws.service";
+    String ES_AWS_SERVICE_DEFAULT = "";
+
     /** HTTP connection timeout */
     String ES_HTTP_TIMEOUT = "es.http.timeout";
     String ES_HTTP_TIMEOUT_DEFAULT = "1m";
