@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
@@ -39,23 +40,13 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField;
 import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
-import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.BytesRef;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.SettingsUtils;
-import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TrackingBytesArray;
+import org.elasticsearch.hadoop.util.*;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static org.elasticsearch.hadoop.rest.Request.Method.POST;
@@ -96,6 +87,11 @@ public class RestRepository implements Closeable, StatsAware {
 
     private final Settings settings;
     private final Stats stats = new Stats();
+    private Map<Integer, MutablePair<String,Object>> rawObjects = new TreeMap<Integer, MutablePair<String,Object>>();
+    private int lastOffset = 0;
+    private int nextInsert =0;
+    private final boolean failOnLeftOvers;
+
 
     public RestRepository(Settings settings) {
         this.settings = settings;
@@ -109,7 +105,8 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         Assert.isTrue(resourceR != null || resourceW != null, "Invalid configuration - No read or write resource specified");
-
+        failOnLeftOvers =  settings.getProperty("es.internal.client.failOnLeftOvers") == null || "true".equals(settings.getProperty("es.internal.client.failOnLeftOvers"));
+        log.info(String.format("Fail on left overs: %s", failOnLeftOvers));
         this.client = new RestClient(settings);
     }
 
@@ -175,6 +172,10 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     private void doWriteToIndex(BytesRef payload) {
+        doWriteToIndex(payload, null);
+    }
+
+    private void doWriteToIndex(BytesRef payload, Object raw) {
         // check space first
         // ba is the backing array for data
         if (payload.length() > ba.available()) {
@@ -188,6 +189,7 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         data.copyFrom(payload);
+        rawObjects.put(nextInsert++, new MutablePair<String, Object>(null, raw) );
         payload.reset();
 
         dataEntries++;
@@ -228,26 +230,62 @@ public class RestRepository implements Closeable, StatsAware {
         }
 
         // always discard data since there's no code path that uses the in flight data
-        discard();
+        discard(bulkResult);
 
         return bulkResult;
     }
 
-    public void discard() {
+    public void discard(final BulkResponse bulkResult) {
+        BitSet rejected = bulkResult.getRejected();
+        BitSet leftOvers = bulkResult.getLeftovers();
+        for (int i = 0; i < dataEntries; i ++) {
+            if( rejected.get(i) ) {
+                rawObjects.get(lastOffset + i).setLeft( bulkResult.getRejectedErrorMessages().get(i) );
+            }
+            if( leftOvers.get(i) && !failOnLeftOvers) {
+                rejected.set(i);
+                rawObjects.get(lastOffset + i).setLeft("Rejected entry. Perhaps ES was overloaded");
+            }
+            if( ! rejected.get(i) ) {
+                rawObjects.remove(lastOffset + i);
+            }
+        }
+        lastOffset = nextInsert;
         data.reset();
         dataEntries = 0;
     }
 
     public void flush() {
+        int bulkSize = data.entries();
         BulkResponse bulk = tryFlush();
-        if (!bulk.getLeftovers().isEmpty()) {
+
+        BitSet rejected = bulk.getRejected();
+        for (int i = rejected.nextSetBit(0); i >= 0; i = rejected.nextSetBit(i+1)) {
+            log.info(String.format("ES rejected entry at position [%d] of [%d] in batch of entries", i, bulkSize) );
+        }
+        BitSet leftOver = bulk.getLeftovers();
+        for (int i = leftOver.nextSetBit(0); i >= 0; i = leftOver.nextSetBit(i+1)) {
+            log.info(String.format("Retries exhausted for entry at position [%d] of [%d] in the batch of entries", i, bulkSize) );
+        }
+
+        StringBuilder errorMessage = new StringBuilder();
+
+        if (!bulk.getErrorExamples().isEmpty()) {
             String header = String.format("Could not write all entries [%s/%s] (Maybe ES was overloaded?). Error sample (first [%s] error messages):\n", bulk.getLeftovers().cardinality(), bulk.getTotalWrites(), bulk.getErrorExamples().size());
-            StringBuilder message = new StringBuilder(header);
+            errorMessage.append(header);
             for (String errors : bulk.getErrorExamples()) {
-                message.append("\t").append(errors).append("\n");
+                errorMessage.append("\t").append(errors).append("\n");
             }
-            message.append("Bailing out...");
-            throw new EsHadoopException(message.toString());
+        }
+
+        if (!bulk.getLeftovers().isEmpty() ) {
+            if( failOnLeftOvers ) {
+                errorMessage.append("Bailing out...");
+                throw new EsHadoopException(errorMessage.toString());
+            }
+            // Otherwise, we already added the leftovers to the bulk response as a rejected . See discard() method
+        } else if (!bulk.getErrorExamples().isEmpty()) {
+            log.error(errorMessage.toString());
         }
     }
 
@@ -470,6 +508,38 @@ public class RestRepository implements Closeable, StatsAware {
                 sq.close();
             }
         }
+    }
+    /**
+     * Writes the objects to index.
+     *
+     * @param object object to add to the index
+     */
+    public void writeToIndex(Object object, Object raw) {
+        Assert.notNull(object, "no object data given");
+
+        lazyInitWriting();
+        doWriteToIndex(command.write(object), raw);
+    }
+
+    /**
+     * Writes the objects to index.
+     *
+     * @param ba The data as a bytes array
+     */
+    public void writeProcessedToIndex(BytesArray ba, Object raw) {
+        Assert.notNull(ba, "no data given");
+        Assert.isTrue(ba.length() > 0, "no data given");
+
+        lazyInitWriting();
+        trivialBytesRef.reset();
+        trivialBytesRef.add(ba);
+        doWriteToIndex(trivialBytesRef, raw);
+    }
+
+    public List<MutablePair<String, Object>> rejectedObjects() {
+        ArrayList<MutablePair<String, Object>> lst = new ArrayList<MutablePair<String, Object>>();
+        lst.addAll(rawObjects.values());
+        return lst;
     }
 
     public boolean isEmpty(boolean read) {

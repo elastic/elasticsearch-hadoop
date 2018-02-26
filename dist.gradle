@@ -101,7 +101,7 @@ uploadArchives {
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: deployUsername(), password: deployPassword())
             }
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+            snapshotRepository(url: "https://nexus.dev.voicebase.com/nexus/content/repositories/snapshots/") {
                 authentication(userName: deployUsername(), password: deployPassword())
             }
             if (enableArtifactSigning) {

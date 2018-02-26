@@ -34,6 +34,8 @@ import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
+import scala.collection.JavaConverters._
+import org.apache.commons.lang3.tuple.MutablePair
 
 
 private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
@@ -84,6 +86,47 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
             // return the value to be used as the document
             v
           }
+      }
+    } else {
+      next
+    }
+  }
+
+  def writeExt(taskContext: TaskContext, data: Iterator[T]) : Iterator[(String,T)] = {
+    val settingsCopy = settings.copy();
+    settingsCopy.setProperty("es.internal.client.failOnRejected", "false");
+    settingsCopy.setProperty("es.internal.client.failOnLeftOvers", "true");
+    val writer = RestService.createWriter(settingsCopy, taskContext.partitionId, -1, log)
+
+    taskContext.addTaskCompletionListener((TaskContext) => writer.close() )
+
+    if (runtimeMetadata) {
+      writer.repository.addRuntimeFieldExtractor(metaExtractor)
+    }
+
+    while (data.hasNext) {
+      val raw: T = data.next
+      writer.repository.writeToIndex(processRawElement(raw), raw)
+    }
+    // Force the last ES bulk
+    writer.repository.flush();
+    // Return all the rejected objects
+
+    val lst: Seq[(String, T)] = writer.repository.rejectedObjects().asScala.toList.map(x => (x.getLeft(), x.getRight().asInstanceOf[T]));
+    lst.iterator
+  }
+
+  protected def processRawElement(next : T): Any = {
+    if (runtimeMetadata) {
+      //TODO: is there a better way to do this cast
+      next match {
+        case (k, v) =>
+        {
+          // use the key to extract metadata
+          metaExtractor.setObject(k);
+          // return the value to be used as the document
+          v
+        }
       }
     } else {
       next

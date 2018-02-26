@@ -19,9 +19,7 @@
 
 package org.elasticsearch.hadoop.rest;
 
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Simple response object that tracks useful information about a bulk indexing response.
@@ -37,21 +35,25 @@ public class BulkResponse {
     private final int httpStatus;
     private final int totalWrites;
     private final BitSet leftovers;
+    private final BitSet rejected;
     private final List<String> errorExamples;
+    private final Map<Integer, String> rejectedErrorMessages;
 
     /**
      * Creates a bulk response denoting that everything is OK
      * @param totalWrites
      */
     private BulkResponse(int totalWrites) {
-        this(HttpStatus.OK, totalWrites, new BitSet(), Collections.<String>emptyList());
+        this(HttpStatus.OK, totalWrites, new BitSet(), new BitSet(), Collections.<Integer, String>emptyMap(), Collections.<String>emptyList());
     }
 
-    public BulkResponse(int httpStatus, int totalWrites, BitSet leftovers, List<String> errorExamples) {
+    public BulkResponse(int httpStatus, int totalWrites, BitSet leftovers, BitSet rejected, Map<Integer, String> rejectedErrorMessages, List<String> errorExamples) {
         this.httpStatus = httpStatus;
         this.totalWrites = totalWrites;
         this.leftovers = leftovers;
+        this.rejected = rejected;
         this.errorExamples = errorExamples;
+        this.rejectedErrorMessages = new HashMap<Integer, String>(rejectedErrorMessages);
     }
 
     public int getHttpStatus() {
@@ -66,7 +68,13 @@ public class BulkResponse {
         return leftovers;
     }
 
+    public BitSet getRejected() {
+        return rejected;
+    }
+
     public List<String> getErrorExamples() {
         return errorExamples;
     }
+
+    public Map<Integer,String> getRejectedErrorMessages() { return rejectedErrorMessages; }
 }

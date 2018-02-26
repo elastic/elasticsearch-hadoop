@@ -1,28 +1,44 @@
 package org.elasticsearch.hadoop.rest;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.StringUtils;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_NET_HTTP_HEADER_PREFIX;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
+import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Multimap;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_NET_HTTP_HEADER_PREFIX;
+import java.util.stream.Collectors;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
  * Pulls HTTP header information from Configurations, validates them, joins them with connector defaults, and
  * applies them to HTTP Operations.
  */
 public final class HeaderProcessor {
-
+    private static final Splitter SPLITTER = Splitter.on('&').trimResults().omitEmptyStrings();
     private static final Log LOG = LogFactory.getLog(HeaderProcessor.class);
 
     /**
@@ -96,6 +112,7 @@ public final class HeaderProcessor {
     }
 
     private final List<Header> headers;
+    private AWSSigner signer;
 
     public HeaderProcessor(Settings settings) {
         Map<String, String> workingHeaders = new HashMap<String, String>();
@@ -117,6 +134,14 @@ public final class HeaderProcessor {
         }
         for (ReservedHeaders reservedHeaders : ReservedHeaders.values()) {
             headers.add(new Header(reservedHeaders.getName(), reservedHeaders.getDefaultValue()));
+        }
+        if (settings.getAwsSigner()){
+            BasicAWSCredentials basicAWSCredentials = new BasicAWSCredentials(settings.getAwsKey(),
+                settings.getAwsSecret());
+            AWSCredentialsProvider awsCredentialsProvider = new StaticCredentialsProvider(
+                basicAWSCredentials);
+            signer = new AWSSigner(awsCredentialsProvider, settings.getAwsRegion(),
+                settings.getAwsService(), () -> LocalDateTime.now(ZoneOffset.UTC));
         }
     }
 
@@ -165,7 +190,7 @@ public final class HeaderProcessor {
         return value;
     }
 
-    public HttpMethod applyTo(HttpMethod method) {
+    public HttpMethod applyTo(HttpMethod method) throws IOException {
         // Add headers to the request.
         for (Header header : headers) {
             method.setRequestHeader(header);
@@ -173,7 +198,80 @@ public final class HeaderProcessor {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Added HTTP Headers to method: " + Arrays.toString(method.getRequestHeaders()));
         }
-
+        if(signer != null){
+          // Sign headers
+          Header[] headers = headers(signer.getSignedHeaders(
+              path(method),
+              method.getName(),
+              params(method),
+              headers(method),
+              body(method))
+          );
+          // Remove all headers .. No clear method :(
+          for (Header header : method.getRequestHeaders()) {
+            method.removeRequestHeader(header);
+          }
+          // Add the signed headers
+          for (Header header : headers) {
+            method.addRequestHeader(header);
+          }
+        }
         return method;
     }
+
+    private Multimap<String, String> params(HttpMethod request) throws IOException {
+        String rawQuery = URI.create(request.getURI().toString()).getRawQuery();
+        if (Strings.isNullOrEmpty(rawQuery)) {
+          return ImmutableListMultimap.of();
+        }
+        return params(URLDecoder.decode(rawQuery, StandardCharsets.UTF_8.name()));
+    }
+
+    private Multimap<String, String> params(String query) {
+        ImmutableListMultimap.Builder<String, String> queryParams = ImmutableListMultimap.builder();
+        if (! Strings.isNullOrEmpty(query)) {
+            for (String pair : SPLITTER.split(query)) {
+                final int index = pair.indexOf('=');
+                if (index > 0 && pair.length() > index + 1) {
+                    final String key = pair.substring(0, index);
+                    final String value = pair.substring(index + 1);
+                    queryParams.put(key, value);
+                } else if (pair.length() > 0) {
+                    queryParams.put(pair, "");
+                }
+            }
+        }
+        return queryParams.build();
+    }
+
+    private String path(HttpMethod request) throws IOException {
+        return URI.create(request.getURI().toString()).getRawPath();
+    }
+
+    private Map<String, Object> headers(HttpMethod request) {
+      ImmutableMap.Builder<String, Object> headers = ImmutableMap.builder();
+        for (Header header : request.getRequestHeaders()) {
+            headers.put(header.getName(), header.getValue());
+        }
+        return headers.build();
+    }
+
+    private Optional<byte[]> body(HttpMethod request) throws IOException {
+      if(request instanceof EntityEnclosingMethod){
+        EntityEnclosingMethod method = (EntityEnclosingMethod) request;
+        try(ByteArrayOutputStream out = new ByteArrayOutputStream()){
+          method.getRequestEntity().writeRequest(out);
+          return Optional.of(out.toByteArray());
+        }
+      }
+      return Optional.absent();
+    }
+
+    private Header[] headers(Map<String, Object> from) {
+        return from.entrySet().stream()
+            .map(entry -> new Header(entry.getKey(), entry.getValue().toString()))
+            .collect(Collectors.toList())
+            .toArray(new Header[from.size()]);
+    }
+
 }
