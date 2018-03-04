@@ -18,7 +18,7 @@ allprojects {
     repositories {
       mavenCentral()
       // cascading
-      maven { url "http://conjars.org/repo" }
+      maven { url "https://conjars.org/repo" }
       // storm dependencies
       maven { url "https://clojars.org/repo" }
       maven { url 'https://repo.spring.io/plugins-release' }
