@@ -221,7 +221,7 @@ new SparkContext(conf).makeRDD(Seq(json1, json2))
                       .saveJsonToEs("spark/json-trips") <2>
 ----
 
-<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation
+<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation, it should not contains breakline character like \n or \r\n
 <2> index the JSON data through the dedicated +saveJsonToEs+ method
 
 [float]
@@ -238,7 +238,7 @@ JavaRDD<String><2> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
 JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");             <3>
 ----
 
-<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation
+<1> example of an entry within the +RDD+ - the JSON is _written_ as is, without any transformation, it should not contains breakline character like \n or \r\n
 <2> notice the +RDD<String>+ signature
 <3> index the JSON data through the dedicated +saveJsonToEs+ method
 
