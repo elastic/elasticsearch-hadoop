@@ -1,0 +1,10 @@
+[[eshadoop-6.1.4]]
+== Elasticsearch for Apache Hadoop version 6.1.4
+March 20, 2018
+
+ES-Hadoop 6.1.4 is a version compatibility release, tested specifically against Elasticsearch 6.1.4.
+
+[[docs-6.1.4]]
+=== Documentation
+* Multitype is not supported, please update docs according to this change
+https://github.com/elastic/elasticsearch-hadoop/issues/1100[#1100]
