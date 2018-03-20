@@ -8,12 +8,11 @@ This section summarizes the changes in each release.
 [float]
 [[release-notes-6]]
 ===== 6.x
+* <<eshadoop-6.2.3>>
 * <<eshadoop-6.2.2>>
 * <<eshadoop-6.2.1>>
 * <<eshadoop-6.2.0>>
 * <<eshadoop-6.1.4>>
-* <<eshadoop-6.1.3>>
-* <<eshadoop-6.1.2>>
 * <<eshadoop-6.1.1>>
 * <<eshadoop-6.1.0>>
 * <<eshadoop-6.0.1>>
@@ -103,12 +102,11 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/6.2.3.adoc[]
 include::release-notes/6.2.2.adoc[]
 include::release-notes/6.2.1.adoc[]
 include::release-notes/6.2.0.adoc[]
 include::release-notes/6.1.4.adoc[]
-include::release-notes/6.1.3.adoc[]
-include::release-notes/6.1.2.adoc[]
 include::release-notes/6.1.1.adoc[]
 include::release-notes/6.1.0.adoc[]
 include::release-notes/6.0.1.adoc[]
