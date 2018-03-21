@@ -19,26 +19,47 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp;
 
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.Request;
+import org.elasticsearch.hadoop.rest.SimpleRequest;
+import org.elasticsearch.hadoop.util.TestSettings;
+import org.hamcrest.Matchers;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.*;
 
 public class CommonsHttpTransportTests {
+
+    /**
+     * See <a href="https://tools.ietf.org/html/rfc5735">RFC 5735 Section 3:</a>
+     *
+     * 192.0.2.0/24 - This block is assigned as "TEST-NET-1" for use in
+     * documentation and example code.  It is often used in conjunction with
+     * domain names example.com or example.net in vendor and protocol
+     * documentation.  As described in [RFC5737], addresses within this
+     * block do not legitimately appear on the public Internet and can be
+     * used without any coordination with IANA or an Internet registry.  See
+     * [RFC1166].
+     */
+    public static final String TEST_NET_1 = "192.0.2.0";
 
     private Protocol original;
 
@@ -93,5 +114,25 @@ public class CommonsHttpTransportTests {
                 return delegate.createSocket(host, port);
             }
         };
+    }
+
+    @Test
+    public void testTimeout() {
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_HTTP_TIMEOUT, "3s");
+        String garbageHost = TEST_NET_1 + ":80";
+        long maxTime = 3000L + 1000L; // 5s plus some buffer
+
+        long startTime = System.currentTimeMillis();
+        try {
+            CommonsHttpTransport transport = new CommonsHttpTransport(testSettings, garbageHost);
+            transport.execute(new SimpleRequest(Request.Method.GET, null, "/"));
+        } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            long took = endTime - startTime;
+            assertThat("Connection Timeout not respected", took, Matchers.lessThan(maxTime));
+            return;
+        }
+        fail("Should not be able to connect to TEST_NET_1");
     }
 }
