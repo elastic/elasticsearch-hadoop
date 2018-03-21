@@ -159,7 +159,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             }
         });
 
+        // Max time to wait for a connection from the connectionMgr pool
         params.setConnectionManagerTimeout(settings.getHttpTimeout());
+        // Max time to wait for data from a connection.
         params.setSoTimeout((int) settings.getHttpTimeout());
         // explicitly set the charset
         params.setCredentialCharset(StringUtils.UTF_8.name());
@@ -186,6 +188,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
         // make sure to disable Nagle's protocol
         connectionParams.setTcpNoDelay(true);
+        // Max time to wait to establish an initial HTTP connection
+        connectionParams.setConnectionTimeout((int) settings.getHttpTimeout());
 
         this.headers = new HeaderProcessor(settings);
 
