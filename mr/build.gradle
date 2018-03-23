@@ -1,0 +1,44 @@
+
+apply plugin: 'es.hadoop.build.integration'
+
+description = "Elasticsearch Hadoop Map/Reduce"
+
+dependencies {
+    provided(project.ext.hadoopClient)
+    provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    testCompile "io.netty:netty-all:4.0.29.Final"
+    testCompile "org.elasticsearch:securemock:1.2"
+}
+
+String generatedResources = "$buildDir/generated-resources/main"
+
+sourceSets {
+    main {
+        output.dir(generatedResources, builtBy: "generateGitHash")
+    }
+}
+
+task generateGitHash {
+    inputs.file project.ext.gitHead
+    outputs.file generatedResources
+
+    doLast {
+        Properties props = new Properties()
+        props.put("version", version)
+        props.put("hash", project.ext.revHash)
+        File output = new File(generatedResources, "esh-build.properties")
+        new File(generatedResources).mkdirs()
+        output.createNewFile()
+        props.store(output.newWriter(), null)
+    }
+}
+
+eclipse.classpath.file {
+    whenMerged { cp ->
+        // export all jars (to be used upstream by dependent projects)  <-- for some reason Gradle removes all jars
+        cp.entries.each { entry ->
+            if (entry.hasProperty("exported"))
+                entry.exported = true
+        }
+    }
+}

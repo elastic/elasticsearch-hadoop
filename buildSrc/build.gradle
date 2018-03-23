@@ -25,6 +25,9 @@ repositories {
     jcenter()
     mavenCentral()
 
+    // For resolving propdeps (provided/optional dependencies)
+    maven { url 'https://repo.spring.io/plugins-release' }
+
     // For Elasticsearch snapshots.
     if (localRepo) {
         // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
@@ -37,6 +40,9 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
+
+    // Provided/Optional Dependencies
+    compile 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
 
     if (localRepo) {
         compile name: "build-tools-${version}"
