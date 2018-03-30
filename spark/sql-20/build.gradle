@@ -1,5 +1,5 @@
 
-description = "Elasticsearch Spark (for Spark 2.0)"
+description = "Elasticsearch Spark (for Spark 2.X)"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
@@ -15,7 +15,7 @@ variants {
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
 String sparkVersion = spark20Version
 
-// Revert to spark 2.2.0 for scala 2.10
+// Revert to spark 2.2.0 for scala 2.10 as 2.3+ does not support scala 2.10
 if (project.ext.scalaMajorVersion == '2.10') {
     sparkVersion = '2.2.0'
 }
@@ -98,9 +98,11 @@ dependencies {
         exclude group: 'org.apache.hadoop'
     }
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
+    testCompile "org.elasticsearch:securemock:1.2"
+    testCompile(project(":elasticsearch-hadoop-mr").sourceSets.test.output)
 
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    itestCompile(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
+
     itestCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
