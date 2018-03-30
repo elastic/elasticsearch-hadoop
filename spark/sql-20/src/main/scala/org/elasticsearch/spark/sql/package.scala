@@ -22,9 +22,9 @@ import scala.language.implicitConversions
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SQLContext
-import org.elasticsearch.spark.sql.EsSparkSQL
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.Dataset
+
 import scala.reflect.ClassTag
 
 package object sql {
