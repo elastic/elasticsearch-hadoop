@@ -390,8 +390,8 @@ Normally when using an integration that allows specifying some form of schema
 (such as Hive, or Cascading), the connector will automatically extract the field
 names from the schema and request only those fields from {es} to save on bandwidth.
 When using an integration that _does not_ leverage any data schemas (such as normal
-MR and Spark), this property allows you to specify a comma separated list of fields
-that you would like to return from {es}.
+MR and Spark), this property allows you to specify a comma delimited string of field
+names that you would like to return from {es}.
 
 IMPORTANT: If `es.read.source.filter` is set, an exception will be thrown in the
 case that the connector tries to push down a different source field filtering.
