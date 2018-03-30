@@ -13,7 +13,7 @@ import org.gradle.api.tasks.testing.Test
 
 class ScalaVariantPlugin implements Plugin<Project> {
 
-    private static final String NESTED_BUILD_RUN = 'scala.variant.nestedRun'
+    private static final String NESTED_BUILD_RUN = 'scala.variant'
 
     @Override
     void apply(Project project) {
