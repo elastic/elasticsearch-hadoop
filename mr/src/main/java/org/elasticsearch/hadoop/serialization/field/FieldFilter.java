@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.regex.Regex;
 
 public abstract class FieldFilter {
@@ -55,6 +57,29 @@ public abstract class FieldFilter {
         public NumberedInclude(String filter, int depth) {
             this.filter = filter;
             this.depth = depth;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NumberedInclude that = (NumberedInclude) o;
+
+            if (depth != that.depth) return false;
+            return filter != null ? filter.equals(that.filter) : that.filter == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = filter != null ? filter.hashCode() : 0;
+            result = 31 * result + depth;
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "NumberedInclude{"+filter+ ":"+depth+"}";
         }
     }
 
@@ -137,12 +162,30 @@ public abstract class FieldFilter {
             return Collections.<NumberedInclude> emptyList();
         }
 
-        List<NumberedInclude> newFilter = new ArrayList<NumberedInclude>(includeAsStrings.size());
+        List<NumberedInclude> numberedIncludes = new ArrayList<NumberedInclude>(includeAsStrings.size());
 
         for (String include : includeAsStrings) {
-            newFilter.add(new NumberedInclude(include));
+            int index = include.indexOf(":");
+            String filter = include;
+            int depth = 1;
+
+            try {
+                if (index > 0) {
+                    filter = include.substring(0, index);
+                    String depthString = include.substring(index + 1);
+                    if (depthString.length() > 0) {
+                        depth = Integer.parseInt(depthString);
+                    }
+                }
+            } catch (NumberFormatException ex) {
+                throw new EsHadoopIllegalArgumentException(
+                    String.format(Locale.ROOT, "Invalid parameter [%s] specified in inclusion configuration", include),
+                    ex
+                );
+            }
+            numberedIncludes.add(new NumberedInclude(filter, depth));
         }
 
-        return newFilter;
+        return numberedIncludes;
     }
 }

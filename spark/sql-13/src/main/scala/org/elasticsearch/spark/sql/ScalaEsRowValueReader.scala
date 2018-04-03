@@ -27,7 +27,6 @@ import org.elasticsearch.hadoop.serialization.builder.ValueParsingCallback
 import org.elasticsearch.spark.serialization.ScalaValueReader
 import org.apache.commons.logging.LogFactory
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
-import org.elasticsearch.hadoop.util.StringUtils
 
 class ScalaRowValueReader extends ScalaValueReader with RowValueReader with ValueParsingCallback {
 
@@ -37,7 +36,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   var currentArrayRowOrder:Seq[String] = null
 
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
-    sparkRowField = currentFieldName
+    sparkRowField = if (getCurrentField == null) null else getCurrentField.getFieldName
 
     if (sparkRowField == null) {
       sparkRowField = Utils.ROOT_LEVEL_NAME

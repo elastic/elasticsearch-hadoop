@@ -20,6 +20,11 @@ public class Mapping implements Serializable {
     private final String name;
     private final Field[] fields;
 
+    /**
+     * Construct a new mapping
+     * @param name The name of the mapping
+     * @param fields The fields in the mapping
+     */
     public Mapping(String name, Collection<Field> fields) {
         this(name, (fields != null ? fields.toArray(new Field[fields.size()]) : Field.NO_FIELDS));
     }

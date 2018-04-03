@@ -43,15 +43,12 @@ import org.elasticsearch.hadoop.util.unit.Booleans;
 /**
  * Basic value reader handling using the implied JSON type.
  */
-public class JdkValueReader implements SettingsAware, ValueReader {
+public class JdkValueReader extends AbstractValueReader implements SettingsAware {
 
     private boolean emptyAsNull = true;
     private boolean richDate = true;
     protected Collection<NumberedInclude> arrayInclude = Collections.<NumberedInclude> emptyList();
     protected Collection<String> arrayExclude = Collections.emptyList();
-
-    protected String currentFieldName;
-    protected int nestedArrayLevel = 0;
 
     @Override
     public Object readValue(Parser parser, String value, FieldType esType) {
@@ -116,7 +113,11 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     @Override
     public Object createArray(FieldType type) {
-        nestedArrayLevel++;
+        // keep track of how deep in a nested array we are
+        FieldContext ctx = getCurrentField();
+        if (ctx != null) {
+            ctx.setArrayDepth(ctx.getArrayDepth() + 1);
+        }
 
         // no need to create a collection, we'll just reuse the one passed to #addToArray
         return Collections.emptyList();
@@ -124,13 +125,21 @@ public class JdkValueReader implements SettingsAware, ValueReader {
 
     @Override
     public Object addToArray(Object array, List<Object> value) {
-        nestedArrayLevel--;
+        // Setting an array's values essentially means leaving the array scope. Keep track of our array depth.
+        FieldContext ctx = getCurrentField();
+        if (ctx != null) {
+            ctx.setArrayDepth(ctx.getArrayDepth() - 1);
+        }
 
         array = value;
-        // outer most array (a multi level array might be defined)
-        if (nestedArrayLevel == 0) {
-            Result result = FieldFilter.filter(currentFieldName, arrayInclude, arrayExclude);
+        // When adding data to an array at the outer most dimension for a field, we want to see if we're at the
+        // required array dimension yet.
+        if (ctx != null && ctx.getArrayDepth() == 0) {
+            // Check if the current field is marked as an array field.
+            Result result = FieldFilter.filter(ctx.getFieldName(), arrayInclude, arrayExclude);
             if (result.matched && result.depth > 1) {
+                // If we're not at the required array dimension after reading the data, wrap the array up to
+                // the required dimensions as detailed in the array includes config
                 int actualDepth = arrayDepth(value);
                 int extraDepth = result.depth - actualDepth;
                 if (extraDepth > 0) {
@@ -163,16 +172,6 @@ public class JdkValueReader implements SettingsAware, ValueReader {
     @Override
     public Object wrapString(String value) {
         return textValue(value);
-    }
-
-    @Override
-    public void beginField(String fieldName) {
-        currentFieldName = fieldName;
-    }
-
-    @Override
-    public void endField(String fieldName) {
-        currentFieldName = null;
     }
 
     private boolean isEmpty(String value) {

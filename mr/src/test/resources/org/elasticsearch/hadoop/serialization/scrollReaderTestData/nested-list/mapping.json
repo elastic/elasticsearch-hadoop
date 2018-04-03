@@ -1,0 +1,13 @@
+{
+  "nested-list": {
+    "mappings": {
+      "doc": {
+        "properties": {
+          "a": {
+            "type": "long"
+          }
+        }
+      }
+    }
+  }
+}

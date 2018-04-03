@@ -16,21 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
+package org.elasticsearch.hadoop.serialization;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.FieldType;
+import org.elasticsearch.hadoop.serialization.JsonUtils;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
+import org.elasticsearch.hadoop.serialization.builder.ValueReader;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -45,10 +56,18 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class ScrollReaderTest {
 
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                { Boolean.TRUE, "_metabutu"},
+                { Boolean.FALSE, "" } });
+    }
+
     private boolean readMetadata = false;
     private final String metadataField;
     private final boolean readAsJson = false;
     private final ScrollReaderConfig scrollReaderConfig;
+
     private ScrollReader reader;
 
     public ScrollReaderTest(boolean readMetadata, String metadataField) {
@@ -59,9 +78,17 @@ public class ScrollReaderTest {
         reader = new ScrollReader(scrollReaderConfig);
     }
 
+    private String scrollData(String testDataSet) {
+        return "scrollReaderTestData/" + testDataSet + "/scroll.json";
+    }
+
+    private String mappingData(String testDataSet) {
+        return "scrollReaderTestData/" + testDataSet + "/mapping.json";
+    }
+
     @Test
     public void testScrollWithFields() throws IOException {
-        InputStream stream = getClass().getResourceAsStream("scroll-fields.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("fields"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
@@ -70,7 +97,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithMatchedQueries() throws IOException {
-        InputStream stream = getClass().getResourceAsStream("scroll-matched-queries.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("matched-queries"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
@@ -79,13 +106,13 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithNestedFields() throws IOException {
-        InputStream stream = getClass().getResourceAsStream("scroll-source-mapping.json");
-        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
+        InputStream stream = getClass().getResourceAsStream(mappingData("source"));
+        MappingSet fl = FieldParser.parseMapping(JsonUtils.asMap(stream));
 
         scrollReaderConfig.resolvedMapping = fl.getResolvedView();
         reader = new ScrollReader(scrollReaderConfig);
 
-        stream = getClass().getResourceAsStream("scroll-source.json");
+        stream = getClass().getResourceAsStream(scrollData("source"));
         List<Object[]> read = reader.read(stream).getHits();
 
         assertEquals(3, read.size());
@@ -102,7 +129,7 @@ public class ScrollReaderTest {
     @Test
     public void testScrollWithSource() throws IOException {
         reader = new ScrollReader(scrollReaderConfig);
-        InputStream stream = getClass().getResourceAsStream("scroll-source.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("source"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
         Object[] objects = read.get(0);
@@ -112,7 +139,7 @@ public class ScrollReaderTest {
     @Test
     public void testScrollWithoutSource() throws IOException {
         reader = new ScrollReader(scrollReaderConfig);
-        InputStream stream = getClass().getResourceAsStream("empty-source.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("empty-source"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(2, read.size());
         Object[] objects = read.get(0);
@@ -127,7 +154,7 @@ public class ScrollReaderTest {
     @Test
     public void testScrollMultiValueList() throws IOException {
         reader = new ScrollReader(scrollReaderConfig);
-        InputStream stream = getClass().getResourceAsStream("list-with-null.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("list"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
         Object[] objects = read.get(0);
@@ -138,12 +165,11 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithJoinField() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("scroll-join-source-mapping.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("join"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
         ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
 
-        InputStream stream = getClass().getResourceAsStream("scroll-join-source.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("join"));
         List<Object[]> read = myReader.read(stream).getHits();
         assertEquals(7, read.size());
 
@@ -259,12 +285,11 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithMultipleTypes() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("scroll-multi-type-source-mapping.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("multi-type"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
         ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
 
-        InputStream stream = getClass().getResourceAsStream("scroll-multi-type-source.json");
+        InputStream stream = getClass().getResourceAsStream(scrollData("multi-type"));
         List<Object[]> read = myReader.read(stream).getHits();
         assertEquals(3, read.size());
         Object[] row1 = read.get(0);
@@ -282,10 +307,95 @@ public class ScrollReaderTest {
         assertEquals("value4", ((Map) row3[1]).get("field4"));
     }
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                { Boolean.TRUE, "_metabutu"},
-                { Boolean.FALSE, "" } });
+    @Test
+    public void testScrollWithNestedFieldAndArrayIncludes() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("nested-data"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("nested-data"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "a.b,a.b.d:2");
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), readMetadata, metadataField, readAsJson, true);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+        // First document in scroll has a nested document field
+        {
+            @SuppressWarnings("unchecked") Map<String, Object> document = (Map<String, Object>) scroll.getHits().get(0)[1];
+            @SuppressWarnings("unchecked") Map<String, Object> rootField = (Map<String, Object>) document.get("a");
+            @SuppressWarnings("unchecked") List<Object> nestedObjects = (List<Object>) rootField.get("b");
+            @SuppressWarnings("unchecked") Map<String, Object> nestedObject = (Map<String, Object>) nestedObjects.get(0);
+            assertEquals("hello", nestedObject.get("c"));
+        }
+        // Second document in scroll has a nested document with an array field. This array field should be padded to meet
+        // the configured array depth in the include setting above. This should be independent of the fact that the nested
+        // object will be added to a different array further up the call stack.
+        {
+            @SuppressWarnings("unchecked") Map<String, Object> document = (Map<String, Object>) scroll.getHits().get(1)[1];
+            System.out.println(document);
+            @SuppressWarnings("unchecked") Map<String, Object> rootField = (Map<String, Object>) document.get("a");
+            @SuppressWarnings("unchecked") List<Object> nestedObjects = (List<Object>) rootField.get("b");
+            @SuppressWarnings("unchecked") Map<String, Object> nestedObject = (Map<String, Object>) nestedObjects.get(0);
+            @SuppressWarnings("unchecked") List<Object> dataList = (List<Object>) nestedObject.get("d");
+            @SuppressWarnings("unchecked") List<Object> nestedDimensionDataList = (List<Object>) dataList.get(0);
+            assertEquals("howdy", nestedDimensionDataList.get(0));
+            assertEquals("partner", nestedDimensionDataList.get(1));
+        }
+    }
+
+    @Test
+    public void testScrollWithNestedArrays() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("nested-list"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("nested-list"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "a:3");
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+        // Case of already correctly nested array data
+        {
+            @SuppressWarnings("unchecked")
+            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(0)[1]).get("a"));
+            @SuppressWarnings("unchecked")
+            List<Object> level2List = (List<Object>) (datalist.get(0));
+            @SuppressWarnings("unchecked")
+            List<Object> level3List = (List<Object>) (level2List.get(0));
+            assertEquals(2, level3List.size());
+            assertEquals(1L, level3List.get(0));
+        }
+        // Case of insufficiently nested array data
+        {
+            @SuppressWarnings("unchecked")
+            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(1)[1]).get("a"));
+            @SuppressWarnings("unchecked")
+            List<Object> level2List = (List<Object>) (datalist.get(0));
+            @SuppressWarnings("unchecked")
+            List<Object> level3List = (List<Object>) (level2List.get(0));
+            assertEquals(2, level3List.size());
+            assertEquals(9L, level3List.get(0));
+        }
+        // Case of singleton data that is not nested in ANY array levels.
+        {
+            @SuppressWarnings("unchecked")
+            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(2)[1]).get("a"));
+            @SuppressWarnings("unchecked")
+            List<Object> level2List = (List<Object>) (datalist.get(0));
+            @SuppressWarnings("unchecked")
+            List<Object> level3List = (List<Object>) (level2List.get(0));
+            assertEquals(10L, level3List.get(0));
+        }
     }
 }

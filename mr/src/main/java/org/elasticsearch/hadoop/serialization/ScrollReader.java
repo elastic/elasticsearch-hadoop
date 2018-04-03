@@ -43,6 +43,7 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.regex.Regex;
 
@@ -755,13 +756,7 @@ public class ScrollReader {
 
     private boolean isArrayField(String fieldName) {
         // Test if the current field is marked as an array field in the include array property
-        for (NumberedInclude includeArrayField : includeArrayFields) {
-            String pattern = includeArrayField.filter;
-            if (Regex.simpleMatch(pattern, fieldName)) {
-                return true;
-            }
-        }
-        return false;
+        return fieldName != null && FieldFilter.filter(fieldName, includeArrayFields, null).matched;
     }
 
     private Object parseValue(FieldType esType) {

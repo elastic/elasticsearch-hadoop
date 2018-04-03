@@ -1,0 +1,47 @@
+{
+  "_scroll_id": "DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAAA5FkZaNWRCZ2V5VHl1ZmU5d0wwUWRiRVEAAAAAAAAAOhZGWjVkQmdleVR5dWZlOXdMMFFkYkVRAAAAAAAAADsWRlo1ZEJnZXlUeXVmZTl3TDBRZGJFUQAAAAAAAAA8FkZaNWRCZ2V5VHl1ZmU5d0wwUWRiRVEAAAAAAAAAPRZGWjVkQmdleVR5dWZlOXdMMFFkYkVR",
+  "took": 2,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 1,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "nested",
+        "_type": "doc",
+        "_id": "i0eHjGIBIXMbN_wcOnyT",
+        "_score": 1,
+        "_source": {
+          "a": {
+            "b": [
+              {
+                "c": "hello"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "_index": "nested",
+        "_type": "doc",
+        "_id": "i0eHjGIBIXMbN_wcOnyx",
+        "_score": 1,
+        "_source": {
+          "a": {
+            "b": [
+              {
+                "d": ["howdy", "partner"]
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}
