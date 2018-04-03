@@ -1,0 +1,25 @@
+{
+  "nested": {
+    "mappings": {
+      "doc": {
+        "properties": {
+          "a": {
+            "properties": {
+              "b": {
+                "type": "nested",
+                "properties": {
+                  "c": {
+                    "type": "text"
+                  },
+                  "d": {
+                    "type": "text"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

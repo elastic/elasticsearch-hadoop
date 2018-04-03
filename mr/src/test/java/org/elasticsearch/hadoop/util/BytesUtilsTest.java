@@ -111,7 +111,7 @@ public class BytesUtilsTest {
 
     // @Test
     public void testByteToCharFromFile() throws Exception {
-        BytesArray input = IOUtils.asBytes(getClass().getResourceAsStream("/org/elasticsearch/hadoop/rest/scroll-matched-queries.json"));
+        BytesArray input = IOUtils.asBytes(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/scrollReaderTestData/matched-queries/scroll.json"));
         int[] chars = new int[] { 555, 558, 1008, 1009, 1649 };
         int[] bytePositions = BytesUtils.charToBytePosition(input, chars);
         assertEquals(570, bytePositions[0]);

@@ -18,9 +18,12 @@
  */
 package org.elasticsearch.hadoop.serialization.field;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -28,91 +31,136 @@ import static org.junit.Assert.*;
 public class FieldFilterTest {
 
     @Test
-    public void testNoIncludes() {
+    public void testFilterNoIncludes() {
         assertTrue(filter("foo.bar", null, null));
     }
 
     @Test
-    public void testOnlyIncludesNotMatching() {
+    public void testFilterOnlyIncludesNotMatching() {
         assertFalse(filter("foo.bar", Arrays.asList("bar"), null));
     }
 
     @Test
-    public void testOnlyIncludesExactMatch() {
+    public void testFilterOnlyIncludesExactMatch() {
         assertTrue(filter("foo.bar", Arrays.asList("foo.bar"), null));
     }
 
     @Test
-    public void testOnlyIncludesTopLevelMatchWithoutPattern() {
+    public void testFilterOnlyIncludesTopLevelMatchWithoutPattern() {
         assertFalse(filter("foo.bar", Arrays.asList("foo"), null));
     }
 
     @Test
-    public void testOnlyIncludesTopLevelMatchWithPattern() {
+    public void testFilterOnlyIncludesTopLevelMatchWithPattern() {
         assertTrue(filter("foo.bar", Arrays.asList( "foo.*"), null));
     }
 
     @Test
-    public void testOnlyIncludesNestedMatch() {
+    public void testFilterOnlyIncludesNestedMatch() {
         assertTrue(filter("foo.bar", Arrays.asList( "*.bar"), null));
     }
 
     @Test
-    public void testOnlyIncludesNestedPattern() {
+    public void testFilterOnlyIncludesNestedPattern() {
         assertTrue(filter("foo.bar.taz", Arrays.asList( "foo.*ar.taz"), null));
     }
 
     @Test
-    public void testOnlyIncludesNestedPatternNotMatching() {
+    public void testFilterOnlyIncludesNestedPatternNotMatching() {
         assertFalse(filter("foo.bar.taz", Arrays.asList( "foo.br*.taz"), null));
     }
 
     @Test
-    public void testOnlyExcludesPartialMatch() {
+    public void testFilterOnlyExcludesPartialMatch() {
         assertTrue(filter("foo.bar", null, Arrays.asList("foo")));
     }
 
     @Test
-    public void testOnlyExcludesWithExactMatch() {
+    public void testFilterOnlyExcludesWithExactMatch() {
         assertFalse(filter("foo.bar", null, Arrays.asList("foo.bar")));
     }
 
     @Test
-    public void testOnlyExcludesWithTopPatternMatch() {
+    public void testFilterOnlyExcludesWithTopPatternMatch() {
         assertFalse(filter("foo.bar", null, Arrays.asList("foo*")));
     }
 
     @Test
-    public void testOnlyExcludesWithNestedPatternMatch() {
+    public void testFilterOnlyExcludesWithNestedPatternMatch() {
         assertFalse(filter("foo.bar", null, Arrays.asList("*.bar")));
     }
 
     @Test
-    public void testOnlyExcludesWithNestedMiddlePatternMatch() {
+    public void testFilterOnlyExcludesWithNestedMiddlePatternMatch() {
         assertFalse(filter("foo.bar.taz", null, Arrays.asList("foo.*.taz")));
     }
 
     @Test
-    public void testIncludeAndExcludeExactMatch() {
+    public void testFilterIncludeAndExcludeExactMatch() {
         assertFalse(filter("foo.bar", Arrays.asList("foo", "foo.bar"), Arrays.asList("foo.bar")));
     }
 
     @Test
-    public void testIncludeTopMatchWithExcludeNestedExactMatch() {
+    public void testFilterIncludeTopMatchWithExcludeNestedExactMatch() {
         assertFalse(filter("foo.bar.taz", Arrays.asList("foo.bar.*"), Arrays.asList("foo.*.taz")));
     }
 
     @Test
-    public void testIncludeExactMatchWithExcludePattern() {
+    public void testFilterIncludeExactMatchWithExcludePattern() {
         assertFalse(filter("foo.bar", Arrays.asList("foo.bar"), Arrays.asList("foo.*")));
     }
 
     @Test
-    public void testMatchNonExisting() {
+    public void testFilterMatchNonExisting() {
         assertFalse(filter("nested.what", Arrays.asList("nested.bar"), null));
     }
 
     public static boolean filter(String path, Collection<String> includes, Collection<String> excludes) {
         return FieldFilter.filter(path, FieldFilter.toNumberedFilter(includes), excludes, true).matched;
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreateMalformedFilter() {
+        FieldFilter.toNumberedFilter(Arrays.asList("a:broken"));
+    }
+
+    @Test
+    public void testCreateSimpleFilter() {
+        assertThat(
+                new ArrayList<FieldFilter.NumberedInclude>(FieldFilter.toNumberedFilter(Arrays.asList("a"))),
+                Matchers.contains(new FieldFilter.NumberedInclude("a", 1))
+        );
+    }
+
+    @Test
+    public void testCreateMultipleSimpleFilters() {
+        assertThat(
+                new ArrayList<FieldFilter.NumberedInclude>(FieldFilter.toNumberedFilter(Arrays.asList("a", "b"))),
+                Matchers.contains(new FieldFilter.NumberedInclude("a", 1), new FieldFilter.NumberedInclude("b", 1))
+        );
+    }
+
+    @Test
+    public void testCreateSimpleNumberedFilter() {
+        assertThat(
+                new ArrayList<FieldFilter.NumberedInclude>(FieldFilter.toNumberedFilter(Arrays.asList("a:2"))),
+                Matchers.contains(new FieldFilter.NumberedInclude("a", 2))
+        );
+    }
+
+    @Test
+    public void testCreateMultipleNumberedFilters() {
+        assertThat(
+                new ArrayList<FieldFilter.NumberedInclude>(FieldFilter.toNumberedFilter(Arrays.asList("a:2", "b:4"))),
+                Matchers.contains(new FieldFilter.NumberedInclude("a", 2), new FieldFilter.NumberedInclude("b", 4))
+        );
+    }
+
+    @Test
+    public void testCreateMultipleMixedFilters() {
+        assertThat(
+                new ArrayList<FieldFilter.NumberedInclude>(FieldFilter.toNumberedFilter(Arrays.asList("a:2", "b:4", "c"))),
+                Matchers.contains(new FieldFilter.NumberedInclude("a", 2), new FieldFilter.NumberedInclude("b", 4), new FieldFilter.NumberedInclude("c", 1))
+        );
     }
 }

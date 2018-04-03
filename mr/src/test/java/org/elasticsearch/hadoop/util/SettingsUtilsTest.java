@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -92,5 +93,16 @@ public class SettingsUtilsTest {
         List<String> nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         assertThat(nodes.size(), equalTo(1));
         assertThat("http://127.0.0.1:9800", equalTo(nodes.get(0)));
+    }
+
+    @Test
+    public void testGetArrayIncludes() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("es.read.field.as.array.include", "a:4");
+
+        PropertiesSettings settings = new PropertiesSettings(props);
+        List<FieldFilter.NumberedInclude> filters = SettingsUtils.getFieldArrayFilterInclude(settings);
+        assertThat(filters.size(), equalTo(1));
+        assertThat(filters.get(0), equalTo(new FieldFilter.NumberedInclude("a", 4)));
     }
 }

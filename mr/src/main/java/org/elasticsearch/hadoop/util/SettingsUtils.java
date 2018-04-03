@@ -24,6 +24,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 
 import java.net.InetAddress;
@@ -222,31 +223,13 @@ public abstract class SettingsUtils {
     public static List<NumberedInclude> getFieldArrayFilterInclude(Settings settings) {
         String includeString = settings.getReadFieldAsArrayInclude();
         List<String> includes = StringUtils.tokenize(includeString);
-
-        List<NumberedInclude> list = new ArrayList<NumberedInclude>(includes.size());
-
-        for (String include : includes) {
-            int index = include.indexOf(":");
-            String filter = include;
-            int depth = 1;
-
-            try {
-                if (index > 0) {
-                    filter = include.substring(0, index);
-                    String depthString = include.substring(index + 1);
-                    if (depthString.length() > 0) {
-                        depth = Integer.parseInt(depthString);
-                    }
-                }
-            } catch (NumberFormatException ex) {
-                throw new EsHadoopIllegalArgumentException(
-                        String.format(Locale.ROOT, "Invalid parameter [%s] specified in setting [%s]",
-                                include, includeString), ex);
-            }
-            list.add(new NumberedInclude(filter, depth));
+        try {
+            return FieldFilter.toNumberedFilter(includes);
+        } catch (EsHadoopIllegalArgumentException iae) {
+            throw new EsHadoopIllegalArgumentException("Failed to parse [" +
+                    ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE + "] option with value of [" +
+                    includeString + "]", iae);
         }
-
-        return list;
     }
 
     public static String getFixedRouting(Settings settings) {

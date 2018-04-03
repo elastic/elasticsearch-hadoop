@@ -1,0 +1,68 @@
+{
+  "_scroll_id": "DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAABDFkZaNWRCZ2V5VHl1ZmU5d0wwUWRiRVEAAAAAAAAARBZGWjVkQmdleVR5dWZlOXdMMFFkYkVRAAAAAAAAAEUWRlo1ZEJnZXlUeXVmZTl3TDBRZGJFUQAAAAAAAABHFkZaNWRCZ2V5VHl1ZmU5d0wwUWRiRVEAAAAAAAAARhZGWjVkQmdleVR5dWZlOXdMMFFkYkVR",
+  "took": 183,
+  "timed_out": false,
+  "_shards": {
+    "total": 5,
+    "successful": 5,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": 2,
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "nested-list",
+        "_type": "doc",
+        "_id": "jEefjWIBIXMbN_wc33xF",
+        "_score": 1,
+        "_source": {
+          "a": [
+            [
+              [
+                1,
+                2
+              ],
+              [
+                3,
+                4
+              ]
+            ],
+            [
+              [
+                5,
+                6
+              ],
+              [
+                7,
+                8
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "_index": "nested-list",
+        "_type": "doc",
+        "_id": "jUeljWIBIXMbN_wc0HwL",
+        "_score": 1,
+        "_source": {
+          "a": [
+            9,
+            0
+          ]
+        }
+      },
+      {
+        "_index": "nested-list",
+        "_type": "doc",
+        "_id": "jUeljWIBIXMbN_we3BLe",
+        "_score": 1,
+        "_source": {
+          "a": 10
+        }
+      }
+    ]
+  }
+}
