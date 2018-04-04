@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.hive.pushdown;
+package org.elasticsearch.hadoop.hive;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,7 +26,7 @@ import org.apache.hadoop.hive.ql.plan.ExprNodeGenericFuncDesc;
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPAnd;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.mapred.JobConf;
-import org.elasticsearch.hadoop.hive.pushdown.function.Pair;
+import org.elasticsearch.hadoop.hive.pushdown.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
 

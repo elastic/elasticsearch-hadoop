@@ -86,34 +86,4 @@ public abstract class Node implements Serializable {
         return "expression=" + expression;
     }
 
-    /**
-     * print the whole tree nodes by using DFS recursion.
-     *
-     * @return
-     */
-    public String treeToString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n=================== WhereTree ==================");
-        _treeToString(sb, this, 0);
-        sb.append("\n================END WhereTree END===============");
-        return sb.toString();
-    }
-
-    /**
-     * recursively traverse node,then write to the first input params.
-     *
-     * @param result
-     * @param now
-     * @param dep
-     */
-    protected static void _treeToString(StringBuilder result, Node now, int dep) {
-        result.append("\n");
-        for (int i = 0; i < dep; i++)
-            result.append("+");
-        result.append(" ").append(now.toString());
-        if (now.hasChildren()) {
-            for (Node wn : now.getChildren())
-                _treeToString(result, wn, dep + 1);
-        }
-    }
 }

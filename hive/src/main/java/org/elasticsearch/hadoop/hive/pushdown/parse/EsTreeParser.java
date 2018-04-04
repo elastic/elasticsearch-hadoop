@@ -18,16 +18,30 @@
  */
 package org.elasticsearch.hadoop.hive.pushdown.parse;
 
+import org.elasticsearch.hadoop.hive.pushdown.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.SargableParser;
 import org.elasticsearch.hadoop.hive.pushdown.TreeParser;
-import org.elasticsearch.hadoop.hive.pushdown.function.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.node.ConstantNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.FieldNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.*;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.AndJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.BoolJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.ExistsJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObjManager;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.MatchJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.MissingJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.QueryJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.RangeJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.TermJson;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 public class EsTreeParser extends TreeParser<JsonObj> {
     JsonObj preFilterJson = null;

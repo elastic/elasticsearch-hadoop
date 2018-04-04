@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.hive.pushdown.parse.query;
 
 /**
  * Exist operator.
- *
+ * <p>
  * It is equal to exists operation in elasticsearch syntax.
  */
 public class ExistsJson extends JsonObj {
@@ -31,5 +31,6 @@ public class ExistsJson extends JsonObj {
 
     public ExistsJson(String field) {
         super("field", field);
+        this.key = "exists";
     }
 }

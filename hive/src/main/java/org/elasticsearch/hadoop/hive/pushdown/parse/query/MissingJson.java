@@ -30,5 +30,6 @@ public class MissingJson extends JsonObj {
 
     public MissingJson(String field) {
         super("field", field);
+        this.key = "missing";
     }
 }

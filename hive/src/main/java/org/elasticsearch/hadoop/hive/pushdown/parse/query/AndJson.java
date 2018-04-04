@@ -27,7 +27,7 @@ import java.util.List;
  * And operator
  * <p>
  * It is equal to and operation in elasticsearch 1.X syntax.
- *
+ * <p>
  * And using it before elasticsearch 5.X version
  */
 public class AndJson extends JsonObj {

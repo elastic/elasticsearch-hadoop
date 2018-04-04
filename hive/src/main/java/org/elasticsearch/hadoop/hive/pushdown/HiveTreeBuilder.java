@@ -106,8 +106,6 @@ public class HiveTreeBuilder {
                 childrenExprs.add(nodeDesc.getExprString());
             }
 
-            // findParentOp is usuallly for local test
-//            String operator = findParentOp(opNode.getExpression(), childrenExprs);
             String operator = findOp(hiveNode);
 
             if (operator != null) {
@@ -126,7 +124,7 @@ public class HiveTreeBuilder {
                 _build(opNode, nodeDesc);
             }
 
-            // 最后检查当前节点是否需要扫全表
+            // finally, check whether is current node need scan all data from the target table or not.
             boolean scanAllTable = opNode.checkNeedScanAllTable(sargableParser);
             opNode.checkIsAllOptimizable(sargableParser);
             if (!scanAllTable && sargableParser.reverseOp(operator) != null) {

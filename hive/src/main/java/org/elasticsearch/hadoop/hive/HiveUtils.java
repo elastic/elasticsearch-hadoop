@@ -18,19 +18,8 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspectorFactory;
@@ -48,7 +37,25 @@ import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+
+import static org.elasticsearch.hadoop.hive.HiveConstants.DATA_SOURCE_PUSH_DOWN;
+import static org.elasticsearch.hadoop.hive.HiveConstants.DATA_SOURCE_PUSH_DOWN_DEFAULT;
+
+
 abstract class HiveUtils {
+
+    private static final Log log = LogFactory.getLog(HiveUtils.class);
 
     // Date type available since Hive 0.12
     static final boolean DATE_WRITABLE_AVAILABLE = ObjectUtils.isClassPresent(HiveConstants.DATE_WRITABLE,
@@ -78,6 +85,7 @@ abstract class HiveUtils {
     /**
      * Renders the full collection of field names needed from ES by combining the names of
      * the hive table fields with the user provided name mappings.
+     *
      * @param settings Settings to pull hive column names and user name mappings from.
      * @return A collection of ES field names
      */
@@ -104,6 +112,7 @@ abstract class HiveUtils {
     /**
      * Reads the current aliases, and then the set of hive column names. Remaps the raw hive column names (_col1, _col2)
      * to the names used in the hive table, or, if the mappings exist, the names in the mappings instead.
+     *
      * @param settings Settings to pull user name mappings and hive column names from
      * @return FieldAlias mapping object to go from hive column name to ES field name
      */
@@ -132,6 +141,7 @@ abstract class HiveUtils {
 
     /**
      * Selects an appropriate field from the given Hive table schema to insert JSON data into if the feature is enabled
+     *
      * @param settings Settings to read schema information from
      * @return A FieldAlias object that projects the json source field into the select destination field
      */
@@ -147,7 +157,7 @@ abstract class HiveUtils {
 
         String candidateField = null;
 
-        while(nameIter.hasNext() && candidateField == null) {
+        while (nameIter.hasNext() && candidateField == null) {
             String columnName = nameIter.next();
             String type = typeIter.next();
 
@@ -204,5 +214,17 @@ abstract class HiveUtils {
 
         settings.setProperty(HiveConstants.COLUMN_COMMENTS, "");
         tbl.setProperty(HiveConstants.COLUMN_COMMENTS, "");
+    }
+
+    /**
+     * whether to perform pushdown optimization operation, the default is true
+     *
+     * @param settings
+     * @return
+     */
+    static boolean isPushDown(Settings settings) {
+        boolean isPushdown = Booleans.parseBoolean(settings.getProperty(DATA_SOURCE_PUSH_DOWN), DATA_SOURCE_PUSH_DOWN_DEFAULT);
+        log.info("[HiveUtils][Pushdown] " + DATA_SOURCE_PUSH_DOWN + " : " + isPushdown);
+        return isPushdown;
     }
 }

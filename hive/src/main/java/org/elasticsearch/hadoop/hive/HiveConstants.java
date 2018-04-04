@@ -18,6 +18,8 @@
  */
 package org.elasticsearch.hadoop.hive;
 
+import org.elasticsearch.hadoop.hive.pushdown.EsSargableParser;
+
 /**
  * Holder class for various Hive configuration options. Exists mainly since the Hive classes have been refactored/renamed between releases which are not backwards compatible.
  */
@@ -25,7 +27,7 @@ interface HiveConstants {
 
     String COLUMNS = "columns";
     String COLUMNS_TYPES = "columns.types";
-    String UNNAMED_COLUMN_PREFIX="_col";
+    String UNNAMED_COLUMN_PREFIX = "_col";
 
     String DECIMAL_WRITABLE = "org.apache.hadoop.hive.serde2.io.HiveDecimalWritable";
     String DATE_WRITABLE = "org.apache.hadoop.hive.serde2.io.DateWritable";
@@ -38,6 +40,13 @@ interface HiveConstants {
 
     String INPUT_TBL_PROPERTIES = "es.internal.hive.input.tbl.properties";
     String OUTPUT_TBL_PROPERTIES = "es.internal.hive.output.tbl.properties";
-    String[] VIRTUAL_COLUMNS = new String[] { "INPUT__FILE__NAME", "BLOCK__OFFSET__INSIDE__FILE",
-            "ROW__OFFSET__INSIDE__BLOCK", "RAW__DATA__SIZE", "GROUPING__ID" };
+    String[] VIRTUAL_COLUMNS = new String[]{"INPUT__FILE__NAME", "BLOCK__OFFSET__INSIDE__FILE",
+            "ROW__OFFSET__INSIDE__BLOCK", "RAW__DATA__SIZE", "GROUPING__ID"};
+
+    /**
+     * is pushdown optimization, default true
+     */
+    String DATA_SOURCE_PUSH_DOWN = "es.hive.pushdown";
+    boolean DATA_SOURCE_PUSH_DOWN_DEFAULT = true;
+
 }

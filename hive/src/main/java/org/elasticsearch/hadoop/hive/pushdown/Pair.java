@@ -16,13 +16,43 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.hive.pushdown.function;
+package org.elasticsearch.hadoop.hive.pushdown;
 
 import java.io.Serializable;
 
 /**
- * A closure function
+ * the wrapper about a key value pairs
  */
-public interface Function2<A, B, R> extends Serializable {
-    R apply(A in1, B in2);
+public class Pair<A, B> implements Serializable {
+    protected A first;
+    protected B second;
+
+    public Pair(A first, B second) {
+        this.first = first;
+        this.second = second;
+    }
+
+    public A getFirst() {
+        return first;
+    }
+
+    public void setFirst(A first) {
+        this.first = first;
+    }
+
+    public B getSecond() {
+        return second;
+    }
+
+    public void setSecond(B second) {
+        this.second = second;
+    }
+
+    @Override
+    public String toString() {
+        return "Pair{" +
+                "first=" + first +
+                ", second=" + second +
+                '}';
+    }
 }

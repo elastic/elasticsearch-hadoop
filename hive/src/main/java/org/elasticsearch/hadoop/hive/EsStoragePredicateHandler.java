@@ -26,16 +26,18 @@ import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.hive.pushdown.EsSargableParser;
 import org.elasticsearch.hadoop.hive.pushdown.HiveTreeBuilder;
-import org.elasticsearch.hadoop.hive.pushdown.PredicateHandler;
+import org.elasticsearch.hadoop.hive.pushdown.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.SargableParser;
-import org.elasticsearch.hadoop.hive.pushdown.Utils;
-import org.elasticsearch.hadoop.hive.pushdown.function.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
 import org.elasticsearch.hadoop.hive.pushdown.parse.EsQueryParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.EsTreeParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
+import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryBuilder;
+import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 
@@ -49,18 +51,34 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
 
     private static Log log = LogFactory.getLog(EsStoragePredicateHandler.class);
 
+    private static EsStoragePredicateHandler _instance;
+
+    private EsStoragePredicateHandler() {
+    }
+
+    public static EsStoragePredicateHandler getInstance() {
+        if (_instance == null) {
+            synchronized (EsStoragePredicateHandler.class) {
+                if (_instance == null) {
+                    _instance = new EsStoragePredicateHandler();
+                }
+            }
+        }
+        return _instance;
+    }
+
     @Override
     public Pair<Node, JsonObj> optimizePushdown(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
         if (exprNodeDesc == null) {
             return new Pair<Node, JsonObj>(null, null);
         }
 
-        // get settings
+        // load settings
         Settings settings = HadoopSettingsManager.loadFrom(jobConf);
         boolean isES50 = SettingsUtils.isEs50(settings);
         log.info("[PushDown][isES50] : " + isES50);
 
-        SargableParser sargableParser = Utils.getSargableParser(settings);
+        SargableParser sargableParser = EsSargableParser.getInstance();
         if (sargableParser == null) {
             return new Pair<Node, JsonObj>(null, null);
         }
@@ -77,10 +95,14 @@ public class EsStoragePredicateHandler extends PredicateHandler<JsonObj> {
         String preFilterQuery = settings.getQuery();
         // if exists es.query prop, then it is a necessary condition to add to the pushdown optimization plan
         if (StringUtils.isNotEmpty(preFilterQuery)) {
-            log.info("[PushDown][Pre Filter " + ES_QUERY + "] : " + preFilterQuery);
-            JsonObj preFilterJson = new EsQueryParser(jobConf, isES50).parse(preFilterQuery);
-            //add a pre filter condition.
-            parser.setPreFilterJson(preFilterJson);
+            QueryBuilder rawQuery = QueryUtils.parseQuery(settings);
+
+            if (rawQuery != null && !(rawQuery instanceof MatchAllQueryBuilder)) {
+                log.info("[PushDown][Pre Filter " + ES_QUERY + "] : " + preFilterQuery);
+                JsonObj preFilterJson = new EsQueryParser(rawQuery, isES50).parse();
+                //add a pre filter condition.
+                parser.setPreFilterJson(preFilterJson);
+            }
         }
 
         //build a operator node tree

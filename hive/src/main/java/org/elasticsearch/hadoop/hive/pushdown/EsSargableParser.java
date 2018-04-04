@@ -22,12 +22,33 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import org.apache.hadoop.hive.ql.udf.UDFRegExp;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Es Sargable Parser class
  */
 public class EsSargableParser implements SargableParser {
+
+    private static EsSargableParser _instance;
+
+    private EsSargableParser() {
+        init();
+    }
+
+    public static EsSargableParser getInstance() {
+        if (_instance == null) {
+            synchronized (EsSargableParser.class) {
+                if (_instance == null) {
+                    _instance = new EsSargableParser();
+                }
+            }
+        }
+        return _instance;
+    }
 
     /**
      * All sargable operators
@@ -54,10 +75,6 @@ public class EsSargableParser implements SargableParser {
     protected Set<String> logicOp = new HashSet<String>(Arrays.asList(
             "and", "or", "not"
     ));
-
-    public EsSargableParser() {
-        init();
-    }
 
     public void init() {
         reverseOps.put(">", "<");
