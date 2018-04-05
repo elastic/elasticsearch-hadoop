@@ -756,7 +756,7 @@ public class ScrollReader {
 
     private boolean isArrayField(String fieldName) {
         // Test if the current field is marked as an array field in the include array property
-        return fieldName != null && FieldFilter.filter(fieldName, includeArrayFields, null).matched;
+        return fieldName != null && includeArrayFields != null && !includeArrayFields.isEmpty() && FieldFilter.filter(fieldName, includeArrayFields, null).matched;
     }
 
     private Object parseValue(FieldType esType) {

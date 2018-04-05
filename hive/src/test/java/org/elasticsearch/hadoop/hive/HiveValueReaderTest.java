@@ -30,7 +30,9 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -46,7 +48,7 @@ public class HiveValueReaderTest {
         Map map = (Map) doc[1];
         assertTrue(map.containsKey(new Text("type")));
         assertTrue(map.containsKey(new Text("&t")));
-        assertTrue(map.get(new Text("&t")).toString().contains("2014-08-05"));
+        assertThat(map.get(new Text("&t")).toString(), containsString("2014-08-05"));
     }
 
     private Mapping mapping(String resource) throws Exception {
