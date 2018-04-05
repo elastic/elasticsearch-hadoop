@@ -643,7 +643,7 @@ public abstract class RestService implements Serializable {
         repository.close();
 
         Assert.isTrue(!targetShards.isEmpty(),
-                String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters?)", resource));
+                String.format("Cannot determine write shards for [%s]; likely its format is incorrect (maybe it contains illegal characters? or all shards failed?)", resource));
 
 
         List<ShardInfo> orderedShards = new ArrayList<ShardInfo>(targetShards.keySet());
