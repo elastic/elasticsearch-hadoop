@@ -37,7 +37,7 @@ class ScalaRowValueReader extends ScalaValueReader with RowValueReader with Valu
   var currentArrayRowOrder:Seq[String] = null
 
   override def readValue(parser: Parser, value: String, esType: FieldType) = {
-    sparkRowField = currentFieldName
+    sparkRowField = if (getCurrentField == null) null else getCurrentField.getFieldName
 
     if (sparkRowField == null) {
       sparkRowField = Utils.ROOT_LEVEL_NAME
