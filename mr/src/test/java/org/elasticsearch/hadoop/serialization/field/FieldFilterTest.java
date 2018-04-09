@@ -41,6 +41,17 @@ public class FieldFilterTest {
     }
 
     @Test
+    public void testFilterOnlyIncludesPartialMatching() {
+        assertFalse(filter("fo", Arrays.asList("foo.bar.baz"), null));
+        assertTrue(filter("foo", Arrays.asList("foo.bar.baz"), null));
+        assertFalse(filter("foo.ba", Arrays.asList("foo.bar.baz"), null));
+        assertTrue(filter("foo.bar", Arrays.asList("foo.bar.baz"), null));
+        assertFalse(filter("foo.bar.ba", Arrays.asList("foo.bar.baz"), null));
+        assertTrue(filter("foo.bar.baz", Arrays.asList("foo.bar.baz"), null));
+        assertFalse(filter("foo.bar.baz.qux", Arrays.asList("foo.bar.baz"), null));
+    }
+
+    @Test
     public void testFilterOnlyIncludesExactMatch() {
         assertTrue(filter("foo.bar", Arrays.asList("foo.bar"), null));
     }
