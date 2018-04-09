@@ -136,7 +136,7 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
         // required array dimension yet.
         if (ctx != null && ctx.getArrayDepth() == 0) {
             // Check if the current field is marked as an array field.
-            Result result = FieldFilter.filter(ctx.getFieldName(), arrayInclude, arrayExclude);
+            Result result = FieldFilter.filter(ctx.getFieldName(), arrayInclude, arrayExclude, false);
             if (result.matched && result.depth > 1) {
                 // If we're not at the required array dimension after reading the data, wrap the array up to
                 // the required dimensions as detailed in the array includes config

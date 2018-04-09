@@ -133,7 +133,14 @@ public abstract class FieldFilter {
                         break;
                     }
                     else if (include.length() > path.length() && include.charAt(path.length()) == '.') {
-                        // include might may match deeper paths. Dive deeper.
+                        // This is mostly for the case that we are writing a document with a path like "a.b.c", we are
+                        // starting to write the first field "a", and we have marked in the settings that we want to
+                        // explicitly include the field "a.b". We don't want to skip writing field "a" in this case;
+                        // Moreover, we want to include "a" because we know that "a.b" was explicitly included to be
+                        // written, and we can't determine yet if "a.b" even exists at this point.
+                        // The same logic applies for reading data. Make sure to read the "a" field even if it's not
+                        // marked as included specifically. If we skip the "a" field at this point, we may skip the "b"
+                        // field underneath it which is marked as explicitly included.
                         pathIsPrefixOfAnInclude = true;
                         continue;
                     }

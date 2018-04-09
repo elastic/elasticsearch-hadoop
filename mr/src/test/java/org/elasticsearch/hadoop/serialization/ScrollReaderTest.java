@@ -22,26 +22,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.serialization.FieldType;
-import org.elasticsearch.hadoop.serialization.JsonUtils;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.builder.ValueReader;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Field;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
-import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -314,36 +307,65 @@ public class ScrollReaderTest {
         InputStream stream = getClass().getResourceAsStream(scrollData("nested-data"));
 
         Settings testSettings = new TestSettings();
-        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "a.b,a.b.d:2");
+        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "a.b.d:2,a.b.f");
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), readMetadata, metadataField, readAsJson, true);
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
         ScrollReader reader = new ScrollReader(scrollReaderConfig);
 
         ScrollReader.Scroll scroll = reader.read(stream);
-        // First document in scroll has a nested document field
-        {
-            @SuppressWarnings("unchecked") Map<String, Object> document = (Map<String, Object>) scroll.getHits().get(0)[1];
-            @SuppressWarnings("unchecked") Map<String, Object> rootField = (Map<String, Object>) document.get("a");
-            @SuppressWarnings("unchecked") List<Object> nestedObjects = (List<Object>) rootField.get("b");
-            @SuppressWarnings("unchecked") Map<String, Object> nestedObject = (Map<String, Object>) nestedObjects.get(0);
-            assertEquals("hello", nestedObject.get("c"));
-        }
-        // Second document in scroll has a nested document with an array field. This array field should be padded to meet
+        // First document in scroll has a single object on the nested field.
+        assertEquals("yo", JsonUtils.query("a").get("b").get(0).get("c").apply(scroll.getHits().get(0)[1]));
+        // Second document in scroll has a nested document field
+        assertEquals("hello", JsonUtils.query("a").get("b").get(0).get("c").apply(scroll.getHits().get(1)[1]));
+        // Third document in scroll has a nested document with an array field. This array field should be padded to meet
         // the configured array depth in the include setting above. This should be independent of the fact that the nested
         // object will be added to a different array further up the call stack.
-        {
-            @SuppressWarnings("unchecked") Map<String, Object> document = (Map<String, Object>) scroll.getHits().get(1)[1];
-            System.out.println(document);
-            @SuppressWarnings("unchecked") Map<String, Object> rootField = (Map<String, Object>) document.get("a");
-            @SuppressWarnings("unchecked") List<Object> nestedObjects = (List<Object>) rootField.get("b");
-            @SuppressWarnings("unchecked") Map<String, Object> nestedObject = (Map<String, Object>) nestedObjects.get(0);
-            @SuppressWarnings("unchecked") List<Object> dataList = (List<Object>) nestedObject.get("d");
-            @SuppressWarnings("unchecked") List<Object> nestedDimensionDataList = (List<Object>) dataList.get(0);
-            assertEquals("howdy", nestedDimensionDataList.get(0));
-            assertEquals("partner", nestedDimensionDataList.get(1));
-        }
+        assertEquals("howdy", JsonUtils.query("a").get("b").get(0).get("d").get(0).get(0).apply(scroll.getHits().get(2)[1]));
+        assertEquals("partner", JsonUtils.query("a").get("b").get(0).get("d").get(0).get(1).apply(scroll.getHits().get(2)[1]));
+
+        // Fourth document has some nested arrays next to more complex datatypes
+        assertEquals(1L, JsonUtils.query("a").get("b").get(0).get("f").get(0).apply(scroll.getHits().get(3)[1]));
+        assertEquals(ISODateTimeFormat.dateParser().parseDateTime("2015-01-01").toDate(), JsonUtils.query("a").get("b").get(0).get("e").apply(scroll.getHits().get(3)[1]));
+        assertEquals(3L, JsonUtils.query("a").get("b").get(1).get("f").get(0).apply(scroll.getHits().get(3)[1]));
+    }
+
+    @Test
+    public void testScrollWithObjectFieldAndArrayIncludes() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("object-fields"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("object-fields"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_FIELD_AS_ARRAY_INCLUDE, "a.b.d:2,a.b,a.b.f");
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+        // First document in scroll has a single object on the nested field.
+        assertEquals("yo", JsonUtils.query("a").get("b").get(0).get("c").apply(scroll.getHits().get(0)[1]));
+        // Second document in scroll has a nested document field
+        assertEquals("hello", JsonUtils.query("a").get("b").get(0).get("c").apply(scroll.getHits().get(1)[1]));
+        // Third document in scroll has a nested document with an array field. This array field should be padded to meet
+        // the configured array depth in the include setting above. This should be independent of the fact that the nested
+        // object will be added to a different array further up the call stack.
+        assertEquals("howdy", JsonUtils.query("a").get("b").get(0).get("d").get(0).get(0).apply(scroll.getHits().get(2)[1]));
+        assertEquals("partner", JsonUtils.query("a").get("b").get(0).get("d").get(0).get(1).apply(scroll.getHits().get(2)[1]));
+
+        // Fourth document has some nested arrays next to more complex datatypes
+        assertEquals(1L, JsonUtils.query("a").get("b").get(0).get("f").get(0).apply(scroll.getHits().get(3)[1]));
+        assertEquals(ISODateTimeFormat.dateParser().parseDateTime("2015-01-01").toDate(), JsonUtils.query("a").get("b").get(0).get("e").apply(scroll.getHits().get(3)[1]));
+        assertEquals(3L, JsonUtils.query("a").get("b").get(1).get("f").get(0).apply(scroll.getHits().get(3)[1]));
     }
 
     @Test
@@ -366,36 +388,10 @@ public class ScrollReaderTest {
 
         ScrollReader.Scroll scroll = reader.read(stream);
         // Case of already correctly nested array data
-        {
-            @SuppressWarnings("unchecked")
-            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(0)[1]).get("a"));
-            @SuppressWarnings("unchecked")
-            List<Object> level2List = (List<Object>) (datalist.get(0));
-            @SuppressWarnings("unchecked")
-            List<Object> level3List = (List<Object>) (level2List.get(0));
-            assertEquals(2, level3List.size());
-            assertEquals(1L, level3List.get(0));
-        }
+        assertEquals(1L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(0)[1]));
         // Case of insufficiently nested array data
-        {
-            @SuppressWarnings("unchecked")
-            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(1)[1]).get("a"));
-            @SuppressWarnings("unchecked")
-            List<Object> level2List = (List<Object>) (datalist.get(0));
-            @SuppressWarnings("unchecked")
-            List<Object> level3List = (List<Object>) (level2List.get(0));
-            assertEquals(2, level3List.size());
-            assertEquals(9L, level3List.get(0));
-        }
+        assertEquals(9L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(1)[1]));
         // Case of singleton data that is not nested in ANY array levels.
-        {
-            @SuppressWarnings("unchecked")
-            List<Object> datalist = (List<Object>) (((Map) scroll.getHits().get(2)[1]).get("a"));
-            @SuppressWarnings("unchecked")
-            List<Object> level2List = (List<Object>) (datalist.get(0));
-            @SuppressWarnings("unchecked")
-            List<Object> level3List = (List<Object>) (level2List.get(0));
-            assertEquals(10L, level3List.get(0));
-        }
+        assertEquals(10L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(2)[1]));
     }
 }

@@ -712,7 +712,16 @@ public class ScrollReader {
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
-            return map(fieldMapping);
+            // Check if the object field is a nested object or a field that should be considered an array.
+            FieldType esType = mapping(fieldMapping);
+            if ((esType != null && esType.equals(FieldType.NESTED)) || isArrayField(fieldMapping)) {
+                // If this field has the nested data type, then this object we are
+                // about to read is using the abbreviated single value syntax (no array brackets needed for nested fields
+                // that only have one nested element.)
+                return singletonList(fieldMapping, map(fieldMapping));
+            } else {
+                return map(fieldMapping);
+            }
         }
         FieldType esType = mapping(fieldMapping);
 
@@ -739,6 +748,7 @@ public class ScrollReader {
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
+            // Don't need special handling for nested fields since this field is already in an array.
             return map(fieldMapping);
         }
         FieldType esType = mapping(fieldMapping);
@@ -756,7 +766,12 @@ public class ScrollReader {
 
     private boolean isArrayField(String fieldName) {
         // Test if the current field is marked as an array field in the include array property
-        return fieldName != null && includeArrayFields != null && !includeArrayFields.isEmpty() && FieldFilter.filter(fieldName, includeArrayFields, null).matched;
+        if (fieldName != null) {
+            if (includeArrayFields != null && !includeArrayFields.isEmpty()) {
+                return FieldFilter.filter(fieldName, includeArrayFields, null, false).matched;
+            }
+        }
+        return false;
     }
 
     private Object parseValue(FieldType esType) {

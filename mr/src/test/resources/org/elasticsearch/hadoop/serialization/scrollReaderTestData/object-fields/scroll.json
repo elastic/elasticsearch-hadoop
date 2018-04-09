@@ -13,7 +13,7 @@
     "max_score": 1,
     "hits": [
       {
-        "_index": "nested",
+        "_index": "object",
         "_type": "doc",
         "_id": "i0eHjGIBIXMbN_wcBlah",
         "_score": 1,
@@ -26,7 +26,7 @@
         }
       },
       {
-        "_index": "nested",
+        "_index": "object",
         "_type": "doc",
         "_id": "i0eHjGIBIXMbN_wcOnyT",
         "_score": 1,
@@ -41,7 +41,7 @@
         }
       },
       {
-        "_index": "nested",
+        "_index": "object",
         "_type": "doc",
         "_id": "i0eHjGIBIXMbN_wcOnyx",
         "_score": 1,
@@ -56,7 +56,7 @@
         }
       },
       {
-        "_index": "nested",
+        "_index": "object",
         "_type": "doc",
         "_id": "i0eHjGIBIXMbN_wcOpex",
         "_score": 1,

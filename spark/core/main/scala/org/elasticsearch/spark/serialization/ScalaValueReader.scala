@@ -216,7 +216,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
     var arr: AnyRef = values.asScala
     // outer most array (a multi level array might be defined)
     if (ctx != null && ctx.getArrayDepth == 0) {
-        val result = FieldFilter.filter(ctx.getFieldName, arrayInclude, arrayExclude)
+        val result = FieldFilter.filter(ctx.getFieldName, arrayInclude, arrayExclude, false)
         if (result.matched && result.depth > 1) {
             val extraDepth = result.depth - arrayDepth(arr)
             if (extraDepth > 0) {
