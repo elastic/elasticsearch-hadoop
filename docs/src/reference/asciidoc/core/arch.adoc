@@ -23,7 +23,7 @@ TIP: Hadoop `splits` as well as {es} `shards` play an important role regarding a
 
 While {sp} is not built on top of {mr} it shares similar concepts: it features the concept of `partition` which is the rough equivalent of {es} `shard` or the {mr} `split`. Thus, the analogy above applies here as well - more shards and/or more partitions increase the number of parallelism and thus allows both systems to scale better.
 
-NOTE: Due to the similarity in concepts, through-out the docs one can think interchangebly of Hadoop `InputSplit`s and Spark `Partition's.
+NOTE: Due to the similarity in concepts, through-out the docs one can think interchangebly of Hadoop `InputSplit` s and Spark `Partition` s.
 
 [[arch-reading]]
 [float]
