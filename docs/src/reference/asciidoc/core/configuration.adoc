@@ -154,7 +154,7 @@ Whether the input is already in JSON format or not (the default). Please see the
 integration for more details about using JSON directly.
 
 `es.write.operation` (default index)::
-The write operation {eh} should peform - can be any of:
+The write operation {eh} should perform - can be any of:
 `index` (default);; new data is added while existing data (based on its id) is replaced (reindexed).
 `create`;; adds new data - if the data already exists (based on its id), an exception is thrown.
 `update`;; updates existing data (based on its id). If no data is found, an exception is thrown.
