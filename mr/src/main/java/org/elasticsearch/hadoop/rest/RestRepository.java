@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.serialization.handler.SerializationErrorHandler;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -165,7 +166,15 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        doWriteToIndex(command.write(object));
+        BytesRef serialized = null;
+        try {
+            serialized = command.write(object);
+        } catch (Exception e) {
+
+        }
+        if (serialized != null) {
+            doWriteToIndex(serialized);
+        }
     }
 
     /**
