@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -93,6 +94,25 @@ public class AbstractHiveSearchTest {
         assertContains(result, "Marilyn");
         assertContains(result, "last.fm/music/MALICE");
         assertContains(result, "last.fm/serve/252/5872875.jpg");
+    }
+
+    @Test
+    public void basicLoadWMetadata() throws Exception {
+        Assume.assumeTrue("Only applicable to metadata reading", readMetadata);
+        String create = "CREATE EXTERNAL TABLE artistsload" + testInstance + "("
+                + "id         BIGINT, "
+                + "name     STRING, "
+                + "links     STRUCT<url:STRING, picture:STRING>, "
+                + "meta     MAP<STRING, STRING>) "
+                + tableProps("hive-artists/data", "'es.read.metadata.field'='meta'");
+
+        String select = "SELECT meta FROM artistsload" + testInstance;
+
+        server.execute(create);
+        List<String> result = server.execute(select);
+        assertTrue("Hive returned null", containsNoNull(result));
+        assertContains(result, "\"_score\":\"1.0\"");
+        System.out.println(result);
     }
 
     //@Test

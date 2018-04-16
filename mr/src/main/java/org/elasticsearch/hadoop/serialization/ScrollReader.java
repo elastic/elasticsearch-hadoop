@@ -214,6 +214,7 @@ public class ScrollReader {
     private final Map<String, FieldType> esMapping;
     private final boolean trace = log.isTraceEnabled();
     private final boolean readMetadata;
+    private boolean inMetadataSection;
     private final String metadataField;
     private final boolean returnRawJson;
     private final boolean ignoreUnmappedFields;
@@ -421,6 +422,7 @@ public class ScrollReader {
             if (parsingCallback != null) {
                 parsingCallback.beginLeadMetadata();
             }
+            inMetadataSection = true;
 
             metadata = reader.createMap();
             result[1] = metadata;
@@ -456,6 +458,7 @@ public class ScrollReader {
                 }
             }
 
+            inMetadataSection = false;
             if (parsingCallback != null) {
                 parsingCallback.endLeadMetadata();
             }
@@ -505,6 +508,7 @@ public class ScrollReader {
             if (parsingCallback != null) {
                 parsingCallback.beginTrailMetadata();
             }
+            inMetadataSection = true;
         }
 
         // in case of additional fields (matched_query), add them to the metadata
@@ -530,6 +534,7 @@ public class ScrollReader {
         }
 
         if (readMetadata) {
+            inMetadataSection = false;
             if (parsingCallback != null) {
                 parsingCallback.endTrailMetadata();
             }
@@ -909,6 +914,11 @@ public class ScrollReader {
         if (!currentToken.isValue()) {
             // nested type
             return FieldType.OBJECT;
+        }
+
+        // If we're currently parsing a metadata section, return string types for primitive fields
+        if (inMetadataSection) {
+            return FieldType.STRING;
         }
 
         switch (currentToken) {
