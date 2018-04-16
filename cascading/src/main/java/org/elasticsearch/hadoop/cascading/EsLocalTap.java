@@ -113,6 +113,7 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
                             .scroll(settings.getScrollKeepAlive())
                             .size(settings.getScrollSize())
                             .limit(settings.getScrollLimit())
+                            .readMetadata(settings.getReadMetadata())
                             .filters(QueryUtils.parseFilters(settings))
                             .fields(StringUtils.concatenate(fields, ","));
             input = queryBuilder.build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));

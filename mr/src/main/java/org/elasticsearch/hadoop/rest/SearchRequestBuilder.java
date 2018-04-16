@@ -67,10 +67,15 @@ public class SearchRequestBuilder {
     private Slice slice;
     private boolean local = false;
     private boolean excludeSource = false;
+    private boolean readMetadata = false;
 
     public SearchRequestBuilder(EsMajorVersion version, boolean includeVersion) {
         this.version = version;
         this.includeVersion = includeVersion;
+    }
+
+    public boolean isReadMetadata() {
+        return readMetadata;
     }
 
     public String routing() {
@@ -135,6 +140,11 @@ public class SearchRequestBuilder {
 
     public SearchRequestBuilder filters(Collection<QueryBuilder> filters) {
         this.filters.addAll(filters);
+        return this;
+    }
+
+    public SearchRequestBuilder readMetadata(boolean read) {
+        this.readMetadata = read;
         return this;
     }
 
@@ -222,6 +232,10 @@ public class SearchRequestBuilder {
         // Request routing
         if (routing != null) {
             uriParams.put("routing", HttpEncodingTools.encode(routing));
+        }
+
+        if (readMetadata) {
+            uriParams.put("track_scores", "true");
         }
 
         // append params

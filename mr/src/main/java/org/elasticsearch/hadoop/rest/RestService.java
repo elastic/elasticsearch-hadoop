@@ -449,6 +449,7 @@ public abstract class RestService implements Serializable {
                         .fields(SettingsUtils.determineSourceFields(settings))
                         .filters(QueryUtils.parseFilters(settings))
                         .shard(Integer.toString(partition.getShardId()))
+                        .readMetadata(settings.getReadMetadata())
                         .local(true)
                         .excludeSource(settings.getExcludeSource());
         if (partition.getSlice() != null && partition.getSlice().max > 1) {
