@@ -1,0 +1,9 @@
+[[eshadoop-6.2.4]]
+== Elasticsearch for Apache Hadoop version 6.2.4
+April 17, 2018
+
+ES-Hadoop 6.2.4 is a version compatibility release, tested specifically against Elasticsearch 6.2.4.
+
+[[docs-6.2.4]]
+=== Documentation
+* Clarify that es.read.source.filter uses a string and not a list
