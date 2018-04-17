@@ -1,0 +1,27 @@
+[[eshadoop-6.2.0]]
+== Elasticsearch for Apache Hadoop version 6.2.0
+February 6, 2018
+
+[[new-6.2.0]]
+=== New Features
+Core::
+* Add "Dead Letter Handlers" for bulk write failures
+https://github.com/elastic/elasticsearch-hadoop/issues/1038[#1038]
+https://github.com/elastic/elasticsearch-hadoop/issues/1064[#1064]
+https://github.com/elastic/elasticsearch-hadoop/pull/1095[#1095]
+
+[[enhancements-6.2.0]]
+=== Enhancements
+Build::
+* Drop/replace insecure dependencies
+http://github.com/elastic/elasticsearch-hadoop/issues/1083[#1083]
+
+[[docs-6.2.0]]
+=== Documentation
+* In Elasticsearch 6.x version, multitype is not supported, please update docs according to this change
+https://github.com/elastic/elasticsearch-hadoop/issues/1100[#1100]
+* Documentation for error handlers
+https://github.com/elastic/elasticsearch-hadoop/pull/1099[#1099]
+* fix misspelling saveToEs function in Spark SQL sections
+http://github.com/elastic/elasticsearch-hadoop/pull/1094[#1094]
+
