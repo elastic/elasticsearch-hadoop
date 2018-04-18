@@ -208,7 +208,6 @@ public class ScrollReader {
 
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
-    private Parser parser;
     private final ValueReader reader;
     private final ValueParsingCallback parsingCallback;
     private final Map<String, FieldType> esMapping;
@@ -269,22 +268,22 @@ public class ScrollReader {
             log.trace("About to parse scroll content " + copy);
         }
 
-        this.parser = new JacksonJsonParser(content);
+        Parser parser = new JacksonJsonParser(content);
 
         try {
-            return read(copy);
+            return read(parser, copy);
         } finally {
             parser.close();
         }
     }
 
-    private Scroll read(BytesArray input) {
+    private Scroll read(Parser parser, BytesArray input) {
         // get scroll_id
         Token token = ParsingUtils.seek(parser, SCROLL_ID);
         Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
         String scrollId = parser.text();
 
-        long totalHits = hitsTotal();
+        long totalHits = hitsTotal(parser);
         // check hits/total
         if (totalHits == 0) {
             return Scroll.empty(scrollId);
@@ -299,7 +298,7 @@ public class ScrollReader {
         List<Object[]> results = new ArrayList<Object[]>();
 
         for (token = parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
-            results.add(readHit());
+            results.add(readHit(parser));
         }
 
         // convert the char positions into actual content
@@ -401,13 +400,18 @@ public class ScrollReader {
         return new Scroll(scrollId, totalHits, results);
     }
 
-    private Object[] readHit() {
+    private Object[] readHit(Parser parser) {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
-        return (returnRawJson ? readHitAsJson() : readHitAsMap());
+        if (returnRawJson) {
+            return readHitAsJson(parser);
+        }
+        else {
+            return readHitAsMap(parser);
+        }
     }
 
-    private Object[] readHitAsMap() {
+    private Object[] readHitAsMap(Parser parser) {
         Object[] result = new Object[2];
         Object metadata = null;
         Object id = null;
@@ -438,7 +442,7 @@ public class ScrollReader {
                 if (t == Token.FIELD_NAME) {
                     if (!("fields".equals(name) || "_source".equals(name))) {
                         reader.beginField(absoluteName);
-                        value = read(absoluteName, parser.nextToken(), null);
+                        value = read(absoluteName, parser.nextToken(), null, parser);
                         if (ID_FIELD.equals(name)) {
                             id = value;
                         }
@@ -481,7 +485,7 @@ public class ScrollReader {
                 parsingCallback.beginSource();
             }
 
-            data = read(StringUtils.EMPTY, t, null);
+            data = read(StringUtils.EMPTY, t, null, parser);
 
             if (parsingCallback != null) {
                 parsingCallback.endSource();
@@ -518,7 +522,7 @@ public class ScrollReader {
             if (readMetadata) {
                 // skip sort (useless and is an array which triggers the row mapping which does not apply)
                 if (!"sort".equals(name)) {
-                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null));
+                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null, parser));
                 }
                 else {
                     parser.nextToken();
@@ -567,7 +571,7 @@ public class ScrollReader {
         }
     }
 
-    private Object[] readHitAsJson() {
+    private Object[] readHitAsJson(Parser parser) {
         // return results as raw json
 
         Object[] result = new Object[2];
@@ -704,39 +708,39 @@ public class ScrollReader {
 
     }
 
-    private long hitsTotal() {
+    private long hitsTotal(Parser parser) {
         ParsingUtils.seek(parser, TOTAL);
         long hits = parser.longValue();
         return hits;
     }
 
-    protected Object read(String fieldName, Token t, String fieldMapping) {
+    protected Object read(String fieldName, Token t, String fieldMapping, Parser parser) {
         if (t == Token.START_ARRAY) {
-            return list(fieldName, fieldMapping);
+            return list(fieldName, fieldMapping, parser);
         }
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
             // Check if the object field is a nested object or a field that should be considered an array.
-            FieldType esType = mapping(fieldMapping);
+            FieldType esType = mapping(fieldMapping, parser);
             if ((esType != null && esType.equals(FieldType.NESTED)) || isArrayField(fieldMapping)) {
                 // If this field has the nested data type, then this object we are
                 // about to read is using the abbreviated single value syntax (no array brackets needed for nested fields
                 // that only have one nested element.)
-                return singletonList(fieldMapping, map(fieldMapping));
+                return singletonList(fieldMapping, map(fieldMapping, parser), parser);
             } else {
-                return map(fieldMapping);
+                return map(fieldMapping, parser);
             }
         }
-        FieldType esType = mapping(fieldMapping);
+        FieldType esType = mapping(fieldMapping, parser);
 
         if (t.isValue()) {
             String rawValue = parser.text();
             try {
                 if (isArrayField(fieldMapping)) {
-                    return singletonList(fieldMapping, parseValue(esType));
+                    return singletonList(fieldMapping, parseValue(parser, esType), parser);
                 } else {
-                    return parseValue(esType);
+                    return parseValue(parser, esType);
                 }
             } catch (Exception ex) {
                 throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
@@ -746,22 +750,22 @@ public class ScrollReader {
     }
 
     // Same as read(String, Token, String) above, but does not include checking the current field name to see if it's an array.
-    protected Object readListItem(String fieldName, Token t, String fieldMapping) {
+    protected Object readListItem(String fieldName, Token t, String fieldMapping, Parser parser) {
         if (t == Token.START_ARRAY) {
-            return list(fieldName, fieldMapping);
+            return list(fieldName, fieldMapping, parser);
         }
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
             // Don't need special handling for nested fields since this field is already in an array.
-            return map(fieldMapping);
+            return map(fieldMapping, parser);
         }
-        FieldType esType = mapping(fieldMapping);
+        FieldType esType = mapping(fieldMapping, parser);
 
         if (t.isValue()) {
             String rawValue = parser.text();
             try {
-                return parseValue(esType);
+                return parseValue(parser, esType);
             } catch (Exception ex) {
                 throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
             }
@@ -779,7 +783,7 @@ public class ScrollReader {
         return false;
     }
 
-    private Object parseValue(FieldType esType) {
+    private Object parseValue(Parser parser, FieldType esType) {
         Object obj;
         // special case of handing null (as text() will return "null")
         if (parser.currentToken() == Token.VALUE_NULL) {
@@ -792,7 +796,7 @@ public class ScrollReader {
         return obj;
     }
 
-    protected Object list(String fieldName, String fieldMapping) {
+    protected Object list(String fieldName, String fieldMapping, Parser parser) {
         Token t = parser.currentToken();
 
         if (t == null) {
@@ -802,11 +806,11 @@ public class ScrollReader {
             t = parser.nextToken();
         }
 
-        Object array = reader.createArray(mapping(fieldMapping));
+        Object array = reader.createArray(mapping(fieldMapping, parser));
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         for (; parser.currentToken() != Token.END_ARRAY;) {
-            content.add(readListItem(fieldName, parser.currentToken(), fieldMapping));
+            content.add(readListItem(fieldName, parser.currentToken(), fieldMapping, parser));
         }
 
         // eliminate END_ARRAY
@@ -816,8 +820,8 @@ public class ScrollReader {
         return array;
     }
 
-    protected Object singletonList(String fieldMapping, Object value) {
-        Object array = reader.createArray(mapping(fieldMapping));
+    protected Object singletonList(String fieldMapping, Object value, Parser parser) {
+        Object array = reader.createArray(mapping(fieldMapping, parser));
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         content.add(value);
@@ -825,7 +829,7 @@ public class ScrollReader {
         return array;
     }
 
-    protected Object map(String fieldMapping) {
+    protected Object map(String fieldMapping, Parser parser) {
         Token t = parser.currentToken();
 
         if (t == null) {
@@ -839,7 +843,7 @@ public class ScrollReader {
 
         if (fieldMapping != null) {
             // parse everything underneath without mapping
-            if (FieldType.isGeo(mapping(fieldMapping))) {
+            if (FieldType.isGeo(mapping(fieldMapping, parser))) {
                 toggleGeo = true;
                 insideGeo = true;
                 if (parsingCallback != null) {
@@ -883,7 +887,7 @@ public class ScrollReader {
                 // Must point to field name
                 Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
                 // And then the value...
-                reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
+                reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping, parser));
                 reader.endField(absoluteName);
             }
         }
@@ -902,7 +906,7 @@ public class ScrollReader {
         return map;
     }
 
-    private FieldType mapping(String fieldMapping) {
+    private FieldType mapping(String fieldMapping, Parser parser) {
         FieldType esType = esMapping.get(fieldMapping);
 
         if (esType != null) {
