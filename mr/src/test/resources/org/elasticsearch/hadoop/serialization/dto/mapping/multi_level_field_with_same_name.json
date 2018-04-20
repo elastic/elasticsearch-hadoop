@@ -11,6 +11,16 @@
                         "properties" : {
                             "url" : {
                                 "type" : "string"
+                            },
+                            "image": {
+                                "properties": {
+                                    "kind": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string"
+                                    }
+                                }
                             }
                         }
                     },

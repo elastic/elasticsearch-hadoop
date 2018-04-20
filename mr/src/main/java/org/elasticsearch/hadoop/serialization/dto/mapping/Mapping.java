@@ -68,7 +68,7 @@ public class Mapping implements Serializable {
             if (FieldType.isCompound(field.type())) {
                 List<Field> nested = new ArrayList<Field>();
                 for (Field nestedField : field.properties()) {
-                    intact &= filterField(nestedField, field.name(), nested, includes, excludes);
+                    intact &= filterField(nestedField, fieldName, nested, includes, excludes);
                 }
                 filtered.add(new Field(field.name(), field.type(), nested));
             }
