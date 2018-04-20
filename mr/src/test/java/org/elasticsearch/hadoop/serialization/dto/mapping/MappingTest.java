@@ -181,6 +181,26 @@ public class MappingTest {
     }
 
     @Test
+    public void testFieldNestedInclude() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
+
+        Mapping filtered = mapping.filter(Collections.singleton("links.image.url"), Collections.<String> emptyList());
+
+        assertThat(mapping.getName(), is(filtered.getName()));
+
+        Field[] props = filtered.getFields();
+
+        assertThat(props.length, is(1));
+        assertThat(props[0].name(), is("links"));
+        assertThat(props[0].properties().length, is(1));
+        assertThat(props[0].properties()[0].name(), is("image"));
+        assertThat(props[0].properties()[0].properties().length, is(1));
+        assertThat(props[0].properties()[0].properties()[0].name(), is("url"));
+    }
+
+    @Test
     public void testFieldExclude() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested_arrays_mapping.json"), Map.class);
         MappingSet mappings = parseMapping(value);
