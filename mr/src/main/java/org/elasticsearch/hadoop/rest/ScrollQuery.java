@@ -94,6 +94,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
                 size = (size < 1 ? scroll.getTotalHits() : size);
                 scrollId = scroll.getScrollId();
                 batch = scroll.getHits();
+                finished = scroll.isConcluded();
             } catch (IOException ex) {
                 throw new EsHadoopIllegalStateException(String.format("Cannot create scroll for query [%s/%s]", query, body), ex);
             }
@@ -103,7 +104,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             query = null;
         }
 
-        if (batch.isEmpty() || batchIndex >= batch.size()) {
+        while (!finished && (batch.isEmpty() || batchIndex >= batch.size())) {
             if (read >= size) {
                 finished = true;
                 return false;
@@ -113,21 +114,18 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
                 Scroll scroll = repository.scroll(scrollId, reader);
                 scrollId = scroll.getScrollId();
                 batch = scroll.getHits();
+                finished = scroll.isConcluded();
             } catch (IOException ex) {
                 throw new EsHadoopIllegalStateException("Cannot retrieve scroll [" + scrollId + "]", ex);
             }
             read += batch.size();
             stats.docsReceived += batch.size();
 
-            if (batch.isEmpty()) {
-                finished = true;
-                return false;
-            }
             // reset index
             batchIndex = 0;
         }
 
-        return true;
+        return !finished;
     }
 
     public long getSize() {

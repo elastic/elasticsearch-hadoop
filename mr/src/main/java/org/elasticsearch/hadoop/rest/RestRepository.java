@@ -393,7 +393,7 @@ public class RestRepository implements Closeable, StatsAware {
                 sb.append("&search_type=scan");
             }
             String scanQuery = sb.toString();
-            ScrollReaderConfig readerConf = new ScrollReaderConfig(true, new JdkValueReader());
+            ScrollReaderConfig readerConf = new ScrollReaderConfig(true, new JdkValueReader(), settings);
             ScrollReader scrollReader = new ScrollReader(readerConf);
 
             // start iterating

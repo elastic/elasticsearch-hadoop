@@ -93,7 +93,7 @@ public class AbstractRestQueryTest {
                         .filters(QueryUtils.parseFilters(settings));
         MappingSet mappingSet = client.getMappings();
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mappingSet.getResolvedView(), true, "_metadata", false, false);
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mappingSet.getResolvedView(), settings, true, "_metadata", false, false);
         ScrollReader reader = new ScrollReader(scrollReaderConfig);
 
         int count = 0;

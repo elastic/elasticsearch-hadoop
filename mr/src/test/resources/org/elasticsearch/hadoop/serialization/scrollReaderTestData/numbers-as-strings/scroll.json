@@ -16,7 +16,7 @@
       "_id" : "23hrGo7VRCyao8lB9Uu5Kw",
       "_score" : 0.0,
       "_source" : {
-        "number" : "null"
+        "number" : "abcd"
       }
     }]
   }

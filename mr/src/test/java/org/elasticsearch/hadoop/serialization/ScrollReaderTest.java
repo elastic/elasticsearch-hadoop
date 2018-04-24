@@ -22,16 +22,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
+import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
+import org.elasticsearch.hadoop.serialization.handler.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.DeserializationFailure;
+import org.elasticsearch.hadoop.serialization.handler.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.joda.time.format.ISODateTimeFormat;
@@ -41,10 +48,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 public class ScrollReaderTest {
@@ -67,7 +79,7 @@ public class ScrollReaderTest {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
 
-        scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), null, readMetadata, metadataField, readAsJson, false);
+        scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), null, new TestSettings(), readMetadata, metadataField, readAsJson, false);
         reader = new ScrollReader(scrollReaderConfig);
     }
 
@@ -160,7 +172,7 @@ public class ScrollReaderTest {
     public void testScrollWithJoinField() throws Exception {
         MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("join"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
-        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
+        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), new TestSettings(), readMetadata, metadataField, readAsJson, false));
 
         InputStream stream = getClass().getResourceAsStream(scrollData("join"));
         List<Object[]> read = myReader.read(stream).getHits();
@@ -280,7 +292,7 @@ public class ScrollReaderTest {
     public void testScrollWithMultipleTypes() throws Exception {
         MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("multi-type"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
-        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
+        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), new TestSettings(), readMetadata, metadataField, readAsJson, false));
 
         InputStream stream = getClass().getResourceAsStream(scrollData("multi-type"));
         List<Object[]> read = myReader.read(stream).getHits();
@@ -393,5 +405,244 @@ public class ScrollReaderTest {
         assertEquals(9L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(1)[1]));
         // Case of singleton data that is not nested in ANY array levels.
         assertEquals(10L, JsonUtils.query("a").get(0).get(0).get(0).apply(scroll.getHits().get(2)[1]));
+    }
+
+    @Test(expected = EsHadoopParsingException.class)
+    public void testScrollWithBreakOnInvalidMapping() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        reader.read(stream);
+        fail("Should not be able to parse string as long");
+    }
+
+    @Test(expected = EsHadoopException.class)
+    public void testScrollWithThrowingErrorHandler() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "throw");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".throw" , ExceptionThrowingHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        reader.read(stream);
+        fail("Should not be able to parse string as long");
+    }
+
+    @Test(expected = EsHadoopParsingException.class)
+    public void testScrollWithThrowingAbortErrorHandler() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "throw");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".throw" , AbortingExceptionThrowingHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        reader.read(stream);
+        fail("Should not be able to parse string as long");
+    }
+
+    @Test(expected = EsHadoopException.class)
+    public void testScrollWithNeverendingHandler() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "evil");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".evil" , NeverSurrenderHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        reader.read(stream);
+        fail("Should not be able to parse string as long");
+    }
+
+    @Test
+    public void testScrollWithIgnoringHandler() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "skipskipskip");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".skipskipskip" , NothingToSeeHereHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+
+        assertThat(scroll.getTotalHits(), equalTo(196L));
+        assertThat(scroll.getHits(), is(empty()));
+    }
+
+    @Test
+    public void testScrollWithHandlersThatPassWithMessages() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "marco,polo,skip");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".marco" , MarcoHandler.class.getName());
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".polo" , PoloHandler.class.getName());
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".skip" , NothingToSeeHereHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+
+        assertThat(scroll.getTotalHits(), equalTo(196L));
+        assertThat(scroll.getHits(), is(empty()));
+    }
+
+    @Test
+    public void testScrollWithHandlersThatCorrectsError() throws IOException {
+        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+
+        InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
+
+        Settings testSettings = new TestSettings();
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA, "" + readMetadata);
+        testSettings.setProperty(ConfigurationOptions.ES_READ_METADATA_FIELD, "" + metadataField);
+        testSettings.setProperty(ConfigurationOptions.ES_OUTPUT_JSON, "" + readAsJson);
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLERS , "fix");
+        testSettings.setProperty(DeserializationHandlerLoader.ES_READ_DATA_ERROR_HANDLER + ".fix" , CorrectingHandler.class.getName());
+
+        JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
+
+        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
+        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+
+        ScrollReader.Scroll scroll = reader.read(stream);
+
+        assertThat(scroll.getTotalHits(), equalTo(196L));
+        assertThat(scroll.getHits().size(), equalTo(1));
+        assertEquals(4L, JsonUtils.query("number").apply(scroll.getHits().get(0)[1]));
+    }
+
+    /**
+     * Case: Handler throws random Exceptions
+     * Outcome: Processing fails fast.
+     */
+    public static class ExceptionThrowingHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            throw new IllegalArgumentException("Whoopsie!");
+        }
+    }
+
+    /**
+     * Case: Handler throws exception, wrapped in abort based exception
+     * Outcome: Exception is collected and used as the reason for aborting that specific document.
+     */
+    public static class AbortingExceptionThrowingHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            throw new EsHadoopAbortHandlerException("Abort the handler!!");
+        }
+    }
+
+    /**
+     * Case: Evil or incorrect handler causes infinite loop.
+     */
+    public static class NeverSurrenderHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            return collector.retry(); // NEVER GIVE UP
+        }
+    }
+
+    /**
+     * Case: Handler acks the failure and expects the processing to move along.
+     */
+    public static class NothingToSeeHereHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            return HandlerResult.HANDLED; // Move along.
+        }
+    }
+
+    /**
+     * Case: Handler passes on the failure, setting a "message for why"
+     */
+    public static class MarcoHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            return collector.pass("MARCO!");
+        }
+    }
+
+    /**
+     * Case: Handler checks the pass messages and ensures that they have been set.
+     * Outcome: If set, it acks and continues, and if not, it aborts.
+     */
+    public static class PoloHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            if (entry.previousHandlerMessages().contains("MARCO!")) {
+                return collector.pass("POLO!");
+            }
+            throw new EsHadoopAbortHandlerException("FISH OUT OF WATER!");
+        }
+    }
+
+    /**
+     * Case: Handler somehow knows how to fix data.
+     * Outcome: Data is deserialized correctly.
+     */
+    public static class CorrectingHandler extends DeserializationErrorHandler {
+        @Override
+        public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+            entry.getException().printStackTrace();
+            return collector.retry("{\"_index\":\"pig\",\"_type\":\"tupleartists\",\"_id\":\"23hrGo7VRCyao8lB9Uu5Kw\",\"_score\":0.0,\"_source\":{\"number\":4}}".getBytes());
+        }
     }
 }

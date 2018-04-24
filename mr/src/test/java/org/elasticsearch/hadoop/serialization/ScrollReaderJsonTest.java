@@ -27,12 +27,11 @@ import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
-import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
-import org.junit.Assert;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -40,7 +39,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -65,7 +63,7 @@ public class ScrollReaderJsonTest {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
         this.mapper = new ObjectMapper();
-        scrollCfg = new ScrollReaderConfig(new JdkValueReader(), null, readMetadata, metadataField, readAsJson, true);
+        scrollCfg = new ScrollReaderConfig(new JdkValueReader(), null, new TestSettings(), readMetadata, metadataField, readAsJson, true);
         reader = new ScrollReader(scrollCfg);
     }
 
@@ -190,7 +188,7 @@ public class ScrollReaderJsonTest {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream(mappingData("join")), Map.class);
         MappingSet mappings = parseMapping(value);
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
-        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), readMetadata, metadataField, readAsJson, false));
+        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), new TestSettings(), readMetadata, metadataField, readAsJson, false));
 
         InputStream stream = getClass().getResourceAsStream(scrollData("join"));
         List<Object[]> read = myReader.read(stream).getHits();
