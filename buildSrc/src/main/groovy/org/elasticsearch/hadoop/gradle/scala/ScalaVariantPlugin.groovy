@@ -41,6 +41,9 @@ class ScalaVariantPlugin implements Plugin<Project> {
                 Map<String, String> properties = new HashMap<>()
                 properties.put(NESTED_BUILD_RUN, variantVersion)
                 properties.put('shush', 'true')
+                if (project.properties.containsKey("localRepo")) {
+                    properties.put('localRepo', 'true')
+                }
 
                 StartParameter parameters = project.gradle.startParameter.newBuild()
                 parameters.setProjectProperties(properties)
