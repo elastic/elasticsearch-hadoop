@@ -1,5 +1,7 @@
 package org.elasticsearch.hadoop.gradle.fixture
 
+import org.elasticsearch.gradle.BuildPlugin
+import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.ClusterConfiguration
 import org.elasticsearch.gradle.test.ClusterFormationTasks
 import org.elasticsearch.gradle.test.NodeInfo
@@ -64,7 +66,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
 
         // Set BWC if not current ES version:
         if (version != project.elasticsearchVersion) {
-            clusterConfig.bwcVersion = version
+            clusterConfig.bwcVersion = Version.fromString(version)
             clusterConfig.numBwcNodes = 1
         }
 
@@ -80,8 +82,6 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             clusterConfig.setting("script.inline", "true")
             clusterConfig.setting("node.ingest", "true")
         } else if (majorVersion >= 6) {
-            clusterConfig.setting("transport.type","netty4")
-            clusterConfig.setting("http.type","netty4")
             clusterConfig.setting("node.ingest", "true")
         }
 
