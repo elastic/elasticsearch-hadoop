@@ -137,8 +137,13 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.java8 = JavaVersion.current().isJava8Compatible()
 
             String javaHome = findJavaHome()
+            // Register the currently running JVM version under its version number.
+            final Map<Integer, String> javaVersions = [:]
+            javaVersions.put(Integer.parseInt(JavaVersion.current().getMajorVersion()), javaHome)
+
             project.rootProject.ext.javaHome = javaHome
             project.rootProject.ext.runtimeJavaHome = javaHome
+            project.rootProject.ext.javaVersions = javaVersions
 
             File gitHead = gitBranch(project)
             project.rootProject.ext.gitHead = gitHead
@@ -148,6 +153,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.ext.java8 = project.rootProject.ext.java8
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
+        project.ext.javaVersions = project.rootProject.ext.javaVersions
     }
 
     /**
