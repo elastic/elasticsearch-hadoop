@@ -158,7 +158,7 @@ public class ScrollReader {
             this.numberOfSkippedHits = 0;
         }
 
-        private Scroll(String scrollId, long total, List<Object[]> hits, int responseHits, int skippedHits) {
+        public Scroll(String scrollId, long total, List<Object[]> hits, int responseHits, int skippedHits) {
             this.scrollId = scrollId;
             this.hits = hits;
             this.total = total;
