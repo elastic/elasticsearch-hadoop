@@ -97,6 +97,13 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
         public PartitionDefinition getPartition() {
             return partition;
         }
+
+        @Override
+        public String toString() {
+            return "EsInputSplit{" +
+                    (partition == null ? "NULL" : partition.toString()) +
+                    "}";
+        }
     }
 
     protected static abstract class EsInputRecordReader<K,V> extends RecordReader<K, V> implements org.apache.hadoop.mapred.RecordReader<K, V> {
