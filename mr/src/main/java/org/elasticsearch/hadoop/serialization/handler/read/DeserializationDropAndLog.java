@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler;
+package org.elasticsearch.hadoop.serialization.handler.read;
 
 import java.util.LinkedHashSet;
 import java.util.List;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler;
+package org.elasticsearch.hadoop.serialization.handler.read;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.HandlerLoader;

@@ -17,31 +17,32 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler;
+package org.elasticsearch.hadoop.serialization.handler.read;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
 import org.elasticsearch.hadoop.handler.Exceptional;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-/**
- * Encapsulates all available information pertaining to a data serialization failure.
- * @param <R> The type of the integration specific record being serialized to JSON
- */
-public class SerializationFailure<R> implements Exceptional {
-
-    private final R record;
+public class DeserializationFailure implements Exceptional {
+    private final BytesArray hit;
     private final Exception reason;
     private final List<String> passReasons;
 
-    public SerializationFailure(Exception reason, R record, List<String> passReasons) {
-        this.record = record;
+    public DeserializationFailure(Exception reason, BytesArray hit, List<String> passReasons) {
+        this.hit = hit;
         this.reason = reason;
         this.passReasons = Collections.unmodifiableList(passReasons);
     }
 
-    public R getRecord() {
-        return record;
+    /**
+     * @return the scroll search hit in the original raw JSON format
+     */
+    public InputStream getHitContents() {
+        return new FastByteArrayInputStream(hit);
     }
 
     @Override
