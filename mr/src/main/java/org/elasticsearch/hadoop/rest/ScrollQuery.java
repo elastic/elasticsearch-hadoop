@@ -71,6 +71,7 @@ public class ScrollQuery implements Iterator<Object>, Closeable, StatsAware {
             closed = true;
             finished = true;
             batch = Collections.emptyList();
+            reader.close();
             // typically the scroll is closed after it is consumed so this will trigger a 404
             // however we're closing it either way
             if (StringUtils.hasText(scrollId)) {

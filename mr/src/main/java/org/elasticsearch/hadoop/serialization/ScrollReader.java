@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
  * Expected to read a _search response.
  */
-public class ScrollReader {
+public class ScrollReader implements Closeable {
 
     private static class JsonFragment {
         static final JsonFragment EMPTY = new JsonFragment(-1, -1) {
@@ -534,7 +535,7 @@ public class ScrollReader {
 
                                 // Limit the number of retries though to like 50
                                 if (attempts >= 50) {
-                                    throw new EsHadoopException("Maximum retry attempts reached for deserialization errors.");
+                                    throw new EsHadoopException("Maximum retry attempts (50) reached for deserialization errors.");
                                 } else {
                                     retryRead = true;
                                     // Advance to the first token, as it will be expected to be on a start object.
@@ -1128,5 +1129,12 @@ public class ScrollReader {
             break;
         }
         return esType;
+    }
+
+    @Override
+    public void close() {
+        for (DeserializationErrorHandler handler : deserializationErrorHandlers) {
+            handler.close();
+        }
     }
 }

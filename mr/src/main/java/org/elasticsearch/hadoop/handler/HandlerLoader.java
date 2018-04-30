@@ -8,6 +8,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -44,6 +45,8 @@ public abstract class HandlerLoader<E extends ErrorHandler> implements SettingsA
     }
 
     public List<E> loadHandlers() {
+        Assert.notNull(settings, "No settings are present in the handler loader!");
+
         String handlerListPropertyName = getHandlersPropertyName();
         String handlerPropertyPrefix = getHandlerPropertyName();
 
