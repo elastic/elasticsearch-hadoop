@@ -31,7 +31,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
@@ -44,7 +43,6 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
 import org.elasticsearch.hadoop.serialization.json.BlockAwareJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
@@ -193,55 +191,6 @@ public class ScrollReader implements Closeable {
         }
     }
 
-    public static class ScrollReaderConfig {
-        public Settings settings;
-        public ValueReader reader;
-
-        public boolean readMetadata;
-        public String metadataName;
-        public boolean returnRawJson;
-        public boolean ignoreUnmappedFields;
-        public List<String> includeFields;
-        public List<String> excludeFields;
-        public List<String> includeArrayFields;
-        public Mapping resolvedMapping;
-
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings settings, boolean readMetadata, String metadataName,
-                boolean returnRawJson, boolean ignoreUnmappedFields, List<String> includeFields,
-                List<String> excludeFields, List<String> includeArrayFields) {
-            super();
-            this.settings = settings;
-            this.reader = reader;
-            this.readMetadata = readMetadata;
-            this.metadataName = metadataName;
-            this.returnRawJson = returnRawJson;
-            this.ignoreUnmappedFields = ignoreUnmappedFields;
-            this.includeFields = includeFields;
-            this.excludeFields = excludeFields;
-            this.includeArrayFields = includeArrayFields;
-            this.resolvedMapping = resolvedMapping;
-        }
-
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings settings, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
-            this(reader, resolvedMapping, settings, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
-        }
-
-        public ScrollReaderConfig(ValueReader reader, Settings settings) {
-            this(false, reader, settings);
-        }
-
-        public ScrollReaderConfig(boolean readMetadata, ValueReader reader, Settings settings) {
-            this(reader, null, settings, readMetadata, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
-        }
-
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
-            this(reader, resolvedMapping, cfg, cfg.getReadMetadata(), cfg.getReadMetadataField(),
-                    cfg.getOutputAsJson(), cfg.getReadMappingMissingFieldsIgnore(),
-                    StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()),
-                    StringUtils.tokenize(cfg.getReadFieldAsArrayInclude()));
-        }
-    }
-
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
     private final ValueReader reader;
@@ -269,33 +218,30 @@ public class ScrollReader implements Closeable {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ScrollReaderConfig scrollConfig) {
-        this.reader = scrollConfig.reader;
+    public ScrollReader(ScrollReaderConfigBuilder scrollConfig) {
+        this.reader = scrollConfig.getReader();
         this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
 
-        this.readMetadata = scrollConfig.readMetadata;
-        this.metadataField = scrollConfig.metadataName;
-        this.returnRawJson = scrollConfig.returnRawJson;
-        this.ignoreUnmappedFields = scrollConfig.ignoreUnmappedFields;
-        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.includeFields);
-        this.excludeFields = scrollConfig.excludeFields;
-        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.includeArrayFields);
+        this.readMetadata = scrollConfig.getReadMetadata();
+        this.metadataField = scrollConfig.getMetadataName();
+        this.returnRawJson = scrollConfig.getReturnRawJson();
+        this.ignoreUnmappedFields = scrollConfig.getIgnoreUnmappedFields();
+        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeFields());
+        this.excludeFields = scrollConfig.getExcludeFields();
+        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeArrayFields());
 
-        Mapping mapping = scrollConfig.resolvedMapping;
+        Mapping mapping = scrollConfig.getResolvedMapping();
         if (mapping != null) {
             // optimize filtering
             if (ignoreUnmappedFields) {
-                mapping = mapping.filter(scrollConfig.includeFields, scrollConfig.excludeFields);
+                mapping = mapping.filter(scrollConfig.getIncludeFields(), scrollConfig.getExcludeFields());
             }
             this.esMapping = mapping.flatten();
         } else {
             this.esMapping = Collections.emptyMap();
         }
 
-        DeserializationHandlerLoader handlerLoader = new DeserializationHandlerLoader();
-        handlerLoader.setSettings(scrollConfig.settings);
-
-        this.deserializationErrorHandlers = handlerLoader.loadHandlers();
+        this.deserializationErrorHandlers = scrollConfig.getErrorHandlerLoader().loadHandlers();
     }
 
     public Scroll read(InputStream content) throws IOException {

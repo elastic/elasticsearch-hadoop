@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.integration.rest;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
+import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
@@ -93,8 +94,16 @@ public class AbstractRestQueryTest {
                         .filters(QueryUtils.parseFilters(settings));
         MappingSet mappingSet = client.getMappings();
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), mappingSet.getResolvedView(), settings, true, "_metadata", false, false);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReaderConfigBuilder scrollCfg = ScrollReaderConfigBuilder.builder(new JdkValueReader(), settings)
+                .setResolvedMapping(mappingSet.getResolvedView())
+                .setReadMetadata(true)
+                .setMetadataName("_metadata")
+                .setReturnRawJson(false)
+                .setIgnoreUnmappedFields(false)
+                .setIncludeFields(Collections.<String>emptyList())
+                .setExcludeFields(Collections.<String>emptyList())
+                .setIncludeArrayFields(Collections.<String>emptyList());
+        ScrollReader reader = new ScrollReader(scrollCfg);
 
         int count = 0;
         for (ScrollQuery query = qb.build(client, reader); query.hasNext();) {

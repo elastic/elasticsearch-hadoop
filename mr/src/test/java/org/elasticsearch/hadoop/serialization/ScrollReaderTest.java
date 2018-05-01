@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +33,6 @@ import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
@@ -71,7 +71,6 @@ public class ScrollReaderTest {
     private boolean readMetadata = false;
     private final String metadataField;
     private final boolean readAsJson = false;
-    private final ScrollReaderConfig scrollReaderConfig;
 
     private ScrollReader reader;
 
@@ -79,8 +78,18 @@ public class ScrollReaderTest {
         this.readMetadata = readMetadata;
         this.metadataField = metadataField;
 
-        scrollReaderConfig = new ScrollReaderConfig(new JdkValueReader(), null, new TestSettings(), readMetadata, metadataField, readAsJson, false);
-        reader = new ScrollReader(scrollReaderConfig);
+        reader = new ScrollReader(getScrollReaderCfg());
+    }
+
+    private ScrollReaderConfigBuilder getScrollReaderCfg() {
+        return ScrollReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings())
+                .setReadMetadata(readMetadata)
+                .setMetadataName(metadataField)
+                .setReturnRawJson(readAsJson)
+                .setIgnoreUnmappedFields(false)
+                .setIncludeFields(Collections.<String>emptyList())
+                .setExcludeFields(Collections.<String>emptyList())
+                .setIncludeArrayFields(Collections.<String>emptyList());
     }
 
     private String scrollData(String testDataSet) {
@@ -114,7 +123,7 @@ public class ScrollReaderTest {
         InputStream stream = getClass().getResourceAsStream(mappingData("source"));
         MappingSet fl = FieldParser.parseMapping(JsonUtils.asMap(stream));
 
-        scrollReaderConfig.resolvedMapping = fl.getResolvedView();
+        ScrollReaderConfigBuilder scrollReaderConfig = getScrollReaderCfg().setResolvedMapping(fl.getResolvedView());
         reader = new ScrollReader(scrollReaderConfig);
 
         stream = getClass().getResourceAsStream(scrollData("source"));
@@ -133,7 +142,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithSource() throws IOException {
-        reader = new ScrollReader(scrollReaderConfig);
+        reader = new ScrollReader(getScrollReaderCfg());
         InputStream stream = getClass().getResourceAsStream(scrollData("source"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(3, read.size());
@@ -143,7 +152,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithoutSource() throws IOException {
-        reader = new ScrollReader(scrollReaderConfig);
+        reader = new ScrollReader(getScrollReaderCfg());
         InputStream stream = getClass().getResourceAsStream(scrollData("empty-source"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(2, read.size());
@@ -158,7 +167,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollMultiValueList() throws IOException {
-        reader = new ScrollReader(scrollReaderConfig);
+        reader = new ScrollReader(getScrollReaderCfg());
         InputStream stream = getClass().getResourceAsStream(scrollData("list"));
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
@@ -172,7 +181,8 @@ public class ScrollReaderTest {
     public void testScrollWithJoinField() throws Exception {
         MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("join"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
-        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), new TestSettings(), readMetadata, metadataField, readAsJson, false));
+        ScrollReaderConfigBuilder scrollCfg = getScrollReaderCfg().setResolvedMapping(mappings.getResolvedView());
+        ScrollReader myReader = new ScrollReader(scrollCfg);
 
         InputStream stream = getClass().getResourceAsStream(scrollData("join"));
         List<Object[]> read = myReader.read(stream).getHits();
@@ -292,7 +302,8 @@ public class ScrollReaderTest {
     public void testScrollWithMultipleTypes() throws Exception {
         MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("multi-type"))));
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
-        ScrollReader myReader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mappings.getResolvedView(), new TestSettings(), readMetadata, metadataField, readAsJson, false));
+        ScrollReaderConfigBuilder scrollCfg = getScrollReaderCfg().setResolvedMapping(mappings.getResolvedView());
+        ScrollReader myReader = new ScrollReader(scrollCfg);
 
         InputStream stream = getClass().getResourceAsStream(scrollData("multi-type"));
         List<Object[]> read = myReader.read(stream).getHits();
@@ -326,8 +337,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
         // First document in scroll has a single object on the nested field.
@@ -360,8 +370,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
         // First document in scroll has a single object on the nested field.
@@ -394,9 +403,8 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
 
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
         // Case of already correctly nested array data
@@ -420,8 +428,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         reader.read(stream);
         fail("Should not be able to parse string as long");
@@ -442,8 +449,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         reader.read(stream);
         fail("Should not be able to parse string as long");
@@ -464,8 +470,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         reader.read(stream);
         fail("Should not be able to parse string as long");
@@ -486,8 +491,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         reader.read(stream);
         fail("Should not be able to parse string as long");
@@ -508,8 +512,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
 
@@ -534,8 +537,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
 
@@ -558,8 +560,7 @@ public class ScrollReaderTest {
 
         JdkValueReader valueReader = ObjectUtils.instantiate(JdkValueReader.class.getName(), testSettings);
 
-        ScrollReaderConfig scrollReaderConfig = new ScrollReaderConfig(valueReader, mappings.getResolvedView(), testSettings);
-        ScrollReader reader = new ScrollReader(scrollReaderConfig);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(valueReader, mappings.getResolvedView(), testSettings));
 
         ScrollReader.Scroll scroll = reader.read(stream);
 
