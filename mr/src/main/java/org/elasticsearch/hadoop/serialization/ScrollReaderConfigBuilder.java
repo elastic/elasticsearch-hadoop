@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.HandlerLoader;
+import org.elasticsearch.hadoop.handler.PreloadedHandlerLoader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
@@ -162,6 +163,11 @@ public class ScrollReaderConfigBuilder {
 
     public ScrollReaderConfigBuilder setErrorHandlerLoader(HandlerLoader<DeserializationErrorHandler> errorHandlerLoader) {
         this.errorHandlerLoader = errorHandlerLoader;
+        return this;
+    }
+
+    public ScrollReaderConfigBuilder setErrorHandlers(List<DeserializationErrorHandler> errorHandlers) {
+        this.errorHandlerLoader = new PreloadedHandlerLoader<DeserializationErrorHandler>(errorHandlers);
         return this;
     }
 }
