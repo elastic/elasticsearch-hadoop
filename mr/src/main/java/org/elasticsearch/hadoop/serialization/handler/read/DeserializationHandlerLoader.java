@@ -20,9 +20,9 @@
 package org.elasticsearch.hadoop.serialization.handler.read;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.handler.HandlerLoader;
+import org.elasticsearch.hadoop.handler.AbstractHandlerLoader;
 
-public class DeserializationHandlerLoader extends HandlerLoader<DeserializationErrorHandler> {
+public class DeserializationHandlerLoader extends AbstractHandlerLoader<DeserializationErrorHandler> {
 
     public static final String ES_READ_DATA_ERROR_HANDLERS = "es.read.data.error.handlers";
     public static final String ES_READ_DATA_ERROR_HANDLER = "es.read.data.error.handler";
