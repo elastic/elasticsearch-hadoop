@@ -119,7 +119,7 @@ There are no configurations for this handler.
 
 [[errorhandlers-bulk-use]]
 [float]
-==== Using Bulk Error Handlers
+=== Using Bulk Error Handlers
 
 To configure bulk error handlers, you must specify the handlers in order with the following properties.
 
@@ -363,6 +363,12 @@ in a format that cannot be read correctly.
 - The raw JSON search result that was tried
 - Exception encountered
 
+Note: Deserialization Error Handlers only allow handling of errors that occur when reading JSON data. It may be possible
+that a search result is successfully read, but is still malformed, thus causing an exception when it is used in a
+completely different part of the framework. This Error Handler is called from the top of the most reasonable place to
+handle exceptions in the scroll reading process, but this does not encapsulate all possible reading logic for all
+integrations.
+
 [[errorhandlers-read-json-log]]
 [float]
 ==== Drop and Log Error Handler
@@ -398,7 +404,7 @@ There are no configurations for this handler.
 
 [[errorhandlers-read-json-use]]
 [float]
-==== Using Deserialization Error Handlers
+=== Using Deserialization Error Handlers
 
 To configure deserialization error handlers, you must specify the handlers in order with the following properties.
 
