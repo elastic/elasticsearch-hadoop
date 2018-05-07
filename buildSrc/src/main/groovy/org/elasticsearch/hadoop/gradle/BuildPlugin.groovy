@@ -99,6 +99,8 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.versions = VersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 
+            println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
+
             // Hadoop versions
             project.rootProject.ext.hadoopClient = []
             project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -174,8 +176,7 @@ class BuildPlugin implements Plugin<Project>  {
         // For Lucene Snapshots, Use the lucene version interpreted from elasticsearch-build-tools version file.
         if (project.ext.luceneVersion.contains('-snapshot')) {
             // Extract the revision number of the snapshot via regex:
-            Matcher matcher = project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/
-            String revision = matcher.group(1)
+            String revision = (project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
             project.repositories.maven {
                 name 'lucene-snapshots'
                 url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
