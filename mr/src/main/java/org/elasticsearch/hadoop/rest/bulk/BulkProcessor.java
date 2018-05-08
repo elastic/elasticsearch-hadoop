@@ -16,7 +16,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.ErrorExtractor;
-import org.elasticsearch.hadoop.rest.EsHadoopBulkException;
+import org.elasticsearch.hadoop.rest.EsHadoopRemoteException;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorCollector;
@@ -472,6 +472,9 @@ public class BulkProcessor implements Closeable, StatsAware {
                 message.append("\t");
                 appendError(message, errors.getError());
                 message.append("\n");
+                message.append("\t")
+                	.append(errors.getDocument().toString())
+                	.append("\n");
                 i++;
             }
             message.append("Bailing out...");

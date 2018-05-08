@@ -27,9 +27,9 @@ public class ErrorExtractor {
     	EsHadoopException ex = null;
     	if(reason != null) {
     		if(type != null) {
-    			ex = new EsHadoopBulkException(type.toString(), reason.toString());
+    			ex = new EsHadoopRemoteException(type.toString(), reason.toString());
     		} else {
-    			ex = new EsHadoopBulkException(reason.toString());
+    			ex = new EsHadoopRemoteException(reason.toString());
     		}
     	}
     	if(causedBy != null) {
@@ -41,7 +41,7 @@ public class ErrorExtractor {
     	}
     	
     	if(ex == null) {
-    		ex = new EsHadoopBulkException(m.toString());
+    		ex = new EsHadoopRemoteException(m.toString());
     	}
     	
     	return ex;
@@ -68,20 +68,20 @@ public class ErrorExtractor {
                             	error = extractErrorWithCause(nestedM);
                             }
                             else {
-                                error = new EsHadoopBulkException(nested.toString());
+                                error = new EsHadoopRemoteException(nested.toString());
                             }
                         }
                         else {
-                        	error = new EsHadoopBulkException(nested.toString());
+                        	error = new EsHadoopRemoteException(nested.toString());
                         }
                     }
                     else {
-                    	error = new EsHadoopBulkException(err.toString());
+                    	error = new EsHadoopRemoteException(err.toString());
                     }
                 }
             }
             else {
-            	error = new EsHadoopBulkException(err.toString());
+            	error = new EsHadoopRemoteException(err.toString());
             }
         }
         return error;

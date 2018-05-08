@@ -2,22 +2,22 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.EsHadoopException;
 
-public class EsHadoopBulkException extends EsHadoopException {
+public class EsHadoopRemoteException extends EsHadoopException {
 	private static final long serialVersionUID = 5402297229024034583L;
 	
 	private String type=null;
 	
-	public EsHadoopBulkException(String message) {
+	public EsHadoopRemoteException(String message) {
 		super(message);
 	}
-	public EsHadoopBulkException(String message, Throwable throwable) {
+	public EsHadoopRemoteException(String message, Throwable throwable) {
 		super(message, throwable);
 	}
-	public EsHadoopBulkException(String type, String message) {
+	public EsHadoopRemoteException(String type, String message) {
 		super(message);
 		this.type = type;
 	}
-	public EsHadoopBulkException(String type, String message, Throwable throwable) {
+	public EsHadoopRemoteException(String type, String message, Throwable throwable) {
 		super(message, throwable);
 		this.type = type;
 	}
