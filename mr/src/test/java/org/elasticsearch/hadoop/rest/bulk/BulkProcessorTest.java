@@ -283,7 +283,7 @@ public class BulkProcessorTest {
         assertEquals(4, bulkResponse.getDocsSent());
         assertEquals(0, bulkResponse.getDocsSkipped());
         assertEquals(1, bulkResponse.getDocsAborted());
-        assertEquals("This data is bogus", bulkResponse.getDocumentErrors().get(0).getErrorMessage());
+        assertEquals("This data is bogus", bulkResponse.getDocumentErrors().get(0).getError().getMessage());
 
         processor.close();
         Stats stats = processor.stats();
@@ -315,7 +315,7 @@ public class BulkProcessorTest {
         assertEquals(4, bulkResponse.getDocsSent());
         assertEquals(0, bulkResponse.getDocsSkipped());
         assertEquals(1, bulkResponse.getDocsAborted());
-        assertEquals("This data is bogus", bulkResponse.getDocumentErrors().get(0).getErrorMessage());
+        assertEquals("This data is bogus", bulkResponse.getDocumentErrors().get(0).getError().getMessage());
 
         processor.close();
         Stats stats = processor.stats();
@@ -716,7 +716,7 @@ public class BulkProcessorTest {
         assertEquals(4, bulkResponse.getDocsSent());
         assertEquals(0, bulkResponse.getDocsSkipped());
         assertEquals(1, bulkResponse.getDocsAborted());
-        assertEquals("Abort the handler!!", bulkResponse.getDocumentErrors().get(0).getErrorMessage());
+        assertEquals("Abort the handler!!", bulkResponse.getDocumentErrors().get(0).getError().getMessage());
 
         processor.close();
         Stats stats = processor.stats();

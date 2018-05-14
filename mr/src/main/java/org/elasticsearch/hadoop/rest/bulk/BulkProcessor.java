@@ -16,6 +16,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.ErrorExtractor;
+import org.elasticsearch.hadoop.rest.EsHadoopRemoteException;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorCollector;
@@ -229,9 +230,9 @@ public class BulkProcessor implements Closeable, StatsAware {
                             // Get the underlying document information as a map and extract the error information.
                             Map values = (Map) map.values().iterator().next();
                             Integer docStatus = (Integer) values.get("status");
-                            String error = errorExtractor.extractError(values);
+                            EsHadoopException error = errorExtractor.extractError(values);
 
-                            if (error == null || error.isEmpty()){
+                            if (error == null){
                                 // Write operation for this entry succeeded
                                 stats.bytesAccepted += data.length(trackingBytesPosition);
                                 stats.docsAccepted += 1;
@@ -260,7 +261,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                                 List<String> bulkErrorPassReasons = new ArrayList<String>();
                                 BulkWriteFailure failure = new BulkWriteFailure(
                                         status,
-                                        new Exception(error),
+                                        error,
                                         document,
                                         previousAttempt.attemptNumber,
                                         bulkErrorPassReasons
@@ -279,7 +280,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                                             LOG.error("Bulk write error handler abort exception caught with underlying cause:", cause);
                                         }
                                         result = HandlerResult.ABORT;
-                                        error = ahe.getMessage();
+                                        error = ahe;
                                     } catch (Exception e) {
                                         throw new EsHadoopException("Encountered exception during error handler.", e);
                                     }
@@ -468,12 +469,27 @@ public class BulkProcessor implements Closeable, StatsAware {
                 if (i >=maxErrors ) {
                     break;
                 }
-                message.append("\t").append(errors.getErrorMessage()).append("\n");
+                message.append("\t");
+                appendError(message, errors.getError());
+                message.append("\n");
+                message.append("\t")
+                	.append(errors.getDocument().toString())
+                	.append("\n");
                 i++;
             }
             message.append("Bailing out...");
             throw new EsHadoopException(message.toString());
         }
+    }
+    
+    private void appendError(StringBuilder message, Throwable exception) {
+    	if(exception != null) {
+    		message.append(exception);
+    		if(exception.getCause() != null) {
+    			message.append(';');
+    			appendError(message, exception.getCause());
+    		}
+    	}
     }
 
 

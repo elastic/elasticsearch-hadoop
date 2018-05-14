@@ -22,6 +22,7 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -401,10 +402,11 @@ public class RestClient implements Closeable, StatsAware {
     private void checkResponse(Request request, Response response) {
         if (response.hasFailed()) {
             // check error first
-            String msg = null;
+        	String msg = null;
             // try to parse the answer
             try {
-                msg = errorExtractor.extractError(this.<Map> parseContent(response.body(), null));
+            	EsHadoopException ex = errorExtractor.extractError(this.<Map> parseContent(response.body(), null));
+                msg = (ex != null) ? ex.toString() : null;
                 if (response.isClientError()) {
                     msg = msg + "\n" + request.body();
                 }
