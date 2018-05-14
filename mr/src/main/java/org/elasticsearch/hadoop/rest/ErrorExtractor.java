@@ -3,6 +3,7 @@ package org.elasticsearch.hadoop.rest;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 
@@ -16,25 +17,47 @@ public class ErrorExtractor {
     public ErrorExtractor(EsMajorVersion internalVersion) {
         this.internalVersion = internalVersion;
     }
+    
+    @SuppressWarnings("rawtypes")
+	public EsHadoopException extractErrorWithCause(Map m) {
+    	Object type = m.get("type");
+    	Object reason = m.get("reason");
+    	Object causedBy = m.get("caused_by");
+    	
+    	EsHadoopException ex = null;
+    	if(reason != null) {
+    		if(type != null) {
+    			ex = new EsHadoopRemoteException(type.toString(), reason.toString());
+    		} else {
+    			ex = new EsHadoopRemoteException(reason.toString());
+    		}
+    	}
+    	if(causedBy != null) {
+    		if(ex == null) {
+    			ex = extractErrorWithCause((Map)causedBy);
+    		} else {
+    			ex.initCause(extractErrorWithCause((Map)causedBy));
+    		}
+    	}
+    	
+    	if(ex == null) {
+    		ex = new EsHadoopRemoteException(m.toString());
+    	}
+    	
+    	return ex;
+    }
 
-    public String extractError(Map jsonMap) {
+    @SuppressWarnings("rawtypes")
+	public EsHadoopException extractError(Map jsonMap) {
         Object err = jsonMap.get("error");
-        String error = "";
+        EsHadoopException error = null;
         if (err != null) {
             // part of ES 2.0
             if (err instanceof Map) {
                 Map m = ((Map) err);
                 err = m.get("root_cause");
                 if (err == null) {
-                    if (m.containsKey("reason")) {
-                        error = m.get("reason").toString();
-                    }
-                    else if (m.containsKey("caused_by")) {
-                        error += ";" + ((Map) m.get("caused_by")).get("reason");
-                    }
-                    else {
-                        error = m.toString();
-                    }
+                    error = extractErrorWithCause(m);
                 }
                 else {
                     if (err instanceof List) {
@@ -42,23 +65,23 @@ public class ErrorExtractor {
                         if (nested instanceof Map) {
                             Map nestedM = (Map) nested;
                             if (nestedM.containsKey("reason")) {
-                                error = nestedM.get("reason").toString();
+                            	error = extractErrorWithCause(nestedM);
                             }
                             else {
-                                error = nested.toString();
+                                error = new EsHadoopRemoteException(nested.toString());
                             }
                         }
                         else {
-                            error = nested.toString();
+                        	error = new EsHadoopRemoteException(nested.toString());
                         }
                     }
                     else {
-                        error = err.toString();
+                    	error = new EsHadoopRemoteException(err.toString());
                     }
                 }
             }
             else {
-                error = err.toString();
+            	error = new EsHadoopRemoteException(err.toString());
             }
         }
         return error;
