@@ -15,8 +15,7 @@ Spark provides fast iterative/functional-like capabilities over large data sets,
 Just like other libraries, {eh} needs to be available in Spark's classpath. As Spark has multiple deployment modes, this can translate to the target classpath, whether it is on only one node (as is the case with the local mode - which will be used through-out the documentation) or per-node depending on the desired infrastructure.
 
 [[spark-native]]
-[float]
-=== Native support
+=== Native RDD support
 
 added[2.1]
 
@@ -606,7 +605,6 @@ It is worth mentioning that rich data types available only in {es}, such as http
 For example, based on its storage a +geo_point+ might be returned as a +String+ or a +Traversable+.
 
 [[spark-streaming]]
-[float]
 === Spark Streaming support
 
 added[5.0]
@@ -1144,7 +1142,6 @@ It is worth re-mentioning that rich data types available only in {es}, such as h
 For example, based on its storage a +geo_point+ might be returned as a +String+ or a +Traversable+.
 
 [[spark-sql]]
-[float]
 === Spark SQL support
 
 added[2.1]
@@ -1644,7 +1641,6 @@ In addition to the table above, for Spark SQL 1.3 or higher, {eh} performs autom
 IMPORTANT: Since Spark SQL is strongly-typed, each geo field needs to have the same format across _all_ documents. Shy of that, the returned data will not fit the detected schema and thus lead to errors. 
 
 [[spark-sql-streaming]]
-[float]
 === Spark Structured Streaming support
 
 added[6.0]
@@ -2008,7 +2004,6 @@ val docCount = esRDD.count();
 <4> Create a Spark +RDD+ on top of {es} through `EsInputFormat`
 
 [[spark-python]]
-[float]
 === Using the connector from PySpark
 
 Thanks to its <<mapreduce, {mr}>> layer, {eh} can be used from PySpark as well to both read and write data to {es}.
