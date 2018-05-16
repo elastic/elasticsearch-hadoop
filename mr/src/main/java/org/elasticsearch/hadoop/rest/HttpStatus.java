@@ -97,7 +97,7 @@ public abstract class HttpStatus {
     public static final int NOT_IMPLEMENTED = 501;
     public static final int BAD_GATEWAY = 502;
     public static final int SERVICE_UNAVAILABLE = 503;
-    public static final int GATEWAY_TIMEOUT = 50;
+    public static final int GATEWAY_TIMEOUT = 504;
     public static final int HTTP_VERSION_NOT_SUPPORTED = 505;
     public static final int VARIANT_ALSO_NEGOTIATES = 506;
     public static final int INSUFFICIENT_STORAGE = 507;
