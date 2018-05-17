@@ -31,8 +31,8 @@ import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
 import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
+import org.elasticsearch.hadoop.serialization.bulk.BulkEntryWriter;
 import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.dto.ShardInfo;
@@ -76,10 +76,10 @@ public class RestRepository implements Closeable, StatsAware {
     private boolean writeInitialized = false;
 
     private RestClient client;
-    private BulkCommand command;
     // optional extractor passed lazily to BulkCommand
     private MetadataExtractor metaExtractor;
 
+    private BulkEntryWriter bulkEntryWriter;
     private BulkProcessor bulkProcessor;
 
     // Internal
@@ -135,7 +135,7 @@ public class RestRepository implements Closeable, StatsAware {
             this.writeInitialized = true;
             this.bulkProcessor = new BulkProcessor(client, resources.getResourceWrite(), settings);
             this.trivialBytesRef = new BytesRef();
-            this.command = BulkCommands.create(settings, metaExtractor, client.internalVersion);
+            this.bulkEntryWriter = new BulkEntryWriter(settings, BulkCommands.create(settings, metaExtractor, client.internalVersion));
         }
     }
 
@@ -167,8 +167,7 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        BytesRef serialized = null;
-        serialized = command.write(object);
+        BytesRef serialized = bulkEntryWriter.writeBulkEntry(object);
         if (serialized != null) {
             doWriteToIndex(serialized);
         }
@@ -219,6 +218,11 @@ public class RestRepository implements Closeable, StatsAware {
                 // Aggregate stats before discarding them.
                 stats.aggregate(bulkProcessor.stats());
                 bulkProcessor = null;
+            }
+
+            if (bulkEntryWriter != null) {
+                bulkEntryWriter.close();
+                bulkEntryWriter = null;
             }
         } finally {
             client.close();
