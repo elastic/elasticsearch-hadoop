@@ -24,8 +24,8 @@ import org.elasticsearch.hadoop.handler.AbstractHandlerLoader;
 
 public class SerializationHandlerLoader extends AbstractHandlerLoader<SerializationErrorHandler> {
 
-    public static final String ES_WRITE_DATA_ERROR_HANDLERS = "";
-    public static final String ES_WRITE_DATA_ERROR_HANDLER = "";
+    public static final String ES_WRITE_DATA_ERROR_HANDLERS = "es.write.data.error.handlers";
+    public static final String ES_WRITE_DATA_ERROR_HANDLER = "es.write.data.error.handler";
 
     public SerializationHandlerLoader() {
         super(SerializationErrorHandler.class);
@@ -45,9 +45,9 @@ public class SerializationHandlerLoader extends AbstractHandlerLoader<Serializat
     protected SerializationErrorHandler loadBuiltInHandler(NamedHandlers handlerName) {
         switch (handlerName) {
             case FAIL:
-                return null; // TODO
+                return new SerializationAbortOnFailure();
             case LOG:
-                return null; // TODO
+                return new SerializationDropAndLog();
             default:
                 throw new EsHadoopIllegalArgumentException(
                         "Could not find default implementation for built in handler type [" + handlerName + "]"
