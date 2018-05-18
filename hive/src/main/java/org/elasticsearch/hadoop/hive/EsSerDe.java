@@ -160,6 +160,8 @@ public class EsSerDe extends AbstractSerDe {
         hiveType.setObjectInspector(objInspector);
         hiveType.setObject(data);
 
+        // We use the command directly instead of the bulk entry writer since there is no close() method on SerDes.
+        // See FileSinkOperator#process() for more info of how this is used with the output format.
         command.write(hiveType).copyTo(scratchPad);
         result.setContent(scratchPad);
         return result;
