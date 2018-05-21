@@ -35,7 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 public class BulkEntryWriterTest {
 
