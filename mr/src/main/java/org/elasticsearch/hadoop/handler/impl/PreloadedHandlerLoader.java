@@ -17,9 +17,12 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.handler;
+package org.elasticsearch.hadoop.handler.impl;
 
 import java.util.List;
+
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.HandlerLoader;
 
 /**
  * Returns the specified handlers as the loaded handlers.

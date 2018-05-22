@@ -1,7 +1,7 @@
 package org.elasticsearch.hadoop.rest.bulk.handler.impl;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.handler.AbstractHandlerLoader;
+import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
 
 /**
