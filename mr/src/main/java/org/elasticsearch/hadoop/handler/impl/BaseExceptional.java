@@ -17,28 +17,33 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.handler.impl;
 
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.elasticsearch.hadoop.handler.impl.BaseExceptional;
-import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
+import org.elasticsearch.hadoop.handler.Exceptional;
 
-public class DeserializationFailure extends BaseExceptional {
-    private final BytesArray hit;
+/**
+ * Provides a basic implementation of an exceptional event to be passed between error handlers.
+ */
+public abstract class BaseExceptional implements Exceptional {
 
-    public DeserializationFailure(Exception reason, BytesArray hit, List<String> passReasons) {
-        super(reason, passReasons);
-        this.hit = hit;
+    private final Exception reason;
+    private final List<String> passReasons;
+
+    public BaseExceptional(Exception reason, List<String> passReasons) {
+        this.reason = reason;
+        this.passReasons = Collections.unmodifiableList(passReasons);
     }
 
-    /**
-     * @return the scroll search hit in the original raw JSON format
-     */
-    public InputStream getHitContents() {
-        return new FastByteArrayInputStream(hit);
+    @Override
+    public Exception getException() {
+        return reason;
+    }
+
+    @Override
+    public List<String> previousHandlerMessages() {
+        return passReasons;
     }
 }

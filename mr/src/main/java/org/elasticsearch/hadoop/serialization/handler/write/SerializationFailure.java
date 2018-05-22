@@ -21,17 +21,14 @@ package org.elasticsearch.hadoop.serialization.handler.write;
 
 import java.util.List;
 
-import org.elasticsearch.hadoop.handler.Exceptional;
+import org.elasticsearch.hadoop.handler.impl.BaseExceptional;
 
-public class SerializationFailure implements Exceptional {
+public class SerializationFailure extends BaseExceptional {
     private final Object record;
-    private final Exception reason;
-    private final List<String> passReasons;
 
     public SerializationFailure(Exception reason, Object record, List<String> passReasons) {
+        super(reason, passReasons);
         this.record = record;
-        this.reason = reason;
-        this.passReasons = passReasons;
     }
 
     /**
@@ -39,15 +36,5 @@ public class SerializationFailure implements Exceptional {
      */
     public Object getRecord() {
         return record;
-    }
-
-    @Override
-    public Exception getException() {
-        return reason;
-    }
-
-    @Override
-    public List<String> previousHandlerMessages() {
-        return passReasons;
     }
 }
