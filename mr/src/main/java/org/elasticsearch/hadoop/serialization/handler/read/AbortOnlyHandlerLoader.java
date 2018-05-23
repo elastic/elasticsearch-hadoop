@@ -17,14 +17,20 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.handler;
+package org.elasticsearch.hadoop.serialization.handler.read;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Any object that can produce a list of error handlers of a given type.
- * @param <E> ErrorHandler type.
+ * A handler loader that ignores the configured error handlers and only loads the abort handler.
  */
-public interface HandlerLoader<E extends ErrorHandler> {
-    List<E> loadHandlers();
+public class AbortOnlyHandlerLoader extends DeserializationHandlerLoader {
+
+    @Override
+    public List<DeserializationErrorHandler> loadHandlers() {
+        List<DeserializationErrorHandler> handlers = new ArrayList<DeserializationErrorHandler>();
+        handlers.add(loadBuiltInHandler(NamedHandlers.FAIL));
+        return handlers;
+    }
 }

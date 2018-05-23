@@ -22,9 +22,19 @@ package org.elasticsearch.hadoop.handler;
 import java.util.List;
 
 /**
- * Any object that can produce a list of error handlers of a given type.
- * @param <E> ErrorHandler type.
+ * Returns the specified handlers as the loaded handlers.
+ * @param <E> ErrorHandler class.
  */
-public interface HandlerLoader<E extends ErrorHandler> {
-    List<E> loadHandlers();
+public class PreloadedHandlerLoader<E extends ErrorHandler> implements HandlerLoader<E> {
+
+    private final List<E> handlers;
+
+    public PreloadedHandlerLoader(List<E> handlers) {
+        this.handlers = handlers;
+    }
+
+    @Override
+    public List<E> loadHandlers() {
+        return handlers;
+    }
 }

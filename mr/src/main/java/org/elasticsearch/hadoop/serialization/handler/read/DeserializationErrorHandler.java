@@ -17,14 +17,21 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.handler;
+package org.elasticsearch.hadoop.serialization.handler.read;
 
-import java.util.List;
+import java.util.Properties;
 
-/**
- * Any object that can produce a list of error handlers of a given type.
- * @param <E> ErrorHandler type.
- */
-public interface HandlerLoader<E extends ErrorHandler> {
-    List<E> loadHandlers();
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.HandlerResult;
+
+public abstract class DeserializationErrorHandler implements ErrorHandler<DeserializationFailure, byte[], ErrorCollector<byte[]>> {
+    @Override
+    public void init(Properties properties) {}
+
+    @Override
+    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
+
+    @Override
+    public void close() {}
 }

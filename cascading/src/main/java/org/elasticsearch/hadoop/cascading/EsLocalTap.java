@@ -34,7 +34,7 @@ import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.ScrollQuery;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
+import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
@@ -116,7 +116,7 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
                             .readMetadata(settings.getReadMetadata())
                             .filters(QueryUtils.parseFilters(settings))
                             .fields(StringUtils.concatenate(fields, ","));
-            input = queryBuilder.build(client, new ScrollReader(new ScrollReaderConfig(new JdkValueReader(), mapping, settings)));
+            input = queryBuilder.build(client, new ScrollReader(ScrollReaderConfigBuilder.builder(new JdkValueReader(), mapping, settings)));
         }
         return new TupleEntrySchemeIterator<Properties, ScrollQuery>(flowProcess, getScheme(), input, getIdentifier());
     }

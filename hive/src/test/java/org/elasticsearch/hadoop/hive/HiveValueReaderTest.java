@@ -25,9 +25,10 @@ import java.util.Map;
 import org.apache.hadoop.io.Text;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
+import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.containsString;
@@ -40,7 +41,12 @@ public class HiveValueReaderTest {
 
     @Test
     public void testDateMapping() throws Exception {
-        ScrollReader reader = new ScrollReader(new ScrollReaderConfig(new HiveValueReader(), mapping("hive-date-mappingresponse.json"), false, "_mapping", false, false));
+        ScrollReaderConfigBuilder scrollCfg = ScrollReaderConfigBuilder.builder(new HiveValueReader(), new TestSettings())
+                .setResolvedMapping(mapping("hive-date-mappingresponse.json"))
+                .setReadMetadata(false)
+                .setReturnRawJson(false)
+                .setIgnoreUnmappedFields(false);
+        ScrollReader reader = new ScrollReader(scrollCfg);
         InputStream stream = getClass().getResourceAsStream("hive-date-source.json");
         List<Object[]> read = reader.read(stream).getHits();
         assertEquals(1, read.size());
