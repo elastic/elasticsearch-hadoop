@@ -32,7 +32,7 @@ import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
-import org.elasticsearch.hadoop.serialization.handler.write.SerializationHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.write.impl.SerializationHandlerLoader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesRef;
 

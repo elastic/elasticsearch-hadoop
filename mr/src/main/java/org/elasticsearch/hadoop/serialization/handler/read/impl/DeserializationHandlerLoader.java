@@ -17,37 +17,38 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.write;
+package org.elasticsearch.hadoop.serialization.handler.read.impl;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 
-public class SerializationHandlerLoader extends AbstractHandlerLoader<SerializationErrorHandler> {
+public class DeserializationHandlerLoader extends AbstractHandlerLoader<DeserializationErrorHandler> {
 
-    public static final String ES_WRITE_DATA_ERROR_HANDLERS = "es.write.data.error.handlers";
-    public static final String ES_WRITE_DATA_ERROR_HANDLER = "es.write.data.error.handler";
+    public static final String ES_READ_DATA_ERROR_HANDLERS = "es.read.data.error.handlers";
+    public static final String ES_READ_DATA_ERROR_HANDLER = "es.read.data.error.handler";
 
-    public SerializationHandlerLoader() {
-        super(SerializationErrorHandler.class);
+    public DeserializationHandlerLoader() {
+        super(DeserializationErrorHandler.class);
     }
 
     @Override
     protected String getHandlersPropertyName() {
-        return ES_WRITE_DATA_ERROR_HANDLERS;
+        return ES_READ_DATA_ERROR_HANDLERS;
     }
 
     @Override
     protected String getHandlerPropertyName() {
-        return ES_WRITE_DATA_ERROR_HANDLER;
+        return ES_READ_DATA_ERROR_HANDLER;
     }
 
     @Override
-    protected SerializationErrorHandler loadBuiltInHandler(NamedHandlers handlerName) {
+    protected DeserializationErrorHandler loadBuiltInHandler(AbstractHandlerLoader.NamedHandlers handlerName) {
         switch (handlerName) {
             case FAIL:
-                return new SerializationAbortOnFailure();
+                return new DeserializationAbortOnFailure();
             case LOG:
-                return new SerializationDropAndLog();
+                return new DeserializationDropAndLog();
             default:
                 throw new EsHadoopIllegalArgumentException(
                         "Could not find default implementation for built in handler type [" + handlerName + "]"

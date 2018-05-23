@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.write;
+package org.elasticsearch.hadoop.serialization.handler.read.impl;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,8 +29,11 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-public class SerializationDropAndLog extends SerializationErrorHandler {
+public class DeserializationDropAndLog extends DeserializationErrorHandler {
     public static final String CONF_LOGGER_NAME = "logger.name";
     public static final String CONF_LOGGER_CLASS = "logger.class";
     public static final String CONF_LOGGER_LEVEL = "logger.level";
@@ -90,7 +93,7 @@ public class SerializationDropAndLog extends SerializationErrorHandler {
     }
 
     @Override
-    public HandlerResult onError(SerializationFailure entry, ErrorCollector<Object> collector) throws Exception {
+    public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
         switch (loggerLevel) {
             case FATAL:
                 if (logger.isFatalEnabled()) {
@@ -126,7 +129,7 @@ public class SerializationDropAndLog extends SerializationErrorHandler {
         return HandlerResult.HANDLED;
     }
 
-    private String renderLogMessage(SerializationFailure entry) {
+    private String renderLogMessage(DeserializationFailure entry) {
         // Render the previous handler messages
         List<String> handlerMessages = entry.previousHandlerMessages();
         String tailMessage;
@@ -147,12 +150,8 @@ public class SerializationDropAndLog extends SerializationErrorHandler {
                         "%s" +
                         "%s",
                 entry.getException().getMessage(),
-                stringify(entry.getRecord()),
+                ((FastByteArrayInputStream) entry.getHitContents()).bytes().toString(),
                 tailMessage
         );
-    }
-
-    private String stringify(Object entry) {
-        return entry.toString();
     }
 }

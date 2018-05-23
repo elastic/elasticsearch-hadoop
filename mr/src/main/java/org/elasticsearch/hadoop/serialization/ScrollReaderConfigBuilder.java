@@ -27,7 +27,7 @@ import org.elasticsearch.hadoop.handler.impl.PreloadedHandlerLoader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.read.impl.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class ScrollReaderConfigBuilder {

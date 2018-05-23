@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,9 +29,10 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
+import org.elasticsearch.hadoop.serialization.handler.write.SerializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 
-public class DeserializationDropAndLog extends DeserializationErrorHandler {
+public class SerializationDropAndLog extends SerializationErrorHandler {
     public static final String CONF_LOGGER_NAME = "logger.name";
     public static final String CONF_LOGGER_CLASS = "logger.class";
     public static final String CONF_LOGGER_LEVEL = "logger.level";
@@ -91,7 +92,7 @@ public class DeserializationDropAndLog extends DeserializationErrorHandler {
     }
 
     @Override
-    public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+    public HandlerResult onError(SerializationFailure entry, ErrorCollector<Object> collector) throws Exception {
         switch (loggerLevel) {
             case FATAL:
                 if (logger.isFatalEnabled()) {
@@ -127,7 +128,7 @@ public class DeserializationDropAndLog extends DeserializationErrorHandler {
         return HandlerResult.HANDLED;
     }
 
-    private String renderLogMessage(DeserializationFailure entry) {
+    private String renderLogMessage(SerializationFailure entry) {
         // Render the previous handler messages
         List<String> handlerMessages = entry.previousHandlerMessages();
         String tailMessage;
@@ -148,8 +149,12 @@ public class DeserializationDropAndLog extends DeserializationErrorHandler {
                         "%s" +
                         "%s",
                 entry.getException().getMessage(),
-                ((FastByteArrayInputStream) entry.getHitContents()).bytes().toString(),
+                stringify(entry.getRecord()),
                 tailMessage
         );
+    }
+
+    private String stringify(Object entry) {
+        return entry.toString();
     }
 }
