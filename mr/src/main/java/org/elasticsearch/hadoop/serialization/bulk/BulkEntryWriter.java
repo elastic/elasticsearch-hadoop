@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
+import org.elasticsearch.hadoop.serialization.handler.write.ISerializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 import org.elasticsearch.hadoop.serialization.handler.write.impl.SerializationHandlerLoader;
@@ -45,7 +46,7 @@ public class BulkEntryWriter {
     private static final Log LOG = LogFactory.getLog(BulkEntryWriter.class);
 
     private final BulkCommand bulkCommand;
-    private final List<SerializationErrorHandler> serializationErrorHandlers;
+    private final List<ISerializationErrorHandler> serializationErrorHandlers;
 
     public BulkEntryWriter(Settings settings, BulkCommand bulkCommand) {
         this.bulkCommand = bulkCommand;
@@ -77,7 +78,7 @@ public class BulkEntryWriter {
                 // Attempmt failure handling
                 Exception abortException = serializationException;
                 handlerloop:
-                for (SerializationErrorHandler serializationErrorHandler : serializationErrorHandlers) {
+                for (ISerializationErrorHandler serializationErrorHandler : serializationErrorHandlers) {
                     HandlerResult result;
                     try {
                         result = serializationErrorHandler.onError(entry, errorCollector);
@@ -148,7 +149,7 @@ public class BulkEntryWriter {
     }
 
     public void close() {
-        for (SerializationErrorHandler errorHandler : serializationErrorHandlers) {
+        for (ISerializationErrorHandler errorHandler : serializationErrorHandlers) {
             errorHandler.close();
         }
     }
