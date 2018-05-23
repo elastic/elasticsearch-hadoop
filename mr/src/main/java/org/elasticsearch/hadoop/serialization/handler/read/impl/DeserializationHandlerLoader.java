@@ -22,14 +22,15 @@ package org.elasticsearch.hadoop.serialization.handler.read.impl;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 
-public class DeserializationHandlerLoader extends AbstractHandlerLoader<DeserializationErrorHandler> {
+public class DeserializationHandlerLoader extends AbstractHandlerLoader<IDeserializationErrorHandler> {
 
     public static final String ES_READ_DATA_ERROR_HANDLERS = "es.read.data.error.handlers";
     public static final String ES_READ_DATA_ERROR_HANDLER = "es.read.data.error.handler";
 
     public DeserializationHandlerLoader() {
-        super(DeserializationErrorHandler.class);
+        super(IDeserializationErrorHandler.class);
     }
 
     @Override

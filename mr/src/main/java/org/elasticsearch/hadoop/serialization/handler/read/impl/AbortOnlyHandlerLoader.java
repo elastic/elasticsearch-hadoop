@@ -22,7 +22,7 @@ package org.elasticsearch.hadoop.serialization.handler.read.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 
 /**
  * A handler loader that ignores the configured error handlers and only loads the abort handler.
@@ -30,8 +30,8 @@ import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorH
 public class AbortOnlyHandlerLoader extends DeserializationHandlerLoader {
 
     @Override
-    public List<DeserializationErrorHandler> loadHandlers() {
-        List<DeserializationErrorHandler> handlers = new ArrayList<DeserializationErrorHandler>();
+    public List<IDeserializationErrorHandler> loadHandlers() {
+        List<IDeserializationErrorHandler> handlers = new ArrayList<IDeserializationErrorHandler>();
         handlers.add(loadBuiltInHandler(NamedHandlers.FAIL));
         return handlers;
     }

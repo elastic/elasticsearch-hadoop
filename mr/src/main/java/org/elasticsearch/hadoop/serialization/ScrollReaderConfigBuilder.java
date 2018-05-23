@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.handler.impl.PreloadedHandlerLoader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.impl.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -59,7 +60,7 @@ public class ScrollReaderConfigBuilder {
     private List<String> excludeFields;
     private List<String> includeArrayFields;
 
-    private HandlerLoader<DeserializationErrorHandler> errorHandlerLoader;
+    private HandlerLoader<IDeserializationErrorHandler> errorHandlerLoader;
 
     public ScrollReaderConfigBuilder(Settings settings, ValueReader reader) {
         this.reader = reader;
@@ -157,17 +158,17 @@ public class ScrollReaderConfigBuilder {
         return this;
     }
 
-    public HandlerLoader<DeserializationErrorHandler> getErrorHandlerLoader() {
+    public HandlerLoader<IDeserializationErrorHandler> getErrorHandlerLoader() {
         return errorHandlerLoader;
     }
 
-    public ScrollReaderConfigBuilder setErrorHandlerLoader(HandlerLoader<DeserializationErrorHandler> errorHandlerLoader) {
+    public ScrollReaderConfigBuilder setErrorHandlerLoader(HandlerLoader<IDeserializationErrorHandler> errorHandlerLoader) {
         this.errorHandlerLoader = errorHandlerLoader;
         return this;
     }
 
-    public ScrollReaderConfigBuilder setErrorHandlers(List<DeserializationErrorHandler> errorHandlers) {
-        this.errorHandlerLoader = new PreloadedHandlerLoader<DeserializationErrorHandler>(errorHandlers);
+    public ScrollReaderConfigBuilder setErrorHandlers(List<IDeserializationErrorHandler> errorHandlers) {
+        this.errorHandlerLoader = new PreloadedHandlerLoader<IDeserializationErrorHandler>(errorHandlers);
         return this;
     }
 }
