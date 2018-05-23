@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -28,8 +29,10 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
+import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.serialization.Parser.NumberType;
 import org.elasticsearch.hadoop.serialization.Parser.Token;
@@ -38,20 +41,22 @@ import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter;
 import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
+import org.elasticsearch.hadoop.serialization.json.BlockAwareJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.regex.Regex;
 
 /**
  * Class handling the conversion of data from ES to target objects. It performs tree navigation tied to a potential ES mapping (if available).
  * Expected to read a _search response.
  */
-public class ScrollReader {
+public class ScrollReader implements Closeable {
 
     private static class JsonFragment {
         static final JsonFragment EMPTY = new JsonFragment(-1, -1) {
@@ -133,17 +138,32 @@ public class ScrollReader {
 
     public static class Scroll {
         static Scroll empty(String scrollId) {
-            return new Scroll(scrollId, -1L, Collections.<Object[]> emptyList());
+            return new Scroll(scrollId, 0L, true);
         }
 
         private final String scrollId;
         private final long total;
         private final List<Object[]> hits;
+        private final boolean concluded;
+        private final int numberOfHits;
+        private final int numberOfSkippedHits;
 
-        private Scroll(String scrollId, long total, List<Object[]> hits) {
+        public Scroll(String scrollId, long total, boolean concluded) {
+            this.scrollId = scrollId;
+            this.total = total;
+            this.hits = Collections.emptyList();
+            this.concluded = concluded;
+            this.numberOfHits = 0;
+            this.numberOfSkippedHits = 0;
+        }
+
+        public Scroll(String scrollId, long total, List<Object[]> hits, int responseHits, int skippedHits) {
             this.scrollId = scrollId;
             this.hits = hits;
             this.total = total;
+            this.concluded = false;
+            this.numberOfHits = responseHits;
+            this.numberOfSkippedHits = skippedHits;
         }
 
         public String getScrollId() {
@@ -157,58 +177,22 @@ public class ScrollReader {
         public List<Object[]> getHits() {
             return hits;
         }
-    }
 
-    public static class ScrollReaderConfig {
-        public ValueReader reader;
-
-        public boolean readMetadata;
-        public String metadataName;
-        public boolean returnRawJson;
-        public boolean ignoreUnmappedFields;
-        public List<String> includeFields;
-        public List<String> excludeFields;
-        public List<String> includeArrayFields;
-        public Mapping resolvedMapping;
-
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName,
-                boolean returnRawJson, boolean ignoreUnmappedFields, List<String> includeFields,
-                List<String> excludeFields, List<String> includeArrayFields) {
-            super();
-            this.reader = reader;
-            this.readMetadata = readMetadata;
-            this.metadataName = metadataName;
-            this.returnRawJson = returnRawJson;
-            this.ignoreUnmappedFields = ignoreUnmappedFields;
-            this.includeFields = includeFields;
-            this.excludeFields = excludeFields;
-            this.includeArrayFields = includeArrayFields;
-            this.resolvedMapping = resolvedMapping;
+        public boolean isConcluded() {
+            return concluded;
         }
 
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, boolean readMetadata, String metadataName, boolean returnRawJson, boolean ignoreUnmappedFields) {
-            this(reader, resolvedMapping, readMetadata, metadataName, returnRawJson, ignoreUnmappedFields, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
+        public int getNumberOfHits() {
+            return numberOfHits;
         }
 
-        public ScrollReaderConfig(ValueReader reader) {
-            this(false, reader);
-        }
-
-        public ScrollReaderConfig(boolean readMetadata, ValueReader reader) {
-            this(reader, null, readMetadata, "_metadata", false, false, Collections.<String> emptyList(), Collections.<String> emptyList(), Collections.<String> emptyList());
-        }
-
-        public ScrollReaderConfig(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
-            this(reader, resolvedMapping, cfg.getReadMetadata(), cfg.getReadMetadataField(),
-                    cfg.getOutputAsJson(), cfg.getReadMappingMissingFieldsIgnore(),
-                    StringUtils.tokenize(cfg.getReadFieldInclude()), StringUtils.tokenize(cfg.getReadFieldExclude()),
-                    StringUtils.tokenize(cfg.getReadFieldAsArrayInclude()));
+        public int getNumberOfSkippedHits() {
+            return numberOfSkippedHits;
         }
     }
 
     private static final Log log = LogFactory.getLog(ScrollReader.class);
 
-    private Parser parser;
     private final ValueReader reader;
     private final ValueParsingCallback parsingCallback;
     private final Map<String, FieldType> esMapping;
@@ -224,6 +208,7 @@ public class ScrollReader {
     private final List<NumberedInclude> includeFields;
     private final List<String> excludeFields;
     private final List<NumberedInclude> includeArrayFields;
+    private List<DeserializationErrorHandler> deserializationErrorHandlers;
 
     private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
@@ -233,58 +218,59 @@ public class ScrollReader {
     private static final String[] SOURCE = new String[] { "_source" };
     private static final String[] TOTAL = new String[] { "hits", "total" };
 
-    public ScrollReader(ScrollReaderConfig scrollConfig) {
-        this.reader = scrollConfig.reader;
+    public ScrollReader(ScrollReaderConfigBuilder scrollConfig) {
+        this.reader = scrollConfig.getReader();
         this.parsingCallback = (reader instanceof ValueParsingCallback ?  (ValueParsingCallback) reader : null);
 
-        this.readMetadata = scrollConfig.readMetadata;
-        this.metadataField = scrollConfig.metadataName;
-        this.returnRawJson = scrollConfig.returnRawJson;
-        this.ignoreUnmappedFields = scrollConfig.ignoreUnmappedFields;
-        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.includeFields);
-        this.excludeFields = scrollConfig.excludeFields;
-        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.includeArrayFields);
+        this.readMetadata = scrollConfig.getReadMetadata();
+        this.metadataField = scrollConfig.getMetadataName();
+        this.returnRawJson = scrollConfig.getReturnRawJson();
+        this.ignoreUnmappedFields = scrollConfig.getIgnoreUnmappedFields();
+        this.includeFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeFields());
+        this.excludeFields = scrollConfig.getExcludeFields();
+        this.includeArrayFields = FieldFilter.toNumberedFilter(scrollConfig.getIncludeArrayFields());
 
-        Mapping mapping = scrollConfig.resolvedMapping;
+        Mapping mapping = scrollConfig.getResolvedMapping();
         if (mapping != null) {
             // optimize filtering
             if (ignoreUnmappedFields) {
-                mapping = mapping.filter(scrollConfig.includeFields, scrollConfig.excludeFields);
+                mapping = mapping.filter(scrollConfig.getIncludeFields(), scrollConfig.getExcludeFields());
             }
             this.esMapping = mapping.flatten();
         } else {
             this.esMapping = Collections.emptyMap();
         }
+
+        this.deserializationErrorHandlers = scrollConfig.getErrorHandlerLoader().loadHandlers();
     }
 
     public Scroll read(InputStream content) throws IOException {
         Assert.notNull(content);
 
-        BytesArray copy = null;
+        //copy content
+        BytesArray copy = IOUtils.asBytes(content);
+        content = new FastByteArrayInputStream(copy);
 
-        if (log.isTraceEnabled() || returnRawJson) {
-            //copy content
-            copy = IOUtils.asBytes(content);
-            content = new FastByteArrayInputStream(copy);
+        if (log.isTraceEnabled()) {
             log.trace("About to parse scroll content " + copy);
         }
 
-        this.parser = new JacksonJsonParser(content);
+        Parser parser = new JacksonJsonParser(content);
 
         try {
-            return read(copy);
+            return read(parser, copy);
         } finally {
             parser.close();
         }
     }
 
-    private Scroll read(BytesArray input) {
+    private Scroll read(Parser parser, BytesArray input) {
         // get scroll_id
         Token token = ParsingUtils.seek(parser, SCROLL_ID);
         Assert.isTrue(token == Token.VALUE_STRING, "invalid response");
         String scrollId = parser.text();
 
-        long totalHits = hitsTotal();
+        long totalHits = hitsTotal(parser);
         // check hits/total
         if (totalHits == 0) {
             return Scroll.empty(scrollId);
@@ -297,9 +283,18 @@ public class ScrollReader {
         Assert.isTrue(token == Token.START_ARRAY, "invalid response");
 
         List<Object[]> results = new ArrayList<Object[]>();
-
+        int responseHits = 0;
+        int skippedHits = 0;
+        int readHits = 0;
         for (token = parser.nextToken(); token != Token.END_ARRAY; token = parser.nextToken()) {
-            results.add(readHit());
+            responseHits++;
+            Object[] hit = readHit(parser, input);
+            if (hit != null) {
+                readHits++;
+                results.add(hit);
+            } else {
+                skippedHits++;
+            }
         }
 
         // convert the char positions into actual content
@@ -398,16 +393,138 @@ public class ScrollReader {
             }
         }
 
-        return new Scroll(scrollId, totalHits, results);
+        if (responseHits > 0) {
+            return new Scroll(scrollId, totalHits, results, responseHits, skippedHits);
+        } else {
+            // Scroll had no hits in the response, it must have concluded.
+            return new Scroll(scrollId, totalHits, true);
+        }
     }
 
-    private Object[] readHit() {
+    private Object[] readHit(Parser parser, BytesArray input) {
         Token t = parser.currentToken();
         Assert.isTrue(t == Token.START_OBJECT, "expected object, found " + t);
-        return (returnRawJson ? readHitAsJson() : readHitAsMap());
+        int hitStartPos = parser.tokenCharOffset();
+        // Wrap the parser in a block aware parser so we can skip a hit if its parsing fails.
+        BlockAwareJsonParser blockAwareJsonParser = new BlockAwareJsonParser(parser);
+        // This is the parser that we will be using to parse a hit. Starts with the block parser and the main scroll,
+        // but may change during the course of the function if hits are retried with different parsers.
+        Parser workingParser = blockAwareJsonParser;
+
+        Object[] readResult = null;
+        boolean retryRead = false;
+        boolean skip = false;
+        int attempts = 0;
+        do {
+            try {
+                // Clear the retry flag
+                retryRead = false;
+                if (returnRawJson) {
+                    readResult = readHitAsJson(workingParser);
+                } else {
+                    readResult = readHitAsMap(workingParser);
+                }
+            } catch (Exception deserializationException) {
+                // Skip this hit if we need to
+                if (workingParser == blockAwareJsonParser) {
+                    blockAwareJsonParser.exitBlock();
+                    t = blockAwareJsonParser.currentToken();
+                    Assert.isTrue(t == Token.END_OBJECT, "expected end of object, found " + t);
+                }
+
+                // slice input data to create an input stream for the handler event
+                int hitEndPos = parser.tokenCharOffset();
+                BytesArray hitSection = new BytesArray(input.bytes(), hitStartPos, hitEndPos - hitStartPos + 1);
+
+                // Make error event
+                List<String> passReasons = new ArrayList<String>();
+                DeserializationFailure event = new DeserializationFailure(deserializationException, hitSection, passReasons);
+
+                // Set up error collector
+                SerdeErrorCollector<byte[]> errorCollector = new SerdeErrorCollector<byte[]>();
+
+                // Attempt failure handling
+                retryRead = false;
+                Exception abortException = deserializationException;
+                handlerLoop:
+                for (DeserializationErrorHandler deserializationErrorHandler : deserializationErrorHandlers) {
+                    HandlerResult result;
+                    try {
+                        result = deserializationErrorHandler.onError(event, errorCollector);
+                    } catch (EsHadoopAbortHandlerException ahe) {
+                        // Count this as an abort operation. Translate the exception into a parsing exception.
+                        result = HandlerResult.ABORT;
+                        abortException = new EsHadoopParsingException(ahe.getMessage(), ahe.getCause());
+                    } catch (Exception e) {
+                        // Log the error we're handling before we throw for the handler being broken.
+                        log.error("Could not handle deserialization error event due to an exception in error handler. " +
+                                "Deserialization exception:", deserializationException);
+                        throw new EsHadoopException("Encountered unexpected exception during error handler execution.", e);
+                    }
+
+                    switch (result) {
+                        case HANDLED:
+                            Assert.isTrue(errorCollector.getAndClearMessage() == null,
+                                    "Found pass message with Handled response. Be sure to return the value returned from " +
+                                            "the pass(String) call.");
+                            // Check for retries
+                            if (errorCollector.receivedRetries()) {
+                                // Reset the working parser with the retry buffer.
+                                byte[] retryDataBuffer = errorCollector.getAndClearRetryValue();
+                                if (retryDataBuffer == null || hitSection.bytes() == retryDataBuffer) {
+                                    // Same buffer as the scroll content.
+                                    workingParser = new JacksonJsonParser(event.getHitContents());
+                                } else {
+                                    // Brand new byte array to use.
+                                    workingParser = new JacksonJsonParser(retryDataBuffer);
+                                }
+
+                                // Limit the number of retries though to like 50
+                                if (attempts >= 50) {
+                                    throw new EsHadoopException("Maximum retry attempts (50) reached for deserialization errors.");
+                                } else {
+                                    retryRead = true;
+                                    // Advance to the first token, as it will be expected to be on a start object.
+                                    workingParser.nextToken();
+                                    attempts++;
+                                }
+                            } else {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Skipping a scroll search hit that resulted in error while reading: [" +
+                                            StringUtils.asUTFString(hitSection.bytes(), hitSection.offset(),
+                                                    hitSection.length()) + "]");
+                                } else {
+                                    log.info("Skipping a scroll search hit that resulted in error while reading. (DEBUG for more info).");
+                                }
+                                skip = true;
+                            }
+                            break handlerLoop;
+                        case PASS:
+                            String reason = errorCollector.getAndClearMessage();
+                            if (reason != null) {
+                                passReasons.add(reason);
+                            }
+                            continue handlerLoop;
+                        case ABORT:
+                            errorCollector.getAndClearMessage(); // Sanity clearing
+                            if (abortException instanceof EsHadoopParsingException) {
+                                throw (EsHadoopParsingException) abortException;
+                            } else {
+                                throw new EsHadoopParsingException(abortException);
+                            }
+                    }
+                }
+            }
+        } while (retryRead);
+
+        if (readResult == null && skip == false) {
+            throw new EsHadoopParsingException("Could not read hit from scroll response.");
+        }
+
+        return readResult;
     }
 
-    private Object[] readHitAsMap() {
+    private Object[] readHitAsMap(Parser parser) {
         Object[] result = new Object[2];
         Object metadata = null;
         Object id = null;
@@ -438,7 +555,7 @@ public class ScrollReader {
                 if (t == Token.FIELD_NAME) {
                     if (!("fields".equals(name) || "_source".equals(name))) {
                         reader.beginField(absoluteName);
-                        value = read(absoluteName, parser.nextToken(), null);
+                        value = read(absoluteName, parser.nextToken(), null, parser);
                         if (ID_FIELD.equals(name)) {
                             id = value;
                         }
@@ -481,7 +598,7 @@ public class ScrollReader {
                 parsingCallback.beginSource();
             }
 
-            data = read(StringUtils.EMPTY, t, null);
+            data = read(StringUtils.EMPTY, t, null, parser);
 
             if (parsingCallback != null) {
                 parsingCallback.endSource();
@@ -518,7 +635,7 @@ public class ScrollReader {
             if (readMetadata) {
                 // skip sort (useless and is an array which triggers the row mapping which does not apply)
                 if (!"sort".equals(name)) {
-                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null));
+                    reader.addToMap(data, reader.wrapString(name), read(absoluteName, parser.nextToken(), null, parser));
                 }
                 else {
                     parser.nextToken();
@@ -567,7 +684,7 @@ public class ScrollReader {
         }
     }
 
-    private Object[] readHitAsJson() {
+    private Object[] readHitAsJson(Parser parser) {
         // return results as raw json
 
         Object[] result = new Object[2];
@@ -704,39 +821,39 @@ public class ScrollReader {
 
     }
 
-    private long hitsTotal() {
+    private long hitsTotal(Parser parser) {
         ParsingUtils.seek(parser, TOTAL);
         long hits = parser.longValue();
         return hits;
     }
 
-    protected Object read(String fieldName, Token t, String fieldMapping) {
+    protected Object read(String fieldName, Token t, String fieldMapping, Parser parser) {
         if (t == Token.START_ARRAY) {
-            return list(fieldName, fieldMapping);
+            return list(fieldName, fieldMapping, parser);
         }
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
             // Check if the object field is a nested object or a field that should be considered an array.
-            FieldType esType = mapping(fieldMapping);
+            FieldType esType = mapping(fieldMapping, parser);
             if ((esType != null && esType.equals(FieldType.NESTED)) || isArrayField(fieldMapping)) {
                 // If this field has the nested data type, then this object we are
                 // about to read is using the abbreviated single value syntax (no array brackets needed for nested fields
                 // that only have one nested element.)
-                return singletonList(fieldMapping, map(fieldMapping));
+                return singletonList(fieldMapping, map(fieldMapping, parser), parser);
             } else {
-                return map(fieldMapping);
+                return map(fieldMapping, parser);
             }
         }
-        FieldType esType = mapping(fieldMapping);
+        FieldType esType = mapping(fieldMapping, parser);
 
         if (t.isValue()) {
             String rawValue = parser.text();
             try {
                 if (isArrayField(fieldMapping)) {
-                    return singletonList(fieldMapping, parseValue(esType));
+                    return singletonList(fieldMapping, parseValue(parser, esType), parser);
                 } else {
-                    return parseValue(esType);
+                    return parseValue(parser, esType);
                 }
             } catch (Exception ex) {
                 throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
@@ -746,22 +863,22 @@ public class ScrollReader {
     }
 
     // Same as read(String, Token, String) above, but does not include checking the current field name to see if it's an array.
-    protected Object readListItem(String fieldName, Token t, String fieldMapping) {
+    protected Object readListItem(String fieldName, Token t, String fieldMapping, Parser parser) {
         if (t == Token.START_ARRAY) {
-            return list(fieldName, fieldMapping);
+            return list(fieldName, fieldMapping, parser);
         }
 
         // handle nested nodes first
         else if (t == Token.START_OBJECT) {
             // Don't need special handling for nested fields since this field is already in an array.
-            return map(fieldMapping);
+            return map(fieldMapping, parser);
         }
-        FieldType esType = mapping(fieldMapping);
+        FieldType esType = mapping(fieldMapping, parser);
 
         if (t.isValue()) {
             String rawValue = parser.text();
             try {
-                return parseValue(esType);
+                return parseValue(parser, esType);
             } catch (Exception ex) {
                 throw new EsHadoopParsingException(String.format(Locale.ROOT, "Cannot parse value [%s] for field [%s]", rawValue, fieldName), ex);
             }
@@ -779,7 +896,7 @@ public class ScrollReader {
         return false;
     }
 
-    private Object parseValue(FieldType esType) {
+    private Object parseValue(Parser parser, FieldType esType) {
         Object obj;
         // special case of handing null (as text() will return "null")
         if (parser.currentToken() == Token.VALUE_NULL) {
@@ -792,7 +909,7 @@ public class ScrollReader {
         return obj;
     }
 
-    protected Object list(String fieldName, String fieldMapping) {
+    protected Object list(String fieldName, String fieldMapping, Parser parser) {
         Token t = parser.currentToken();
 
         if (t == null) {
@@ -802,11 +919,11 @@ public class ScrollReader {
             t = parser.nextToken();
         }
 
-        Object array = reader.createArray(mapping(fieldMapping));
+        Object array = reader.createArray(mapping(fieldMapping, parser));
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         for (; parser.currentToken() != Token.END_ARRAY;) {
-            content.add(readListItem(fieldName, parser.currentToken(), fieldMapping));
+            content.add(readListItem(fieldName, parser.currentToken(), fieldMapping, parser));
         }
 
         // eliminate END_ARRAY
@@ -816,8 +933,8 @@ public class ScrollReader {
         return array;
     }
 
-    protected Object singletonList(String fieldMapping, Object value) {
-        Object array = reader.createArray(mapping(fieldMapping));
+    protected Object singletonList(String fieldMapping, Object value, Parser parser) {
+        Object array = reader.createArray(mapping(fieldMapping, parser));
         // create only one element since with fields, we always get arrays which create unneeded allocations
         List<Object> content = new ArrayList<Object>(1);
         content.add(value);
@@ -825,7 +942,7 @@ public class ScrollReader {
         return array;
     }
 
-    protected Object map(String fieldMapping) {
+    protected Object map(String fieldMapping, Parser parser) {
         Token t = parser.currentToken();
 
         if (t == null) {
@@ -839,7 +956,7 @@ public class ScrollReader {
 
         if (fieldMapping != null) {
             // parse everything underneath without mapping
-            if (FieldType.isGeo(mapping(fieldMapping))) {
+            if (FieldType.isGeo(mapping(fieldMapping, parser))) {
                 toggleGeo = true;
                 insideGeo = true;
                 if (parsingCallback != null) {
@@ -883,7 +1000,7 @@ public class ScrollReader {
                 // Must point to field name
                 Object fieldName = reader.readValue(parser, currentName, FieldType.STRING);
                 // And then the value...
-                reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping));
+                reader.addToMap(map, fieldName, read(absoluteName, parser.nextToken(), nodeMapping, parser));
                 reader.endField(absoluteName);
             }
         }
@@ -902,7 +1019,7 @@ public class ScrollReader {
         return map;
     }
 
-    private FieldType mapping(String fieldMapping) {
+    private FieldType mapping(String fieldMapping, Parser parser) {
         FieldType esType = esMapping.get(fieldMapping);
 
         if (esType != null) {
@@ -958,5 +1075,12 @@ public class ScrollReader {
             break;
         }
         return esType;
+    }
+
+    @Override
+    public void close() {
+        for (DeserializationErrorHandler handler : deserializationErrorHandlers) {
+            handler.close();
+        }
     }
 }

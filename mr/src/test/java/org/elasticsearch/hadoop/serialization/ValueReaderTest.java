@@ -20,8 +20,8 @@ package org.elasticsearch.hadoop.serialization;
 
 import java.io.InputStream;
 
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,15 +42,13 @@ public class ValueReaderTest {
 
     @Test
     public void testSimplePathReader() throws Exception {
-        ScrollReader reader = new ScrollReader(new ScrollReaderConfig(new JdkValueReader()));
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false));
         reader.read(in);
     }
 
     @Test
     public void testSimplePathReaderJson() throws Exception {
-        ScrollReaderConfig config = new ScrollReaderConfig(new JdkValueReader());
-        config.returnRawJson = true;
-        ScrollReader reader = new ScrollReader(config);
+        ScrollReader reader = new ScrollReader(ScrollReaderConfigBuilder.builder(new JdkValueReader(), new TestSettings()).setReadMetadata(false).setReturnRawJson(true));
         reader.read(in);
     }
 }

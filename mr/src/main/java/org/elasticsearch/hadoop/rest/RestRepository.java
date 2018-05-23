@@ -29,7 +29,7 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.ScrollReader.Scroll;
-import org.elasticsearch.hadoop.serialization.ScrollReader.ScrollReaderConfig;
+import org.elasticsearch.hadoop.serialization.ScrollReaderConfigBuilder;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
+import org.elasticsearch.hadoop.serialization.handler.read.AbortOnlyHandlerLoader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
@@ -53,6 +54,7 @@ import org.elasticsearch.hadoop.util.unit.TimeValue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -165,7 +167,11 @@ public class RestRepository implements Closeable, StatsAware {
         Assert.notNull(object, "no object data given");
 
         lazyInitWriting();
-        doWriteToIndex(command.write(object));
+        BytesRef serialized = null;
+        serialized = command.write(object);
+        if (serialized != null) {
+            doWriteToIndex(serialized);
+        }
     }
 
     /**
@@ -384,8 +390,17 @@ public class RestRepository implements Closeable, StatsAware {
                 sb.append("&search_type=scan");
             }
             String scanQuery = sb.toString();
-            ScrollReaderConfig readerConf = new ScrollReaderConfig(true, new JdkValueReader());
-            ScrollReader scrollReader = new ScrollReader(readerConf);
+            ScrollReader scrollReader = new ScrollReader(
+                    ScrollReaderConfigBuilder.builder(new JdkValueReader(), settings)
+                            .setReadMetadata(true)
+                            .setMetadataName("_metadata")
+                            .setReturnRawJson(false)
+                            .setIgnoreUnmappedFields(false)
+                            .setIncludeFields(Collections.<String>emptyList())
+                            .setExcludeFields(Collections.<String>emptyList())
+                            .setIncludeArrayFields(Collections.<String>emptyList())
+                            .setErrorHandlerLoader(new AbortOnlyHandlerLoader()) // Only abort since this is internal
+            );
 
             // start iterating
             ScrollQuery sq = scanAll(scanQuery, null, scrollReader);

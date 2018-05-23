@@ -1,13 +1,13 @@
 package org.elasticsearch.hadoop.rest.bulk.handler.impl;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.handler.HandlerLoader;
+import org.elasticsearch.hadoop.handler.AbstractHandlerLoader;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
 
 /**
  * Produces BulkWriteErrorHandler objects based on user configuration.
  */
-public class BulkWriteHandlerLoader extends HandlerLoader<BulkWriteErrorHandler> {
+public class BulkWriteHandlerLoader extends AbstractHandlerLoader<BulkWriteErrorHandler> {
 
     public static final String ES_WRITE_REST_ERROR_HANDLERS = "es.write.rest.error.handlers";
     public static final String ES_WRITE_REST_ERROR_HANDLER = "es.write.rest.error.handler";
@@ -27,7 +27,7 @@ public class BulkWriteHandlerLoader extends HandlerLoader<BulkWriteErrorHandler>
     }
 
     @Override
-    protected BulkWriteErrorHandler loadBuiltInHandler(HandlerLoader.NamedHandlers handlerName) {
+    protected BulkWriteErrorHandler loadBuiltInHandler(AbstractHandlerLoader.NamedHandlers handlerName) {
         switch (handlerName) {
             case FAIL:
                 return new AbortOnFailure();

@@ -43,8 +43,10 @@ public abstract class StringUtils {
     public static final String SLASH = "/";
     public static final String PATH_TOP = "..";
     public static final String PATH_CURRENT = ".";
-    public static final String SOURCE_ROOT = "hits.hits._source.";
-    public static final String FIELDS_ROOT = "hits.hits.fields.";
+    public static final String SOURCE_FIELD_NAME = "_source.";
+    public static final String FIELD_FIELD_NAME = "fields.";
+    public static final String SOURCE_ROOT = "hits.hits."+SOURCE_FIELD_NAME;
+    public static final String FIELDS_ROOT = "hits.hits."+FIELD_FIELD_NAME;
     public static final String[] EMPTY_ARRAY = new String[0];
 
     private static final boolean HAS_JACKSON_CLASS = ObjectUtils.isClassPresent("org.codehaus.jackson.io.JsonStringEncoder", StringUtils.class.getClassLoader());
@@ -464,10 +466,13 @@ public abstract class StringUtils {
 
     public static String stripFieldNameSourcePrefix(String fieldName) {
         if (fieldName != null) {
-            if (fieldName.startsWith(SOURCE_ROOT)) {
+            if (fieldName.startsWith(SOURCE_FIELD_NAME)) {
+                return fieldName.substring(SOURCE_FIELD_NAME.length());
+            } else if (fieldName.startsWith(SOURCE_ROOT)) {
                 return fieldName.substring(SOURCE_ROOT.length());
-            }
-            else if (fieldName.startsWith(FIELDS_ROOT)) {
+            } else if (fieldName.startsWith(FIELD_FIELD_NAME)) {
+                return fieldName.substring(FIELD_FIELD_NAME.length());
+            } else if (fieldName.startsWith(FIELDS_ROOT)) {
                 return fieldName.substring(FIELDS_ROOT.length());
             }
         }
