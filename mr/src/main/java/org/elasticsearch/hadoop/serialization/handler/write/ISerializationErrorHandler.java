@@ -19,18 +19,8 @@
 
 package org.elasticsearch.hadoop.serialization.handler.write;
 
-import java.util.Properties;
-
 import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
 
-public abstract class SerializationErrorHandler implements ISerializationErrorHandler {
-    @Override
-    public void init(Properties properties) {}
-
-    public abstract HandlerResult onError(SerializationFailure entry, ErrorCollector<Object> collector) throws Exception;
-
-    @Override
-    public void close() {}
+public interface ISerializationErrorHandler extends ErrorHandler<SerializationFailure, Object, ErrorCollector<Object>> {
 }

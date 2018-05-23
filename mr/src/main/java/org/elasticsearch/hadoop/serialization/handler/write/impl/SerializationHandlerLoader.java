@@ -21,15 +21,16 @@ package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.write.ISerializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationErrorHandler;
 
-public class SerializationHandlerLoader extends AbstractHandlerLoader<SerializationErrorHandler> {
+public class SerializationHandlerLoader extends AbstractHandlerLoader<ISerializationErrorHandler> {
 
     public static final String ES_WRITE_DATA_ERROR_HANDLERS = "es.write.data.error.handlers";
     public static final String ES_WRITE_DATA_ERROR_HANDLER = "es.write.data.error.handler";
 
     public SerializationHandlerLoader() {
-        super(SerializationErrorHandler.class);
+        super(ISerializationErrorHandler.class);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class SerializationHandlerLoader extends AbstractHandlerLoader<Serializat
     }
 
     @Override
-    protected SerializationErrorHandler loadBuiltInHandler(NamedHandlers handlerName) {
+    protected ISerializationErrorHandler loadBuiltInHandler(NamedHandlers handlerName) {
         switch (handlerName) {
             case FAIL:
                 return new SerializationAbortOnFailure();
