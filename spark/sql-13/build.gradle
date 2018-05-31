@@ -8,8 +8,8 @@ apply plugin: 'scala'
 apply plugin: 'scala.variants'
 
 variants {
-    defaultVersion '2.11.8'
-    targetVersions '2.10.6', '2.11.8'
+    defaultVersion '2.11.12'
+    targetVersions '2.10.7', '2.11.12'
 }
 
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
