@@ -38,7 +38,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.read.impl.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.joda.time.format.ISODateTimeFormat;
