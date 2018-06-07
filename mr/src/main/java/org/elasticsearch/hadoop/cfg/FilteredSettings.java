@@ -22,6 +22,10 @@ package org.elasticsearch.hadoop.cfg;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Filtered settings are used for masking and hiding configuration values by key prefix. This is useful when you want
+ * to ignore a namespace of a configuration, but still reference values from its state.
+ */
 public class FilteredSettings extends Settings {
 
     private final Settings parent;
