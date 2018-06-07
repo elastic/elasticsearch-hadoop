@@ -587,7 +587,7 @@ public abstract class Settings {
 
     public abstract Settings copy();
 
-    protected String getProperty(String name, String defaultValue) {
+    public String getProperty(String name, String defaultValue) {
         String value = getProperty(name);
         if (!StringUtils.hasText(value)) {
             return defaultValue;
