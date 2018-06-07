@@ -11,6 +11,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.rest.EsHadoopParsingException;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
 /**
  * A set of utilities to parse JSON in tests, the same way that the RestClient might parse json data.
@@ -26,6 +28,10 @@ public final class JsonUtils {
     }
 
     private JsonUtils() { }
+
+    public static Map<String, Object> asMap(BytesArray bytesArray) {
+        return asMap(new FastByteArrayInputStream(bytesArray));
+    }
 
     public static Map<String, Object> asMap(InputStream inputStream) {
         Map<String, Object> map;
