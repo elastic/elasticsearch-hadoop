@@ -603,6 +603,10 @@ public abstract class Settings {
         return new SettingsView(this, name);
     }
 
+    public Settings excludeFilter(String prefix) {
+        return new FilteredSettings(this, prefix);
+    }
+
     public Settings merge(Properties properties) {
         if (properties == null || properties.isEmpty()) {
             return this;
