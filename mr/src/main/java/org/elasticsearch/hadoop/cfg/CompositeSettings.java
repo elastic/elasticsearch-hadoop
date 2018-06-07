@@ -26,6 +26,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Properties;
 
+/**
+ * Provides a composite view of configurations, using a hierarchical model for property lookup as well as immutable
+ * treatment of the underlying configurations. Each Composite has its own write-settings to accumulate mutations that
+ * is checked for values first. After checking the write-settings, each settings object is checked in order that they
+ * were specified.
+ */
 public class CompositeSettings extends Settings {
 
     private Settings writeSettings;
