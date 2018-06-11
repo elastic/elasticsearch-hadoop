@@ -65,6 +65,10 @@ public abstract class AbstractHandlerLoader<E extends ErrorHandler> implements S
         this.settings = settings;
     }
 
+    protected Settings getSettings() {
+        return this.settings;
+    }
+
     @Override
     public List<E> loadHandlers() {
         Assert.notNull(settings, "No settings are present in the handler loader!");
