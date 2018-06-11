@@ -19,6 +19,7 @@
 
 package org.elasticsearch.hadoop.rest;
 
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.TestSettings;
@@ -33,6 +34,9 @@ public class RestClientTest {
     @Test
     public void testPostDocumentSuccess() throws Exception {
         String index = "index/type";
+        Settings settings = new TestSettings();
+        settings.setResourceWrite(index);
+        Resource writeResource = new Resource(settings, false);
         BytesArray document = new BytesArray("{\"field\":\"value\"}");
         SimpleRequest request = new SimpleRequest(Request.Method.POST, null, index, null, document);
         String response =
@@ -56,7 +60,7 @@ public class RestClientTest {
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
-        String id = client.postDocument(index, document);
+        String id = client.postDocument(writeResource, document);
 
         assertEquals("AbcDefGhiJklMnoPqrS_", id);
     }
@@ -64,6 +68,9 @@ public class RestClientTest {
     @Test(expected = EsHadoopInvalidRequest.class)
     public void testPostDocumentFailure() throws Exception {
         String index = "index/type";
+        Settings settings = new TestSettings();
+        settings.setResourceWrite(index);
+        Resource writeResource = new Resource(settings, false);
         BytesArray document = new BytesArray("{\"field\":\"value\"}");
         SimpleRequest request = new SimpleRequest(Request.Method.POST, null, index, null, document);
         String response =
@@ -90,7 +97,7 @@ public class RestClientTest {
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
-        client.postDocument(index, document);
+        client.postDocument(writeResource, document);
 
         fail("Request should have failed");
     }
@@ -98,6 +105,9 @@ public class RestClientTest {
     @Test(expected = EsHadoopInvalidRequest.class)
     public void testPostDocumentWeirdness() throws Exception {
         String index = "index/type";
+        Settings settings = new TestSettings();
+        settings.setResourceWrite(index);
+        Resource writeResource = new Resource(settings, false);
         BytesArray document = new BytesArray("{\"field\":\"value\"}");
         SimpleRequest request = new SimpleRequest(Request.Method.POST, null, index, null, document);
         String response =
@@ -121,7 +131,7 @@ public class RestClientTest {
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
-        String id = client.postDocument(index, document);
+        String id = client.postDocument(writeResource, document);
 
         assertEquals("AbcDefGhiJklMnoPqrS_", id);
     }

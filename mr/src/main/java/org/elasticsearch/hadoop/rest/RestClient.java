@@ -248,9 +248,8 @@ public class RestClient implements Closeable, StatsAware {
         }
     }
 
-    public String postDocument(String indexAndType, BytesArray document) throws IOException {
-        // target+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes()
-        Request request = new SimpleRequest(Method.POST, null, indexAndType, null, document);
+    public String postDocument(Resource resource, BytesArray document) throws IOException {
+        Request request = new SimpleRequest(Method.POST, null, resource.index() + "/" + resource.type(), null, document);
         Response response = execute(request, true);
         Object id = parseContent(response.body(), "_id");
         if (id == null || !StringUtils.hasText(id.toString())) {
