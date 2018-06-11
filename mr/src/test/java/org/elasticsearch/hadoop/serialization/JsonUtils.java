@@ -29,6 +29,10 @@ public final class JsonUtils {
 
     private JsonUtils() { }
 
+    public static Map<String, Object> asMap(String data) {
+        return asMap(new BytesArray(data));
+    }
+
     public static Map<String, Object> asMap(BytesArray bytesArray) {
         return asMap(new FastByteArrayInputStream(bytesArray));
     }
