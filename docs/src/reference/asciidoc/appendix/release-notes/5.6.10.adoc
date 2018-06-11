@@ -1,0 +1,15 @@
+[[eshadoop-5.6.10]]
+== Elasticsearch for Apache Hadoop version 5.6.10
+June 12, 2018
+
+[[enhancements-5.6.10]]
+=== Enhancements
+MapReduce::
+* add EsInputSplit.toString method which can be used for debugging
+http://github.com/elastic/elasticsearch-hadoop/pull/1144[#1144]
+
+[[bugs-5.6.10]]
+=== Bug Fixes
+Rest::
+* HttpStatus.GATEWAY_TIMEOUT should be 504, is 50
+http://github.com/elastic/elasticsearch-hadoop/issues/1147[#1147]
