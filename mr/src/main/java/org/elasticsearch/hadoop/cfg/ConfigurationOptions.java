@@ -154,6 +154,8 @@ public interface ConfigurationOptions {
 
     /** Mapping types */
     String ES_MAPPING_DEFAULT_EXTRACTOR_CLASS = "es.mapping.default.extractor.class";
+    
+    String ES_MAPPING_METADATA_EXTRACTOR_CLASS = "es.mapping.metadata.extractor.class";
 
     String ES_MAPPING_ID = "es.mapping.id";
     String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
