@@ -1,0 +1,52 @@
+[[eshadoop-6.3.0]]
+== Elasticsearch for Apache Hadoop version 6.3.0
+June 13, 2018
+
+[[enhancements-6.3.0]]
+=== Enhancements
+Rest::
+* Add additional error message if all shards are unavailable
+https://github.com/elastic/elasticsearch-hadoop/pull/1129[#1129]
+* Add switchable findPartitions behavior.
+https://github.com/elastic/elasticsearch-hadoop/pull/1108[#1108]
+Build::
+* Overhaul the build system to be modular.
+https://github.com/elastic/elasticsearch-hadoop/pull/1120[#1120]
+
+[[bugs-6.3.0]]
+=== Bug Fixes
+Rest::
+* HttpStatus.GATEWAY_TIMEOUT should be 504, is 50
+https://github.com/elastic/elasticsearch-hadoop/issues/1147[#1147]
+* Scores are null when reading metadata from scroll data
+https://github.com/elastic/elasticsearch-hadoop/issues/1137[#1137]
+* can't set "http.connection.timeout" in HttpClientParams.
+https://github.com/elastic/elasticsearch-hadoop/issues/1124[#1124]
+Serialization::
+* Setting es.read.field.include breaks mapping discovery for fields nested deeper than two levels
+https://github.com/elastic/elasticsearch-hadoop/issues/1139[#1139]
+* Array include depths not being respected on singleton value fields.
+https://github.com/elastic/elasticsearch-hadoop/issues/1134[#1134]
+* NullPointerException when setting “es.read.field.as.array.include” option
+https://github.com/elastic/elasticsearch-hadoop/issues/928[#928]
+* SparkSql scala.MatchError when inserting single-value object in nested type
+https://github.com/elastic/elasticsearch-hadoop/issues/808[#808]
+Hive::
+* getting a wrong result when run a hive-sql that contains union-all opeartor.
+https://github.com/elastic/elasticsearch-hadoop/issues/1084[#1084]
+* Fixed resourceRead field from settings to read dirty data when contains the union-all opeartor in hive-sql.
+https://github.com/elastic/elasticsearch-hadoop/pull/1085[#1085]
+Spark::
+* DefaultSource wrongly parses 'es.resource' (spark2.2)
+https://github.com/elastic/elasticsearch-hadoop/issues/1082[#1082]
+* Unable to overwrite dataframe when documents have parent
+https://github.com/elastic/elasticsearch-hadoop/issues/1030[#1030]
+
+[[docs-6.3.0]]
+=== Documentation
+* Update arch.adoc: correct backtick quotes
+https://github.com/elastic/elasticsearch-hadoop/pull/1136[#1136]
+* Update configuration.adoc
+https://github.com/elastic/elasticsearch-hadoop/pull/1126[#1126]
+* Update spark.adoc for Windows
+https://github.com/elastic/elasticsearch-hadoop/pull/1121[#1121]
