@@ -45,7 +45,7 @@ public class QueryTest {
 
     @Test
     public void testExcludeSourceTrue() {
-        assertTrue(builder.excludeSource(true).toString().contains("_source=false"));
+        assertFalse(builder.excludeSource(true).toString().contains("_source=false"));
     }
 
     @Test
