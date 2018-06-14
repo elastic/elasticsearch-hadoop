@@ -20,10 +20,12 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.rest.query.BoolQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.FilteredQueryBuilder;
+import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.rest.query.QueryBuilder;
 import org.elasticsearch.hadoop.serialization.ScrollReader;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -72,6 +74,7 @@ public class SearchRequestBuilder {
     public SearchRequestBuilder(EsMajorVersion version, boolean includeVersion) {
         this.version = version;
         this.includeVersion = includeVersion;
+        this.query = MatchAllQueryBuilder.MATCH_ALL;
     }
 
     public boolean isReadMetadata() {
@@ -247,8 +250,7 @@ public class SearchRequestBuilder {
         return sb.toString();
     }
 
-    public ScrollQuery build(RestRepository client, ScrollReader reader) {
-        String scrollUri = assemble();
+    private BytesArray assembleBody() {
         QueryBuilder root = query;
         if (filters.isEmpty() == false) {
             if (version.onOrAfter(EsMajorVersion.V_2_X)) {
@@ -290,11 +292,17 @@ public class SearchRequestBuilder {
         } finally {
             generator.close();
         }
-        return client.scanLimit(scrollUri, out.bytes(), limit, reader);
+        return out.bytes();
+    }
+
+    public ScrollQuery build(RestRepository client, ScrollReader reader) {
+        String scrollUri = assemble();
+        BytesArray requestBody = assembleBody();
+        return client.scanLimit(scrollUri, requestBody, limit, reader);
     }
 
     @Override
     public String toString() {
-        return "QueryBuilder [" + assemble() + "]";
+        return "QueryBuilder [" + assemble() + "][" + assembleBody() + "]";
     }
 }
