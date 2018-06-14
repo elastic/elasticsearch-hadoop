@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class QueryTest {
     private TestSettings cfg;
@@ -45,12 +44,12 @@ public class QueryTest {
 
     @Test
     public void testExcludeSourceTrue() {
-        assertFalse(builder.excludeSource(true).toString().contains("_source=false"));
+        assertTrue(builder.excludeSource(true).toString().contains("\"_source\":false"));
     }
 
     @Test
     public void testExcludeSourceFalse() {
-        assertFalse(builder.fields("a,b").excludeSource(false).toString().contains("_source=false"));
+        assertTrue(builder.fields("a,b").excludeSource(false).toString().contains("\"_source\":[\"a\",\"b\"]"));
     }
 
     @Test(expected=EsHadoopIllegalArgumentException.class)
