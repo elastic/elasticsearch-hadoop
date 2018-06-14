@@ -133,33 +133,33 @@ public class ApplyAliasMetaDataTest {
             {
                 SearchRequestBuilder searchRequest = new SearchRequestBuilder(version, false);
                 RestService.applyAliasMetadata(version, aliases, searchRequest, "index1", "alias1");
-                assertEquals(printQueryBuilder(searchRequest.query(), false),
-                        printQueryBuilder(expected, false));
-                assertEquals(searchRequest.routing(), "1,2");
+                assertEquals(printQueryBuilder(expected, false),
+                        printQueryBuilder(searchRequest.query(), false));
+                assertEquals("1,2", searchRequest.routing());
             }
 
             {
                 SearchRequestBuilder searchRequest = new SearchRequestBuilder(version, false);
                 RestService.applyAliasMetadata(version, aliases, searchRequest, "index1", "a*1");
-                assertEquals(printQueryBuilder(searchRequest.query(), false),
-                        printQueryBuilder(expected, false));
-                assertEquals(searchRequest.routing(), "1,2");
+                assertEquals(printQueryBuilder(expected, false),
+                        printQueryBuilder(searchRequest.query(), false));
+                assertEquals("1,2", searchRequest.routing());
             }
 
             {
                 SearchRequestBuilder searchRequest = new SearchRequestBuilder(version, false);
                 RestService.applyAliasMetadata(version, aliases, searchRequest, "index1", "alias*", "-alias2");
-                assertEquals(printQueryBuilder(searchRequest.query(), false),
-                        printQueryBuilder(expected, false));
-                assertEquals(searchRequest.routing(), "1,2");
+                assertEquals(printQueryBuilder(expected, false),
+                        printQueryBuilder(searchRequest.query(), false));
+                assertEquals("1,2", searchRequest.routing());
             }
 
             {
                 SearchRequestBuilder searchRequest = new SearchRequestBuilder(version, false);
                 RestService.applyAliasMetadata(version, aliases, searchRequest, "index1", "+alias1", "+alias2", "-alias2");
-                assertEquals(printQueryBuilder(searchRequest.query(), false),
-                        printQueryBuilder(expected, false));
-                assertEquals(searchRequest.routing(), "1,2");
+                assertEquals(printQueryBuilder(expected, false),
+                        printQueryBuilder(searchRequest.query(), false));
+                assertEquals("1,2", searchRequest.routing());
             }
         }
     }
@@ -196,9 +196,9 @@ public class ApplyAliasMetaDataTest {
                                         .boost(0.0f)
                         );
             }
-            assertEquals(printQueryBuilder(searchRequest.query(), false),
-                    printQueryBuilder(expected, false));
-            assertEquals(searchRequest.routing(), "1,2");
+            assertEquals(printQueryBuilder(expected, false),
+                    printQueryBuilder(searchRequest.query(), false));
+            assertEquals("1,2", searchRequest.routing());
         }
     }
 
@@ -221,9 +221,9 @@ public class ApplyAliasMetaDataTest {
                                     .field("system")
                                     .term("spark")
                     );
-            assertEquals(printQueryBuilder(searchRequest.query(), false),
-                    printQueryBuilder(expected, false));
-            assertEquals(searchRequest.routing(), "1,2");
+            assertEquals(printQueryBuilder(expected, false),
+                    printQueryBuilder(searchRequest.query(), false));
+            assertEquals("1,2", searchRequest.routing());
         }
     }
 
@@ -271,9 +271,9 @@ public class ApplyAliasMetaDataTest {
                                         .boost(0.0f)
                         );
             }
-            assertEquals(printQueryBuilder(searchRequest.query(), false),
-                    printQueryBuilder(expected, false));
-            assertEquals(searchRequest.routing(), "1,2");
+            assertEquals(printQueryBuilder(expected, false),
+                    printQueryBuilder(searchRequest.query(), false));
+            assertEquals("1,2", searchRequest.routing());
         }
     }
 }
