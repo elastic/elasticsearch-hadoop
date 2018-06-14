@@ -201,13 +201,6 @@ public class SearchRequestBuilder {
             uriParams.put("version", "");
         }
 
-        // override fields
-        if (StringUtils.hasText(fields)) {
-            uriParams.put("_source", HttpEncodingTools.concatenateAndUriEncode(StringUtils.tokenize(fields), StringUtils.DEFAULT_DELIMITER));
-        } else if (excludeSource) {
-            uriParams.put("_source", "false");
-        }
-
         // set shard preference
         StringBuilder pref = new StringBuilder();
         if (StringUtils.hasText(shard)) {
@@ -281,6 +274,18 @@ public class SearchRequestBuilder {
             generator.writeBeginObject();
             root.toJson(generator);
             generator.writeEndObject();
+            generator.writeFieldName("_source");
+            // override fields
+            if (StringUtils.hasText(fields)) {
+                generator.writeBeginArray();
+                final String[] fieldsArray = org.apache.commons.lang.StringUtils.split(fields, StringUtils.DEFAULT_DELIMITER);
+                for (String field : fieldsArray) {
+                    generator.writeString(field);
+                }
+                generator.writeEndArray();
+            } else if (excludeSource) {
+                generator.writeBoolean(false);
+            }
             generator.writeEndObject();
         } finally {
             generator.close();
