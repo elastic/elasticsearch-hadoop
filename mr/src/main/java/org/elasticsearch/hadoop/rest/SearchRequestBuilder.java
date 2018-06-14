@@ -74,7 +74,6 @@ public class SearchRequestBuilder {
     public SearchRequestBuilder(EsMajorVersion version, boolean includeVersion) {
         this.version = version;
         this.includeVersion = includeVersion;
-        this.query = MatchAllQueryBuilder.MATCH_ALL;
     }
 
     public boolean isReadMetadata() {
@@ -252,11 +251,14 @@ public class SearchRequestBuilder {
 
     private BytesArray assembleBody() {
         QueryBuilder root = query;
+        if (root == null) {
+            root = MatchAllQueryBuilder.MATCH_ALL;
+        }
         if (filters.isEmpty() == false) {
             if (version.onOrAfter(EsMajorVersion.V_2_X)) {
-                root = new BoolQueryBuilder().must(query).filters(filters);
+                root = new BoolQueryBuilder().must(root).filters(filters);
             } else {
-                root = new FilteredQueryBuilder().query(query).filters(filters);
+                root = new FilteredQueryBuilder().query(root).filters(filters);
             }
         }
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
