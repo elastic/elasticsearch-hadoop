@@ -200,7 +200,7 @@ public class SearchRequestBuilder {
         uriParams.put("scroll", String.valueOf(scroll.toString()));
         uriParams.put("size", String.valueOf(size));
         if (includeVersion) {
-            uriParams.put("version", "");
+            uriParams.put("version", "true");
         }
 
         // set shard preference
