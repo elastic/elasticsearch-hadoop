@@ -41,6 +41,7 @@ import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -139,6 +140,10 @@ public class ElasticsearchHandler<I extends Exceptional, O, C extends ErrorColle
 
         // Inherit the original configuration or not
         this.clientSettings = handlerSettings.getSettingsView(CONF_CLIENT_CONF);
+
+        // Ensure we have a write resource to use
+        Assert.hasText(clientSettings.getResourceWrite(), "Could not locate write resource for ES error handler.");
+
         if (inheritRoot) {
             LOG.info("Elasticsearch Error Handler inheriting root configuration");
             this.clientSettings = new CompositeSettings(Arrays.asList(clientSettings, rootSettings.excludeFilter("es.internal")));
