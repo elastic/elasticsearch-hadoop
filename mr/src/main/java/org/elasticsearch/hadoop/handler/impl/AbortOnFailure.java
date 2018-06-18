@@ -17,14 +17,29 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.handler.impl;
+
+import java.util.Properties;
 
 import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 
-public class DeserializationAbortOnFailure extends DeserializationErrorHandler {
+public class AbortOnFailure<I extends Exceptional, O, C extends ErrorCollector<O>> implements ErrorHandler<I, O, C> {
+
+    public static <I extends Exceptional, O, C extends ErrorCollector<O>> AbortOnFailure<I,O,C> create() {
+        return new AbortOnFailure<I, O, C>();
+    }
+
     @Override
-    public HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception {
+    public void init(Properties properties) {}
+
+    @Override
+    public void close() {}
+
+    @Override
+    public HandlerResult onError(I entry, C collector) throws Exception {
         return HandlerResult.ABORT;
     }
 }

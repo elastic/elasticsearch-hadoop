@@ -21,7 +21,7 @@ import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
 import org.elasticsearch.hadoop.rest.bulk.handler.DelayableErrorCollector;
 import org.elasticsearch.hadoop.rest.bulk.handler.impl.BulkWriteHandlerLoader;
-import org.elasticsearch.hadoop.rest.bulk.handler.impl.DropAndLog;
+import org.elasticsearch.hadoop.handler.impl.DropAndLog;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;

@@ -17,18 +17,24 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.read.impl;
 
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.handler.AbstractHandlerLoader;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.impl.AbortOnFailure;
+import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
+import org.elasticsearch.hadoop.handler.impl.DropAndLog;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 
-public class DeserializationHandlerLoader extends AbstractHandlerLoader<DeserializationErrorHandler> {
+public class DeserializationHandlerLoader extends AbstractHandlerLoader<IDeserializationErrorHandler> {
 
     public static final String ES_READ_DATA_ERROR_HANDLERS = "es.read.data.error.handlers";
     public static final String ES_READ_DATA_ERROR_HANDLER = "es.read.data.error.handler";
 
     public DeserializationHandlerLoader() {
-        super(DeserializationErrorHandler.class);
+        super(IDeserializationErrorHandler.class);
     }
 
     @Override
@@ -42,12 +48,15 @@ public class DeserializationHandlerLoader extends AbstractHandlerLoader<Deserial
     }
 
     @Override
-    protected DeserializationErrorHandler loadBuiltInHandler(NamedHandlers handlerName) {
+    protected IDeserializationErrorHandler loadBuiltInHandler(AbstractHandlerLoader.NamedHandlers handlerName) {
+        ErrorHandler<DeserializationFailure, byte[], ErrorCollector<byte[]>> genericHandler;
         switch (handlerName) {
             case FAIL:
-                return new DeserializationAbortOnFailure();
+                genericHandler = AbortOnFailure.create();
+                return new DelegatingErrorHandler(genericHandler);
             case LOG:
-                return new DeserializationDropAndLog();
+                genericHandler = DropAndLog.create(new DeserializationLogRenderer());
+                return new DelegatingErrorHandler(genericHandler);
             default:
                 throw new EsHadoopIllegalArgumentException(
                         "Could not find default implementation for built in handler type [" + handlerName + "]"

@@ -17,21 +17,36 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.ErrorHandler;
 import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.serialization.handler.write.ISerializationErrorHandler;
+import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
-    @Override
-    public void init(Properties properties) {}
+final class DelegatingErrorHandler implements ISerializationErrorHandler {
+
+    private final ErrorHandler<SerializationFailure, Object, ErrorCollector<Object>> delegate;
+
+    DelegatingErrorHandler(ErrorHandler<SerializationFailure, Object, ErrorCollector<Object>> delegate) {
+        this.delegate = delegate;
+    }
 
     @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
+    public void init(Properties properties) {
+        delegate.init(properties);
+    }
 
     @Override
-    public void close() {}
+    public HandlerResult onError(SerializationFailure entry, ErrorCollector<Object> collector) throws Exception {
+        return delegate.onError(entry, collector);
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
+    }
 }

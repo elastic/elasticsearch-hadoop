@@ -17,21 +17,10 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.rest.bulk.handler;
 
-import java.util.Properties;
-
-import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
 
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
-    @Override
-    public void init(Properties properties) {}
+public interface IBulkWriteErrorHandler extends ErrorHandler<BulkWriteFailure,byte[],DelayableErrorCollector<byte[]>> {
 
-    @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
-
-    @Override
-    public void close() {}
 }

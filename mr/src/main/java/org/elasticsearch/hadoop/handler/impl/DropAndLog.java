@@ -1,24 +1,37 @@
-package org.elasticsearch.hadoop.rest.bulk.handler.impl;
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.elasticsearch.hadoop.handler.impl;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.handler.ErrorCollector;
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.handler.HandlerResult;
-import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
-import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
-import org.elasticsearch.hadoop.rest.bulk.handler.DelayableErrorCollector;
-import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-/**
- * Drops and logs any given error messages from bulk requests.
- */
-public class DropAndLog extends BulkWriteErrorHandler {
-
+public class DropAndLog<I extends Exceptional, O, C extends ErrorCollector<O>> implements ErrorHandler<I, O, C> {
     public static final String CONF_LOGGER_NAME = "logger.name";
     public static final String CONF_LOGGER_CLASS = "logger.class";
     public static final String CONF_LOGGER_LEVEL = "logger.level";
@@ -32,6 +45,7 @@ public class DropAndLog extends BulkWriteErrorHandler {
         TRACE;
 
         private static Set<String> names = new LinkedHashSet<String>();
+
         static {
             for (LogLevel logLevel : values()) {
                 names.add(logLevel.name());
@@ -41,6 +55,15 @@ public class DropAndLog extends BulkWriteErrorHandler {
 
     private Log logger;
     private LogLevel loggerLevel;
+    private final LogRenderer<I> logLineMaker;
+
+    public static <I extends Exceptional, O, C extends ErrorCollector<O>> DropAndLog<I,O,C> create(LogRenderer<I> logLineMaker) {
+        return new DropAndLog<I, O, C>(logLineMaker);
+    }
+
+    public DropAndLog(LogRenderer<I> logLineMaker) {
+        this.logLineMaker = logLineMaker;
+    }
 
     @Override
     public void init(Properties properties) {
@@ -78,67 +101,44 @@ public class DropAndLog extends BulkWriteErrorHandler {
     }
 
     @Override
-    public HandlerResult onError(BulkWriteFailure entry, DelayableErrorCollector<byte[]> collector) throws Exception {
+    public HandlerResult onError(I entry, C collector) throws Exception {
         switch (loggerLevel) {
             case FATAL:
                 if (logger.isFatalEnabled()) {
-                    logger.fatal(renderLogMessage(entry));
+                    logger.fatal(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
             case ERROR:
                 if (logger.isErrorEnabled()) {
-                    logger.error(renderLogMessage(entry));
+                    logger.error(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
             case WARN:
                 if (logger.isWarnEnabled()) {
-                    logger.warn(renderLogMessage(entry));
+                    logger.warn(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
             case INFO:
                 if (logger.isInfoEnabled()) {
-                    logger.info(renderLogMessage(entry));
+                    logger.info(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
             case DEBUG:
                 if (logger.isDebugEnabled()) {
-                    logger.debug(renderLogMessage(entry));
+                    logger.debug(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
             case TRACE:
                 if (logger.isTraceEnabled()) {
-                    logger.trace(renderLogMessage(entry));
+                    logger.trace(logLineMaker.renderLog(entry), entry.getException());
                 }
                 break;
         }
         return HandlerResult.HANDLED;
     }
 
-    private String renderLogMessage(BulkWriteFailure entry) {
-        // Render the previous handler messages
-        List<String> handlerMessages = entry.previousHandlerMessages();
-        String tailMessage;
-        if (!handlerMessages.isEmpty()) {
-            StringBuilder tail = new StringBuilder("Previous handler messages:");
-            for (String handlerMessage : handlerMessages) {
-                tail.append("\n\t").append(handlerMessage);
-            }
-            tailMessage = tail.toString();
-        } else {
-            tailMessage = "";
-        }
-
-        // Log the failure
-        return String.format(
-                "Dropping failed bulk entry (response [%s] from server) after [%s] attempts due to error [%s]:%n" +
-                        "Entry Contents:%n" +
-                        "%s" +
-                        "%s",
-                entry.getResponseCode(),
-                entry.getNumberOfAttempts(),
-                entry.getException().getMessage(),
-                ((FastByteArrayInputStream) entry.getEntryContents()).bytes().toString(),
-                tailMessage
-        );
+    @Override
+    public void close() {
+        // Nothing to do
     }
 }

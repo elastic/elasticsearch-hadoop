@@ -4,27 +4,24 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.elasticsearch.hadoop.handler.Exceptional;
+import org.elasticsearch.hadoop.handler.impl.BaseExceptional;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
 /**
  * Encapsulates all available information pertaining to an unhandled bulk indexing operation failure.
  */
-public class BulkWriteFailure implements Exceptional {
+public class BulkWriteFailure extends BaseExceptional {
 
     private final int response;
-    private final Exception reason;
     private final BytesArray contents;
     private final int attemptNumber;
-    private final List<String> passReasons;
 
     public BulkWriteFailure(int response, Exception reason, BytesArray contents, int attemptNumber, List<String> passReasons) {
+        super(reason, passReasons);
         this.response = response;
-        this.reason = reason;
         this.contents = contents;
         this.attemptNumber = attemptNumber;
-        this.passReasons = Collections.unmodifiableList(passReasons);
     }
 
     /**
@@ -32,17 +29,6 @@ public class BulkWriteFailure implements Exceptional {
      */
     public int getResponseCode() {
         return response;
-    }
-
-    // TODO: Use a better exception type?
-    @Override
-    public Exception getException() {
-        return reason;
-    }
-
-    @Override
-    public List<String> previousHandlerMessages() {
-        return passReasons;
     }
 
     /**

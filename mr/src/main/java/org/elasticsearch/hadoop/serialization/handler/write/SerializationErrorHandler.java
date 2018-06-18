@@ -25,7 +25,7 @@ import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.ErrorHandler;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 
-public abstract class SerializationErrorHandler implements ErrorHandler<SerializationFailure, Object, ErrorCollector<Object>> {
+public abstract class SerializationErrorHandler implements ISerializationErrorHandler {
     @Override
     public void init(Properties properties) {}
 
