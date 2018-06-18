@@ -17,21 +17,19 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.read.impl;
 
-import java.util.Properties;
+import org.elasticsearch.hadoop.handler.impl.LogRenderer;
+import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-import org.elasticsearch.hadoop.handler.ErrorCollector;
-import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
-
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
+public class DeserializationLogRenderer extends LogRenderer<DeserializationFailure> {
     @Override
-    public void init(Properties properties) {}
-
-    @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
-
-    @Override
-    public void close() {}
+    public String convert(DeserializationFailure entry) {
+        return String.format(
+                "Dropping malformed scroll search hit due to error [%s]:%nEntry Contents:%n%s",
+                entry.getException().getMessage(),
+                ((FastByteArrayInputStream) entry.getHitContents()).bytes().toString()
+        );
+    }
 }

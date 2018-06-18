@@ -17,20 +17,24 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.elasticsearch.hadoop.handler.impl.LogRenderer;
+import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 
-/**
- * A handler loader that ignores the configured error handlers and only loads the abort handler.
- */
-public class AbortOnlyHandlerLoader extends DeserializationHandlerLoader {
-
+public class SerializationLogRenderer extends LogRenderer<SerializationFailure> {
     @Override
-    public List<DeserializationErrorHandler> loadHandlers() {
-        List<DeserializationErrorHandler> handlers = new ArrayList<DeserializationErrorHandler>();
-        handlers.add(loadBuiltInHandler(NamedHandlers.FAIL));
-        return handlers;
+    public String convert(SerializationFailure entry) {
+        return String.format(
+                "Dropping malformed output record due to error while serializing [%s]:%n" +
+                        "Entry Contents:%n" +
+                        "%s",
+                entry.getException().getMessage(),
+                stringify(entry.getRecord())
+        );
+    }
+
+    private String stringify(Object record) {
+        return record.toString();
     }
 }

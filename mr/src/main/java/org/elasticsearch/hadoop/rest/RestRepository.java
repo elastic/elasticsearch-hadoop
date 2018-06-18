@@ -42,7 +42,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.GeoField.GeoType;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
-import org.elasticsearch.hadoop.serialization.handler.read.AbortOnlyHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.read.impl.AbortOnlyHandlerLoader;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;

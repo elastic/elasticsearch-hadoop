@@ -23,19 +23,16 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
-import org.elasticsearch.hadoop.handler.Exceptional;
+import org.elasticsearch.hadoop.handler.impl.BaseExceptional;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-public class DeserializationFailure implements Exceptional {
+public class DeserializationFailure extends BaseExceptional {
     private final BytesArray hit;
-    private final Exception reason;
-    private final List<String> passReasons;
 
     public DeserializationFailure(Exception reason, BytesArray hit, List<String> passReasons) {
+        super(reason, passReasons);
         this.hit = hit;
-        this.reason = reason;
-        this.passReasons = Collections.unmodifiableList(passReasons);
     }
 
     /**
@@ -43,15 +40,5 @@ public class DeserializationFailure implements Exceptional {
      */
     public InputStream getHitContents() {
         return new FastByteArrayInputStream(hit);
-    }
-
-    @Override
-    public Exception getException() {
-        return reason;
-    }
-
-    @Override
-    public List<String> previousHandlerMessages() {
-        return passReasons;
     }
 }

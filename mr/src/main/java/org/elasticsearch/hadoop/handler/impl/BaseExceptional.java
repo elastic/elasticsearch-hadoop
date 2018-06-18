@@ -17,21 +17,33 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.handler.impl;
 
-import java.util.Properties;
+import java.util.Collections;
+import java.util.List;
 
-import org.elasticsearch.hadoop.handler.ErrorCollector;
-import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.handler.Exceptional;
 
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
+/**
+ * Provides a basic implementation of an exceptional event to be passed between error handlers.
+ */
+public abstract class BaseExceptional implements Exceptional {
+
+    private final Exception reason;
+    private final List<String> passReasons;
+
+    public BaseExceptional(Exception reason, List<String> passReasons) {
+        this.reason = reason;
+        this.passReasons = Collections.unmodifiableList(passReasons);
+    }
+
     @Override
-    public void init(Properties properties) {}
+    public Exception getException() {
+        return reason;
+    }
 
     @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
-
-    @Override
-    public void close() {}
+    public List<String> previousHandlerMessages() {
+        return passReasons;
+    }
 }

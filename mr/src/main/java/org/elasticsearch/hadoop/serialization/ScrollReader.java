@@ -44,6 +44,7 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter.NumberedInclude;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
 import org.elasticsearch.hadoop.serialization.handler.SerdeErrorCollector;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.json.BlockAwareJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.util.Assert;
@@ -208,7 +209,7 @@ public class ScrollReader implements Closeable {
     private final List<NumberedInclude> includeFields;
     private final List<String> excludeFields;
     private final List<NumberedInclude> includeArrayFields;
-    private List<DeserializationErrorHandler> deserializationErrorHandlers;
+    private List<IDeserializationErrorHandler> deserializationErrorHandlers;
 
     private static final String[] SCROLL_ID = new String[] { "_scroll_id" };
     private static final String[] HITS = new String[] { "hits" };
@@ -447,7 +448,7 @@ public class ScrollReader implements Closeable {
                 retryRead = false;
                 Exception abortException = deserializationException;
                 handlerLoop:
-                for (DeserializationErrorHandler deserializationErrorHandler : deserializationErrorHandlers) {
+                for (IDeserializationErrorHandler deserializationErrorHandler : deserializationErrorHandlers) {
                     HandlerResult result;
                     try {
                         result = deserializationErrorHandler.onError(event, errorCollector);
@@ -1079,7 +1080,7 @@ public class ScrollReader implements Closeable {
 
     @Override
     public void close() {
-        for (DeserializationErrorHandler handler : deserializationErrorHandlers) {
+        for (IDeserializationErrorHandler handler : deserializationErrorHandlers) {
             handler.close();
         }
     }

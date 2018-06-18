@@ -22,6 +22,7 @@ import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorCollector;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorHandler;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.rest.bulk.handler.IBulkWriteErrorHandler;
 import org.elasticsearch.hadoop.rest.bulk.handler.impl.BulkWriteHandlerLoader;
 import org.elasticsearch.hadoop.rest.bulk.handler.impl.HttpRetryHandler;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -63,7 +64,7 @@ public class BulkProcessor implements Closeable, StatsAware {
     private boolean requiresRefreshAfterBulk = false;
 
     // Bulk write error handlers.
-    private List<BulkWriteErrorHandler> documentBulkErrorHandlers;
+    private List<IBulkWriteErrorHandler> documentBulkErrorHandlers;
 
     public BulkProcessor(RestClient restClient, Resource resource, Settings settings) {
         this.restClient = restClient;
@@ -86,7 +87,7 @@ public class BulkProcessor implements Closeable, StatsAware {
         handlerLoader.setSettings(settings);
 
         // Order up the handlers.
-        this.documentBulkErrorHandlers = new ArrayList<BulkWriteErrorHandler>();
+        this.documentBulkErrorHandlers = new ArrayList<IBulkWriteErrorHandler>();
         this.documentBulkErrorHandlers.add(httpRetryHandler);
         this.documentBulkErrorHandlers.addAll(handlerLoader.loadHandlers());
 
@@ -268,7 +269,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                                 );
 
                                 // Label the loop since we'll be breaking to/from it within a switch block.
-                                handlerLoop: for (BulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
+                                handlerLoop: for (IBulkWriteErrorHandler errorHandler : documentBulkErrorHandlers) {
                                     HandlerResult result;
                                     try {
                                         result = errorHandler.onError(failure, errorCollector);
@@ -516,7 +517,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                 }
             }
         } finally {
-            for (BulkWriteErrorHandler handler : documentBulkErrorHandlers) {
+            for (IBulkWriteErrorHandler handler : documentBulkErrorHandlers) {
                 handler.close();
             }
         }

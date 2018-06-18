@@ -17,21 +17,22 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.serialization.handler.read.impl;
 
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.elasticsearch.hadoop.handler.ErrorCollector;
-import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
-    @Override
-    public void init(Properties properties) {}
-
-    @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
+/**
+ * A handler loader that ignores the configured error handlers and only loads the abort handler.
+ */
+public class AbortOnlyHandlerLoader extends DeserializationHandlerLoader {
 
     @Override
-    public void close() {}
+    public List<IDeserializationErrorHandler> loadHandlers() {
+        List<IDeserializationErrorHandler> handlers = new ArrayList<IDeserializationErrorHandler>();
+        handlers.add(loadBuiltInHandler(NamedHandlers.FAIL));
+        return handlers;
+    }
 }

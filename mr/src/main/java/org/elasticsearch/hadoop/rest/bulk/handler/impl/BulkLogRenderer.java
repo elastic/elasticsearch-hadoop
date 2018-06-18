@@ -17,21 +17,22 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.read;
+package org.elasticsearch.hadoop.rest.bulk.handler.impl;
 
-import java.util.Properties;
+import org.elasticsearch.hadoop.handler.impl.LogRenderer;
+import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteFailure;
+import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 
-import org.elasticsearch.hadoop.handler.ErrorCollector;
-import org.elasticsearch.hadoop.handler.ErrorHandler;
-import org.elasticsearch.hadoop.handler.HandlerResult;
-
-public abstract class DeserializationErrorHandler implements IDeserializationErrorHandler {
+public class BulkLogRenderer extends LogRenderer<BulkWriteFailure> {
     @Override
-    public void init(Properties properties) {}
-
-    @Override
-    public abstract HandlerResult onError(DeserializationFailure entry, ErrorCollector<byte[]> collector) throws Exception;
-
-    @Override
-    public void close() {}
+    public String convert(BulkWriteFailure entry) {
+        return String.format(
+                "Dropping failed bulk entry (response [%s] from server) after [%s] attempts due to error [%s]:%n" +
+                        "Entry Contents:%n%s",
+                entry.getResponseCode(),
+                entry.getNumberOfAttempts(),
+                entry.getException().getMessage(),
+                ((FastByteArrayInputStream) entry.getEntryContents()).bytes().toString()
+        );
+    }
 }

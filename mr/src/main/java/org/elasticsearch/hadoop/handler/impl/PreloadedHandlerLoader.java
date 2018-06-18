@@ -17,14 +17,27 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.serialization.handler.write;
+package org.elasticsearch.hadoop.handler.impl;
 
-import org.elasticsearch.hadoop.handler.ErrorCollector;
-import org.elasticsearch.hadoop.handler.HandlerResult;
+import java.util.List;
 
-public class SerializationAbortOnFailure extends SerializationErrorHandler {
+import org.elasticsearch.hadoop.handler.ErrorHandler;
+import org.elasticsearch.hadoop.handler.HandlerLoader;
+
+/**
+ * Returns the specified handlers as the loaded handlers.
+ * @param <E> ErrorHandler class.
+ */
+public class PreloadedHandlerLoader<E extends ErrorHandler> implements HandlerLoader<E> {
+
+    private final List<E> handlers;
+
+    public PreloadedHandlerLoader(List<E> handlers) {
+        this.handlers = handlers;
+    }
+
     @Override
-    public HandlerResult onError(SerializationFailure entry, ErrorCollector<Object> collector) throws Exception {
-        return HandlerResult.ABORT;
+    public List<E> loadHandlers() {
+        return handlers;
     }
 }

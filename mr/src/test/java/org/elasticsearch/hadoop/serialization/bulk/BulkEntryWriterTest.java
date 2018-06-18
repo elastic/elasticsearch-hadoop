@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
-import org.elasticsearch.hadoop.serialization.handler.write.SerializationHandlerLoader;
+import org.elasticsearch.hadoop.serialization.handler.write.impl.SerializationHandlerLoader;
 import org.elasticsearch.hadoop.util.BytesRef;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assert;
