@@ -2016,7 +2016,7 @@ To wit, below is a snippet from the https://spark.apache.org/docs/1.5.1/programm
 
 [source, python]
 ----
-$ ./bin/pyspark --driver-class-path=/path/to/elasticsearch-hadoop.jar
+$ ./bin/pyspark --driver-class-path=/path/to/elasticsearch-hadoop-mr-6.2.4.jar
 >>> conf = {"es.resource" : "index/type"}   # assume Elasticsearch is running on localhost defaults
 >>> rdd = sc.newAPIHadoopRDD("org.elasticsearch.hadoop.mr.EsInputFormat",\
     "org.apache.hadoop.io.NullWritable", "org.elasticsearch.hadoop.mr.LinkedMapWritable", conf=conf)
