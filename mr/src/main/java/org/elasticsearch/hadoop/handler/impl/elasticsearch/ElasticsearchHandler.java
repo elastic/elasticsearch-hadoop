@@ -59,10 +59,9 @@ import org.elasticsearch.hadoop.util.unit.Booleans;
  * default.
  * <p>
  *
- *
- * @param <I>
- * @param <O>
- * @param <C>
+ * @param <I> type of error event
+ * @param <O> in case of retries, this is the type of the retry value
+ * @param <C> the type of error collector used
  */
 public class ElasticsearchHandler<I extends Exceptional, O, C extends ErrorCollector<O>> implements ErrorHandler<I, O, C> {
 
@@ -76,7 +75,7 @@ public class ElasticsearchHandler<I extends Exceptional, O, C extends ErrorColle
     public static final String CONF_RETURN_VALUE_DEFAULT = HandlerResult.HANDLED.toString();
     public static final String CONF_RETURN_ERROR = "return.error";
     public static final String CONF_RETURN_ERROR_DEFAULT = HandlerResult.ABORT.toString();
-    private static final String CONF_PASS_REASON_SUFFIX = "reason";
+    public static final String CONF_PASS_REASON_SUFFIX = "reason";
 
     /// Document metadata
     public static final String CONF_LABEL = "label";
