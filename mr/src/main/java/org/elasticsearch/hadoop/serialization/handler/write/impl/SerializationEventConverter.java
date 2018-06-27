@@ -32,8 +32,8 @@ public class SerializationEventConverter extends BaseEventConverter<Serializatio
 
     @Override
     public String getRawEvent(SerializationFailure event) throws IOException {
-        // TODO - We should get this data from the currently available writer object
-        // ObjectUtils.instantiate(settings.getSerializerValueWriterClassName(), settings);
+        // TODO: toString doesn't reliably render the record's contents.
+        // This should show the contents of the record more cleanly...
         return event.getRecord().toString();
     }
 }

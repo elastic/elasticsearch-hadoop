@@ -20,34 +20,45 @@
 package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
+import org.elasticsearch.hadoop.hive.HiveType;
+import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class SerializationEventConverterTest {
+public class HiveSerializationEventConverterTest {
 
     @Test
-    public void generateEvent() throws Exception {
-        Map<String, Object> document = new HashMap<String, Object>();
-        document.put("field", "value");
+    public void generateEventHiveRecord() throws Exception {
+        Map<Writable, Writable> map = new LinkedMapWritable();
+        map.put(new Text("one"), new IntWritable(1));
+        map.put(new Text("two"), new IntWritable(2));
+        map.put(new Text("three"), new IntWritable(3));
+
+        HiveType tuple = new HiveType(map, TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(
+                TypeInfoFactory.getMapTypeInfo(TypeInfoFactory.stringTypeInfo, TypeInfoFactory.intTypeInfo)));
 
         SerializationEventConverter eventConverter = new SerializationEventConverter();
 
-        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
+        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), tuple, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertEquals("{field=value}", rawEvent);
+        assertThat(rawEvent, startsWith("HiveType{object={one=1, two=2, three=3}, " +
+                "inspector=org.apache.hadoop.hive.serde2.objectinspector.StandardMapObjectInspector@"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);
@@ -60,16 +71,21 @@ public class SerializationEventConverterTest {
     }
 
     @Test
-    public void generateEventWritable() throws Exception {
-        MapWritable document = new MapWritable();
-        document.put(new Text("field"), new Text("value"));
+    public void generateEventHiveRecordLimited() throws Exception {
+        Map<Writable, Writable> map = new MapWritable();
+        map.put(new Text("one"), new IntWritable(1));
+        map.put(new Text("two"), new IntWritable(2));
+        map.put(new Text("three"), new IntWritable(3));
+
+        HiveType tuple = new HiveType(map, TypeInfoUtils.getStandardWritableObjectInspectorFromTypeInfo(
+                TypeInfoFactory.getMapTypeInfo(TypeInfoFactory.stringTypeInfo, TypeInfoFactory.intTypeInfo)));
 
         SerializationEventConverter eventConverter = new SerializationEventConverter();
 
-        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
+        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), tuple, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, Matchers.startsWith("org.apache.hadoop.io.MapWritable@"));
+        assertThat(rawEvent, startsWith("HiveType{object=org.apache.hadoop.io.MapWritable@"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);

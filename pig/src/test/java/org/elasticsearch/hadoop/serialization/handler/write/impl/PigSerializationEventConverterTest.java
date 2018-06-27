@@ -20,34 +20,42 @@
 package org.elasticsearch.hadoop.serialization.handler.write.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.pig.ResourceSchema;
+import org.apache.pig.data.TupleFactory;
+import org.apache.pig.impl.util.Utils;
+import org.elasticsearch.hadoop.pig.PigTuple;
 import org.elasticsearch.hadoop.serialization.handler.write.SerializationFailure;
 import org.elasticsearch.hadoop.util.DateUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class SerializationEventConverterTest {
+public class PigSerializationEventConverterTest {
 
     @Test
-    public void generateEvent() throws Exception {
-        Map<String, Object> document = new HashMap<String, Object>();
-        document.put("field", "value");
+    public void generateEventPigTuple() throws Exception {
+        Map<String, Number> map = new LinkedHashMap<String, Number>();
+        map.put("one", 1);
+        map.put("two", 2);
+        map.put("three", 3);
+
+        PigTuple tuple = createTuple(TupleFactory.getInstance().newTuple(Arrays.asList(new String[] { "one", "two" })),
+                createSchema("namedtuple: (first:chararray, second:chararray)"));
 
         SerializationEventConverter eventConverter = new SerializationEventConverter();
 
-        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
+        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), tuple, new ArrayList<String>());
 
         String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertEquals("{field=value}", rawEvent);
+        assertThat(rawEvent, equalTo("[PigTuple]=((namedtuple:(first:chararray,second:chararray)):((one,two)))"));
         String timestamp = eventConverter.getTimestamp(iaeFailure);
         assertTrue(StringUtils.hasText(timestamp));
         assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);
@@ -59,25 +67,17 @@ public class SerializationEventConverterTest {
         assertEquals("Could not construct bulk entry from record", eventMessage);
     }
 
-    @Test
-    public void generateEventWritable() throws Exception {
-        MapWritable document = new MapWritable();
-        document.put(new Text("field"), new Text("value"));
+    private ResourceSchema createSchema(String schema) {
+        try {
+            return new ResourceSchema(Utils.getSchemaFromString(schema));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
-        SerializationEventConverter eventConverter = new SerializationEventConverter();
-
-        SerializationFailure iaeFailure = new SerializationFailure(new IllegalArgumentException("garbage"), document, new ArrayList<String>());
-
-        String rawEvent = eventConverter.getRawEvent(iaeFailure);
-        assertThat(rawEvent, Matchers.startsWith("org.apache.hadoop.io.MapWritable@"));
-        String timestamp = eventConverter.getTimestamp(iaeFailure);
-        assertTrue(StringUtils.hasText(timestamp));
-        assertTrue(DateUtils.parseDate(timestamp).getTime().getTime() > 1L);
-        String exceptionType = eventConverter.renderExceptionType(iaeFailure);
-        assertEquals("illegal_argument_exception", exceptionType);
-        String exceptionMessage = eventConverter.renderExceptionMessage(iaeFailure);
-        assertEquals("garbage", exceptionMessage);
-        String eventMessage = eventConverter.renderEventMessage(iaeFailure);
-        assertEquals("Could not construct bulk entry from record", eventMessage);
+    private PigTuple createTuple(Object obj, ResourceSchema schema) {
+        PigTuple tuple = new PigTuple(schema);
+        tuple.setTuple(TupleFactory.getInstance().newTuple(obj));
+        return tuple;
     }
 }
