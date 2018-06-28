@@ -112,10 +112,11 @@ public abstract class AbstractIndexExtractor implements IndexExtractor, Settings
         for (Object object : list) {
             if (object instanceof FieldExtractor) {
                 Object field = ((FieldExtractor) object).field(target);
-                if (field == NOT_FOUND) {
+                if (field == null) {
+                    throw new EsHadoopIllegalArgumentException(String.format("Found null value for pattern element in %s", pattern));
+                } else if (field == NOT_FOUND) {
                     throw new EsHadoopIllegalArgumentException(String.format("Cannot find match for %s", pattern));
-                }
-                else {
+                } else {
                     sb.append(StringUtils.jsonEncoding(field.toString()));
                 }
             }
