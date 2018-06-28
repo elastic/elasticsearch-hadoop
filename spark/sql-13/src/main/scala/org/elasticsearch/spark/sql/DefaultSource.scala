@@ -455,10 +455,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
        StringUtils.EMPTY
      } else  {
        if (SettingsUtils.isEs50(cfg)) {
-         s"""{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
+         s"""{"terms":{"$attribute":${strings.mkString("[\"", "\",\"", "\"]")}}}"""
        }
        else {
-         s"""{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""  
+         s"""{"query":{"terms":{"$attribute":${strings.mkString("[\"", "\",\"", "\"]")}}}}"""
        }
      }
     } else {
@@ -469,10 +469,10 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       // if needed, add the strings as a match query
       } else str + {
         if (SettingsUtils.isEs50(cfg)) {
-          s""",{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
+          s""",{"terms":{"$attribute":${strings.mkString("[\"", "\",\"", "\"]")}}}"""
         }
         else {
-          s""",{"query":{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}}"""
+          s""",{"query":{"terms":{"$attribute":${strings.mkString("[\"", "\",\"", "\"]")}}}}"""
         }
       }
     }
