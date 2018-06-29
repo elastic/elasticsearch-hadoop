@@ -284,7 +284,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     df.take(1).foreach(println)
     assertEquals(1, df.count())
   }
-  
+
   @Test
   def testEmptyDataFrame() {
     val target = wrapIndex("spark-test-empty-dataframe/data")
@@ -382,6 +382,33 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val array = first.getSeq[Long](0)
     assertEquals(1l, array(0))
     assertEquals(4l, array(2))
+  }
+
+  @Test
+  def testArrayValueWithUserSchema {
+    val index = wrapIndex("sparksql-test-array-value-with-schema")
+    val indexAndType = s"$index/data"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc = """{"array" : [1, 2, 4, 5] }"""
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(indexAndType)
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_AS_ARRAY_INCLUDE -> "array")
+    val schemaInt = StructType(StructField("array", ArrayType(IntegerType)) :: Nil)
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql")
+      .schema(schemaInt).load(indexAndType)
+
+    assertEquals("array", df.schema("array").dataType.typeName)
+    assertEquals("integer", df.schema("array").dataType.asInstanceOf[ArrayType].elementType.typeName)
+    assertEquals(1, df.count())
+
+    val first = df.first()
+    val array = first.getSeq[Int](0)
+    assertEquals(1, array(0))
+    assertEquals(4, array(2))
   }
 
   @Test

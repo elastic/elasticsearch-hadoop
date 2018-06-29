@@ -373,6 +373,33 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   @Test
+  def testArrayValueWithUserSchema {
+    val index = wrapIndex("sparksql-test-array-value-with-schema")
+    val indexAndType = s"$index/data"
+    RestUtils.touch(index)
+
+    // add some data
+    val jsonDoc = """{"array" : [1, 2, 4, 5] }"""
+    sc.makeRDD(Seq(jsonDoc)).saveJsonToEs(indexAndType)
+    RestUtils.refresh(index)
+
+    val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_AS_ARRAY_INCLUDE -> "array")
+    val schemaInt = StructType(StructField("array", ArrayType(IntegerType)) :: Nil)
+
+    val df = sqc.read.options(newCfg).format("org.elasticsearch.spark.sql")
+      .schema(schemaInt).load(indexAndType)
+
+    assertEquals("array", df.schema("array").dataType.typeName)
+    assertEquals("integer", df.schema("array").dataType.asInstanceOf[ArrayType].elementType.typeName)
+    assertEquals(1, df.count())
+
+    val first = df.first()
+    val array = first.getSeq[Int](0)
+    assertEquals(1, array(0))
+    assertEquals(4, array(2))
+  }
+
+  @Test
   def testSometimesArrayValue {
     val index = wrapIndex("sparksql-test-sometimes-array-value")
     val indexAndType = s"$index/data"
