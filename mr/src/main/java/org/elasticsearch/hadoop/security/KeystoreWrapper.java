@@ -29,6 +29,9 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -71,6 +74,14 @@ public class KeystoreWrapper {
         }
     }
 
+    public void removeSecureSetting(String alias) throws EsHadoopSecurityException {
+        try {
+            keyStore.deleteEntry(alias);
+        } catch (KeyStoreException e) {
+            throw new EsHadoopSecurityException(String.format("Could not delete secret key (alias : [%s]) from keystore", alias), e);
+        }
+    }
+
     public String getSecureSetting(String alias) throws EsHadoopSecurityException {
         try {
             if (!keyStore.containsAlias(alias)) {
@@ -85,6 +96,28 @@ public class KeystoreWrapper {
             throw new EsHadoopSecurityException(String.format("Could not read alias [%s] from keystore", alias), e);
         } catch (KeyStoreException e) {
             throw new EsHadoopSecurityException(String.format("Could not read alias [%s] from keystore", alias), e);
+        }
+    }
+
+    public boolean containsEntry(String alias) throws EsHadoopSecurityException {
+        try {
+            return keyStore.containsAlias(alias);
+        } catch (KeyStoreException e) {
+            throw new EsHadoopSecurityException(String.format("Could not read existence of alias [%s]", alias), e);
+        }
+    }
+
+    public List<String> listEntries() throws EsHadoopSecurityException {
+        try {
+            List<String> entries = new ArrayList<String>(keyStore.size());
+            Enumeration<String> aliases = keyStore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                entries.add(alias);
+            }
+            return entries;
+        } catch (KeyStoreException e) {
+            throw new EsHadoopSecurityException("Could not read aliases from keystore", e);
         }
     }
 
