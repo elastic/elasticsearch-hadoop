@@ -45,7 +45,6 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE
 import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.mr.RestUtils.ExtendedRestClient
-import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
@@ -290,7 +289,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
 
-  @Test(expected = classOf[EsHadoopSerializationException])
+  @Test(expected = classOf[EsHadoopUnsupportedOperationException])
   def testEsRDDWriteWithUnsupportedMapping() {
     EsAssume.versionOnOrAfter(EsMajorVersion.V_6_X, "TTL only removed in v6 and up.")
 
