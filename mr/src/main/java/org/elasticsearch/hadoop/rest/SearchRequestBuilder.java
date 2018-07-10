@@ -278,9 +278,9 @@ public class SearchRequestBuilder {
             generator.writeBeginObject();
             root.toJson(generator);
             generator.writeEndObject();
-            generator.writeFieldName("_source");
             // override fields
             if (StringUtils.hasText(fields)) {
+                generator.writeFieldName("_source");
                 generator.writeBeginArray();
                 final String[] fieldsArray = org.apache.commons.lang.StringUtils.split(fields, StringUtils.DEFAULT_DELIMITER);
                 for (String field : fieldsArray) {
@@ -288,6 +288,7 @@ public class SearchRequestBuilder {
                 }
                 generator.writeEndArray();
             } else if (excludeSource) {
+                generator.writeFieldName("_source");
                 generator.writeBoolean(false);
             }
             generator.writeEndObject();

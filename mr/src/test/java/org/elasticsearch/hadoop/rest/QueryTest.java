@@ -24,6 +24,7 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class QueryTest {
@@ -50,6 +51,11 @@ public class QueryTest {
     @Test
     public void testExcludeSourceFalse() {
         assertTrue(builder.fields("a,b").excludeSource(false).toString().contains("\"_source\":[\"a\",\"b\"]"));
+    }
+
+    @Test
+    public void testEmptySource() {
+        assertFalse(builder.fields("").excludeSource(false).toString().contains("\"_source\""));
     }
 
     @Test(expected=EsHadoopIllegalArgumentException.class)
