@@ -10,7 +10,6 @@ https://github.com/elastic/elasticsearch-hadoop/pull/1144[#1144]
 REST::
 * An HTTP line is larger than 4096 bytes
 https://github.com/elastic/elasticsearch-hadoop/pull/1154[#1154]
-Build::
 
 [[bugs-6.3.1]]
 === Bug Fixes
