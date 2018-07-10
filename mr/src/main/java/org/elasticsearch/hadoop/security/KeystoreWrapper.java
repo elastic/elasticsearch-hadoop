@@ -35,6 +35,7 @@ import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -187,7 +188,16 @@ public class KeystoreWrapper {
 
         public KeystoreWrapper build() throws EsHadoopSecurityException, IOException {
             if (StringUtils.hasText(path)) {
-                keystoreFile = IOUtils.open(path);
+                try {
+                    keystoreFile = IOUtils.open(path);
+                    if (keystoreFile == null) {
+                        throw new EsHadoopIllegalArgumentException(String.format("Could not locate [%s] on classpath", path));
+                    }
+                } catch (Exception e) {
+                    throw new EsHadoopIllegalArgumentException(String.format("Expected to find keystore file at [%s] but " +
+                            "was unable to. Make sure that it is available on the classpath, or if not, that you have " +
+                            "specified a valid file URI.", path));
+                }
             }
             if (!StringUtils.hasText(type)) {
                 type = PKCS12;

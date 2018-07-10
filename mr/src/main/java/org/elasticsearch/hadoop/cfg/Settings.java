@@ -408,6 +408,7 @@ public abstract class Settings {
         return getProperty(ES_NET_SSL_KEYSTORE_TYPE, ES_NET_SSL_KEYSTORE_TYPE_DEFAULT);
     }
 
+    @Deprecated
     public String getNetworkSSLKeyStorePass() {
         return getProperty(ES_NET_SSL_KEYSTORE_PASS);
     }
@@ -416,6 +417,7 @@ public abstract class Settings {
         return getProperty(ES_NET_SSL_TRUST_STORE_LOCATION);
     }
 
+    @Deprecated
     public String getNetworkSSLTrustStorePass() {
         return getProperty(ES_NET_SSL_TRUST_STORE_PASS);
     }
@@ -428,6 +430,7 @@ public abstract class Settings {
         return getProperty(ES_NET_HTTP_AUTH_USER);
     }
 
+    @Deprecated
     public String getNetworkHttpAuthPass() {
         return getProperty(ES_NET_HTTP_AUTH_PASS);
     }
@@ -444,6 +447,7 @@ public abstract class Settings {
         return getProperty(ES_NET_PROXY_HTTP_USER);
     }
 
+    @Deprecated
     public String getNetworkProxyHttpPass() {
         return getProperty(ES_NET_PROXY_HTTP_PASS);
     }
@@ -464,6 +468,7 @@ public abstract class Settings {
         return getProperty(ES_NET_PROXY_HTTPS_USER);
     }
 
+    @Deprecated
     public String getNetworkProxyHttpsPass() {
         return getProperty(ES_NET_PROXY_HTTPS_PASS);
     }
@@ -484,6 +489,7 @@ public abstract class Settings {
         return getProperty(ES_NET_PROXY_SOCKS_USER);
     }
 
+    @Deprecated
     public String getNetworkProxySocksPass() {
         return getProperty(ES_NET_PROXY_SOCKS_PASS);
     }

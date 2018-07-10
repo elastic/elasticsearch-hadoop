@@ -46,7 +46,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -105,15 +107,15 @@ class SSLSocketFactory implements SecureProtocolSocketFactory {
     private final String trustStorePass;
     private final TrustStrategy trust;
 
-    SSLSocketFactory(Settings settings) {
+    SSLSocketFactory(Settings settings, SecureSettings secureSettings) {
         sslProtocol = settings.getNetworkSSLProtocol();
 
         keyStoreLocation = settings.getNetworkSSLKeyStoreLocation();
-        keyStorePass = settings.getNetworkSSLKeyStorePass();
+        keyStorePass = secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_SSL_KEYSTORE_PASS);
         keyStoreType = settings.getNetworkSSLKeyStoreType();
 
         trustStoreLocation = settings.getNetworkSSLTrustStoreLocation();
-        trustStorePass = settings.getNetworkSSLTrustStorePass();
+        trustStorePass = secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_SSL_TRUST_STORE_PASS);
 
         trust = (settings.getNetworkSSLAcceptSelfSignedCert() ? new SelfSignedStrategy() : null);
     }

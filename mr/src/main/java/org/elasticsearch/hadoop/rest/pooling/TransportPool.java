@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
 import org.elasticsearch.hadoop.rest.stats.Stats;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import java.io.IOException;
@@ -47,6 +48,7 @@ final class TransportPool {
     private final Log log = LogFactory.getLog(this.getClass());
 
     private final Settings transportSettings;
+    private final SecureSettings secureSettings;
     private final String hostName;
     private final String jobPoolingKey;
     private final TimeValue idleTransportTimeout;
@@ -60,11 +62,13 @@ final class TransportPool {
      * @param jobPoolingKey Unique key for all pooled connections for this job
      * @param hostName Host name to pool transports for
      * @param transportSettings Settings to use for this pool and for new transports
+     * @param secureSettings Secure settings to use for new transports
      */
-    TransportPool(String jobPoolingKey, String hostName, Settings transportSettings) {
+    TransportPool(String jobPoolingKey, String hostName, Settings transportSettings, SecureSettings secureSettings) {
         this.jobPoolingKey = jobPoolingKey;
         this.hostName = hostName;
         this.transportSettings = transportSettings;
+        this.secureSettings = secureSettings;
         this.leased = new HashMap<PooledTransport, Long>();
         this.idle = new HashMap<PooledTransport, Long>();
 
@@ -85,7 +89,7 @@ final class TransportPool {
         if (log.isDebugEnabled()) {
             log.debug("Creating new pooled CommonsHttpTransport for host ["+hostName+"] belonging to job ["+jobPoolingKey+"]");
         }
-        return new PooledCommonsHttpTransport(transportSettings, hostName);
+        return new PooledCommonsHttpTransport(transportSettings, secureSettings, hostName);
     }
 
     /**
@@ -266,8 +270,8 @@ final class TransportPool {
     private final class PooledCommonsHttpTransport extends CommonsHttpTransport implements PooledTransport {
         private final String loggingHostInformation;
 
-        PooledCommonsHttpTransport(Settings settings, String host) {
-            super(settings, host);
+        PooledCommonsHttpTransport(Settings settings, SecureSettings secureSettings, String host) {
+            super(settings, secureSettings, host);
             this.loggingHostInformation = host;
         }
 
