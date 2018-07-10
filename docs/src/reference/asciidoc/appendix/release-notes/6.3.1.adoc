@@ -11,8 +11,6 @@ REST::
 * An HTTP line is larger than 4096 bytes
 https://github.com/elastic/elasticsearch-hadoop/pull/1154[#1154]
 Build::
-* Upgrade Scala minor version to support Java 9/10
-https://github.com/elastic/elasticsearch-hadoop/pull/1155[#1155]
 
 [[bugs-6.3.1]]
 === Bug Fixes
