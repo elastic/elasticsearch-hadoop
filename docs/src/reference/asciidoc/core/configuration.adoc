@@ -494,6 +494,11 @@ For example, here the user is setting the `Max-Forwards` HTTP header:
 es.net.http.header.Max-Forwards = 10
 ----
 
+[float]
+==== Secure Settings
+
+added[6.4]
+`es.keystore.location`:: location of the secure settings keystore file (typically a URL, without a prefix it is interpreted as a classpath entry)
 
 added[2.1]
 [float]
@@ -673,6 +678,66 @@ The authentication support in {eh} is of two types:
 Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.auth.pass` properties.
 PKI/X.509:: Use X.509 certificates to authenticate {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
+[float]
+==== Secure Settings
+added[6.4.0]
+
+{eh} is configured using settings that sometimes contain sensitive information such as passwords. It may not be
+desirable for those property values to appear in the job configuration as plain text. For these situations, {eh} supports
+reading some secure properties from a keystore file.
+
+NOTE: The {eh} keystore currently only provides obfuscation. In the future, password protection will be added.
+
+Only the following configurations can be read from the secure settings:
+* `es.net.http.auth.pass`
+* `es.net.ssl.keystore.pass`
+* `es.net.ssl.truststore.pass`
+* `es.net.proxy.http.pass`
+* `es.net.proxy.https.pass`
+* `es.net.proxy.socks.pass`
+
+Provided with {eh} is a keytool program that will allow you to create and add entries to a compatible keystore file.
+[source,bash]
+----
+$> java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool <command> <args>
+----
+
+To create a keystore file in your working directory, run the `create` command:
+[source,bash]
+----
+$> java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool create
+$> ls
+esh.keystore
+----
+
+A list of the settings in the keystore is available with the `list` command:
+[source,bash]
+----
+$> java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool list
+----
+
+Once a keystore file has been created, your sensitive settings can be added using the `add` command:
+[source,bash]
+----
+$> java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool add the.setting.name.to.set
+----
+A prompt will appear and request the value for the setting. To pass the value through stdin, use the `--stdin` flag:
+[source,bash]
+----
+$> cat /file/containing/setting/value | java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool add --stdin the.setting.name.to.set
+----
+
+To remove a setting from the keystore, use the `remove` command:
+[source,bash]
+----
+$> java -classpath path/to/eshadoop.jar org.elasticsearch.hadoop.cli.Keytool remove the.setting.name.to.set
+----
+
+Once your settings are all specified, you must make sure that the keystore is available on every node. This can
+be done by placing it on each node's local file system, or by adding the keystore to the job's classpath. Once the
+keystore has been added, its location must be specified with the `es.keystore.location`. To reference a local file,
+use a fully qualified file URL (ex `file:///path/to/file`). If the secure store is propagated using the command line, just
+use the file's name.
 
 [[logging]]
 == Logging
