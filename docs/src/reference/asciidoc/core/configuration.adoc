@@ -505,7 +505,7 @@ added[2.1]
 ==== Basic Authentication
 
 `es.net.http.auth.user`:: Basic Authentication user name
-`es.net.http.auth.pass`:: Basic Authentication password
+`es.net.http.auth.pass`:: <<keystore,Securable>>. Basic Authentication password
 
 added[2.1]
 [float]
@@ -515,13 +515,13 @@ added[2.1]
 
 `es.net.ssl.keystore.location`:: key store (if used) location (typically a URL, without a prefix it is interpreted as a classpath entry)
 
-`es.net.ssl.keystore.pass`:: key store password
+`es.net.ssl.keystore.pass`:: <<keystore,Securable>>. key store password
 
 `es.net.ssl.keystore.type` (default JKS):: key store type. PK12 is a common, alternative format
 
 `es.net.ssl.truststore.location`:: trust store location (typically a URL, without a prefix it is interpreted as a classpath entry)
 
-`es.net.ssl.truststore.pass`:: trust store password
+`es.net.ssl.truststore.pass`:: <<keystore,Securable>>. trust store password
 
 `es.net.ssl.cert.allow.self.signed` (default false):: Whether or not to allow self signed certificates
 
@@ -533,7 +533,7 @@ added[2.1]
 `es.net.proxy.http.host`:: Http proxy host name
 `es.net.proxy.http.port`:: Http proxy port
 `es.net.proxy.http.user`:: Http proxy user name
-`es.net.proxy.http.pass`:: Http proxy password
+`es.net.proxy.http.pass`:: <<keystore,Securable>>. Http proxy password
 `es.net.proxy.http.use.system.props`(default yes):: Whether the use the system Http proxy properties (namely `http.proxyHost` and `http.proxyPort`) or not
 
 added[2.2]
@@ -543,14 +543,14 @@ added[2.2]
 added[2.2]
 `es.net.proxy.https.user`:: Https proxy user name
 added[2.2]
-`es.net.proxy.https.pass`:: Https proxy password
+`es.net.proxy.https.pass`:: <<keystore,Securable>>. Https proxy password
 added[2.2]
 `es.net.proxy.https.use.system.props`(default yes):: Whether the use the system Https proxy properties (namely `https.proxyHost` and `https.proxyPort`) or not
 
 `es.net.proxy.socks.host`:: Http proxy host name
 `es.net.proxy.socks.port`:: Http proxy port
 `es.net.proxy.socks.user`:: Http proxy user name
-`es.net.proxy.socks.pass`:: Http proxy password
+`es.net.proxy.socks.pass`:: <<keystore,Securable>>. Http proxy password
 `es.net.proxy.socks.use.system.props`(default yes):: Whether the use the system Socks proxy properties (namely `socksProxyHost` and `socksProxyHost`) or not
 
 NOTE: {eh} allows proxy settings to be applied only to its connection using the setting above. Take extra care when there is already a JVM-wide proxy setting (typically through system properties) to avoid unexpected behavior.
