@@ -44,13 +44,15 @@ public class KeystoreWrapper {
 
     private static final String PKCS12 = "PKCS12";
     private static final String AES = "AES";
-    private static final String DEFAULT_PASS = "changeme";
+
+    // TODO: Eventually support password protected keystores when Elasticsearch does.
+    private static final String DEFAULT_PASS = "";
 
     private final KeyStore keyStore;
     private final KeyStore.PasswordProtection protection;
 
     private KeystoreWrapper(InputStream inputStream, String type, String password) throws EsHadoopSecurityException, IOException {
-        Assert.hasText(password);
+        Assert.notNull(password, "Password should not be null");
         try {
             char[] pwd = password.toCharArray();
             protection = new KeyStore.PasswordProtection(pwd);
