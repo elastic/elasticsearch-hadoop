@@ -498,7 +498,7 @@ es.net.http.header.Max-Forwards = 10
 ==== Secure Settings
 
 added[6.4]
-`es.keystore.location`:: location of the secure settings keystore file (typically a URL, without a prefix it is interpreted as a classpath entry).
+`es.keystore.location`:: location of the secure settings keystore file (typically a URL, without a prefix it is interpreted as a classpath entry). See <<keystore>> for more info.
 
 added[2.1]
 [float]
@@ -679,6 +679,7 @@ Username/Password:: Set these through `es.net.http.auth.user` and `es.net.http.a
 PKI/X.509:: Use X.509 certificates to authenticate {eh} to {eh}. For this, one would need to setup the `keystore` containing the private key and certificate to the appropriate user (configured in {es}) and the `truststore` with the CA certificate used to sign the SSL/TLS certificates in the {es} cluster. That is one setup the key to authenticate {eh} and also to verify that is the right one. To do so, one should setup the `es.net.ssl.keystore.location` and `es.net.ssl.truststore.location` properties to indicate the `keystore` and `truststore` to use. It is recommended to have these secured through a password in which case `es.net.ssl.keystore.pass` and `es.net.ssl.truststore.pass` properties are required.
 
 [float]
+[[keystore]]
 ==== Secure Settings
 added[6.4.0]
 
