@@ -530,7 +530,7 @@ class BuildPlugin implements Plugin<Project>  {
         integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
         integrationTest.excludes = ["**/Abstract*.class"]
 
-        integrationTest.ignoreFailures = true
+        integrationTest.ignoreFailures = false
 
         integrationTest.minHeapSize = "256m"
         integrationTest.maxHeapSize = "2g"
