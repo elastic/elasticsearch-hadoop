@@ -498,7 +498,7 @@ es.net.http.header.Max-Forwards = 10
 ==== Secure Settings
 
 added[6.4]
-`es.keystore.location`:: location of the secure settings keystore file (typically a URL, without a prefix it is interpreted as a classpath entry)
+`es.keystore.location`:: location of the secure settings keystore file (typically a URL, without a prefix it is interpreted as a classpath entry).
 
 added[2.1]
 [float]
