@@ -77,13 +77,4 @@ public final class FieldNames {
     public static final String FIELD_HOST_TIMEZONE = "timezone";
     public static final String FIELD_HOST_TIMEZONE_OFFSET = "offset";
     public static final String FIELD_HOST_TIMEZONE_OFFSET_SEC = "sec";
-
-    // User: TBD (Could collect this from the UGI maybe?)
-    public static final String FIELD_USER = "user";
-    // user.name - (keyword) perhaps? This isn't as useful probably.
-    public static final String FIELD_USER_NAME = "name";
-
-    // Extensions:
-    public static final String FIELD_ERROR_HANDLER = "handler";
-    public static final String FIELD_ERROR_HANDLER_PASSES = "passes";
 }

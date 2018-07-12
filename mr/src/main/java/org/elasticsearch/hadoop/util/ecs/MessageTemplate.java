@@ -43,25 +43,17 @@ public class MessageTemplate {
 
     // Event
     private String eventCategory;
-    private String eventModule;
     private String eventType;
-
-    // User
-    // TODO: TBD
-    public String userName;
-    // userName = System.getProperty("user.name");
 
     public MessageTemplate(ElasticCommonSchema schema, Map<String, String> labels, Set<String> tags, HostData host,
                            String eventCategory, String eventType) {
         Assert.hasText(eventCategory, "Missing " + FieldNames.FIELD_EVENT_CATEGORY + " value for ECS template.");
-//        Assert.hasText(eventModule, "Missing " + FieldNames.FIELD_EVENT_MODULE + " value for ECS template.");
         Assert.hasText(eventType, "Missing " + FieldNames.FIELD_EVENT_TYPE + " value for ECS template.");
         this.schema = schema;
         this.labels = labels;
         this.tags = tags;
         this.host = host;
         this.eventCategory = eventCategory;
-//        this.eventModule = eventModule;
         this.eventType = eventType;
     }
 
@@ -150,21 +142,11 @@ public class MessageTemplate {
             generator.writeFieldName(FieldNames.FIELD_EVENT).writeBeginObject();
             {
                 generator.writeFieldName(FieldNames.FIELD_EVENT_CATEGORY).writeString(eventCategory);
-//                generator.writeFieldName(FieldNames.FIELD_EVENT_MODULE).writeString(eventModule);
                 generator.writeFieldName(FieldNames.FIELD_EVENT_TYPE).writeString(eventType);
                 generator.writeFieldName(FieldNames.FIELD_EVENT_RAW).writeString(rawEvent);
                 generator.writeFieldName(FieldNames.FIELD_EVENT_VERSION).writeString(schema.getVersion());
             }
             generator.writeEndObject();
-
-//            // User TBD
-//            if (userName != null) {
-//                generator.writeFieldName(FieldNames.FIELD_USER).writeBeginObject();
-//                {
-//                    generator.writeFieldName(FieldNames.FIELD_USER_NAME).writeString(userName);
-//                }
-//                generator.writeEndObject();
-//            }
         }
         generator.writeEndObject();
 

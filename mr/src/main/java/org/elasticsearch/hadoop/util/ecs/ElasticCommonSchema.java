@@ -51,9 +51,7 @@ public class ElasticCommonSchema {
         private Map<String, String> labels;
         private Set<String> tags;
         private HostData host;
-        private String userName;
         private String eventCategory;
-//        private String eventModule;
         private String eventType;
 
         private TemplateBuilder(ElasticCommonSchema schema) {
@@ -61,9 +59,7 @@ public class ElasticCommonSchema {
             this.labels = new LinkedHashMap<String, String>();
             this.tags = new LinkedHashSet<String>();
             this.host = null;
-            this.userName = null;
             this.eventCategory = null;
-//            this.eventModule = null;
             this.eventType = null;
         }
 
@@ -93,11 +89,6 @@ public class ElasticCommonSchema {
             this.eventCategory = eventCategory;
             return this;
         }
-
-//        public TemplateBuilder setEventModule(String eventModule) {
-//            this.eventModule = eventModule;
-//            return this;
-//        }
 
         public TemplateBuilder setEventType(String eventType) {
             this.eventType = eventType;
