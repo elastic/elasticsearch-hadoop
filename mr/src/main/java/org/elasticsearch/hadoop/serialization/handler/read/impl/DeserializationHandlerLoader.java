@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.handler.ErrorHandler;
 import org.elasticsearch.hadoop.handler.impl.AbortOnFailure;
 import org.elasticsearch.hadoop.handler.impl.AbstractHandlerLoader;
 import org.elasticsearch.hadoop.handler.impl.DropAndLog;
+import org.elasticsearch.hadoop.handler.impl.elasticsearch.ElasticsearchHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.DeserializationFailure;
 import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 
@@ -53,14 +54,18 @@ public class DeserializationHandlerLoader extends AbstractHandlerLoader<IDeseria
         switch (handlerName) {
             case FAIL:
                 genericHandler = AbortOnFailure.create();
-                return new DelegatingErrorHandler(genericHandler);
+                break;
             case LOG:
                 genericHandler = DropAndLog.create(new DeserializationLogRenderer());
-                return new DelegatingErrorHandler(genericHandler);
+                break;
+            case ES:
+                genericHandler = ElasticsearchHandler.create(getSettings(), new DeserializationEventConverter());
+                break;
             default:
                 throw new EsHadoopIllegalArgumentException(
                         "Could not find default implementation for built in handler type [" + handlerName + "]"
                 );
         }
+        return new DelegatingErrorHandler(genericHandler);
     }
 }

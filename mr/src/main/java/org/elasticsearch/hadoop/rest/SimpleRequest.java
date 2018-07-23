@@ -85,6 +85,30 @@ public class SimpleRequest implements Request {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SimpleRequest request = (SimpleRequest) o;
+
+        if (method != request.method) return false;
+        if (uri != null ? !uri.equals(request.uri) : request.uri != null) return false;
+        if (path != null ? !path.equals(request.path) : request.path != null) return false;
+        if (params != null ? !params.equals(request.params) : request.params != null) return false;
+        return body != null ? body.equals(request.body) : request.body == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = method != null ? method.hashCode() : 0;
+        result = 31 * result + (uri != null ? uri.hashCode() : 0);
+        result = 31 * result + (path != null ? path.hashCode() : 0);
+        result = 31 * result + (params != null ? params.hashCode() : 0);
+        result = 31 * result + (body != null ? body.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(method.name());
         sb.append("@");
