@@ -54,7 +54,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,10 +91,13 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public RestClient(Settings settings) {
-        network = new NetworkClient(settings);
+        this(settings, new NetworkClient(settings));
+    }
 
-        scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
-        indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+    RestClient(Settings settings, NetworkClient networkClient) {
+        this.network = networkClient;
+        this.scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
+        this.indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
 
         String retryPolicyName = settings.getBatchWriteRetryPolicy();
 
@@ -106,10 +108,10 @@ public class RestClient implements Closeable, StatsAware {
             retryPolicyName = NoHttpRetryPolicy.class.getName();
         }
 
-        retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
+        this.retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
-        internalVersion = settings.getInternalVersionOrLatest();
-        errorExtractor = new ErrorExtractor(internalVersion);
+        this.internalVersion = settings.getInternalVersionOrLatest();
+        this.errorExtractor = new ErrorExtractor(internalVersion);
     }
 
     public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
@@ -244,6 +246,21 @@ public class RestClient implements Closeable, StatsAware {
         } catch (IOException ex) {
             throw new EsHadoopParsingException(ex);
         }
+    }
+
+    public String postDocument(Resource resource, BytesArray document) throws IOException {
+        Request request = new SimpleRequest(Method.POST, null, resource.index() + "/" + resource.type(), null, document);
+        Response response = execute(request, true);
+        Object id = parseContent(response.body(), "_id");
+        if (id == null || !StringUtils.hasText(id.toString())) {
+            throw new EsHadoopInvalidRequest(
+                    String.format("Could not determine successful write operation. Request[%s > %s] Response[%s]",
+                            request.method(), request.path(),
+                            IOUtils.asString(response.body())
+                    )
+            );
+        }
+        return id.toString();
     }
 
     public void refresh(Resource resource) {

@@ -112,6 +112,20 @@ public class AbstractCascadingHadoopSaveTest {
     }
 
     @Test
+    public void testIndexPatternFailing() throws Exception {
+        Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
+
+        props.put("es.mapping.id", "nonexistent");
+        props.put("es.write.data.error.handlers", "es");
+        props.put("es.write.data.error.handler.es.client.resource", "cascading-hadoop-pattern-errors/data");
+
+        Tap in = sourceTap();
+        Tap out = new EsTap("cascading-hadoop-error-pattern-{tag}/data", new Fields("id", "name", "url", "picture", "tag"));
+        Pipe pipe = new Pipe("copy");
+        StatsUtils.proxy(new HadoopFlowConnector(props).connect(in, out, pipe)).complete();
+    }
+
+    @Test
     public void testIndexPatternWithFormat() throws Exception {
         Properties props = HdpBootstrap.asProperties(CascadingHadoopSuite.configuration);
 

@@ -42,7 +42,8 @@ public abstract class AbstractHandlerLoader<E extends ErrorHandler> implements S
 
     public enum NamedHandlers {
         FAIL("fail"),
-        LOG("log");
+        LOG("log"),
+        ES("es");
 
         private final String name;
 
@@ -65,6 +66,10 @@ public abstract class AbstractHandlerLoader<E extends ErrorHandler> implements S
         this.settings = settings;
     }
 
+    protected Settings getSettings() {
+        return this.settings;
+    }
+
     @Override
     public List<E> loadHandlers() {
         Assert.notNull(settings, "No settings are present in the handler loader!");
@@ -85,6 +90,8 @@ public abstract class AbstractHandlerLoader<E extends ErrorHandler> implements S
                 failureHandlerAdded = true;
             } else if (handlerName.equals(NamedHandlers.LOG.name)) {
                 handler = loadBuiltInHandler(NamedHandlers.LOG);
+            } else if (handlerName.equals(NamedHandlers.ES.name)) {
+                handler = loadBuiltInHandler(NamedHandlers.ES);
             } else {
                 String handlerClassName = settings.getProperty(handlerPropertyPrefix + "." + handlerName);
                 handler = ObjectUtils.instantiate(handlerClassName, AbstractHandlerLoader.class.getClassLoader());

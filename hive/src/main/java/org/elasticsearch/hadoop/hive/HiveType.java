@@ -48,4 +48,12 @@ public class HiveType {
     public void setObjectInspector(ObjectInspector oi) {
         this.oi = oi;
     }
+
+    @Override
+    public String toString() {
+        return "HiveType{" +
+                "object=" + object +
+                ", inspector=" + oi +
+                '}';
+    }
 }

@@ -88,7 +88,9 @@ import com.esotericsoftware.kryo.io.{Output => KryoOutput}
 import javax.xml.bind.DatatypeConverter
 
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.mr.EsAssume
+import org.elasticsearch.hadoop.serialization.JsonUtils
 import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.junit.Assert._
 
@@ -719,6 +721,42 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val target = wrapIndex("sparksql-test-decimal-exception/data")
     dataFrame.saveToEs(target)
+  }
+
+  @Test
+  def testEsDataFrame4WriteConflictingData(): Unit = {
+    val schema = StructType(Seq(StructField("id", StringType), StructField("version", IntegerType), StructField("field", StringType)))
+    val rowRDD1 = sc.makeRDD(Seq(Row("id", 1, "hello")))
+    val rowRDD2 = sc.makeRDD(Seq(Row("id", 2, "hello")))
+    val dataFrame1 = sqc.createDataFrame(rowRDD1, schema)
+    val dataFrame2 = sqc.createDataFrame(rowRDD2, schema)
+
+    val dataIndex = wrapIndex("sparksql-test-scala-error-handler-es")
+    val errorIndex = wrapIndex("sparksql-test-scala-error-handler-es-errors")
+
+    val typeName = "/data"
+
+    val dataResource = dataIndex + typeName
+    val errorResource = errorIndex + typeName
+
+    val conf = Map(
+      ConfigurationOptions.ES_MAPPING_ID -> "id",
+      ConfigurationOptions.ES_MAPPING_VERSION -> "version",
+      "es.write.rest.error.handlers" -> "es",
+      "es.write.rest.error.handler.es.client.resource" -> errorResource,
+      "es.write.rest.error.handler.es.label.extraData" -> "labelValue",
+      "es.write.rest.error.handler.es.tags" -> "tagValue"
+    )
+
+    dataFrame2.saveToEs(dataResource, conf)
+    dataFrame1.saveToEs(dataResource, conf)
+
+    val errorDataSearch = RestUtils.get(errorResource + "/_search")
+    val errorDoc = JsonUtils.query("hits").get("hits").get(0).apply(JsonUtils.asMap(errorDataSearch))
+    assertEquals("Encountered Bulk Failure", JsonUtils.query("_source").get("message").apply(errorDoc))
+    assertEquals("version_conflict_engine_exception", JsonUtils.query("_source").get("error").get("code").apply(errorDoc))
+    assertEquals("labelValue", JsonUtils.query("_source").get("labels").get("extraData").apply(errorDoc))
+    assertEquals("tagValue", JsonUtils.query("_source").get("tags").get(0).apply(errorDoc))
   }
 
   @Test

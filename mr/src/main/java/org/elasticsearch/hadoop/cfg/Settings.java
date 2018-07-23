@@ -587,7 +587,7 @@ public abstract class Settings {
 
     public abstract Settings copy();
 
-    protected String getProperty(String name, String defaultValue) {
+    public String getProperty(String name, String defaultValue) {
         String value = getProperty(name);
         if (!StringUtils.hasText(value)) {
             return defaultValue;
@@ -601,6 +601,10 @@ public abstract class Settings {
 
     public Settings getSettingsView(String name) {
         return new SettingsView(this, name);
+    }
+
+    public Settings excludeFilter(String prefix) {
+        return new FilteredSettings(this, prefix);
     }
 
     public Settings merge(Properties properties) {
