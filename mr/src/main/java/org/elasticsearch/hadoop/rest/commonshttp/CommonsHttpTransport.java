@@ -480,9 +480,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         headers.applyTo(http);
 
         // when tracing, log everything
-//        if (log.isTraceEnabled()) {
-            log.info(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
-//        }
+        if (log.isTraceEnabled()) {
+            log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
+        }
 
         long start = System.currentTimeMillis();
         try {
@@ -491,11 +491,11 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             stats.netTotalTime += (System.currentTimeMillis() - start);
         }
 
-//        if (log.isTraceEnabled()) {
+        if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
             String addr = sk.getLocalAddress().getHostAddress();
-            log.info(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
-//        }
+            log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+        }
 
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
