@@ -48,6 +48,8 @@ public class SecureSettings {
             } catch (IOException e) {
                 throw new EsHadoopException("Could not load keystore", e);
             }
+        } else {
+            this.keystoreWrapper = null;
         }
     }
 
