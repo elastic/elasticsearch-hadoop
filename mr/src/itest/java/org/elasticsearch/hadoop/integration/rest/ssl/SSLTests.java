@@ -18,6 +18,9 @@
  */
 package org.elasticsearch.hadoop.integration.rest.ssl;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Properties;
 
 import org.elasticsearch.hadoop.HdpBootstrap;
@@ -27,12 +30,15 @@ import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransport;
+import org.elasticsearch.hadoop.security.KeystoreWrapper;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
 
@@ -65,20 +71,30 @@ public class SSLTests {
         }
     };
 
+    @ClassRule
+    public static TemporaryFolder TEMP_FOLDER = new TemporaryFolder();
+
     private PropertiesSettings cfg;
     private CommonsHttpTransport transport;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
+        KeystoreWrapper keystoreWrapper = KeystoreWrapper.newStore().build();
+        keystoreWrapper.setSecureSetting(ES_NET_SSL_TRUST_STORE_PASS, "testpass");
+        File ks = TEMP_FOLDER.newFile();
+        OutputStream ksOut = new FileOutputStream(ks);
+        keystoreWrapper.saveKeystore(ksOut);
+        ksOut.close();
+
         cfg = new PropertiesSettings();
         cfg.setPort(SSL_PORT);
+        cfg.setProperty(ES_KEYSTORE_LOCATION, ks.toURI().toString());
         cfg.setProperty(ES_NET_USE_SSL, "true");
         cfg.setProperty(ES_NET_SSL_CERT_ALLOW_SELF_SIGNED, "true");
         cfg.setProperty(ES_NET_SSL_TRUST_STORE_LOCATION, "ssl/client.jks");
-        cfg.setProperty(ES_NET_SSL_TRUST_STORE_PASS, "testpass");
         cfg.setProperty(ES_NODES_PATH_PREFIX, PREFIX);
 
-        transport = new CommonsHttpTransport(cfg.copy(), "localhost");
+        transport = new CommonsHttpTransport(cfg.copy(), new SecureSettings(cfg), "localhost");
     }
 
     @After

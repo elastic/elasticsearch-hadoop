@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -71,6 +72,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final boolean sslEnabled;
     private final String pathPrefix;
     private final Settings settings;
+    private final SecureSettings secureSettings;
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
@@ -138,7 +140,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     public CommonsHttpTransport(Settings settings, String host) {
+        this(settings, new SecureSettings(settings), host);
+    }
+
+    public CommonsHttpTransport(Settings settings, SecureSettings secureSettings, String host) {
         this.settings = settings;
+        this.secureSettings = secureSettings;
         httpInfo = host;
         sslEnabled = settings.getNetworkSSLEnabled();
 
@@ -169,9 +176,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         HostConfiguration hostConfig = new HostConfiguration();
 
-        hostConfig = setupSSLIfNeeded(settings, hostConfig);
-        hostConfig = setupSocksProxy(settings, hostConfig);
-        Object[] authSettings = setupHttpOrHttpsProxy(settings, hostConfig);
+        hostConfig = setupSSLIfNeeded(settings, secureSettings, hostConfig);
+        hostConfig = setupSocksProxy(settings, secureSettings, hostConfig);
+        Object[] authSettings = setupHttpOrHttpsProxy(settings, secureSettings, hostConfig);
         hostConfig = (HostConfiguration) authSettings[0];
 
         try {
@@ -182,7 +189,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         client = new HttpClient(params, new SocketTrackingConnectionManager());
         client.setHostConfiguration(hostConfig);
 
-        addHttpAuth(settings, authSettings);
+        addHttpAuth(settings, secureSettings, authSettings);
         completeAuth(authSettings);
 
         HttpConnectionManagerParams connectionParams = client.getHttpConnectionManager().getParams();
@@ -198,7 +205,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private HostConfiguration setupSSLIfNeeded(Settings settings, HostConfiguration hostConfig) {
+    private HostConfiguration setupSSLIfNeeded(Settings settings, SecureSettings secureSettings, HostConfiguration hostConfig) {
         if (!sslEnabled) {
             return hostConfig;
         }
@@ -214,18 +221,18 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         //
         String schema = "https";
         int port = 443;
-        SecureProtocolSocketFactory sslFactory = new SSLSocketFactory(settings);
+        SecureProtocolSocketFactory sslFactory = new SSLSocketFactory(settings, secureSettings);
 
         replaceProtocol(sslFactory, schema, port);
 
         return hostConfig;
     }
 
-    private void addHttpAuth(Settings settings, Object[] authSettings) {
+    private void addHttpAuth(Settings settings, SecureSettings secureSettings, Object[] authSettings) {
         if (StringUtils.hasText(settings.getNetworkHttpAuthUser())) {
             HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
             authSettings[1] = state;
-            state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(), settings.getNetworkHttpAuthPass()));
+            state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(), secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS)));
             if (log.isDebugEnabled()) {
                 log.info("Using detected HTTP Auth credentials...");
             }
@@ -239,7 +246,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
     }
 
-    private Object[] setupHttpOrHttpsProxy(Settings settings, HostConfiguration hostConfig) {
+    private Object[] setupHttpOrHttpsProxy(Settings settings, SecureSettings secureSettings, HostConfiguration hostConfig) {
         // return HostConfiguration + HttpState
         Object[] results = new Object[2];
         results[0] = hostConfig;
@@ -279,11 +286,11 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             // client is not yet initialized so postpone state
             if (sslEnabled) {
                 if (StringUtils.hasText(settings.getNetworkProxyHttpsUser())) {
-                    if (!StringUtils.hasText(settings.getNetworkProxyHttpsPass())) {
+                    if (!StringUtils.hasText(secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS))) {
                         log.warn(String.format("HTTPS proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS));
                     }
                     HttpState state = new HttpState();
-                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpsUser(), settings.getNetworkProxyHttpsPass()));
+                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpsUser(), secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_HTTPS_PASS)));
                     // client is not yet initialized so simply save the object for later
                     results[1] = state;
                 }
@@ -299,11 +306,11 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             }
             else {
                 if (StringUtils.hasText(settings.getNetworkProxyHttpUser())) {
-                    if (!StringUtils.hasText(settings.getNetworkProxyHttpPass())) {
+                    if (!StringUtils.hasText(secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_HTTP_PASS))) {
                         log.warn(String.format("HTTP proxy user specified but no/empty password defined - double check the [%s] property", ConfigurationOptions.ES_NET_PROXY_HTTP_PASS));
                     }
                     HttpState state = new HttpState();
-                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), settings.getNetworkProxyHttpPass()));
+                    state.setProxyCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkProxyHttpUser(), secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_HTTP_PASS)));
                     // client is not yet initialized so simply save the object for later
                     results[1] = state;
                 }
@@ -322,7 +329,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         return results;
     }
 
-    private HostConfiguration setupSocksProxy(Settings settings, HostConfiguration hostConfig) {
+    private HostConfiguration setupSocksProxy(Settings settings, SecureSettings secureSettings, HostConfiguration hostConfig) {
         // set proxy settings
         String proxyHost = null;
         int proxyPort = -1;
@@ -344,8 +351,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (StringUtils.hasText(settings.getNetworkProxySocksUser())) {
             proxyUser = settings.getNetworkProxySocksUser();
         }
-        if (StringUtils.hasText(settings.getNetworkProxySocksPass())) {
-            proxyPass = settings.getNetworkProxySocksPass();
+        if (StringUtils.hasText(secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS))) {
+            proxyPass = secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_PROXY_SOCKS_PASS);
         }
 
         // we actually have a socks proxy, let's start the setup
