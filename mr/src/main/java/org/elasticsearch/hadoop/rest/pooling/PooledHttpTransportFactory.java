@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Transport;
 import org.elasticsearch.hadoop.rest.TransportFactory;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 
 import java.util.ArrayList;
@@ -49,10 +50,10 @@ final class PooledHttpTransportFactory implements TransportFactory {
      * {@inheritDoc}
      */
     @Override
-    public synchronized Transport create(Settings settings, String hostInfo) {
+    public synchronized Transport create(Settings settings, SecureSettings secureSettings, String hostInfo) {
         // Make sure that the caller's Settings has the correct job pool key.
         assertCorrectJobId(settings);
-        return borrowFrom(getOrCreateTransportPool(hostInfo, settings), hostInfo);
+        return borrowFrom(getOrCreateTransportPool(hostInfo, settings, secureSettings), hostInfo);
     }
 
     /**
@@ -75,13 +76,14 @@ final class PooledHttpTransportFactory implements TransportFactory {
      * Gets the transport pool for the given host info, or creates one if it is absent.
      * @param hostInfo To get a pool for
      * @param settings For creating the pool if it does not exist
+     * @param secureSettings For providing secure settings to the connections within the pool once created
      * @return A transport pool for the given host
      */
-    private TransportPool getOrCreateTransportPool(String hostInfo, Settings settings) {
+    private TransportPool getOrCreateTransportPool(String hostInfo, Settings settings, SecureSettings secureSettings) {
         TransportPool pool;
         pool = hostPools.get(hostInfo); // Check again in case it was added while waiting for the lock
         if (pool == null) {
-            pool = new TransportPool(jobKey, hostInfo, settings);
+            pool = new TransportPool(jobKey, hostInfo, settings, secureSettings);
             hostPools.put(hostInfo, pool);
             if (log.isDebugEnabled()) {
                 log.debug("Creating new TransportPool for job ["+jobKey+"] for host ["+hostInfo+"]");

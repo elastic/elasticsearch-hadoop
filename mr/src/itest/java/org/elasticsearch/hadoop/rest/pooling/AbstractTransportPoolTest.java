@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.rest.pooling;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Transport;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class AbstractTransportPoolTest {
 
         String host = SettingsUtils.discoveredOrDeclaredNodes(settings).get(0);
 
-        TransportPool pool = new TransportPool(UUID.randomUUID().toString(), host, settings);
+        TransportPool pool = new TransportPool(UUID.randomUUID().toString(), host, settings, new SecureSettings(settings));
 
         Transport transport1 = null;
         Transport transport2 = null;

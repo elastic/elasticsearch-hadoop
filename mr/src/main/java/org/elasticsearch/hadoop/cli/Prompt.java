@@ -16,20 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
 
-import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.security.SecureSettings;
+package org.elasticsearch.hadoop.cli;
 
-/**
- * Creates {@link Transport} Objects
- */
-public interface TransportFactory {
-    /**
-     * Creates a {@link Transport} object
-     * @param settings Specifies the Transport's properties
-     * @param secureSettings Any secure settings that should be provided
-     * @param hostInfo Host to connect to
-     */
-    Transport create(Settings settings, SecureSettings secureSettings, String hostInfo);
+public interface Prompt {
+
+    void println();
+
+    void println(String s);
+
+    void printf(String format, Object... args);
+
+    String readLine();
+
+    String readLine(String format, Object... args);
+
+    char[] readPassword(String prompt, Object... args);
 }

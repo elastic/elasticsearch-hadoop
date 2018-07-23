@@ -67,6 +67,9 @@ public interface ConfigurationOptions {
 
     String ES_NODES_RESOLVE_HOST_NAME = "es.nodes.resolve.hostname";
 
+    /** Secure Settings Keystore */
+    String ES_KEYSTORE_LOCATION = "es.keystore.location";
+
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";

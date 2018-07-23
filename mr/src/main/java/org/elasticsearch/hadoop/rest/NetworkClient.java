@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.rest.commonshttp.CommonsHttpTransportFactory;
 import org.elasticsearch.hadoop.rest.pooling.PooledTransportManager;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.SettingsUtils;
@@ -45,6 +46,7 @@ public class NetworkClient implements StatsAware, Closeable {
     private static Log log = LogFactory.getLog(NetworkClient.class);
 
     private final Settings settings;
+    private final SecureSettings secureSettings;
     private final List<String> nodes;
     private final Map<String, Throwable> failedNodes = new LinkedHashMap<String, Throwable>();
 
@@ -61,6 +63,7 @@ public class NetworkClient implements StatsAware, Closeable {
 
     public NetworkClient(Settings settings, TransportFactory transportFactory) {
         this.settings = settings.copy();
+        this.secureSettings = new SecureSettings(settings);
         this.nodes = SettingsUtils.discoveredOrDeclaredNodes(settings);
         this.transportFactory = transportFactory;
 
@@ -96,7 +99,7 @@ public class NetworkClient implements StatsAware, Closeable {
         closeTransport();
         currentNode = nodes.get(nextClient++);
         SettingsUtils.pinNode(settings, currentNode);
-        currentTransport = transportFactory.create(settings, currentNode);
+        currentTransport = transportFactory.create(settings, secureSettings, currentNode);
         return true;
     }
 
