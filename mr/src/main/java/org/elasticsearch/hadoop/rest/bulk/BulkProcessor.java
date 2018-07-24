@@ -16,7 +16,6 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.handler.EsHadoopAbortHandlerException;
 import org.elasticsearch.hadoop.handler.HandlerResult;
 import org.elasticsearch.hadoop.rest.ErrorExtractor;
-import org.elasticsearch.hadoop.rest.EsHadoopRemoteException;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.bulk.handler.BulkWriteErrorCollector;
@@ -157,6 +156,7 @@ public class BulkProcessor implements Closeable, StatsAware {
     public BulkResponse tryFlush() {
         BulkResponse bulkResult = null;
         boolean trackingArrayExpanded = false;
+        String bulkLoggingID = createDebugTxnID();
 
         try {
             // double check data - it might be a false flush (called on clean-up)
@@ -165,6 +165,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                 int docsSent = 0;
                 int docsSkipped = 0;
                 int docsAborted = 0;
+                long totalTime = 0L;
                 boolean retryOperation = false;
                 int totalAttempts = 0;
                 long waitTime = 0L;
@@ -181,11 +182,14 @@ public class BulkProcessor implements Closeable, StatsAware {
                     }
 
                     // Log messages, and if wait time is set, perform the thread sleep.
-                    initFlushOperation(retryOperation, waitTime);
+                    initFlushOperation(bulkLoggingID, retryOperation, retries.size(), waitTime);
 
                     // Exec bulk operation to ES, get response.
+                    debugLog(bulkLoggingID, "Submitting request");
                     RestClient.BulkActionResponse bar = restClient.bulk(resource, data);
+                    debugLog(bulkLoggingID, "Response received");
                     totalAttempts++;
+                    totalTime += bar.getTimeSpent();
 
                     // Log retry stats if relevant
                     if (retryOperation) {
@@ -204,7 +208,7 @@ public class BulkProcessor implements Closeable, StatsAware {
                         stats.bytesAccepted += data.length();
                         stats.docsAccepted += data.entries();
                         retryOperation = false;
-                        bulkResult = BulkResponse.complete(bar.getResponseCode(), bar.getTimeSpent(), totalDocs, totalDocs, 0);
+                        bulkResult = BulkResponse.complete(bar.getResponseCode(), totalTime, totalDocs, totalDocs, 0);
                     } else {
                         // Base Case:
                         // Iterate over the response and the data in the tracking bytes array at the same time, passing
@@ -353,17 +357,26 @@ public class BulkProcessor implements Closeable, StatsAware {
                         } else {
                             retryOperation = false;
                             if (docsAborted > 0) {
-                                bulkResult = BulkResponse.partial(bar.getResponseCode(), bar.getTimeSpent(), totalDocs, docsSent, docsSkipped, docsAborted, abortErrors);
+                                bulkResult = BulkResponse.partial(bar.getResponseCode(), totalTime, totalDocs, docsSent, docsSkipped, docsAborted, abortErrors);
                             } else {
-                                bulkResult = BulkResponse.complete(bar.getResponseCode(), bar.getTimeSpent(), totalDocs, docsSent, docsSkipped);
+                                bulkResult = BulkResponse.complete(bar.getResponseCode(), totalTime, totalDocs, docsSent, docsSkipped);
                             }
                         }
                     }
                 } while (retryOperation);
+
+                debugLog(bulkLoggingID, "Completed. [%d] Original Entries. [%d] Attempts. [%d/%d] Docs Sent. [%d/%d] Docs Skipped. [%d/%d] Docs Aborted.",
+                        totalDocs,
+                        totalAttempts,
+                        docsSent, totalDocs,
+                        docsSkipped, totalDocs,
+                        docsAborted, totalDocs
+                );
             } else {
                 bulkResult = BulkResponse.complete();
             }
         } catch (EsHadoopException ex) {
+            debugLog(bulkLoggingID, "Failed. %s", ex.getMessage());
             hadWriteErrors = true;
             throw ex;
         }
@@ -429,28 +442,45 @@ public class BulkProcessor implements Closeable, StatsAware {
     /**
      * Logs flushing messages and performs backoff waiting if there is a wait time for retry.
      */
-    private void initFlushOperation(boolean retryOperation, long waitTime) {
+    private void initFlushOperation(String bulkLoggingID, boolean retryOperation, long retriedDocs, long waitTime) {
         if (retryOperation) {
             if (waitTime > 0L) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug(String.format("Retrying failed bulk documents after backing off for [%s] ms",
-                            TimeValue.timeValueMillis(waitTime)));
-                }
+                debugLog(bulkLoggingID, "Retrying [%d] entries after backing off for [%s] ms",
+                        retriedDocs, TimeValue.timeValueMillis(waitTime));
                 try {
                     Thread.sleep(waitTime);
                 } catch (InterruptedException e) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Thread interrupted - giving up on retrying...");
-                    }
+                    debugLog(bulkLoggingID, "Thread interrupted - giving up on retrying...");
                     throw new EsHadoopException("Thread interrupted - giving up on retrying...", e);
                 }
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Retrying failed bulk documents immediately (without backoff)");
-                }
+                debugLog(bulkLoggingID, "Retrying [%d] entries immediately (without backoff)", retriedDocs);
             }
-        } else if (LOG.isDebugEnabled()) {
-            LOG.debug(String.format("Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries));
+        } else {
+            debugLog(bulkLoggingID, "Sending batch of [%d] bytes/[%s] entries", data.length(), dataEntries);
+        }
+    }
+
+    /**
+     * Creates a semi-unique string to reasonably identify a bulk transaction.
+     *
+     * String is not guaranteed to be unique.
+     */
+    private String createDebugTxnID() {
+        if (LOG.isDebugEnabled()) {
+            // Not required to be unique, just a best effort id here.
+            return (Integer.toString(hashCode()) + Long.toString(System.currentTimeMillis()));
+        }
+        return null;
+    }
+
+    private void debugLog(String bulkLoggingID, String message, Object... args) {
+        if (LOG.isDebugEnabled()) {
+            if (args.length > 0) {
+                LOG.info("Bulk Flush #[" + bulkLoggingID + "]: " + String.format(message, args));
+            } else {
+                LOG.info("Bulk Flush #[" + bulkLoggingID + "]: " + message);
+            }
         }
     }
 
