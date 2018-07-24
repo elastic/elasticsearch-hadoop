@@ -1,0 +1,15 @@
+[[eshadoop-6.3.2]]
+== Elasticsearch for Apache Hadoop version 6.3.2
+July 24, 2018
+
+[[enhancements-6.3.2]]
+=== Enhancements
+Spark::
+* Upgrade Scala minor version to support Java 9/10
+https://github.com/elastic/elasticsearch-hadoop/pull/1155[#1155]
+
+[[bugs-6.3.2]]
+=== Bug Fixes
+REST::
+* Search query generated has wrong JSON
+https://github.com/elastic/elasticsearch-hadoop/issues/1172[#1172]

@@ -2,6 +2,11 @@
 == Elasticsearch for Apache Hadoop version 6.3.1
 June 13, 2018
 
+[[known-5.3.1]]
+=== Known Issues
+* ES-Hadoop may generate search scroll requests incorrectly if no source fields are provided for filtering. Fixed in 6.3.2.
+https://github.com/elastic/elasticsearch-hadoop/issues/1172[#1172]
+
 [[enhancements-6.3.1]]
 === Enhancements
 MR::
