@@ -213,6 +213,8 @@ class BuildPlugin implements Plugin<Project>  {
                 exclude group: "org.elasticsearch", module: "elasticsearch-core"
                 exclude group: "org.elasticsearch", module: "elasticsearch-secure-sm"
             }
+            testCompile("org.apache.hadoop:hadoop-minikdc:2.7.7")
+
             testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
             testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
             testRuntime "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}"
