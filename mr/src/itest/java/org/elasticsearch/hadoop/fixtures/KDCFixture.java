@@ -25,19 +25,20 @@ import java.util.List;
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.TemporaryFolder;
 
 public class KDCFixture extends ExternalResource {
 
-    private File kdcDirectory;
+    private TemporaryFolder temporaryFolder;
     private MiniKdc kdc;
 
-    public KDCFixture(File kdcDirectory) {
-        this.kdcDirectory = kdcDirectory;
+    public KDCFixture(TemporaryFolder temporaryFolder) {
+        this.temporaryFolder = temporaryFolder;
     }
 
     @Override
     protected void before() throws Throwable {
-        kdc = new MiniKdc(MiniKdc.createConf(), kdcDirectory);
+        kdc = new MiniKdc(MiniKdc.createConf(), temporaryFolder.newFolder());
         kdc.start();
     }
 
