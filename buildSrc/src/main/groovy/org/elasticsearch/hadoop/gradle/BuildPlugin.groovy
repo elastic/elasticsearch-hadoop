@@ -168,13 +168,13 @@ class BuildPlugin implements Plugin<Project>  {
         project.repositories.maven { url "https://clojars.org/repo" }
         project.repositories.maven { url 'https://repo.spring.io/plugins-release' }
 
-        // Elastic artifacts
-        project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
-        project.repositories.maven { url "https://oss.sonatype.org/content/groups/public/" } // oss-only
-
         // For Elasticsearch snapshots.
         project.repositories.maven { url "https://snapshots.elastic.co/maven/" } // default
         project.repositories.maven { url "https://oss.sonatype.org/content/repositories/snapshots" } // oss-only
+
+        // Elastic artifacts
+        project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
+        project.repositories.maven { url "https://oss.sonatype.org/content/groups/public/" } // oss-only
 
         // For Lucene Snapshots, Use the lucene version interpreted from elasticsearch-build-tools version file.
         if (project.ext.luceneVersion.contains('-snapshot')) {
