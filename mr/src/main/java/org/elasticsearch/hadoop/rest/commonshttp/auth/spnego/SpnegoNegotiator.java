@@ -71,6 +71,11 @@ public class SpnegoNegotiator {
         token = Base64.decodeBase64(data);
     }
 
+    public String send(String data) throws GSSException {
+        setTokenData(data);
+        return send();
+    }
+
     public String send() throws GSSException {
         byte[] sendData;
         if (gssContext == null) {
@@ -83,7 +88,12 @@ public class SpnegoNegotiator {
         } else {
             throw new EsHadoopTransportException("Missing required negotiation token");
         }
-        return Base64.encodeBase64String(sendData);
+
+        if (sendData == null) {
+            return null;
+        } else {
+            return Base64.encodeBase64String(sendData);
+        }
     }
 
     public boolean established() {
