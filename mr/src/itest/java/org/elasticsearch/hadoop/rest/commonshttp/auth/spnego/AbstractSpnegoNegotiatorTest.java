@@ -29,8 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.HdpBootstrap;
-import org.elasticsearch.hadoop.fixtures.KDCFixture;
 import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -39,31 +37,18 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
-import org.junit.rules.ChainedExternalResource;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.TemporaryFolder;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
-public class SpnegoNegotiatorTest {
-
-    private static TemporaryFolder temporaryFolder = new TemporaryFolder();
-    private static KDCFixture kdcFixture = new KDCFixture(temporaryFolder);
-
-    @ClassRule
-    public static ExternalResource resource = new ChainedExternalResource(temporaryFolder, kdcFixture);
+public class AbstractSpnegoNegotiatorTest {
 
     private static File KEYTAB_FILE;
 
     @BeforeClass
-    public static void provision() throws Exception {
-        HdpBootstrap.hackHadoopStagingOnWin();
-
-        KEYTAB_FILE = temporaryFolder.newFile("test.keytab");
-        kdcFixture.createPrincipal(KEYTAB_FILE, "client", "server");
+    public static void setUp() throws Exception {
+        KEYTAB_FILE = KerberosSuite.getKeytabFile();
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
