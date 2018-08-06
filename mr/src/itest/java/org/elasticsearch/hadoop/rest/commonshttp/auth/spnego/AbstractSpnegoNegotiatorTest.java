@@ -139,6 +139,31 @@ public class AbstractSpnegoNegotiatorTest {
         fail("No token given to Negotiator but was accepted anyway.");
     }
 
+    @Test(expected = UndeclaredThrowableException.class)
+    public void testWrongServicePrincipal() throws IOException, InterruptedException {
+        // Configure logins
+        Configuration configuration = new Configuration();
+        SecurityUtil.setAuthenticationMethod(UserGroupInformation.AuthenticationMethod.KERBEROS, configuration);
+        UserGroupInformation.setConfiguration(configuration);
+
+        // Login as Client and Create negotiator
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
+            @Override
+            public SpnegoNegotiator run() throws Exception {
+                return new SpnegoNegotiator("client", "omgWrongServerName");
+            }
+        });
+
+        client.doAs(new PrivilegedExceptionAction<String>() {
+            @Override
+            public String run() throws Exception {
+                return spnegoNegotiator.send();
+            }
+        });
+        fail("Should not be able to find non existent server credentials");
+    }
+
     @Test
     public void testSuccessfulNegotiate() throws IOException, GSSException, InterruptedException {
         // Mechanisms
