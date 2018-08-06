@@ -35,6 +35,10 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({ AbstractSpnegoNegotiatorTest.class, AbstractSpnegoAuthSchemeTest.class })
 public class KerberosSuite {
 
+    public static String PRINCIPAL_CLIENT = "client";
+    public static String PRINCIPAL_SERVER = "server";
+    public static String PRINCIPAL_HTTP = "HTTP/es.build.elastic.co";
+
     private static TemporaryFolder temporaryFolder = new TemporaryFolder();
     private static KDCFixture kdcFixture = new KDCFixture(temporaryFolder);
 
@@ -48,7 +52,7 @@ public class KerberosSuite {
         HdpBootstrap.hackHadoopStagingOnWin();
 
         KEYTAB_FILE = temporaryFolder.newFile("test.keytab");
-        kdcFixture.createPrincipal(KEYTAB_FILE, "client", "server");
+        kdcFixture.createPrincipal(KEYTAB_FILE, PRINCIPAL_CLIENT, PRINCIPAL_SERVER, PRINCIPAL_HTTP);
     }
 
     public static File getKeytabFile() {

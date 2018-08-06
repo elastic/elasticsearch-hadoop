@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.fixtures;
 
 import java.io.File;
 import java.util.List;
+import java.util.Properties;
 
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.junit.Test;
@@ -38,7 +39,10 @@ public class KDCFixture extends ExternalResource {
 
     @Override
     protected void before() throws Throwable {
-        kdc = new MiniKdc(MiniKdc.createConf(), temporaryFolder.newFolder());
+        Properties conf = MiniKdc.createConf();
+        conf.setProperty(MiniKdc.ORG_NAME, "BUILD.ELASTIC");
+        conf.setProperty(MiniKdc.ORG_DOMAIN, "CO");
+        kdc = new MiniKdc(conf, temporaryFolder.newFolder());
         kdc.start();
     }
 

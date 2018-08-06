@@ -19,8 +19,13 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthenticationException;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
@@ -30,6 +35,7 @@ import org.ietf.jgss.GSSException;
 
 public class SpnegoAuthScheme implements AuthScheme {
 
+    private static final String HOSTNAME_PATTERN = "_HOST";
     private String challenge;
     private SpnegoNegotiator spnegoNegotiator;
 
@@ -69,7 +75,7 @@ public class SpnegoAuthScheme implements AuthScheme {
     /**
      * Implementation method that returns the text to send via the Authenticate header on the next request.
      */
-    private String authenticate(Credentials credentials) throws AuthenticationException {
+    private String authenticate(Credentials credentials, URI requestURI) throws AuthenticationException {
         if (!(credentials instanceof SpnegoCredentials)) {
             throw new AuthenticationException("Invalid credentials type provided to " + this.getClass().getName() + "." +
                     "Expected " + SpnegoCredentials.class.getName() + " but got " + credentials.getClass().getName());
@@ -80,7 +86,17 @@ public class SpnegoAuthScheme implements AuthScheme {
         try {
             // Initialize negotiator
             if (spnegoNegotiator == null) {
-                spnegoNegotiator = new SpnegoNegotiator(spnegoCredentials.getPrincipalName(), spnegoCredentials.getServicePrincipalName());
+                // Determine host principal
+                String servicePrincipal = spnegoCredentials.getServicePrincipalName();
+                if (spnegoCredentials.getServicePrincipalName().contains(HOSTNAME_PATTERN)) {
+                    String fqdn = getFQDN(requestURI);
+                    String[] components = spnegoCredentials.getServicePrincipalName().split("[/@]");
+                    if (components.length != 3 || !components[1].equals(HOSTNAME_PATTERN)) {
+                        throw new AuthenticationException("Malformed service principal name [" + spnegoCredentials.getServicePrincipalName() + "]");
+                    }
+                    servicePrincipal = components[0] + "/" + fqdn.toLowerCase() + "@" + components[2];
+                }
+                spnegoNegotiator = new SpnegoNegotiator(spnegoCredentials.getPrincipalName(), servicePrincipal);
             }
 
             // Perform GSS Dance
@@ -99,7 +115,15 @@ public class SpnegoAuthScheme implements AuthScheme {
             return authString;
         } catch (GSSException e) {
             throw new AuthenticationException("Could not authenticate", e);
+        } catch (UnknownHostException e) {
+            throw new AuthenticationException("Could not authenticate", e);
         }
+    }
+
+    protected String getFQDN(URI requestURI) throws UnknownHostException {
+        String host = requestURI.getHost();
+        InetAddress address = InetAddress.getByName(host);
+        return address.getCanonicalHostName();
     }
 
     /**
@@ -107,7 +131,11 @@ public class SpnegoAuthScheme implements AuthScheme {
      */
     @Override
     public String authenticate(Credentials credentials, HttpMethod method) throws AuthenticationException {
-        return authenticate(credentials);
+        try {
+            return authenticate(credentials, URI.create(method.getURI().getURI()));
+        } catch (URIException e) {
+            throw new AuthenticationException("Could not determine request URI", e);
+        }
     }
 
     /**
@@ -115,7 +143,7 @@ public class SpnegoAuthScheme implements AuthScheme {
      */
     @Override
     public String authenticate(Credentials credentials, String method, String uri) throws AuthenticationException {
-        return authenticate(credentials);
+        return authenticate(credentials, URI.create(uri));
     }
 
     @Override
