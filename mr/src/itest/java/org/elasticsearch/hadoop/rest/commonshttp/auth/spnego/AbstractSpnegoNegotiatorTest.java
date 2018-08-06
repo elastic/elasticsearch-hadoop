@@ -59,11 +59,11 @@ public class AbstractSpnegoNegotiatorTest {
         UserGroupInformation.setConfiguration(configuration);
 
         // Login as Client and Create negotiator
-        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT, KEYTAB_FILE.getAbsolutePath());
         final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
             @Override
             public SpnegoNegotiator run() throws Exception {
-                return new SpnegoNegotiator("client", "server");
+                return new SpnegoNegotiator(KerberosSuite.PRINCIPAL_CLIENT, KerberosSuite.PRINCIPAL_SERVER);
             }
         });
 
@@ -80,11 +80,11 @@ public class AbstractSpnegoNegotiatorTest {
         UserGroupInformation.setConfiguration(configuration);
 
         // Login as Client and Create negotiator
-        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT, KEYTAB_FILE.getAbsolutePath());
         final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
             @Override
             public SpnegoNegotiator run() throws Exception {
-                return new SpnegoNegotiator("client", "server");
+                return new SpnegoNegotiator(KerberosSuite.PRINCIPAL_CLIENT, KerberosSuite.PRINCIPAL_SERVER);
             }
         });
 
@@ -114,11 +114,11 @@ public class AbstractSpnegoNegotiatorTest {
         UserGroupInformation.setConfiguration(configuration);
 
         // Login as Client and Create negotiator
-        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT, KEYTAB_FILE.getAbsolutePath());
         final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
             @Override
             public SpnegoNegotiator run() throws Exception {
-                return new SpnegoNegotiator("client", "server");
+                return new SpnegoNegotiator(KerberosSuite.PRINCIPAL_CLIENT, KerberosSuite.PRINCIPAL_SERVER);
             }
         });
 
@@ -147,11 +147,11 @@ public class AbstractSpnegoNegotiatorTest {
         UserGroupInformation.setConfiguration(configuration);
 
         // Login as Client and Create negotiator
-        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT, KEYTAB_FILE.getAbsolutePath());
         final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
             @Override
             public SpnegoNegotiator run() throws Exception {
-                return new SpnegoNegotiator("client", "omgWrongServerName");
+                return new SpnegoNegotiator(KerberosSuite.PRINCIPAL_CLIENT, "omgWrongServerName");
             }
         });
 
@@ -176,8 +176,8 @@ public class AbstractSpnegoNegotiatorTest {
         UserGroupInformation.setConfiguration(configuration);
 
         // Login as Server
-        UserGroupInformation server = UserGroupInformation.loginUserFromKeytabAndReturnUGI("server", KEYTAB_FILE.getAbsolutePath());
-        final GSSName gssServicePrincipalName = gssManager.createName("server", GSSName.NT_USER_NAME);
+        UserGroupInformation server = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_SERVER, KEYTAB_FILE.getAbsolutePath());
+        final GSSName gssServicePrincipalName = gssManager.createName(KerberosSuite.PRINCIPAL_SERVER, GSSName.NT_USER_NAME);
         final GSSCredential gssServiceCredential = server.doAs(new PrivilegedExceptionAction<GSSCredential>() {
             @Override
             public GSSCredential run() throws Exception {
@@ -192,11 +192,11 @@ public class AbstractSpnegoNegotiatorTest {
         final GSSContext serverCtx = gssManager.createContext(gssServiceCredential);
 
         // Login as Client and Create negotiator
-        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI("client", KEYTAB_FILE.getAbsolutePath());
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT, KEYTAB_FILE.getAbsolutePath());
         final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
             @Override
             public SpnegoNegotiator run() throws Exception {
-                return new SpnegoNegotiator("client", "server");
+                return new SpnegoNegotiator(KerberosSuite.PRINCIPAL_CLIENT, KerberosSuite.PRINCIPAL_SERVER);
             }
         });
 
@@ -240,5 +240,87 @@ public class AbstractSpnegoNegotiatorTest {
         assertThat(authenticated, is(true));
         assertThat(serverCtx.isEstablished(), is(true));
         assertThat(spnegoNegotiator.established(), is(true));
+    }
+
+    @Test
+    public void testSuccessfulNegotiateWithRealmName() throws IOException, GSSException, InterruptedException {
+        // Mechanisms
+        final GSSManager gssManager = GSSManager.getInstance();
+        final Oid spnegoOid = new Oid("1.3.6.1.5.5.2");
+
+        // Configure logins
+        Configuration configuration = new Configuration();
+        SecurityUtil.setAuthenticationMethod(UserGroupInformation.AuthenticationMethod.KERBEROS, configuration);
+        UserGroupInformation.setConfiguration(configuration);
+
+        // Login as Server
+        UserGroupInformation server = UserGroupInformation.loginUserFromKeytabAndReturnUGI(withRealm(KerberosSuite.PRINCIPAL_SERVER), KEYTAB_FILE.getAbsolutePath());
+        final GSSName gssServicePrincipalName = gssManager.createName(withRealm(KerberosSuite.PRINCIPAL_SERVER), GSSName.NT_USER_NAME);
+        final GSSCredential gssServiceCredential = server.doAs(new PrivilegedExceptionAction<GSSCredential>() {
+            @Override
+            public GSSCredential run() throws Exception {
+                return gssManager.createCredential(
+                        gssServicePrincipalName,
+                        GSSCredential.DEFAULT_LIFETIME,
+                        spnegoOid,
+                        GSSCredential.ACCEPT_ONLY
+                );
+            }
+        });
+        final GSSContext serverCtx = gssManager.createContext(gssServiceCredential);
+
+        // Login as Client and Create negotiator
+        UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(withRealm(KerberosSuite.PRINCIPAL_CLIENT), KEYTAB_FILE.getAbsolutePath());
+        final SpnegoNegotiator spnegoNegotiator = client.doAs(new PrivilegedExceptionAction<SpnegoNegotiator>() {
+            @Override
+            public SpnegoNegotiator run() throws Exception {
+                return new SpnegoNegotiator(withRealm(KerberosSuite.PRINCIPAL_CLIENT), withRealm(KerberosSuite.PRINCIPAL_SERVER));
+            }
+        });
+
+        byte[] token = new byte[0];
+        boolean authenticated = false;
+
+        for (int idx = 0; idx < 100; idx++) {
+            if (!spnegoNegotiator.established()) {
+                if (token.length > 0) {
+                    spnegoNegotiator.setTokenData(Base64.encodeBase64String(token));
+                }
+                String baseToken = client.doAs(new PrivilegedExceptionAction<String>() {
+                    @Override
+                    public String run() throws Exception {
+                        return spnegoNegotiator.send();
+                    }
+                });
+                token = Base64.decodeBase64(baseToken);
+            }
+
+            if (!spnegoNegotiator.established() && serverCtx.isEstablished()) {
+                fail("Server is established, but client is not.");
+            }
+
+            if (!serverCtx.isEstablished()) {
+                final byte[] currentToken = token;
+                token = server.doAs(new PrivilegedExceptionAction<byte[]>() {
+                    @Override
+                    public byte[] run() throws Exception {
+                        return serverCtx.acceptSecContext(currentToken, 0, currentToken.length);
+                    }
+                });
+            }
+
+            if (serverCtx.isEstablished() && spnegoNegotiator.established()) {
+                authenticated = true;
+                break;
+            }
+        }
+
+        assertThat(authenticated, is(true));
+        assertThat(serverCtx.isEstablished(), is(true));
+        assertThat(spnegoNegotiator.established(), is(true));
+    }
+
+    private static String withRealm(String principal) {
+        return principal + "@BUILD.ELASTIC.CO";
     }
 }
