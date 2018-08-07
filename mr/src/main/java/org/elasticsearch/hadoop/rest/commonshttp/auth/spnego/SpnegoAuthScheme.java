@@ -92,7 +92,8 @@ public class SpnegoAuthScheme implements AuthScheme {
                     String fqdn = getFQDN(requestURI);
                     String[] components = spnegoCredentials.getServicePrincipalName().split("[/@]");
                     if (components.length != 3 || !components[1].equals(HOSTNAME_PATTERN)) {
-                        throw new AuthenticationException("Malformed service principal name [" + spnegoCredentials.getServicePrincipalName() + "]");
+                        throw new AuthenticationException("Malformed service principal name [" + spnegoCredentials.getServicePrincipalName()
+                                + "]. To use host substitution, the principal must be of the format [serviceName/_HOST@REALM.NAME].");
                     }
                     servicePrincipal = components[0] + "/" + fqdn.toLowerCase() + "@" + components[2];
                 }

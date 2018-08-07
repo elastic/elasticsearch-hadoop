@@ -283,13 +283,15 @@ public class AbstractSpnegoNegotiatorTest {
 
         for (int idx = 0; idx < 100; idx++) {
             if (!spnegoNegotiator.established()) {
-                if (token.length > 0) {
-                    spnegoNegotiator.setTokenData(Base64.encodeBase64String(token));
-                }
+                final byte[] sendToken = token;
                 String baseToken = client.doAs(new PrivilegedExceptionAction<String>() {
                     @Override
                     public String run() throws Exception {
-                        return spnegoNegotiator.send();
+                        if (sendToken.length > 0) {
+                            return spnegoNegotiator.send(Base64.encodeBase64String(sendToken));
+                        } else {
+                            return spnegoNegotiator.send();
+                        }
                     }
                 });
                 token = Base64.decodeBase64(baseToken);
