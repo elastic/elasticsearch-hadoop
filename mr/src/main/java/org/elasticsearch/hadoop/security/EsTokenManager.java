@@ -17,25 +17,21 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.rest.commonshttp.auth;
+package org.elasticsearch.hadoop.security;
 
-import org.apache.commons.httpclient.auth.AuthPolicy;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.TokenAuthScheme;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoAuthScheme;
+import org.apache.hadoop.security.token.Token;
+import org.elasticsearch.hadoop.rest.RestClient;
 
-public class EsHadoopAuthPolicies {
+public class EsTokenManager {
 
-    public static final String NEGOTIATE = "Negotiate";
-    public static final String BEARER = "Bearer";
+    private final RestClient client;
 
-    private static boolean REGISTERED = false;
-
-    public synchronized static void registerAuthSchemes() {
-        if (!REGISTERED) {
-            REGISTERED = true;
-            AuthPolicy.registerAuthScheme(NEGOTIATE, SpnegoAuthScheme.class);
-            AuthPolicy.registerAuthScheme(BEARER, TokenAuthScheme.class);
-        }
+    public EsTokenManager(RestClient client) {
+        this.client = client;
     }
 
+    public Token<EsTokenIdentifier> createDelegationToken() {
+        // TODO
+        return null;
+    }
 }
