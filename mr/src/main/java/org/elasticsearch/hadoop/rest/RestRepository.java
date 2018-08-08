@@ -369,6 +369,8 @@ public class RestRepository implements Closeable, StatsAware {
             client.delete(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type());
         }
         else {
+            lazyInitWriting();
+
             // try first a blind delete by query (since the plugin might be installed)
             try {
                 client.delete(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type() + "/_query?q=*");
