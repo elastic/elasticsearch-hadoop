@@ -19,21 +19,32 @@
 
 package org.elasticsearch.hadoop.security;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 /**
  * Stores token authentication information for an Elasticsearch user.
  */
 public class EsToken {
 
-    private final String accessToken;
-    private final long expiresIn;
-    private final String refreshToken;
     private final String userName;
+    private final String accessToken;
+    private final String refreshToken;
+    private final long expiresIn;
 
     public EsToken(String userName, String accessToken, String refreshToken, long expiresIn) {
         this.userName = userName;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.expiresIn = expiresIn;
+    }
+
+    public EsToken(DataInput inputStream) throws IOException {
+        this.userName = inputStream.readUTF();
+        this.accessToken = inputStream.readUTF();
+        this.refreshToken = inputStream.readUTF();
+        this.expiresIn = inputStream.readLong();
     }
 
     public String getAccessToken() {
@@ -50,6 +61,13 @@ public class EsToken {
 
     public String getUserName() {
         return userName;
+    }
+
+    public void writeOut(DataOutput dataOutput) throws IOException {
+        dataOutput.writeUTF(userName);
+        dataOutput.writeUTF(accessToken);
+        dataOutput.writeUTF(refreshToken);
+        dataOutput.writeLong(expiresIn);
     }
 
     @Override
