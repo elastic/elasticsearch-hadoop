@@ -19,6 +19,10 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.CredentialsNotAvailableException;
@@ -27,7 +31,8 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
-import org.elasticsearch.hadoop.security.EsTokenIdentifier;
+import org.elasticsearch.hadoop.mr.EsTokenIdentifier;
+import org.elasticsearch.hadoop.security.EsToken;
 
 public class TokenCredentialProvider implements CredentialsProvider {
 
@@ -56,6 +61,10 @@ public class TokenCredentialProvider implements CredentialsProvider {
             throw new CredentialsNotAvailableException("Could not locate valid Elasticsearch token in subject credentials");
         }
 
-        return new TokenCredentials(new String(esToken.getPassword()));
+        try {
+            return new EsTokenCredentials(new EsToken(new DataInputStream(new ByteArrayInputStream(esToken.getPassword()))));
+        } catch (IOException e) {
+            throw new CredentialsNotAvailableException("Could not decode token data", e);
+        }
     }
 }

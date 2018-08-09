@@ -20,16 +20,17 @@
 package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
 import org.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.security.EsToken;
 
-public class TokenCredentials implements Credentials {
+public class EsTokenCredentials implements Credentials {
 
-    private String token;
+    private EsToken token;
 
-    public TokenCredentials(String token) {
+    public EsTokenCredentials(EsToken token) {
         this.token = token;
     }
 
-    public String getToken() {
+    public EsToken getToken() {
         return token;
     }
 }

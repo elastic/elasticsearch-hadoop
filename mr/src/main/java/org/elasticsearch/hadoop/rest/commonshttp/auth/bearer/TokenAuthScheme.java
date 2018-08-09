@@ -29,6 +29,8 @@ import org.elasticsearch.hadoop.util.StringUtils;
 
 public class TokenAuthScheme implements AuthScheme {
 
+    private boolean complete = false;
+
     @Override
     public boolean isConnectionBased() {
         // Token is sent every request
@@ -60,16 +62,17 @@ public class TokenAuthScheme implements AuthScheme {
      * Implementation method for authentication
      */
     private String authenticate(Credentials credentials) throws AuthenticationException {
-        if (!(credentials instanceof TokenCredentials)) {
-            throw new AuthenticationException("Incorrect credentials type provided. Expected [" + TokenCredentials.class.getName()
+        if (!(credentials instanceof EsTokenCredentials)) {
+            throw new AuthenticationException("Incorrect credentials type provided. Expected [" + EsTokenCredentials.class.getName()
                     + "] but got [" + credentials.getClass().getName() + "]");
         }
 
-        TokenCredentials tokenCredentials = ((TokenCredentials) credentials);
+        EsTokenCredentials esTokenCredentials = ((EsTokenCredentials) credentials);
         String authString = null;
 
-        if (StringUtils.hasText(tokenCredentials.getToken())) {
-            authString = EsHadoopAuthPolicies.BEARER + " " + tokenCredentials.getToken();
+        if (esTokenCredentials.getToken() != null && StringUtils.hasText(esTokenCredentials.getToken().getAccessToken())) {
+            authString = EsHadoopAuthPolicies.BEARER + " " + esTokenCredentials.getToken().getAccessToken();
+            complete = true;
         }
 
         return authString;
@@ -93,7 +96,7 @@ public class TokenAuthScheme implements AuthScheme {
 
     @Override
     public boolean isComplete() {
-        return false;
+        return complete;
     }
 
     @Override
