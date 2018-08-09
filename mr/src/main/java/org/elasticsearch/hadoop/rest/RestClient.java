@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.rest.Request.Method;
 import org.elasticsearch.hadoop.rest.query.QueryBuilder;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
+import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
@@ -587,6 +588,72 @@ public class RestClient implements Closeable, StatsAware {
         touch(index);
 
         execute(PUT, mapping, new BytesArray(bytes));
+    }
+
+    public EsToken getAuthToken(String user, String password) {
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
+        try {
+            generator.writeBeginObject();
+            {
+                generator.writeFieldName("grant_type").writeString("password");
+                generator.writeFieldName("username").writeString(user);
+                generator.writeFieldName("password").writeString(password);
+            }
+            generator.writeEndObject();
+        } finally {
+            generator.close();
+        }
+        Response response = execute(POST, "/_xpack/security/oauth2/token", out.bytes());
+        Map<String, Object> content = parseContent(response.body(), null);
+        Number expiry = (Number) content.get("expires_in");
+        return new EsToken(
+                user,
+                content.get("access_token").toString(),
+                content.get("refresh_token").toString(),
+                expiry.longValue()
+        );
+    }
+
+    public EsToken refreshToken(EsToken tokenToRefresh) {
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
+        try {
+            generator.writeBeginObject();
+            {
+                generator.writeFieldName("grant_type").writeString("refresh_token");
+                generator.writeFieldName("username").writeString(tokenToRefresh.getRefreshToken());
+            }
+            generator.writeEndObject();
+        } finally {
+            generator.close();
+        }
+        Response response = execute(POST, "/_xpack/security/oauth2/token", out.bytes());
+        Map<String, Object> content = parseContent(response.body(), null);
+        Number expiry = (Number) content.get("expires_in");
+        return new EsToken(
+                tokenToRefresh.getUserName(),
+                content.get("access_token").toString(),
+                content.get("refresh_token").toString(),
+                expiry.longValue()
+        );
+    }
+
+    public boolean cancelToken(EsToken tokenToCancel) {
+        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
+        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
+        try {
+            generator.writeBeginObject();
+            {
+                generator.writeFieldName("token").writeString(tokenToCancel.getAccessToken());
+            }
+            generator.writeEndObject();
+        } finally {
+            generator.close();
+        }
+        Response response = execute(DELETE, "/_xpack/security/oauth2/token", out.bytes());
+        Boolean invalidated = parseContent(response.body(), "created"); // Not intuitive field naming here.
+        return invalidated != null && invalidated;
     }
 
     public EsMajorVersion remoteEsVersion() {
