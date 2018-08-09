@@ -34,11 +34,11 @@ import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.mr.EsTokenIdentifier;
 import org.elasticsearch.hadoop.security.EsToken;
 
-public class TokenCredentialProvider implements CredentialsProvider {
+public class EsTokenCredentialProvider implements CredentialsProvider {
 
     private UserGroupInformation userGroupInformation;
 
-    public TokenCredentialProvider(UserGroupInformation userGroupInformation) {
+    public EsTokenCredentialProvider(UserGroupInformation userGroupInformation) {
         this.userGroupInformation = userGroupInformation;
     }
 

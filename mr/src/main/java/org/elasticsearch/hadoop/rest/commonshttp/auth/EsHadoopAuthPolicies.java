@@ -20,7 +20,7 @@
 package org.elasticsearch.hadoop.rest.commonshttp.auth;
 
 import org.apache.commons.httpclient.auth.AuthPolicy;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.TokenAuthScheme;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoAuthScheme;
 
 public class EsHadoopAuthPolicies {
@@ -34,7 +34,7 @@ public class EsHadoopAuthPolicies {
         if (!REGISTERED) {
             REGISTERED = true;
             AuthPolicy.registerAuthScheme(NEGOTIATE, SpnegoAuthScheme.class);
-            AuthPolicy.registerAuthScheme(BEARER, TokenAuthScheme.class);
+            AuthPolicy.registerAuthScheme(BEARER, EsTokenAuthScheme.class);
         }
     }
 

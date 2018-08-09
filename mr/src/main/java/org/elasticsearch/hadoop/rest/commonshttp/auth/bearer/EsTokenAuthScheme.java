@@ -27,7 +27,7 @@ import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public class TokenAuthScheme implements AuthScheme {
+public class EsTokenAuthScheme implements AuthScheme {
 
     private boolean complete = false;
 
