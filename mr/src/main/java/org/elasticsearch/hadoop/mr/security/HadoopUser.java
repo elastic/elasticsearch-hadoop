@@ -42,6 +42,8 @@ import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
  */
 public class HadoopUser implements User {
 
+    private static final String ES_SERVICE_NAME = "es";
+
     private final UserGroupInformation ugi;
 
     public HadoopUser(UserGroupInformation ugi) {
@@ -93,7 +95,7 @@ public class HadoopUser implements User {
         byte[] id = identifier.getBytes();
         byte[] pw = buffer.toByteArray();
         Text kind = identifier.getKind();
-        Text service = new Text(); // No service information
+        Text service = new Text(ES_SERVICE_NAME);
         Token<EsTokenIdentifier> token = new Token<EsTokenIdentifier>(id, pw, kind, service);
         ugi.addToken(token);
     }
