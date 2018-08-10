@@ -31,7 +31,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
-import org.elasticsearch.hadoop.mr.EsTokenIdentifier;
+import org.elasticsearch.hadoop.mr.security.EsTokenIdentifier;
 import org.elasticsearch.hadoop.security.EsToken;
 
 public class EsTokenCredentialProvider implements CredentialsProvider {

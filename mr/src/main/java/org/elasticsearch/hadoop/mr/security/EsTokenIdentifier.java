@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.mr;
+package org.elasticsearch.hadoop.mr.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
