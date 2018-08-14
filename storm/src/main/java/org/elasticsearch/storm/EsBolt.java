@@ -101,7 +101,7 @@ public class EsBolt implements IRichBolt {
         InitializationUtils.setValueWriterIfNotSet(settings, StormValueWriter.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, StormTupleBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
-        // FIXME: Probably need a storm specific user provider
+        // FIXHERE: Probably need a storm specific user provider
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);

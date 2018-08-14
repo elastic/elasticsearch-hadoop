@@ -66,7 +66,7 @@ public abstract class CascadingUtils {
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, CascadingLocalBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, CascadingFieldExtractor.class, log);
-        // FIXME: Does this make sense for local running
+        // FIXHERE: Does this make sense for local running
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
         return settings;
