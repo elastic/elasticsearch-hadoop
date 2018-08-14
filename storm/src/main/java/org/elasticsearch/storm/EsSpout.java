@@ -35,6 +35,7 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestService;
@@ -99,6 +100,7 @@ public class EsSpout implements IRichSpout {
         StormSettings settings = new StormSettings(copy);
 
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
         ackReads = settings.getStormSpoutReliable();
 

@@ -24,6 +24,7 @@ import org.apache.spark.Partition
 import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.Settings
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader
@@ -49,6 +50,7 @@ private[spark] class JavaEsRDDIterator[T](
 
   override def initReader(settings: Settings, log: Log) = {
     InitializationUtils.setValueReaderIfNotSet(settings, classOf[JdkValueReader], log)
+    InitializationUtils.setUserProviderIfNotSet(settings, classOf[HadoopUserProvider], log)
   }
 
   override def createValue(value: Array[Object]): (String, T) = {
