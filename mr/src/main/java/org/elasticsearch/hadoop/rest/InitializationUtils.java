@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.BytesConverter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
@@ -442,6 +443,18 @@ public abstract class InitializationUtils {
             return true;
         }
 
+        return false;
+    }
+
+    public static boolean setUserProviderIfNotSet(Settings settings, Class<? extends UserProvider> clazz, Log log) {
+        if (!StringUtils.hasText(settings.getSecurityUserProviderClass())) {
+            settings.setProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Using pre-defined user provider [%s] as default", settings.getSecurityUserProviderClass()));
+            }
+            return true;
+        }
         return false;
     }
 }

@@ -23,8 +23,10 @@ import org.apache.commons.logging.LogFactory
 import org.apache.spark.TaskContext
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
 import org.elasticsearch.hadoop.cfg.Settings
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService
+import org.elasticsearch.hadoop.security.UserProvider
 import org.elasticsearch.hadoop.serialization.BytesConverter
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
@@ -48,6 +50,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     InitializationUtils.setValueWriterIfNotSet(settings, valueWriter, log)
     InitializationUtils.setBytesConverterIfNeeded(settings, bytesConverter, log)
     InitializationUtils.setFieldExtractorIfNotSet(settings, fieldExtractor, log)
+    InitializationUtils.setUserProviderIfNotSet(settings, userProvider, log)
 
     settings
   }
@@ -71,6 +74,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
   protected def valueWriter: Class[_ <: ValueWriter[_]] = classOf[ScalaValueWriter]
   protected def bytesConverter: Class[_ <: BytesConverter] = classOf[JdkBytesConverter]
   protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[ScalaMapFieldExtractor]
+  protected def userProvider: Class[_ <: UserProvider] = classOf[HadoopUserProvider]
 
   protected def processData(data: Iterator[T]): Any = {
     val next = data.next

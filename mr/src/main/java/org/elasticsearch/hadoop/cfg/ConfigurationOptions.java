@@ -305,4 +305,7 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_SOCKS_PASS = "es.net.proxy.socks.pass";
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS = "es.net.proxy.socks.use.system.props";
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
+
+    /** Security options **/
+    String ES_SECURITY_USER_PROVIDER_CLASS = "es.security.user.provider.class";
 }

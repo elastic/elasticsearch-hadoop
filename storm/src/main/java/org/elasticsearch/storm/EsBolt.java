@@ -32,6 +32,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
@@ -100,6 +101,8 @@ public class EsBolt implements IRichBolt {
         InitializationUtils.setValueWriterIfNotSet(settings, StormValueWriter.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, StormTupleBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
+        // FIXME: Probably need a storm specific user provider
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);
     }

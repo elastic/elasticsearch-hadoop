@@ -589,6 +589,10 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_INPUT_USE_SLICED_PARTITIONS, ES_INPUT_USE_SLICED_PARTITIONS_DEFAULT));
     }
 
+    public String getSecurityUserProviderClass() {
+        return getProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS);
+    }
+
     public abstract InputStream loadResource(String location);
 
     public abstract Settings copy();

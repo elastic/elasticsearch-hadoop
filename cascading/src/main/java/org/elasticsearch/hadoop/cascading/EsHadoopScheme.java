@@ -33,6 +33,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
@@ -149,6 +150,7 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(set, CascadingLocalBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(set, CascadingFieldExtractor.class, log);
+        InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, log);
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());

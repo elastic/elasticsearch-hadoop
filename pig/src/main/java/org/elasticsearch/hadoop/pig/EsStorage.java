@@ -56,6 +56,7 @@ import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -153,6 +154,7 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
         isJSON = settings.getOutputAsJson();
     }
