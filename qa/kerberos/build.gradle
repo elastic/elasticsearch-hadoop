@@ -1,0 +1,119 @@
+/*
+ * Licensed to Elasticsearch under one or more contributor
+ * license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import org.elasticsearch.gradle.test.AntFixture
+
+apply plugin: 'es.hadoop.build'
+
+configurations {
+    kdcFixture
+}
+
+dependencies {
+    itestCompile project(":elasticsearch-hadoop-mr")
+    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+
+    kdcFixture project(':test:fixtures:minikdc')
+}
+
+String serverKeytabName = "http_es.build.elastic.co.keytab"
+
+Map users = ["client":"password", "gmarx":"swordfish"]
+Map keytabUsers = ["HTTP/es.build.elastic.co" : "es.keytab"]
+
+// Configure MiniKDC
+AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
+    dependsOn project.configurations.kdcFixture
+    executable = new File(project.runtimeJavaHome, 'bin/java')
+    env 'CLASSPATH', "${ -> project.configurations.kdcFixture.asPath }"
+    waitCondition = { fixture, ant ->
+        // the kdc wrapper writes the ports file when
+        // it's ready, so we can just wait for the file to exist
+        return fixture.portsFile.exists()
+    }
+
+    final List<String> kdcFixtureArgs = []
+
+    // Add provisioning lines first for sys properties
+    users.forEach { k, v -> kdcFixtureArgs.add("-Des.fixture.kdc.user.${k}.pwd=${v}") }
+    keytabUsers.forEach { k, v -> kdcFixtureArgs.add("-Des.fixture.kdc.user.${k}.keytab=${v}") }
+
+    // Common options
+    kdcFixtureArgs.add('org.elasticsearch.hadoop.test.fixture.minikdc.MiniKdcFixture')
+    kdcFixtureArgs.add(baseDir.toString())
+
+    args kdcFixtureArgs.toArray()
+}
+
+// KDC Fixture artifacts
+java.nio.file.Path fixtureDir = project.buildDir.toPath().resolve("fixtures").resolve("kdcFixture")
+java.nio.file.Path krb5Conf = fixtureDir.resolve("krb5.conf")
+java.nio.file.Path esKeytab = fixtureDir.resolve("es.keytab")
+
+// Configure ES with Kerberos Auth
+esCluster {
+    dependsOn(kdcFixture)
+
+    // This may be needed if we ever run against java 9: --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED
+    systemProperty("java.security.krb5.conf", krb5Conf.toString())
+//    systemProperty("sun.security.krb5.debug", "true")
+
+    // force localhost IPv4 otherwise it is a chicken and egg problem where we need the keytab for the hostname when starting the cluster
+    // but do not know the exact address that is first in the http ports file
+    setting 'http.host', '127.0.0.1'
+    setting 'xpack.license.self_generated.type', 'trial'
+    setting 'xpack.security.enabled', 'true'
+    setting 'xpack.security.authc.realms.file.type', 'file'
+    setting 'xpack.security.authc.realms.file.order', '0'
+    setting 'xpack.ml.enabled', 'false'
+    setting 'xpack.security.audit.enabled', 'true'
+    // Kerberos realm
+    setting 'xpack.security.authc.realms.kerberos.type', 'kerberos'
+    setting 'xpack.security.authc.realms.kerberos.order', '1'
+    setting 'xpack.security.authc.realms.kerberos.keytab.path', 'es.keytab'
+    setting 'xpack.security.authc.realms.kerberos.krb.debug', 'true'
+    setting 'xpack.security.authc.realms.kerberos.remove_realm_name', 'false'
+
+    setupCommand 'setupTestAdmin',
+            'bin/elasticsearch-users', 'useradd', "test_admin", '-p', 'x-pack-test-password', '-r', 'superuser'
+
+    extraConfigFile('es.keytab', esKeytab.toAbsolutePath())
+
+    // Override the wait condition; Do the same wait logic, but pass in the test credentials for the API
+    waitCondition = { node, ant ->
+        File tmpFile = new File(node.cwd, 'wait.success')
+        ant.get(src: "http://${node.httpUri()}/_cluster/health?wait_for_nodes=>=${numNodes}&wait_for_status=yellow",
+                dest: tmpFile.toString(),
+                username: 'test_admin',
+                password: 'x-pack-test-password',
+                ignoreerrors: true,
+                retries: 10)
+        return tmpFile.exists()
+    }
+}
+
+// Configure Integration Test Task
+Test integrationTest = project.tasks.findByName('integrationTest') as Test
+integrationTest.dependsOn(kdcFixture)
+integrationTest.finalizedBy(kdcFixture.getStopTask())
+integrationTest.systemProperty("java.security.krb5.conf", krb5Conf.toString())
+//integrationTest.systemProperty("sun.security.krb5.debug", "true")
+integrationTest.systemProperty("es.net.http.auth.user", "test_admin")
+integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
+
