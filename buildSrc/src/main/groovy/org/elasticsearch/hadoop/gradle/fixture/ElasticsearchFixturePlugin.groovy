@@ -88,7 +88,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         // Also write a script to a file for use in tests
         File scriptsDir = new File(project.buildDir, 'scripts')
         scriptsDir.mkdirs()
-        File script
+        File script = null
         if (majorVersion <= 2) {
             scriptsDir.mkdirs()
             script = new File(scriptsDir, "increment.groovy").setText("ctx._source.counter+=1", 'UTF-8')
@@ -96,7 +96,9 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             scriptsDir.mkdirs()
             script = new File(scriptsDir, "increment.painless").setText("ctx._source.counter = ctx._source.getOrDefault('counter', 0) + 1", 'UTF-8')
         }
-        clusterConfig.extraConfigFile("script", script)
+        if (script != null) {
+            clusterConfig.extraConfigFile("script", script)
+        }
 
         project.gradle.projectsEvaluated {
             List<NodeInfo> nodes = ClusterFormationTasks.setup(project, "esCluster", integrationTest, clusterConfig)
