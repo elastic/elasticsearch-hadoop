@@ -435,6 +435,14 @@ public abstract class Settings {
         return getProperty(ES_NET_HTTP_AUTH_PASS);
     }
 
+    public String getNetworkSpnegoAuthUserPrincipal() {
+        return getProperty(ES_NET_SPNEGO_AUTH_USER_PRINCIPAL);
+    }
+
+    public String getNetworkSpnegoAuthElasticsearchPrincipal() {
+        return getProperty(ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL);
+    }
+
     public String getNetworkProxyHttpHost() {
         return getProperty(ES_NET_PROXY_HTTP_HOST);
     }

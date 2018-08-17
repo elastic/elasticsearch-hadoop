@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.rest.commonshttp;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -34,9 +35,12 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoCredentials;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -47,6 +51,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -229,6 +235,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     private void addHttpAuth(Settings settings, SecureSettings secureSettings, Object[] authSettings) {
+        List<String> authPrefs = new ArrayList<String>();
         if (StringUtils.hasText(settings.getNetworkHttpAuthUser())) {
             HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
             authSettings[1] = state;
@@ -236,13 +243,33 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             if (log.isDebugEnabled()) {
                 log.info("Using detected HTTP Auth credentials...");
             }
+            authPrefs.add(AuthPolicy.BASIC);
+            client.getParams().setAuthenticationPreemptive(true); // Preemptive auth only if there's basic creds.
         }
+        // All we really need here to support SPNEGO is that a user is logged in, has kerberos credentials, and knows
+        // the ES service principal name.
+        if (StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
+            Assert.hasText(settings.getNetworkSpnegoAuthUserPrincipal(), "User principal required via [" +
+                    ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL + "]");
+            HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
+            authSettings[1] = state;
+            // TODO: Should there be some sort of validation to ensure that the principal name matches the currently logged in user?
+            state.setCredentials(AuthScope.ANY, new SpnegoCredentials(
+                    settings.getNetworkSpnegoAuthUserPrincipal(),
+                    settings.getNetworkSpnegoAuthElasticsearchPrincipal())
+            );
+            if (log.isDebugEnabled()) {
+                log.info("Using detected SPNEGO credentials...");
+            }
+            EsHadoopAuthPolicies.registerAuthSchemes();
+            authPrefs.add(EsHadoopAuthPolicies.NEGOTIATE);
+        }
+        client.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, authPrefs);
     }
 
     private void completeAuth(Object[] authSettings) {
         if (authSettings[1] != null) {
             client.setState((HttpState) authSettings[1]);
-            client.getParams().setAuthenticationPreemptive(true);
         }
     }
 

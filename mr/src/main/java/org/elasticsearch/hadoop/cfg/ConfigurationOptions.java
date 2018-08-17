@@ -285,6 +285,9 @@ public interface ConfigurationOptions {
     String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
     String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";
 
+    String ES_NET_SPNEGO_AUTH_USER_PRINCIPAL = "es.net.spnego.auth.user.principal";
+    String ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL = "es.net.spnego.auth.elasticsearch.principal";
+
     String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";
     String ES_NET_PROXY_HTTP_PORT = "es.net.proxy.http.port";
     String ES_NET_PROXY_HTTP_USER = "es.net.proxy.http.user";

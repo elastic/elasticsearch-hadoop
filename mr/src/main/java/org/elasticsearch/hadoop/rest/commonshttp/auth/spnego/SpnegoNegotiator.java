@@ -23,6 +23,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
@@ -92,7 +93,7 @@ public class SpnegoNegotiator {
         if (sendData == null) {
             return null;
         } else {
-            return Base64.encodeBase64String(sendData);
+            return new String(Base64.encodeBase64(sendData), StringUtils.UTF_8);
         }
     }
 

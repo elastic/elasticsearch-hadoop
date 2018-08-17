@@ -20,17 +20,22 @@
 package org.elasticsearch.hadoop.qa.kerberos;
 
 import java.security.PrivilegedExceptionAction;
+import java.util.List;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.rest.EsHadoopInvalidRequest;
+import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoNegotiator;
+import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
-import static org.junit.Assert.fail;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 
 public class AbstractKerberosClientTest {
 
@@ -42,7 +47,7 @@ public class AbstractKerberosClientTest {
                 @Override
                 public Void run() throws Exception {
                     SpnegoNegotiator negotiator = new SpnegoNegotiator("client", "HTTP/es.build.elastic.co");
-                    System.out.println(negotiator.send());
+                    assertNotNull(negotiator.send());
                     return null;
                 }
             });
@@ -51,8 +56,11 @@ public class AbstractKerberosClientTest {
         }
     }
 
-    @Test(expected = EsHadoopInvalidRequest.class)
+    @Test
     public void testSpnegoAuthToES() throws Exception {
+        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+                "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
+
         LoginContext loginCtx = LoginUtil.login("client", "password");
         try {
             Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
@@ -63,16 +71,20 @@ public class AbstractKerberosClientTest {
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
+                    // Set kerberos settings
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL, "client@BUILD.ELASTIC.CO");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+
                     RestClient restClient = new RestClient(testSettings);
-                    System.out.println(restClient.get("/", null).toString());
+                    List<NodeInfo> httpDataNodes = restClient.getHttpDataNodes();
+                    assertThat(httpDataNodes.size(), is(greaterThan(0)));
 
                     return null;
                 }
             });
         } finally {
             loginCtx.logout();
+            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
         }
-        fail("Should not succeed without auth settings configured.");
     }
-
 }
