@@ -1,5 +1,6 @@
 package org.elasticsearch.hadoop.gradle
 
+import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -28,6 +29,7 @@ import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.internal.jvm.Jvm
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
+import org.gradle.process.ExecResult
 import org.springframework.build.gradle.propdep.PropDepsEclipsePlugin
 import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
 import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
@@ -151,11 +153,15 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.gitHead = gitHead
             project.rootProject.ext.revHash = gitHash(gitHead)
             project.rootProject.ext.settingsConfigured = true
+
+            String inFipsJvmScript = 'print(java.security.Security.getProviders()[0].name.toLowerCase().contains("fips"));'
+            project.rootProject.ext.inFipsJvm = Boolean.parseBoolean(runJavascript(project, javaHome, inFipsJvmScript))
         }
         project.ext.java8 = project.rootProject.ext.java8
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
         project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.inFipsJvm = project.rootProject.ext.inFipsJvm
     }
 
     /**
@@ -635,5 +641,31 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
         return javaHome
+    }
+
+    /** Runs the given javascript using jjs from the jdk, and returns the output */
+    private static String runJavascript(Project project, String javaHome, String script) {
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream()
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            // gradle/groovy does not properly escape the double quote for windows
+            script = script.replace('"', '\\"')
+        }
+        File jrunscriptPath = new File(javaHome, 'bin/jrunscript')
+        ExecResult result = project.exec {
+            executable = jrunscriptPath
+            args '-e', script
+            standardOutput = stdout
+            errorOutput = stderr
+            ignoreExitValue = true
+        }
+        if (result.exitValue != 0) {
+            project.logger.error("STDOUT:")
+            stdout.toString('UTF-8').eachLine { line -> project.logger.error(line) }
+            project.logger.error("STDERR:")
+            stderr.toString('UTF-8').eachLine { line -> project.logger.error(line) }
+            result.rethrowFailure()
+        }
+        return stdout.toString('UTF-8').trim()
     }
 }
