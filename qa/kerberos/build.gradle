@@ -89,6 +89,9 @@ esCluster {
     setting 'xpack.security.authc.realms.kerberos.keytab.path', 'es.keytab'
     setting 'xpack.security.authc.realms.kerberos.krb.debug', 'true'
     setting 'xpack.security.authc.realms.kerberos.remove_realm_name', 'false'
+    // Token realm
+    setting 'xpack.security.authc.token.enabled', 'true'
+    setting 'xpack.security.authc.token.timeout', '20m'
 
     setupCommand 'setupTestAdmin',
             'bin/elasticsearch-users', 'useradd', "test_admin", '-p', 'x-pack-test-password', '-r', 'superuser'
