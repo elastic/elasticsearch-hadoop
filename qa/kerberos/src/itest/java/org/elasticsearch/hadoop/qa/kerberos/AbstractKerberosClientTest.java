@@ -26,10 +26,18 @@ import javax.security.auth.login.LoginContext;
 
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoNegotiator;
+import org.elasticsearch.hadoop.security.EsToken;
+import org.elasticsearch.hadoop.security.JdkUserProvider;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.greaterThan;
@@ -86,5 +94,48 @@ public class AbstractKerberosClientTest {
             loginCtx.logout();
             RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
         }
+    }
+
+    @Test
+    public void testBasicIntoTokenAuth() throws Exception {
+        TestSettings testSettings = new TestSettings();
+        Assume.assumeTrue(testSettings.getNetworkHttpAuthUser() != null);
+        Assume.assumeTrue(testSettings.getNetworkHttpAuthPass() != null);
+        InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, null);
+        RestClient restClient = null;
+        try {
+            restClient = new RestClient(testSettings);
+            EsToken token = restClient.getAuthToken(testSettings.getNetworkHttpAuthUser(), testSettings.getNetworkHttpAuthPass());
+            UserProvider provider = ObjectUtils.instantiate(testSettings.getSecurityUserProviderClass(), testSettings);
+            User userInfo = provider.getUser();
+            assertNotNull(userInfo);
+            userInfo.setEsToken(token);
+            userInfo.doAs(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    TestSettings innerTestSettings = new TestSettings();
+                    InitializationUtils.setUserProviderIfNotSet(innerTestSettings, JdkUserProvider.class, null);
+                    // Remove the regular auth settings
+                    innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
+                    innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+                    // Rest Client should use token auth
+                    RestClient tokenClient = new RestClient(innerTestSettings);
+                    List<NodeInfo> httpDataNodes = tokenClient.getHttpDataNodes();
+                    assertThat(httpDataNodes.size(), is(greaterThan(0)));
+                    tokenClient.close();
+                    return null;
+                }
+            });
+        } finally {
+            if (restClient != null) {
+                restClient.close();
+            }
+        }
+    }
+
+    @Ignore("Not yet implemented")
+    @Test
+    public void testSpnegoIntoTokenAuth() throws Exception {
+
     }
 }

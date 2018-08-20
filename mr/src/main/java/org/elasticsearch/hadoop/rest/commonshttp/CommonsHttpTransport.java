@@ -22,6 +22,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.auth.AuthPolicy;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.CredentialsProvider;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
@@ -36,12 +37,16 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenCredentialProvider;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoCredentials;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
+import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
@@ -239,12 +244,37 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (StringUtils.hasText(settings.getNetworkHttpAuthUser())) {
             HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
             authSettings[1] = state;
-            state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(), secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS)));
+            // TODO: Limit this by hosts and ports
+            AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, AuthPolicy.BASIC);
+            Credentials usernamePassword = new UsernamePasswordCredentials(settings.getNetworkHttpAuthUser(),
+                    secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS));
+            state.setCredentials(scope, usernamePassword);
             if (log.isDebugEnabled()) {
                 log.info("Using detected HTTP Auth credentials...");
             }
             authPrefs.add(AuthPolicy.BASIC);
             client.getParams().setAuthenticationPreemptive(true); // Preemptive auth only if there's basic creds.
+        }
+        // Try auth schemes based on currently logged in user:
+        if (settings.getSecurityUserProviderClass() != null) {
+            UserProvider userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
+            User user = userProvider.getUser();
+            if (user != null && authSettings[0] != null) {
+                // Check for tokens
+                if (user.getEsToken() != null) {
+                    // TODO: Limit this by hosts and ports
+                    AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.BEARER);
+                    // FIXME: Convert this into a credentials object instead of a credentials provider.
+                    // The provider seems like a request-wide catch all should the configured credentials fail. We should just
+                    // package up the user provider into a token credential and have the token credential produce the token instead of
+                    // using the credential provider.
+                    CredentialsProvider provider = new EsTokenCredentialProvider(userProvider);
+                    HostConfiguration hostConfiguration = (HostConfiguration) authSettings[0];
+                    hostConfiguration.getParams().setParameter(CredentialsProvider.PROVIDER, provider);
+                    EsHadoopAuthPolicies.registerAuthSchemes();
+                    authPrefs.add(EsHadoopAuthPolicies.BEARER);
+                }
+            }
         }
         // All we really need here to support SPNEGO is that a user is logged in, has kerberos credentials, and knows
         // the ES service principal name.
@@ -253,11 +283,11 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                     ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL + "]");
             HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
             authSettings[1] = state;
-            // TODO: Should there be some sort of validation to ensure that the principal name matches the currently logged in user?
-            state.setCredentials(AuthScope.ANY, new SpnegoCredentials(
-                    settings.getNetworkSpnegoAuthUserPrincipal(),
-                    settings.getNetworkSpnegoAuthElasticsearchPrincipal())
-            );
+            // TODO: Limit this by hosts and ports
+            AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
+            // FIXHERE: Should there be some sort of validation to ensure that the principal name matches the currently logged in user?
+            Credentials credential = new SpnegoCredentials(settings.getNetworkSpnegoAuthUserPrincipal(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
+            state.setCredentials(scope, credential);
             if (log.isDebugEnabled()) {
                 log.info("Using detected SPNEGO credentials...");
             }
