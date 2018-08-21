@@ -548,6 +548,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             stats.netTotalTime += (System.currentTimeMillis() - start);
         }
 
+        // FIXHERE: We should drag out the auth scheme, and attempt to either close it if it's closeable, or check mutual auth for Kerberos
+
         if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
             String addr = sk.getLocalAddress().getHostAddress();
