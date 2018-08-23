@@ -1,8 +1,7 @@
 [[errorhandlers]]
 == Error Handlers
 
-NOTE: Error Handlers are a beta feature in 6.2.0. This means that the APIs and configurations detailed
-here may be subject to breaking changes between releases while we improve the usability and clarity of the feature.
+added[6.4]
 
 {ehtm} is designed to be a mostly hands off integration. Most of the features are managed through conventions and
 configurations and no substantial amount of code is required to get up and running with the connector. When it comes to
