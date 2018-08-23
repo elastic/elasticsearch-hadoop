@@ -11,7 +11,7 @@
 :ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/5.0
 :description: Reference documentation of {eh}
 :ver:	6.4.0
-:ver-d: 6.4.0.BUILD-SNAPSHOT
+:ver-d: 6.4.1.BUILD-SNAPSHOT
 :es-v:	6.4.0
 :sp-v:	2.2.0
 :st-v:	1.0.1
