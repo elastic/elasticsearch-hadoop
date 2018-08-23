@@ -1,0 +1,44 @@
+[[eshadoop-6.4.0]]
+== Elasticsearch for Apache Hadoop version 6.4.0
+August 23, 2018
+
+[[new-6.4.0]]
+=== New Features
+Core::
+* Add ability to specify sensitive settings through a keystore
+https://github.com/elastic/elasticsearch-hadoop/pull/1174[#1174]
+Serialization::
+* Introduce error handler for serialization failures
+https://github.com/elastic/elasticsearch-hadoop/issues/1128[#1128]
+https://github.com/elastic/elasticsearch-hadoop/pull/1149[#1149]
+https://github.com/elastic/elasticsearch-hadoop/pull/1153[#1153]
+
+[[enhancements-6.4.0]]
+=== Enhancements
+REST::
+* Fill bulk errors with nested error causes
+https://github.com/elastic/elasticsearch-hadoop/issues/1115[#1115]
+https://github.com/elastic/elasticsearch-hadoop/pull/1143[#1143]
+* Log at debug level when bulk operations complete
+https://github.com/elastic/elasticsearch-hadoop/issues/1122[#1122]
+* An HTTP line is larger than 4096 bytes
+https://github.com/elastic/elasticsearch-hadoop/pull/1154[#1154]
+Error Handlers::
+* Elasticsearch Generic Error Handler
+https://github.com/elastic/elasticsearch-hadoop/pull/1167[#1167]
+* Unify base error handler implementations
+https://github.com/elastic/elasticsearch-hadoop/pull/1163[#1163]
+Build::
+* Upgrade Scala minor version to support Java 9/10
+https://github.com/elastic/elasticsearch-hadoop/pull/1155[#1155]
+
+[[bugs-6.4.0]]
+=== Bug Fixes
+REST::
+* HttpStatus.GATEWAY_TIMEOUT should be 504, is 50
+https://github.com/elastic/elasticsearch-hadoop/issues/1147[#1147]
+
+[[docs-6.4.0]]
+=== Documentation
+* Breaking up the Spark documentation page into sub pages
+https://github.com/elastic/elasticsearch-hadoop/pull/1151[#1151]
