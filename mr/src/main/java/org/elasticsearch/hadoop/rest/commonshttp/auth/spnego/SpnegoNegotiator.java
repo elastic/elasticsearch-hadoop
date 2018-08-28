@@ -19,6 +19,9 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.rest.EsHadoopTransportException;
@@ -38,7 +41,7 @@ import org.ietf.jgss.Oid;
  *
  * Yes, the name is redundant.
  */
-public class SpnegoNegotiator {
+public class SpnegoNegotiator implements Closeable {
 
     private static final String SPNEGO_OID = "1.3.6.1.5.5.2";
 
@@ -99,5 +102,16 @@ public class SpnegoNegotiator {
 
     public boolean established() {
         return gssContext != null && gssContext.isEstablished();
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (gssContext != null) {
+            try {
+                gssContext.dispose();
+            } catch (GSSException e) {
+                throw new IOException("Could not dispose of GSSContext", e);
+            }
+        }
     }
 }

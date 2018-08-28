@@ -97,6 +97,39 @@ public class AbstractKerberosClientTest {
     }
 
     @Test
+    public void testMutualSpnegoAuthToES() throws Exception {
+        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+                "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
+
+        LoginContext loginCtx = LoginUtil.login("client", "password");
+        try {
+            Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    TestSettings testSettings = new TestSettings();
+                    // Remove the regular auth settings
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+
+                    // Set kerberos settings
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL, "client@BUILD.ELASTIC.CO");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_MUTUAL, "true");
+
+                    RestClient restClient = new RestClient(testSettings);
+                    List<NodeInfo> httpDataNodes = restClient.getHttpDataNodes();
+                    assertThat(httpDataNodes.size(), is(greaterThan(0)));
+
+                    return null;
+                }
+            });
+        } finally {
+            loginCtx.logout();
+            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+        }
+    }
+
+    @Test
     public void testBasicIntoTokenAuth() throws Exception {
         TestSettings testSettings = new TestSettings();
         Assume.assumeTrue(testSettings.getNetworkHttpAuthUser() != null);

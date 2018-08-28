@@ -240,6 +240,9 @@ public class AbstractSpnegoNegotiatorTest {
         assertThat(authenticated, is(true));
         assertThat(serverCtx.isEstablished(), is(true));
         assertThat(spnegoNegotiator.established(), is(true));
+
+        spnegoNegotiator.close();
+        assertThat(spnegoNegotiator.established(), is(false));
     }
 
     @Test
@@ -320,6 +323,9 @@ public class AbstractSpnegoNegotiatorTest {
         assertThat(authenticated, is(true));
         assertThat(serverCtx.isEstablished(), is(true));
         assertThat(spnegoNegotiator.established(), is(true));
+
+        spnegoNegotiator.close();
+        assertThat(spnegoNegotiator.established(), is(false));
     }
 
     private static String withRealm(String principal) {

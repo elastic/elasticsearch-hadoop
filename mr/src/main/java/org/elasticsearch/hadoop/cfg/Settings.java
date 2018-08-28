@@ -443,6 +443,10 @@ public abstract class Settings {
         return getProperty(ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL);
     }
 
+    public boolean getNetworkSpnegoAuthMutual() {
+        return Booleans.parseBoolean(getProperty(ES_NET_SPNEGO_AUTH_MUTUAL, ES_NET_SPNEGO_AUTH_MUTUAL_DEFAULT));
+    }
+
     public String getNetworkProxyHttpHost() {
         return getProperty(ES_NET_PROXY_HTTP_HOST);
     }

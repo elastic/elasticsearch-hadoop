@@ -20,8 +20,11 @@ package org.elasticsearch.hadoop.rest.commonshttp;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.auth.AuthChallengeParser;
 import org.apache.commons.httpclient.auth.AuthPolicy;
+import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.auth.AuthState;
 import org.apache.commons.httpclient.auth.CredentialsProvider;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -38,6 +41,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenCredentialProvider;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoCredentials;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
@@ -52,6 +56,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -59,11 +64,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Transport implemented on top of Commons Http. Provides transport retries.
  */
 public class CommonsHttpTransport implements Transport, StatsAware {
+
+    private static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
     private static Log log = LogFactory.getLog(CommonsHttpTransport.class);
     private static final Method GET_SOCKET;
@@ -549,6 +557,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
 
         // FIXHERE: We should drag out the auth scheme, and attempt to either close it if it's closeable, or check mutual auth for Kerberos
+        afterExecute(http);
 
         if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
@@ -558,6 +567,34 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
+    }
+
+    /**
+     * Close any authentication resources that we may still have open and perform any after-response duties that we need to perform.
+     * @param method The method that has been executed
+     * @throws IOException If any issues arise during post processing
+     */
+    private void afterExecute(HttpMethod method) throws IOException {
+        AuthState hostAuthState = method.getHostAuthState();
+        if (hostAuthState.isPreemptive() || hostAuthState.isAuthAttempted()) {
+            AuthScheme authScheme = hostAuthState.getAuthScheme();
+
+            if (authScheme instanceof SpnegoAuthScheme && settings.getNetworkSpnegoAuthMutual()) {
+                // Perform Mutual Authentication
+                SpnegoAuthScheme spnegoAuthScheme = ((SpnegoAuthScheme) authScheme);
+                Map challenges = AuthChallengeParser.parseChallenges(method.getResponseHeaders(WWW_AUTHENTICATE));
+                String id = spnegoAuthScheme.getSchemeName();
+                String challenge = (String) challenges.get(id.toLowerCase());
+                if (challenge == null) {
+                    throw new IOException(id + " authorization challenge expected, but not found");
+                }
+                spnegoAuthScheme.ensureMutualAuth(challenge);
+            }
+
+            if (authScheme instanceof Closeable) {
+                ((Closeable) authScheme).close();
+            }
+        }
     }
 
     @Override
