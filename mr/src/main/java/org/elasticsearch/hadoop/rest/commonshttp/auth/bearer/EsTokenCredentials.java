@@ -21,16 +21,40 @@ package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
 import org.apache.commons.httpclient.Credentials;
 import org.elasticsearch.hadoop.security.EsToken;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
+import org.junit.Assert;
 
+/**
+ * Credentials class that produces an EsToken if it is available on the currently logged in user.
+ */
 public class EsTokenCredentials implements Credentials {
 
-    private EsToken token;
+    private final UserProvider userProvider;
+    private final EsToken providedToken;
 
-    public EsTokenCredentials(EsToken token) {
-        this.token = token;
+    public EsTokenCredentials(UserProvider userProvider) {
+        Assert.assertNotNull("UserProvider must not be null", userProvider);
+        this.userProvider = userProvider;
+        this.providedToken = null;
+    }
+
+    public EsTokenCredentials(EsToken providedToken) {
+        Assert.assertNotNull("Token must not be null", providedToken);
+        this.userProvider = null;
+        this.providedToken = providedToken;
     }
 
     public EsToken getToken() {
-        return token;
+        EsToken esToken = null;
+        if (providedToken != null) {
+            esToken = providedToken;
+        } else {
+            User user = userProvider.getUser();
+            if (user != null) {
+                esToken = user.getEsToken(); // Token may be null.
+            }
+        }
+        return esToken;
     }
 }
