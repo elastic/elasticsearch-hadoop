@@ -545,11 +545,11 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         long start = System.currentTimeMillis();
         try {
             client.executeMethod(http);
+            afterExecute(http);
         } finally {
             stats.netTotalTime += (System.currentTimeMillis() - start);
+            closeAuthSchemeQuietly(http);
         }
-
-        afterExecute(http);
 
         if (log.isTraceEnabled()) {
             Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
@@ -582,9 +582,21 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
                 spnegoAuthScheme.ensureMutualAuth(challenge);
             }
+        }
+    }
 
-            if (authScheme instanceof Closeable) {
-                ((Closeable) authScheme).close();
+    /**
+     * Close the underlying authscheme if it is a Closeable object.
+     * @param method Executing method
+     * @throws IOException If the scheme could not be closed
+     */
+    private void closeAuthSchemeQuietly(HttpMethod method) {
+        AuthScheme scheme = method.getHostAuthState().getAuthScheme();
+        if (scheme instanceof Closeable) {
+            try {
+                ((Closeable) scheme).close();
+            } catch (IOException e) {
+                log.error("Could not close [" + scheme.getSchemeName() + "] auth scheme", e);
             }
         }
     }
