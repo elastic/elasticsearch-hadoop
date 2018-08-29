@@ -39,6 +39,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenCredentials;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoCredentials;
@@ -91,6 +92,13 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final String pathPrefix;
     private final Settings settings;
     private final SecureSettings secureSettings;
+    private final UserProvider userProvider;
+
+    /** If the HTTP Connection is made through a proxy */
+    private boolean isProxied = false;
+
+    /** If the Socket Factory used for HTTP Connections extends SecureProtocolSocketFactory */
+    private boolean isSecure = false;
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
@@ -164,6 +172,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     public CommonsHttpTransport(Settings settings, SecureSettings secureSettings, String host) {
         this.settings = settings;
         this.secureSettings = secureSettings;
+        this.userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
         httpInfo = host;
         sslEnabled = settings.getNetworkSSLEnabled();
 
@@ -233,6 +242,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             log.debug("SSL Connection enabled");
         }
 
+        isSecure = true;
+
         //
         // switch protocol
         // due to how HttpCommons work internally this dance is best to be kept as is
@@ -264,7 +275,6 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
         // Try auth schemes based on currently logged in user:
         if (settings.getSecurityUserProviderClass() != null) {
-            UserProvider userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
             User user = userProvider.getUser();
             if (user != null && user.getEsToken() != null) {
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
@@ -339,6 +349,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         if (StringUtils.hasText(proxyHost)) {
             hostConfig.setProxy(proxyHost, proxyPort);
+            isProxied = true;
             proxyInfo = proxyInfo.concat(String.format(Locale.ROOT, "[%s proxy %s:%s]", (sslEnabled ? "HTTPS" : "HTTP"), proxyHost, proxyPort));
 
             // client is not yet initialized so postpone state
@@ -415,6 +426,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // we actually have a socks proxy, let's start the setup
         if (StringUtils.hasText(proxyHost)) {
+            isSecure = false;
+            isProxied = true;
             proxyInfo = proxyInfo.concat(String.format("[SOCKS proxy %s:%s]", proxyHost, proxyPort));
 
             if (!StringUtils.hasText(proxyUser)) {
@@ -536,6 +549,17 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
 
         headers.applyTo(http);
+
+        // If we are using token authentication, set the auth to be preemptive:
+        if (userProvider.getUser().getEsToken() != null) {
+            http.getHostAuthState().setPreemptive();
+            http.getHostAuthState().setAuthAttempted(true);
+            http.getHostAuthState().setAuthScheme(new EsTokenAuthScheme());
+            if (isProxied && !isSecure) {
+                http.getProxyAuthState().setPreemptive();
+                http.getProxyAuthState().setAuthAttempted(true);
+            }
+        }
 
         // when tracing, log everything
         if (log.isTraceEnabled()) {

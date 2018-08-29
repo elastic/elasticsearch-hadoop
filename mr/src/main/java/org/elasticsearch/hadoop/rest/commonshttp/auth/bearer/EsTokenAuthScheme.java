@@ -21,13 +21,20 @@ package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.auth.AuthScheme;
 import org.apache.commons.httpclient.auth.AuthenticationException;
+import org.apache.commons.httpclient.auth.BasicScheme;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.util.StringUtils;
 
-public class EsTokenAuthScheme implements AuthScheme {
+/**
+ * Performs authentication by sending an auth header that contains an authentication token.
+ *
+ * This scheme extends and overrides BasicScheme because HTTPClient 3.0.1 does not allow any
+ * preemptive authentication that isn't a subclass of BasicScheme. This allows us to send
+ * the auth token up front without waiting to be turned down with a 401 Unauthorized response.
+ */
+public class EsTokenAuthScheme extends BasicScheme {
 
     private boolean complete = false;
 
@@ -55,7 +62,7 @@ public class EsTokenAuthScheme implements AuthScheme {
      */
     @Override
     public void processChallenge(String challenge) throws MalformedChallengeException {
-        // Do nothing? If the token can be accepted, we'll try sending it.
+        complete = true;
     }
 
     /**
@@ -72,7 +79,6 @@ public class EsTokenAuthScheme implements AuthScheme {
 
         if (esTokenCredentials.getToken() != null && StringUtils.hasText(esTokenCredentials.getToken().getAccessToken())) {
             authString = EsHadoopAuthPolicies.BEARER + " " + esTokenCredentials.getToken().getAccessToken();
-            complete = true;
         }
 
         return authString;
