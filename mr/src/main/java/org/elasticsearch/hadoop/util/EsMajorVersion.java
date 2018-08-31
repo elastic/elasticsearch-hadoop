@@ -99,7 +99,7 @@ public class EsMajorVersion {
         EsMajorVersion version = (EsMajorVersion) o;
 
         return major == version.major &&
-                version.equals(version.version);
+                this.version.equals(version.version);
     }
 
     @Override
