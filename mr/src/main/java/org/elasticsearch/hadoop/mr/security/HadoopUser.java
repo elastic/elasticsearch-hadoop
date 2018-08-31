@@ -28,6 +28,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
@@ -98,5 +100,13 @@ public class HadoopUser implements User {
         Text service = new Text(ES_SERVICE_NAME);
         Token<EsTokenIdentifier> token = new Token<EsTokenIdentifier>(id, pw, kind, service);
         ugi.addToken(token);
+    }
+
+    @Override
+    public KerberosPrincipal getKerberosPrincipal() {
+        if (ugi.hasKerberosCredentials()) {
+            return new KerberosPrincipal(ugi.getUserName());
+        }
+        return null;
     }
 }

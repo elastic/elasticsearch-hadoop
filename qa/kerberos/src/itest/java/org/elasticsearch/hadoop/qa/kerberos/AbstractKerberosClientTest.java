@@ -80,7 +80,6 @@ public class AbstractKerberosClientTest {
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
                     // Set kerberos settings
-                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL, "client@BUILD.ELASTIC.CO");
                     testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
 
                     RestClient restClient = new RestClient(testSettings);
@@ -112,7 +111,6 @@ public class AbstractKerberosClientTest {
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
                     // Set kerberos settings
-                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL, "client@BUILD.ELASTIC.CO");
                     testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
                     testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_MUTUAL, "true");
 

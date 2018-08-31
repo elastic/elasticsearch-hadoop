@@ -285,7 +285,6 @@ public interface ConfigurationOptions {
     String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
     String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";
 
-    String ES_NET_SPNEGO_AUTH_USER_PRINCIPAL = "es.net.spnego.auth.user.principal";
     String ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL = "es.net.spnego.auth.elasticsearch.principal";
     String ES_NET_SPNEGO_AUTH_MUTUAL = "es.net.spnego.auth.mutual";
     String ES_NET_SPNEGO_AUTH_MUTUAL_DEFAULT = "false";

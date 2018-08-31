@@ -22,9 +22,11 @@ package org.elasticsearch.hadoop.security;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.elasticsearch.hadoop.EsHadoopException;
 
@@ -73,5 +75,14 @@ public class JdkUser implements User {
             }
         }
         subject.getPrivateCredentials().add(esToken);
+    }
+
+    @Override
+    public KerberosPrincipal getKerberosPrincipal() {
+        Iterator<KerberosPrincipal> iter = subject.getPrincipals(KerberosPrincipal.class).iterator();
+        if (iter.hasNext()) {
+            return iter.next();
+        }
+        return null;
     }
 }

@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.security.auth.kerberos.KerberosPrincipal;
 
 /**
  * Transport implemented on top of Commons Http. Provides transport retries.
@@ -283,6 +284,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.BEARER);
                 Credentials tokenCredentials = new EsTokenCredentials(userProvider);
                 state.setCredentials(scope, tokenCredentials);
+                if (log.isDebugEnabled()) {
+                    log.info("Using detected Token credentials...");
+                }
                 EsHadoopAuthPolicies.registerAuthSchemes();
                 authPrefs.add(EsHadoopAuthPolicies.BEARER);
             }
@@ -290,14 +294,14 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // All we really need here to support SPNEGO is that a user is logged in, has kerberos credentials, and knows
         // the ES service principal name.
         if (StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
-            Assert.hasText(settings.getNetworkSpnegoAuthUserPrincipal(), "User principal required via [" +
-                    ConfigurationOptions.ES_NET_SPNEGO_AUTH_USER_PRINCIPAL + "]");
+            User user = userProvider.getUser();
+            KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
+            Assert.notNull(userPrincipal, "Could not locate KerberosPrincipal on current user. Please make sure you are logged in.");
             HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
             authSettings[1] = state;
             // TODO: Limit this by hosts and ports
             AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
-            // FIXHERE: Should there be some sort of validation to ensure that the principal name matches the currently logged in user?
-            Credentials credential = new SpnegoCredentials(settings.getNetworkSpnegoAuthUserPrincipal(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
+            Credentials credential = new SpnegoCredentials(userPrincipal.getName(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
             state.setCredentials(scope, credential);
             if (log.isDebugEnabled()) {
                 log.info("Using detected SPNEGO credentials...");

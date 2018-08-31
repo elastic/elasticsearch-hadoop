@@ -22,6 +22,8 @@ package org.elasticsearch.hadoop.security;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.elasticsearch.hadoop.EsHadoopException;
 
 /**
@@ -37,4 +39,5 @@ public interface User {
 
     void setEsToken(EsToken esToken);
 
+    KerberosPrincipal getKerberosPrincipal();
 }
