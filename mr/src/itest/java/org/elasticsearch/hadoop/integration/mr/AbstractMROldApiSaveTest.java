@@ -256,10 +256,7 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testSaveWithIngest() throws Exception {
-        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
-        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
-        versionTestingClient.close();
+        EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
 
         JobConf conf = createJobConf();
 

@@ -417,15 +417,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDIngest() {
-    try {
-      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-      try {
-        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
-      } finally {
-        if (versionTestingClient != null) versionTestingClient.close()
-      }
-    }
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only")
 
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val prefix: String = "spark"

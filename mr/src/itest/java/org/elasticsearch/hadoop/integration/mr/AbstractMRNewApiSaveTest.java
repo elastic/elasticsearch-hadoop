@@ -191,10 +191,7 @@ public class AbstractMRNewApiSaveTest {
 
     @Test
     public void testSaveWithIngest() throws Exception {
-        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
-        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
-        assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
-        versionTestingClient.close();
+        EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
 
         Configuration conf = createConf();
 
