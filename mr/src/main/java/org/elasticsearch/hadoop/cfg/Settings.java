@@ -86,6 +86,25 @@ public abstract class Settings {
         return new ClusterInfo(new ClusterName(clusterName, clusterUUID), version);
     }
 
+    /**
+     * Get the internal cluster name and version or throw an {@link IllegalArgumentException} if not present
+     * @return the {@link ClusterInfo} extracted from the properties
+     * @deprecated This is a dangerous method to use, because it assumes that you care about which cluster you are working with,
+     *     but the info you receive from this call may not be accurate, and thus, cannot be trusted to let you make accurate
+     *     decisions about the ES cluster you are speaking with. Prefer to use the {@link Settings#getClusterInfoOrThrow()}
+     *     instead.
+     */
+    @Deprecated
+    public ClusterInfo getClusterInfoOrUnnamedLatest() {
+        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        if (clusterName == null) {
+            return ClusterInfo.unnamedLatest();
+        }
+        String clusterUUID = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
+        EsMajorVersion version = getInternalVersionOrLatest();
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), version);
+    }
+
     public String getNodes() {
         return getProperty(ES_NODES, ES_NODES_DEFAULT);
     }
@@ -536,9 +555,9 @@ public abstract class Settings {
     }
 
     public Settings setInternalClusterInfo(ClusterInfo clusterInfo) {
-        setProperty(INTERNAL_ES_CLUSTER_NAME, clusterInfo.getClusterName().getClusterName());
-        if (clusterInfo.getClusterName().getClusterUUID() != null) {
-            setProperty(INTERNAL_ES_CLUSTER_UUID, clusterInfo.getClusterName().getClusterUUID());
+        setProperty(INTERNAL_ES_CLUSTER_NAME, clusterInfo.getClusterName().getName());
+        if (clusterInfo.getClusterName().getUUID() != null) {
+            setProperty(INTERNAL_ES_CLUSTER_UUID, clusterInfo.getClusterName().getUUID());
         }
         setProperty(INTERNAL_ES_VERSION, clusterInfo.getMajorVersion().toString());
         return this;

@@ -38,6 +38,7 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
+import org.elasticsearch.hadoop.util.ClusterName;
 
 /**
  * Provides access to user operations from Hadoop's UserGroupInformation class.
@@ -71,10 +72,13 @@ public class HadoopUser implements User {
     }
 
     @Override
-    public EsToken getEsToken() {
+    public EsToken getEsToken(String clusterName) {
+        // An unset cluster name - Wouldn't have a token for it.
+        if (clusterName == null || clusterName.equals("") || clusterName.equals(ClusterName.UNNAMED_CLUSTER_NAME)) {
+            return null;
+        }
         for (Token<? extends TokenIdentifier> token : ugi.getTokens()) {
-            // TODO: If we ever support interacting with different ES clusters, this should be changed to select the appropriate token
-            if (EsTokenIdentifier.KIND_NAME.equals(token.getKind())) {
+            if (EsTokenIdentifier.KIND_NAME.equals(token.getKind()) && clusterName.equals(token.getService().toString())) {
                 try {
                     return new EsToken(new DataInputStream(new ByteArrayInputStream(token.getPassword())));
                 } catch (IOException e) {
@@ -86,7 +90,7 @@ public class HadoopUser implements User {
     }
 
     @Override
-    public void setEsToken(EsToken esToken) {
+    public void addEsToken(EsToken esToken) {
         EsTokenIdentifier identifier = new EsTokenIdentifier();
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         try {
@@ -97,7 +101,7 @@ public class HadoopUser implements User {
         byte[] id = identifier.getBytes();
         byte[] pw = buffer.toByteArray();
         Text kind = identifier.getKind();
-        Text service = new Text(ES_SERVICE_NAME);
+        Text service = new Text(esToken.getClusterName());
         Token<EsTokenIdentifier> token = new Token<EsTokenIdentifier>(id, pw, kind, service);
         ugi.addToken(token);
     }

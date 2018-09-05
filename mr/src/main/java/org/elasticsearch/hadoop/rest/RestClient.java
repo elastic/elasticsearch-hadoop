@@ -23,6 +23,7 @@ import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -77,7 +78,7 @@ public class RestClient implements Closeable, StatsAware {
     private final TimeValue scrollKeepAlive;
     private final boolean indexReadMissingAsEmpty;
     private final HttpRetryPolicy retryPolicy;
-    final EsMajorVersion internalVersion;
+    final ClusterInfo clusterInfo;
     private final ErrorExtractor errorExtractor;
 
     {
@@ -113,8 +114,8 @@ public class RestClient implements Closeable, StatsAware {
 
         this.retryPolicy = ObjectUtils.instantiate(retryPolicyName, settings);
         // Assume that the elasticsearch major version is the latest if the version is not already present in the settings
-        this.internalVersion = settings.getInternalVersionOrLatest();
-        this.errorExtractor = new ErrorExtractor(internalVersion);
+        this.clusterInfo = settings.getClusterInfoOrUnnamedLatest();
+        this.errorExtractor = new ErrorExtractor(clusterInfo.getMajorVersion());
     }
 
     public List<NodeInfo> getHttpNodes(boolean clientNodeOnly) {
@@ -316,7 +317,7 @@ public class RestClient implements Closeable, StatsAware {
         sb.setLength(sb.length() - 1);
         sb.append("],\n\"query\":{");
 
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_2_X)) {
             sb.append("\"bool\": { \"must\":[");
         }
         else {
@@ -330,7 +331,7 @@ public class RestClient implements Closeable, StatsAware {
         sb.setLength(sb.length() - 1);
         sb.append("\n]}");
 
-        if (internalVersion.on(EsMajorVersion.V_1_X)) {
+        if (clusterInfo.getMajorVersion().on(EsMajorVersion.V_1_X)) {
             sb.append("}");
         }
 
@@ -452,7 +453,7 @@ public class RestClient implements Closeable, StatsAware {
         long start = network.transportStats().netTotalTime;
         try {
             BytesArray body;
-            if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+            if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_2_X)) {
                 body = new BytesArray("{\"scroll_id\":\"" + scrollId + "\"}");
             } else {
                 body = new BytesArray(scrollId);
@@ -473,7 +474,7 @@ public class RestClient implements Closeable, StatsAware {
     }
     public boolean deleteScroll(String scrollId) {
         BytesArray body;
-        if (internalVersion.onOrAfter(EsMajorVersion.V_2_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_2_X)) {
             body = new BytesArray(("{\"scroll_id\":[\"" + scrollId + "\"]}").getBytes(StringUtils.UTF_8));
         } else {
             body = new BytesArray(scrollId.getBytes(StringUtils.UTF_8));
@@ -489,7 +490,7 @@ public class RestClient implements Closeable, StatsAware {
 
     public boolean typeExists(String index, String type) {
         String indexType;
-        if (internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             indexType = index + "/_mapping/" + type;
         } else {
             indexType = index + "/" + type;
@@ -535,7 +536,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public long count(String indexAndType, String shardId, QueryBuilder query) {
-        return internalVersion.onOrAfter(EsMajorVersion.V_5_X) ?
+        return clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) ?
                 countInES5X(indexAndType, shardId, query) : countBeforeES5X(indexAndType, shardId, query);
     }
 
@@ -593,6 +594,10 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public EsToken getAuthToken(String user, String password) {
+        ClusterInfo remoteInfo = clusterInfo;
+        if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {
+            remoteInfo = mainInfo();
+        }
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
         JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
         try {
@@ -613,11 +618,27 @@ public class RestClient implements Closeable, StatsAware {
                 user,
                 content.get("access_token").toString(),
                 content.get("refresh_token").toString(),
-                expiry.longValue()
+                expiry.longValue(),
+                remoteInfo.getClusterName().getName()
         );
     }
 
     public EsToken refreshToken(EsToken tokenToRefresh) {
+        ClusterInfo remoteInfo = clusterInfo;
+        if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {
+            remoteInfo = mainInfo();
+        }
+        String serviceForToken = tokenToRefresh.getClusterName();
+        if (!StringUtils.hasText(serviceForToken)) {
+            throw new EsHadoopIllegalArgumentException("Attempting to refresh access token that has no service name");
+        }
+        if (!serviceForToken.equals(remoteInfo.getClusterName().getName())) {
+            throw new EsHadoopIllegalArgumentException(String.format(
+                    "Attempting to refresh access token for a cluster named [%s] through a differently named cluster [%s]",
+                    serviceForToken,
+                    remoteInfo.getClusterName().getName()
+            ));
+        }
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
         JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
         try {
@@ -637,11 +658,27 @@ public class RestClient implements Closeable, StatsAware {
                 tokenToRefresh.getUserName(),
                 content.get("access_token").toString(),
                 content.get("refresh_token").toString(),
-                expiry.longValue()
+                expiry.longValue(),
+                serviceForToken
         );
     }
 
     public boolean cancelToken(EsToken tokenToCancel) {
+        ClusterInfo remoteInfo = clusterInfo;
+        if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {
+            remoteInfo = mainInfo();
+        }
+        String serviceForToken = tokenToCancel.getClusterName();
+        if (!StringUtils.hasText(serviceForToken)) {
+            throw new EsHadoopIllegalArgumentException("Attempting to cancel access token that has no service name");
+        }
+        if (!serviceForToken.equals(remoteInfo.getClusterName().getName())) {
+            throw new EsHadoopIllegalArgumentException(String.format(
+                    "Attempting to cancel access token for a cluster named [%s] through a differently named cluster [%s]",
+                    serviceForToken,
+                    remoteInfo.getClusterName().getName()
+            ));
+        }
         FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
         JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
         try {

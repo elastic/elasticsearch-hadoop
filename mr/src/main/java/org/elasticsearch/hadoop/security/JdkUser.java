@@ -29,6 +29,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.util.ClusterName;
 
 public class JdkUser implements User {
 
@@ -57,21 +58,33 @@ public class JdkUser implements User {
     }
 
     @Override
-    public EsToken getEsToken() {
+    public EsToken getEsToken(String clusterName) {
+        // An unset cluster name - Wouldn't have a token for it.
+        if (clusterName == null || clusterName.equals("") || clusterName.equals(ClusterName.UNNAMED_CLUSTER_NAME)) {
+            return null;
+        }
         Set<EsToken> creds = subject.getPrivateCredentials(EsToken.class);
         if (creds.isEmpty()) {
             return null;
         } else {
-            return creds.iterator().next();
+            for (EsToken cred : creds) {
+                if (clusterName.equals(cred.getClusterName())) {
+                    return cred;
+                }
+            }
         }
+        return null;
     }
 
     @Override
-    public void setEsToken(EsToken esToken) {
+    public void addEsToken(EsToken esToken) {
+        // FIXHERE: Just add a custom Token Holder or use the existing Credentials class - this should be similar to how UGI works for compatibility reasons.
         Set<EsToken> creds = subject.getPrivateCredentials(EsToken.class);
         if (!creds.isEmpty()) {
             for (EsToken cred : creds) {
-                subject.getPrivateCredentials().remove(cred);
+                if (esToken.getClusterName().equals(cred.getClusterName())) {
+                    subject.getPrivateCredentials().remove(cred);
+                }
             }
         }
         subject.getPrivateCredentials().add(esToken);

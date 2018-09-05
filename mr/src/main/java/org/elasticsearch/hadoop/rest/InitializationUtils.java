@@ -333,8 +333,8 @@ public abstract class InitializationUtils {
             ClusterInfo mainInfo = bootstrap.mainInfo();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Discovered Elasticsearch cluster [%s/%s], version [%s]",
-                        mainInfo.getClusterName().getClusterName(),
-                        mainInfo.getClusterName().getClusterUUID(),
+                        mainInfo.getClusterName().getName(),
+                        mainInfo.getClusterName().getUUID(),
                         mainInfo.getMajorVersion()));
             }
             settings.setInternalClusterInfo(mainInfo);

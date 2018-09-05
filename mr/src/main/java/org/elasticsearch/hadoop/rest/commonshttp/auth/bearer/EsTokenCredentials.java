@@ -32,17 +32,21 @@ public class EsTokenCredentials implements Credentials {
 
     private final UserProvider userProvider;
     private final EsToken providedToken;
+    private final String clusterName;
 
-    public EsTokenCredentials(UserProvider userProvider) {
-        Assert.assertNotNull("UserProvider must not be null", userProvider);
+    public EsTokenCredentials(UserProvider userProvider, String clusterName) {
+        Assert.assertNotNull("userProvider must not be null", userProvider);
+        Assert.assertNotNull("clusterName must not be null", clusterName);
         this.userProvider = userProvider;
         this.providedToken = null;
+        this.clusterName = clusterName;
     }
 
     public EsTokenCredentials(EsToken providedToken) {
-        Assert.assertNotNull("Token must not be null", providedToken);
+        Assert.assertNotNull("providedToken must not be null", providedToken);
         this.userProvider = null;
         this.providedToken = providedToken;
+        this.clusterName = null;
     }
 
     public EsToken getToken() {
@@ -52,7 +56,7 @@ public class EsTokenCredentials implements Credentials {
         } else {
             User user = userProvider.getUser();
             if (user != null) {
-                esToken = user.getEsToken(); // Token may be null.
+                esToken = user.getEsToken(clusterName); // Token may be null.
             }
         }
         return esToken;

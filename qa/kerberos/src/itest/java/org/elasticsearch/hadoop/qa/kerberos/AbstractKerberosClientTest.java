@@ -140,7 +140,7 @@ public class AbstractKerberosClientTest {
             UserProvider provider = ObjectUtils.instantiate(testSettings.getSecurityUserProviderClass(), testSettings);
             User userInfo = provider.getUser();
             assertNotNull(userInfo);
-            userInfo.setEsToken(token);
+            userInfo.addEsToken(token);
             userInfo.doAs(new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {

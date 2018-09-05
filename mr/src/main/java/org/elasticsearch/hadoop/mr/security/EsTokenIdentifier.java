@@ -65,7 +65,10 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
                 client = createClient(settings);
                 // We get the time starting right before we submit the request to have a safer expiration time.
                 long startTime = System.currentTimeMillis();
-                EsToken refreshedToken = client.refreshToken(esToken); // TODO: Test after ES supports immutable token refresh
+                // TODO: Does not support multiple clusters yet
+                // the client will need to point to the cluster that this token is associated with in order to refresh it.
+                // FIXHERE: Test after ES supports immutable token refresh
+                EsToken refreshedToken = client.refreshToken(esToken);
                 return startTime + refreshedToken.getExpiresIn();
             } finally {
                 if (client != null) {
@@ -83,6 +86,8 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
             Settings settings = HadoopSettingsManager.loadFrom(conf);
             RestClient client = null;
             try {
+                // TODO: Does not support multiple clusters yet
+                // the client will need to point to the cluster that this token is associated with in order to cancel it.
                 client = createClient(settings);
                 client.cancelToken(esToken);
             } finally {

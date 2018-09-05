@@ -34,11 +34,11 @@ public class ClusterName {
         this.clusterUUID = clusterUUID;
     }
 
-    public String getClusterName() {
+    public String getName() {
         return clusterName;
     }
 
-    public String getClusterUUID() {
+    public String getUUID() {
         return clusterUUID;
     }
 

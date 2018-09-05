@@ -93,6 +93,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final String pathPrefix;
     private final Settings settings;
     private final SecureSettings secureSettings;
+    private final String clusterName;
     private final UserProvider userProvider;
 
     /** If the HTTP Connection is made through a proxy */
@@ -174,6 +175,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         this.settings = settings;
         this.secureSettings = secureSettings;
         this.userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
+        this.clusterName = settings.getClusterInfoOrUnnamedLatest().getClusterName().getName(); // May be a bootstrap client.
         httpInfo = host;
         sslEnabled = settings.getNetworkSSLEnabled();
 
@@ -276,13 +278,14 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         }
         // Try auth schemes based on currently logged in user:
         if (settings.getSecurityUserProviderClass() != null) {
+            // FIXHERE: Maybe lazily create the user provider?
             User user = userProvider.getUser();
-            if (user != null && user.getEsToken() != null) {
+            if (user != null && user.getEsToken(clusterName) != null) {
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
                 // TODO: Limit this by hosts and ports
                 AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.BEARER);
-                Credentials tokenCredentials = new EsTokenCredentials(userProvider);
+                Credentials tokenCredentials = new EsTokenCredentials(userProvider, clusterName);
                 state.setCredentials(scope, tokenCredentials);
                 if (log.isDebugEnabled()) {
                     log.info("Using detected Token credentials...");
@@ -294,6 +297,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // All we really need here to support SPNEGO is that a user is logged in, has kerberos credentials, and knows
         // the ES service principal name.
         if (StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
+            // FIXHERE: Maybe this could combined with the if-block above?
             User user = userProvider.getUser();
             KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
             Assert.notNull(userPrincipal, "Could not locate KerberosPrincipal on current user. Please make sure you are logged in.");
@@ -555,7 +559,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         headers.applyTo(http);
 
         // If we are using token authentication, set the auth to be preemptive:
-        if (userProvider.getUser().getEsToken() != null) {
+        if (userProvider.getUser().getEsToken(clusterName) != null) {
             http.getHostAuthState().setPreemptive();
             http.getHostAuthState().setAuthAttempted(true);
             http.getHostAuthState().setAuthScheme(new EsTokenAuthScheme());

@@ -35,9 +35,9 @@ public interface User {
 
     <T> T doAs(PrivilegedExceptionAction<T> action) throws EsHadoopException;
 
-    EsToken getEsToken();
+    EsToken getEsToken(String clusterName);
 
-    void setEsToken(EsToken esToken);
+    void addEsToken(EsToken esToken);
 
     KerberosPrincipal getKerberosPrincipal();
 }
