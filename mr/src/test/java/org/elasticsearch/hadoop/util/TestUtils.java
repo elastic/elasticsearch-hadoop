@@ -49,8 +49,8 @@ public class TestUtils {
         return file.delete() & result;
     }
 
-    public static EsMajorVersion getEsVersion() {
-        return new RestClient(new TestSettings()).remoteEsVersion();
+    public static ClusterInfo getEsClusterInfo() {
+        return new RestClient(new TestSettings()).mainInfo();
     }
 
     public static boolean isWindows() {

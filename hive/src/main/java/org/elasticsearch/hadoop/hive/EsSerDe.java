@@ -66,7 +66,7 @@ public class EsSerDe extends AbstractSerDe {
     private final HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
-    private EsMajorVersion version;
+    private ClusterInfo clusterInfo;
     private BulkCommand command;
 
     private boolean writeInitialized = false;
@@ -85,7 +85,7 @@ public class EsSerDe extends AbstractSerDe {
         settings = (cfg != null ? HadoopSettingsManager.loadFrom(cfg).merge(tbl) : HadoopSettingsManager.loadFrom(tbl));
         alias = HiveUtils.alias(settings);
 
-        version = InitializationUtils.discoverEsVersion(settings, log);
+        clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
 
         HiveUtils.fixHive13InvalidComments(settings, tbl);
         this.tableProperties = tbl;
@@ -179,7 +179,7 @@ public class EsSerDe extends AbstractSerDe {
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
-        this.command = BulkCommands.create(settings, null, version);
+        this.command = BulkCommands.create(settings, null, clusterInfo.getMajorVersion());
     }
 
 

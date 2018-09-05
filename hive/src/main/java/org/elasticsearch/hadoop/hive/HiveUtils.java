@@ -194,7 +194,7 @@ abstract class HiveUtils {
     static void init(Settings settings, Log log) {
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
-        InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverClusterInfo(settings, log);
     }
 
     static void fixHive13InvalidComments(Settings settings, Properties tbl) {

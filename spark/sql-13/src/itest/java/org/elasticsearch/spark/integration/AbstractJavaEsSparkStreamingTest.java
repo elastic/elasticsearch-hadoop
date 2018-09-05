@@ -116,7 +116,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     private String prefix;
     private Map<String, String> cfg = new HashMap<>();
     private JavaStreamingContext ssc = null;
-    private EsMajorVersion version = TestUtils.getEsVersion();
+    private EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
     public AbstractJavaEsSparkStreamingTest(String prefix, boolean readMetadata) {
         this.prefix = prefix;

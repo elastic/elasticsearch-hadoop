@@ -39,6 +39,8 @@ import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ClusterInfo;
+import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -656,12 +658,27 @@ public class RestClient implements Closeable, StatsAware {
         return invalidated != null && invalidated;
     }
 
-    public EsMajorVersion remoteEsVersion() {
-        Map<String, String> result = get("", "version");
-        if (result == null || !StringUtils.hasText(result.get("number"))) {
+    public ClusterInfo mainInfo() {
+        Map<String, Object> result = get("", null);
+        if (result == null) {
+            throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch main cluster info.");
+        }
+        String clusterName = result.get("cluster_name").toString();
+        String clusterUUID = result.get("cluster_uuid").toString();
+        @SuppressWarnings("unchecked")
+        Map<String, String> versionBody = (Map<String, String>) result.get("version");
+        if (versionBody == null || !StringUtils.hasText(versionBody.get("number"))) {
             throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch version.");
         }
-        return EsMajorVersion.parse(result.get("number"));
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), EsMajorVersion.parse(versionBody.get("number")));
+    }
+
+    /**
+     * @deprecated use RestClient#mainInfo() instead.
+     */
+    @Deprecated
+    public EsMajorVersion remoteEsVersion() {
+        return mainInfo().getMajorVersion();
     }
 
     public Health getHealth(String index) {

@@ -89,7 +89,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   val sc = AbstractScalaEsScalaSparkStreaming.sc
   val cfg = Map(ConfigurationOptions.ES_READ_METADATA -> readMetadata.toString)
-  val version = TestUtils.getEsVersion
+  val version = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
   val text = if (version.onOrAfter(EsMajorVersion.V_5_X)) "text" else "string"
 

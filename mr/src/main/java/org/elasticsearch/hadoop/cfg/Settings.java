@@ -26,8 +26,10 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
@@ -55,13 +57,33 @@ public abstract class Settings {
     /**
      * Get the internal version or {@link EsMajorVersion#LATEST} if not present
      * @return The {@link EsMajorVersion} extracted from the properties or {@link EsMajorVersion#LATEST} if not present
+     * @deprecated This is kind of a dangerous method to use, because it assumes that you care about which version you are working with,
+     *             but the version you receive from this call may not be accurate, and thus, cannot be trusted to let you make accurate
+     *             decisions about the version of ES you are speaking with. Prefer to use the {@link Settings#getInternalVersionOrThrow()}
+     *             instead.
      */
+    @Deprecated
     public EsMajorVersion getInternalVersionOrLatest() {
         String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
         if (version == null) {
             return EsMajorVersion.LATEST;
         }
         return EsMajorVersion.parse(version);
+    }
+
+    /**
+     * Get the internal cluster name and version or throw an {@link IllegalArgumentException} if not present
+     * @return the {@link ClusterInfo} extracted from the properties
+     */
+    public ClusterInfo getClusterInfoOrThrow() {
+        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        if (clusterName == null) {
+            throw new IllegalArgumentException("Elasticsearch cluster name:[ " + InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME +
+                    "] not present in configuration");
+        }
+        String clusterUUID = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
+        EsMajorVersion version = getInternalVersionOrThrow();
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), version);
     }
 
     public String getNodes() {
@@ -513,6 +535,19 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_RESOLVE_HOST_NAME), !getNodesWANOnly());
     }
 
+    public Settings setInternalClusterInfo(ClusterInfo clusterInfo) {
+        setProperty(INTERNAL_ES_CLUSTER_NAME, clusterInfo.getClusterName().getClusterName());
+        if (clusterInfo.getClusterName().getClusterUUID() != null) {
+            setProperty(INTERNAL_ES_CLUSTER_UUID, clusterInfo.getClusterName().getClusterUUID());
+        }
+        setProperty(INTERNAL_ES_VERSION, clusterInfo.getMajorVersion().toString());
+        return this;
+    }
+
+    /**
+     * @deprecated prefer to use Settings#setInternalClusterInfo
+     */
+    @Deprecated
     public Settings setInternalVersion(EsMajorVersion version) {
         setProperty(INTERNAL_ES_VERSION, version.toString());
         return this;

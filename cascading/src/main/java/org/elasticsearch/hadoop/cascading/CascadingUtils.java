@@ -73,7 +73,7 @@ public abstract class CascadingUtils {
     }
 
     static void initialDiscovery(Settings settings, Log log) {
-        InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverClusterInfo(settings, log);
         InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);

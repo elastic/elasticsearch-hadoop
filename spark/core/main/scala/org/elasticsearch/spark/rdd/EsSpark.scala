@@ -100,7 +100,7 @@ object EsSpark {
     config.merge(cfg.asJava)
 
     // Need to discover the EsVersion here before checking if the index exists
-    InitializationUtils.discoverEsVersion(config, LOG)
+    InitializationUtils.discoverClusterInfo(config, LOG)
     InitializationUtils.checkIdForOperation(config)
     InitializationUtils.checkIndexExistence(config)
 

@@ -96,7 +96,7 @@ object AbstractScalaEsScalaSparkSQL {
     sc = new SparkContext(conf)
     sqc = new SQLContext(sc)
 
-    val version = TestUtils.getEsVersion
+    val version = TestUtils.getEsClusterInfo.getMajorVersion
     if (version.before(EsMajorVersion.V_5_X)) {
       keywordType = "string"
       textType = "string"

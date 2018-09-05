@@ -64,12 +64,14 @@ import org.elasticsearch.hadoop.EsHadoopIllegalStateException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.INTERNAL_TRANSPORT_POOLING_KEY
+import org.elasticsearch.hadoop.cfg.Settings
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestRepository
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator
+import org.elasticsearch.hadoop.util.EsMajorVersion
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream
 import org.elasticsearch.hadoop.util.IOUtils
 import org.elasticsearch.hadoop.util.SettingsUtils
@@ -266,7 +268,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         if (Utils.LOGGER.isDebugEnabled()) {
           Utils.LOGGER.debug(s"Pushing down filters ${filters.mkString("[", ",", "]")}")
         }
-        val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg), SettingsUtils.isEs50(cfg))
+        val filterString = createDSLFromFilters(filters, Utils.isPushDownStrict(cfg), isEs50(cfg))
 
         if (Utils.LOGGER.isTraceEnabled()) {
           Utils.LOGGER.trace(s"Transformed filters into DSL ${filterString.mkString("[", ",", "]")}")
@@ -524,7 +526,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
      if (strings.isEmpty) {
         StringUtils.EMPTY
      } else {
-       if (SettingsUtils.isEs50(cfg)) {
+       if (isEs50(cfg)) {
          s"""{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
        }
        else {
@@ -538,7 +540,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
         str
       // if needed, add the strings as a match query
       } else str + {
-        if (SettingsUtils.isEs50(cfg)) {
+        if (isEs50(cfg)) {
           s""",{"match":{"$attribute":${strings.mkString("\"", " ", "\"")}}}"""
         }
         else {
@@ -596,7 +598,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
       // perform a scan-scroll delete
       val cfgCopy = cfg.copy()
-      InitializationUtils.discoverEsVersion(cfgCopy, Utils.LOGGER)
+      InitializationUtils.discoverClusterInfo(cfgCopy, Utils.LOGGER)
       InitializationUtils.setValueWriterIfNotSet(cfgCopy, classOf[JdkValueWriter], null)
       InitializationUtils.setFieldExtractorIfNotSet(cfgCopy, classOf[ConstantFieldExtractor], null) //throw away extractor
       InitializationUtils.setUserProviderIfNotSet(cfgCopy, classOf[HadoopUserProvider], null)
@@ -617,5 +619,15 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       val empty = rr.isEmpty(true)
       rr.close()
       empty
+  }
+
+  private[this] def isEs50(cfg: Settings): Boolean = {
+    // TODO: Problematic. It's possible that the version is not ever discovered and set before this is needed.
+    val version = if (cfg.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION) == null) {
+      EsMajorVersion.LATEST
+    } else {
+      cfg.getInternalVersionOrThrow
+    }
+    version.onOrAfter(EsMajorVersion.V_5_X)
   }
 }

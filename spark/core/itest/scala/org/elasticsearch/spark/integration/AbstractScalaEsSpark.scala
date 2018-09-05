@@ -131,7 +131,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   val sc = AbstractScalaEsScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
-  val version: EsMajorVersion = TestUtils.getEsVersion
+  val version: EsMajorVersion = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword: String = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
 
   private def readAsRDD(uri: URI) = {

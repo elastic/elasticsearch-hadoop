@@ -40,6 +40,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils;
 import org.elasticsearch.hadoop.serialization.field.IndexExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -217,7 +218,7 @@ public abstract class RestService implements Serializable {
         InitializationUtils.validateSettings(settings);
         InitializationUtils.validateSettingsForReading(settings);
 
-        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
+        ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
         List<NodeInfo> nodes = InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
@@ -265,7 +266,7 @@ public abstract class RestService implements Serializable {
                 }
             }
             final List<PartitionDefinition> partitions;
-            if (version.onOrAfter(EsMajorVersion.V_5_X) && settings.getInputUseSlicedPartitions()) {
+            if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) && settings.getInputUseSlicedPartitions()) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
                 partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
@@ -413,7 +414,7 @@ public abstract class RestService implements Serializable {
                 SettingsUtils.pinNode(settings, pinAddress);
             }
         }
-        EsMajorVersion version = InitializationUtils.discoverEsVersion(settings, log);
+        ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
         ValueReader reader = ObjectUtils.instantiate(settings.getSerializerValueReaderClassName(), settings);
         // initialize REST client
         RestRepository repository = new RestRepository(settings);
@@ -439,7 +440,7 @@ public abstract class RestService implements Serializable {
         boolean includeVersion = settings.getReadMetadata() && settings.getReadMetadataVersion();
         Resource read = new Resource(settings, true);
         SearchRequestBuilder requestBuilder =
-                new SearchRequestBuilder(version, includeVersion)
+                new SearchRequestBuilder(clusterInfo.getMajorVersion(), includeVersion)
                         .types(read.type())
                         .indices(partition.getIndex())
                         .query(QueryUtils.parseQuery(settings))
@@ -463,7 +464,7 @@ public abstract class RestService implements Serializable {
                             .execute().getIndices();
             Map<String, IndicesAliases.Alias> aliases = indicesAliases.getAliases(partition.getIndex());
             if (aliases != null && aliases.size() > 0) {
-                requestBuilder = applyAliasMetadata(version, aliases, requestBuilder, partition.getIndex(), indices);
+                requestBuilder = applyAliasMetadata(clusterInfo.getMajorVersion(), aliases, requestBuilder, partition.getIndex(), indices);
             }
         }
         return new PartitionReader(scrollReader, repository, requestBuilder);
@@ -573,7 +574,7 @@ public abstract class RestService implements Serializable {
         Version.logVersion();
 
         InitializationUtils.validateSettings(settings);
-        InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverClusterInfo(settings, log);
 
         InitializationUtils.validateSettingsForWriting(settings);
 
