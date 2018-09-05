@@ -598,7 +598,7 @@ public abstract class Settings {
     }
 
     public String getSecurityUserProviderClass() {
-        return getProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS);
+        return getProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS, ES_SECURITY_USER_PROVIDER_CLASS_DEFAULT);
     }
 
     public abstract InputStream loadResource(String location);

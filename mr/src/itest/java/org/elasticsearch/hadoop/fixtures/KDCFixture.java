@@ -20,11 +20,13 @@
 package org.elasticsearch.hadoop.fixtures;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Properties;
 
 import org.apache.hadoop.minikdc.MiniKdc;
-import org.junit.Test;
+import org.apache.hadoop.security.authentication.util.KerberosName;
+import org.apache.hadoop.security.authentication.util.KerberosUtil;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 
@@ -32,6 +34,7 @@ public class KDCFixture extends ExternalResource {
 
     private TemporaryFolder temporaryFolder;
     private MiniKdc kdc;
+    private String previousDefaultRealm;
 
     public KDCFixture(TemporaryFolder temporaryFolder) {
         this.temporaryFolder = temporaryFolder;
@@ -44,18 +47,31 @@ public class KDCFixture extends ExternalResource {
         conf.setProperty(MiniKdc.ORG_DOMAIN, "CO");
         kdc = new MiniKdc(conf, temporaryFolder.newFolder());
         kdc.start();
+
+        /*
+         * So, this test suite is run alongside other suites that are initializing static state
+         * all throughout the Hadoop code with the assumption that Kerberos doesn't exist, and
+         * no one in this JVM will ever care about it existing. KerberosName has a static field
+         * set once and left as-is at class loading time. That field contains the default realm
+         * as specified by the JVM's krb5 conf file. MiniKdc adds a test conf file to the JVM
+         * properties after it starts up. We need to smash the glass and update the defaultRealm
+         * field on the KerberosName class or else Hadoop will not be able to map a Kerberos
+         * Principal Name to a regular user name with the DEFAULT rule.
+         */
+        Field defaultRealm = KerberosName.class.getDeclaredField("defaultRealm");
+        defaultRealm.setAccessible(true);
+        previousDefaultRealm = (String) defaultRealm.get(null);
+        defaultRealm.set(null, KerberosUtil.getDefaultRealm());
     }
 
     public void createPrincipal(String principal, String password) throws Exception {
         kdc.createPrincipal(principal, password);
     }
 
-    @Test
     public void createPrincipal(File keytab, List<String> principals) throws Exception {
         kdc.createPrincipal(keytab, principals.toArray(new String[0]));
     }
 
-    @Test
     public void createPrincipal(File keytab, String... principals) throws Exception {
         kdc.createPrincipal(keytab, principals);
     }
@@ -63,5 +79,17 @@ public class KDCFixture extends ExternalResource {
     @Override
     protected void after() {
         kdc.stop();
+        /*
+         * Replace the default realm information on the KerberosName class so that we don't interfere
+         * with any other test suites in the future.
+         */
+        try {
+            Field defaultRealm = KerberosName.class.getDeclaredField("defaultRealm");
+            defaultRealm.set(null, previousDefaultRealm);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Couldn't access defaultRealm field on KerberosName", e);
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException("Couldn't find defaultRealm field on KerberosName", e);
+        }
     }
 }

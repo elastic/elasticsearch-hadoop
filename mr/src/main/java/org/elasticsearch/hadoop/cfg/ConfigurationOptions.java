@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
+import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.serialization.field.DateIndexFormatter;
 import org.elasticsearch.hadoop.serialization.field.DefaultIndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.DefaultParamsExtractor;
@@ -312,4 +313,6 @@ public interface ConfigurationOptions {
 
     /** Security options **/
     String ES_SECURITY_USER_PROVIDER_CLASS = "es.security.user.provider.class";
+    // FIXHERE: Default value is being returned, but in reality we should be untangling our plate-of-spaghetti initialization code.
+    String ES_SECURITY_USER_PROVIDER_CLASS_DEFAULT = JdkUserProvider.class.getName();
 }
