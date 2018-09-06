@@ -470,7 +470,7 @@ public abstract class InitializationUtils {
     }
 
     public static boolean setUserProviderIfNotSet(Settings settings, Class<? extends UserProvider> clazz, Log log) {
-        if (!StringUtils.hasText(settings.getProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS))) { // FIXHERE: Fix default
+        if (!StringUtils.hasText(settings.getSecurityUserProviderClass())) {
             settings.setProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS, clazz.getName());
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
             if (logger.isDebugEnabled()) {
