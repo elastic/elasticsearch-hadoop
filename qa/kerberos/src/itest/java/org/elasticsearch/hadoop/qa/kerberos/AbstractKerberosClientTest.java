@@ -79,6 +79,7 @@ public class AbstractKerberosClientTest {
                 @Override
                 public Void run() throws Exception {
                     TestSettings testSettings = new TestSettings();
+                    InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, null);
                     // Remove the regular auth settings
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
@@ -110,6 +111,7 @@ public class AbstractKerberosClientTest {
                 @Override
                 public Void run() throws Exception {
                     TestSettings testSettings = new TestSettings();
+                    InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, null);
                     // Remove the regular auth settings
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);

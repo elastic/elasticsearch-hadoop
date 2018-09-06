@@ -21,8 +21,6 @@ package org.elasticsearch.hadoop.security;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.Principal;
-import java.util.Collections;
 import javax.security.auth.Subject;
 
 /**
@@ -36,7 +34,7 @@ public class JdkUserProvider implements UserProvider {
         AccessControlContext acc = AccessController.getContext();
         Subject subject = Subject.getSubject(acc);
         if (subject == null) {
-            subject = new Subject(false, Collections.<Principal>emptySet(), Collections.emptySet(), Collections.emptySet());
+            subject = new Subject();
         }
         return new JdkUser(subject);
     }

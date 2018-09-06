@@ -174,8 +174,12 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     public CommonsHttpTransport(Settings settings, SecureSettings secureSettings, String host) {
         this.settings = settings;
         this.secureSettings = secureSettings;
-        this.userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
         this.clusterName = settings.getClusterInfoOrUnnamedLatest().getClusterName().getName(); // May be a bootstrap client.
+        if (StringUtils.hasText(settings.getSecurityUserProviderClass())) {
+            this.userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
+        } else {
+            this.userProvider = null;
+        }
         httpInfo = host;
         sslEnabled = settings.getNetworkSSLEnabled();
 
@@ -277,10 +281,10 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             client.getParams().setAuthenticationPreemptive(true); // Preemptive auth only if there's basic creds.
         }
         // Try auth schemes based on currently logged in user:
-        if (settings.getSecurityUserProviderClass() != null) {
-            // FIXHERE: Maybe lazily create the user provider?
+        if (userProvider != null) {
             User user = userProvider.getUser();
-            if (user != null && user.getEsToken(clusterName) != null) {
+            // Add Token Authentication if a token is present
+            if (user.getEsToken(clusterName) != null) {
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
                 // TODO: Limit this by hosts and ports
@@ -293,25 +297,21 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 EsHadoopAuthPolicies.registerAuthSchemes();
                 authPrefs.add(EsHadoopAuthPolicies.BEARER);
             }
-        }
-        // All we really need here to support SPNEGO is that a user is logged in, has kerberos credentials, and knows
-        // the ES service principal name.
-        if (StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
-            // FIXHERE: Maybe this could combined with the if-block above?
-            User user = userProvider.getUser();
+            // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
             KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
-            Assert.notNull(userPrincipal, "Could not locate KerberosPrincipal on current user. Please make sure you are logged in.");
-            HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
-            authSettings[1] = state;
-            // TODO: Limit this by hosts and ports
-            AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
-            Credentials credential = new SpnegoCredentials(userPrincipal.getName(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
-            state.setCredentials(scope, credential);
-            if (log.isDebugEnabled()) {
-                log.info("Using detected SPNEGO credentials...");
+            if (userPrincipal != null && StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
+                HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
+                authSettings[1] = state;
+                // TODO: Limit this by hosts and ports
+                AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
+                Credentials credential = new SpnegoCredentials(userPrincipal.getName(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
+                state.setCredentials(scope, credential);
+                if (log.isDebugEnabled()) {
+                    log.info("Using detected SPNEGO credentials...");
+                }
+                EsHadoopAuthPolicies.registerAuthSchemes();
+                authPrefs.add(EsHadoopAuthPolicies.NEGOTIATE);
             }
-            EsHadoopAuthPolicies.registerAuthSchemes();
-            authPrefs.add(EsHadoopAuthPolicies.NEGOTIATE);
         }
         client.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, authPrefs);
     }
@@ -559,7 +559,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         headers.applyTo(http);
 
         // If we are using token authentication, set the auth to be preemptive:
-        if (userProvider.getUser().getEsToken(clusterName) != null) {
+        if (userProvider != null && userProvider.getUser().getEsToken(clusterName) != null) {
             http.getHostAuthState().setPreemptive();
             http.getHostAuthState().setAuthAttempted(true);
             http.getHostAuthState().setAuthScheme(new EsTokenAuthScheme());
