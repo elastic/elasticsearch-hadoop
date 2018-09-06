@@ -44,8 +44,8 @@ public class JdkUserTest {
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(jdkUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis(), testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis(), ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
 
         JdkUser.EsTokenHolder holder = new JdkUser.EsTokenHolder();
         holder.setCred(testClusterName, testToken);
@@ -81,9 +81,9 @@ public class JdkUserTest {
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(jdkUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis(), testClusterName);
-        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis(), testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis(), ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
+        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis() + 100000L, testClusterName);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
 
         jdkUser.addEsToken(testToken);
         jdkUser.addEsToken(unnamedToken);

@@ -63,13 +63,11 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
             RestClient client = null;
             try {
                 client = createClient(settings);
-                // We get the time starting right before we submit the request to have a safer expiration time.
-                long startTime = System.currentTimeMillis();
                 // TODO: Does not support multiple clusters yet
                 // the client will need to point to the cluster that this token is associated with in order to refresh it.
                 // FIXHERE: Test after ES supports immutable token refresh
                 EsToken refreshedToken = client.refreshToken(esToken);
-                return startTime + refreshedToken.getExpiresIn();
+                return refreshedToken.getExpirationTime();
             } finally {
                 if (client != null) {
                     client.close();

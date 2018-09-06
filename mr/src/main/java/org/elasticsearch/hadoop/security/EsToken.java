@@ -31,14 +31,14 @@ public class EsToken {
     private final String userName;
     private final String accessToken;
     private final String refreshToken;
-    private final long expiresIn;
+    private final long expirationTime;
     private final String clusterName;
 
-    public EsToken(String userName, String accessToken, String refreshToken, long expiresIn, String clusterName) {
+    public EsToken(String userName, String accessToken, String refreshToken, long expirationTime, String clusterName) {
         this.userName = userName;
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
-        this.expiresIn = expiresIn;
+        this.expirationTime = expirationTime;
         this.clusterName = clusterName;
     }
 
@@ -46,7 +46,7 @@ public class EsToken {
         this.userName = inputStream.readUTF();
         this.accessToken = inputStream.readUTF();
         this.refreshToken = inputStream.readUTF();
-        this.expiresIn = inputStream.readLong();
+        this.expirationTime = inputStream.readLong();
         this.clusterName = inputStream.readUTF();
     }
 
@@ -54,9 +54,8 @@ public class EsToken {
         return accessToken;
     }
 
-    // FIXHERE: Make this just an expiration time (expires in is kinda useless on its own)
-    public long getExpiresIn() {
-        return expiresIn;
+    public long getExpirationTime() {
+        return expirationTime;
     }
 
     public String getRefreshToken() {
@@ -75,7 +74,7 @@ public class EsToken {
         dataOutput.writeUTF(userName);
         dataOutput.writeUTF(accessToken);
         dataOutput.writeUTF(refreshToken);
-        dataOutput.writeLong(expiresIn);
+        dataOutput.writeLong(expirationTime);
         dataOutput.writeUTF(clusterName);
     }
 
@@ -86,7 +85,7 @@ public class EsToken {
 
         EsToken esToken = (EsToken) o;
 
-        if (expiresIn != esToken.expiresIn) return false;
+        if (expirationTime != esToken.expirationTime) return false;
         if (userName != null ? !userName.equals(esToken.userName) : esToken.userName != null) return false;
         if (accessToken != null ? !accessToken.equals(esToken.accessToken) : esToken.accessToken != null) return false;
         if (refreshToken != null ? !refreshToken.equals(esToken.refreshToken) : esToken.refreshToken != null) return false;
@@ -98,7 +97,7 @@ public class EsToken {
         int result = userName != null ? userName.hashCode() : 0;
         result = 31 * result + (accessToken != null ? accessToken.hashCode() : 0);
         result = 31 * result + (refreshToken != null ? refreshToken.hashCode() : 0);
-        result = 31 * result + (int) (expiresIn ^ (expiresIn >>> 32));
+        result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
         result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
         return result;
     }
@@ -109,7 +108,7 @@ public class EsToken {
                 "userName='" + userName + '\'' +
                 ", accessToken='" + accessToken + '\'' +
                 ", refreshToken='" + refreshToken + '\'' +
-                ", expiresIn=" + expiresIn +
+                ", expiresIn=" + expirationTime +
                 ", clusterName='" + clusterName + '\'' +
                 '}';
     }

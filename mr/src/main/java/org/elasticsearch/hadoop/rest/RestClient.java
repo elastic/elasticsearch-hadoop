@@ -611,14 +611,17 @@ public class RestClient implements Closeable, StatsAware {
         } finally {
             generator.close();
         }
+        // Get time right before the token is sent so we have a safe approximation of expiration time.
+        long startTime = System.currentTimeMillis();
         Response response = execute(POST, "/_xpack/security/oauth2/token", out.bytes());
         Map<String, Object> content = parseContent(response.body(), null);
         Number expiry = (Number) content.get("expires_in");
+        long expirationTime = startTime + expiry.longValue();
         return new EsToken(
                 user,
                 content.get("access_token").toString(),
                 content.get("refresh_token").toString(),
-                expiry.longValue(),
+                expirationTime,
                 remoteInfo.getClusterName().getName()
         );
     }
