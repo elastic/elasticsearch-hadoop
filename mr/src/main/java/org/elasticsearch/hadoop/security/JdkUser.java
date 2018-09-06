@@ -22,7 +22,9 @@ package org.elasticsearch.hadoop.security;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import javax.security.auth.Subject;
@@ -32,6 +34,21 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.util.ClusterName;
 
 public class JdkUser implements User {
+
+    /**
+     * Simplify getting and setting of tokens on a Subject by letting us store and retrieve them by name
+     */
+    static class EsTokenHolder {
+        private Map<String, EsToken> creds = new HashMap<String, EsToken>();
+
+        public EsToken getCred(String alias) {
+            return creds.get(alias);
+        }
+
+        public void setCred(String alias, EsToken cred) {
+            creds.put(alias, cred);
+        }
+    }
 
     private final Subject subject;
 
@@ -63,31 +80,26 @@ public class JdkUser implements User {
         if (clusterName == null || clusterName.equals("") || clusterName.equals(ClusterName.UNNAMED_CLUSTER_NAME)) {
             return null;
         }
-        Set<EsToken> creds = subject.getPrivateCredentials(EsToken.class);
-        if (creds.isEmpty()) {
+        Set<EsTokenHolder> credSet = subject.getPrivateCredentials(EsTokenHolder.class);
+        if (credSet.isEmpty()) {
             return null;
         } else {
-            for (EsToken cred : creds) {
-                if (clusterName.equals(cred.getClusterName())) {
-                    return cred;
-                }
-            }
+            EsTokenHolder holder = credSet.iterator().next();
+            return holder.getCred(clusterName);
         }
-        return null;
     }
 
     @Override
     public void addEsToken(EsToken esToken) {
-        // FIXHERE: Just add a custom Token Holder or use the existing Credentials class - this should be similar to how UGI works for compatibility reasons.
-        Set<EsToken> creds = subject.getPrivateCredentials(EsToken.class);
-        if (!creds.isEmpty()) {
-            for (EsToken cred : creds) {
-                if (esToken.getClusterName().equals(cred.getClusterName())) {
-                    subject.getPrivateCredentials().remove(cred);
-                }
-            }
+        Iterator<EsTokenHolder> credSet = subject.getPrivateCredentials(EsTokenHolder.class).iterator();
+        EsTokenHolder creds = null;
+        if (credSet.hasNext()) {
+            creds = credSet.next();
+        } else {
+            creds = new EsTokenHolder();
+            subject.getPrivateCredentials().add(creds);
         }
-        subject.getPrivateCredentials().add(esToken);
+        creds.setCred(esToken.getClusterName(), esToken);
     }
 
     @Override

@@ -45,8 +45,6 @@ import org.elasticsearch.hadoop.util.ClusterName;
  */
 public class HadoopUser implements User {
 
-    private static final String ES_SERVICE_NAME = "es";
-
     private final UserGroupInformation ugi;
 
     public HadoopUser(UserGroupInformation ugi) {

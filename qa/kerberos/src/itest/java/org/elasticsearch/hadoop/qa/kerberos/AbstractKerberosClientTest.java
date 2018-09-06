@@ -24,6 +24,8 @@ import java.util.List;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
@@ -46,6 +48,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class AbstractKerberosClientTest {
+
+    private static final Log LOG = LogFactory.getLog(AbstractKerberosClientTest.class);
 
     @Test
     public void testNegotiateWithExternalKDC() throws Exception {
@@ -132,7 +136,7 @@ public class AbstractKerberosClientTest {
         TestSettings testSettings = new TestSettings();
         Assume.assumeTrue(testSettings.getNetworkHttpAuthUser() != null);
         Assume.assumeTrue(testSettings.getNetworkHttpAuthPass() != null);
-        InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, null);
+        InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, LOG);
         RestClient restClient = null;
         try {
             restClient = new RestClient(testSettings);
@@ -145,10 +149,15 @@ public class AbstractKerberosClientTest {
                 @Override
                 public Void run() throws Exception {
                     TestSettings innerTestSettings = new TestSettings();
-                    InitializationUtils.setUserProviderIfNotSet(innerTestSettings, JdkUserProvider.class, null);
+                    InitializationUtils.setUserProviderIfNotSet(innerTestSettings, JdkUserProvider.class, LOG);
+                    InitializationUtils.discoverClusterInfo(innerTestSettings, LOG);
                     // Remove the regular auth settings
                     innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
                     innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+
+                    innerTestSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+                    innerTestSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_MUTUAL, "true");
+
                     // Rest Client should use token auth
                     RestClient tokenClient = new RestClient(innerTestSettings);
                     List<NodeInfo> httpDataNodes = tokenClient.getHttpDataNodes();

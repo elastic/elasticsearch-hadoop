@@ -32,12 +32,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractSpnegoNegotiatorTest.class, AbstractSpnegoAuthSchemeTest.class })
+@Suite.SuiteClasses({ AbstractSpnegoNegotiatorTest.class, AbstractSpnegoAuthSchemeTest.class, HadoopUserKerberosTest.class })
 public class KerberosSuite {
 
     public static String PRINCIPAL_CLIENT = "client";
     public static String PRINCIPAL_SERVER = "server";
     public static String PRINCIPAL_HTTP = "HTTP/es.build.elastic.co";
+    public static String DEFAULT_REALM = "BUILD.ELASTIC.CO";
 
     private static TemporaryFolder temporaryFolder = new TemporaryFolder();
     private static KDCFixture kdcFixture = new KDCFixture(temporaryFolder);
