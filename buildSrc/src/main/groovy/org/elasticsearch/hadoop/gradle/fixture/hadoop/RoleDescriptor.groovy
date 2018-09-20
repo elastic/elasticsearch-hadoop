@@ -19,30 +19,14 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-/**
- * Uniquely identifies an instance of a service in a Hadoop ecosystem
- *
- * Example: hive:hiveserver or hadoop:hdfs:namenode or hadoop:yarn:nodemanager
- */
-class ServiceIdentifier {
+interface RoleDescriptor {
 
-    /**
-     * The project/group that this service belongs to. Example: hadoop, hive
-     */
-    String serviceName
+    boolean required()
 
-    /**
-     * The subproject/subgroup that this service belongs to. Example: hdfs, mapreduce, yarn
-     */
-    String subGroup
+    String roleName()
 
-    /**
-     * The name of the service being run. Example: namenode, nodemanager, hiveserver
-     */
-    String roleName
+    int defaultInstances()
 
-    @Override
-    String toString() {
-        return "$serviceName:${subGroup == null ? '' : subGroup + ':'}${roleName}"
-    }
+    List<RoleDescriptor> dependentRoles()
+
 }

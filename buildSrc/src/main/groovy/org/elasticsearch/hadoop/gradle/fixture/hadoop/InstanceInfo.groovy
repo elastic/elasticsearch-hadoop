@@ -35,18 +35,18 @@ import java.nio.file.Paths
  * Might be a yarn node, might be an hdfs node, or even a hive server.
  * Anything that can be run as a service program within Hadoop.
  */
-class HadoopServiceInfo {
+class InstanceInfo {
 
     /** Gradle project this node is part of */
     Project project
 
-    /** configuration for entire cluster of services, including this one */
-    HadoopClusterConfiguration config
+    /** Configuration for this running instance */
+    InstanceConfiguration config
 
-    /** Unique instance of a service within the cluster, for creating unique names and paths */
+    /** Compound name of this instance's service group and role names */
     ServiceIdentifier serviceId
 
-    /** Which instance this service is in the cluster */
+    /** The numbered instance of this node */
     int instance
 
     /** name of the cluster this node is part of */
@@ -123,37 +123,37 @@ class HadoopServiceInfo {
     /** buffer for ant output when starting this node */
     ByteArrayOutputStream buffer = new ByteArrayOutputStream()
 
-    /** the version of the service that this node runs */
-    Version serviceVersion
-
     /** Holds node configuration for part of a test cluster. */
-    HadoopServiceInfo(HadoopClusterConfiguration config, ServiceIdentifier service, int instance, Project project, String prefix, Version version, File sharedDir) {
+    InstanceInfo(InstanceConfiguration config, Project project, String prefix, File sharedDir) {
         this.config = config
-        this.serviceId = service
-        this.instance = instance
         this.project = project
+
+        this.serviceId = new ServiceIdentifier(
+                serviceName: config.serviceConf.serviceDescriptor.serviceName(),
+                subGroup: config.serviceConf.serviceDescriptor.serviceSubGroup(),
+                roleName: config.roleConf.roleDescriptor.roleName()
+        )
+
+        this.instance = config.instance
         this.sharedDir = sharedDir
 
-//        // FIXHERE: Clustername?
-//        if (config.clusterName != null) {
-//            clusterName = config.clusterName
-//        } else {
-            clusterName = project.path.replace(':', '_').substring(1) + '_' + prefix
-//        }
+        Version version = config.serviceConf.version
+
+        clusterName = project.path.replace(':', '_').substring(1) + '_' + prefix
 
         // Note: Many hadoop scripts break when using spaces in names
-        baseDir = new File(project.buildDir, "fixtures/${service.serviceGroup}/${prefix}-${service.serviceName}${instance}")
+        baseDir = new File(project.buildDir, "fixtures/${serviceId.serviceName}/${prefix}-${serviceId.roleName}${instance}")
         pidDir = new File(baseDir, "run")
-        pidFile = new File(pidDir, config.pidFileName(service))
-        this.serviceVersion = serviceVersion
-        homeDir = new File(baseDir, "${config.packageName(service)}-${version}")
-        pathConf = new File(homeDir, config.configPath(service))
-        if (config.dataDir != null) {
-            dataDir = "${config.dataDir(service)}"
+        pidFile = new File(pidDir, config.getServiceDescriptor().pidFileName(serviceId))
+        homeDir = new File(baseDir, "${config.getServiceDescriptor().packageName()}-${version}")
+        pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
+        def getDataDir = config.getDataDir()
+        if (getDataDir != null) {
+            dataDir = "${getDataDir(serviceId)}"
         } else {
             dataDir = new File(homeDir, "data")
         }
-        configFile = new File(pathConf, config.configFile(service))
+        configFile = new File(pathConf, config.getServiceDescriptor().configFile(serviceId))
         // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
         // even for rpm/deb, the logs are under home because we dont start with real services
 //        File logsDir = new File(homeDir, 'logs')
@@ -181,10 +181,10 @@ class HadoopServiceInfo {
 
         // Prepare Environment
         env = [:]
-        env.putAll(config.environmentVariables)
-        if (config.pidFileEnvSetting(service) != null) {
-            env.put(config.envIdentString(service), prefix)
-            env.put(config.pidFileEnvSetting(service), "${pidDir}")
+        env.putAll(config.getEnvironmentVariables())
+        if (config.getServiceDescriptor().pidFileEnvSetting(serviceId) != null) {
+            env.put(config.getServiceDescriptor().envIdentString(serviceId), prefix)
+            env.put(config.getServiceDescriptor().pidFileEnvSetting(serviceId), "${pidDir}")
         }
 
         // TODO: Is this needed / supported uniformly for hadoop?
@@ -201,7 +201,7 @@ class HadoopServiceInfo {
 
         // Prepare startup command and arguments
         args = []
-        List<String> startCommandLine = config.daemonize ? config.daemonStartCommand(service) : config.startCommand(service)
+        List<String> startCommandLine = config.isDaemonized() ? config.getServiceDescriptor().daemonStartCommand(serviceId) : config.getServiceDescriptor().startCommand(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             // TODO: Test on windows to see if this actually works
             executable = 'cmd'
@@ -218,8 +218,8 @@ class HadoopServiceInfo {
             wrapperScript = new File(cwd, "run")
             startScript = binPath().resolve(startCommandLine.first())
         }
-        spawn = config.wrapScript(service)
-        if (config.daemonize && spawn) {
+        spawn = config.getServiceDescriptor().wrapScript(serviceId)
+        if (config.isDaemonized() && spawn) {
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 /*
                  * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
@@ -266,10 +266,11 @@ class HadoopServiceInfo {
     }
 
     Path binPath() {
+        String dir = config.isDaemonized() ? config.getServiceDescriptor().daemonScriptDir(serviceId) : config.getServiceDescriptor().scriptDir(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return Paths.get(getShortPathName(new File(homeDir, config.scriptDir(serviceId)).toString()))
+            return Paths.get(getShortPathName(new File(homeDir, dir).toString()))
         } else {
-            return Paths.get(new File(homeDir, config.scriptDir(serviceId)).toURI())
+            return Paths.get(new File(homeDir, dir).toURI())
         }
     }
 
@@ -301,14 +302,14 @@ class HadoopServiceInfo {
 
     /** Returns debug string for the command that started this node. */
     String getCommandString() {
-        String commandString = "\nService ${serviceId.serviceGroup}: ${serviceId.serviceName} configuration:\n"
+        String commandString = "\nService ${serviceId.serviceName}: ${serviceId.roleName} configuration:\n"
         commandString += "|-----------------------------------------\n"
         commandString += "|  cwd: ${cwd}\n"
         commandString += "|  command: ${executable} ${args.join(' ')}\n"
         commandString += '|  environment:\n'
         commandString += "|    JAVA_HOME: ${javaHome}\n"
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
-        if (config.daemonize && spawn) {
+        if (config.isDaemonized() && spawn) {
             commandString += "|\n|  [${wrapperScript.name}]\n"
             wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
         }

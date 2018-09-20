@@ -19,192 +19,91 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
+import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
+import org.gradle.util.ConfigureUtil
 
 /**
  * Configuration for a Hadoop cluster, used for integration tests
  */
-class HadoopClusterConfiguration {
+class HadoopClusterConfiguration extends ProcessConfiguration {
 
-    enum Service {
-        HDFS_NAMENODE,
-        HDFS_DATANODE,
-        YARN_RESOURCEMANAGER,
-        YARN_NODEMANAGER
-    }
+    static final HdfsServiceDescriptor HDFS = new HdfsServiceDescriptor()
+    static final YarnServiceDescriptor YARN = new YarnServiceDescriptor()
+
+    private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HDFS, YARN]
+                    .collectEntries { [(it.id()): it] }
+
+    private static final ProcessConfiguration END = new EndProcessConfiguration()
 
     private final Project project
-
-    public String instances(ServiceIdentifier instance) {
-        return 1 // Only one service at a time for now.
+    private final String name
+    private final Map<String, ServiceConfiguration> serviceConfigurations
+    private final List<ServiceConfiguration> serviceCreationOrder
+    HadoopClusterConfiguration(Project project, String name) {
+        this.project = project
+        this.name = name
+        this.serviceConfigurations = [:]
+        this.serviceCreationOrder = []
     }
 
-    public String packageName(ServiceIdentifier instance) {
-        if (instance.serviceGroup == "hadoop") {
-            return "hadoop"
+    ServiceConfiguration service(String serviceName) {
+        return service(serviceName, null)
+    }
+
+    ServiceConfiguration service(String serviceName, Closure<ServiceConfiguration> configure) {
+        ServiceDescriptor serviceDescriptor = SUPPORTED_SERVICES.get(serviceName)
+        if (serviceDescriptor == null) {
+            throw new GradleScriptException("HadoopClusterConfiguration does not support unknown service [${serviceName}]")
         }
+        return doGetService(serviceDescriptor, configure)
     }
 
-    public String configPath(ServiceIdentifier instance) {
-        if (instance.serviceGroup == "hadoop") {
-            return "etc/hadoop"
-        }
+    private ServiceConfiguration doGetService(ServiceDescriptor descriptor) {
+        return doGetService(descriptor, null)
     }
 
-    public String configFile(ServiceIdentifier instance) {
-        if (instance.serviceGroup == "hadoop") {
-            if (instance.serviceName == "namenode") {
-                return "hdfs-site.xml"
+    private ServiceConfiguration doGetService(ServiceDescriptor serviceDescriptor, Closure<ServiceConfiguration> configure) {
+        ServiceConfiguration serviceConf = serviceConfigurations.get(serviceDescriptor.id())
+        if (serviceConf != null) {
+            if (configure != null) {
+                ConfigureUtil.configure(configure, serviceConf)
             }
+            return serviceConf
         }
-    }
 
-    public List<String> startCommand(ServiceIdentifier instance) {
-        if (instance.serviceName == "namenode") {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                return ['hdfs.cmd', 'namenode']
-            } else {
-                return ['hdfs', 'namenode']
-            }
+        // Create the service conf and its dependent service confs
+
+        // Ensure that the dependent services already exist
+        List<ServiceConfiguration> dependentServices = []
+        for (ServiceDescriptor dependentServiceName : serviceDescriptor.serviceDependencies()) {
+            ServiceConfiguration conf = doGetService(dependentServiceName)
+            dependentServices.add(conf)
         }
-    }
 
-    /**
-     * If the service is run as a daemon, should the script be wrapped or run as is?
-     */
-    public boolean wrapScript(ServiceIdentifier instance) {
-        return instance.serviceGroup != "hadoop"
-    }
+        serviceConf = new ServiceConfiguration(project, this, name, serviceDescriptor, dependentServices)
+        serviceConfigurations.put(serviceDescriptor.id(), serviceConf)
+        serviceCreationOrder.add(serviceConf)
 
-    public List<String> daemonStartCommand(ServiceIdentifier serviceIdentifier) {
-        if (serviceIdentifier.serviceName == "namenode") {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                return ['hdfs.cmd', 'namenode']
-            } else {
-                return ['hadoop-daemon.sh', 'start', 'namenode']
-            }
+        if (configure != null) {
+            ConfigureUtil.configure(configure, serviceConf)
         }
+
+        return serviceConf
     }
 
-    public List<String> daemonStopCommand(ServiceIdentifier serviceIdentifier) {
-        if (serviceIdentifier.serviceName == "namenode") {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                return null
-            } else {
-                return ['hadoop-daemon.sh', 'stop', 'namenode']
-            }
-        }
+    String getName() {
+        return name
     }
 
-    public String pidFileName(ServiceIdentifier instance) {
-        return "hadoop-james.baiera-${instance.serviceName}.pid"
+    List<ServiceConfiguration> getServices() {
+        return serviceCreationOrder
     }
 
-    public String envIdentString(ServiceIdentifier instance) {
-        return "HADOOP_IDENT_STRING"
-    }
-
-    public String scriptDir(ServiceIdentifier serviceIdentifier) {
-        String dirName
-        if (daemonize) {
-            if (wrapScript(serviceIdentifier)) {
-                dirName = "bin"
-            } else {
-                dirName = "sbin"
-            }
-        } else {
-            dirName = "bin"
-        }
-    }
-
-    public String pidFileEnvSetting(ServiceIdentifier instance) {
-        if (instance.serviceName == "namenode") {
-            return "HADOOP_PID_DIR"
-        } else if (instance.serviceName == "datanode") {
-            return "HADOOP_PID_DIR"
-        } else if (instance.serviceName == "resourcemanager") {
-            return "YARN_PID_DIR"
-        } else if (instance.serviceName == "nodemanager") {
-            return "YARN_PID_DIR"
-        } else {
-            return null
-        }
-    }
-
-    /**
-     * The name of the environment variable whose contents are used for the service's java system properties
-     */
-    public String envSysPropOption(ServiceIdentifier instance) {
-        if (instance.serviceName == "namenode") {
-            return "HADOOP_NAMENODE_OPTS"
-        } else if (instance.serviceName == "datanode") {
-            return "HADOOP_DATANODE_OPTS"
-        } else if (instance.serviceName == "resourcemanager") {
-            return "YARN_OPTS"
-        } else if (instance.serviceName == "nodemanager") {
-            return "YARN_OPTS"
-        }
-    }
-
-    /*
-     * String distribution? Nope, only Tar supported
-     * int num nodes? always 1
-     * int num bwc nodes? always 0?
-     * Version bwc version? Not set yet.
-     * int httpPort? NA?
-     * int transportPort? defaults
-     * Closure<String> dataDirectory? This might be good to set
-     * String clusterName? Probably not important
-     * boolean daemonize? Probably not applicable
-     * boolean debug? Not sure
-     * mimimumMasterNodes? No
-     * String jvmArgs? Yes - per service
-     * boolean cleanShared? Do we need a shared environment?
-     * Closure waitCondition? Yes
-     *      takes NodeInfo and AntBuilder
-     *      We'll probably have ServiceInfo for each item
-     *      hits wait URL and writes url contents to wait.success
-     *      returns that wait.success exists
-     * nodeStartupWaitSeconds, yes 30
-     */
-
-    Map<String, String> systemProperties = new HashMap<>()
-
-    Map<String, String> environmentVariables = new HashMap<>()
-
-    Map<String, String> settings = new HashMap<>()
-
-    // Don't need keystore settings or files do we?
-
-    Map<String, Object> extraConfigFiles = new HashMap<>()
-
-    // don't need plugins or modules
-
-    HashMap<String, LinkedHashMap<String, Object[]>> setupCommands = new LinkedHashMap<>()
-
-    List<Object> dependencies = new ArrayList<>()
-
-    // outputs the path for the data dir
-    Closure<ServiceIdentifier> dataDir
-
-    // Not sure this ever makes sense to be false
-    boolean daemonize = true
-
-    String jvmArgs = ''
-
-    boolean debug
-
-    public void addSetupCommand(ServiceIdentifier instance, String commandName, Object[] command) {
-        LinkedHashMap<String, Object[]> commandMap = setupCommands.get(instance.serviceName)
-        if (commandMap == null) {
-            commandMap = new LinkedHashMap<>()
-            setupCommands.put(instance.serviceName, commandMap)
-        }
-        commandMap.put(commandName, command)
-    }
-
-    public Map<String, Object[]> setupCommands(ServiceIdentifier instance) {
-        return setupCommands.getOrDefault(instance.serviceName, Collections.emptyMap())
+    @Override
+    protected ProcessConfiguration parent() {
+        return END
     }
 }
