@@ -1365,7 +1365,7 @@ val spark14DF = sql.read.format("org.elasticsearch.spark.sql")
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (<3> resource 'spark/index', nodes 'spark/index')" ) "
+   "OPTIONS (<3> resource 'spark/index', nodes 'someNode')" ) "
 ----
 
 <1> Spark's temporary table name
