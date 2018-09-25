@@ -18,9 +18,13 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public enum FieldType {
@@ -55,11 +59,35 @@ public enum FieldType {
     COMPLETION;
 
     private static final Set<String> KNOWN_TYPES = new LinkedHashSet<String>();
+    private static final Map<FieldType, LinkedHashSet<FieldType>> CAST_HIERARCHY = new HashMap<FieldType, LinkedHashSet<FieldType>>();
 
     static {
         for (FieldType fieldType : EnumSet.allOf(FieldType.class)) {
             KNOWN_TYPES.add(fieldType.name());
         }
+        CAST_HIERARCHY.put(NULL,             new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(BOOLEAN,          new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(LONG,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(INTEGER,          new LinkedHashSet<FieldType>(Arrays.asList(LONG, KEYWORD)));
+        CAST_HIERARCHY.put(SHORT,            new LinkedHashSet<FieldType>(Arrays.asList(INTEGER, LONG, KEYWORD)));
+        CAST_HIERARCHY.put(BYTE,             new LinkedHashSet<FieldType>(Arrays.asList(SHORT, INTEGER, LONG, KEYWORD)));
+        CAST_HIERARCHY.put(DOUBLE,           new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(FLOAT,            new LinkedHashSet<FieldType>(Arrays.asList(DOUBLE, KEYWORD)));
+        CAST_HIERARCHY.put(STRING,           new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(DATE,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(BINARY,           new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(TOKEN_COUNT,      new LinkedHashSet<FieldType>(Arrays.asList(LONG, KEYWORD)));
+        CAST_HIERARCHY.put(TEXT,             new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(KEYWORD,          new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(HALF_FLOAT,       new LinkedHashSet<FieldType>(Arrays.asList(FLOAT, DOUBLE, KEYWORD)));
+        CAST_HIERARCHY.put(SCALED_FLOAT,     new LinkedHashSet<FieldType>(Arrays.asList(DOUBLE, KEYWORD)));
+        CAST_HIERARCHY.put(GEO_POINT,        new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(GEO_SHAPE,        new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(OBJECT,           new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(NESTED,           new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(JOIN,             new LinkedHashSet<FieldType>());
+        CAST_HIERARCHY.put(IP,               new LinkedHashSet<FieldType>(Collections.singletonList(KEYWORD)));
+        CAST_HIERARCHY.put(COMPLETION,       new LinkedHashSet<FieldType>());
     }
 
     public static FieldType parse(String name) {
@@ -87,5 +115,13 @@ public enum FieldType {
 
     public static boolean isGeo(FieldType fieldType) {
         return (GEO_POINT == fieldType || GEO_SHAPE == fieldType);
+    }
+
+    public LinkedHashSet<FieldType> getCastingTypes() {
+        LinkedHashSet<FieldType> types = CAST_HIERARCHY.get(this);
+        if (types == null) {
+            types = new LinkedHashSet<FieldType>();
+        }
+        return types;
     }
 }
