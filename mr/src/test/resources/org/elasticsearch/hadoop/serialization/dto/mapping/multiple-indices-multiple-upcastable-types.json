@@ -1,0 +1,34 @@
+{
+  "index1": {
+    "mappings": {
+      "type1": {
+        "properties": {
+          "field1_keyword": { "type": "keyword" },
+          "field2_keyword": { "type": "short" },
+          "field3_keyword": { "type": "keyword" },
+          "field4_integer": { "type": "short" },
+          "field5_keyword": { "type": "float" },
+          "field6_float": { "type": "half_float" },
+          "field7_keyword": { "type": "date" },
+          "field8_float": { "type": "float" }
+        }
+      }
+    }
+  },
+  "index2": {
+    "mappings": {
+      "type2": {
+        "properties": {
+          "field1_keyword": { "type": "keyword" },
+          "field2_keyword": { "type": "keyword" },
+          "field3_keyword": { "type": "integer" },
+          "field4_integer": { "type": "integer" },
+          "field5_keyword": { "type": "long" },
+          "field6_float": { "type": "float" },
+          "field7_keyword": { "type": "text" },
+          "field9_integer": { "type": "integer" }
+        }
+      }
+    }
+  }
+}
