@@ -160,7 +160,7 @@ private[sql] object SchemaUtils {
       case FLOAT        => FloatType
       case DOUBLE       => DoubleType
       case HALF_FLOAT   => FloatType
-      case SCALED_FLOAT => FloatType
+      case SCALED_FLOAT => DoubleType
       // String type
       case STRING       => StringType
       case TEXT         => StringType

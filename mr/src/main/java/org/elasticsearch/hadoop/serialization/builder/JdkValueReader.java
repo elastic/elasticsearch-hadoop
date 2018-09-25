@@ -73,9 +73,9 @@ public class JdkValueReader extends AbstractValueReader implements SettingsAware
         case LONG:
             return longValue(value, parser);
         case HALF_FLOAT:
-        case SCALED_FLOAT:
         case FLOAT:
             return floatValue(value, parser);
+        case SCALED_FLOAT:
         case DOUBLE:
             return doubleValue(value, parser);
         case BOOLEAN:

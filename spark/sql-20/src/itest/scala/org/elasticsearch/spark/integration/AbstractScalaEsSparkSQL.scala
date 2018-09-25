@@ -2236,6 +2236,25 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     assertEquals(2, df.count())
   }
 
+  @Test
+  def testMultiIndexesWithUpcastableTypes() {
+    // add some data
+    val jsonDoc1 = """{"artist" : "buckethead", "album": "mirror realms", "data": "blah" }"""
+    val jsonDoc2 = """{"artist" : "buckethead", "album": "mirror realms", "data": 42 }"""
+    val index1 = wrapIndex("sparksql-multi-index-upcast-1/doc")
+    val index2 = wrapIndex("sparksql-multi-index-upcast-2/doc")
+    sc.makeRDD(Seq(jsonDoc1)).saveJsonToEs(index1)
+    sc.makeRDD(Seq(jsonDoc2)).saveJsonToEs(index2)
+    RestUtils.refresh(wrapIndex("sparksql-multi-index-upcast-1"))
+    RestUtils.refresh(wrapIndex("sparksql-multi-index-upcast-1"))
+    val multiIndex = wrapIndex("sparksql-multi-index-upcast-1,") + index2
+    val df = sqc.read.format("es").load(multiIndex)
+    df.show
+    assertEquals(StringType, df.schema.fields(2).dataType)
+    println(df.selectExpr("count(*)").show(5))
+    assertEquals(2, df.count())
+  }
+
   /**
    * Take advantage of the fixed method order and clear out all created indices.
    * The indices will last in Elasticsearch for all parameters of this test suite.

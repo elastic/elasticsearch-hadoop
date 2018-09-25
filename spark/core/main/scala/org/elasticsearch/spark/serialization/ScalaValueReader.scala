@@ -85,7 +85,7 @@ class ScalaValueReader extends AbstractValueReader with SettingsAware {
         case TOKEN_COUNT => longValue(value, parser)
         case LONG => longValue(value, parser)
         case HALF_FLOAT => floatValue(value, parser)
-        case SCALED_FLOAT => floatValue(value, parser)
+        case SCALED_FLOAT => doubleValue(value, parser)
         case FLOAT => floatValue(value, parser)
         case DOUBLE => doubleValue(value, parser)
         case BOOLEAN => booleanValue(value, parser)
