@@ -100,12 +100,16 @@ final class PooledHttpTransportFactory implements TransportFactory {
      */
     private Transport borrowFrom(TransportPool pool, String hostInfo) {
         if (!pool.getJobPoolingKey().equals(jobKey)) {
-            throw new EsHadoopIllegalArgumentException("PooledTransportFactory found a pool with a different owner than this job. This could be a different job incorrectly polluting the TransportPool. Bailing out...");
+            throw new EsHadoopIllegalArgumentException("PooledTransportFactory found a pool with a different owner than this job. " +
+                    "This could be a different job incorrectly polluting the TransportPool. Bailing out...");
         }
         try {
             return pool.borrowTransport();
-        } catch (Exception e) {
-            throw new EsHadoopException(String.format("Could not get a Transport from the Transport Pool for host [%s]", hostInfo));
+        } catch (Exception ex) {
+            throw new EsHadoopException(
+                    String.format("Could not get a Transport from the Transport Pool for host [%s]", hostInfo),
+                    ex
+            );
         }
     }
 
