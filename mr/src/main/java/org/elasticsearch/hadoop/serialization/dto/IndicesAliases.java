@@ -33,6 +33,10 @@ public class IndicesAliases {
         return indices.get(index);
     }
 
+    public Map<String, Map<String, Alias>> getAll() {
+        return indices;
+    }
+
     /**
      * Parse an aliases response into an instance of {@link IndicesAliases}
      *
@@ -48,7 +52,8 @@ public class IndicesAliases {
      *           }
      *         },
      *         "index_routing" : "1",
-     *         "search_routing" : "1"
+     *         "search_routing" : "1",
+     *         "is_write_index" : true
      *       },
      *       "alias2" : {
      *         "search_routing" : "5"
@@ -78,6 +83,7 @@ public class IndicesAliases {
                 String searchRouting = null;
                 String indexRouting = null;
                 Map<String, Object> filter = null;
+                boolean isWriteIndex = false;
 
                 if (aliasMetadata.containsKey("search_routing")) {
                     searchRouting = (String) aliasMetadata.get("search_routing");
@@ -88,7 +94,11 @@ public class IndicesAliases {
                 if (aliasMetadata.containsKey("filter")) {
                     filter = (Map<String, Object>) aliasMetadata.get("filter");
                 }
-                Alias alias = new Alias(name, searchRouting, indexRouting, filter);
+                if (aliasMetadata.containsKey("is_write_index")) {
+                    isWriteIndex = (Boolean) aliasMetadata.get("is_write_index");
+                }
+
+                Alias alias = new Alias(name, searchRouting, indexRouting, filter, isWriteIndex);
                 indexAliases.put(alias.name, alias);
             }
         }
@@ -101,13 +111,14 @@ public class IndicesAliases {
         private final String searchRouting;
         private final String indexRouting;
         private final Map<String, Object> filter;
+        private final boolean isWriteIndex;
 
-
-        Alias(String name, String searchRouting, String indexRouting, Map<String, Object> filter) {
+        Alias(String name, String searchRouting, String indexRouting, Map<String, Object> filter, boolean isWriteIndex) {
             this.name = name;
             this.searchRouting = searchRouting;
             this.indexRouting = indexRouting;
             this.filter = filter;
+            this.isWriteIndex = isWriteIndex;
         }
 
         public String getName() {
@@ -126,6 +137,10 @@ public class IndicesAliases {
             return filter;
         }
 
+        public boolean isWriteIndex() {
+            return isWriteIndex;
+        }
+
         @Override
         public String toString() {
             return "Alias{" +
@@ -133,6 +148,7 @@ public class IndicesAliases {
                     ", searchRouting='" + searchRouting + '\'' +
                     ", indexRouting='" + indexRouting + '\'' +
                     ", filter=" + filter +
+                    ", isWriteAlias=" + isWriteIndex +
                     '}';
         }
     }
