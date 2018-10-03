@@ -51,4 +51,25 @@ public class StringUtilsTest {
         assertEquals("11.222.3.4", StringUtils.parseIpAddress("foobar/11.222.3.4:9200").ip);
     }
 
+    @Test
+    public void testSingularIndexNames() {
+        assertTrue(StringUtils.isValidSingularIndexName("abcdefg"));
+        assertTrue(StringUtils.isValidSingularIndexName("\uD840\uDE13")); // HTTP Encode: %F0%A0%88%93
+        assertFalse(StringUtils.isValidSingularIndexName("+abcdefg"));
+        assertFalse(StringUtils.isValidSingularIndexName("-abcdefg"));
+        assertFalse(StringUtils.isValidSingularIndexName("_abcdefg"));
+        assertFalse(StringUtils.isValidSingularIndexName("*abcdefg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abc*defg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcd/efg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcd\\efg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abc|defg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcdef,g"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcdef<em>g"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcde\"fg"));
+        assertFalse(StringUtils.isValidSingularIndexName("a bcdefg"));
+        assertFalse(StringUtils.isValidSingularIndexName("abcdefg?"));
+        // Multi-Index Format is not a legal singular index name, but it should be resolved to one at runtime
+        assertFalse(StringUtils.isValidSingularIndexName("abc{date|yyyy-MM-dd}defg"));
+
+    }
 }

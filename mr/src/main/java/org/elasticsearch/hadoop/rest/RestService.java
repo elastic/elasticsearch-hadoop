@@ -606,6 +606,11 @@ public abstract class RestService implements Serializable {
             // hard way at runtime.
             repository = initMultiIndices(settings, currentSplit, resource, log);
         } else {
+            // Make sure the resource name is a valid singular index name string candidate
+            if (!StringUtils.isValidSingularIndexName(resource.index())) {
+                throw new EsHadoopIllegalArgumentException("Illegal write index name [" + resource.index() + "]. Write resources must " +
+                        "be lowercase singular index names, with no illegal pattern characters except for multi-resource writes.");
+            }
             // Determine if the configured index is an alias.
             RestClient bootstrap = new RestClient(settings);
             GetAliasesRequestBuilder.Response response = null;

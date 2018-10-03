@@ -40,9 +40,10 @@ import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.fail;
 
 public class AbstractRestSaveTest {
 
@@ -123,8 +124,19 @@ public class AbstractRestSaveTest {
         writer.close();
     }
 
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleIndices() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "alias_index1,alias_index2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Cannot write to multiple indices.");
+    }
+
     @Test
-    public void testCreatePartitionWriterWithSingleAlias() throws Exception {
+    public void testCreatePartitionWriterWithAliasUsingSingleIndex() throws Exception {
         RestUtils.postData("_aliases", ("{" +
                     "\"actions\": [" +
                         "{" +
@@ -146,7 +158,7 @@ public class AbstractRestSaveTest {
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
-    public void testCreatePartitionWriterWithMultipleAliases() throws Exception {
+    public void testCreatePartitionWriterWithAliasUsingMultipleIndices() throws Exception {
         RestUtils.postData("_aliases", ("{" +
                     "\"actions\": [" +
                         "{" +
@@ -170,11 +182,11 @@ public class AbstractRestSaveTest {
         InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
         InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
         RestService.createWriter(settings, 1, 3, LOG);
-        Assert.fail("Should not be able to read data from multi_alias run");
+        fail("Should not be able to read data from multi_alias run");
     }
 
     @Test
-    public void testCreatePartitionWriterWithWritableMultipleAliases() throws Exception {
+    public void testCreatePartitionWriterWithWritableAliasUsingMultipleIndices() throws Exception {
         RestUtils.postData("_aliases", ("{" +
                     "\"actions\": [" +
                         "{" +
@@ -200,5 +212,88 @@ public class AbstractRestSaveTest {
         InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
         RestService.PartitionWriter writer = RestService.createWriter(settings, 1, 3, LOG);
         writer.close();
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleAliases() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_aliases_1\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_aliases_1\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_aliases_2\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_aliases_2\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "more_aliases_1,more_aliases_2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Multiple alias names are not supported. Only singular aliases.");
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleWritableAliases() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_write_aliases_1\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_write_aliases_1\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_write_aliases_2\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_write_aliases_2\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "more_aliases_1,more_aliases_2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Even if the aliases are writable, they should fail since we only accept singular aliases.");
     }
 }
