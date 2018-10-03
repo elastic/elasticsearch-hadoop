@@ -81,6 +81,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             clusterConfig.setting("http.type","netty4")
             clusterConfig.setting("script.inline", "true")
             clusterConfig.setting("node.ingest", "true")
+            clusterConfig.setting("script.max_compilations_rate", null)
         } else if (majorVersion >= 6) {
             clusterConfig.setting("node.ingest", "true")
         }
