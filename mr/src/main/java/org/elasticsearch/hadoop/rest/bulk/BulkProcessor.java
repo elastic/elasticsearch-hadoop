@@ -74,7 +74,13 @@ public class BulkProcessor implements Closeable, StatsAware {
         this.autoFlush = !settings.getBatchFlushManual();
         this.bufferEntriesThreshold = settings.getBatchSizeInEntries();
         this.requiresRefreshAfterBulk = settings.getBatchRefreshAfterWrite();
-        this.retryLimit = settings.getBatchWriteRetryLimit();
+
+        // Negative retry count means that we're going to retry forever in the retry handler.
+        int retryCount = settings.getBatchWriteRetryCount();
+        // Negative retry limit means that we'll let retry handlers retry forever if need be.
+        int limit = settings.getBatchWriteRetryLimit();
+        // Set the processors retry limit to a smart value based on both the configured limit and the configured retry count.
+        this.retryLimit = (limit < retryCount || retryCount < 0) ? retryCount : limit;
 
         // Backing data array
         this.ba = new BytesArray(new byte[settings.getBatchSizeInBytes()], 0);
@@ -173,7 +179,8 @@ public class BulkProcessor implements Closeable, StatsAware {
                 List<BulkResponse.BulkError> abortErrors = new ArrayList<BulkResponse.BulkError>();
 
                 do {
-                    if (totalAttempts > retryLimit) {
+                    // Throw to break out of a possible infinite loop, but only if the limit is a positive number
+                    if (retryLimit >= 0 && totalAttempts > retryLimit) {
                         throw new EsHadoopException("Executed too many bulk requests without success. Attempted [" +
                                 totalAttempts + "] write operations, which exceeds the bulk request retry limit specified" +
                                 "by [" + ConfigurationOptions.ES_BATCH_WRITE_RETRY_LIMIT + "], and found data still " +
