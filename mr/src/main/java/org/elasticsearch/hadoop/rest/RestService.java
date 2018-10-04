@@ -265,7 +265,7 @@ public abstract class RestService implements Serializable {
                 }
             }
             final List<PartitionDefinition> partitions;
-            if (version.onOrAfter(EsMajorVersion.V_5_X) && settings.getInputUseSlicedPartitions()) {
+            if (version.onOrAfter(EsMajorVersion.V_5_X) && settings.getMaxDocsPerPartition() != null) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
                 partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
@@ -321,7 +321,8 @@ public abstract class RestService implements Serializable {
     static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, MappingSet mappingSet,
                                                          Map<String, NodeInfo> nodes, List<List<Map<String, Object>>> shards, Log log) {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
-        int maxDocsPerPartition = settings.getMaxDocsPerPartition();
+        Integer maxDocsPerPartition = settings.getMaxDocsPerPartition();
+        Assert.notNull(maxDocsPerPartition, "Attempting to find slice partitions but maximum documents per partition is not set.");
         String types = new Resource(settings, true).type();
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
 

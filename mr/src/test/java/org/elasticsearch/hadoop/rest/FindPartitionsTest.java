@@ -68,6 +68,7 @@ public class FindPartitionsTest {
     @Test
     public void testEmpty() {
         Settings settings = new PropertiesSettings();
+        settings.setMaxDocsPerPartition(10000);
         settings.setProperty(ES_RESOURCE_READ, "_all");
         assertEquals(RestService.findShardPartitions(settings, null,
                 Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
