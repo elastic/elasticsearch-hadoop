@@ -1,9 +1,0 @@
-[[eshadoop-5.0.2]]
-== Elasticsearch for Apache Hadoop version 5.0.2
-November 29, 2016
-
-[[bugs-5.0.2]]
-=== Bug Fixes
-Spark Streaming::
-* Fix for java.util.ConcurrentModificationException during REST connection pool eviction
-http://github.com/elastic/elasticsearch-hadoop/issues/894[#894]
