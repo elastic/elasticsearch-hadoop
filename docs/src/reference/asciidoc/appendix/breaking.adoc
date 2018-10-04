@@ -10,6 +10,12 @@ versions (e.g. 5.x to 6.y).
 For clarity, we always list any breaking changes at the top of the
 <<release-notes,release notes>> for each version.
 
+[[breaking-changes-7.0]]
+=== Breaking Changes in 7.0
+
+==== Configuration Changes
+`es.input.use.sliced.partitions` has been removed.
+
 [[breaking-changes-6.0]]
 === Breaking Changes in 6.0
 
@@ -17,6 +23,11 @@ This section discusses the changes that you should be aware of if you
 upgrade ES-Hadoop from version 5.x to 6.x.
 
 ==== Configuration Changes
+`es.input.use.sliced.partitions` is deprecated in 6.5.0, and will be removed
+in 7.0.0. The default value for `es.input.max.docs.per.partition` (100000)
+will also be removed in 7.0.0, thus disabling sliced scrolls by default, and
+switching them to be an explicitly opt-in feature.
+
 `es.update.script` has been deprecated in favor of the new `es.update.script.
 inline` option. The `es.update.script` configuration will continue to function
 as a legacy configuration with the same meaning as `es.update.script.inline`.
