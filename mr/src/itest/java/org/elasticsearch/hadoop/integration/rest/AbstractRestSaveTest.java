@@ -35,14 +35,20 @@ import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestRepository;
 import org.elasticsearch.hadoop.rest.RestService;
+import org.elasticsearch.hadoop.serialization.JsonUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
 import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 public class AbstractRestSaveTest {
@@ -83,6 +89,32 @@ public class AbstractRestSaveTest {
         restRepo.waitForYellow();
         restRepo.close();
         client.close();
+    }
+
+    @Test
+    public void testRepositoryDelete() throws Exception {
+        Settings settings = new TestSettings("rest/deletebulk");
+        RestUtils.delete("rest");
+        InitializationUtils.discoverEsVersion(settings, LOG);
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, ConstantFieldExtractor.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb");
+
+        RestRepository repository = new RestRepository(settings);
+
+        String id = "Tést\tData 5";
+        String doc = "{\"index\":{\"_id\":\"" + StringUtils.jsonEncoding(id) + "\"}}\n{\"field\":1}\n";
+        repository.writeProcessedToIndex(new BytesArray(doc));
+        repository.flush();
+        RestUtils.refresh("rest");
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("rest/deletebulk/_search"))), is(equalTo(1)));
+
+        repository.delete();
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("rest/deletebulk/_search"))), is(equalTo(0)));
     }
 
     @BeforeClass
