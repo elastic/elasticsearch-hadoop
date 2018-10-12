@@ -422,10 +422,12 @@ public class RestRepository implements Closeable, StatsAware {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> metadata = (Map<String, Object>) value.get("_metadata");
                     String routing = (String) metadata.get("_routing");
+                    String encodedId = StringUtils.jsonEncoding((String) kv[0]);
                     if (StringUtils.hasText(routing)) {
-                        entry.add(StringUtils.toUTF(String.format(routedFormat, kv[0], routing)));
+                        String encodedRouting = StringUtils.jsonEncoding(routing);
+                        entry.add(StringUtils.toUTF(String.format(routedFormat, encodedId, encodedRouting)));
                     } else {
-                        entry.add(StringUtils.toUTF(String.format(baseFormat, kv[0])));
+                        entry.add(StringUtils.toUTF(String.format(baseFormat, encodedId)));
                     }
                     writeProcessedToIndex(entry);
                 }

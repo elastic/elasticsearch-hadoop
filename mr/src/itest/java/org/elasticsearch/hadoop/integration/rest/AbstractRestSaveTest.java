@@ -22,17 +22,38 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.mr.WritableBytesConverter;
+import org.elasticsearch.hadoop.mr.WritableValueWriter;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestRepository;
+import org.elasticsearch.hadoop.rest.RestService;
+import org.elasticsearch.hadoop.serialization.JsonUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
+import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor;
+import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
 public class AbstractRestSaveTest {
+
+    private static final Log LOG = LogFactory.getLog(AbstractRestSaveTest.class);
 
     @Test
     public void testBulkWrite() throws Exception {
@@ -68,5 +89,243 @@ public class AbstractRestSaveTest {
         restRepo.waitForYellow();
         restRepo.close();
         client.close();
+    }
+
+    @Test
+    public void testRepositoryDelete() throws Exception {
+        Settings settings = new TestSettings("rest/deletebulk");
+        RestUtils.delete("rest");
+        InitializationUtils.discoverEsVersion(settings, LOG);
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, ConstantFieldExtractor.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb");
+
+        RestRepository repository = new RestRepository(settings);
+
+        String id = "Tést\tData 5";
+        String doc = "{\"index\":{\"_id\":\"" + StringUtils.jsonEncoding(id) + "\"}}\n{\"field\":1}\n";
+        repository.writeProcessedToIndex(new BytesArray(doc));
+        repository.flush();
+        RestUtils.refresh("rest");
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("rest/deletebulk/_search"))), is(equalTo(1)));
+
+        repository.delete();
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("rest/deletebulk/_search"))), is(equalTo(0)));
+    }
+
+    @BeforeClass
+    public static void createAliasTestIndices() throws Exception {
+        RestUtils.put("alias_index1", ("{" +
+                    "\"settings\": {" +
+                        "\"number_of_shards\": 3," +
+                        "\"number_of_replicas\": 0" +
+                    "}" +
+                "}'").getBytes());
+
+        RestUtils.put("alias_index2", ("{" +
+                    "\"settings\": {" +
+                        "\"number_of_shards\": 3," +
+                        "\"number_of_replicas\": 0" +
+                    "}" +
+                "}'").getBytes());
+    }
+
+    @Test
+    public void testCreatePartitionWriterWithPatternedIndex() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "alias_index{id}/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.PartitionWriter writer = RestService.createWriter(settings, 1, 3, LOG);
+        writer.close();
+    }
+
+    @Test
+    public void testCreatePartitionWriterWithSingleIndex() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "alias_index1/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.PartitionWriter writer = RestService.createWriter(settings, 1, 3, LOG);
+        writer.close();
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleIndices() throws Exception {
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "alias_index1,alias_index2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Cannot write to multiple indices.");
+    }
+
+    @Test
+    public void testCreatePartitionWriterWithAliasUsingSingleIndex() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"single_alias\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "single_alias/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.PartitionWriter writer = RestService.createWriter(settings, 1, 3, LOG);
+        writer.close();
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithAliasUsingMultipleIndices() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"multi_alias\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"multi_alias\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "multi_alias/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Should not be able to read data from multi_alias run");
+    }
+
+    @Test
+    public void testCreatePartitionWriterWithWritableAliasUsingMultipleIndices() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"multi_alias_writable\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"multi_alias_writable\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "multi_alias_writable/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.PartitionWriter writer = RestService.createWriter(settings, 1, 3, LOG);
+        writer.close();
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleAliases() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_aliases_1\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_aliases_1\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_aliases_2\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_aliases_2\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "more_aliases_1,more_aliases_2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Multiple alias names are not supported. Only singular aliases.");
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testCreatePartitionWriterWithMultipleWritableAliases() throws Exception {
+        RestUtils.postData("_aliases", ("{" +
+                    "\"actions\": [" +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_write_aliases_1\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_write_aliases_1\"" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index1\"," +
+                                "\"alias\": \"more_write_aliases_2\"," +
+                                "\"is_write_index\": true" +
+                            "}" +
+                        "}," +
+                        "{" +
+                            "\"add\": {" +
+                                "\"index\": \"alias_index2\"," +
+                                "\"alias\": \"more_write_aliases_2\"" +
+                            "}" +
+                        "}" +
+                    "]" +
+                "}").getBytes());
+
+        Settings settings = new TestSettings();
+        settings.setProperty(ConfigurationOptions.ES_RESOURCE, "more_aliases_1,more_aliases_2/doc");
+        InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, LOG);
+        InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, LOG);
+        InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, LOG);
+        RestService.createWriter(settings, 1, 3, LOG);
+        fail("Even if the aliases are writable, they should fail since we only accept singular aliases.");
     }
 }
