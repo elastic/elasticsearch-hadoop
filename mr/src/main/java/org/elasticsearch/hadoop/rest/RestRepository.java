@@ -194,10 +194,12 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public BulkResponse tryFlush() {
+        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
         return bulkProcessor.tryFlush();
     }
 
     public void flush() {
+        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
         bulkProcessor.flush();
     }
 
@@ -419,7 +421,10 @@ public class RestRepository implements Closeable, StatsAware {
                 } else {
                     routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";
                 }
+
+                boolean hasData = false;
                 while (sq.hasNext()) {
+                    hasData = true;
                     entry.reset();
                     Object[] kv = sq.next();
                     @SuppressWarnings("unchecked")
@@ -437,9 +442,11 @@ public class RestRepository implements Closeable, StatsAware {
                     writeProcessedToIndex(entry);
                 }
 
-                flush();
-                // once done force a refresh
-                client.refresh(resources.getResourceWrite());
+                if (hasData) {
+                    flush();
+                    // once done force a refresh
+                    client.refresh(resources.getResourceWrite());
+                }
             } finally {
                 stats.aggregate(sq.stats());
                 sq.close();

@@ -117,21 +117,47 @@ public class AbstractRestSaveTest {
         assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("rest/deletebulk/_search"))), is(equalTo(0)));
     }
 
+    @Test
+    public void testRepositoryDeleteEmptyIndex() throws Exception {
+        Settings settings = new TestSettings("delete_empty/test");
+        RestUtils.delete("delete_empty");
+        InitializationUtils.discoverEsVersion(settings, LOG);
+        settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, ConstantFieldExtractor.class.getName());
+        settings.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000");
+        settings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb");
+
+        RestRepository repository = new RestRepository(settings);
+        repository.touch();
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("delete_empty/test/_search"))), is(equalTo(0)));
+
+        repository.delete();
+
+        assertThat(JsonUtils.query("hits").get("total").apply(JsonUtils.asMap(RestUtils.get("delete_empty/test/_search"))), is(equalTo(0)));
+    }
+
+
     @BeforeClass
     public static void createAliasTestIndices() throws Exception {
-        RestUtils.put("alias_index1", ("{" +
-                    "\"settings\": {" +
-                        "\"number_of_shards\": 3," +
-                        "\"number_of_replicas\": 0" +
-                    "}" +
-                "}'").getBytes());
+        if (!RestUtils.exists("alias_index1")) {
+            RestUtils.put("alias_index1", ("{" +
+                        "\"settings\": {" +
+                            "\"number_of_shards\": 3," +
+                            "\"number_of_replicas\": 0" +
+                        "}" +
+                    "}'").getBytes());
+        }
 
-        RestUtils.put("alias_index2", ("{" +
-                    "\"settings\": {" +
-                        "\"number_of_shards\": 3," +
-                        "\"number_of_replicas\": 0" +
-                    "}" +
-                "}'").getBytes());
+        if (!RestUtils.exists("alias_index2")) {
+            RestUtils.put("alias_index2", ("{" +
+                        "\"settings\": {" +
+                            "\"number_of_shards\": 3," +
+                            "\"number_of_replicas\": 0" +
+                        "}" +
+                    "}'").getBytes());
+        }
     }
 
     @Test
