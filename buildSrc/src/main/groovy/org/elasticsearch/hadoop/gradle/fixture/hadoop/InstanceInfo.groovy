@@ -24,6 +24,7 @@ import com.sun.jna.WString
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.JNAKernel32Library
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.Project
 
 import java.nio.file.Path

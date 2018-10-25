@@ -19,12 +19,18 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
+/**
+ * Describes deployment characteristics for the roles within a service.
+ *
+ * Used to define the names of roles in a service, the roles they depend on,
+ * and their default instance counts.
+ */
 class RoleDescriptor {
 
-    private final boolean required;
-    private final String name;
-    private final int defaultInstances;
-    private final List<RoleDescriptor> dependentRoles;
+    private final boolean required
+    private final String name
+    private final int defaultInstances
+    private final List<RoleDescriptor> dependentRoles
 
     RoleDescriptor(boolean required, String name, int defaultInstances, List<RoleDescriptor> dependentRoles) {
         this.required = required

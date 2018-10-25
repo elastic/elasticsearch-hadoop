@@ -17,15 +17,22 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
 /**
  * Handles configurations for a sub-cluster of services within the larger Hadoop cluster.
+ *
+ * A service in this context is the collection of programs that make up a self contained
+ * system. HDFS and YARN can be considered services.
+ *
+ * End -> Cluster -> Service -> Role -> Instance
  */
 class ServiceConfiguration extends ProcessConfiguration {
 

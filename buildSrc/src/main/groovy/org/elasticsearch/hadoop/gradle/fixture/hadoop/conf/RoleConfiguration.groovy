@@ -17,12 +17,21 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
+/**
+ * Shared configurations for all instances of a role within a Hadoop service.
+ *
+ * Roles in this context are the different types of programs that run as part
+ * of a service. Datanodes and Namenodes are examples of roles in the HDFS service.
+ *
+ * End -> Cluster -> Service -> Role -> Instance
+ */
 class RoleConfiguration extends ProcessConfiguration {
 
     private final Project project

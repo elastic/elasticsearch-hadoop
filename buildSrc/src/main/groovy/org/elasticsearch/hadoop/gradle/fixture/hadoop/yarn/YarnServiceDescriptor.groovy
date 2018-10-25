@@ -21,7 +21,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier

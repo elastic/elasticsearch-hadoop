@@ -19,6 +19,10 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.junit.Test
 
 import static org.junit.Assert.*

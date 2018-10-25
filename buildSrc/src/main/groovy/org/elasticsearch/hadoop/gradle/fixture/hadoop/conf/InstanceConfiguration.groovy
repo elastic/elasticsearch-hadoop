@@ -17,12 +17,17 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.gradle.api.Project
 
 /**
- * Configurations for a specific running process, that is of a given role type, belonging to a service within a cluster.
+ * Configurations for a specific running process, that is of a given role type, belonging
+ * to a service within a cluster.
+ *
+ * End -> Cluster -> Service -> Role -> Instance
  */
 class InstanceConfiguration extends ProcessConfiguration {
 

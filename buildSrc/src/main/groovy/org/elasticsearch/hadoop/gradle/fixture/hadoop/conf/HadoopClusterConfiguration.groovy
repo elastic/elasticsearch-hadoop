@@ -17,8 +17,9 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
 import org.gradle.api.GradleScriptException
@@ -26,7 +27,12 @@ import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
 /**
- * Configuration for a Hadoop cluster, used for integration tests
+ * Configuration for a Hadoop cluster, used for integration tests.
+ *
+ * The master configuration for the entire cluster. Each service, role, and instance
+ * inherits config values from this config.
+ *
+ * End -> Cluster -> Service -> Role -> Instance
  */
 class HadoopClusterConfiguration extends ProcessConfiguration {
 
@@ -42,6 +48,7 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
     private final String name
     private final Map<String, ServiceConfiguration> serviceConfigurations
     private final List<ServiceConfiguration> serviceCreationOrder
+
     HadoopClusterConfiguration(Project project, String name) {
         this.project = project
         this.name = name

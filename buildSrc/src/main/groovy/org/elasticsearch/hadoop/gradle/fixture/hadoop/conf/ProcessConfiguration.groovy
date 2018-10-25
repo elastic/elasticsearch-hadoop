@@ -17,7 +17,9 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
+
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 
 /**
  * All the configurations that can be set hierarchically for a cluster.

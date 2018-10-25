@@ -17,10 +17,17 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
+
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 
 /**
- * Provides defaults and can be slotted in as the last parent configuration in a chain
+ * Provides defaults and can be slotted in as the last parent configuration in a chain.
+ *
+ * ProcessConfiguration is a chain of configurations. This is meant to be the head of the
+ * chain, in that it provides the empty defaults.
+ *
+ * End -> Cluster -> Service -> Role -> Instance
  */
 class EndProcessConfiguration extends ProcessConfiguration {
 
