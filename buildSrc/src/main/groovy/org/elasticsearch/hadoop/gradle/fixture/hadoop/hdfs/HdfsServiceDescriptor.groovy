@@ -30,8 +30,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
  */
 class HdfsServiceDescriptor implements ServiceDescriptor {
 
-    static final RoleDescriptor NAMENODE_ROLE = new NamenodeRoleDescriptor()
-    static final RoleDescriptor DATANODE_ROLE = new DatanodeRoleDescriptor()
+    static final RoleDescriptor NAMENODE_ROLE = new RoleDescriptor(true, 'namenode', 1, [])
+    static final RoleDescriptor DATANODE_ROLE = new RoleDescriptor(true, 'datanode', 1, [NAMENODE_ROLE])
 
     @Override
     String id() {

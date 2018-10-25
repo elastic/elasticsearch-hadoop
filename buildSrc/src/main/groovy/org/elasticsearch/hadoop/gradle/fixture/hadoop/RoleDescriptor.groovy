@@ -19,14 +19,34 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-interface RoleDescriptor {
+class RoleDescriptor {
 
-    boolean required()
+    private final boolean required;
+    private final String name;
+    private final int defaultInstances;
+    private final List<RoleDescriptor> dependentRoles;
 
-    String roleName()
+    RoleDescriptor(boolean required, String name, int defaultInstances, List<RoleDescriptor> dependentRoles) {
+        this.required = required
+        this.name = name
+        this.defaultInstances = defaultInstances
+        this.dependentRoles = dependentRoles
+    }
 
-    int defaultInstances()
+    boolean required() {
+        return required
+    }
 
-    List<RoleDescriptor> dependentRoles()
+    String roleName() {
+        return name
+    }
+
+    int defaultInstances() {
+        return defaultInstances
+    }
+
+    List<RoleDescriptor> dependentRoles() {
+        return dependentRoles
+    }
 
 }

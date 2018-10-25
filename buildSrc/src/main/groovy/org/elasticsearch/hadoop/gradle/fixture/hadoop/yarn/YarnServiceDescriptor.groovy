@@ -28,8 +28,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 
 class YarnServiceDescriptor implements ServiceDescriptor {
 
-    static ResourceManagerRoleDescriptor RESOURCEMANAGER = new ResourceManagerRoleDescriptor()
-    static NodeManagerRoleDescriptor NODEMANAGER = new NodeManagerRoleDescriptor()
+    static RoleDescriptor RESOURCEMANAGER = new RoleDescriptor(true, 'resourcemanager', 1, [])
+    static RoleDescriptor NODEMANAGER = new RoleDescriptor(true, 'nodemanager', 1, [RESOURCEMANAGER])
 
     @Override
     String id() {
