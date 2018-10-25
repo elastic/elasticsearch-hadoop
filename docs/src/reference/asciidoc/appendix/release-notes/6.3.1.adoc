@@ -1,0 +1,31 @@
+[[eshadoop-6.3.1]]
+== Elasticsearch for Apache Hadoop version 6.3.1
+June 13, 2018
+
+[[known-5.3.1]]
+=== Known Issues
+* ES-Hadoop may generate search scroll requests incorrectly if no source fields are provided for filtering. Fixed in 6.3.2.
+https://github.com/elastic/elasticsearch-hadoop/issues/1172[#1172]
+
+[[enhancements-6.3.1]]
+=== Enhancements
+MR::
+* add EsInputSplit.toString method which can be used for debugging
+https://github.com/elastic/elasticsearch-hadoop/pull/1144[#1144]
+REST::
+* An HTTP line is larger than 4096 bytes
+https://github.com/elastic/elasticsearch-hadoop/pull/1154[#1154]
+Build::
+* Upgrade Scala minor version to support Java 9/10
+https://github.com/elastic/elasticsearch-hadoop/pull/1155[#1155]
+
+[[bugs-6.3.1]]
+=== Bug Fixes
+Serialization::
+* NullPointerException if index pattern field is null in json document
+https://github.com/elastic/elasticsearch-hadoop/issues/1166[#1166]
+
+[[docs-6.3.1]]
+=== Documentation
+* Breaking up the Spark documentation page into sub pages
+https://github.com/elastic/elasticsearch-hadoop/pull/1151[#1151]

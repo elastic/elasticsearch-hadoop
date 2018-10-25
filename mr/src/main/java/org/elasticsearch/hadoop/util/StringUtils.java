@@ -341,6 +341,50 @@ public abstract class StringUtils {
         return res;
     }
 
+    private static final char[] SINGLE_INDEX_ILLEGAL_START_CHARACTERS = {'_', '+', '-'};
+    private static final char[] SINGLE_INDEX_ILLEGAL_CHARACTERS = {' ', '\"', '*', '\\', '<', '|', ',', '>', '/', '?'};
+
+    /**
+     * Determines if a string is a valid name for a singular index in that
+     * it contains no illegal index name characters, and would likely be legal
+     * for use with API's that operate on singular indices only (writes, etc)
+     */
+    public static boolean isValidSingularIndexName(String singleIndexName) {
+        boolean firstRun = true;
+        char[] chars = singleIndexName.toCharArray();
+        for (int idx = 0; idx < chars.length; idx++) {
+            char c = chars[idx];
+            // Check first character for illegal starting chars
+            if (firstRun) {
+                for (char illegalStartCharacter : SINGLE_INDEX_ILLEGAL_START_CHARACTERS) {
+                    if (c == illegalStartCharacter) {
+                        return false;
+                    }
+                }
+                firstRun = false;
+            }
+            // Check for any illegal chars
+            for (char illegalCharacter : SINGLE_INDEX_ILLEGAL_CHARACTERS) {
+                if (c == illegalCharacter) {
+                    return false;
+                }
+            }
+            // No uppercase characters
+            if (Character.isHighSurrogate(c)) {
+                // Be sensitive to surrogate pairs in unicode...
+                int hi = (int) c;
+                int lo = (int) chars[++idx];
+                int codePoint = ((hi - 0xD800) * 0x400) + (lo - 0XDC00) + 0x10000;
+                if (Character.isUpperCase(codePoint)) {
+                    return false;
+                }
+            } else if (Character.isUpperCase(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static boolean isLowerCase(CharSequence string) {
         for (int index = 0; index < string.length(); index++) {
             if (Character.isUpperCase(string.charAt(index))) {

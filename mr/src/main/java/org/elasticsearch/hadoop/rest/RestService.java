@@ -266,7 +266,7 @@ public abstract class RestService implements Serializable {
                 }
             }
             final List<PartitionDefinition> partitions;
-            if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) && settings.getInputUseSlicedPartitions()) {
+            if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X) && settings.getMaxDocsPerPartition() != null) {
                 partitions = findSlicePartitions(client.getRestClient(), settings, mapping, nodesMap, shards, log);
             } else {
                 partitions = findShardPartitions(settings, mapping, nodesMap, shards, log);
@@ -322,7 +322,8 @@ public abstract class RestService implements Serializable {
     static List<PartitionDefinition> findSlicePartitions(RestClient client, Settings settings, MappingSet mappingSet,
                                                          Map<String, NodeInfo> nodes, List<List<Map<String, Object>>> shards, Log log) {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
-        int maxDocsPerPartition = settings.getMaxDocsPerPartition();
+        Integer maxDocsPerPartition = settings.getMaxDocsPerPartition();
+        Assert.notNull(maxDocsPerPartition, "Attempting to find slice partitions but maximum documents per partition is not set.");
         String types = new Resource(settings, true).type();
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
 
@@ -599,11 +600,54 @@ public abstract class RestService implements Serializable {
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
         iformat.compile(resource.toString());
 
-        RestRepository repository = (iformat.hasPattern() ? initMultiIndices(settings, currentSplit, resource, log) : initSingleIndex(settings, currentSplit, resource, log));
-
+        // Create the partition writer and its client
+        RestRepository repository;
+        if (iformat.hasPattern()) {
+            // Can't be sure if a multi-index pattern will resolve to indices or aliases
+            // during the job. It's better to trust the user and discover any issues the
+            // hard way at runtime.
+            repository = initMultiIndices(settings, currentSplit, resource, log);
+        } else {
+            // Make sure the resource name is a valid singular index name string candidate
+            if (!StringUtils.isValidSingularIndexName(resource.index())) {
+                throw new EsHadoopIllegalArgumentException("Illegal write index name [" + resource.index() + "]. Write resources must " +
+                        "be lowercase singular index names, with no illegal pattern characters except for multi-resource writes.");
+            }
+            // Determine if the configured index is an alias.
+            RestClient bootstrap = new RestClient(settings);
+            GetAliasesRequestBuilder.Response response = null;
+            try {
+                response = new GetAliasesRequestBuilder(bootstrap).aliases(resource.index()).execute();
+            } catch (EsHadoopInvalidRequest remoteException) {
+                // For now, the get alias call throws if it does not find an alias that matches. Just log and continue.
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Provided index name [%s] is not an alias. Reason: [%s]",
+                            resource.index(), remoteException.getMessage()));
+                }
+            } finally {
+                bootstrap.close();
+            }
+            // Validate the alias for writing, or pin to a single index shard.
+            if (response != null && response.hasAliases()) {
+                repository = initAliasWrite(response, settings, currentSplit, resource, log);
+            } else {
+                repository = initSingleIndex(settings, currentSplit, resource, log);
+            }
+        }
         return new PartitionWriter(settings, currentSplit, totalSplits, repository);
     }
 
+    /**
+     * Validate and configure a rest repository for writing to an index.
+     * The index is potentially created if it does not exist, and the
+     * client is pinned to a node that hosts one of the index's primary
+     * shards based on its currentInstance number.
+     * @param settings Job settings
+     * @param currentInstance Partition number
+     * @param resource Configured write resource
+     * @param log Logger to use
+     * @return The RestRepository to be used by the partition writer
+     */
     private static RestRepository initSingleIndex(Settings settings, long currentInstance, Resource resource, Log log) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Resource [%s] resolves as a single index", resource));
@@ -639,9 +683,7 @@ public abstract class RestService implements Serializable {
         }
 
         // no routing necessary; select the relevant target shard/node
-        Map<ShardInfo, NodeInfo> targetShards = Collections.emptyMap();
-
-        targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
+        Map<ShardInfo, NodeInfo> targetShards = repository.getWriteTargetPrimaryShards(settings.getNodesClientOnly());
         repository.close();
 
         Assert.isTrue(!targetShards.isEmpty(),
@@ -676,12 +718,83 @@ public abstract class RestService implements Serializable {
         return repository;
     }
 
+    /**
+     * Creates a RestRepository for use with a multi-index resource pattern. The client is left pinned
+     * to the original node that it was pinned to since the shard locations cannot be determined at all.
+     * @param settings Job settings
+     * @param currentInstance Partition number
+     * @param resource Configured write resource
+     * @param log Logger to use
+     * @return The RestRepository to be used by the partition writer
+     */
     private static RestRepository initMultiIndices(Settings settings, long currentInstance, Resource resource, Log log) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("Resource [%s] resolves as an index pattern", resource));
         }
 
         // multi-index write - since we don't know before hand what index will be used, use an already selected node
+        String node = SettingsUtils.getPinnedNode(settings);
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, node));
+        }
+
+        return new RestRepository(settings);
+    }
+
+    /**
+     * Validate and configure a rest repository for writing to an alias backed by a valid write-index.
+     * This validation only checks that an alias is valid at time of job start, and makes no guarantees
+     * about the alias changing during the execution.
+     * @param response Response from the get alias call
+     * @param settings Job settings
+     * @param currentInstance Partition number
+     * @param resource Configured write resource
+     * @param log Logger to use
+     * @return The RestRepository to be used by the partition writer
+     */
+    private static RestRepository initAliasWrite(GetAliasesRequestBuilder.Response response, Settings settings, long currentInstance,
+                                                 Resource resource, Log log) {
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Resource [%s] resolves as an index alias", resource));
+        }
+
+        // indexName -> aliasName -> alias definition
+        Map<String, Map<String, IndicesAliases.Alias>> indexAliasTable = response.getIndices().getAll();
+
+        if (indexAliasTable.size() < 1) {
+            // Sanity check
+            throw new EsHadoopIllegalArgumentException("Cannot initialize alias write resource [" + resource.index() +
+                    "] if it does not have any alias entries.");
+        } else if (indexAliasTable.size() > 1) {
+            // Multiple indices, validate that one index-alias relation has its write index flag set
+            String currentWriteIndex = null;
+            for (Map.Entry<String, Map<String, IndicesAliases.Alias>> indexRow : indexAliasTable.entrySet()) {
+                String indexName = indexRow.getKey();
+                Map<String, IndicesAliases.Alias> aliases = indexRow.getValue();
+                IndicesAliases.Alias aliasInfo = aliases.get(resource.index());
+                if (aliasInfo.isWriteIndex()) {
+                    currentWriteIndex = indexName;
+                    break;
+                }
+            }
+            if (currentWriteIndex == null) {
+                throw new EsHadoopIllegalArgumentException("Attempting to write to alias [" + resource.index() + "], " +
+                        "but detected multiple indices [" + indexAliasTable.size() + "] with no write index selected. " +
+                        "Bailing out...");
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("Writing to currently configured write-index [%s]", currentWriteIndex));
+                }
+            }
+        } else {
+            // Single index in the alias, but we should still not pin the nodes
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Writing to the alias's single configured index [%s]", indexAliasTable.keySet().iterator().next()));
+            }
+        }
+
+        // alias-index write - since we don't know beforehand what concrete index will be used at any
+        // given time during the job, use an already selected node
         String node = SettingsUtils.getPinnedNode(settings);
         if (log.isDebugEnabled()) {
             log.debug(String.format("Partition writer instance [%s] assigned to [%s]", currentInstance, node));

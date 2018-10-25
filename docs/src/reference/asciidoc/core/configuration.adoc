@@ -421,12 +421,14 @@ caution.
 ==== Input
 
 added[5.0.0]
-`es.input.max.docs.per.partition` (default 100000)::
-When reading from an {es} cluster that supports scroll slicing ({es} v5.0.0 and above), this parameter advises the connector on what the maximum number of documents per input partition should be. The connector will sample and estimate the number of documents on each shard to be read and divides each shard into input slices using the value supplied by this property. This property is ignored if you are reading from an {es} cluster that does not support scroll slicing ({es} any version below v5.0.0).
-
-added[6.2.3]
-`es.input.use.sliced.partitions` (default true)::
-By default, when this parameter is true, sliced partitions are used (standard behavior for {es} v5.0.0 and above). This can cause a significant slowdown in the pre-reading phase of the index. In some cases, the preparation time can be significantly longer than the time it takes to retrieve the data. This option allows you to disable this behavior and use shard partitions (as for {es} before 5.0.0).
+`es.input.max.docs.per.partition` ::
+When reading from an {es} cluster that supports scroll slicing ({es} v5.0.0 and above), this parameter advises the
+connector on what the maximum number of documents per input partition should be. The connector will sample and estimate
+the number of documents on each shard to be read and divides each shard into input slices using the value supplied by
+this property. This property is a suggestion, not a guarantee. The final number of documents per partition is not
+guaranteed to be below this number, but rather, they will be close to this number. This property is ignored if you are
+reading from an {es} cluster that does not support scroll slicing ({es} any version below v5.0.0). By default, this
+value is unset, and the input partitions are calculated based on the number of shards in the indices being read.
 
 [float]
 ==== Network

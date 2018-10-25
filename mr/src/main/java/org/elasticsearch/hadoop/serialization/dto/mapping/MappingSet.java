@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -91,9 +92,13 @@ public class MappingSet implements Serializable {
             Field previousField = (Field)entry[0];
             // ensure that it doesn't conflict
             if (!previousField.type().equals(field.type())) {
-                throw new EsHadoopIllegalArgumentException("Incompatible types found in multi-mapping: " +
-                        "Field ["+fullName+"] has conflicting types of ["+previousField.type()+"] and ["+
-                        field.type()+"].");
+                // Attempt to resolve field type conflicts by upcasting fields to a common "super type"
+                FieldType resolvedType = resolveTypeConflict(fullName, previousField.type(), field.type());
+                // If successful, update the previous field entry with the updated field type
+                if (!previousField.type().equals(resolvedType)) {
+                    previousField = new Field(previousField.name(), resolvedType, previousField.properties());
+                    entry[0] = previousField;
+                }
             }
             // If it does not conflict, visit it's children if it has them
             if (FieldType.isCompound(field.type())) {
@@ -104,6 +109,33 @@ public class MappingSet implements Serializable {
                 }
             }
         }
+    }
+
+    private static FieldType resolveTypeConflict(String fullName, FieldType existing, FieldType incoming) {
+        // Prefer to upcast the incoming field to the existing first
+        LinkedHashSet<FieldType> incomingSuperTypes = incoming.getCastingTypes();
+        if (incomingSuperTypes.contains(existing)) {
+            // Incoming can be cast to existing.
+            return existing;
+        }
+        // See if existing can be upcast to the incoming field's type next
+        LinkedHashSet<FieldType> existingSuperTypes = existing.getCastingTypes();
+        if (existingSuperTypes.contains(incoming)) {
+            // Existing can be cast to incoming
+            return incoming;
+        }
+        // Finally, Try to pick the lowest common super type for both fields if it exists
+        if (incomingSuperTypes.size() > 0 && existingSuperTypes.size() > 0) {
+            LinkedHashSet<FieldType> combined = new LinkedHashSet<FieldType>(incomingSuperTypes);
+            combined.retainAll(existingSuperTypes);
+            if (combined.size() > 0) {
+                return combined.iterator().next();
+            }
+        }
+        // If none of the above options succeed, the fields are conflicting
+        throw new EsHadoopIllegalArgumentException("Incompatible types found in multi-mapping: " +
+                "Field ["+fullName+"] has conflicting types of ["+existing+"] and ["+
+                incoming+"].");
     }
 
     @SuppressWarnings("unchecked")

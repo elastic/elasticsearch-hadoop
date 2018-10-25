@@ -194,10 +194,12 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public BulkResponse tryFlush() {
+        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
         return bulkProcessor.tryFlush();
     }
 
     public void flush() {
+        Assert.isTrue(writeInitialized, "Cannot flush non-initialized write operation");
         bulkProcessor.flush();
     }
 
@@ -419,7 +421,10 @@ public class RestRepository implements Closeable, StatsAware {
                 } else {
                     routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";
                 }
+
+                boolean hasData = false;
                 while (sq.hasNext()) {
+                    hasData = true;
                     entry.reset();
                     Object[] kv = sq.next();
                     @SuppressWarnings("unchecked")
@@ -427,17 +432,21 @@ public class RestRepository implements Closeable, StatsAware {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> metadata = (Map<String, Object>) value.get("_metadata");
                     String routing = (String) metadata.get("_routing");
+                    String encodedId = StringUtils.jsonEncoding((String) kv[0]);
                     if (StringUtils.hasText(routing)) {
-                        entry.add(StringUtils.toUTF(String.format(routedFormat, kv[0], routing)));
+                        String encodedRouting = StringUtils.jsonEncoding(routing);
+                        entry.add(StringUtils.toUTF(String.format(routedFormat, encodedId, encodedRouting)));
                     } else {
-                        entry.add(StringUtils.toUTF(String.format(baseFormat, kv[0])));
+                        entry.add(StringUtils.toUTF(String.format(baseFormat, encodedId)));
                     }
                     writeProcessedToIndex(entry);
                 }
 
-                flush();
-                // once done force a refresh
-                client.refresh(resources.getResourceWrite());
+                if (hasData) {
+                    flush();
+                    // once done force a refresh
+                    client.refresh(resources.getResourceWrite());
+                }
             } finally {
                 stats.aggregate(sq.stats());
                 sq.close();

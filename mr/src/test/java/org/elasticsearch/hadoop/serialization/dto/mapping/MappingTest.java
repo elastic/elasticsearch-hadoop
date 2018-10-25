@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
 
@@ -345,5 +346,55 @@ public class MappingTest {
         assertEquals(FieldType.TEXT, mapping.getFields()[1].type());
         assertEquals("name", mapping.getFields()[2].name());
         assertEquals(FieldType.TEXT, mapping.getFields()[2].type());
+    }
+
+    @Test
+    public void testMultipleIndexMultipleUpcastableFields() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-upcastable-types.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        assertNotNull(mappings.getMapping("index1", "type1"));
+        assertNotNull(mappings.getMapping("index2", "type2"));
+
+        Mapping mapping = mappings.getResolvedView();
+        assertEquals("*", mapping.getName());
+
+        assertEquals("field1_keyword", mapping.getFields()[0].name());
+        assertEquals("field2_keyword", mapping.getFields()[1].name());
+        assertEquals("field3_keyword", mapping.getFields()[2].name());
+        assertEquals("field4_integer", mapping.getFields()[3].name());
+        assertEquals("field5_keyword", mapping.getFields()[4].name());
+        assertEquals("field6_float", mapping.getFields()[5].name());
+        assertEquals("field7_keyword", mapping.getFields()[6].name());
+        assertEquals("field8_float", mapping.getFields()[7].name());
+        assertEquals("field9_integer", mapping.getFields()[8].name());
+
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[1].type());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[2].type());
+        assertEquals(FieldType.INTEGER, mapping.getFields()[3].type());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[4].type());
+        assertEquals(FieldType.FLOAT, mapping.getFields()[5].type());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[6].type());
+        assertEquals(FieldType.FLOAT, mapping.getFields()[7].type());
+        assertEquals(FieldType.INTEGER, mapping.getFields()[8].type());
+    }
+
+    @Test(expected = EsHadoopIllegalArgumentException.class)
+    public void testMultipleIndexMultipleConflictingFields() throws Exception {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-conflicting-types.json"), Map.class);
+        MappingSet mappings = parseMapping(value);
+
+        assertNotNull(mappings.getMapping("index1", "type1"));
+        assertNotNull(mappings.getMapping("index2", "type2"));
+
+        Mapping mapping = mappings.getResolvedView();
+        assertEquals("*", mapping.getName());
+        assertEquals("field1", mapping.getFields()[0].name());
+        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals("field3", mapping.getFields()[1].name());
+        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals("field4", mapping.getFields()[2].name());
+        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
     }
 }

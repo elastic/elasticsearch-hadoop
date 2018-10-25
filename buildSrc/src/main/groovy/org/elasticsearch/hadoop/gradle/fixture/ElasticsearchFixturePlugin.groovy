@@ -81,8 +81,16 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
             clusterConfig.setting("http.type","netty4")
             clusterConfig.setting("script.inline", "true")
             clusterConfig.setting("node.ingest", "true")
-        } else if (majorVersion >= 6) {
+            clusterConfig.setting("script.max_compilations_rate", null)
+        } else if (majorVersion == 6) {
             clusterConfig.setting("node.ingest", "true")
+            clusterConfig.setting("http.host", "localhost")
+            clusterConfig.systemProperty('es.http.cname_in_publish_address', 'true')
+        } else if (majorVersion >= 7) {
+            clusterConfig.setting("node.ingest", "true")
+            clusterConfig.setting("http.host", "localhost")
+            // TODO: Remove this when this is the default in 7
+            clusterConfig.systemProperty('es.http.cname_in_publish_address', 'true')
         }
 
         // Also write a script to a file for use in tests

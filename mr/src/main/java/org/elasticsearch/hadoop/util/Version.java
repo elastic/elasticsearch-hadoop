@@ -106,6 +106,14 @@ public abstract class Version {
         if (!printed) {
             printed = true;
             LogFactory.getLog(Version.class).info("Elasticsearch Hadoop " + version());
+
+            // Check java version
+            String javaVersion = System.getProperty("java.version");
+            if (javaVersion.startsWith("1.")) {
+                if (!javaVersion.startsWith("1.8.")) {
+                    LogFactory.getLog(Version.class).warn("Using java version " + javaVersion + " is deprecated in Elasticsearch Hadoop");
+                }
+            }
         }
     }
 }

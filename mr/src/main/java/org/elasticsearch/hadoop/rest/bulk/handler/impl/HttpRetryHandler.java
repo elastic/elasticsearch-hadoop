@@ -54,7 +54,8 @@ public class HttpRetryHandler extends BulkWriteErrorHandler {
         boolean legacyRetry = entry.getResponseCode() == -1 && entry.getException().getMessage().contains("EsRejectedExecutionException");
 
         if (legacyRetry || retry.retry(entry.getResponseCode())) {
-            if (entry.getNumberOfAttempts() <= retryLimit) {
+            // Negative retry limit? Retry forever.
+            if (retryLimit < 0 || entry.getNumberOfAttempts() <= retryLimit) {
                 return collector.backoffAndRetry(retryTime, TimeUnit.MILLISECONDS);
             } else {
                 return collector.pass("Document bulk write attempts [" + entry.getNumberOfAttempts() +

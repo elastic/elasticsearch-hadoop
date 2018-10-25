@@ -623,8 +623,12 @@ public abstract class Settings {
         return getProperty(ES_QUERY);
     }
 
-    public int getMaxDocsPerPartition() {
-        return Integer.parseInt(getProperty(ES_MAX_DOCS_PER_PARTITION, Integer.toString(ES_DEFAULT_MAX_DOCS_PER_PARTITION)));
+    public Integer getMaxDocsPerPartition() {
+        String value = getProperty(ES_MAX_DOCS_PER_PARTITION);
+        if (StringUtils.hasText(value)) {
+            return Integer.parseInt(value);
+        }
+        return null;
     }
 
     public boolean getReadMetadata() {
@@ -645,10 +649,6 @@ public abstract class Settings {
 
     public boolean getDataFrameWriteNullValues() {
         return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
-    }
-
-    public boolean getInputUseSlicedPartitions() {
-        return Booleans.parseBoolean(getProperty(ES_INPUT_USE_SLICED_PARTITIONS, ES_INPUT_USE_SLICED_PARTITIONS_DEFAULT));
     }
 
     public String getSecurityUserProviderClass() {

@@ -29,11 +29,25 @@ import java.util.Map;
 
 public class GetAliasesRequestBuilder extends RequestBuilder<GetAliasesRequestBuilder.Response> {
     private final List<String> indices = new ArrayList<String>();
+    private final List<String> aliases = new ArrayList<String>();
 
     public GetAliasesRequestBuilder(RestClient client) {
         super(client);
     }
 
+    /**
+     * The aliases to filter down in the response.
+     */
+    public GetAliasesRequestBuilder aliases(String... values) {
+        Collections.addAll(aliases, values);
+        return this;
+    }
+
+    /**
+     * The indices to find aliases for.
+     * Any aliases placed here are resolved on the server side to the indices that they contain.
+     * If no indices are given, we default to "_all"
+     */
     public GetAliasesRequestBuilder indices(String... values) {
         Collections.addAll(indices, values);
         return this;
@@ -48,6 +62,9 @@ public class GetAliasesRequestBuilder extends RequestBuilder<GetAliasesRequestBu
             path.append("_all");
         }
         path.append("/_alias");
+        if (aliases.size() > 0) {
+            path.append("/").append(StringUtils.concatenate(aliases));
+        }
         return new Response((Map<String, Object>) client.get(path.toString(), null));
     }
 
@@ -60,6 +77,10 @@ public class GetAliasesRequestBuilder extends RequestBuilder<GetAliasesRequestBu
 
         public IndicesAliases getIndices() {
             return indicesAliases;
+        }
+
+        public boolean hasAliases() {
+            return indicesAliases.getAll().size() > 0;
         }
     }
 }

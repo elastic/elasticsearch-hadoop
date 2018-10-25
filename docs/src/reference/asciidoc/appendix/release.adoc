@@ -8,6 +8,12 @@ This section summarizes the changes in each release.
 [float]
 [[release-notes-6]]
 ===== 6.x
+* <<eshadoop-6.4.2>>
+* <<eshadoop-6.4.1>>
+* <<eshadoop-6.4.0>>
+* <<eshadoop-6.3.2>>
+* <<eshadoop-6.3.1>>
+* <<eshadoop-6.3.0>>
 * <<eshadoop-6.2.4>>
 * <<eshadoop-6.2.3>>
 * <<eshadoop-6.2.2>>
@@ -26,36 +32,6 @@ This section summarizes the changes in each release.
 * <<eshadoop-6.0.0-beta-1>>
 * <<eshadoop-6.0.0-alpha-2>>
 * <<eshadoop-6.0.0-alpha-1>>
-
-[float]
-[[release-notes-5]]
-===== 5.x
-* <<eshadoop-5.6.5>>
-* <<eshadoop-5.6.4>>
-* <<eshadoop-5.6.3>>
-* <<eshadoop-5.6.2>>
-* <<eshadoop-5.6.1>>
-* <<eshadoop-5.6.0>>
-* <<eshadoop-5.5.3>>
-* <<eshadoop-5.5.2>>
-* <<eshadoop-5.5.1>>
-* <<eshadoop-5.5.0>>
-* <<eshadoop-5.4.2>>
-* <<eshadoop-5.4.1>>
-* <<eshadoop-5.4.0>>
-* <<eshadoop-5.3.3>>
-* <<eshadoop-5.3.2>>
-* <<eshadoop-5.3.1>>
-* <<eshadoop-5.3.0>>
-* <<eshadoop-5.2.2>>
-* <<eshadoop-5.2.1>>
-* <<eshadoop-5.2.0>>
-* <<eshadoop-5.1.2>>
-* <<eshadoop-5.1.1>>
-* <<eshadoop-5.0.2>>
-* <<eshadoop-5.0.1>>
-* <<eshadoop-5.0.0>>
-
 --
 
 ////////////////////////
@@ -105,6 +81,12 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/6.4.2.adoc[]
+include::release-notes/6.4.1.adoc[]
+include::release-notes/6.4.0.adoc[]
+include::release-notes/6.3.2.adoc[]
+include::release-notes/6.3.1.adoc[]
+include::release-notes/6.3.0.adoc[]
 include::release-notes/6.2.4.adoc[]
 include::release-notes/6.2.3.adoc[]
 include::release-notes/6.2.2.adoc[]
@@ -123,28 +105,3 @@ include::release-notes/6.0.0-beta-2.adoc[]
 include::release-notes/6.0.0-beta-1.adoc[]
 include::release-notes/6.0.0-alpha-2.adoc[]
 include::release-notes/6.0.0-alpha-1.adoc[]
-include::release-notes/5.6.5.adoc[]
-include::release-notes/5.6.4.adoc[]
-include::release-notes/5.6.3.adoc[]
-include::release-notes/5.6.2.adoc[]
-include::release-notes/5.6.1.adoc[]
-include::release-notes/5.6.0.adoc[]
-include::release-notes/5.5.3.adoc[]
-include::release-notes/5.5.2.adoc[]
-include::release-notes/5.5.1.adoc[]
-include::release-notes/5.5.0.adoc[]
-include::release-notes/5.4.2.adoc[]
-include::release-notes/5.4.1.adoc[]
-include::release-notes/5.4.0.adoc[]
-include::release-notes/5.3.3.adoc[]
-include::release-notes/5.3.2.adoc[]
-include::release-notes/5.3.1.adoc[]
-include::release-notes/5.3.0.adoc[]
-include::release-notes/5.2.2.adoc[]
-include::release-notes/5.2.1.adoc[]
-include::release-notes/5.2.0.adoc[]
-include::release-notes/5.1.2.adoc[]
-include::release-notes/5.1.1.adoc[]
-include::release-notes/5.0.2.adoc[]
-include::release-notes/5.0.1.adoc[]
-include::release-notes/5.0.0.adoc[]
