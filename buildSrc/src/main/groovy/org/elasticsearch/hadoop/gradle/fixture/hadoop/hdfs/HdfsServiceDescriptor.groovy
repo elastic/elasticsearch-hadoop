@@ -24,6 +24,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
+import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
  * Describes behavior, file/setting names, and commands for deploying a local HDFS cluster
@@ -61,6 +62,14 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     @Override
     Version defaultVersion() {
         return new Version(2, 7, 7, null, false)
+    }
+
+    @Override
+    void configureDownload(ApacheMirrorDownload task, Version version) {
+        task.packagePath = 'hadoop/common'
+        task.packageName = 'hadoop'
+        task.version = "${version}"
+        task.distribution = 'tar.gz'
     }
 
     @Override

@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
+import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
 
@@ -59,6 +60,14 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     @Override
     Version defaultVersion() {
         return new Version(2, 7, 7, null, false)
+    }
+
+    @Override
+    void configureDownload(ApacheMirrorDownload task, Version version) {
+        task.packagePath = 'hadoop/common'
+        task.packageName = 'hadoop'
+        task.version = "${version}"
+        task.distribution = 'tar.gz'
     }
 
     @Override

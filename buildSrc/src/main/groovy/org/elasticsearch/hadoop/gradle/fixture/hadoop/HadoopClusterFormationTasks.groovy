@@ -184,10 +184,7 @@ class HadoopClusterFormationTasks {
         ApacheMirrorDownload downloadTask = project.rootProject.tasks.findByName(downloadTaskName) as ApacheMirrorDownload
         if (downloadTask == null) {
             downloadTask = project.rootProject.tasks.create(name: downloadTaskName, type: ApacheMirrorDownload) as ApacheMirrorDownload
-            downloadTask.packagePath = serviceConfiguration.getServiceDescriptor().packagePath()
-            downloadTask.packageName = serviceConfiguration.getServiceDescriptor().packageName()
-            downloadTask.version = "${serviceVersion}"
-            downloadTask.distribution = serviceConfiguration.getServiceDescriptor().packageDistro()
+            serviceConfiguration.getServiceDescriptor().configureDownload(downloadTask, serviceVersion)
             downloadTask.onlyIf { !downloadTask.outputFile().exists() }
         }
 

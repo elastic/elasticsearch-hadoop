@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
  * Describes deployment characteristics for different Hadoop ecosystem projects.
@@ -40,6 +41,8 @@ interface ServiceDescriptor {
     List<RoleDescriptor> roles()
 
     Version defaultVersion()
+
+    void configureDownload(ApacheMirrorDownload task, Version version)
 
     String packageName()
 

@@ -19,7 +19,7 @@
 
 
 import org.elasticsearch.gradle.test.AntFixture
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 
 apply plugin: 'es.hadoop.build'
