@@ -53,6 +53,7 @@ class ApacheMirrorDownload extends DefaultTask {
 
     private String packagePath
     private String packageName
+    private String artifactFileName
     private String version
     private String distribution
     private File downloadDir = project.rootProject.buildDir.toPath().resolve("downloadcache").toFile()
@@ -81,6 +82,14 @@ class ApacheMirrorDownload extends DefaultTask {
         this.version = version
     }
 
+    String getArtifactFileName() {
+        return artifactFileName
+    }
+
+    void setArtifactFileName(String artifactFileName) {
+        this.artifactFileName = artifactFileName
+    }
+
     String getDistribution() {
         return distribution
     }
@@ -95,19 +104,20 @@ class ApacheMirrorDownload extends DefaultTask {
     }
 
     File outputFile() {
-        return getArtifactDirectory().toPath().resolve(packageName + '-' + version + "." + distribution).toFile()
+        return getArtifactDirectory().toPath().resolve(artifactFileName + "." + distribution).toFile()
     }
 
     @TaskAction
     def doMirroredDownload() {
         getArtifactDirectory().mkdirs()
-        String artifact = packageName + '-' + version
+        String packageDirectory = packageName + '-' + version
 
         MirrorInfo mirrorInfo = getMirrors(packagePath)
         def mirrors = new LinkedList<String>(mirrorInfo.mirrors)
         String mirror = mirrorInfo.preferred
         while (true) {
-            String url = "${mirror}${packagePath}/${artifact}/${artifact}.${distribution}"
+            // Ex: [http://blah.blah/dist/][hive]/[hive-1.2.2]/[apache-hive-1.2.2-bin].[tar.gz]
+            String url = "${mirror}${packagePath}/${packageDirectory}/${artifactFileName}.${distribution}"
             try {
                 logger.info("Downloading [$url]...")
                 project.getAnt().get(

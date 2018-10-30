@@ -25,6 +25,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.JNAKernel32Library
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 import java.nio.file.Path
@@ -143,10 +144,10 @@ class InstanceInfo {
         clusterName = project.path.replace(':', '_').substring(1) + '_' + prefix
 
         // Note: Many hadoop scripts break when using spaces in names
-        baseDir = new File(project.buildDir, "fixtures/${serviceId.serviceName}/${prefix}-${serviceId.roleName}${instance}")
+        baseDir = config.getBaseDir()
         pidDir = new File(baseDir, "run")
         pidFile = new File(pidDir, config.getServiceDescriptor().pidFileName(serviceId))
-        homeDir = new File(baseDir, "${config.getServiceDescriptor().packageName()}-${version}")
+        homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(version))
         pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
         def getDataDir = config.getDataDir()
         if (getDataDir != null) {
@@ -183,10 +184,7 @@ class InstanceInfo {
         // Prepare Environment
         env = [:]
         env.putAll(config.getEnvironmentVariables())
-        if (config.getServiceDescriptor().pidFileEnvSetting(serviceId) != null) {
-            env.put(config.getServiceDescriptor().envIdentString(serviceId), prefix)
-            env.put(config.getServiceDescriptor().pidFileEnvSetting(serviceId), "${pidDir}")
-        }
+        config.getServiceDescriptor().finalizeEnv(env, config, baseDir)
 
         // TODO: Is this needed / supported uniformly for hadoop?
 //        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -321,13 +319,17 @@ class InstanceInfo {
     }
 
     void writeWrapperScript() {
-        String argsPasser = '"$@"'
-        String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
+//        String argsPasser = '"$@"'
+//        String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            argsPasser = '%*'
-            exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
+            // TODO Eventually support Windows
+//            argsPasser = '%*'
+//            exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
+            throw new GradleException('Full test fixtures on Windows are currently unsupported')
         }
-        wrapperScript.setText("\"${startScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
+//        wrapperScript.setText("\"${startScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
+        String scriptContents = "echo \$\$> ${pidFile}; \"${startScript}\" \"\$@\" > run.log 2>&1; if [ \$? != 0 ]; then touch run.failed; rm ${pidFile}; fi"
+        wrapperScript.setText(scriptContents, 'UTF-8')
     }
 
 //    /** Returns an address and port suitable for a uri to connect to this node over http */

@@ -193,7 +193,9 @@ class HadoopClusterFormationTasks {
             verifyTask = project.rootProject.tasks.create(name: verifyTaskName, type: VerifyChecksums) as VerifyChecksums
             verifyTask.dependsOn downloadTask
             verifyTask.inputFile downloadTask.outputFile()
-            verifyTask.checksum 'SHA-512', serviceConfiguration.serviceDescriptor.packageSha512(serviceVersion)
+            for (Map.Entry<String, String> hash : serviceConfiguration.serviceDescriptor.packageHashVerification(serviceVersion)) {
+                verifyTask.checksum hash.key, hash.value
+            }
         }
 
         return new DistributionTasks(download: downloadTask, verify: verifyTask)

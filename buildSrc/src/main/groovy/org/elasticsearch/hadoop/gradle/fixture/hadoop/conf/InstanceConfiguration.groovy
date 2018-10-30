@@ -43,6 +43,12 @@ class InstanceConfiguration extends ProcessConfiguration {
         this.instance = instance
     }
 
+    File getBaseDir() {
+        String serviceName = getServiceDescriptor().serviceName()
+        String roleName = getRoleDescriptor().roleName()
+        return new File(project.buildDir, "fixtures/${serviceName}/${prefix}-${roleName}${instance}")
+    }
+
     String getPrefix() {
         return prefix
     }

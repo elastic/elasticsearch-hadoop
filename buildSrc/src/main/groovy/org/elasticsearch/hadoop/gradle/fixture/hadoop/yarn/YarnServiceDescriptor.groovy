@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
@@ -66,6 +67,7 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     void configureDownload(ApacheMirrorDownload task, Version version) {
         task.packagePath = 'hadoop/common'
         task.packageName = 'hadoop'
+        task.artifactFileName = "hadoop-${version}"
         task.version = "${version}"
         task.distribution = 'tar.gz'
     }
@@ -81,15 +83,25 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    String artifactName(Version version) {
+        return "${packageName()}-${version}"
+    }
+
+    @Override
     String packageDistro() {
         return 'tar.gz'
     }
 
     @Override
-    String packageSha512(Version version) {
+    Map<String, String> packageHashVerification(Version version) {
         if (version.major == 2 && version.minor == 7 && version.revision == 7) {
-            return '17c8917211dd4c25f78bf60130a390f9e273b0149737094e45f4ae5c917b1174b97eb90818c5df068e607835120126281bcc07514f38bd7fd3cb8e9d3db1bdde'
+            return ['SHA-512': '17c8917211dd4c25f78bf60130a390f9e273b0149737094e45f4ae5c917b1174b97eb90818c5df068e607835120126281bcc07514f38bd7fd3cb8e9d3db1bdde']
         }
+    }
+
+    @Override
+    String homeDirName(Version version) {
+        return artifactName(version)
     }
 
     @Override
@@ -151,18 +163,8 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String envIdentString(ServiceIdentifier serviceIdentifier) {
-        return 'YARN_IDENT_STRING'
-    }
-
-    @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
         return 'bin'
-    }
-
-    @Override
-    String pidFileEnvSetting(ServiceIdentifier serviceIdentifier) {
-        return 'YARN_PID_DIR'
     }
 
     @Override
@@ -173,6 +175,12 @@ class YarnServiceDescriptor implements ServiceDescriptor {
             return "YARN_NODEMANAGER_OPTS"
         }
         throw new UnsupportedOperationException("Unknown instance [${serviceIdentifier}]")
+    }
+
+    @Override
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
+        env.put("YARN_IDENT_STRING", config.getClusterConf().getName())
+        env.put("YARN_PID_DIR", "${new File(baseDir, "run")}")
     }
 
     @Override

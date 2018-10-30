@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
@@ -48,9 +49,13 @@ interface ServiceDescriptor {
 
     String packagePath()
 
+    String artifactName(Version version)
+
     String packageDistro()
 
-    String packageSha512(Version version)
+    Map<String, String> packageHashVerification(Version version)
+
+    String homeDirName(Version version)
 
     String pidFileName(ServiceIdentifier service)
 
@@ -68,13 +73,17 @@ interface ServiceDescriptor {
 
     boolean wrapScript(ServiceIdentifier instance)
 
-    String envIdentString(ServiceIdentifier instance)
-
     String scriptDir(ServiceIdentifier serviceIdentifier)
 
-    String pidFileEnvSetting(ServiceIdentifier instance)
-
+    /**
+     * The Environment Variable used to give the underlying process its java options.
+     */
     String javaOptsEnvSetting(ServiceIdentifier instance)
+
+    /**
+     * Finalize the environment variables for a given instance.
+     */
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir)
 
     Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance)
 }

@@ -135,5 +135,6 @@ HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, pref
 
 config.service('hdfs')
 config.service('yarn')
+config.service('hive')
 
 HadoopClusterFormationTasks.setup(project, runner, config)

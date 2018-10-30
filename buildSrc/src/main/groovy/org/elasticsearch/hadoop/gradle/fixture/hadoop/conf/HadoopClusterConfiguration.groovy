@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.hive.HiveServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
@@ -38,8 +39,9 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
 
     static final HdfsServiceDescriptor HDFS = new HdfsServiceDescriptor()
     static final YarnServiceDescriptor YARN = new YarnServiceDescriptor()
+    static final HiveServiceDescriptor HIVE = new HiveServiceDescriptor()
 
-    private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HDFS, YARN]
+    private static final Map<String, ServiceDescriptor> SUPPORTED_SERVICES = [HDFS, YARN, HIVE]
                     .collectEntries { [(it.id()): it] }
 
     private static final ProcessConfiguration END = new EndProcessConfiguration()
