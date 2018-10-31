@@ -33,8 +33,8 @@ import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
  */
 class HdfsServiceDescriptor implements ServiceDescriptor {
 
-    static final RoleDescriptor NAMENODE_ROLE = new RoleDescriptor(true, 'namenode', 1, [])
-    static final RoleDescriptor DATANODE_ROLE = new RoleDescriptor(true, 'datanode', 1, [NAMENODE_ROLE])
+    static final RoleDescriptor NAMENODE_ROLE = RoleDescriptor.requiredProcess('namenode')
+    static final RoleDescriptor DATANODE_ROLE = RoleDescriptor.requiredProcess('datanode', [NAMENODE_ROLE])
 
     @Override
     String id() {

@@ -207,19 +207,30 @@ class HadoopClusterFormationTasks {
             delete node.homeDir
             delete node.cwd
         }
-        setup = project.tasks.create(name: taskName(prefix, node, 'createCwd'), type: DefaultTask, dependsOn: setup) {
-            doLast {
-                node.cwd.mkdirs()
+
+        // Only create CWD and check previous if the role is an executable process
+        if (node.getConfig().getRoleDescriptor().isExecutableProcess()) {
+            setup = project.tasks.create(name: taskName(prefix, node, 'createCwd'), type: DefaultTask, dependsOn: setup) {
+                doLast {
+                    node.cwd.mkdirs()
+                }
+                outputs.dir node.cwd
             }
-            outputs.dir node.cwd
+            // FIXHERE: Check Previous
+            setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
+            setup = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, setup, node)
         }
-        // FIXHERE: Check Previous
-        setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
-        setup = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, setup, node)
+
+        // Always extract the package contents, and configure the files
         setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distribution)
         setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
         // FIXHERE: Extra Config Files
         setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
+
+        // If the role for this instance is not a process, we skip creating start and stop tasks for it.
+        if (!node.getConfig().getRoleDescriptor().isExecutableProcess()) {
+            return new InstanceTasks(startTask: setup)
+        }
 
         Map<String, Object[]> setupCommands = new LinkedHashMap<>()
         setupCommands.putAll(node.config.getServiceDescriptor().defaultSetupCommands(node.serviceId))

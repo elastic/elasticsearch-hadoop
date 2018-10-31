@@ -31,7 +31,7 @@ import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class HiveServiceDescriptor implements ServiceDescriptor {
 
-    static RoleDescriptor HIVESERVER = new RoleDescriptor(true, 'hiveserver', 1, [])
+    static RoleDescriptor HIVESERVER = RoleDescriptor.requiredProcess('hiveserver')
 
     @Override
     String id() {

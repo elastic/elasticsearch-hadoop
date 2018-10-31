@@ -31,8 +31,8 @@ import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
 
-    static RoleDescriptor RESOURCEMANAGER = new RoleDescriptor(true, 'resourcemanager', 1, [])
-    static RoleDescriptor NODEMANAGER = new RoleDescriptor(true, 'nodemanager', 1, [RESOURCEMANAGER])
+    static RoleDescriptor RESOURCEMANAGER = RoleDescriptor.requiredProcess('resourcemanager')
+    static RoleDescriptor NODEMANAGER = RoleDescriptor.requiredProcess('nodemanager', [RESOURCEMANAGER])
 
     @Override
     String id() {

@@ -27,16 +27,38 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop
  */
 class RoleDescriptor {
 
+    static RoleDescriptor requiredProcess(String name) {
+        return requiredProcess(name, [])
+    }
+
+    static RoleDescriptor requiredProcess(String name, List<RoleDescriptor> dependentRoles) {
+        return new RoleDescriptor(true, name, 1, dependentRoles, true)
+    }
+
+    static RoleDescriptor optionalProcess(String name, int defaultInstances, List<RoleDescriptor> dependentRoles) {
+        return new RoleDescriptor(false, name, defaultInstances, dependentRoles, true)
+    }
+
+    static RoleDescriptor requiredGateway(String serviceName, List<RoleDescriptor> dependentRoles) {
+        return new RoleDescriptor(true, "${serviceName}.gateway", 1, dependentRoles, false)
+    }
+
+    static RoleDescriptor optionalGateway(String serviceName, List<RoleDescriptor> dependentRoles) {
+        return new RoleDescriptor(false, "${serviceName}.gateway", 1, dependentRoles, false)
+    }
+
     private final boolean required
     private final String name
     private final int defaultInstances
     private final List<RoleDescriptor> dependentRoles
+    private final boolean executableProcess
 
-    RoleDescriptor(boolean required, String name, int defaultInstances, List<RoleDescriptor> dependentRoles) {
+    RoleDescriptor(boolean required, String name, int defaultInstances, List<RoleDescriptor> dependentRoles, boolean executableProcess) {
         this.required = required
         this.name = name
         this.defaultInstances = defaultInstances
         this.dependentRoles = dependentRoles
+        this.executableProcess = executableProcess
     }
 
     boolean required() {
@@ -55,4 +77,7 @@ class RoleDescriptor {
         return dependentRoles
     }
 
+    boolean isExecutableProcess() {
+        return executableProcess
+    }
 }
