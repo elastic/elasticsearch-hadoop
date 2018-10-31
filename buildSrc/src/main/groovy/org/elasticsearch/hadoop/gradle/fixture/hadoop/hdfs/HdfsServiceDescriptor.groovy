@@ -80,18 +80,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String packagePath() {
-        return 'hadoop/common'
-    }
-
-    @Override
     String artifactName(Version version) {
-        return "${packageName()}-${version}"
-    }
-
-    @Override
-    String packageDistro() {
-        return 'tar.gz'
+        return "hadoop-${version}"
     }
 
     @Override

@@ -47,11 +47,7 @@ interface ServiceDescriptor {
 
     String packageName()
 
-    String packagePath()
-
     String artifactName(Version version)
-
-    String packageDistro()
 
     Map<String, String> packageHashVerification(Version version)
 

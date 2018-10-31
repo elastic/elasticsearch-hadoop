@@ -65,11 +65,11 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void configureDownload(ApacheMirrorDownload task, Version version) {
-        task.packagePath = packagePath()
-        task.packageName = packageName()
+        task.packagePath = 'hive'
+        task.packageName = 'hive'
         task.artifactFileName = artifactName(version)
         task.version = "${version}"
-        task.distribution = packageDistro()
+        task.distribution = 'tar.gz'
     }
 
     @Override
@@ -78,18 +78,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String packagePath() {
-        return 'hive'
-    }
-
-    @Override
     String artifactName(Version version) {
         return "apache-hive-${version}-bin"
-    }
-
-    @Override
-    String packageDistro() {
-        return 'tar.gz'
     }
 
     @Override
