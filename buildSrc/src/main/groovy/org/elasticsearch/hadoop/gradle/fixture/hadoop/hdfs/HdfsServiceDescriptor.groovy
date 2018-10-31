@@ -69,9 +69,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     void configureDownload(ApacheMirrorDownload task, Version version) {
         task.packagePath = 'hadoop/common'
         task.packageName = 'hadoop'
-        task.artifactFileName = "hadoop-${version}"
+        task.artifactFileName = "hadoop-${version}.tar.gz"
         task.version = "${version}"
-        task.distribution = 'tar.gz'
     }
 
     @Override

@@ -30,6 +30,10 @@ import org.gradle.api.tasks.TaskAction
  * Mirror selection is done by requesting the closest mirror from the apache site. The download
  * is performed on the preferred mirror, with falling back on to the other mirrors in the mirror
  * list.
+ *
+ * Note: Apache's download mirrors are almost always http only. Since we cannot rely on downloading
+ * over https, you should always use the {@linkplain org.elasticsearch.hadoop.gradle.tasks.VerifyChecksums}
+ * task to make sure the package you are downloading is safe/intact.
  */
 class ApacheMirrorDownload extends DefaultTask {
 
@@ -53,58 +57,84 @@ class ApacheMirrorDownload extends DefaultTask {
 
     private String packagePath
     private String packageName
-    private String artifactFileName
     private String version
-    private String distribution
+    private String artifactFileName
     private File downloadDir = project.rootProject.buildDir.toPath().resolve("downloadcache").toFile()
 
+    /**
+     * @return The path on the apache download server to the directory that holds the versioned artifact directories
+     */
     String getPackagePath() {
         return packagePath
     }
 
+    /**
+     * Sets the path to the directory on the Apache download server that holds the versioned artifact directories.
+     * Also used to look up a valid mirror server for downloading the artifact for this task.
+     * @param packagePath The path on the apache download server to the directory that holds the versioned artifact
+     * directories
+     */
     void setPackagePath(String packagePath) {
         this.packagePath = packagePath
     }
 
+    /**
+     * @return The root name of the package to download
+     */
     String getPackageName() {
         return packageName
     }
 
+    /**
+     * Set the root name of the package to download. The version is appended to this to locate the versioned directory
+     * to pick out the actual download artifact, as well as to cache the artifact on the disk once it is downloaded.
+     * @param packageName The root name of the package to download
+     */
     void setPackageName(String packageName) {
         this.packageName = packageName
     }
 
+    /**
+     * @return The version of the package to download
+     */
     String getVersion() {
         return version
     }
 
+    /**
+     * @param version The version of the package to download
+     */
     void setVersion(String version) {
         this.version = version
     }
 
+    /**
+     * @return The final name of the artifact to download, including version and file extension
+     */
     String getArtifactFileName() {
         return artifactFileName
     }
 
+    /**
+     * @param artifactFileName The final name of the artifact to download, including the version and file extension
+     */
     void setArtifactFileName(String artifactFileName) {
         this.artifactFileName = artifactFileName
     }
 
-    String getDistribution() {
-        return distribution
-    }
-
-    void setDistribution(String distribution) {
-        this.distribution = distribution
-    }
-
+    /**
+     * @return The local directory that this task will download its artifact into
+     */
     @OutputDirectory
     File getArtifactDirectory() {
         return downloadDir.toPath().resolve("${packageName}-${version}").toFile()
     }
 
+    /**
+     * @return The downloaded artifact
+     */
     File outputFile() {
-        return getArtifactDirectory().toPath().resolve(artifactFileName + "." + distribution).toFile()
+        return getArtifactDirectory().toPath().resolve(artifactFileName).toFile()
     }
 
     @TaskAction
@@ -115,9 +145,14 @@ class ApacheMirrorDownload extends DefaultTask {
         MirrorInfo mirrorInfo = getMirrors(packagePath)
         def mirrors = new LinkedList<String>(mirrorInfo.mirrors)
         String mirror = mirrorInfo.preferred
+        // Sanitize mirror link
+        if (mirror.endsWith('/')) {
+            mirror = mirror.substring(0, mirror.length() - 1)
+        }
         while (true) {
-            // Ex: [http://blah.blah/dist/][hive]/[hive-1.2.2]/[apache-hive-1.2.2-bin].[tar.gz]
-            String url = "${mirror}${packagePath}/${packageDirectory}/${artifactFileName}.${distribution}"
+            // Ex: [http://blah.blah/dist]/[hive]/[hive-1.2.2]/[apache-hive-1.2.2-bin.tar.gz]
+            // Ex: [http://blah.blah/dist]/[hadoop/common]/[hadoop-2.7.7]/[hadoop-2.7.7.tar.gz]
+            String url = "${mirror}/${packagePath}/${packageDirectory}/${artifactFileName}"
             try {
                 logger.info("Downloading [$url]...")
                 project.getAnt().get(

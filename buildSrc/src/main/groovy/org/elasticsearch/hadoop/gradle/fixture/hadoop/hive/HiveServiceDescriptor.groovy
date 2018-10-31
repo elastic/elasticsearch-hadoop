@@ -67,9 +67,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     void configureDownload(ApacheMirrorDownload task, Version version) {
         task.packagePath = 'hive'
         task.packageName = 'hive'
-        task.artifactFileName = artifactName(version)
+        task.artifactFileName = "apache-hive-${version}-bin.tar.gz"
         task.version = "${version}"
-        task.distribution = 'tar.gz'
     }
 
     @Override
