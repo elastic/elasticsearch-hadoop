@@ -139,7 +139,7 @@ class InstanceInfo {
         // Note: Many hadoop scripts break when using spaces in names
         baseDir = config.getBaseDir()
         pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(serviceId))
-        homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(version))
+        homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
         pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
         def getDataDir = config.getDataDir()
         if (getDataDir != null) {
