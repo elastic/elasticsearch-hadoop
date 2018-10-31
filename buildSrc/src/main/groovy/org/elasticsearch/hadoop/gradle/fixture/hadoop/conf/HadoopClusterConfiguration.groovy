@@ -24,7 +24,6 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hive.HiveServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
 import org.gradle.api.GradleException
-import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 

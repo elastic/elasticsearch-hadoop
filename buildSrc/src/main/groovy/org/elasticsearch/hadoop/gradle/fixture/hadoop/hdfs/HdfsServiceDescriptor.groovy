@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
@@ -66,7 +67,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, Version version) {
+    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
+        Version version = configuration.getVersion()
         task.packagePath = 'hadoop/common'
         task.packageName = 'hadoop'
         task.artifactFileName = "hadoop-${version}.tar.gz"
@@ -79,7 +81,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String artifactName(Version version) {
+    String artifactName(ServiceConfiguration configuration) {
+        Version version = configuration.getVersion()
         return "hadoop-${version}"
     }
 

@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
@@ -43,11 +44,11 @@ interface ServiceDescriptor {
 
     Version defaultVersion()
 
-    void configureDownload(ApacheMirrorDownload task, Version version)
+    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration)
 
     String packageName()
 
-    String artifactName(Version version)
+    String artifactName(ServiceConfiguration configuration)
 
     Map<String, String> packageHashVerification(Version version)
 

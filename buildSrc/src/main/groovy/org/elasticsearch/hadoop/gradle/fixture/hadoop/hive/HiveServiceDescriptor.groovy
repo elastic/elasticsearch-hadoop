@@ -64,7 +64,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, Version version) {
+    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
+        Version version = configuration.getVersion()
         task.packagePath = 'hive'
         task.packageName = 'hive'
         task.artifactFileName = "apache-hive-${version}-bin.tar.gz"
@@ -77,7 +78,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String artifactName(Version version) {
+    String artifactName(ServiceConfiguration configuration) {
+        Version version = configuration.getVersion()
         return "apache-hive-${version}-bin"
     }
 
@@ -141,7 +143,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
                 .instance(0)
                 .getBaseDir()
 
-        File hadoopHome = new File(hadoopBaseDir, hdfsServiceDescriptor.artifactName(hdfsServiceConf.getVersion()))
+        File hadoopHome = new File(hadoopBaseDir, hdfsServiceDescriptor.artifactName(hdfsServiceConf))
 
         env.put('HADOOP_HOME', hadoopHome.toString())
     }
