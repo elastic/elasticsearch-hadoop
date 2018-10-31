@@ -90,8 +90,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String homeDirName(Version version) {
-        return artifactName(version)
+    String homeDirName(InstanceConfiguration configuration) {
+        return artifactName(configuration.getServiceConf())
     }
 
     @Override

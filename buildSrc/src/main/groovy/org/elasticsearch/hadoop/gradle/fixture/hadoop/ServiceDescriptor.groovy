@@ -52,7 +52,7 @@ interface ServiceDescriptor {
 
     Map<String, String> packageHashVerification(Version version)
 
-    String homeDirName(Version version)
+    String homeDirName(InstanceConfiguration configuration)
 
     String pidFileName(ServiceIdentifier service)
 
