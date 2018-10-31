@@ -62,19 +62,8 @@ class InstanceInfo {
     // Unneeded?
     File sharedDir
 
-    /** the directory in which the pid file will sit */
-    File pidDir
-
     /** the pid file the node will use */
     File pidFile
-
-    /** a file written by elasticsearch containing the ports of each bound address for http */
-    // Unneeded
-    File httpPortsFile
-
-    /** a file written by elasticsearch containing the ports of each bound address for transport */
-    // Unneeded
-    File transportPortsFile
 
     /** service home dir */
     File homeDir
@@ -119,6 +108,10 @@ class InstanceInfo {
     /** script to run when running in the background */
     private File wrapperScript
 
+    private File backgroundScript
+
+    private File pidWrapperScript
+
     /** true if the service requires us to wrap the execution to ensure daemonizing it */
     boolean spawn
 
@@ -145,8 +138,7 @@ class InstanceInfo {
 
         // Note: Many hadoop scripts break when using spaces in names
         baseDir = config.getBaseDir()
-        pidDir = new File(baseDir, "run")
-        pidFile = new File(pidDir, config.getServiceDescriptor().pidFileName(serviceId))
+        pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(serviceId))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(version))
         pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
         def getDataDir = config.getDataDir()
@@ -206,7 +198,9 @@ class InstanceInfo {
             executable = 'cmd'
             args.add('/C')
             args.add('"') // quote the entire command
-            wrapperScript = new File(cwd, "run.bat")
+//            wrapperScript = new File(cwd, "run.bat")
+            backgroundScript = new File(cwd, "run.bat")
+            pidWrapperScript = new File(cwd, "start.bat")
             /*
              * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
              * getting the short name requiring the path to already exist.
@@ -214,7 +208,9 @@ class InstanceInfo {
             startScript = "${-> binPath().resolve(startCommandLine.first()).toString()}"
         } else {
             executable = 'bash'
-            wrapperScript = new File(cwd, "run")
+//            wrapperScript = new File(cwd, "run")
+            backgroundScript = new File(cwd, "run")
+            pidWrapperScript = new File(cwd, "start")
             startScript = binPath().resolve(startCommandLine.first())
         }
         spawn = config.getServiceDescriptor().wrapScript(serviceId)
@@ -224,9 +220,10 @@ class InstanceInfo {
                  * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
                  * getting the short name requiring the path to already exist.
                  */
-                args.add("${-> getShortPathName(wrapperScript.toString())}")
+//                args.add("${-> getShortPathName(wrapperScript.toString())}")
+                args.add("${-> getShortPathName(backgroundScript.toString())}")
             } else {
-                args.add("${wrapperScript}")
+                args.add("${backgroundScript}")
             }
         } else {
             args.add("${startScript}")
@@ -309,8 +306,12 @@ class InstanceInfo {
         commandString += "|    JAVA_HOME: ${javaHome}\n"
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
         if (config.isDaemonized() && spawn) {
-            commandString += "|\n|  [${wrapperScript.name}]\n"
-            wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
+            commandString += "|\n|  [${backgroundScript.name}]\n"
+            backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
+            commandString += "|\n|  [${pidWrapperScript.name}]\n"
+            pidWrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
+//            commandString += "|\n|  [${wrapperScript.name}]\n"
+//            wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
         }
         commandString += "|\n|  [${configFile.name}]\n"
         configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
@@ -319,6 +320,10 @@ class InstanceInfo {
     }
 
     void writeWrapperScript() {
+        writeWrapperScripts()
+    }
+
+    void writeWrapperScripts() {
 //        String argsPasser = '"$@"'
 //        String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
@@ -328,8 +333,17 @@ class InstanceInfo {
             throw new GradleException('Full test fixtures on Windows are currently unsupported')
         }
 //        wrapperScript.setText("\"${startScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
-        String scriptContents = "echo \$\$> ${pidFile}; \"${startScript}\" \"\$@\" > run.log 2>&1; if [ \$? != 0 ]; then touch run.failed; rm ${pidFile}; fi"
-        wrapperScript.setText(scriptContents, 'UTF-8')
+
+//        String scriptContents = "echo \$\$> ${pidFile}; \"${startScript}\" \"\$@\" > run.log 2>&1; if [ \$? != 0 ]; then touch run.failed; rm ${pidFile}; fi"
+//        wrapperScript.setText(scriptContents, 'UTF-8')
+
+        String pidWrapperScriptContents = "echo \$\$> ${pidFile}; exec \"${startScript}\" \"\$@\" > run.log 2>&1;"
+        pidWrapperScript.setText(pidWrapperScriptContents, 'UTF-8')
+        pidWrapperScript.setExecutable(true)
+        String backgroundScriptContents = "\"${pidWrapperScript}\" \"\$@\"; if [ \\\$? != 0 ]; then touch run.failed; rm -f ${pidFile}; fi"
+        backgroundScript.setText(backgroundScriptContents, 'UTF-8')
+        backgroundScript.setExecutable(true)
+
     }
 
 //    /** Returns an address and port suitable for a uri to connect to this node over http */

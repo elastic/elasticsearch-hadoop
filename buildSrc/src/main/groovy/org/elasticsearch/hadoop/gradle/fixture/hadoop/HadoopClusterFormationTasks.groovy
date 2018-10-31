@@ -408,9 +408,9 @@ class HadoopClusterFormationTasks {
     static Task configureStopTask(String name, Project project, Object depends, InstanceInfo node) {
         // TODO: Fix the pidDir vs pidFile resolution when we get the daemon tasks to generate pids correctly
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: depends) {
-            onlyIf { node.pidDir.exists() && node.pidDir.listFiles().size() > 0 }
+            onlyIf { node.pidFile.exists() }
             // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString
-            ext.pid = "${ -> node.pidDir.listFiles().first().getText('UTF-8').trim()}"
+            ext.pid = "${ -> node.pidFile.getText('UTF-8').trim()}"
             doFirst {
                 project.logger.info("Shutting down external service with pid ${pid}")
             }
@@ -422,7 +422,7 @@ class HadoopClusterFormationTasks {
                 args '-9', pid
             }
             doLast {
-                project.delete(node.pidDir)
+                project.delete(node.pidFile)
             }
         }
     }

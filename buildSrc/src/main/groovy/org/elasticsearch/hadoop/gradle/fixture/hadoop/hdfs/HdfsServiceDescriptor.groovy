@@ -108,7 +108,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String pidFileName(ServiceIdentifier instance) {
-        return "hadoop-james.baiera-${instance.roleName}.pid"
+        return "${instance.roleName}.pid"
     }
 
     @Override
@@ -139,7 +139,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
      */
     @Override
     boolean wrapScript(ServiceIdentifier instance) {
-        return false
+//        return false
+        return true
     }
 
     @Override
@@ -148,7 +149,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             return ['hdfs.cmd', cmdName]
         } else {
-            return ['hadoop-daemon.sh', 'start', cmdName]
+//            return ['hadoop-daemon.sh', 'start', cmdName]
+            return ['hdfs', cmdName]
         }
     }
 
@@ -169,7 +171,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String daemonScriptDir(ServiceIdentifier serviceIdentifier) {
-        return "sbin"
+//        return "sbin"
+        return "bin"
     }
 
     /**
@@ -187,8 +190,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
-        env.put("HADOOP_IDENT_STRING", config.getClusterConf().getName())
-        env.put("HADOOP_PID_DIR", "${new File(baseDir, "run")}")
+//        env.put("HADOOP_IDENT_STRING", config.getClusterConf().getName())
+//        env.put("HADOOP_PID_DIR", "${new File(baseDir, "run")}")
     }
 
     @Override

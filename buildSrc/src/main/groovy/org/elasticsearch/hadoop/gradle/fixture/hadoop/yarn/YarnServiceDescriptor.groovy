@@ -106,12 +106,12 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String pidFileName(ServiceIdentifier serviceIdentifier) {
-        return "hadoop-james.baiera-${serviceIdentifier.roleName}.pid"
+        return "${serviceIdentifier.roleName}.pid"
     }
 
     @Override
-    String configPath(ServiceIdentifier serviceIdentifier) {
-        if (serviceIdentifier.subGroup == "yarn") {
+    String configPath(ServiceIdentifier instance) {
+        if (instance.subGroup == "yarn") {
             return "etc/hadoop"
         }
         throw new UnsupportedOperationException("Unknown instance [${instance}]")
@@ -138,7 +138,8 @@ class YarnServiceDescriptor implements ServiceDescriptor {
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             return ['yarn.cmd', cmdName]
         } else {
-            return ['yarn-daemon.sh', 'start', cmdName]
+//            return ['yarn-daemon.sh', 'start', cmdName]
+            return ['yarn', cmdName]
         }
     }
 
@@ -154,12 +155,14 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String daemonScriptDir(ServiceIdentifier serviceIdentifier) {
-        return 'sbin'
+//        return 'sbin'
+        return 'bin'
     }
 
     @Override
     boolean wrapScript(ServiceIdentifier serviceIdentifier) {
-        return false
+//        return false
+        return true
     }
 
     @Override
@@ -179,8 +182,8 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
-        env.put("YARN_IDENT_STRING", config.getClusterConf().getName())
-        env.put("YARN_PID_DIR", "${new File(baseDir, "run")}")
+//        env.put("YARN_IDENT_STRING", config.getClusterConf().getName())
+//        env.put("YARN_PID_DIR", "${new File(baseDir, "run")}")
     }
 
     @Override
