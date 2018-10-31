@@ -58,18 +58,21 @@ class VerifyChecksums extends DefaultTask {
             throw new GradleException("Input file required on verify checksums task")
         }
         AntBuilder antBuilder = project.getAnt()
-        checksums.collect { String algorithmName, String result ->
+        checksums.collect { String algorithmName, String expected ->
             String verifyPropertyName = "${getName()}.${algorithmName}.result"
             antBuilder.checksum(
                     file: inputFile.absolutePath,
                     algorithm: algorithmName,
-                    property: "${result}",
-                    verifyProperty: verifyPropertyName
+                    property: "${verifyPropertyName}",
             )
-            boolean success = antBuilder.properties[verifyPropertyName] == "true"
+            String expectedHash = expected.toUpperCase()
+            String actualHash = antBuilder.properties[verifyPropertyName].toString().toUpperCase()
+            boolean success = actualHash.equals(expectedHash)
             logger.info("Validation of [${algorithmName}] checksum was [${success ? "successful" : "failure"}]")
             if (!success) {
-                throw new GradleException("Failed to verify [${inputFile}] against [${algorithmName}] checksum")
+                throw new GradleException("Failed to verify [${inputFile}] against [${algorithmName}] checksum.\n" +
+                        "Expected [${expectedHash}]\n" +
+                        " but got [${actualHash}].")
             }
         }
     }
