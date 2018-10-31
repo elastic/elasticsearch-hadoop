@@ -71,10 +71,10 @@ class EndProcessConfiguration extends ProcessConfiguration {
         return null
     }
 
-    @Override
-    boolean isDaemonized() {
-        return true
-    }
+//    @Override
+//    boolean isDaemonized() {
+//        return true
+//    }
 
     @Override
     String getJvmArgs() {

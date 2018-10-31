@@ -65,14 +65,6 @@ interface ServiceDescriptor {
 
     List<String> startCommand(ServiceIdentifier instance)
 
-    List<String> daemonStartCommand(ServiceIdentifier serviceIdentifier)
-
-    List<String> daemonStopCommand(ServiceIdentifier serviceIdentifier)
-
-    String daemonScriptDir(ServiceIdentifier serviceIdentifier)
-
-    boolean wrapScript(ServiceIdentifier instance)
-
     String scriptDir(ServiceIdentifier serviceIdentifier)
 
     /**

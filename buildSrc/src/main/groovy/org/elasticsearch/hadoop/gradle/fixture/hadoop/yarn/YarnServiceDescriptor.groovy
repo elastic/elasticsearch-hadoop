@@ -133,39 +133,6 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    List<String> daemonStartCommand(ServiceIdentifier serviceIdentifier) {
-        String cmdName = serviceIdentifier.roleName
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return ['yarn.cmd', cmdName]
-        } else {
-//            return ['yarn-daemon.sh', 'start', cmdName]
-            return ['yarn', cmdName]
-        }
-    }
-
-    @Override
-    List<String> daemonStopCommand(ServiceIdentifier serviceIdentifier) {
-        String cmdName = serviceIdentifier.roleName
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return null
-        } else {
-            return ['yarn-daemon.sh', 'stop', cmdName]
-        }
-    }
-
-    @Override
-    String daemonScriptDir(ServiceIdentifier serviceIdentifier) {
-//        return 'sbin'
-        return 'bin'
-    }
-
-    @Override
-    boolean wrapScript(ServiceIdentifier serviceIdentifier) {
-//        return false
-        return true
-    }
-
-    @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
         return 'bin'
     }

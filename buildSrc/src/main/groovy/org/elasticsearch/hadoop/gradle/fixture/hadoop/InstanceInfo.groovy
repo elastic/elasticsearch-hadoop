@@ -112,8 +112,8 @@ class InstanceInfo {
 
     private File pidWrapperScript
 
-    /** true if the service requires us to wrap the execution to ensure daemonizing it */
-    boolean spawn
+//    /** true if the service requires us to wrap the execution to ensure daemonizing it */
+//    boolean spawn
 
     /** buffer for ant output when starting this node */
     ByteArrayOutputStream buffer = new ByteArrayOutputStream()
@@ -158,7 +158,7 @@ class InstanceInfo {
         failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
 
-        // TODO Is this needed for Hadoop?
+        // FIXHERE Is this needed for Hadoop?
         // Determine Java Version
 //        if (version.before("6.2.0")) {
 //            javaVersion = 8
@@ -178,7 +178,7 @@ class InstanceInfo {
         env.putAll(config.getEnvironmentVariables())
         config.getServiceDescriptor().finalizeEnv(env, config, baseDir)
 
-        // TODO: Is this needed / supported uniformly for hadoop?
+        // FIXHERE: Is this needed / supported uniformly for hadoop?
 //        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 //            /*
 //             * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
@@ -192,9 +192,11 @@ class InstanceInfo {
 
         // Prepare startup command and arguments
         args = []
-        List<String> startCommandLine = config.isDaemonized() ? config.getServiceDescriptor().daemonStartCommand(serviceId) : config.getServiceDescriptor().startCommand(serviceId)
+//        List<String> startCommandLine = config.isDaemonized() ? config.getServiceDescriptor().daemonStartCommand(serviceId) : config.getServiceDescriptor().startCommand(serviceId)
+//        List<String> startCommandLine = config.getServiceDescriptor().daemonStartCommand(serviceId)
+        List<String> startCommandLine = config.getServiceDescriptor().startCommand(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            // TODO: Test on windows to see if this actually works
+            // FIXHERE: Test on windows to see if this actually works
             executable = 'cmd'
             args.add('/C')
             args.add('"') // quote the entire command
@@ -213,8 +215,8 @@ class InstanceInfo {
             pidWrapperScript = new File(cwd, "start")
             startScript = binPath().resolve(startCommandLine.first())
         }
-        spawn = config.getServiceDescriptor().wrapScript(serviceId)
-        if (config.isDaemonized() && spawn) {
+//        spawn = config.getServiceDescriptor().wrapScript(serviceId)
+//        if (config.isDaemonized() && spawn) {
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 /*
                  * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
@@ -225,15 +227,16 @@ class InstanceInfo {
             } else {
                 args.add("${backgroundScript}")
             }
-        } else {
-            args.add("${startScript}")
-        }
+//        } else {
+//            args.add("${startScript}")
+//        }
+
         // Add tail of arguments to the command to run
         if (startCommandLine.size() > 1) {
             args.addAll(startCommandLine.tail())
         }
 
-        // TODO Is this needed for Hadoop?
+        // FIXHERE Is this needed for Hadoop?
 //        for (Map.Entry<String, String> property : System.properties.entrySet()) {
 //            if (property.key.startsWith('tests.es.')) {
 //                args.add("-E")
@@ -241,7 +244,7 @@ class InstanceInfo {
 //            }
 //        }
 
-        // TODO setting data directory from command line might not be possible/advised with Hadoop
+        // FIXHERE setting data directory from command line might not be possible/advised with Hadoop
 //        if (!System.properties.containsKey("tests.es.path.data")) {
 //            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 //                /*
@@ -262,7 +265,9 @@ class InstanceInfo {
     }
 
     Path binPath() {
-        String dir = config.isDaemonized() ? config.getServiceDescriptor().daemonScriptDir(serviceId) : config.getServiceDescriptor().scriptDir(serviceId)
+//        String dir = config.isDaemonized() ? config.getServiceDescriptor().daemonScriptDir(serviceId) : config.getServiceDescriptor().scriptDir(serviceId)
+//        String dir = config.getServiceDescriptor().daemonScriptDir(serviceId)
+        String dir = config.getServiceDescriptor().scriptDir(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             return Paths.get(getShortPathName(new File(homeDir, dir).toString()))
         } else {
@@ -305,14 +310,14 @@ class InstanceInfo {
         commandString += '|  environment:\n'
         commandString += "|    JAVA_HOME: ${javaHome}\n"
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
-        if (config.isDaemonized() && spawn) {
+//        if (config.isDaemonized() && spawn) {
             commandString += "|\n|  [${backgroundScript.name}]\n"
             backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
             commandString += "|\n|  [${pidWrapperScript.name}]\n"
             pidWrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
 //            commandString += "|\n|  [${wrapperScript.name}]\n"
 //            wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
-        }
+//        }
         commandString += "|\n|  [${configFile.name}]\n"
         configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
         commandString += "|-----------------------------------------"
@@ -327,7 +332,7 @@ class InstanceInfo {
 //        String argsPasser = '"$@"'
 //        String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            // TODO Eventually support Windows
+            // FIXHERE Eventually support Windows
 //            argsPasser = '%*'
 //            exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
             throw new GradleException('Full test fixtures on Windows are currently unsupported')

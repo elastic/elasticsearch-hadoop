@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
+import org.gradle.api.GradleException
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
@@ -79,7 +80,7 @@ class ServiceConfiguration extends ProcessConfiguration {
         RoleDescriptor roleDescriptor = supportedRoles.get(roleName)
 
         if (roleDescriptor == null) {
-            throw new GradleScriptException("${serviceDescriptor.serviceName()} does not support unknown role [${roleName}]")
+            throw new GradleException("${serviceDescriptor.serviceName()} does not support unknown role [${roleName}]")
         }
 
         RoleConfiguration roleConf = roleConfigurations.get(roleName)

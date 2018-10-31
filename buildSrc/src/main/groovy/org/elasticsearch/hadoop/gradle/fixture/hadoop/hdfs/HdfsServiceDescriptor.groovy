@@ -134,44 +134,8 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
         }
     }
 
-    /**
-     * If the service is run as a daemon, should the script be wrapped or run as is?
-     */
-    @Override
-    boolean wrapScript(ServiceIdentifier instance) {
-//        return false
-        return true
-    }
-
-    @Override
-    List<String> daemonStartCommand(ServiceIdentifier serviceIdentifier) {
-        String cmdName = serviceIdentifier.roleName
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return ['hdfs.cmd', cmdName]
-        } else {
-//            return ['hadoop-daemon.sh', 'start', cmdName]
-            return ['hdfs', cmdName]
-        }
-    }
-
-    @Override
-    List<String> daemonStopCommand(ServiceIdentifier serviceIdentifier) {
-        String cmdName = serviceIdentifier.roleName
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return null
-        } else {
-            return ['hadoop-daemon.sh', 'stop', cmdName]
-        }
-    }
-
     @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
-        return "bin"
-    }
-
-    @Override
-    String daemonScriptDir(ServiceIdentifier serviceIdentifier) {
-//        return "sbin"
         return "bin"
     }
 

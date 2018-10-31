@@ -153,7 +153,7 @@ class HadoopClusterFormationTasks {
                 }
             }
 
-            // TODO: Configure wait command
+            // FIXHERE: Configure wait command
             // wait command for entire service
             // wait depends on last instance start task
             // runner depends on wait task
@@ -213,12 +213,12 @@ class HadoopClusterFormationTasks {
             }
             outputs.dir node.cwd
         }
-        // TODO: Check Previous
+        // FIXHERE: Check Previous
         setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
         setup = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, setup, node)
         setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distribution)
         setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
-        // TODO: Extra Config Files
+        // FIXHERE: Extra Config Files
         setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
 
         Map<String, Object[]> setupCommands = new LinkedHashMap<>()
@@ -247,7 +247,7 @@ class HadoopClusterFormationTasks {
 
         // Configure daemon stop task
 
-        if (node.config.daemonized) {
+//        if (node.config.daemonized) {
             Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
             // We're running in the background, so make sure that the stop command is called after the runner task
             // finishes
@@ -261,8 +261,8 @@ class HadoopClusterFormationTasks {
                 }
             }
             return new InstanceTasks(startTask: start, stopTask: stop)
-        }
-        return new InstanceTasks(startTask: start)
+//        }
+//        return new InstanceTasks(startTask: start)
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
@@ -272,7 +272,7 @@ class HadoopClusterFormationTasks {
     static Task configureExtractTask(String name, Project project, Task setup, InstanceInfo node, DistributionTasks distribution) {
         List extractDependsOn = [distribution.verify, setup]
         return project.tasks.create(name: name, type: Copy, dependsOn: extractDependsOn) {
-            // TODO: Switch logic if a service is ever not a tar distribution
+            // FIXHERE: Switch logic if a service is ever not a tar distribution
             from {
                 project.tarTree(project.resources.gzip(distribution.download.outputFile()))
             }
@@ -296,7 +296,7 @@ class HadoopClusterFormationTasks {
         // Add all node level configs to node Configuration
         return project.tasks.create(name: name, type: DefaultTask, dependsOn: setup) {
             doFirst {
-                // Todo: Switch logic if a service is ever uses something other than XML configuration files
+                // FIXHERE: Switch logic if a service is ever uses something other than XML configuration files
                 String properties = nodeConfiguration.collect { key, value ->
                     "<property>\n\t\t<name>${key}</name>\n\t\t<value>${value}</value>\n\t</property>"
                 }.join("\n\t")
@@ -332,7 +332,7 @@ class HadoopClusterFormationTasks {
             exec.workingDir node.cwd
             exec.environment 'JAVA_HOME', node.getJavaHome()
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                // fixhere eventually
+                // FIXHERE eventually
                 exec.executable 'cmd'
                 exec.args '/C', 'call'
                 exec.args execArgs.collect { a -> new EscapeCommaWrapper(arg: a)}
@@ -344,7 +344,7 @@ class HadoopClusterFormationTasks {
 
     static Task configureStartTask(String name, Project project, Task setup, InstanceInfo node) {
         Task start = project.tasks.create(name: name, type: DefaultTask, dependsOn: setup)
-        // TODO Do we need this?
+        // FIXHERE Do we need this?
         //if (node.javaVersion != null) {
         //    BuildPlugin.requireJavaHome(start, node.javaVersion)
         //}
@@ -380,33 +380,34 @@ class HadoopClusterFormationTasks {
             // of the real start script. This allows ant to keep the streams open with the
             // dummy process, but us to have the output available if there is an error in the
             // services start script
-            if (node.spawn) {
+//            if (node.spawn) {
                 node.writeWrapperScript()
-            }
+//            }
 
             node.getCommandString().eachLine { line -> project.logger.info(line) }
 
             // this closure is the ant command to be wrapped in our stream redirection and then executed
             Closure antRunner = { AntBuilder ant ->
-                ant.exec(executable: node.executable, spawn: node.spawn, dir: node.cwd, taskName: node.serviceId.roleName) {
+//                ant.exec(executable: node.executable, spawn: node.spawn, dir: node.cwd, taskName: node.serviceId.roleName) {
+                ant.exec(executable: node.executable, spawn: true, dir: node.cwd, taskName: node.serviceId.roleName) {
                     node.env.each { key, value -> env(key: key, value: value) }
                     node.args.each { arg(value: it) }
                 }
             }
 
-            if (project.logger.isInfoEnabled() || node.config.isDaemonized() == false) {
-                runAntCommand(project, antRunner, System.out, System.err)
-            } else {
+//            if (project.logger.isInfoEnabled() || node.config.isDaemonized() == false) {
+//                runAntCommand(project, antRunner, System.out, System.err)
+//            } else {
                 // buffer the output, we may not need to print it
                 PrintStream captureStream = new PrintStream(node.buffer, true, "UTF-8")
                 runAntCommand(project, antRunner, captureStream, captureStream)
-            }
+//            }
         }
         return start
     }
 
     static Task configureStopTask(String name, Project project, Object depends, InstanceInfo node) {
-        // TODO: Fix the pidDir vs pidFile resolution when we get the daemon tasks to generate pids correctly
+        // FIXHERE: Fix the pidDir vs pidFile resolution when we get the daemon tasks to generate pids correctly
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: depends) {
             onlyIf { node.pidFile.exists() }
             // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString

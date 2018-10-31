@@ -23,6 +23,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hive.HiveServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
+import org.gradle.api.GradleException
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
@@ -65,7 +66,7 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
     ServiceConfiguration service(String serviceName, Closure<ServiceConfiguration> configure) {
         ServiceDescriptor serviceDescriptor = SUPPORTED_SERVICES.get(serviceName)
         if (serviceDescriptor == null) {
-            throw new GradleScriptException("HadoopClusterConfiguration does not support unknown service [${serviceName}]")
+            throw new GradleException("HadoopClusterConfiguration does not support unknown service [${serviceName}]")
         }
         return doGetService(serviceDescriptor, configure)
     }

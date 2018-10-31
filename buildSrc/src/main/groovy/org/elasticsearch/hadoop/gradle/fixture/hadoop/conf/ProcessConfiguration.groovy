@@ -32,7 +32,7 @@ abstract class ProcessConfiguration {
     protected abstract ProcessConfiguration parent()
 
     /*
-     * TODO: Pick properties to add here
+     * FIXHERE: Pick properties to add here
      * String distribution? Nope, only Tar supported
      * int num nodes? set this at the role level?
      * int num bwc nodes? no, hadoop should be homogeneous
@@ -62,7 +62,7 @@ abstract class ProcessConfiguration {
     // outputs the path for the data dir
     private Closure<ServiceIdentifier> dataDir
     // Not sure this ever makes sense to be false
-    private boolean daemonize = true
+//    private boolean daemonize = true
     private String jvmArgs = ''
     private boolean debug = false
 
@@ -165,24 +165,24 @@ abstract class ProcessConfiguration {
         return null
     }
 
-    void setDaemonize(boolean daemonize) {
-        this.daemonize = daemonize
-    }
+//    void setDaemonize(boolean daemonize) {
+//        this.daemonize = daemonize
+//    }
 
-    boolean isDaemonized() {
-        if (daemonize) {
-            // Prefer local value if true
-            return daemonize
-        } else {
-            // if the local value is false, fall back to parent value if has one
-            ProcessConfiguration parent = parent()
-            if (parent != null) {
-                return parent.isDaemonized()
-            }
-        }
-        // No parent, return value (which should be false)
-        return daemonize
-    }
+//    boolean isDaemonized() {
+//        if (daemonize) {
+//            // Prefer local value if true
+//            return daemonize
+//        } else {
+//            // if the local value is false, fall back to parent value if has one
+//            ProcessConfiguration parent = parent()
+//            if (parent != null) {
+//                return parent.isDaemonized()
+//            }
+//        }
+//        // No parent, return value (which should be false)
+//        return daemonize
+//    }
 
     void setJvmArgs(String jvmArgs) {
         this.jvmArgs = jvmArgs

@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
+import org.gradle.api.GradleException
 import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
@@ -93,7 +94,7 @@ class RoleConfiguration extends ProcessConfiguration {
 
     void setInstances(int desiredInstances) {
         if (desiredInstances < instances.size()) {
-            throw GradleScriptException("Cannot lower number of instances once they are allocated. " +
+            throw new GradleException("Cannot lower number of instances once they are allocated. " +
                     "Asking for [${desiredInstances}] but have already allocated [${instances.size()}]")
         }
 

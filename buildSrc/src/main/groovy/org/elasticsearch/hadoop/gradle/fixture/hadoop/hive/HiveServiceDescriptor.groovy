@@ -94,7 +94,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        // TODO only for 1.2.2
+        // FIXHERE only for 1.2.2
         return ['SHA-256': '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1']
     }
 
@@ -121,30 +121,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     List<String> startCommand(ServiceIdentifier instance) {
         // We specify the hive root logger to print to console via the hiveconf override.
-        // TODO: This might make sense to put in the default settings?
+        // FIXHERE: This might make sense to put in the default settings?
         return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
-    }
-
-    @Override
-    List<String> daemonStartCommand(ServiceIdentifier serviceIdentifier) {
-        // TODO: Remove this eventually - everything runs as daemon by default.
-        return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
-    }
-
-    @Override
-    List<String> daemonStopCommand(ServiceIdentifier serviceIdentifier) {
-        return [''] // TODO: Not really needed it seems...
-    }
-
-    @Override
-    String daemonScriptDir(ServiceIdentifier serviceIdentifier) {
-        // TODO: Remove this eventually as well
-        return 'bin'
-    }
-
-    @Override
-    boolean wrapScript(ServiceIdentifier instance) {
-        return true // Not seeing any hiveserver2 daemon scripts... might have to modify the wrapper script ^^^
     }
 
     @Override
