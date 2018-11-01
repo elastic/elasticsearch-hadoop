@@ -20,11 +20,11 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.hive.HiveServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.YarnServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.pig.PigServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.spark.SparkYarnServiceDescriptor
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn.YarnServiceDescriptor
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil

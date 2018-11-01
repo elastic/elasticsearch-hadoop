@@ -27,7 +27,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class HiveServiceDescriptor implements ServiceDescriptor {

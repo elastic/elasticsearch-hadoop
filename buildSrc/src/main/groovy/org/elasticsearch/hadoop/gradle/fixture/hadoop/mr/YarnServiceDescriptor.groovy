@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.mr
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
@@ -28,7 +28,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
