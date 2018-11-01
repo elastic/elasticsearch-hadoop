@@ -157,6 +157,8 @@ class HadoopClusterFormationTasks {
             // wait command for entire service
             // wait depends on last instance start task
             // runner depends on wait task
+
+            runner.dependsOn(instanceStartTasks)
         }
 
 
@@ -296,23 +298,20 @@ class HadoopClusterFormationTasks {
          * FIXHERE: Need to ask the service descriptor to render a config file for this instance,
          * pulling values from any dependent services, roles, or instances that came before it
          */
-        Map nodeConfiguration = [
-                'fs.defaultFS': 'hdfs://localhost:9000',
-                'dfs.replication' : '1',
-                'dfs.namenode.name.dir' : new File(node.dataDir, "dfs/name/").toURI().toString(),
-                'dfs.datanode.data.dir' : new File(node.dataDir, "dfs/data/").toURI().toString(),
-                'dfs.namenode.checkpoint.dir' : new File(node.dataDir, "dfs/namesecondary/").toURI().toString()
-        ]
+//        Map nodeConfiguration = [
+//                'fs.defaultFS': 'hdfs://localhost:9000',
+//                'dfs.replication' : '1',
+//                'dfs.namenode.name.dir' : new File(node.dataDir, "dfs/name/").toURI().toString(),
+//                'dfs.datanode.data.dir' : new File(node.dataDir, "dfs/data/").toURI().toString(),
+//                'dfs.namenode.checkpoint.dir' : new File(node.dataDir, "dfs/namesecondary/").toURI().toString()
+//        ]
 
         // Add all node level configs to node Configuration
         return project.tasks.create(name: name, type: DefaultTask, dependsOn: setup) {
             doFirst {
-                // FIXHERE: Switch logic if a service is ever uses something other than XML configuration files
-                String properties = nodeConfiguration.collect { key, value ->
-                    "<property>\n\t\t<name>${key}</name>\n\t\t<value>${value}</value>\n\t</property>"
-                }.join("\n\t")
-                properties = "<configuration>\n\t${properties}\n</configuration>"
-                node.configFile.setText(properties)
+                // Descriptor Defaults
+                String contents = node.configFileFormatter(node.configContents)
+                node.configFile.setText(contents, 'UTF-8')
             }
         }
     }

@@ -77,6 +77,11 @@ class InstanceInfo {
     /** THE config file */
     File configFile
 
+    Map<String, String> configContents
+
+    /** Closure that renders the contents of the config file */
+    Closure<String> configFileFormatter
+
     /** working directory for the service process */
     File cwd
 
@@ -141,13 +146,15 @@ class InstanceInfo {
         pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(serviceId))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
         pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
-        def getDataDir = config.getDataDir()
-        if (getDataDir != null) {
-            dataDir = "${getDataDir(serviceId)}"
-        } else {
-            dataDir = new File(homeDir, "data")
-        }
+//        def getDataDir = config.getDataDir()
+//        if (getDataDir != null) {
+//            dataDir = "${getDataDir(serviceId)}"
+//        } else {
+//            dataDir = new File(homeDir, "data")
+//        }
         configFile = new File(pathConf, config.getServiceDescriptor().configFile(serviceId))
+        configContents = config.getServiceDescriptor().collectSettings(config)
+        configFileFormatter = config.getServiceDescriptor().configFormat(serviceId)
         // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
         // even for rpm/deb, the logs are under home because we dont start with real services
 //        File logsDir = new File(homeDir, 'logs')
@@ -366,11 +373,11 @@ class InstanceInfo {
 //        return transportPortsFile
 //    }
 
-    /** Returns the data directory for this node */
-    File getDataDir() {
-        if (!(dataDir instanceof File)) {
-            return new File(dataDir)
-        }
-        return dataDir
-    }
+//    /** Returns the data directory for this node */
+//    File getDataDir() {
+//        if (!(dataDir instanceof File)) {
+//            return new File(dataDir)
+//        }
+//        return dataDir
+//    }
 }

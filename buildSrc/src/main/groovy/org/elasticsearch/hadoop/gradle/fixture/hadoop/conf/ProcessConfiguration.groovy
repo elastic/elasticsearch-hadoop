@@ -60,7 +60,7 @@ abstract class ProcessConfiguration {
     private LinkedHashMap<String, Object[]> setupCommands = new LinkedHashMap<>()
     private List<Object> dependencies = new ArrayList<>()
     // outputs the path for the data dir
-    private Closure<ServiceIdentifier> dataDir
+//    private Closure<ServiceIdentifier> dataDir
     // Not sure this ever makes sense to be false
 //    private boolean daemonize = true
     private String jvmArgs = ''
@@ -150,20 +150,20 @@ abstract class ProcessConfiguration {
         return combined
     }
 
-    void setDataDir(Closure<ServiceIdentifier> dataDir) {
-        this.dataDir = dataDir
-    }
+//    void setDataDir(Closure<ServiceIdentifier> dataDir) {
+//        this.dataDir = dataDir
+//    }
 
-    Closure<ServiceIdentifier> getDataDir() {
-        if (dataDir != null) {
-            return dataDir
-        }
-        ProcessConfiguration parent = parent()
-        if (parent != null) {
-            return parent.getDataDir()
-        }
-        return null
-    }
+//    Closure<ServiceIdentifier> getDataDir() {
+//        if (dataDir != null) {
+//            return dataDir
+//        }
+//        ProcessConfiguration parent = parent()
+//        if (parent != null) {
+//            return parent.getDataDir()
+//        }
+//        return null
+//    }
 
 //    void setDaemonize(boolean daemonize) {
 //        this.daemonize = daemonize

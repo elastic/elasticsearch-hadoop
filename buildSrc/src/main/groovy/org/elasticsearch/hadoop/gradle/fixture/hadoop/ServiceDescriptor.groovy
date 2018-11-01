@@ -60,6 +60,10 @@ interface ServiceDescriptor {
 
     String configFile(ServiceIdentifier instance)
 
+    Map<String, String> collectSettings(InstanceConfiguration configuration)
+
+    Closure<String> configFormat(ServiceIdentifier instance)
+
     List<String> startCommand(ServiceIdentifier instance)
 
     String scriptDir(ServiceIdentifier serviceIdentifier)

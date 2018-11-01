@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
@@ -113,7 +114,38 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String configFile(ServiceIdentifier instance) {
+        // FIXHERE: Might be core-site.xml for gateways!
         return "hdfs-site.xml"
+    }
+
+    @Override
+    Map<String, String> collectSettings(InstanceConfiguration configuration) {
+        Map<String, String> collected = configuration.getSettings()
+
+        // hdfs-site.xml:
+        // default replication should be 1
+        collected.putIfAbsent('dfs.replication', '1')
+
+        // data directories
+        File defaultDataDir = new File(new File(configuration.getBaseDir(), homeDirName(configuration)), 'data')
+        collected.putIfAbsent('dfs.namenode.name.dir', new File(defaultDataDir, "dfs/name/").toURI().toString())
+        collected.putIfAbsent('dfs.datanode.name.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
+        collected.putIfAbsent('dfs.namenode.checkpoint.dir', new File(defaultDataDir, "dfs/namesecondary/").toURI().toString())
+
+        // namenode rpc-address
+        collected.putIfAbsent('dfs.namenode.rpc-address', 'localhost:9000')
+
+        // TODO: This setting traditionally lives in core-site.xml, but we only have one config per integration right now
+        // core-site.xml:
+        // default FS settings
+        collected.putIfAbsent('fs.defaultFS', "hdfs://${collected.get('dfs.namenode.rpc-address')}")
+
+        return collected
+    }
+
+    @Override
+    Closure<String> configFormat(ServiceIdentifier instance) {
+        return ConfigFormats.hadoopXML()
     }
 
     @Override

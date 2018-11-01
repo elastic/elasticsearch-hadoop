@@ -21,12 +21,14 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.yarn
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
@@ -112,6 +114,31 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     @Override
     String configFile(ServiceIdentifier serviceIdentifier) {
         return 'yarn-site.xml'
+    }
+
+    @Override
+    Map<String, String> collectSettings(InstanceConfiguration configuration) {
+        Map<String, String> collected = configuration.getSettings()
+
+        ServiceDescriptor hdfs = configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
+                .getServiceDescriptor()
+        Map<String, String> hdfsFinal = hdfs.collectSettings(
+                configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
+                    .role(HdfsServiceDescriptor.NAMENODE_ROLE.roleName())
+                    .instance(0)
+        )
+
+        // TODO: This setting traditionally lives in core-site.xml, but we only have one config per integration right now
+        // core-site.xml:
+        // default FS settings
+        collected.putIfAbsent('fs.defaultFS', hdfsFinal.get('fs.defaultFS'))
+
+        return collected
+    }
+
+    @Override
+    Closure<String> configFormat(ServiceIdentifier instance) {
+        return ConfigFormats.hadoopXML()
     }
 
     @Override

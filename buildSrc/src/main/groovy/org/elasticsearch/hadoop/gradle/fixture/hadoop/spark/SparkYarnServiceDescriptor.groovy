@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.spark
 
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
@@ -108,6 +109,16 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     @Override
     String configFile(ServiceIdentifier instance) {
         return 'spark-defaults.conf'
+    }
+
+    @Override
+    Map<String, String> collectSettings(InstanceConfiguration configuration) {
+        return configuration.getSettings()
+    }
+
+    @Override
+    Closure<String> configFormat(ServiceIdentifier instance) {
+        return ConfigFormats.whiteSpaced()
     }
 
     @Override

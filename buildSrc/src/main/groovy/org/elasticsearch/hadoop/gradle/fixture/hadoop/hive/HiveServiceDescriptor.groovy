@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.hive
 
 import org.elasticsearch.gradle.Version
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
@@ -107,6 +108,16 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     String configFile(ServiceIdentifier instance) {
         return 'hive-site.xml'
+    }
+
+    @Override
+    Map<String, String> collectSettings(InstanceConfiguration configuration) {
+        return configuration.getSettings()
+    }
+
+    @Override
+    Closure<String> configFormat(ServiceIdentifier instance) {
+        return ConfigFormats.hadoopXML()
     }
 
     @Override
