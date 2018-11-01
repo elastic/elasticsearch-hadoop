@@ -137,5 +137,6 @@ config.service('hdfs')
 config.service('yarn')
 config.service('hive')
 config.service('spark')
+config.service('pig')
 
 HadoopClusterFormationTasks.setup(project, runner, config)

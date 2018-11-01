@@ -17,21 +17,20 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop.hive
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.pig
 
 import org.elasticsearch.gradle.Version
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.hdfs.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
-class HiveServiceDescriptor implements ServiceDescriptor {
+class PigServiceDescriptor implements ServiceDescriptor {
 
-    static RoleDescriptor HIVESERVER = RoleDescriptor.requiredProcess('hiveserver')
+    static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('pig', [])
 
     @Override
     String id() {
@@ -40,7 +39,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String serviceName() {
-        return 'hive'
+        return 'pig'
     }
 
     @Override
@@ -55,38 +54,35 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<RoleDescriptor> roles() {
-        return [HIVESERVER]
+        return [GATEWAY]
     }
 
     @Override
     Version defaultVersion() {
-        return new Version(1, 2, 2, null, false)
+        return new Version(0, 17, 0, null, false)
     }
 
     @Override
     void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        Version version = configuration.getVersion()
-        task.packagePath = 'hive'
-        task.packageName = 'hive'
-        task.artifactFileName = "apache-hive-${version}-bin.tar.gz"
-        task.version = "${version}"
+        task.setPackagePath('pig')
+        task.setPackageName('pig')
+        task.setVersion(configuration.getVersion().toString())
+        task.setArtifactFileName("${artifactName(configuration)}.tar.gz")
     }
 
     @Override
     String packageName() {
-        return 'hive'
+        return 'pig'
     }
 
     @Override
     String artifactName(ServiceConfiguration configuration) {
-        Version version = configuration.getVersion()
-        return "apache-hive-${version}-bin"
+        return "pig-${configuration.getVersion()}"
     }
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        // FIXHERE only for 1.2.2
-        return ['SHA-256': '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1']
+        return ['MD5': 'da76998409fe88717b970b45678e00d4']
     }
 
     @Override
@@ -96,7 +92,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String pidFileName(ServiceIdentifier service) {
-        return 'hive.pid'
+        return 'pig.pid' // Not needed for gateway
     }
 
     @Override
@@ -106,48 +102,32 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String configFile(ServiceIdentifier instance) {
-        return 'hive-site.xml'
+        return 'pig.properties'
     }
 
     @Override
     List<String> startCommand(ServiceIdentifier instance) {
-        // We specify the hive root logger to print to console via the hiveconf override.
-        // FIXHERE: This might make sense to put in the default settings?
-        return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
+        return ['']
     }
 
     @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
-        return 'bin'
+        return ''
     }
 
     @Override
     String javaOptsEnvSetting(ServiceIdentifier instance) {
-        // The jvm that launches Hiveserver2 executes by means of the `hadoop jar` command.
-        // Thus, to specify java options to the Hive server, we do so through the same channels
-        // that one would use to specify them to any hadoop job.
-        return 'HADOOP_OPTS'
+        return 'PIG_OPTS' // Only used when launching pig scripts
     }
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
-        // Need to add HADOOP_HOME to the env. Just use the namenode instance for it.
-        InstanceConfiguration namenodeConfiguration = configuration
-                .getClusterConf()
-                .service(HadoopClusterConfiguration.HDFS.id())
-                .role(HdfsServiceDescriptor.NAMENODE_ROLE.roleName())
-                .instance(0)
-
-        ServiceDescriptor hdfsServiceDescriptor = namenodeConfiguration.getServiceDescriptor()
-
-        File hadoopBaseDir = namenodeConfiguration.getBaseDir()
-        String homeDirName = hdfsServiceDescriptor.homeDirName(namenodeConfiguration)
-        File hadoopHome = new File(hadoopBaseDir, homeDirName)
-        env.put('HADOOP_HOME', hadoopHome.toString())
+        // see bin/pig for env options
+        env.put('PIG_HOME', new File(configuration.baseDir, homeDirName(configuration)).toString())
     }
 
     @Override
     Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance) {
-        return [:] // None for now. Hive may require a schema tool to be run in the future though.
+        return [:]
     }
 }
