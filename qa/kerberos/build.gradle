@@ -130,7 +130,13 @@ integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 
 // Project instance available implicitly
 String prefix = "hadoopFixture"
-Task runner = integrationTest
+Task runner = project.tasks.create("testCluster")
+runner.doLast {
+    project.logger.lifecycle("CLUSTER UP")
+    System.console().readLine("Tear Down? ")
+    project.logger.lifecycle("STOPPING CLUSTER")
+}
+
 HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
 
 config.service('hdfs')
