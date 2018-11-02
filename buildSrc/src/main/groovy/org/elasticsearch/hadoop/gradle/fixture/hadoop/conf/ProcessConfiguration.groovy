@@ -18,9 +18,6 @@
  */
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
-
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
-
 /**
  * All the configurations that can be set hierarchically for a cluster.
  *
@@ -55,7 +52,7 @@ abstract class ProcessConfiguration {
 
     private Map<String, String> systemProperties = new HashMap<>()
     private Map<String, String> environmentVariables = new HashMap<>()
-    private Map<String, String> settings = new HashMap<>()
+    private SettingsContainer settingsContainer = new SettingsContainer()
     private Map<String, Object> extraConfigFiles = new HashMap<>()
     private LinkedHashMap<String, Object[]> setupCommands = new LinkedHashMap<>()
     private List<Object> dependencies = new ArrayList<>()
@@ -95,16 +92,20 @@ abstract class ProcessConfiguration {
     }
 
     void addSetting(String key, String value) {
-        settings.put(key, value)
+        settingsContainer.put(key, value)
     }
 
-    Map<String, String> getSettings() {
-        Map<String, String> combined = new HashMap<>()
+    SettingsContainer.FileSettings settingsFile(String filename) {
+        return settingsContainer.getFile(filename)
+    }
+
+    SettingsContainer getSettingsContainer() {
+        SettingsContainer combined = new SettingsContainer()
         ProcessConfiguration parent = parent()
         if (parent != null) {
-            combined.putAll(parent.getSettings())
+            combined.combine(parent.getSettingsContainer())
         }
-        combined.putAll(settings)
+        combined.combine(settingsContainer)
         return combined
     }
 

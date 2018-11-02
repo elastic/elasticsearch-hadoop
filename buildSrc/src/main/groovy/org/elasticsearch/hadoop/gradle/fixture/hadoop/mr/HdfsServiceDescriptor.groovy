@@ -120,7 +120,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        Map<String, String> collected = configuration.getSettings()
+        Map<String, String> collected = configuration.getSettingsContainer().getSettings()
 
         // hdfs-site.xml:
         // default replication should be 1

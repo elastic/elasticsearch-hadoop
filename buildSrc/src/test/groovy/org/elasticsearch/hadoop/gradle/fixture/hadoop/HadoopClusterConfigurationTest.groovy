@@ -53,21 +53,21 @@ class HadoopClusterConfigurationTest {
         InstanceConfiguration namenode0 = instances[0]
         assertEquals('namenode', namenode0.getRoleConf().getRoleDescriptor().roleName())
         assertEquals(0, namenode0.getInstance())
-        assertEquals('instanceValue', namenode0.getSettings().get('test1'))
+        assertEquals('instanceValue', namenode0.getSettingsContainer().getSettings().get('test1'))
 
         InstanceConfiguration datanode0 = instances[1]
         assertEquals('datanode', datanode0.getRoleConf().getRoleDescriptor().roleName())
         assertEquals(0, datanode0.getInstance())
-        assertEquals('serviceValue', datanode0.getSettings().get('test1'))
+        assertEquals('serviceValue', datanode0.getSettingsContainer().getSettings().get('test1'))
 
         InstanceConfiguration datanode1 = instances[2]
         assertEquals('datanode', datanode1.getRoleConf().getRoleDescriptor().roleName())
         assertEquals(1, datanode1.getInstance())
-        assertEquals('serviceValue', datanode1.getSettings().get('test1'))
+        assertEquals('serviceValue', datanode1.getSettingsContainer().getSettings().get('test1'))
 
         InstanceConfiguration datanode2 = instances[3]
         assertEquals('datanode', datanode2.getRoleConf().getRoleDescriptor().roleName())
         assertEquals(2, datanode2.getInstance())
-        assertEquals('serviceValue', datanode2.getSettings().get('test1'))
+        assertEquals('serviceValue', datanode2.getSettingsContainer().getSettings().get('test1'))
     }
 }

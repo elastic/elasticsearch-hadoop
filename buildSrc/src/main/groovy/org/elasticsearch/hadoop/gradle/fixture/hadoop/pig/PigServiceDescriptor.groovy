@@ -108,7 +108,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        return configuration.getSettings()
+        return configuration.getSettingsContainer().getSettings()
     }
 
     @Override

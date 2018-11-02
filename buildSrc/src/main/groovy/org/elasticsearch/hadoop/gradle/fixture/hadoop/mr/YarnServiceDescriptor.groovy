@@ -28,7 +28,6 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HdfsServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
@@ -118,7 +117,7 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        Map<String, String> collected = configuration.getSettings()
+        Map<String, String> collected = configuration.getSettingsContainer().getSettings()
 
         ServiceDescriptor hdfs = configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
                 .getServiceDescriptor()

@@ -47,8 +47,8 @@ class EndProcessConfiguration extends ProcessConfiguration {
     }
 
     @Override
-    Map<String, String> getSettings() {
-        return Collections.emptyMap()
+    SettingsContainer getSettings() {
+        return new SettingsContainer()
     }
 
     @Override
