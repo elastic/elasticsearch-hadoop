@@ -63,7 +63,7 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 7, 7, null, false)
+        return new Version(2, 7, 7)
     }
 
     @Override
@@ -182,6 +182,7 @@ class YarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
+//        env.put('HADOOP_USER_NAME', 'hadoop')
 //        env.put("YARN_IDENT_STRING", config.getClusterConf().getName())
 //        env.put("YARN_PID_DIR", "${new File(baseDir, "run")}")
     }

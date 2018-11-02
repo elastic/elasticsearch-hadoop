@@ -65,7 +65,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 7, 7, null, false)
+        return new Version(2, 7, 7)
     }
 
     @Override
@@ -138,6 +138,9 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
         // namenode rpc-address
         hdfsSite.putIfAbsent('dfs.namenode.rpc-address', 'localhost:9000')
 
+        // default permissions to disabled
+        hdfsSite.putIfAbsent('dfs.permissions.enabled', 'false')
+
         files.put('hdfs-site.xml', hdfsSite)
 
         // core-site.xml:
@@ -186,6 +189,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
+//        env.put('HADOOP_USER_NAME', 'hadoop')
 //        env.put("HADOOP_IDENT_STRING", config.getClusterConf().getName())
 //        env.put("HADOOP_PID_DIR", "${new File(baseDir, "run")}")
     }

@@ -60,7 +60,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(0, 17, 0, null, false)
+        return new Version(0, 17, 0)
     }
 
     @Override

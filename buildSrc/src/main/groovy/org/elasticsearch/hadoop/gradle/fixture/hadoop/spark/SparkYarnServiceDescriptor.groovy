@@ -60,7 +60,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 1, null, false)
+        return new Version(2, 3, 1)
     }
 
     @Override

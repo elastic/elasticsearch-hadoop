@@ -61,7 +61,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(1, 2, 2, null, false)
+        return new Version(1, 2, 2)
     }
 
     @Override
@@ -112,7 +112,10 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
-        return ['hive-site.xml' : configuration.getSettingsContainer().flattenFile('hive-site.xml')]
+        Map<String, String> hiveSite = configuration.getSettingsContainer().flattenFile('hive-site.xml')
+//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.groups', '*')
+//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.hosts', '*')
+        return ['hive-site.xml' : hiveSite]
     }
 
     @Override
@@ -155,10 +158,13 @@ class HiveServiceDescriptor implements ServiceDescriptor {
         String homeDirName = hdfsServiceDescriptor.homeDirName(namenodeConfiguration)
         File hadoopHome = new File(hadoopBaseDir, homeDirName)
         env.put('HADOOP_HOME', hadoopHome.toString())
+
+//        env.put('HADOOP_USER_NAME', 'hadoop')
     }
 
     @Override
     Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance) {
+        //FIXHERE: Need a tmp dir accessible to all in HDFS
         return [:] // None for now. Hive may require a schema tool to be run in the future though.
     }
 }

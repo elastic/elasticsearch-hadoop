@@ -337,6 +337,7 @@ class HadoopClusterFormationTasks {
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: setup) { Exec exec ->
             exec.workingDir node.cwd
             exec.environment 'JAVA_HOME', node.getJavaHome()
+            exec.environment(node.env)
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 // FIXHERE eventually
                 exec.executable 'cmd'
