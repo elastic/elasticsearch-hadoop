@@ -107,13 +107,13 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configFile(ServiceIdentifier instance) {
-        return 'spark-defaults.conf'
+    List<String> configFiles(ServiceIdentifier instance) {
+        return ['spark-defaults.conf']
     }
 
     @Override
-    Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        return configuration.getSettingsContainer().getSettings()
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+        return ['spark-defaults.conf' : configuration.getSettingsContainer().flattenFile('spark-defaults.conf')]
     }
 
     @Override

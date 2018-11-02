@@ -58,9 +58,9 @@ interface ServiceDescriptor {
 
     String configPath(ServiceIdentifier instance)
 
-    String configFile(ServiceIdentifier instance)
+    List<String> configFiles(ServiceIdentifier instance)
 
-    Map<String, String> collectSettings(InstanceConfiguration configuration)
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration)
 
     Closure<String> configFormat(ServiceIdentifier instance)
 

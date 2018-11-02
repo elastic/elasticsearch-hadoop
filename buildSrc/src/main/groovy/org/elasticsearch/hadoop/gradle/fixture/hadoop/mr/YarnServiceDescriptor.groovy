@@ -28,6 +28,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class YarnServiceDescriptor implements ServiceDescriptor {
@@ -111,28 +112,42 @@ class YarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configFile(ServiceIdentifier serviceIdentifier) {
-        return 'yarn-site.xml'
+    List<String> configFiles(ServiceIdentifier serviceIdentifier) {
+        return ['core-site.xml', 'yarn-site.xml']
     }
 
     @Override
-    Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        Map<String, String> collected = configuration.getSettingsContainer().getSettings()
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+        SettingsContainer container = configuration.getSettingsContainer()
 
-        ServiceDescriptor hdfs = configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
-                .getServiceDescriptor()
-        Map<String, String> hdfsFinal = hdfs.collectSettings(
-                configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
-                    .role(HdfsServiceDescriptor.NAMENODE_ROLE.roleName())
-                    .instance(0)
-        )
+        Map<String, Map<String, String>> files = [:]
+
+        // yarn-site.xml:
+        Map<String, String> yarnSite = container.flattenFile('yarn-site.xml')
+
+        files.put('yarn-site.xml', yarnSite)
 
         // TODO: This setting traditionally lives in core-site.xml, but we only have one config per integration right now
         // core-site.xml:
-        // default FS settings
-        collected.putIfAbsent('fs.defaultFS', hdfsFinal.get('fs.defaultFS'))
+        Map<String, String> coreSite = container.flattenFile('core-site.xml')
 
-        return collected
+        // default FS settings
+        if (!coreSite.containsKey('fs.defaultFS')) {
+            // Pick up default FS from namenode settings
+            ServiceConfiguration hdfsConf = configuration.getClusterConf().service(HadoopClusterConfiguration.HDFS.id())
+            InstanceConfiguration namenodeConf = hdfsConf.role(HdfsServiceDescriptor.NAMENODE_ROLE.roleName()).instance(0)
+            ServiceDescriptor hdfs = hdfsConf.getServiceDescriptor()
+
+            Map<String, Map<String, String>> namenodeConfigs = hdfs.collectConfigFilesContents(namenodeConf)
+
+            Map<String, String> namenodeCoreSite = namenodeConfigs.get('core-site.xml')
+
+            coreSite.putIfAbsent('fs.defaultFS', namenodeCoreSite.get('fs.defaultFS'))
+        }
+
+        files.put('core-site.xml', coreSite)
+
+        return files
     }
 
     @Override

@@ -29,7 +29,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.elasticsearch.hadoop.gradle.tasks.VerifyChecksums
 import org.gradle.api.AntBuilder
-import org.gradle.api.DefaultTask;
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -294,24 +295,19 @@ class HadoopClusterFormationTasks {
     }
 
     static Task configureWriteConfigTask(String name, Project project, Task setup, InstanceInfo node) {
-        /*
-         * FIXHERE: Need to ask the service descriptor to render a config file for this instance,
-         * pulling values from any dependent services, roles, or instances that came before it
-         */
-//        Map nodeConfiguration = [
-//                'fs.defaultFS': 'hdfs://localhost:9000',
-//                'dfs.replication' : '1',
-//                'dfs.namenode.name.dir' : new File(node.dataDir, "dfs/name/").toURI().toString(),
-//                'dfs.datanode.data.dir' : new File(node.dataDir, "dfs/data/").toURI().toString(),
-//                'dfs.namenode.checkpoint.dir' : new File(node.dataDir, "dfs/namesecondary/").toURI().toString()
-//        ]
-
         // Add all node level configs to node Configuration
         return project.tasks.create(name: name, type: DefaultTask, dependsOn: setup) {
             doFirst {
-                // Descriptor Defaults
-                String contents = node.configFileFormatter(node.configContents)
-                node.configFile.setText(contents, 'UTF-8')
+                // Write each config file needed
+                node.configFiles.forEach { configFile ->
+                    String configName = configFile.getName()
+                    Map<String, String> configFileEntries = node.configContents.get(configName)
+                    if (configFileEntries == null) {
+                        throw new GradleException("Could not find contents of [${configFile}] settings file from deployment options.")
+                    }
+                    String contents = node.configFileFormatter(configFileEntries)
+                    configFile.setText(contents, 'UTF-8')
+                }
             }
         }
     }

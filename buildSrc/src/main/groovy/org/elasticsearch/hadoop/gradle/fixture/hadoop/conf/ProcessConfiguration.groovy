@@ -92,7 +92,7 @@ abstract class ProcessConfiguration {
     }
 
     void addSetting(String key, String value) {
-        settingsContainer.put(key, value)
+        settingsContainer.addSetting(key, value)
     }
 
     SettingsContainer.FileSettings settingsFile(String filename) {

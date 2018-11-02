@@ -102,13 +102,13 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configFile(ServiceIdentifier instance) {
-        return 'pig.properties'
+    List<String> configFiles(ServiceIdentifier instance) {
+        return ['pig.properties']
     }
 
     @Override
-    Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        return configuration.getSettingsContainer().getSettings()
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+        return ['pig.properties' : configuration.getSettingsContainer().flattenFile('pig.properties')]
     }
 
     @Override

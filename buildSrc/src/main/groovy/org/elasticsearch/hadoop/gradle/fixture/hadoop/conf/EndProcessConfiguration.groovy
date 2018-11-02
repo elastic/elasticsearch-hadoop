@@ -47,7 +47,7 @@ class EndProcessConfiguration extends ProcessConfiguration {
     }
 
     @Override
-    SettingsContainer getSettings() {
+    SettingsContainer getSettingsContainer() {
         return new SettingsContainer()
     }
 

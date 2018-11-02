@@ -27,6 +27,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 /**
@@ -113,34 +114,41 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configFile(ServiceIdentifier instance) {
-        // FIXHERE: Might be core-site.xml for gateways!
-        return "hdfs-site.xml"
+    List<String> configFiles(ServiceIdentifier instance) {
+        return ['core-site.xml', 'hdfs-site.xml']
     }
 
     @Override
-    Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        Map<String, String> collected = configuration.getSettingsContainer().getSettings()
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+        SettingsContainer container = configuration.getSettingsContainer()
+        Map<String, Map<String, String>> files = [:]
 
         // hdfs-site.xml:
+        Map<String, String> hdfsSite = container.flattenFile('hdfs-site.xml')
+
         // default replication should be 1
-        collected.putIfAbsent('dfs.replication', '1')
+        hdfsSite.putIfAbsent('dfs.replication', '1')
 
         // data directories
         File defaultDataDir = new File(new File(configuration.getBaseDir(), homeDirName(configuration)), 'data')
-        collected.putIfAbsent('dfs.namenode.name.dir', new File(defaultDataDir, "dfs/name/").toURI().toString())
-        collected.putIfAbsent('dfs.datanode.name.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
-        collected.putIfAbsent('dfs.namenode.checkpoint.dir', new File(defaultDataDir, "dfs/namesecondary/").toURI().toString())
+        hdfsSite.putIfAbsent('dfs.namenode.name.dir', new File(defaultDataDir, "dfs/name/").toURI().toString())
+        hdfsSite.putIfAbsent('dfs.datanode.name.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
+        hdfsSite.putIfAbsent('dfs.namenode.checkpoint.dir', new File(defaultDataDir, "dfs/namesecondary/").toURI().toString())
 
         // namenode rpc-address
-        collected.putIfAbsent('dfs.namenode.rpc-address', 'localhost:9000')
+        hdfsSite.putIfAbsent('dfs.namenode.rpc-address', 'localhost:9000')
 
-        // TODO: This setting traditionally lives in core-site.xml, but we only have one config per integration right now
+        files.put('hdfs-site.xml', hdfsSite)
+
         // core-site.xml:
-        // default FS settings
-        collected.putIfAbsent('fs.defaultFS', "hdfs://${collected.get('dfs.namenode.rpc-address')}")
+        Map<String, String> coreSite = container.flattenFile('core-site.xml')
 
-        return collected
+        // default FS settings
+        coreSite.putIfAbsent('fs.defaultFS', "hdfs://${hdfsSite.get('dfs.namenode.rpc-address')}")
+
+        files.put('core-site.xml', coreSite)
+
+        return files
     }
 
     @Override

@@ -65,4 +65,14 @@ class SettingsContainer {
             }
         }
     }
+
+    Map<String, String> flattenFile(String filename) {
+        Map<String, String> flattened = [:]
+        flattened.putAll(globalSettings)
+        FileSettings fileSettings = settingsFiles.get(filename)
+        if (fileSettings != null) {
+            flattened.putAll(fileSettings.getSettings())
+        }
+        return flattened
+    }
 }

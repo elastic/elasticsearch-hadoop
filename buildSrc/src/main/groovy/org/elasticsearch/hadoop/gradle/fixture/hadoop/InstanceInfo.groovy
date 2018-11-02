@@ -74,10 +74,10 @@ class InstanceInfo {
     /** data directory (as an Object, to allow lazy evaluation) */
     Object dataDir
 
-    /** THE config file */
-    File configFile
+    /** The config files */
+    List<File> configFiles
 
-    Map<String, String> configContents
+    Map<String, Map<String, String>> configContents
 
     /** Closure that renders the contents of the config file */
     Closure<String> configFileFormatter
@@ -152,8 +152,8 @@ class InstanceInfo {
 //        } else {
 //            dataDir = new File(homeDir, "data")
 //        }
-        configFile = new File(pathConf, config.getServiceDescriptor().configFile(serviceId))
-        configContents = config.getServiceDescriptor().collectSettings(config)
+        configFiles = config.getServiceDescriptor().configFiles(serviceId).collect { name -> new File(pathConf, name) }
+        configContents = config.getServiceDescriptor().collectConfigFilesContents(config)
         configFileFormatter = config.getServiceDescriptor().configFormat(serviceId)
         // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
         // even for rpm/deb, the logs are under home because we dont start with real services
@@ -325,8 +325,10 @@ class InstanceInfo {
 //            commandString += "|\n|  [${wrapperScript.name}]\n"
 //            wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
 //        }
-        commandString += "|\n|  [${configFile.name}]\n"
-        configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
+        configFiles.forEach { configFile ->
+            commandString += "|\n|  [${configFile.name}]\n"
+            configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
+        }
         commandString += "|-----------------------------------------"
         return commandString
     }

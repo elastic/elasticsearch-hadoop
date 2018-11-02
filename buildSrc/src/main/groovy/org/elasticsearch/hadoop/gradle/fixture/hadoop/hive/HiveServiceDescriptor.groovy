@@ -106,13 +106,13 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configFile(ServiceIdentifier instance) {
-        return 'hive-site.xml'
+    List<String> configFiles(ServiceIdentifier instance) {
+        return ['hive-site.xml']
     }
 
     @Override
-    Map<String, String> collectSettings(InstanceConfiguration configuration) {
-        return configuration.getSettingsContainer().getSettings()
+    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+        return ['hive-site.xml' : configuration.getSettingsContainer().flattenFile('hive-site.xml')]
     }
 
     @Override
