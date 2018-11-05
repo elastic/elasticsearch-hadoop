@@ -1,0 +1,16 @@
+[[eshadoop-6.4.3]]
+== Elasticsearch for Apache Hadoop version 6.4.3
+November 6, 2018
+
+[[bugs-6.4.3]]
+=== Bug Fixes
+REST::
+* Illegal unquoted character ((CTRL-CHAR, code 9)): has to be escaped using backslash
+https://github.com/elastic/elasticsearch-hadoop/issues/1198[#1198]
+* Setting http retries to a negative value no longer retries forever
+https://github.com/elastic/elasticsearch-hadoop/issues/1178[#1178]
+* Reading from ES not including version metadata field
+https://github.com/elastic/elasticsearch-hadoop/issues/1160[#1160]
+https://github.com/elastic/elasticsearch-hadoop/pull/1161[#1161]
+* NullPointerException when overwriting data to an empty index
+https://github.com/elastic/elasticsearch-hadoop/issues/1158[#1158]
