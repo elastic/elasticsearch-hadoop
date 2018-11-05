@@ -1,0 +1,14 @@
+[[eshadoop-5.6.13]]
+== Elasticsearch for Apache Hadoop version 5.6.13
+November 6, 2018
+
+ES-Hadoop 5.6.13 is a version compatibility release, tested specifically against Elasticsearch 5.6.13.
+
+[[bugs-5.6.13]]
+=== Bug Fixes
+REST::
+* PooledHttpTransportFactory.borrowFrom() exception hides orginal exception hindering debugging
+https://github.com/elastic/elasticsearch-hadoop/issues/1191[#1191]
+Serialization::
+* Setting es.read.field.include breaks mapping discovery for fields nested deeper than two levels
+https://github.com/elastic/elasticsearch-hadoop/issues/1139[#1139]

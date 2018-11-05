@@ -5,6 +5,7 @@
 --
 This section summarizes the changes in each release.
 
+* <<eshadoop-5.6.13>>
 * <<eshadoop-5.6.12>>
 * <<eshadoop-5.6.11>>
 * <<eshadoop-5.6.10>>
@@ -87,6 +88,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/5.6.13.adoc[]
 include::release-notes/5.6.12.adoc[]
 include::release-notes/5.6.11.adoc[]
 include::release-notes/5.6.10.adoc[]
