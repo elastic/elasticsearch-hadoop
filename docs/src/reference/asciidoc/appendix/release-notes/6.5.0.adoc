@@ -1,0 +1,43 @@
+[[eshadoop-6.5.0]]
+== Elasticsearch for Apache Hadoop version 6.5.0
+November 6, 2018
+
+[[deprecation-6.5.0]]
+=== Deprecations
+* Deprecate Java 6 and 7
+https://github.com/elastic/elasticsearch-hadoop/issues/1200[#1200]
+* Deprecate es.input.max.docs.per.partition defaults
+https://github.com/elastic/elasticsearch-hadoop/issues/1196[#1196]
+
+[[enhancements-6.5.0]]
+=== Enhancements
+REST::
+* Connector should validate 'is_write_index' flag on aliases during write operations
+https://github.com/elastic/elasticsearch-hadoop/issues/1197[#1197]
+* PooledHttpTransportFactory.borrowFrom() exception hides orginal exception hindering debugging
+https://github.com/elastic/elasticsearch-hadoop/issues/1191[#1191]
+* Modify address parsing code for node discovery
+https://github.com/elastic/elasticsearch-hadoop/issues/1186[#1186]
+* Incompatible types found in multi-mapping
+https://github.com/elastic/elasticsearch-hadoop/issues/1074[#1074]
+
+[[bugs-6.5.0]]
+=== Bug Fixes
+REST::
+* Illegal unquoted character ((CTRL-CHAR, code 9)): has to be escaped using backslash
+https://github.com/elastic/elasticsearch-hadoop/issues/1198[#1198]
+Serialization::
+* Reading indices with keywords and strings causes mapping conflict
+https://github.com/elastic/elasticsearch-hadoop/issues/1192[#1192]
+* Setting http retries to a negative value no longer retries forever
+https://github.com/elastic/elasticsearch-hadoop/issues/1178[#1178]
+* Reading from ES not including version metadata field
+https://github.com/elastic/elasticsearch-hadoop/issues/1160[#1160]
+https://github.com/elastic/elasticsearch-hadoop/pull/1161[#1161]
+* NullPointerException when overwriting data to an empty index
+https://github.com/elastic/elasticsearch-hadoop/issues/1158[#1158]
+
+[[docs-6.5.0]]
+=== Documentation
+* Connector uncorrectly determines the number of partitions
+https://github.com/elastic/elasticsearch-hadoop/issues/1196[#1196]
