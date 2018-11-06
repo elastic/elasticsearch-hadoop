@@ -215,7 +215,7 @@ public class SearchRequestBuilder {
             pref.append("_shards:");
             pref.append(shard);
         }
-        if (!preference.isEmpty() || local) {
+        if (!StringUtils.hasText(preference) || local) {
             if (pref.length() > 0) {
                 if (version.onOrAfter(EsMajorVersion.V_5_X)) {
                     pref.append("|");
@@ -223,7 +223,7 @@ public class SearchRequestBuilder {
                     pref.append(";");
                 }
             }
-            if (!preference.isEmpty()) {
+            if (!StringUtils.hasText(preference)) {
                 pref.append(preference);
             } else {
                 pref.append("_local");
