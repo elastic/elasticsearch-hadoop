@@ -70,6 +70,10 @@ public interface ConfigurationOptions {
     /** Secure Settings Keystore */
     String ES_KEYSTORE_LOCATION = "es.keystore.location";
 
+    /** Elasticsearch shard search preference */
+    String ES_READ_SHARD_PREFERENCE = "es.read.shard.preference";
+    String ES_READ_SHARD_PREFERENCE_DEFAULT = "";
+
     /** Elasticsearch batch size given in bytes */
     String ES_BATCH_SIZE_BYTES = "es.batch.size.bytes";
     String ES_BATCH_SIZE_BYTES_DEFAULT = "1mb";
