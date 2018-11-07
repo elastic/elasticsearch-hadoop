@@ -139,8 +139,7 @@ runner.doLast {
 
 HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
 
-config.service('hdfs')
-config.service('yarn')
+config.service('hadoop')
 config.service('hive')
 config.service('spark')
 config.service('pig')

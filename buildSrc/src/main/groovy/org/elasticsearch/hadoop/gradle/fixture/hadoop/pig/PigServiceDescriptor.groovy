@@ -50,7 +50,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<ServiceDescriptor> serviceDependencies() {
-        return [HadoopClusterConfiguration.HDFS, HadoopClusterConfiguration.YARN]
+        return [HadoopClusterConfiguration.HADOOP]
     }
 
     @Override

@@ -22,25 +22,25 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.mr
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
-/**
- * Describes behavior, file/setting names, and commands for deploying a local HDFS cluster
- */
-class HdfsServiceDescriptor implements ServiceDescriptor {
+class HadoopServiceDescriptor implements ServiceDescriptor {
 
-    static final RoleDescriptor NAMENODE_ROLE = RoleDescriptor.requiredProcess('namenode')
-    static final RoleDescriptor DATANODE_ROLE = RoleDescriptor.requiredProcess('datanode', [NAMENODE_ROLE])
+    static final RoleDescriptor NAMENODE = RoleDescriptor.requiredProcess('namenode')
+    static final RoleDescriptor DATANODE = RoleDescriptor.requiredProcess('datanode', [NAMENODE])
+    static final RoleDescriptor RESOURCEMANAGER = RoleDescriptor.requiredProcess('resourcemanager')
+    static final RoleDescriptor NODEMANAGER = RoleDescriptor.requiredProcess('nodemanager', [RESOURCEMANAGER])
+    static final RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('hadoop', [NAMENODE, DATANODE, RESOURCEMANAGER, NODEMANAGER])
 
     @Override
     String id() {
-        return serviceSubGroup()
+        return serviceName()
     }
 
     @Override
@@ -50,7 +50,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String serviceSubGroup() {
-        return 'hdfs'
+        return null
     }
 
     @Override
@@ -60,7 +60,7 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<RoleDescriptor> roles() {
-        return [NAMENODE_ROLE, DATANODE_ROLE]
+        return [NAMENODE, DATANODE, RESOURCEMANAGER, NODEMANAGER, GATEWAY]
     }
 
     @Override
@@ -101,21 +101,18 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String pidFileName(ServiceIdentifier instance) {
-        return "${instance.roleName}.pid"
+    String pidFileName(ServiceIdentifier service) {
+        return "${service.roleName}.pid"
     }
 
     @Override
     String configPath(ServiceIdentifier instance) {
-        if (instance.subGroup == "hdfs") {
-            return "etc/hadoop"
-        }
-        throw new UnsupportedOperationException("Unknown instance [${instance}]")
+        return "etc/hadoop"
     }
 
     @Override
     List<String> configFiles(ServiceIdentifier instance) {
-        return ['core-site.xml', 'hdfs-site.xml']
+        return ['core-site.xml', 'hdfs-site.xml', 'yarn-site.xml']
     }
 
     @Override
@@ -143,6 +140,11 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
 
         files.put('hdfs-site.xml', hdfsSite)
 
+        // yarn-site.xml:
+        Map<String, String> yarnSite = container.flattenFile('yarn-site.xml')
+
+        files.put('yarn-site.xml', yarnSite)
+
         // core-site.xml:
         Map<String, String> coreSite = container.flattenFile('core-site.xml')
 
@@ -160,38 +162,48 @@ class HdfsServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    List<String> startCommand(ServiceIdentifier serviceIdentifier) {
-        String cmdName = serviceIdentifier.roleName
-        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            return ['hdfs.cmd', cmdName]
-        } else {
-            return ['hdfs', cmdName]
+    List<String> startCommand(ServiceIdentifier instance) {
+        String cmdName = instance.roleName
+        if (NAMENODE.roleName().equals(instance.roleName) || DATANODE.roleName().equals(instance.roleName)) {
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                return ['hdfs.cmd', cmdName]
+            } else {
+                return ['hdfs', cmdName]
+            }
+        } else if (RESOURCEMANAGER.roleName().equals(instance.roleName) || NODEMANAGER.roleName().equals(instance.roleName)) {
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                return ['yarn.cmd', cmdName]
+            } else {
+                return ['yarn', cmdName]
+            }
+        } else if (GATEWAY.roleName().equals(instance.roleName)) {
+            return [""]
         }
+        throw new UnsupportedOperationException("Unknown instance [${instance}]")
     }
 
     @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
-        return "bin"
+        return 'bin'
     }
 
-    /**
-     * The name of the environment variable whose contents are used for the service's java system properties
-     */
     @Override
     String javaOptsEnvSetting(ServiceIdentifier instance) {
         if (instance.roleName == "namenode") {
             return "HADOOP_NAMENODE_OPTS"
         } else if (instance.roleName == "datanode") {
             return "HADOOP_DATANODE_OPTS"
+        } else if (instance.roleName == "resourcemanager") {
+            return "YARN_RESOURCEMANAGER_OPTS"
+        } else if (instance.roleName == "nodemanager") {
+            return "YARN_NODEMANAGER_OPTS"
         }
         throw new UnsupportedOperationException("Unknown instance [${instance}]")
     }
 
     @Override
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration config, File baseDir) {
-//        env.put('HADOOP_USER_NAME', 'hadoop')
-//        env.put("HADOOP_IDENT_STRING", config.getClusterConf().getName())
-//        env.put("HADOOP_PID_DIR", "${new File(baseDir, "run")}")
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
+
     }
 
     @Override

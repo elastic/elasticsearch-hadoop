@@ -27,7 +27,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HdfsServiceDescriptor
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.mr.HadoopServiceDescriptor
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
 class HiveServiceDescriptor implements ServiceDescriptor {
@@ -51,7 +51,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<ServiceDescriptor> serviceDependencies() {
-        return [HadoopClusterConfiguration.HDFS, HadoopClusterConfiguration.YARN]
+        return [HadoopClusterConfiguration.HADOOP]
     }
 
     @Override
@@ -148,8 +148,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
         // Need to add HADOOP_HOME to the env. Just use the namenode instance for it.
         InstanceConfiguration namenodeConfiguration = configuration
                 .getClusterConf()
-                .service(HadoopClusterConfiguration.HDFS.id())
-                .role(HdfsServiceDescriptor.NAMENODE_ROLE.roleName())
+                .service(HadoopClusterConfiguration.HADOOP.id())
+                .role(HadoopServiceDescriptor.NAMENODE.roleName())
                 .instance(0)
 
         ServiceDescriptor hdfsServiceDescriptor = namenodeConfiguration.getServiceDescriptor()

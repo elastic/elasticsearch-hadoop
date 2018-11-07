@@ -33,18 +33,18 @@ class HadoopClusterConfigurationTest {
     void testConfigurations() {
         HadoopClusterConfiguration cluster = new HadoopClusterConfiguration(null, "test");
 
-        cluster.service('hdfs').role('datanode').setInstances(3)
+        cluster.service('hadoop').role('datanode').setInstances(3)
 
-        cluster.service('hdfs').role('namenode').addSetting('test1', 'roleValue')
-        cluster.service('hdfs').role('namenode').addSetting('test2', 'roleValue')
+        cluster.service('hadoop').role('namenode').addSetting('test1', 'roleValue')
+        cluster.service('hadoop').role('namenode').addSetting('test2', 'roleValue')
 
-        cluster.service('hdfs').role('namenode').instance(0).addSetting('test1', 'instanceValue')
+        cluster.service('hadoop').role('namenode').instance(0).addSetting('test1', 'instanceValue')
 
-        cluster.service('hdfs') {
+        cluster.service('hadoop') {
             addSetting('test1', 'serviceValue')
         }
-        cluster.service('hdfs').addSetting('test2', 'serviceValue')
-        cluster.service('hdfs').addSetting('test3', 'serviceValue')
+        cluster.service('hadoop').addSetting('test2', 'serviceValue')
+        cluster.service('hadoop').addSetting('test3', 'serviceValue')
 
         List<InstanceConfiguration> instances = cluster.getServices()
                 .collect() { ServiceConfiguration s -> s.getRoles() }.flatten()
