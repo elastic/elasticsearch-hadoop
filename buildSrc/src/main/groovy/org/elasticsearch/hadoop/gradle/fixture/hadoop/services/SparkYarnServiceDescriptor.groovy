@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop.pig
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.services
 
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
@@ -29,23 +29,23 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
-class PigServiceDescriptor implements ServiceDescriptor {
+class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
-    static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('pig', [])
+    static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
 
     @Override
     String id() {
-        return serviceName()
+        return 'spark'
     }
 
     @Override
     String serviceName() {
-        return 'pig'
+        return 'spark'
     }
 
     @Override
     String serviceSubGroup() {
-        return null
+        return 'on.yarn'
     }
 
     @Override
@@ -60,30 +60,35 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(0, 17, 0)
+        return new Version(2, 3, 1)
     }
 
     @Override
     void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        task.setPackagePath('pig')
-        task.setPackageName('pig')
-        task.setVersion(configuration.getVersion().toString())
-        task.setArtifactFileName("${artifactName(configuration)}.tar.gz")
+        Version version = configuration.getVersion()
+        task.packagePath = 'spark'
+        task.packageName = 'spark'
+        task.version = "$version"
+        task.artifactFileName = "${artifactName(configuration)}.tgz"
     }
 
     @Override
     String packageName() {
-        return 'pig'
+        return 'spark'
     }
 
     @Override
     String artifactName(ServiceConfiguration configuration) {
-        return "pig-${configuration.getVersion()}"
+        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
+        Version version = configuration.getVersion()
+        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP.id()).getVersion()
+        return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
     }
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        return ['MD5': 'da76998409fe88717b970b45678e00d4']
+        // FIXHERE: Only for 2.3.1
+        return ['SHA-512': 'DC3A97F3D99791D363E4F70A622B84D6E313BD852F6FDBC777D31EAB44CBC112CEEAA20F7BF835492FB654F48AE57E9969F93D3B0E6EC92076D1C5E1B40B4696']
     }
 
     @Override
@@ -93,7 +98,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String pidFileName(ServiceIdentifier service) {
-        return 'pig.pid' // Not needed for gateway
+        return 'spark.pid'
     }
 
     @Override
@@ -103,38 +108,42 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<String> configFiles(ServiceIdentifier instance) {
-        return ['pig.properties']
+        return ['spark-defaults.conf']
     }
 
     @Override
     Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
-        return ['pig.properties' : configuration.getSettingsContainer().flattenFile('pig.properties')]
+        return ['spark-defaults.conf' : configuration.getSettingsContainer().flattenFile('spark-defaults.conf')]
     }
 
     @Override
     Closure<String> configFormat(ServiceIdentifier instance) {
-        return ConfigFormats.propertyFile()
+        return ConfigFormats.whiteSpaced()
     }
 
     @Override
     List<String> startCommand(ServiceIdentifier instance) {
+        // No start command for gateway services
         return ['']
     }
 
     @Override
     String scriptDir(ServiceIdentifier serviceIdentifier) {
-        return ''
+        return 'bin'
     }
 
     @Override
     String javaOptsEnvSetting(ServiceIdentifier instance) {
-        return 'PIG_OPTS' // Only used when launching pig scripts
+        return '' //FIXHERE: Spark jobs get their jvm opts through spark.executor.extraJavaOptions
+        // or spark.yarn.am.extraJavaOptions for YARN Client Mode
+        // or spark.driver.extraJavaOptions for YARN cluster mode
+        // Heap settings should be done in spark.yarn.am.memory
     }
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
-        // see bin/pig for env options
-        env.put('PIG_HOME', new File(configuration.baseDir, homeDirName(configuration)).toString())
+        // FIXHERE: More useful for spark standalone daemons
+        // HADOOP_CONF -> ...../etc/hadoop/conf
     }
 
     @Override

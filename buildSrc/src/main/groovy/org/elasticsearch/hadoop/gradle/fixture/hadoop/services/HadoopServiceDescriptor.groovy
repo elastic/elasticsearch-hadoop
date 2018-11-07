@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop.mr
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.services
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.Version

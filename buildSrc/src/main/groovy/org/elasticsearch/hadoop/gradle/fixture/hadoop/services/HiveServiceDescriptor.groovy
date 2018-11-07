@@ -17,35 +17,35 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.gradle.fixture.hadoop.spark
+package org.elasticsearch.hadoop.gradle.fixture.hadoop.services
 
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 
-class SparkYarnServiceDescriptor implements ServiceDescriptor {
+class HiveServiceDescriptor implements ServiceDescriptor {
 
-    static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
+    static RoleDescriptor HIVESERVER = RoleDescriptor.requiredProcess('hiveserver')
 
     @Override
     String id() {
-        return 'spark'
+        return serviceName()
     }
 
     @Override
     String serviceName() {
-        return 'spark'
+        return 'hive'
     }
 
     @Override
     String serviceSubGroup() {
-        return 'on.yarn'
+        return null
     }
 
     @Override
@@ -55,40 +55,38 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<RoleDescriptor> roles() {
-        return [GATEWAY]
+        return [HIVESERVER]
     }
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 1)
+        return new Version(1, 2, 2)
     }
 
     @Override
     void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
         Version version = configuration.getVersion()
-        task.packagePath = 'spark'
-        task.packageName = 'spark'
-        task.version = "$version"
-        task.artifactFileName = "${artifactName(configuration)}.tgz"
+        task.packagePath = 'hive'
+        task.packageName = 'hive'
+        task.artifactFileName = "apache-hive-${version}-bin.tar.gz"
+        task.version = "${version}"
     }
 
     @Override
     String packageName() {
-        return 'spark'
+        return 'hive'
     }
 
     @Override
     String artifactName(ServiceConfiguration configuration) {
-        // The spark artifacts that interface with Hadoop have a hadoop version in their names.
         Version version = configuration.getVersion()
-        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP.id()).getVersion()
-        return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
+        return "apache-hive-${version}-bin"
     }
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        // FIXHERE: Only for 2.3.1
-        return ['SHA-512': 'DC3A97F3D99791D363E4F70A622B84D6E313BD852F6FDBC777D31EAB44CBC112CEEAA20F7BF835492FB654F48AE57E9969F93D3B0E6EC92076D1C5E1B40B4696']
+        // FIXHERE only for 1.2.2
+        return ['SHA-256': '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1']
     }
 
     @Override
@@ -98,7 +96,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String pidFileName(ServiceIdentifier service) {
-        return 'spark.pid'
+        return 'hive.pid'
     }
 
     @Override
@@ -108,23 +106,27 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<String> configFiles(ServiceIdentifier instance) {
-        return ['spark-defaults.conf']
+        return ['hive-site.xml']
     }
 
     @Override
     Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
-        return ['spark-defaults.conf' : configuration.getSettingsContainer().flattenFile('spark-defaults.conf')]
+        Map<String, String> hiveSite = configuration.getSettingsContainer().flattenFile('hive-site.xml')
+//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.groups', '*')
+//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.hosts', '*')
+        return ['hive-site.xml' : hiveSite]
     }
 
     @Override
     Closure<String> configFormat(ServiceIdentifier instance) {
-        return ConfigFormats.whiteSpaced()
+        return ConfigFormats.hadoopXML()
     }
 
     @Override
     List<String> startCommand(ServiceIdentifier instance) {
-        // No start command for gateway services
-        return ['']
+        // We specify the hive root logger to print to console via the hiveconf override.
+        // FIXHERE: This might make sense to put in the default settings?
+        return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
     }
 
     @Override
@@ -134,20 +136,34 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String javaOptsEnvSetting(ServiceIdentifier instance) {
-        return '' //FIXHERE: Spark jobs get their jvm opts through spark.executor.extraJavaOptions
-        // or spark.yarn.am.extraJavaOptions for YARN Client Mode
-        // or spark.driver.extraJavaOptions for YARN cluster mode
-        // Heap settings should be done in spark.yarn.am.memory
+        // The jvm that launches Hiveserver2 executes by means of the `hadoop jar` command.
+        // Thus, to specify java options to the Hive server, we do so through the same channels
+        // that one would use to specify them to any hadoop job.
+        return 'HADOOP_OPTS'
     }
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
-        // FIXHERE: More useful for spark standalone daemons
-        // HADOOP_CONF -> ...../etc/hadoop/conf
+        // Need to add HADOOP_HOME to the env. Just use the namenode instance for it.
+        InstanceConfiguration namenodeConfiguration = configuration
+                .getClusterConf()
+                .service(HadoopClusterConfiguration.HADOOP.id())
+                .role(HadoopServiceDescriptor.NAMENODE.roleName())
+                .instance(0)
+
+        ServiceDescriptor hdfsServiceDescriptor = namenodeConfiguration.getServiceDescriptor()
+
+        File hadoopBaseDir = namenodeConfiguration.getBaseDir()
+        String homeDirName = hdfsServiceDescriptor.homeDirName(namenodeConfiguration)
+        File hadoopHome = new File(hadoopBaseDir, homeDirName)
+        env.put('HADOOP_HOME', hadoopHome.toString())
+
+//        env.put('HADOOP_USER_NAME', 'hadoop')
     }
 
     @Override
     Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance) {
-        return [:]
+        //FIXHERE: Need a tmp dir accessible to all in HDFS
+        return [:] // None for now. Hive may require a schema tool to be run in the future though.
     }
 }

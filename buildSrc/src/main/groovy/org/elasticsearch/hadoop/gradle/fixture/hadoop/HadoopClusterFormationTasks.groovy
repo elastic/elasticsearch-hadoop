@@ -30,15 +30,15 @@ import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.elasticsearch.hadoop.gradle.tasks.VerifyChecksums
 import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException;
-import org.gradle.api.Project;
+import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
 import shadow.org.codehaus.plexus.util.Os
 
-import java.nio.file.Paths;
+import java.nio.file.Paths
 
 /**
  * A helper for creating tasks to build a cluster that is used by a task, and tear down the cluster
