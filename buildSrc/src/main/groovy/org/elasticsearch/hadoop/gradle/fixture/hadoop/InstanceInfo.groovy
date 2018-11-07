@@ -71,9 +71,6 @@ class InstanceInfo {
     /** service config directory */
     File pathConf
 
-    /** data directory (as an Object, to allow lazy evaluation) */
-    Object dataDir
-
     /** The config files */
     List<File> configFiles
 
@@ -91,10 +88,6 @@ class InstanceInfo {
     /** stdout/stderr log of the service process for this instance */
     File startLog
 
-    /** directory to install plugins from */
-    // Unneeded
-    File pluginsTmpDir
-
     /** Major version of java this node runs with, or {@code null} if using the runtime java version */
     Integer javaVersion
 
@@ -111,14 +104,10 @@ class InstanceInfo {
     private Object startScript
 
     /** script to run when running in the background */
-    private File wrapperScript
-
     private File backgroundScript
 
+    /** script that wraps the regular start command to get the PID */
     private File pidWrapperScript
-
-//    /** true if the service requires us to wrap the execution to ensure daemonizing it */
-//    boolean spawn
 
     /** buffer for ant output when starting this node */
     ByteArrayOutputStream buffer = new ByteArrayOutputStream()
@@ -146,21 +135,13 @@ class InstanceInfo {
         pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(serviceId))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
         pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
-//        def getDataDir = config.getDataDir()
-//        if (getDataDir != null) {
-//            dataDir = "${getDataDir(serviceId)}"
-//        } else {
-//            dataDir = new File(homeDir, "data")
-//        }
+
         configFiles = config.getServiceDescriptor().configFiles(serviceId).collect { name -> new File(pathConf, name) }
         configContents = config.getServiceDescriptor().collectConfigFilesContents(config)
         configFileFormatter = config.getServiceDescriptor().configFormat(serviceId)
         // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
         // even for rpm/deb, the logs are under home because we dont start with real services
 //        File logsDir = new File(homeDir, 'logs')
-        // Probably don't need ports files.
-//        httpPortsFile = new File(logsDir, 'http.ports')
-//        transportPortsFile = new File(logsDir, 'transport.ports')
         cwd = new File(baseDir, "cwd")
         failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
@@ -185,29 +166,14 @@ class InstanceInfo {
         env.putAll(config.getEnvironmentVariables())
         config.getServiceDescriptor().finalizeEnv(env, config, baseDir)
 
-        // FIXHERE: Is this needed / supported uniformly for hadoop?
-//        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-//            /*
-//             * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
-//             * getting the short name requiring the path to already exist.
-//             */
-//            env.put('ES_PATH_CONF', "${-> getShortPathName(pathConf.toString())}")
-//        }
-//        else {
-//            env.put('ES_PATH_CONF', pathConf)
-//        }
-
         // Prepare startup command and arguments
         args = []
-//        List<String> startCommandLine = config.isDaemonized() ? config.getServiceDescriptor().daemonStartCommand(serviceId) : config.getServiceDescriptor().startCommand(serviceId)
-//        List<String> startCommandLine = config.getServiceDescriptor().daemonStartCommand(serviceId)
         List<String> startCommandLine = config.getServiceDescriptor().startCommand(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             // FIXHERE: Test on windows to see if this actually works
             executable = 'cmd'
             args.add('/C')
             args.add('"') // quote the entire command
-//            wrapperScript = new File(cwd, "run.bat")
             backgroundScript = new File(cwd, "run.bat")
             pidWrapperScript = new File(cwd, "start.bat")
             /*
@@ -217,26 +183,20 @@ class InstanceInfo {
             startScript = "${-> binPath().resolve(startCommandLine.first()).toString()}"
         } else {
             executable = 'bash'
-//            wrapperScript = new File(cwd, "run")
             backgroundScript = new File(cwd, "run")
             pidWrapperScript = new File(cwd, "start")
             startScript = binPath().resolve(startCommandLine.first())
         }
-//        spawn = config.getServiceDescriptor().wrapScript(serviceId)
-//        if (config.isDaemonized() && spawn) {
-            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                /*
-                 * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
-                 * getting the short name requiring the path to already exist.
-                 */
-//                args.add("${-> getShortPathName(wrapperScript.toString())}")
-                args.add("${-> getShortPathName(backgroundScript.toString())}")
-            } else {
-                args.add("${backgroundScript}")
-            }
-//        } else {
-//            args.add("${startScript}")
-//        }
+
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            /*
+             * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
+             * getting the short name requiring the path to already exist.
+             */
+            args.add("${-> getShortPathName(backgroundScript.toString())}")
+        } else {
+            args.add("${backgroundScript}")
+        }
 
         // Add tail of arguments to the command to run
         if (startCommandLine.size() > 1) {
@@ -251,29 +211,12 @@ class InstanceInfo {
 //            }
 //        }
 
-        // FIXHERE setting data directory from command line might not be possible/advised with Hadoop
-//        if (!System.properties.containsKey("tests.es.path.data")) {
-//            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-//                /*
-//                 * We have to delay building the string as the path will not exist during configuration which will fail on Windows due to
-//                 * getting the short name requiring the path to already exist. This one is extra tricky because usually we rely on the node
-//                 * creating its data directory on startup but we simply can not do that here because getting the short path name requires
-//                 * the directory to already exist. Therefore, we create this directory immediately before getting the short name.
-//                 */
-//                args.addAll("-E", "path.data=${-> Files.createDirectories(Paths.get(dataDir.toString())); getShortPathName(dataDir.toString())}")
-//            } else {
-//                args.addAll("-E", "path.data=${-> dataDir.toString()}")
-//            }
-//        }
-
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             args.add('"') // end the entire command, quoted
         }
     }
 
     Path binPath() {
-//        String dir = config.isDaemonized() ? config.getServiceDescriptor().daemonScriptDir(serviceId) : config.getServiceDescriptor().scriptDir(serviceId)
-//        String dir = config.getServiceDescriptor().daemonScriptDir(serviceId)
         String dir = config.getServiceDescriptor().scriptDir(serviceId)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             return Paths.get(getShortPathName(new File(homeDir, dir).toString()))
@@ -317,14 +260,10 @@ class InstanceInfo {
         commandString += '|  environment:\n'
         commandString += "|    JAVA_HOME: ${javaHome}\n"
         env.each { k, v -> commandString += "|    ${k}: ${v}\n" }
-//        if (config.isDaemonized() && spawn) {
-            commandString += "|\n|  [${backgroundScript.name}]\n"
-            backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
-            commandString += "|\n|  [${pidWrapperScript.name}]\n"
-            pidWrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
-//            commandString += "|\n|  [${wrapperScript.name}]\n"
-//            wrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
-//        }
+        commandString += "|\n|  [${backgroundScript.name}]\n"
+        backgroundScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
+        commandString += "|\n|  [${pidWrapperScript.name}]\n"
+        pidWrapperScript.eachLine('UTF-8', { line -> commandString += "    ${line}\n"})
         configFiles.forEach { configFile ->
             commandString += "|\n|  [${configFile.name}]\n"
             configFile.eachLine('UTF-8', { line -> commandString += "|    ${line}\n" })
@@ -333,53 +272,16 @@ class InstanceInfo {
         return commandString
     }
 
-    void writeWrapperScript() {
-        writeWrapperScripts()
-    }
-
     void writeWrapperScripts() {
-//        String argsPasser = '"$@"'
-//        String exitMarker = "; if [ \$? != 0 ]; then touch run.failed; fi"
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             // FIXHERE Eventually support Windows
-//            argsPasser = '%*'
-//            exitMarker = "\r\n if \"%errorlevel%\" neq \"0\" ( type nul >> run.failed )"
             throw new GradleException('Full test fixtures on Windows are currently unsupported')
         }
-//        wrapperScript.setText("\"${startScript}\" ${argsPasser} > run.log 2>&1 ${exitMarker}", 'UTF-8')
-
-//        String scriptContents = "echo \$\$> ${pidFile}; \"${startScript}\" \"\$@\" > run.log 2>&1; if [ \$? != 0 ]; then touch run.failed; rm ${pidFile}; fi"
-//        wrapperScript.setText(scriptContents, 'UTF-8')
-
         String pidWrapperScriptContents = "echo \$\$> ${pidFile}; exec \"${startScript}\" \"\$@\" > run.log 2>&1;"
         pidWrapperScript.setText(pidWrapperScriptContents, 'UTF-8')
         pidWrapperScript.setExecutable(true)
         String backgroundScriptContents = "\"${pidWrapperScript}\" \"\$@\"; if [ \\\$? != 0 ]; then touch run.failed; rm -f ${pidFile}; fi"
         backgroundScript.setText(backgroundScriptContents, 'UTF-8')
         backgroundScript.setExecutable(true)
-
     }
-
-//    /** Returns an address and port suitable for a uri to connect to this node over http */
-//    String httpUri() {
-//        return httpPortsFile.readLines("UTF-8").get(0)
-//    }
-//
-//    /** Returns an address and port suitable for a uri to connect to this node over transport protocol */
-//    String transportUri() {
-//        return transportPortsFile.readLines("UTF-8").get(0)
-//    }
-//
-//    /** Returns the file which contains the transport protocol ports for this node */
-//    File getTransportPortsFile() {
-//        return transportPortsFile
-//    }
-
-//    /** Returns the data directory for this node */
-//    File getDataDir() {
-//        if (!(dataDir instanceof File)) {
-//            return new File(dataDir)
-//        }
-//        return dataDir
-//    }
 }

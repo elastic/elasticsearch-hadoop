@@ -48,7 +48,13 @@ class HadoopClusterFormationTasks {
 
     // Pie in the sky DSL
 //    hadoopFixture {
-//        hdfs {
+//        config 'key', 'value'
+//        jvmArg 'arg'
+//        env 'key', 'value'
+//        hadoop {
+//            config 'key', 'value'
+//            jvmArg 'arg'
+//            env 'key', 'value'
 //            namenode {
 //                config 'key', 'value'
 //                jvmArg 'arg'
@@ -59,8 +65,6 @@ class HadoopClusterFormationTasks {
 //                jvmArg 'arg'
 //                env 'key', 'value'
 //            }
-//        }
-//        yarn {
 //            resourcemanager {
 //                config 'key', 'value'
 //                jvmArg 'arg'
@@ -73,6 +77,9 @@ class HadoopClusterFormationTasks {
 //            }
 //        }
 //        hive {
+//            config 'key', 'value'
+//            jvmArg 'arg'
+//            env 'key', 'value'
 //            hiveserver {
 //                config 'key', 'value'
 //                jvmArg 'arg'
@@ -260,23 +267,19 @@ class HadoopClusterFormationTasks {
         Task start = configureStartTask(taskName(prefix, node, 'start'), project, setup, node)
 
         // Configure daemon stop task
-
-//        if (node.config.daemonized) {
-            Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
-            // We're running in the background, so make sure that the stop command is called after the runner task
-            // finishes
-            runner.finalizedBy(stop)
-            start.finalizedBy(stop)
-            for (Object dependency : node.config.getClusterConf().getDependencies()) {
-                if (dependency instanceof Fixture) {
-                    def depStop = ((Fixture)dependency).stopTask
-                    runner.finalizedBy(depStop)
-                    start.finalizedBy(depStop)
-                }
+        Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
+        // We're running in the background, so make sure that the stop command is called after the runner task
+        // finishes
+        runner.finalizedBy(stop)
+        start.finalizedBy(stop)
+        for (Object dependency : node.config.getClusterConf().getDependencies()) {
+            if (dependency instanceof Fixture) {
+                def depStop = ((Fixture)dependency).stopTask
+                runner.finalizedBy(depStop)
+                start.finalizedBy(depStop)
             }
-            return new InstanceTasks(startTask: start, stopTask: stop)
-//        }
-//        return new InstanceTasks(startTask: start)
+        }
+        return new InstanceTasks(startTask: start, stopTask: stop)
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
@@ -387,28 +390,21 @@ class HadoopClusterFormationTasks {
             // of the real start script. This allows ant to keep the streams open with the
             // dummy process, but us to have the output available if there is an error in the
             // services start script
-//            if (node.spawn) {
-                node.writeWrapperScript()
-//            }
+            node.writeWrapperScripts()
 
             node.getCommandString().eachLine { line -> project.logger.info(line) }
 
             // this closure is the ant command to be wrapped in our stream redirection and then executed
             Closure antRunner = { AntBuilder ant ->
-//                ant.exec(executable: node.executable, spawn: node.spawn, dir: node.cwd, taskName: node.serviceId.roleName) {
                 ant.exec(executable: node.executable, spawn: true, dir: node.cwd, taskName: node.serviceId.roleName) {
                     node.env.each { key, value -> env(key: key, value: value) }
                     node.args.each { arg(value: it) }
                 }
             }
 
-//            if (project.logger.isInfoEnabled() || node.config.isDaemonized() == false) {
-//                runAntCommand(project, antRunner, System.out, System.err)
-//            } else {
-                // buffer the output, we may not need to print it
-                PrintStream captureStream = new PrintStream(node.buffer, true, "UTF-8")
-                runAntCommand(project, antRunner, captureStream, captureStream)
-//            }
+            // buffer the output, we may not need to print it
+            PrintStream captureStream = new PrintStream(node.buffer, true, "UTF-8")
+            runAntCommand(project, antRunner, captureStream, captureStream)
         }
         return start
     }
