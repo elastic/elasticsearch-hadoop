@@ -19,7 +19,9 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDescriptor
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.CopySpec
@@ -30,13 +32,17 @@ import java.nio.file.Path
 
 class DfsCopyTask extends DefaultTask {
 
-    InstanceConfiguration hadoopGateway
+    HadoopClusterConfiguration cluster
     Path dfsSource
     Path localSource
     Path dfsDestination
     Path localDestination
     Map<String, String> env = [:]
-    Map<String, String> systemProperties = [:]
+
+    DfsCopyTask() {
+        super()
+        this.cluster = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
+    }
 
     Path getDfsSource() {
         return dfsSource
@@ -114,35 +120,31 @@ class DfsCopyTask extends DefaultTask {
         env.putAll(values)
     }
 
-    Map<String, String> getSystemProperties() {
-        return systemProperties
-    }
-
-    void setSystemProperties(Map<String, String> systemProperties) {
-        this.systemProperties = systemProperties
-    }
-
-    void systemProperty(String key, String value) {
-        systemProperties.put(key, value)
-    }
-
-    void systemProperties(Map<String, String> properties) {
-        systemProperties.putAll(properties)
-    }
-
     @TaskAction
     void doCopy() {
         // Verification
-        if (localSource != null || dfsSource != null) {
+        if (cluster == null) {
+            // FIXHERE: Remove once we have a plugin and extension
+            throw new GradleException("No cluster configuration found")
+        }
+        if (localSource == null && dfsSource == null) {
             throw new GradleException("No source given")
         }
-        if (localDestination != null || dfsDestination != null) {
+        if (localDestination == null && dfsDestination == null) {
             throw new GradleException("No destination given")
         }
 
+        // Gateway conf
+        InstanceConfiguration hadoopGateway = cluster
+                .service(HadoopClusterConfiguration.HADOOP)
+                .role(HadoopServiceDescriptor.GATEWAY)
+                .instance(0)
+
         // Determine command
-        File binDir = new File('')
-        String commandName = 'hdfs' // or hdfs.cmd
+        File baseDir = hadoopGateway.getBaseDir()
+        File homeDir = new File(baseDir, hadoopGateway.getServiceDescriptor().homeDirName(hadoopGateway))
+        File binDir = new File(homeDir, hadoopGateway.serviceDescriptor.scriptDir(hadoopGateway))
+        String commandName = 'hdfs' // TODO: or hdfs.cmd for Windows
         File command = new File(binDir, commandName)
         List<String> commandLine = [command.toString()]
         if (localSource != null && localDestination != null) {
@@ -163,10 +165,6 @@ class DfsCopyTask extends DefaultTask {
         Map<String, String> finalEnv = hadoopGateway.getEnvironmentVariables()
         hadoopGateway.getServiceDescriptor().finalizeEnv(finalEnv, hadoopGateway)
         finalEnv.putAll(env)
-
-//        String finalJvmArgs = hadoopGateway.getJvmArgs()
-//        finalJvmArgs = finalJvmArgs + ' ' + systemProperties.collect {k, v -> "-D${k}=${v}"}.join(' ')
-//        finalEnv.put()
 
         // Do command
         project.exec { ExecSpec spec ->
