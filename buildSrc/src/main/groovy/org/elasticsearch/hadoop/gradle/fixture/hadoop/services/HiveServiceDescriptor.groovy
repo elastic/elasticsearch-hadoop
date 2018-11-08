@@ -147,8 +147,8 @@ class HiveServiceDescriptor implements ServiceDescriptor {
         // Need to add HADOOP_HOME to the env. Just use the namenode instance for it.
         InstanceConfiguration namenodeConfiguration = configuration
                 .getClusterConf()
-                .service(HadoopClusterConfiguration.HADOOP.id())
-                .role(HadoopServiceDescriptor.NAMENODE.roleName())
+                .service(HadoopClusterConfiguration.HADOOP)
+                .role(HadoopServiceDescriptor.NAMENODE)
                 .instance(0)
 
         ServiceDescriptor hdfsServiceDescriptor = namenodeConfiguration.getServiceDescriptor()

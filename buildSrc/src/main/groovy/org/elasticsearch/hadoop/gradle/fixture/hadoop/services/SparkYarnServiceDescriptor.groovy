@@ -81,7 +81,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     String artifactName(ServiceConfiguration configuration) {
         // The spark artifacts that interface with Hadoop have a hadoop version in their names.
         Version version = configuration.getVersion()
-        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP.id()).getVersion()
+        Version hadoopVersion = configuration.getClusterConf().service(HadoopClusterConfiguration.HADOOP).getVersion()
         return "spark-$version-bin-hadoop${hadoopVersion.major}.${hadoopVersion.minor}"
     }
 

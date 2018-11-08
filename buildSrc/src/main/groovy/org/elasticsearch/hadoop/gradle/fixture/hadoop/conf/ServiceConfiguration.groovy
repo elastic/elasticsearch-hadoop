@@ -66,7 +66,7 @@ class ServiceConfiguration extends ProcessConfiguration {
     private void initializeRequiredRoles() {
         for (RoleDescriptor roleDescriptor : serviceDescriptor.roles()) {
             if (roleDescriptor.required()) {
-                role(roleDescriptor.roleName())
+                role(roleDescriptor)
             }
         }
     }
@@ -107,7 +107,7 @@ class ServiceConfiguration extends ProcessConfiguration {
         // Ensure that the dependent services already exist
         List<RoleConfiguration> dependentRoles = []
         for (RoleDescriptor dependentRole : roleDescriptor.dependentRoles()) {
-            RoleConfiguration conf = role(dependentRole.roleName())
+            RoleConfiguration conf = role(dependentRole)
             dependentRoles.add(conf)
         }
 
