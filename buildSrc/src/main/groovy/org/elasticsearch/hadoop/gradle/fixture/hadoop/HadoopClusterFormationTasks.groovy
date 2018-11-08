@@ -101,6 +101,7 @@ class HadoopClusterFormationTasks {
      * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
      */
     static List<InstanceInfo> setup(Project project, Task runner, HadoopClusterConfiguration config) {
+        //FIXHERE: We should support a list of tasks to run with the cluster in the HadoopClusterConfig
         String prefix = config.getName()
 
         File sharedDir = new File(project.buildDir, "fixtures/shared")
@@ -272,6 +273,7 @@ class HadoopClusterFormationTasks {
         // finishes
         runner.finalizedBy(stop)
         start.finalizedBy(stop)
+        // FIXHERE: This should be tested as the instance conf dependencies.
         for (Object dependency : node.config.getClusterConf().getDependencies()) {
             if (dependency instanceof Fixture) {
                 def depStop = ((Fixture)dependency).stopTask
