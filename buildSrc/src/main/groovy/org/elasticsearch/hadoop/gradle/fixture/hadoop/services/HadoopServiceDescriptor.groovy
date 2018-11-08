@@ -129,7 +129,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         // data directories
         File defaultDataDir = new File(new File(configuration.getBaseDir(), homeDirName(configuration)), 'data')
         hdfsSite.putIfAbsent('dfs.namenode.name.dir', new File(defaultDataDir, "dfs/name/").toURI().toString())
-        hdfsSite.putIfAbsent('dfs.datanode.name.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
+        hdfsSite.putIfAbsent('dfs.datanode.data.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
         hdfsSite.putIfAbsent('dfs.namenode.checkpoint.dir', new File(defaultDataDir, "dfs/namesecondary/").toURI().toString())
 
         // namenode rpc-address
