@@ -122,7 +122,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String scriptDir(ServiceIdentifier serviceIdentifier) {
+    String scriptDir(InstanceConfiguration instance) {
         return ''
     }
 

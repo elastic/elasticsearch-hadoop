@@ -66,7 +66,7 @@ interface ServiceDescriptor {
 
     List<String> startCommand(ServiceIdentifier instance)
 
-    String scriptDir(ServiceIdentifier serviceIdentifier)
+    String scriptDir(InstanceConfiguration instance)
 
     /**
      * The Environment Variable used to give the underlying process its java options.

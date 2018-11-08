@@ -217,7 +217,7 @@ class InstanceInfo {
     }
 
     Path binPath() {
-        String dir = config.getServiceDescriptor().scriptDir(serviceId)
+        String dir = config.getServiceDescriptor().scriptDir(config)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             return Paths.get(getShortPathName(new File(homeDir, dir).toString()))
         } else {

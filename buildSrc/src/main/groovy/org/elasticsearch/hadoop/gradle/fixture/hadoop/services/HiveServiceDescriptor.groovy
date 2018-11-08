@@ -130,7 +130,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String scriptDir(ServiceIdentifier serviceIdentifier) {
+    String scriptDir(InstanceConfiguration instance) {
         return 'bin'
     }
 
