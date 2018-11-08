@@ -23,7 +23,6 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.gradle.api.GradleException
-import org.gradle.api.GradleScriptException
 import org.gradle.api.Project
 import org.gradle.util.ConfigureUtil
 
@@ -83,6 +82,18 @@ class ServiceConfiguration extends ProcessConfiguration {
             throw new GradleException("${serviceDescriptor.serviceName()} does not support unknown role [${roleName}]")
         }
 
+        return doGetRoleConf(roleDescriptor, configure)
+    }
+
+    RoleConfiguration role(RoleDescriptor roleDescriptor) {
+        if (!supportedRoles.containsKey(roleDescriptor.roleName())) {
+            throw new GradleException("${serviceDescriptor.serviceName()} does not support unknown role [${roleDescriptor.roleName()}]")
+        }
+        return doGetRoleConf(roleDescriptor, null)
+    }
+
+    private RoleConfiguration doGetRoleConf(RoleDescriptor roleDescriptor, Closure<RoleConfiguration> configure) {
+        String roleName = roleDescriptor.roleName();
         RoleConfiguration roleConf = roleConfigurations.get(roleName)
         if (roleConf != null) {
             if (configure != null) {
@@ -95,7 +106,7 @@ class ServiceConfiguration extends ProcessConfiguration {
 
         // Ensure that the dependent services already exist
         List<RoleConfiguration> dependentRoles = []
-        for (RoleDescriptor dependentRole: roleDescriptor.dependentRoles()) {
+        for (RoleDescriptor dependentRole : roleDescriptor.dependentRoles()) {
             RoleConfiguration conf = role(dependentRole.roleName())
             dependentRoles.add(conf)
         }
