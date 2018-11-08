@@ -25,7 +25,9 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDesc
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.PigServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.SparkYarnServiceDescriptor
 import org.gradle.api.GradleException
+import org.gradle.api.InvalidUserDataException
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.util.ConfigureUtil
 
 /**
@@ -50,12 +52,14 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
 
     private final Project project
     private final String name
+    private final List<Task> clusterTasks
     private final Map<String, ServiceConfiguration> serviceConfigurations
     private final List<ServiceConfiguration> serviceCreationOrder
 
     HadoopClusterConfiguration(Project project, String name) {
         this.project = project
         this.name = name
+        this.clusterTasks = []
         this.serviceConfigurations = [:]
         this.serviceCreationOrder = []
     }
@@ -123,5 +127,51 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
     @Override
     protected ProcessConfiguration parent() {
         return END
+    }
+
+    Task createClusterTask(Map<String, ?> options) throws InvalidUserDataException {
+        Task task = project.tasks.create(options)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(Map<String, ?> options, Closure configureClosure) throws InvalidUserDataException {
+        Task task = project.tasks.create(options, configureClosure)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(String name, Closure configureClosure) throws InvalidUserDataException {
+        Task task = project.tasks.create(name, configureClosure)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(String name) throws InvalidUserDataException {
+        Task task = project.tasks.create(name)
+        addClusterTask(task)
+        return task
+    }
+
+    public <T extends Task> T createClusterTask(String name, Class<T> type) throws InvalidUserDataException {
+        T task = project.tasks.create(name, type)
+        addClusterTask(task)
+        return task
+    }
+
+    public <T extends Task> T createClusterTask(String name, Class<T> type, Closure configuration)
+            throws InvalidUserDataException {
+        T task = project.tasks.create(name, type)
+        ConfigureUtil.configure(configuration, task)
+        addClusterTask(task)
+        return task
+    }
+
+    void addClusterTask(Task task) {
+        clusterTasks.add(task)
+    }
+
+    List<Task> getClusterTasks() {
+        return clusterTasks
     }
 }

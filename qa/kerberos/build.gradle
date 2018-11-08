@@ -21,6 +21,7 @@
 import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopyTask
 
 apply plugin: 'es.hadoop.build'
 
@@ -140,8 +141,20 @@ runner.doLast {
 HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
 
 config.service('hadoop')
-config.service('hive')
-config.service('spark')
-config.service('pig')
+//config.service('hive')
+//config.service('spark')
+//config.service('pig')
 
-HadoopClusterFormationTasks.setup(project, runner, config)
+DfsCopyTask copyHello = config.createClusterTask('copyHello', DfsCopyTask.class) {
+    clusterConfiguration = config
+    localSource(project.file('hello.txt').toPath())
+    dfsDestination(new File("/hello.txt").toPath())
+    doLast {
+        project.logger.lifecycle("CLUSTER UP")
+        project.logger.lifecycle("FILE COPIED")
+        System.console().readLine("Tear Down? ")
+        project.logger.lifecycle("STOPPING CLUSTER")
+    }
+}
+
+HadoopClusterFormationTasks.setup(project, config)

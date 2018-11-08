@@ -32,7 +32,7 @@ import java.nio.file.Path
 
 class DfsCopyTask extends DefaultTask {
 
-    HadoopClusterConfiguration cluster
+    HadoopClusterConfiguration clusterConfiguration
     Path dfsSource
     Path localSource
     Path dfsDestination
@@ -41,7 +41,7 @@ class DfsCopyTask extends DefaultTask {
 
     DfsCopyTask() {
         super()
-        this.cluster = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
+        this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
     }
 
     Path getDfsSource() {
@@ -123,7 +123,7 @@ class DfsCopyTask extends DefaultTask {
     @TaskAction
     void doCopy() {
         // Verification
-        if (cluster == null) {
+        if (clusterConfiguration == null) {
             // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("No cluster configuration found")
         }
@@ -135,7 +135,7 @@ class DfsCopyTask extends DefaultTask {
         }
 
         // Gateway conf
-        InstanceConfiguration hadoopGateway = cluster
+        InstanceConfiguration hadoopGateway = clusterConfiguration
                 .service(HadoopClusterConfiguration.HADOOP)
                 .role(HadoopServiceDescriptor.GATEWAY)
                 .instance(0)

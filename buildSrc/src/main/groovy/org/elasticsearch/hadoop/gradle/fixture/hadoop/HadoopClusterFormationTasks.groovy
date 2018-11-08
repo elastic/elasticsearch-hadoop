@@ -100,8 +100,7 @@ class HadoopClusterFormationTasks {
      *
      * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
      */
-    static List<InstanceInfo> setup(Project project, Task runner, HadoopClusterConfiguration config) {
-        //FIXHERE: We should support a list of tasks to run with the cluster in the HadoopClusterConfig
+    static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration config) {
         String prefix = config.getName()
 
         File sharedDir = new File(project.buildDir, "fixtures/shared")
@@ -154,7 +153,8 @@ class HadoopClusterFormationTasks {
                 nodes.add(instanceInfo)
                 // First instance in a service needs to also depend on its download task (serviceDependencies)
                 Object dependsOn = serviceStartTasks.empty ? startDependencies : serviceStartTasks.last()
-                InstanceTasks instanceTasks = configureNode(project, prefix, runner, dependsOn, instanceInfo, distributionTasks)
+                InstanceTasks instanceTasks = configureNode(project, prefix, config.getClusterTasks(), dependsOn,
+                        instanceInfo, distributionTasks)
                 serviceStartTasks.add(instanceTasks.startTask)
                 instanceStartTasks.add(instanceTasks.startTask)
                 if (instanceTasks.stopTask != null) {
@@ -167,7 +167,7 @@ class HadoopClusterFormationTasks {
             // wait depends on last instance start task
             // runner depends on wait task
 
-            runner.dependsOn(instanceStartTasks)
+            config.getClusterTasks().forEach { Task t -> t.dependsOn(instanceStartTasks) }
         }
 
 
@@ -212,8 +212,8 @@ class HadoopClusterFormationTasks {
         return new DistributionTasks(download: downloadTask, verify: verifyTask)
     }
 
-    static InstanceTasks configureNode(Project project, String prefix, Task runner, Object dependsOn, InstanceInfo node,
-                              DistributionTasks distribution) {
+    static InstanceTasks configureNode(Project project, String prefix, List<Task> clusterTasks, Object dependsOn,
+                                       InstanceInfo node, DistributionTasks distribution) {
         Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
@@ -271,13 +271,13 @@ class HadoopClusterFormationTasks {
         Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
         // We're running in the background, so make sure that the stop command is called after the runner task
         // finishes
-        runner.finalizedBy(stop)
+        clusterTasks.forEach { Task t -> t.finalizedBy(stop) }
         start.finalizedBy(stop)
         // FIXHERE: This should be tested as the instance conf dependencies.
         for (Object dependency : node.config.getClusterConf().getDependencies()) {
             if (dependency instanceof Fixture) {
                 def depStop = ((Fixture)dependency).stopTask
-                runner.finalizedBy(depStop)
+                clusterTasks.forEach { Task t -> t.finalizedBy(depStop) }
                 start.finalizedBy(depStop)
             }
         }
