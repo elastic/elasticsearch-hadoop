@@ -141,7 +141,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
         // FIXHERE: More useful for spark standalone daemons
         // HADOOP_CONF -> ...../etc/hadoop/conf
     }

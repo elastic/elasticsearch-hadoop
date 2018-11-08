@@ -164,7 +164,7 @@ class InstanceInfo {
         // Prepare Environment
         env = [:]
         env.putAll(config.getEnvironmentVariables())
-        config.getServiceDescriptor().finalizeEnv(env, config, baseDir)
+        config.getServiceDescriptor().finalizeEnv(env, config)
 
         // Prepare startup command and arguments
         args = []

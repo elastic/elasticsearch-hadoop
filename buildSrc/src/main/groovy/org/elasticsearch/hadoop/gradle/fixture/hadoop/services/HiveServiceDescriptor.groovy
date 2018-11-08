@@ -143,7 +143,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
         // Need to add HADOOP_HOME to the env. Just use the namenode instance for it.
         InstanceConfiguration namenodeConfiguration = configuration
                 .getClusterConf()

@@ -202,7 +202,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
 
     }
 

@@ -76,7 +76,7 @@ interface ServiceDescriptor {
     /**
      * Finalize the environment variables for a given instance.
      */
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir)
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration)
 
     Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance)
 }

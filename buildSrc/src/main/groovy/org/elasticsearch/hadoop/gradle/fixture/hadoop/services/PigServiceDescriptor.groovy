@@ -132,7 +132,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration, File baseDir) {
+    void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
         // see bin/pig for env options
         env.put('PIG_HOME', new File(configuration.baseDir, homeDirName(configuration)).toString())
     }
