@@ -68,6 +68,9 @@ public class WordCount extends Configured implements Tool {
             for (StringTokenizer tokenizer = new StringTokenizer(line); tokenizer.hasMoreTokens(); ) {
                 String word = tokenizer.nextToken();
                 String lowerCase = word.toLowerCase();
+                if (lowerCase.contains(",")) {
+                    lowerCase = lowerCase.replace(",", "");
+                }
                 context.write(new Text(lowerCase), ONE);
             }
         }
@@ -91,7 +94,7 @@ public class WordCount extends Configured implements Tool {
             for (LongWritable value : values) {
                 sum += value.get();
             }
-            context.write(NullWritable.get(), new Text(key.toString() + ":" + sum));
+            context.write(NullWritable.get(), new Text(key.toString() + "," + sum));
         }
     }
 }

@@ -22,6 +22,7 @@ import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopyTask
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.MapReduceExecTask
 
 apply plugin: 'es.hadoop.build'
@@ -132,8 +133,8 @@ integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 
 // Project instance available implicitly
 String prefix = "hadoopFixture"
-Task runner = project.tasks.create("testCluster")
-runner.doLast {
+Task testCluster = project.tasks.create("testCluster")
+testCluster.doLast {
     project.logger.lifecycle("TEST FINISHED")
     System.console().readLine("Tear Down? ")
     project.logger.lifecycle("STOPPING CLUSTER")
@@ -142,7 +143,7 @@ runner.doLast {
 HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
 
 config.service('hadoop')
-//config.service('hive')
+config.service('hive')
 //config.service('spark')
 //config.service('pig')
 
@@ -156,13 +157,21 @@ def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
 
 MapReduceExecTask wordCount = config.createClusterTask('wordCount', MapReduceExecTask.class) {
     clusterConfiguration = config
-    dependsOn = [jar, copyData]
+    dependsOn([jar, copyData])
     jobJar = jar.archivePath
     jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.wordcount.WordCount'
     args = ['/data/pride_and_prejudice.txt', '/output/pride']
 }
 
-testCluster.dependsOn(wordCount)
+File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
+
+HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
+    clusterConfiguration = config
+    dependsOn(wordCount)
+    script = new File(resourceDir, 'hive/top_25_words.sql')
+}
+
+testCluster.dependsOn(topWords)
 config.addClusterTask(testCluster)
 
 HadoopClusterFormationTasks.setup(project, config)
