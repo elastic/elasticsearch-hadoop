@@ -22,6 +22,7 @@ import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopyTask
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.MapReduceExecTask
 
 apply plugin: 'es.hadoop.build'
 
@@ -30,8 +31,8 @@ configurations {
 }
 
 dependencies {
-    itestCompile project(":elasticsearch-hadoop-mr")
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    compile project(":elasticsearch-hadoop-mr")
+    compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
 
     kdcFixture project(':test:fixtures:minikdc')
 }
@@ -133,7 +134,7 @@ integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 String prefix = "hadoopFixture"
 Task runner = project.tasks.create("testCluster")
 runner.doLast {
-    project.logger.lifecycle("CLUSTER UP")
+    project.logger.lifecycle("TEST FINISHED")
     System.console().readLine("Tear Down? ")
     project.logger.lifecycle("STOPPING CLUSTER")
 }
@@ -145,16 +146,23 @@ config.service('hadoop')
 //config.service('spark')
 //config.service('pig')
 
-DfsCopyTask copyHello = config.createClusterTask('copyHello', DfsCopyTask.class) {
+DfsCopyTask copyData = config.createClusterTask('copyData', DfsCopyTask.class) {
     clusterConfiguration = config
-    localSource(project.file('hello.txt').toPath())
-    dfsDestination(new File("/hello.txt").toPath())
-    doLast {
-        project.logger.lifecycle("CLUSTER UP")
-        project.logger.lifecycle("FILE COPIED")
-        System.console().readLine("Tear Down? ")
-        project.logger.lifecycle("STOPPING CLUSTER")
-    }
+    localSource(project.file('data').toPath())
+    dfsDestination(new File("/data").toPath())
 }
+
+def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
+
+MapReduceExecTask wordCount = config.createClusterTask('wordCount', MapReduceExecTask.class) {
+    clusterConfiguration = config
+    dependsOn = [jar, copyData]
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.wordcount.WordCount'
+    args = ['/data/pride_and_prejudice.txt', '/output/pride']
+}
+
+testCluster.dependsOn(wordCount)
+config.addClusterTask(testCluster)
 
 HadoopClusterFormationTasks.setup(project, config)
