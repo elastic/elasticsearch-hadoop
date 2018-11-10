@@ -27,7 +27,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-class MapReduceExecTask extends DefaultTask {
+class HadoopMRJob extends DefaultTask {
 
     HadoopClusterConfiguration clusterConfiguration
     String jobClass
@@ -35,7 +35,7 @@ class MapReduceExecTask extends DefaultTask {
     List<File> libJars = []
     List<String> args = []
 
-    MapReduceExecTask() {
+    HadoopMRJob() {
         super()
         this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
     }

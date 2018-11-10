@@ -30,7 +30,7 @@ import org.gradle.process.ExecSpec
 
 import java.nio.file.Path
 
-class DfsCopyTask extends DefaultTask {
+class DfsCopy extends DefaultTask {
 
     HadoopClusterConfiguration clusterConfiguration
     Path dfsSource
@@ -39,7 +39,7 @@ class DfsCopyTask extends DefaultTask {
     Path localDestination
     Map<String, String> env = [:]
 
-    DfsCopyTask() {
+    DfsCopy() {
         super()
         this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
     }

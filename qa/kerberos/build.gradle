@@ -21,9 +21,9 @@
 import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopyTask
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.MapReduceExecTask
 
 apply plugin: 'es.hadoop.build'
 
@@ -147,7 +147,7 @@ config.service('hive')
 //config.service('spark')
 //config.service('pig')
 
-DfsCopyTask copyData = config.createClusterTask('copyData', DfsCopyTask.class) {
+DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
     localSource(project.file('data').toPath())
     dfsDestination(new File("/data").toPath())
@@ -155,7 +155,7 @@ DfsCopyTask copyData = config.createClusterTask('copyData', DfsCopyTask.class) {
 
 def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
 
-MapReduceExecTask wordCount = config.createClusterTask('wordCount', MapReduceExecTask.class) {
+HadoopMRJob wordCount = config.createClusterTask('wordCount', HadoopMRJob.class) {
     clusterConfiguration = config
     dependsOn([jar, copyData])
     jobJar = jar.archivePath
