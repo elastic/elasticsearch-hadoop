@@ -22,25 +22,18 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDescriptor
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.CopySpec
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-class DfsCopy extends DefaultTask {
+class DfsCopy extends AbstractClusterTask {
 
-    HadoopClusterConfiguration clusterConfiguration
     File dfsSource
     File localSource
     File dfsDestination
     File localDestination
     Map<String, String> env = [:]
-
-    DfsCopy() {
-        super()
-        this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
-    }
 
     File getDfsSource() {
         return dfsSource

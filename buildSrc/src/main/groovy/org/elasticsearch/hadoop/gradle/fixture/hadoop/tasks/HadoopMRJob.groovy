@@ -22,23 +22,16 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HadoopServiceDescriptor
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-class HadoopMRJob extends DefaultTask {
+class HadoopMRJob extends AbstractClusterTask {
 
-    HadoopClusterConfiguration clusterConfiguration
     String jobClass
     File jobJar
     List<File> libJars = []
     List<String> args = []
-
-    HadoopMRJob() {
-        super()
-        this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
-    }
 
     @TaskAction
     void submitJob() {

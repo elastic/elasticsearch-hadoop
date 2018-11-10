@@ -22,20 +22,13 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.services.HiveServiceDescriptor
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-class HiveBeeline extends DefaultTask {
+class HiveBeeline extends AbstractClusterTask {
 
-    HadoopClusterConfiguration clusterConfiguration
     File script
-
-    HiveBeeline() {
-        super()
-        this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
-    }
 
     @TaskAction
     void runBeeline() {
