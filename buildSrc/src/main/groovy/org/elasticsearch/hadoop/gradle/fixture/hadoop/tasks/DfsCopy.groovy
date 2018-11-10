@@ -28,15 +28,13 @@ import org.gradle.api.file.CopySpec
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecSpec
 
-import java.nio.file.Path
-
 class DfsCopy extends DefaultTask {
 
     HadoopClusterConfiguration clusterConfiguration
-    Path dfsSource
-    Path localSource
-    Path dfsDestination
-    Path localDestination
+    File dfsSource
+    File localSource
+    File dfsDestination
+    File localDestination
     Map<String, String> env = [:]
 
     DfsCopy() {
@@ -44,63 +42,63 @@ class DfsCopy extends DefaultTask {
         this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
     }
 
-    Path getDfsSource() {
+    File getDfsSource() {
         return dfsSource
     }
 
-    void setDfsSource(Path dfsSource) {
+    void setDfsSource(File dfsSource) {
         if (localSource != null) {
             throw new GradleException("Cannot set dfs source if local source is set")
         }
         this.dfsSource = dfsSource
     }
 
-    void dfsSource(Path path) {
+    void from(File path) {
         setDfsSource(path)
     }
 
-    Path getLocalSource() {
+    File getLocalSource() {
         return localSource
     }
 
-    void setLocalSource(Path localSource) {
+    void setLocalSource(File localSource) {
         if (dfsSource != null) {
             throw new GradleException("Cannot set local source if dfs source is set")
         }
         this.localSource = localSource
     }
 
-    void localSource(Path path) {
+    void fromLocal(File path) {
         setLocalSource(path)
     }
 
-    Path getDfsDestination() {
+    File getDfsDestination() {
         return dfsDestination
     }
 
-    void setDfsDestination(Path dfsDestination) {
+    void setDfsDestination(File dfsDestination) {
         if (localDestination != null) {
             throw new GradleException("Cannot set dfs destination if local destination is set")
         }
         this.dfsDestination = dfsDestination
     }
 
-    void dfsDestination(Path path) {
+    void to(File path) {
         setDfsDestination(path)
     }
 
-    Path getLocalDestination() {
+    File getLocalDestination() {
         return localDestination
     }
 
-    void setLocalDestination(Path localDestination) {
+    void setLocalDestination(File localDestination) {
         if (dfsDestination != null) {
             throw new GradleException("Cannot set local destination if dfs destination is set")
         }
         this.localDestination = localDestination
     }
 
-    void localDestination(Path path) {
+    void toLocal(File path) {
         setLocalDestination(path)
     }
 

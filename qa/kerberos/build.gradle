@@ -149,8 +149,8 @@ config.service('hive')
 
 DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
-    localSource(project.file('data').toPath())
-    dfsDestination(new File("/data").toPath())
+    fromLocal project.file('data')
+    to new File("/data")
 }
 
 def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
