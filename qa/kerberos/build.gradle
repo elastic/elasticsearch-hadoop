@@ -24,6 +24,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.PigScript
 
 apply plugin: 'es.hadoop.build'
 
@@ -144,8 +145,8 @@ HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, pref
 
 config.service('hadoop')
 config.service('hive')
+config.service('pig')
 //config.service('spark')
-//config.service('pig')
 
 DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
@@ -171,7 +172,13 @@ HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
     script = new File(resourceDir, 'hive/top_25_words.sql')
 }
 
-testCluster.dependsOn(topWords)
+PigScript topWords2 = config.createClusterTask('topWords2', PigScript.class) {
+    clusterConfiguration = config
+    dependsOn(wordCount)
+    script = new File(resourceDir, 'pig/top_25_words.pig')
+}
+
+testCluster.dependsOn(topWords, topWords2)
 config.addClusterTask(testCluster)
 
 HadoopClusterFormationTasks.setup(project, config)

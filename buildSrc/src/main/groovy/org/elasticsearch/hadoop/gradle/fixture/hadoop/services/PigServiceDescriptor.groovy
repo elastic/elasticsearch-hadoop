@@ -123,7 +123,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String scriptDir(InstanceConfiguration instance) {
-        return ''
+        return 'bin'
     }
 
     @Override
@@ -134,7 +134,27 @@ class PigServiceDescriptor implements ServiceDescriptor {
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
         // see bin/pig for env options
-        env.put('PIG_HOME', new File(configuration.baseDir, homeDirName(configuration)).toString())
+        File pigHome = new File(configuration.baseDir, homeDirName(configuration))
+        env.put('PIG_HOME', pigHome.toString())
+        env.put('PIG_LOG_DIR', new File(pigHome, 'logs').toString())
+
+        // Add HADOOP_HOME for
+        InstanceConfiguration hadoopGateway = configuration
+                .getClusterConf()
+                .service(HadoopClusterConfiguration.HADOOP)
+                .role(HadoopServiceDescriptor.GATEWAY)
+                .instance(0)
+
+        ServiceDescriptor hadoopServiceDescriptor = hadoopGateway.getServiceDescriptor()
+
+        File hadoopBaseDir = hadoopGateway.getBaseDir()
+        String homeDirName = hadoopServiceDescriptor.homeDirName(hadoopGateway)
+        File hadoopHome = new File(hadoopBaseDir, homeDirName)
+        env.put('HADOOP_HOME', hadoopHome.toString())
+
+        // TODO: Might not be needed...
+//        String confDir = hadoopServiceDescriptor.configPath(hadoopGateway)
+//        env.put('HADOOP_CONF_DIR', new File(hadoopHome, 'etc/hadoop').toString())
     }
 
     @Override
