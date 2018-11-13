@@ -54,29 +54,29 @@ interface ServiceDescriptor {
 
     String homeDirName(InstanceConfiguration configuration)
 
-    String pidFileName(ServiceIdentifier service)
+    String pidFileName(InstanceConfiguration configuration)
 
-    String configPath(ServiceIdentifier instance)
+    String configPath(InstanceConfiguration configuration)
 
-    List<String> configFiles(ServiceIdentifier instance)
+    List<String> configFiles(InstanceConfiguration configuration)
 
     Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration)
 
-    Closure<String> configFormat(ServiceIdentifier instance)
+    Closure<String> configFormat(InstanceConfiguration configuration)
 
-    List<String> startCommand(ServiceIdentifier instance)
+    List<String> startCommand(InstanceConfiguration configuration)
 
     String scriptDir(InstanceConfiguration instance)
 
     /**
      * The Environment Variable used to give the underlying process its java options.
      */
-    String javaOptsEnvSetting(ServiceIdentifier instance)
+    String javaOptsEnvSetting(InstanceConfiguration configuration)
 
     /**
      * Finalize the environment variables for a given instance.
      */
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration)
 
-    Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance)
+    Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration)
 }

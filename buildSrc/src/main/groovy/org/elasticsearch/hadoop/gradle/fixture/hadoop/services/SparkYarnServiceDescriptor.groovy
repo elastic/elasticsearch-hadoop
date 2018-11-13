@@ -23,7 +23,6 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
@@ -97,17 +96,17 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String pidFileName(ServiceIdentifier service) {
+    String pidFileName(InstanceConfiguration configuration) {
         return 'spark.pid'
     }
 
     @Override
-    String configPath(ServiceIdentifier instance) {
+    String configPath(InstanceConfiguration configuration) {
         return 'conf'
     }
 
     @Override
-    List<String> configFiles(ServiceIdentifier instance) {
+    List<String> configFiles(InstanceConfiguration configuration) {
         return ['spark-defaults.conf']
     }
 
@@ -117,12 +116,12 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Closure<String> configFormat(ServiceIdentifier instance) {
+    Closure<String> configFormat(InstanceConfiguration configuration) {
         return ConfigFormats.whiteSpaced()
     }
 
     @Override
-    List<String> startCommand(ServiceIdentifier instance) {
+    List<String> startCommand(InstanceConfiguration configuration) {
         // No start command for gateway services
         return ['']
     }
@@ -133,7 +132,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String javaOptsEnvSetting(ServiceIdentifier instance) {
+    String javaOptsEnvSetting(InstanceConfiguration configuration) {
         return '' //FIXHERE: Spark jobs get their jvm opts through spark.executor.extraJavaOptions
         // or spark.yarn.am.extraJavaOptions for YARN Client Mode
         // or spark.driver.extraJavaOptions for YARN cluster mode
@@ -161,7 +160,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance) {
+    Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration) {
         return [:]
     }
 }

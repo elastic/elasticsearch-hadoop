@@ -244,7 +244,7 @@ class HadoopClusterFormationTasks {
         }
 
         Map<String, Object[]> setupCommands = new LinkedHashMap<>()
-        setupCommands.putAll(node.config.getServiceDescriptor().defaultSetupCommands(node.serviceId))
+        setupCommands.putAll(node.config.getServiceDescriptor().defaultSetupCommands(node.config))
         setupCommands.putAll(node.config.getSetupCommands())
         for (Map.Entry<String, Object[]> command : setupCommands) {
             // the first argument is the actual script name, relative to home
@@ -362,7 +362,7 @@ class HadoopClusterFormationTasks {
         //}
         start.doFirst {
             // Configure HADOOP_OPTS (or similar env) - adds system properties, assertion flags, remote debug etc
-            String javaOptsEnvKey = node.config.getServiceDescriptor().javaOptsEnvSetting(node.serviceId)
+            String javaOptsEnvKey = node.config.getServiceDescriptor().javaOptsEnvSetting(node.config)
             List<String> javaOpts = [node.env.get(javaOptsEnvKey, '')]
             String collectedSystemProperties = node.config.systemProperties.collect { key, value -> "-D${key}=${value}" }.join(" ")
             javaOpts.add(collectedSystemProperties)

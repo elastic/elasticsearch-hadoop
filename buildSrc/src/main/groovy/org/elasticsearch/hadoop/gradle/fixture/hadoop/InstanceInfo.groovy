@@ -45,9 +45,6 @@ class InstanceInfo {
     /** Configuration for this running instance */
     InstanceConfiguration config
 
-    /** Compound name of this instance's service group and role names */
-    ServiceIdentifier serviceId
-
     /** The numbered instance of this node */
     int instance
 
@@ -117,12 +114,6 @@ class InstanceInfo {
         this.config = config
         this.project = project
 
-        this.serviceId = new ServiceIdentifier(
-                serviceName: config.serviceConf.serviceDescriptor.serviceName(),
-                subGroup: config.serviceConf.serviceDescriptor.serviceSubGroup(),
-                roleName: config.roleConf.roleDescriptor.roleName()
-        )
-
         this.instance = config.instance
         this.sharedDir = sharedDir
 
@@ -132,13 +123,13 @@ class InstanceInfo {
 
         // Note: Many hadoop scripts break when using spaces in names
         baseDir = config.getBaseDir()
-        pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(serviceId))
+        pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(config))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
-        pathConf = new File(homeDir, config.getServiceDescriptor().configPath(serviceId))
+        pathConf = new File(homeDir, config.getServiceDescriptor().configPath(config))
 
-        configFiles = config.getServiceDescriptor().configFiles(serviceId).collect { name -> new File(pathConf, name) }
+        configFiles = config.getServiceDescriptor().configFiles(config).collect { name -> new File(pathConf, name) }
         configContents = config.getServiceDescriptor().collectConfigFilesContents(config)
-        configFileFormatter = config.getServiceDescriptor().configFormat(serviceId)
+        configFileFormatter = config.getServiceDescriptor().configFormat(config)
         // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
         // even for rpm/deb, the logs are under home because we dont start with real services
 //        File logsDir = new File(homeDir, 'logs')
@@ -168,7 +159,7 @@ class InstanceInfo {
 
         // Prepare startup command and arguments
         args = []
-        List<String> startCommandLine = config.getServiceDescriptor().startCommand(serviceId)
+        List<String> startCommandLine = config.getServiceDescriptor().startCommand(config)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             // FIXHERE: Test on windows to see if this actually works
             executable = 'cmd'

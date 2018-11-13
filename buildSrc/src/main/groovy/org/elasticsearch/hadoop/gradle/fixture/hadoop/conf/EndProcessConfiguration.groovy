@@ -19,8 +19,6 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
-
 /**
  * Provides defaults and can be slotted in as the last parent configuration in a chain.
  *

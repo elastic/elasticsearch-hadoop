@@ -24,7 +24,6 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ConfigFormats
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.RoleDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceIdentifier
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
@@ -95,17 +94,17 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String pidFileName(ServiceIdentifier service) {
+    String pidFileName(InstanceConfiguration configuration) {
         return 'hive.pid'
     }
 
     @Override
-    String configPath(ServiceIdentifier instance) {
+    String configPath(InstanceConfiguration configuration) {
         return 'conf'
     }
 
     @Override
-    List<String> configFiles(ServiceIdentifier instance) {
+    List<String> configFiles(InstanceConfiguration configuration) {
         return ['hive-site.xml']
     }
 
@@ -118,12 +117,12 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Closure<String> configFormat(ServiceIdentifier instance) {
+    Closure<String> configFormat(InstanceConfiguration configuration) {
         return ConfigFormats.hadoopXML()
     }
 
     @Override
-    List<String> startCommand(ServiceIdentifier instance) {
+    List<String> startCommand(InstanceConfiguration configuration) {
         // We specify the hive root logger to print to console via the hiveconf override.
         // FIXHERE: This might make sense to put in the default settings?
         return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
@@ -135,7 +134,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String javaOptsEnvSetting(ServiceIdentifier instance) {
+    String javaOptsEnvSetting(InstanceConfiguration configuration) {
         // The jvm that launches Hiveserver2 executes by means of the `hadoop jar` command.
         // Thus, to specify java options to the Hive server, we do so through the same channels
         // that one would use to specify them to any hadoop job.
@@ -162,7 +161,7 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Object[]> defaultSetupCommands(ServiceIdentifier instance) {
+    Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration) {
         //FIXHERE: Need a tmp dir accessible to all in HDFS
         return [:] // None for now. Hive may require a schema tool to be run in the future though.
     }
