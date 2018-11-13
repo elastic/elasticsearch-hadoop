@@ -43,11 +43,6 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String serviceSubGroup() {
-        return null
-    }
-
-    @Override
     List<ServiceDescriptor> serviceDependencies() {
         return [HadoopClusterConfiguration.HADOOP]
     }
@@ -96,7 +91,7 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configPath(InstanceConfiguration configuration) {
+    String confDirName(InstanceConfiguration configuration) {
         return 'conf'
     }
 
@@ -147,13 +142,11 @@ class PigServiceDescriptor implements ServiceDescriptor {
         ServiceDescriptor hadoopServiceDescriptor = hadoopGateway.getServiceDescriptor()
 
         File hadoopBaseDir = hadoopGateway.getBaseDir()
-        String homeDirName = hadoopServiceDescriptor.homeDirName(hadoopGateway)
-        File hadoopHome = new File(hadoopBaseDir, homeDirName)
-        env.put('HADOOP_HOME', hadoopHome.toString())
+        File hadoopHomeDir = new File(hadoopBaseDir, hadoopServiceDescriptor.homeDirName(hadoopGateway))
+        File hadoopConfDir = new File(hadoopHomeDir, hadoopServiceDescriptor.confDirName(hadoopGateway))
 
-        // TODO: Might not be needed...
-//        String confDir = hadoopServiceDescriptor.configPath(hadoopGateway)
-//        env.put('HADOOP_CONF_DIR', new File(hadoopHome, 'etc/hadoop').toString())
+        env.put('HADOOP_HOME', hadoopHomeDir.toString())
+        env.put('HADOOP_CONF_DIR', hadoopConfDir.toString())
     }
 
     @Override

@@ -48,11 +48,6 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String serviceSubGroup() {
-        return null
-    }
-
-    @Override
     List<ServiceDescriptor> serviceDependencies() {
         return []
     }
@@ -105,7 +100,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configPath(InstanceConfiguration configuration) {
+    String confDirName(InstanceConfiguration configuration) {
         return "etc/hadoop"
     }
 

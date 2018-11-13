@@ -56,10 +56,6 @@ abstract class ProcessConfiguration {
     private Map<String, Object> extraConfigFiles = new HashMap<>()
     private LinkedHashMap<String, Object[]> setupCommands = new LinkedHashMap<>()
     private List<Object> dependencies = new ArrayList<>()
-    // outputs the path for the data dir
-//    private Closure<ServiceIdentifier> dataDir
-    // Not sure this ever makes sense to be false
-//    private boolean daemonize = true
     private String jvmArgs = ''
     private boolean debug = false
 
@@ -150,40 +146,6 @@ abstract class ProcessConfiguration {
         combined.addAll(dependencies)
         return combined
     }
-
-//    void setDataDir(Closure<ServiceIdentifier> dataDir) {
-//        this.dataDir = dataDir
-//    }
-
-//    Closure<ServiceIdentifier> getDataDir() {
-//        if (dataDir != null) {
-//            return dataDir
-//        }
-//        ProcessConfiguration parent = parent()
-//        if (parent != null) {
-//            return parent.getDataDir()
-//        }
-//        return null
-//    }
-
-//    void setDaemonize(boolean daemonize) {
-//        this.daemonize = daemonize
-//    }
-
-//    boolean isDaemonized() {
-//        if (daemonize) {
-//            // Prefer local value if true
-//            return daemonize
-//        } else {
-//            // if the local value is false, fall back to parent value if has one
-//            ProcessConfiguration parent = parent()
-//            if (parent != null) {
-//                return parent.isDaemonized()
-//            }
-//        }
-//        // No parent, return value (which should be false)
-//        return daemonize
-//    }
 
     void setJvmArgs(String jvmArgs) {
         this.jvmArgs = jvmArgs

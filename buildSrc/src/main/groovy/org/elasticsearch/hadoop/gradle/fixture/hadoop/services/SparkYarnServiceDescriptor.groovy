@@ -43,11 +43,6 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String serviceSubGroup() {
-        return 'on.yarn'
-    }
-
-    @Override
     List<ServiceDescriptor> serviceDependencies() {
         return [HadoopClusterConfiguration.HADOOP]
     }
@@ -101,7 +96,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String configPath(InstanceConfiguration configuration) {
+    String confDirName(InstanceConfiguration configuration) {
         return 'conf'
     }
 
@@ -151,9 +146,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
         File baseDir = hadoopGateway.getBaseDir()
         File homeDir = new File(baseDir, hadoopServiceDescriptor.homeDirName(hadoopGateway))
-//        File confDir = new File(homeDir, hadoopServiceDescriptor.configPath(hadoopGateway))
-        // FIXHERE: Kill service instance class
-        File confDir = new File(homeDir, 'etc/hadoop')
+        File confDir = new File(homeDir, hadoopServiceDescriptor.confDirName(hadoopGateway))
 
         // HADOOP_CONF_DIR -> ...../etc/hadoop/
         env.put('HADOOP_CONF_DIR', confDir.toString())

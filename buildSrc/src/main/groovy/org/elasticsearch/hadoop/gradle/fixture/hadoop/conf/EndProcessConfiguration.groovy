@@ -64,16 +64,6 @@ class EndProcessConfiguration extends ProcessConfiguration {
         return Collections.emptyList()
     }
 
-//    @Override
-//    Closure<ServiceIdentifier> getDataDir() {
-//        return null
-//    }
-
-//    @Override
-//    boolean isDaemonized() {
-//        return true
-//    }
-
     @Override
     String getJvmArgs() {
         return ""

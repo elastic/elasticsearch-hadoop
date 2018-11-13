@@ -22,7 +22,6 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop
 import com.sun.jna.Native
 import com.sun.jna.WString
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.JNAKernel32Library
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.GradleException
@@ -66,7 +65,7 @@ class InstanceInfo {
     File homeDir
 
     /** service config directory */
-    File pathConf
+    File confDir
 
     /** The config files */
     List<File> configFiles
@@ -117,22 +116,17 @@ class InstanceInfo {
         this.instance = config.instance
         this.sharedDir = sharedDir
 
-        Version version = config.serviceConf.version
-
         clusterName = project.path.replace(':', '_').substring(1) + '_' + prefix
 
         // Note: Many hadoop scripts break when using spaces in names
         baseDir = config.getBaseDir()
         pidFile = new File(baseDir, config.getServiceDescriptor().pidFileName(config))
         homeDir = new File(baseDir, config.getServiceDescriptor().homeDirName(config))
-        pathConf = new File(homeDir, config.getServiceDescriptor().configPath(config))
+        confDir = new File(homeDir, config.getServiceDescriptor().confDirName(config))
 
-        configFiles = config.getServiceDescriptor().configFiles(config).collect { name -> new File(pathConf, name) }
+        configFiles = config.getServiceDescriptor().configFiles(config).collect { name -> new File(confDir, name) }
         configContents = config.getServiceDescriptor().collectConfigFilesContents(config)
         configFileFormatter = config.getServiceDescriptor().configFormat(config)
-        // FIXHERE: Logs can be configured (at least for Hadoop core) via system properties (this is only used for port files though)
-        // even for rpm/deb, the logs are under home because we dont start with real services
-//        File logsDir = new File(homeDir, 'logs')
         cwd = new File(baseDir, "cwd")
         failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
