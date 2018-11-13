@@ -112,7 +112,7 @@ class DfsCopy extends AbstractClusterTask {
     }
 
     @TaskAction
-    void doCopy() {
+    void runHdfsDfsCp() {
         // Verification
         if (clusterConfiguration == null) {
             // FIXHERE: Remove once we have a plugin and extension

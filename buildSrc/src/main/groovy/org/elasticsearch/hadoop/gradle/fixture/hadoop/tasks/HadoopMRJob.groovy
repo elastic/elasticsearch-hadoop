@@ -34,11 +34,17 @@ class HadoopMRJob extends AbstractClusterTask {
     List<String> args = []
 
     @TaskAction
-    void submitJob() {
+    void runYarnJar() {
         // Verification
         if (clusterConfiguration == null) {
             // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("No cluster configuration found")
+        }
+        if (jobClass == null) {
+            throw new GradleException("No job class given")
+        }
+        if (jobJar == null) {
+            throw new GradleException("No job jar given")
         }
 
         // Gateway conf

@@ -31,7 +31,7 @@ class PigScript extends AbstractClusterTask {
     File script
 
     @TaskAction
-    void runBeeline() {
+    void runPig() {
         // Verification
         if (clusterConfiguration == null) {
             // FIXHERE: Remove once we have a plugin and extension
