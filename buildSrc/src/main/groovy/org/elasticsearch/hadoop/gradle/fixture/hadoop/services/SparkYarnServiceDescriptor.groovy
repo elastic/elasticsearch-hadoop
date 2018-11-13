@@ -142,8 +142,22 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     void finalizeEnv(Map<String, String> env, InstanceConfiguration configuration) {
-        // FIXHERE: More useful for spark standalone daemons
-        // HADOOP_CONF -> ...../etc/hadoop/conf
+        // Get Hadoop Conf Dir
+        InstanceConfiguration hadoopGateway = configuration.getClusterConf()
+            .service(HadoopClusterConfiguration.HADOOP)
+            .role(HadoopServiceDescriptor.GATEWAY)
+            .instance(0)
+
+        ServiceDescriptor hadoopServiceDescriptor = hadoopGateway.getServiceDescriptor()
+
+        File baseDir = hadoopGateway.getBaseDir()
+        File homeDir = new File(baseDir, hadoopServiceDescriptor.homeDirName(hadoopGateway))
+//        File confDir = new File(homeDir, hadoopServiceDescriptor.configPath(hadoopGateway))
+        // FIXHERE: Kill service instance class
+        File confDir = new File(homeDir, 'etc/hadoop')
+
+        // HADOOP_CONF_DIR -> ...../etc/hadoop/
+        env.put('HADOOP_CONF_DIR', confDir.toString())
     }
 
     @Override

@@ -25,14 +25,19 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.PigScript
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
 apply plugin: 'es.hadoop.build'
+apply plugin: 'scala'
 
 configurations {
     kdcFixture
 }
 
 dependencies {
+    compile 'org.scala-lang:scala-library:2.11.8'
+    compile project(":elasticsearch-spark-20")
+
     compile project(":elasticsearch-hadoop-mr")
     compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
 
@@ -146,7 +151,7 @@ HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, pref
 config.service('hadoop')
 config.service('hive')
 config.service('pig')
-//config.service('spark')
+config.service('spark')
 
 DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
@@ -164,6 +169,14 @@ HadoopMRJob wordCount = config.createClusterTask('wordCount', HadoopMRJob.class)
     args = ['/data/pride_and_prejudice.txt', '/output/pride']
 }
 
+SparkApp wordCount2 = config.createClusterTask('wordCount2', SparkApp.class) {
+    clusterConfiguration = config
+    dependsOn([jar, copyData])
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.wordcount.SparkWordCount'
+    args = ['/data/pride_and_prejudice.txt', '/output/pride2']
+}
+
 File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
 
 HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
@@ -178,7 +191,7 @@ PigScript topWords2 = config.createClusterTask('topWords2', PigScript.class) {
     script = new File(resourceDir, 'pig/top_25_words.pig')
 }
 
-testCluster.dependsOn(topWords, topWords2)
+testCluster.dependsOn(topWords, topWords2, wordCount2)
 config.addClusterTask(testCluster)
 
 HadoopClusterFormationTasks.setup(project, config)
