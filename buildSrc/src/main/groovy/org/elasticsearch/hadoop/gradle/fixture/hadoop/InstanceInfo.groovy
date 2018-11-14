@@ -238,7 +238,7 @@ class InstanceInfo {
 
     /** Returns debug string for the command that started this node. */
     String getCommandString() {
-        String commandString = "\nService ${serviceId.serviceName}: ${serviceId.roleName} configuration:\n"
+        String commandString = "\nService ${config.serviceDescriptor.serviceName()}: ${config.roleDescriptor.roleName()} configuration:\n"
         commandString += "|-----------------------------------------\n"
         commandString += "|  cwd: ${cwd}\n"
         commandString += "|  command: ${executable} ${args.join(' ')}\n"

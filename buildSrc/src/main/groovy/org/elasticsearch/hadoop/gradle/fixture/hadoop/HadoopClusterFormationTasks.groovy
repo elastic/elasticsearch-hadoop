@@ -377,13 +377,13 @@ class HadoopClusterFormationTasks {
             // we must add debug options inside the closure so the config is read at execution time, as
             // gradle task options are not processed until the end of the configuration phase
             if (node.config.debug) {
-                println "Running ${node.serviceId.roleName} ${node.instance} in debug mode, " +
+                println "Running ${node.config.roleDescriptor.roleName()} ${node.instance} in debug mode, " +
                         "suspending until connected on port 8000"
                 javaOpts.add('-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000')
             }
             node.env[javaOptsEnvKey] = javaOpts.join(" ")
 
-            project.logger.info("Starting ${node.serviceId.roleName} in ${node.clusterName}")
+            project.logger.info("Starting ${node.config.roleDescriptor.roleName()} in ${node.clusterName}")
         }
         start.doLast {
             // Due to how ant exec works with the spawn option, we lose all stdout/stderr from the
@@ -398,7 +398,7 @@ class HadoopClusterFormationTasks {
 
             // this closure is the ant command to be wrapped in our stream redirection and then executed
             Closure antRunner = { AntBuilder ant ->
-                ant.exec(executable: node.executable, spawn: true, dir: node.cwd, taskName: node.serviceId.roleName) {
+                ant.exec(executable: node.executable, spawn: true, dir: node.cwd, taskName: node.config.roleDescriptor.roleName()) {
                     node.env.each { key, value -> env(key: key, value: value) }
                     node.args.each { arg(value: it) }
                 }
@@ -457,9 +457,9 @@ class HadoopClusterFormationTasks {
      */
     static String taskName(String prefix, InstanceInfo node, String action) {
         if (node.getConfig().getRoleConf().getInstances().size() > 1) {
-            return "${prefix}#${node.serviceId.roleName}${node.instance}.${action}"
+            return "${prefix}#${node.config.roleDescriptor.roleName()}${node.instance}.${action}"
         } else {
-            return "${prefix}#${node.serviceId.roleName}.${action}"
+            return "${prefix}#${node.config.roleDescriptor.roleName()}.${action}"
         }
     }
 
