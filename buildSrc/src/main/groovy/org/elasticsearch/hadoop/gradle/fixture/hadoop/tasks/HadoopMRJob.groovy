@@ -79,10 +79,14 @@ class HadoopMRJob extends AbstractClusterTask {
             commandLine.addAll(args)
         }
 
+        Map<String, String> finalEnv = hadoopGateway.getEnvironmentVariables()
+        hadoopGateway.getServiceDescriptor().finalizeEnv(finalEnv, hadoopGateway)
+        finalEnv.put('YARN_USER_CLASSPATH', libJars.join(":"))
+
         // Do command
         project.exec { ExecSpec spec ->
             spec.commandLine(commandLine)
-//            spec.environment(finalEnv)
+            spec.environment(finalEnv)
         }
     }
 }

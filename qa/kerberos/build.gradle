@@ -23,9 +23,6 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.PigScript
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
 apply plugin: 'es.hadoop.build'
 apply plugin: 'scala'
@@ -80,46 +77,48 @@ java.nio.file.Path esKeytab = fixtureDir.resolve("es.keytab")
 
 // Configure ES with Kerberos Auth
 esCluster {
-    dependsOn(kdcFixture)
+    clusterConf {
+        dependsOn(kdcFixture)
 
-    // This may be needed if we ever run against java 9: --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED
-    systemProperty("java.security.krb5.conf", krb5Conf.toString())
-//    systemProperty("sun.security.krb5.debug", "true")
+        // This may be needed if we ever run against java 9: --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED
+//        systemProperty("java.security.krb5.conf", krb5Conf.toString())
+        //systemProperty("sun.security.krb5.debug", "true")
 
-    // force localhost IPv4 otherwise it is a chicken and egg problem where we need the keytab for the hostname when starting the cluster
-    // but do not know the exact address that is first in the http ports file
-    setting 'http.host', '127.0.0.1'
-    setting 'xpack.license.self_generated.type', 'trial'
-    setting 'xpack.security.enabled', 'true'
-    setting 'xpack.security.authc.realms.file.type', 'file'
-    setting 'xpack.security.authc.realms.file.order', '0'
-    setting 'xpack.ml.enabled', 'false'
-    setting 'xpack.security.audit.enabled', 'true'
-    // Kerberos realm
-    setting 'xpack.security.authc.realms.kerberos.type', 'kerberos'
-    setting 'xpack.security.authc.realms.kerberos.order', '1'
-    setting 'xpack.security.authc.realms.kerberos.keytab.path', 'es.keytab'
-    setting 'xpack.security.authc.realms.kerberos.krb.debug', 'true'
-    setting 'xpack.security.authc.realms.kerberos.remove_realm_name', 'false'
-    // Token realm
-    setting 'xpack.security.authc.token.enabled', 'true'
-    setting 'xpack.security.authc.token.timeout', '20m'
-
-    setupCommand 'setupTestAdmin',
-            'bin/elasticsearch-users', 'useradd', "test_admin", '-p', 'x-pack-test-password', '-r', 'superuser'
-
-    extraConfigFile('es.keytab', esKeytab.toAbsolutePath())
-
-    // Override the wait condition; Do the same wait logic, but pass in the test credentials for the API
-    waitCondition = { node, ant ->
-        File tmpFile = new File(node.cwd, 'wait.success')
-        ant.get(src: "http://${node.httpUri()}/_cluster/health?wait_for_nodes=>=${numNodes}&wait_for_status=yellow",
-                dest: tmpFile.toString(),
-                username: 'test_admin',
-                password: 'x-pack-test-password',
-                ignoreerrors: true,
-                retries: 10)
-        return tmpFile.exists()
+        // force localhost IPv4 otherwise it is a chicken and egg problem where we need the keytab for the hostname when starting the cluster
+        // but do not know the exact address that is first in the http ports file
+//        setting 'http.host', '127.0.0.1'
+//        setting 'xpack.license.self_generated.type', 'trial'
+//        setting 'xpack.security.enabled', 'true'
+//        setting 'xpack.security.authc.realms.file.type', 'file'
+//        setting 'xpack.security.authc.realms.file.order', '0'
+//        setting 'xpack.ml.enabled', 'false'
+//        setting 'xpack.security.audit.enabled', 'true'
+//        // Kerberos realm
+//        setting 'xpack.security.authc.realms.kerberos.type', 'kerberos'
+//        setting 'xpack.security.authc.realms.kerberos.order', '1'
+//        setting 'xpack.security.authc.realms.kerberos.keytab.path', 'es.keytab'
+//        setting 'xpack.security.authc.realms.kerberos.krb.debug', 'true'
+//        setting 'xpack.security.authc.realms.kerberos.remove_realm_name', 'false'
+//        // Token realm
+//        setting 'xpack.security.authc.token.enabled', 'true'
+//        setting 'xpack.security.authc.token.timeout', '20m'
+//
+//        setupCommand 'setupTestAdmin',
+//                'bin/elasticsearch-users', 'useradd', "test_admin", '-p', 'x-pack-test-password', '-r', 'superuser'
+//
+//        extraConfigFile('es.keytab', esKeytab.toAbsolutePath())
+//
+//        // Override the wait condition; Do the same wait logic, but pass in the test credentials for the API
+//        waitCondition = { node, ant ->
+//            File tmpFile = new File(node.cwd, 'wait.success')
+//            ant.get(src: "http://${node.httpUri()}/_cluster/health?wait_for_nodes=>=${numNodes}&wait_for_status=yellow",
+//                    dest: tmpFile.toString(),
+//                    username: 'test_admin',
+//                    password: 'x-pack-test-password',
+//                    ignoreerrors: true,
+//                    retries: 10)
+//            return tmpFile.exists()
+//        }
     }
 }
 
@@ -146,52 +145,81 @@ testCluster.doLast {
     project.logger.lifecycle("STOPPING CLUSTER")
 }
 
+def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
+def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
+
 HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
 
 config.service('hadoop')
 config.service('hive')
 config.service('pig')
 config.service('spark')
+config.addDependency(jar)
+config.addDependency(testingJar)
+
+File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
+
 
 DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
-    fromLocal project.file('data')
-    to new File("/data")
+    fromLocal project.file(new File(mrItestResourceDir, 'artists.dat'))
+    to new File("/artists.dat")
 }
 
-def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
 
-HadoopMRJob wordCount = config.createClusterTask('wordCount', HadoopMRJob.class) {
+HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
     clusterConfiguration = config
-    dependsOn([jar, copyData])
+    dependsOn(copyData)
     jobJar = jar.archivePath
-    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.wordcount.WordCount'
-    args = ['/data/pride_and_prejudice.txt', '/output/pride']
+    libJars.add(testingJar.archivePath)
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
+    jobSettings = [
+            'es.resource': 'qa_kerberos_mr_data/_doc',
+            'es.nodes': 'localhost:9500',
+            'load.field.names': 'number,name,url,picture,@timestamp,tag'
+    ]
+    args = ['/artists.dat']
 }
 
-SparkApp wordCount2 = config.createClusterTask('wordCount2', SparkApp.class) {
+esCluster.addTask(mrLoadData)
+
+HadoopMRJob confTest = config.createClusterTask('confTest', HadoopMRJob.class) {
     clusterConfiguration = config
-    dependsOn([jar, copyData])
+    dependsOn(jar)
     jobJar = jar.archivePath
-    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.wordcount.SparkWordCount'
-    args = ['/data/pride_and_prejudice.txt', '/output/pride2']
+    jobSettings(['es.resource': 'test/_doc', 'es.nodes': 'localhost:9500'])
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ConfTest'
 }
 
-File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
+//SparkApp wordCount2 = config.createClusterTask('wordCount2', SparkApp.class) {
+//    clusterConfiguration = config
+//    dependsOn([jar, copyData])
+//    jobJar = jar.archivePath
+//    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.wordcount.SparkWordCount'
+//    args = ['/data/pride_and_prejudice.txt', '/output/pride2']
+//}
+//
+//File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
+//
+//HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
+//    clusterConfiguration = config
+//    dependsOn(wordCount)
+//    script = new File(resourceDir, 'hive/top_25_words.sql')
+//}
+//
+//PigScript topWords2 = config.createClusterTask('topWords2', PigScript.class) {
+//    clusterConfiguration = config
+//    dependsOn(wordCount)
+//    script = new File(resourceDir, 'pig/top_25_words.pig')
+//}
+//
+//testCluster.dependsOn(topWords, topWords2, wordCount2)
 
-HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
-    clusterConfiguration = config
-    dependsOn(wordCount)
-    script = new File(resourceDir, 'hive/top_25_words.sql')
-}
+//testCluster.dependsOn(copyData)
 
-PigScript topWords2 = config.createClusterTask('topWords2', PigScript.class) {
-    clusterConfiguration = config
-    dependsOn(wordCount)
-    script = new File(resourceDir, 'pig/top_25_words.pig')
-}
+testCluster.dependsOn(mrLoadData)
 
-testCluster.dependsOn(topWords, topWords2, wordCount2)
+esCluster.addTask(testCluster)
 config.addClusterTask(testCluster)
 
 HadoopClusterFormationTasks.setup(project, config)
