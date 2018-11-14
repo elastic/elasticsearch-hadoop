@@ -112,6 +112,7 @@ class HadoopClusterFormationTasks {
         Task cleanup = project.tasks.create(
             name: "${prefix}#prepareCluster.cleanShared",
             type: Delete,
+            group: 'hadoopFixture',
             dependsOn: startDependencies) {
                 delete sharedDir
                 doLast {
@@ -196,12 +197,14 @@ class HadoopClusterFormationTasks {
         if (downloadTask == null) {
             downloadTask = project.rootProject.tasks.create(name: downloadTaskName, type: ApacheMirrorDownload) as ApacheMirrorDownload
             serviceConfiguration.getServiceDescriptor().configureDownload(downloadTask, serviceConfiguration)
+            downloadTask.group = 'downloads'
             downloadTask.onlyIf { !downloadTask.outputFile().exists() }
         }
 
         VerifyChecksums verifyTask = project.rootProject.tasks.findByName(verifyTaskName) as VerifyChecksums
         if (verifyTask == null) {
             verifyTask = project.rootProject.tasks.create(name: verifyTaskName, type: VerifyChecksums) as VerifyChecksums
+            verifyTask.group = 'downloads'
             verifyTask.dependsOn downloadTask
             verifyTask.inputFile downloadTask.outputFile()
             for (Map.Entry<String, String> hash : serviceConfiguration.serviceDescriptor.packageHashVerification(serviceVersion)) {
@@ -217,6 +220,7 @@ class HadoopClusterFormationTasks {
         Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
+            group = 'hadoopFixture'
         }
 
         // Only create CWD and check previous if the role is an executable process
@@ -226,6 +230,7 @@ class HadoopClusterFormationTasks {
                     node.cwd.mkdirs()
                 }
                 outputs.dir node.cwd
+                group = 'hadoopFixture'
             }
             // FIXHERE: Check Previous
             setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
@@ -291,6 +296,7 @@ class HadoopClusterFormationTasks {
     static Task configureExtractTask(String name, Project project, Task setup, InstanceInfo node, DistributionTasks distribution) {
         List extractDependsOn = [distribution.verify, setup]
         return project.tasks.create(name: name, type: Copy, dependsOn: extractDependsOn) {
+            group = 'hadoopFixture'
             // FIXHERE: Switch logic if a service is ever not a tar distribution
             from {
                 project.tarTree(project.resources.gzip(distribution.download.outputFile()))
@@ -302,6 +308,7 @@ class HadoopClusterFormationTasks {
     static Task configureWriteConfigTask(String name, Project project, Task setup, InstanceInfo node) {
         // Add all node level configs to node Configuration
         return project.tasks.create(name: name, type: DefaultTask, dependsOn: setup) {
+            group = 'hadoopFixture'
             doFirst {
                 // Write each config file needed
                 node.configFiles.forEach { configFile ->
@@ -340,6 +347,7 @@ class HadoopClusterFormationTasks {
 
     static Task configureExecTask(String name, Project project, Task setup, InstanceInfo node, Object[] execArgs) {
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: setup) { Exec exec ->
+            exec.group = 'hadoopFixture'
             exec.workingDir node.cwd
             exec.environment 'JAVA_HOME', node.getJavaHome()
             exec.environment(node.env)
@@ -356,6 +364,7 @@ class HadoopClusterFormationTasks {
 
     static Task configureStartTask(String name, Project project, Task setup, InstanceInfo node) {
         Task start = project.tasks.create(name: name, type: DefaultTask, dependsOn: setup)
+        start.group = 'hadoopFixture'
         // FIXHERE Do we need this?
         //if (node.javaVersion != null) {
         //    BuildPlugin.requireJavaHome(start, node.javaVersion)
@@ -414,6 +423,7 @@ class HadoopClusterFormationTasks {
     static Task configureStopTask(String name, Project project, Object depends, InstanceInfo node) {
         // FIXHERE: Fix the pidDir vs pidFile resolution when we get the daemon tasks to generate pids correctly
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: depends) {
+            group = 'hadoopFixture'
             onlyIf { node.pidFile.exists() }
             // the pid file won't actually be read until execution time, since the read is wrapped within an inner closure of the GString
             ext.pid = "${ -> node.pidFile.getText('UTF-8').trim()}"
