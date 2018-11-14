@@ -30,8 +30,17 @@ class HadoopMRJob extends AbstractClusterTask {
 
     String jobClass
     File jobJar
+    Map<String, String> jobSettings = [:]
     List<File> libJars = []
     List<String> args = []
+
+    void jobSetting(String key, String value) {
+        jobSettings.put(key, value)
+    }
+
+    void jobSettings(Map<String, String> settings) {
+        jobSettings.putAll(settings)
+    }
 
     @TaskAction
     void runYarnJar() {
@@ -62,6 +71,9 @@ class HadoopMRJob extends AbstractClusterTask {
         List<String> commandLine = [command.toString(), 'jar', jobJar.toString(), jobClass]
         if (!libJars.isEmpty()) {
             commandLine.addAll(['-libjars', libJars.join(',')])
+        }
+        if (!jobSettings.isEmpty()) {
+            commandLine.addAll(jobSettings.collect { k, v -> "-D${k}=${v}"})
         }
         if (!args.isEmpty()) {
             commandLine.addAll(args)
