@@ -1,15 +1,16 @@
 package org.elasticsearch.hadoop.gradle.fixture
 
-import org.elasticsearch.gradle.BuildPlugin
 import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.ClusterConfiguration
 import org.elasticsearch.gradle.test.ClusterFormationTasks
 import org.elasticsearch.gradle.test.NodeInfo
+import org.elasticsearch.hadoop.gradle.util.PlaceholderTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionAdapter
 import org.gradle.api.tasks.TaskState
+import org.gradle.util.ConfigureUtil
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -26,6 +27,26 @@ import java.util.stream.Stream
  *
  */
 class ElasticsearchFixturePlugin implements Plugin<Project> {
+
+    static class ElasticsearchCluster {
+
+        Project project
+        ClusterConfiguration configuration
+        List<Task> tasks = []
+
+        ElasticsearchCluster(Project project) {
+            this.project = project
+            this.configuration = new ClusterConfiguration(project)
+        }
+
+        void clusterConf(Closure configClosure) {
+            ConfigureUtil.configure(configClosure, configuration)
+        }
+
+        void addTask(Task task) {
+            tasks.add(task)
+        }
+    }
 
     @Override
     void apply(Project project) {
@@ -55,7 +76,9 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         Task clusterInit = project.tasks.create(name: "esCluster#init", dependsOn: project.testClasses)
         integrationTest.dependsOn(clusterInit)
 
-        ClusterConfiguration clusterConfig = project.extensions.create("esCluster", ClusterConfiguration.class, project)
+        ElasticsearchCluster cluster = project.extensions.create("esCluster", ElasticsearchCluster.class, project)
+        cluster.tasks.add(integrationTest)
+        ClusterConfiguration clusterConfig = cluster.configuration
 
         // default settings:
         clusterConfig.clusterName = "elasticsearch-fixture"
@@ -109,7 +132,8 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         }
 
         project.gradle.projectsEvaluated {
-            List<NodeInfo> nodes = ClusterFormationTasks.setup(project, "esCluster", integrationTest, clusterConfig)
+            Task clusterMain = new PlaceholderTask()
+            List<NodeInfo> nodes = ClusterFormationTasks.setup(project, "esCluster", clusterMain, clusterConfig)
             project.tasks.getByPath("esCluster#wait").doLast {
                 integrationTest.systemProperty('tests.rest.cluster', "${nodes.collect{it.httpUri()}.join(",")}")
             }
@@ -125,11 +149,19 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
                     }
                 }
             }
-            integrationTest.doFirst {
-                project.gradle.addListener(logDumpListener)
-            }
-            integrationTest.doLast {
-                project.gradle.removeListener(logDumpListener)
+            for (Task clusterTask : cluster.tasks) {
+                for (Object dependency : clusterMain.taskDeps) {
+                    clusterTask.dependsOn(dependency)
+                }
+                for (Object finalizer : clusterMain.taskFinalizers) {
+                    clusterTask.finalizedBy(finalizer)
+                }
+                clusterTask.doFirst {
+                    project.gradle.addListener(logDumpListener)
+                }
+                clusterTask.doLast {
+                    project.gradle.removeListener(logDumpListener)
+                }
             }
         }
     }
