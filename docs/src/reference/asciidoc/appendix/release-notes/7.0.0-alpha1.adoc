@@ -1,0 +1,30 @@
+[[eshadoop-7.0.0-alpha1]]
+== Elasticsearch for Apache Hadoop version 7.0.0-alpha1
+November 15, 2018
+
+[[new-7.0.0-alpha1]]
+=== New Features
+Build::
+* Add a build qualifier system property to the build
+https://github.com/elastic/elasticsearch-hadoop/pull/1215[#1215]
+
+
+[[bugs-7.0.0-alpha1]]
+=== Bug Fixes
+Rest::
+* Conform to new underscore rules in ES 7
+https://github.com/elastic/elasticsearch-hadoop/issues/1078[#1078]
+* Connection leak that occurs when using the WAN support
+https://github.com/elastic/elasticsearch-hadoop/pull/1066[#1066]
+Build::
+* [CI] unknown setting [indices.breaker.total.use_real_memory]
+https://github.com/elastic/elasticsearch-hadoop/issues/1181[#1181]
+* Cannot find 7.0.0-alpha1-SNAPSHOT/maven-metadata.xml and friends
+https://github.com/elastic/elasticsearch-hadoop/issues/1077[#1077]
+
+[[docs-7.0.0-alpha1]]
+=== Documentation
+* Add pushdown filters table for es-spark documentation
+https://github.com/elastic/elasticsearch-hadoop/pull/1052[#1052]
+* Update README.md
+https://github.com/elastic/elasticsearch-hadoop/pull/1090[#1090]
