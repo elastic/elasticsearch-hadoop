@@ -70,6 +70,7 @@ public abstract class Version {
                 }
                 if (foundJars > 1) {
                     LogFactory.getLog(Version.class).fatal(sb);
+                    LogFactory.getLog(Version.class).fatal("Raw URLs: " + urls);
                     throw new Error(sb.toString());
                 }
             }
