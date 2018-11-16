@@ -104,9 +104,6 @@ public class VersionTest {
         // Remove parent dots
         assertEquals("file:/test", IOUtils.toCanonicalFilePath(new URL("file:/test/test/..")));
 
-        // On mac, the /tmp dir is a link to /private/tmp due to legacy weirdness.
-        // Both paths get added to the classpath for local YARN node managers, so make sure to use the canonical file names
-
         // Create a linked directory (like Mac's /tmp dir)
         File linkTest = temporaryFolder.newFolder("linkTest");
         File privateDir = new File(linkTest, "private");

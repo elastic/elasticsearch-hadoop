@@ -56,6 +56,11 @@ public abstract class Version {
             List<URL> urls = Collections.list(res);
             Map<String, List<URL>> normalized = new LinkedHashMap<String, List<URL>>();
 
+            // On mac, the /tmp dir is a link to /private/tmp due to legacy weirdness.
+            // Both paths get added to the classpath for local YARN node managers when
+            // running Spark. This could happen in any number of other scenarios, and
+            // in each case, the jars that share a canonical path should be identical,
+            // so we'll bucket the URL's by their canonical path before counting them.
             for (URL url : urls) {
                 try {
                     String canonicalPath = IOUtils.toCanonicalFilePath(url);
@@ -76,6 +81,10 @@ public abstract class Version {
                 }
             }
 
+            // We only really want to fail if someone has added multiple JAR files to the classpath.
+            // Since the resource URLs will be collapsed by their canonical file paths, just get the
+            // first URL from each file path bucket and see if it is a jar URL for the purposes of
+            // counting unique jar instances.
             int foundJars = 0;
             if (normalized.size() > 1) {
                 StringBuilder sb = new StringBuilder("Multiple ES-Hadoop versions detected in the classpath; please use only one\n");
