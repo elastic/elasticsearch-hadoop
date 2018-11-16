@@ -29,6 +29,7 @@ import org.gradle.process.ExecSpec
 class PigScript extends AbstractClusterTask {
 
     File script
+    List<File> libJars = []
 
     @TaskAction
     void runPig() {
@@ -53,8 +54,13 @@ class PigScript extends AbstractClusterTask {
         String commandName = 'pig' // Todo: Or 'pig.cmd' for Windows
         File command = new File(binDir, commandName)
 
-        // bin/beeline -u <connection> [-f <scriptFile>]
-        List<String> commandLine = [command.toString(), '-f', script.toString()]
+        // bin/pig [-Dpig.additional.jars=<libjars>] [-f <scriptFile>]
+        List<String> commandLine = [command.toString()]
+
+        if (!libJars.isEmpty()) {
+            String jars = libJars.collect { file -> file.getAbsolutePath() }.join(':')
+            commandLine.add("-Dpig.additional.jars=${jars}")
+        }
 
         if (script != null) {
             commandLine.addAll(['-f', script.toString()])
