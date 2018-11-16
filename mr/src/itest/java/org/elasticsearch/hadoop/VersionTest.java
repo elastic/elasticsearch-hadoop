@@ -30,7 +30,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.hadoop.util.OsUtil;
 import org.elasticsearch.hadoop.util.StringUtils;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.internal.AssumptionViolatedException;
@@ -66,29 +68,46 @@ public class VersionTest {
         assertEquals(1, normalized.size());
     }
 
+    @Test
+    public void testWindowsNormalizeCanonicalPath() throws Exception {
+        Assume.assumeTrue("Windows Only Test", OsUtil.IS_OS_WINDOWS);
+
+        // null begets null
+        assertNull(toCanonicalFile(null));
+        // Windows backslashes converted to forward slashes
+        assertEquals("file:/C:/Windows/System32/", toCanonicalFile(new File("C:\\Windows\\System32\\").toURI().toURL()));
+        // first colon that is found is treated as part of the path element name if the prefix contains a slash
+        assertEquals("file:/C:/f/ile:/test", toCanonicalFile(new URL("file:/C:/f/ile:/test/")));
+        // ensure this works with backslashes too
+        assertEquals("file:/C:/f/ile:/test", toCanonicalFile(new File("C:\\f\\ile:\\test\\").toURI().toURL()));
+        // colon denotes a prefix for the file if no slash is in the prefix
+        assertEquals("file:/C:/test", toCanonicalFile(new File("C:\\test\\").toURI().toURL()));
+        // ensure this works for jar urls
+        assertEquals("file:/C:/test", toCanonicalFile(new URL("jar:file:/C:/test/!/some/package/Hello.class")));
+        // Ignore dots
+        assertEquals("file:/C:/test/test", toCanonicalFile(new URL("file:/C:/test/./test/")));
+        // Remove parent dots
+        assertEquals("file:/C:/test", toCanonicalFile(new URL("file:/C:/test/test/..")));
+
+        // Windows jvm lacks the ability to link without special privileges.
+        // FS Links are less common on Windows, so skip.
+    }
 
     @Test
     public void testNormalizeCanonicalPaths() throws Exception {
+        Assume.assumeFalse("Non Windows Test Only", OsUtil.IS_OS_WINDOWS);
         // null begets null
-//        assertNull(StringUtils.normalize(null));
         assertNull(toCanonicalFile(null));
-        // Windows backslashes converted to forward slashes
-//        assertEquals("C:/Windows/System32", StringUtils.normalize("C:\\Windows\\System32\\"));
-//        assertEquals("C:/Windows/System32", toCanonicalFile(new URL(StringUtils.normalize("C:\\Windows\\System32\\"))));
         // first colon that is found is treated as part of the path element name if the prefix contains a slash
 //        assertEquals("f/ile:/test", StringUtils.normalize("f/ile:/test/"));
 //        assertEquals("f/ile:/test", toCanonicalFile(new URL("f/ile:/test/")));
         // colon denotes a prefix for the file if no slash is in the prefix
-//        assertEquals("file:/test", StringUtils.normalize("file:/test/"));
         assertEquals("file:/test", toCanonicalFile(new URL("file:/test/")));
         // ensure this works for jar urls
-//        assertEquals("jar:file:/test/!/some/package/Hello.class", StringUtils.normalize("jar:file:/test/!/some/package/Hello.class"));
         assertEquals("file:/test", toCanonicalFile(new URL("jar:file:/test/!/some/package/Hello.class")));
         // Ignore dots
-//        assertEquals("file:/test/test", StringUtils.normalize("file:/test/./test/"));
         assertEquals("file:/test/test", toCanonicalFile(new URL("file:/test/./test/")));
         // Remove parent dots
-//        assertEquals("file:/test", StringUtils.normalize("file:/test/test/.."));
         assertEquals("file:/test", toCanonicalFile(new URL("file:/test/test/..")));
 
         // On mac, the /tmp dir is a link to /private/tmp due to legacy weirdness.
