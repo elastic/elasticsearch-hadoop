@@ -23,6 +23,7 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
 apply plugin: 'es.hadoop.build'
 apply plugin: 'scala'
@@ -191,14 +192,22 @@ HadoopMRJob confTest = config.createClusterTask('confTest', HadoopMRJob.class) {
     jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ConfTest'
 }
 
-//SparkApp wordCount2 = config.createClusterTask('wordCount2', SparkApp.class) {
-//    clusterConfiguration = config
-//    dependsOn([jar, copyData])
-//    jobJar = jar.archivePath
-//    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.wordcount.SparkWordCount'
-//    args = ['/data/pride_and_prejudice.txt', '/output/pride2']
-//}
-//
+SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
+    clusterConfiguration = config
+    dependsOn(copyData)
+    jobJar = jar.archivePath
+    libJars.add(testingJar.archivePath)
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
+    jobSettings([
+            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+            'spark.es.nodes': 'localhost:9500',
+            'spark.load.field.names': 'number,name,url,picture,@timestamp,tag'
+    ])
+    args = ['/artists.dat']
+}
+
+esCluster.addTask(sparkLoadData)
+
 //File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
 //
 //HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
@@ -218,6 +227,7 @@ HadoopMRJob confTest = config.createClusterTask('confTest', HadoopMRJob.class) {
 //testCluster.dependsOn(copyData)
 
 testCluster.dependsOn(mrLoadData)
+testCluster.dependsOn(sparkLoadData)
 
 esCluster.addTask(testCluster)
 config.addClusterTask(testCluster)

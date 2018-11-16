@@ -17,35 +17,51 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.qa.kerberos.spark.wordcount
+package org.elasticsearch.hadoop.qa.kerberos.spark
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.spark._
 
-class SparkWordCount(args: Array[String]) {
+class LoadToES(args: Array[String]) {
 
-  val sparkConf: SparkConf = new SparkConf().setAppName("WordCount")
+  val sparkConf: SparkConf = new SparkConf().setAppName("LoadToES")
   val spark: SparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
 
   def run(): Unit = {
-    val df = spark.sqlContext.read.textFile("/data/pride_and_prejudice.txt")
+    if (!sparkConf.contains(LoadToES.CONF_FIELD_NAMES)) {
+      throw new IllegalArgumentException(LoadToES.CONF_FIELD_NAMES + " is required")
+    }
+    val resource = sparkConf.get("spark.es.resource")
+    val fieldNames = sparkConf.get(LoadToES.CONF_FIELD_NAMES).split(",")
 
-    val wordCount = df.rdd
-      .flatMap(line => line.split(' '))
-      .map(word => word.replace(",", ""))
-      .map(word => (word, 1))
-      .reduceByKey(_ + _)
-      .map(t => t._1 + "," + t._2)
+    val df = spark.sqlContext.read.textFile(args(0))
 
-    wordCount.saveAsTextFile("/output/pride2")
+    val parsedData = df.rdd
+      .map(line => {
+        var record: Map[String, Object] = Map()
+        val fields = line.split('\t')
+        var fieldNum = 0
+        for (field <- fields) {
+          if (fieldNum < fieldNames.length) {
+            val fieldName = fieldNames(fieldNum)
+            record = record + (fieldName -> field)
+          }
+        }
+        record
+      })
+
+    parsedData.saveToEs(resource)
 
     spark.stop()
   }
 }
 
-object SparkWordCount {
+object LoadToES {
+  val CONF_FIELD_NAMES = "spark.load.field.names"
+
   def main(args: Array[String]): Unit = {
-    new SparkWordCount(args).run()
+    new LoadToES(args).run()
     System.exit(0)
   }
 }

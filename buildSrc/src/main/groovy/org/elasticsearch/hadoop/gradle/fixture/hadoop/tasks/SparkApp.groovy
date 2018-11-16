@@ -40,6 +40,7 @@ class SparkApp extends AbstractClusterTask {
     File jobJar
     Master master = Master.YARN
     DeployMode deployMode = DeployMode.CLIENT
+    Map<String, String> jobSettings = [:]
     List<File> libJars = []
     List<String> args = []
 
@@ -53,6 +54,14 @@ class SparkApp extends AbstractClusterTask {
 
     void deployModeCluster() {
         deployMode = DeployMode.CLUSTER
+    }
+
+    void jobSetting(String key, String value) {
+        jobSettings.put(key, value)
+    }
+
+    void jobSettings(Map<String, String> configs) {
+        jobSettings.putAll(configs)
     }
 
     @TaskAction
@@ -87,10 +96,18 @@ class SparkApp extends AbstractClusterTask {
 
         // bin/spark-submit --master yarn --deploy-mode client --class <class> path/to/jar.jar
         List<String> commandLine = [command.toString(),
-                                    '--master', argMaster,
-                                    '--deploy-mode', argDeployMode,
                                     '--class', jobClass,
-                                    jobJar.toString()]
+                                    '--master', argMaster,
+                                    '--deploy-mode', argDeployMode]
+
+        if (!libJars.isEmpty()) {
+            commandLine.addAll(['--jars', libJars.join(',')])
+        }
+
+        jobSettings.collect { k, v -> "$k=$v" }.forEach { conf -> commandLine.add('--conf'); commandLine.add(conf) }
+
+        commandLine.add(jobJar.toString())
+        commandLine.addAll(args)
 
         // HADOOP_CONF_DIR=..../etc/hadoop
         Map<String, String> finalEnv = sparkGateway.getEnvironmentVariables()
