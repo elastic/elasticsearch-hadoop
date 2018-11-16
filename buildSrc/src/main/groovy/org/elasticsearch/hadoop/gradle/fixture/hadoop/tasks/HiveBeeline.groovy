@@ -29,6 +29,7 @@ import org.gradle.process.ExecSpec
 class HiveBeeline extends AbstractClusterTask {
 
     File script
+    List<File> libJars = []
 
     @TaskAction
     void runBeeline() {
@@ -57,7 +58,8 @@ class HiveBeeline extends AbstractClusterTask {
         List<String> commandLine = [command.toString(), '-u', connectionString]
 
         if (script != null) {
-            commandLine.addAll(['-f', script.toString()])
+            File finalScript = rewriteScript(homeDir)
+            commandLine.addAll(['-f', finalScript.toString()])
         }
 
         // Use the service descriptor to pick up HADOOP_HOME=<hadoopHome>
@@ -81,5 +83,22 @@ class HiveBeeline extends AbstractClusterTask {
 
         // jdbc:hive2://localhost:10000
         return "jdbc:hive2://${thriftBindHost}:${thriftPort}"
+    }
+
+    File rewriteScript(File hiveHome) {
+        // If there are libraries required, copy the contents of the script to a different working location
+        // and prepend the libraries to the script with ADD JAR commands.
+        if (libJars.isEmpty()) {
+            return script
+        } else {
+            File hiveScriptDir = new File(hiveHome, "usr/scripts")
+            hiveScriptDir.mkdirs()
+            File modifiedScriptFile = new File(hiveScriptDir, script.getName())
+            modifiedScriptFile.createNewFile()
+            String addJarDirectives = libJars.collect { jarFile -> "ADD JAR ${jarFile.getAbsolutePath()};" }.join('\n')
+            String finalContents = addJarDirectives + '\n' + script.getText()
+            modifiedScriptFile.setText(finalContents, 'UTF-8')
+            return modifiedScriptFile
+        }
     }
 }
