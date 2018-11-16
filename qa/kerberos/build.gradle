@@ -23,6 +23,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.PigScript
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.SparkApp
 
 apply plugin: 'es.hadoop.build'
@@ -160,13 +162,11 @@ config.addDependency(testingJar)
 
 File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
 
-
 DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
     clusterConfiguration = config
     fromLocal project.file(new File(mrItestResourceDir, 'artists.dat'))
-    to new File("/artists.dat")
+    to new File("/data/artists/artists.dat")
 }
-
 
 HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
     clusterConfiguration = config
@@ -179,18 +179,9 @@ HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.clas
             'es.nodes': 'localhost:9500',
             'load.field.names': 'number,name,url,picture,@timestamp,tag'
     ]
-    args = ['/artists.dat']
+    args = ['/data/artists/artists.dat']
 }
-
 esCluster.addTask(mrLoadData)
-
-HadoopMRJob confTest = config.createClusterTask('confTest', HadoopMRJob.class) {
-    clusterConfiguration = config
-    dependsOn(jar)
-    jobJar = jar.archivePath
-    jobSettings(['es.resource': 'test/_doc', 'es.nodes': 'localhost:9500'])
-    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ConfTest'
-}
 
 SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
     clusterConfiguration = config
@@ -203,31 +194,32 @@ SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.clas
             'spark.es.nodes': 'localhost:9500',
             'spark.load.field.names': 'number,name,url,picture,@timestamp,tag'
     ])
-    args = ['/artists.dat']
+    args = ['/data/artists/artists.dat']
 }
-
 esCluster.addTask(sparkLoadData)
 
-//File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
-//
-//HiveBeeline topWords = config.createClusterTask('topWords', HiveBeeline.class) {
-//    clusterConfiguration = config
-//    dependsOn(wordCount)
-//    script = new File(resourceDir, 'hive/top_25_words.sql')
-//}
-//
-//PigScript topWords2 = config.createClusterTask('topWords2', PigScript.class) {
-//    clusterConfiguration = config
-//    dependsOn(wordCount)
-//    script = new File(resourceDir, 'pig/top_25_words.pig')
-//}
-//
-//testCluster.dependsOn(topWords, topWords2, wordCount2)
+File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
 
-//testCluster.dependsOn(copyData)
+HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
+    clusterConfiguration = config
+    dependsOn(copyData)
+    script = new File(resourceDir, 'hive/load_to_es.sql')
+    libJars.add(testingJar.archivePath)
+}
+esCluster.addTask(hiveLoadData)
+
+PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
+    clusterConfiguration = config
+    dependsOn(copyData)
+    script = new File(resourceDir, 'pig/load_to_es.pig')
+    libJars.add(testingJar.archivePath)
+}
+esCluster.addTask(pigLoadData)
 
 testCluster.dependsOn(mrLoadData)
 testCluster.dependsOn(sparkLoadData)
+testCluster.dependsOn(hiveLoadData)
+testCluster.dependsOn(pigLoadData)
 
 esCluster.addTask(testCluster)
 config.addClusterTask(testCluster)
