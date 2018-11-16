@@ -137,7 +137,8 @@ class DfsCopy extends AbstractClusterTask {
         File binDir = new File(homeDir, hadoopGateway.serviceDescriptor.scriptDir(hadoopGateway))
         String commandName = 'hdfs' // TODO: or hdfs.cmd for Windows
         File command = new File(binDir, commandName)
-        List<String> commandLine = [command.toString()]
+
+        List<String> copyCommandLine = [command.toString()]
         if (localSource != null && localDestination != null) {
             project.copy { CopySpec spec ->
                 spec.from(localSource.toString())
@@ -145,11 +146,11 @@ class DfsCopy extends AbstractClusterTask {
             }
             return // Exit early
         } else if (localSource != null && dfsDestination != null) {
-            commandLine.addAll(['dfs', '-copyFromLocal', localSource.toString(), dfsDestination.toString()])
+            copyCommandLine.addAll(['dfs', '-copyFromLocal', localSource.toString(), dfsDestination.toString()])
         } else if (dfsSource != null && localDestination != null) {
-            commandLine.addAll(['dfs', '-copyToLocal', dfsSource.toString(), localDestination.toString()])
+            copyCommandLine.addAll(['dfs', '-copyToLocal', dfsSource.toString(), localDestination.toString()])
         } else if (dfsSource != null && dfsDestination != null) {
-            commandLine.addAll(['dfs', '-cp', dfsSource.toString(), dfsDestination.toString()])
+            copyCommandLine.addAll(['dfs', '-cp', dfsSource.toString(), dfsDestination.toString()])
         }
 
         // Combine env and sysprops
@@ -157,9 +158,18 @@ class DfsCopy extends AbstractClusterTask {
         hadoopGateway.getServiceDescriptor().finalizeEnv(finalEnv, hadoopGateway)
         finalEnv.putAll(env)
 
+        // First ensure destination directories exist
+        if (dfsDestination != null) {
+            List<String> mkdirCommandLine = [command.toString(), 'dfs', '-mkdir', '-p', dfsDestination.parentFile.toString()]
+            project.exec { ExecSpec spec ->
+                spec.commandLine(mkdirCommandLine)
+                spec.environment(finalEnv)
+            }
+        }
+
         // Do command
         project.exec { ExecSpec spec ->
-            spec.commandLine(commandLine)
+            spec.commandLine(copyCommandLine)
             spec.environment(finalEnv)
         }
     }
