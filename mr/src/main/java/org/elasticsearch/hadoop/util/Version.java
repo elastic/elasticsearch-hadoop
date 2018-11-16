@@ -19,13 +19,15 @@
 package org.elasticsearch.hadoop.util;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
 
@@ -52,19 +54,45 @@ public abstract class Version {
 
         if (res != null) {
             List<URL> urls = Collections.list(res);
-            Set<String> normalized = new LinkedHashSet<String>();
+            Map<String, List<URL>> normalized = new LinkedHashMap<String, List<URL>>();
 
+            // On mac, the /tmp dir is a link to /private/tmp due to legacy weirdness.
+            // Both paths get added to the classpath for local YARN node managers when
+            // running Spark. This could happen in any number of other scenarios, and
+            // in each case, the jars that share a canonical path should be identical,
+            // so we'll bucket the URL's by their canonical path before counting them.
             for (URL url : urls) {
-                normalized.add(StringUtils.normalize(url.toString()));
+                try {
+                    String canonicalPath = IOUtils.toCanonicalFilePath(url);
+                    List<URL> pathURLs = normalized.get(canonicalPath);
+                    if (pathURLs == null) {
+                        pathURLs = new ArrayList<URL>();
+                        normalized.put(canonicalPath, pathURLs);
+                    }
+                    pathURLs.add(url);
+                } catch (URISyntaxException e) {
+                    String message = "Could not parse classpath resource URI: " + url.toString();
+                    LogFactory.getLog(Version.class).fatal(message, e);
+                    throw new Error(message, e);
+                } catch (IOException e) {
+                    String message = "Could not retrieve canonical path to classpath resource: " + url.toString();
+                    LogFactory.getLog(Version.class).fatal(message, e);
+                    throw new Error(message, e);
+                }
             }
 
+            // We only really want to fail if someone has added multiple JAR files to the classpath.
+            // Since the resource URLs will be collapsed by their canonical file paths, just get the
+            // first URL from each file path bucket and see if it is a jar URL for the purposes of
+            // counting unique jar instances.
             int foundJars = 0;
             if (normalized.size() > 1) {
                 StringBuilder sb = new StringBuilder("Multiple ES-Hadoop versions detected in the classpath; please use only one\n");
-                for (String s : normalized) {
-                    if (s.contains("jar:")) {
+                for (List<URL> pathURLs : normalized.values()) {
+                    String path = pathURLs.get(0).toString();
+                    if (path.contains("jar:")) {
                         foundJars++;
-                        sb.append(s.replace("!/" + target, ""));
+                        sb.append(path.replace("!/" + target, ""));
                         sb.append("\n");
                     }
                 }
