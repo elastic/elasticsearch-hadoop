@@ -20,9 +20,6 @@ package org.elasticsearch.hadoop;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.JarURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -30,8 +27,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.OsUtil;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,12 +56,10 @@ public class VersionTest {
 
         for (URL url : urls) {
             // try normalization first
-            String norm = StringUtils.normalize(url.toString());
-            System.out.println(norm);
+            String norm = IOUtils.toCanonicalFilePath(url);
             normalized.add(norm);
         }
 
-        System.out.println(normalized);
         assertEquals(1, normalized.size());
     }
 
@@ -73,21 +68,21 @@ public class VersionTest {
         Assume.assumeTrue("Windows Only Test", OsUtil.IS_OS_WINDOWS);
 
         // null begets null
-        assertNull(toCanonicalFile(null));
+        assertNull(IOUtils.toCanonicalFilePath(null));
         // Windows backslashes converted to forward slashes
-        assertEquals("file:/C:/Windows/System32/", toCanonicalFile(new File("C:\\Windows\\System32\\").toURI().toURL()));
-        // first colon that is found is treated as part of the path element name if the prefix contains a slash
-        assertEquals("file:/C:/f/ile:/test", toCanonicalFile(new URL("file:/C:/f/ile:/test/")));
+        assertEquals("file:/C:/Windows/System32/", IOUtils.toCanonicalFilePath(new File("C:\\Windows\\System32\\").toURI().toURL()));
+        // A colon outside of the scheme should be treated as part of the path element name
+        assertEquals("file:/C:/f/ile:/test", IOUtils.toCanonicalFilePath(new URL("file:/C:/f/ile:/test/")));
         // ensure this works with backslashes too
-        assertEquals("file:/C:/f/ile:/test", toCanonicalFile(new File("C:\\f\\ile:\\test\\").toURI().toURL()));
+        assertEquals("file:/C:/f/ile:/test", IOUtils.toCanonicalFilePath(new File("C:\\f\\ile:\\test\\").toURI().toURL()));
         // colon denotes a prefix for the file if no slash is in the prefix
-        assertEquals("file:/C:/test", toCanonicalFile(new File("C:\\test\\").toURI().toURL()));
+        assertEquals("file:/C:/test", IOUtils.toCanonicalFilePath(new File("C:\\test\\").toURI().toURL()));
         // ensure this works for jar urls
-        assertEquals("file:/C:/test", toCanonicalFile(new URL("jar:file:/C:/test/!/some/package/Hello.class")));
+        assertEquals("file:/C:/test", IOUtils.toCanonicalFilePath(new URL("jar:file:/C:/test/!/some/package/Hello.class")));
         // Ignore dots
-        assertEquals("file:/C:/test/test", toCanonicalFile(new URL("file:/C:/test/./test/")));
+        assertEquals("file:/C:/test/test", IOUtils.toCanonicalFilePath(new URL("file:/C:/test/./test/")));
         // Remove parent dots
-        assertEquals("file:/C:/test", toCanonicalFile(new URL("file:/C:/test/test/..")));
+        assertEquals("file:/C:/test", IOUtils.toCanonicalFilePath(new URL("file:/C:/test/test/..")));
 
         // Windows jvm lacks the ability to link without special privileges.
         // FS Links are less common on Windows, so skip.
@@ -97,18 +92,17 @@ public class VersionTest {
     public void testNormalizeCanonicalPaths() throws Exception {
         Assume.assumeFalse("Non Windows Test Only", OsUtil.IS_OS_WINDOWS);
         // null begets null
-        assertNull(toCanonicalFile(null));
-        // first colon that is found is treated as part of the path element name if the prefix contains a slash
-//        assertEquals("f/ile:/test", StringUtils.normalize("f/ile:/test/"));
-//        assertEquals("f/ile:/test", toCanonicalFile(new URL("f/ile:/test/")));
+        assertNull(IOUtils.toCanonicalFilePath(null));
+        // A colon outside of the scheme should be treated as part of the path element name
+        assertEquals("file:/f/ile:/test", IOUtils.toCanonicalFilePath(new URL("file:/f/ile:/test/")));
         // colon denotes a prefix for the file if no slash is in the prefix
-        assertEquals("file:/test", toCanonicalFile(new URL("file:/test/")));
+        assertEquals("file:/test", IOUtils.toCanonicalFilePath(new URL("file:/test/")));
         // ensure this works for jar urls
-        assertEquals("file:/test", toCanonicalFile(new URL("jar:file:/test/!/some/package/Hello.class")));
+        assertEquals("file:/test", IOUtils.toCanonicalFilePath(new URL("jar:file:/test/!/some/package/Hello.class")));
         // Ignore dots
-        assertEquals("file:/test/test", toCanonicalFile(new URL("file:/test/./test/")));
+        assertEquals("file:/test/test", IOUtils.toCanonicalFilePath(new URL("file:/test/./test/")));
         // Remove parent dots
-        assertEquals("file:/test", toCanonicalFile(new URL("file:/test/test/..")));
+        assertEquals("file:/test", IOUtils.toCanonicalFilePath(new URL("file:/test/test/..")));
 
         // On mac, the /tmp dir is a link to /private/tmp due to legacy weirdness.
         // Both paths get added to the classpath for local YARN node managers, so make sure to use the canonical file names
@@ -145,9 +139,9 @@ public class VersionTest {
         assertNotEquals(testFile.getAbsolutePath(), awkwardTestFile.getAbsolutePath());
         assertNotEquals(testFile.getAbsolutePath(), awkwardParentTestFile.getAbsolutePath());
 
-        assertEquals(toCanonicalFile(testFile.toURI().toURL()), toCanonicalFile(linkedTestFile.toURI().toURL()));
-        assertEquals(toCanonicalFile(testFile.toURI().toURL()), toCanonicalFile(awkwardTestFile.toURI().toURL()));
-        assertEquals(toCanonicalFile(testFile.toURI().toURL()), toCanonicalFile(awkwardParentTestFile.toURI().toURL()));
+        assertEquals(IOUtils.toCanonicalFilePath(testFile.toURI().toURL()), IOUtils.toCanonicalFilePath(linkedTestFile.toURI().toURL()));
+        assertEquals(IOUtils.toCanonicalFilePath(testFile.toURI().toURL()), IOUtils.toCanonicalFilePath(awkwardTestFile.toURI().toURL()));
+        assertEquals(IOUtils.toCanonicalFilePath(testFile.toURI().toURL()), IOUtils.toCanonicalFilePath(awkwardParentTestFile.toURI().toURL()));
 
         URL testURL = new URL("jar:file:" + testFile.getAbsolutePath() + "!/some/package/Hello.class");
         URL linkedTestURL = new URL("jar:file:" + linkedTestFile.getAbsolutePath() + "!/some/package/Hello.class");
@@ -158,9 +152,9 @@ public class VersionTest {
         assertNotEquals(testURL.toString(), awkwardTestURL.toString());
         assertNotEquals(testURL.toString(), awkwardParentTestFile.toString());
 
-        assertEquals(toCanonicalFile(testURL), toCanonicalFile(linkedTestURL));
-        assertEquals(toCanonicalFile(testURL), toCanonicalFile(awkwardTestURL));
-        assertEquals(toCanonicalFile(testURL), toCanonicalFile(awkwardParentTestURL));
+        assertEquals(IOUtils.toCanonicalFilePath(testURL), IOUtils.toCanonicalFilePath(linkedTestURL));
+        assertEquals(IOUtils.toCanonicalFilePath(testURL), IOUtils.toCanonicalFilePath(awkwardTestURL));
+        assertEquals(IOUtils.toCanonicalFilePath(testURL), IOUtils.toCanonicalFilePath(awkwardParentTestURL));
     }
 
     private void createSafe(File testFile) throws IOException {
@@ -181,34 +175,5 @@ public class VersionTest {
         } catch (UnsupportedOperationException e) {
             throw new AssumptionViolatedException("OS does not support symlinks", e);
         }
-    }
-
-    /**
-     * Convert either a file or jar url into a local canonical file, or null if the file is a different scheme.
-     */
-    private String toCanonicalFile(URL fileURL) throws URISyntaxException, IOException {
-        if (fileURL == null) {
-            return null;
-        }
-
-        // Only handle jar: and file: schemes
-        if (!fileURL.getProtocol().equals("jar") && !fileURL.getProtocol().equals("file")) {
-            return null;
-        }
-
-        // Parse the jar file location from the jar url. Doesn't open any resources.
-        if (fileURL.getProtocol().equals("jar")) {
-            JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
-            fileURL = jarURLConnection.getJarFileURL();
-        }
-
-        URI fileURI = fileURL.toURI();
-        File file = new File(fileURI);
-
-        // Use filesystem to resolve any sym links or dots in the path to
-        // a singular unique file path
-        File canonicalFile = file.getCanonicalFile();
-
-        return canonicalFile.toURI().toString();
     }
 }
