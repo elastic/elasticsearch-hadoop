@@ -14,8 +14,7 @@ String eshVersion = props.getProperty('eshadoop')
 String esVersion = props.getProperty('elasticsearch')
 
 // determine if we're building a prerelease or candidate (alphaX/betaX/rcX)
-// TODO: This default should be removed when ES stops using alpha1 as its default qualifier
-String qualifier = System.getProperty("build.version_qualifier", "alpha1")
+String qualifier = System.getProperty("build.version_qualifier", "")
 if (qualifier.isEmpty() == false) {
     if (qualifier.matches("(alpha|beta|rc)\\d+") == false) {
         throw new IllegalStateException("Invalid qualifier: " + qualifier)
