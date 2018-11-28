@@ -156,7 +156,7 @@ HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, pref
 
 config.service('hadoop') { ServiceConfiguration s ->
     s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
-
+    // Shared Core Site Config
     s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
         // Enable Security
         f.addSetting("hadoop.security.authentication", "kerberos")
@@ -169,8 +169,7 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("hadoop.ssl.server.conf", "ssl-server.xml")
         f.addSetting("hadoop.ssl.client.conf", "ssl-client.xml")
     }
-
-    // Common SSL Config
+    // Shared SSL Server Config
     s.settingsFile('ssl-server.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("ssl.server.keystore.type", "jks")
         f.addSetting("ssl.server.keystore.location", "${resourceDir.getAbsolutePath()}/ssl/server.jks")
@@ -178,33 +177,41 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("ssl.server.keystore.keypassword", "bigdata")
     }
 
-    // Namenode
+    // Namenode Setup
     s.role('namenode') { RoleConfiguration r ->
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.namenode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.http.policy", "HTTPS_ONLY")
+        r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
+            f.addSetting("dfs.namenode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
+            f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+            f.addSetting("dfs.http.policy", "HTTPS_ONLY")
+        }
     }
 
-    // Datanode
+    // Datanode Setup
     s.role('datanode') { RoleConfiguration r ->
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.datanode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.data.transfer.protection", "authentication")
-        r.settingsFile('hdfs-site.xml').addSetting("dfs.http.policy", "HTTPS_ONLY")
+        r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
+            f.addSetting("dfs.datanode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
+            f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+            f.addSetting("dfs.data.transfer.protection", "authentication")
+            f.addSetting("dfs.http.policy", "HTTPS_ONLY")
+        }
     }
 
-    // Resource Manager
+    // Resource Manager Setup
     s.role('resourcemanager') { RoleConfiguration r ->
-        r.settingsFile('yarn-site.xml').addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
-        r.settingsFile('yarn-site.xml').addSetting("yarn.resourcemanager.principal", "yarn/hadoop.build.elastic.co")
+        r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
+            f.addSetting("yarn.resourcemanager.principal", "yarn/hadoop.build.elastic.co")
+        }
     }
 
-    // Node Manager
+    // Node Manager Setup
     s.role('nodemanager') { RoleConfiguration r ->
-        r.settingsFile('yarn-site.xml').addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
-        r.settingsFile('yarn-site.xml').addSetting("yarn.nodemanager.principal", "yarn/hadoop.build.elastic.co")
+        r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
+            f.addSetting("yarn.nodemanager.principal", "yarn/hadoop.build.elastic.co")
+        }
     }
 }
 //config.service('hive')
