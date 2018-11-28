@@ -106,7 +106,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<String> configFiles(InstanceConfiguration configuration) {
-        return ['core-site.xml', 'hdfs-site.xml', 'yarn-site.xml']
+        return ['core-site.xml', 'hdfs-site.xml', 'yarn-site.xml', 'ssl-server.xml']
     }
 
     @Override
@@ -146,6 +146,11 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         coreSite.putIfAbsent('fs.defaultFS', "hdfs://${hdfsSite.get('dfs.namenode.rpc-address')}")
 
         files.put('core-site.xml', coreSite)
+
+        // ssl server settings (for HTTPS)
+        Map<String, String> sslServer = container.flattenFile('ssl-server.xml')
+
+        files.put('ssl-server.xml', sslServer)
 
         return files
     }
