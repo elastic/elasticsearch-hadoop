@@ -31,6 +31,10 @@ class SettingsContainer {
             settings.put(key, value)
         }
 
+        void settings(Map<String, String> values) {
+            settings.putAll(values)
+        }
+
         Map<String, String> getSettings() {
             return settings
         }
@@ -53,7 +57,7 @@ class SettingsContainer {
     }
 
     FileSettings getFile(String filename) {
-        return settingsFiles.computeIfAbsent(filename, { -> new FileSettings()})
+        return settingsFiles.computeIfAbsent(filename, {k -> new FileSettings()})
     }
 
     void combine(SettingsContainer other) {

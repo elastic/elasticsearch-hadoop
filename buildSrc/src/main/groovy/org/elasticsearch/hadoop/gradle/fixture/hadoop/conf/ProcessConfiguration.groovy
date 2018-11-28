@@ -18,6 +18,9 @@
  */
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
+
+import org.gradle.util.ConfigureUtil
+
 /**
  * All the configurations that can be set hierarchically for a cluster.
  *
@@ -92,7 +95,15 @@ abstract class ProcessConfiguration {
     }
 
     SettingsContainer.FileSettings settingsFile(String filename) {
-        return settingsContainer.getFile(filename)
+        return settingsFile(filename, null)
+    }
+
+    SettingsContainer.FileSettings settingsFile(String filename, Closure<?> config) {
+        SettingsContainer.FileSettings file = settingsContainer.getFile(filename)
+        if (config != null) {
+            ConfigureUtil.configure(config, file)
+        }
+        return file
     }
 
     SettingsContainer getSettingsContainer() {
