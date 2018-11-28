@@ -351,6 +351,17 @@ class HadoopClusterFormationTasks {
             exec.workingDir node.cwd
             exec.environment 'JAVA_HOME', node.getJavaHome()
             exec.environment(node.env)
+
+            // Configure HADOOP_OPTS (or similar env) - adds system properties, assertion flags, remote debug etc
+            String javaOptsEnvKey = node.config.getServiceDescriptor().javaOptsEnvSetting(node.config)
+            if (javaOptsEnvKey != null) {
+                List<String> javaOpts = [node.env.get(javaOptsEnvKey, '')]
+                String collectedSystemProperties = node.config.systemProperties.collect { key, value -> "-D${key}=${value}" }.join(" ")
+                javaOpts.add(collectedSystemProperties)
+                javaOpts.add(node.config.jvmArgs)
+                exec.environment javaOptsEnvKey, javaOpts.join(" ")
+            }
+
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 // FIXHERE eventually
                 exec.executable 'cmd'
