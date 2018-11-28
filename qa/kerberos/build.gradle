@@ -21,6 +21,9 @@
 import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
@@ -44,10 +47,14 @@ dependencies {
     kdcFixture project(':test:fixtures:minikdc')
 }
 
-String serverKeytabName = "http_es.build.elastic.co.keytab"
-
 Map users = ["client":"password", "gmarx":"swordfish"]
-Map keytabUsers = ["HTTP/es.build.elastic.co" : "es.keytab"]
+Map keytabUsers = [
+        "HTTP/es.build.elastic.co" : "es.keytab",
+        "hdfs/hadoop.build.elastic.co" : "hadoop.keytab",
+        "yarn/hadoop.build.elastic.co" : "hadoop.keytab",
+        "mapred/hadoop.build.elastic.co" : "hadoop.keytab",
+        "HTTP/hadoop.build.elastic.co" : "hadoop.keytab"
+]
 
 // Configure MiniKDC
 AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
@@ -77,6 +84,7 @@ AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
 java.nio.file.Path fixtureDir = project.buildDir.toPath().resolve("fixtures").resolve("kdcFixture")
 java.nio.file.Path krb5Conf = fixtureDir.resolve("krb5.conf")
 java.nio.file.Path esKeytab = fixtureDir.resolve("es.keytab")
+java.nio.file.Path hadoopKeytab = fixtureDir.resolve("hadoop.keytab")
 
 // Configure ES with Kerberos Auth
 esCluster {
@@ -134,6 +142,9 @@ integrationTest.systemProperty("java.security.krb5.conf", krb5Conf.toString())
 integrationTest.systemProperty("es.net.http.auth.user", "test_admin")
 integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 
+// Need these for SSL items, test data, and scripts
+File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
+File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
 
 // =============================================================================
 // Hadoop cluster testing
@@ -141,87 +152,133 @@ integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 
 // Project instance available implicitly
 String prefix = "hadoopFixture"
+HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
+
+config.service('hadoop') { ServiceConfiguration s ->
+    s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+
+    s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
+        // Enable Security
+        f.addSetting("hadoop.security.authentication", "kerberos")
+        f.addSetting("hadoop.security.authorization", "false")
+
+        // Common Core SSL
+        f.addSetting("hadoop.ssl.require.client.cert", "false")
+        f.addSetting("hadoop.ssl.hostname.verifier", "DEFAULT")
+        f.addSetting("hadoop.ssl.keystores.factory.class", "org.apache.hadoop.security.ssl.FileBasedKeyStoresFactory")
+        f.addSetting("hadoop.ssl.server.conf", "ssl-server.xml")
+        f.addSetting("hadoop.ssl.client.conf", "ssl-client.xml")
+    }
+
+    // Common SSL Config
+    s.settingsFile('ssl-server.xml') { SettingsContainer.FileSettings f ->
+        f.addSetting("ssl.server.keystore.type", "jks")
+        f.addSetting("ssl.server.keystore.location", "${resourceDir.getAbsolutePath()}/ssl/server.jks")
+        f.addSetting("ssl.server.keystore.password", "bigdata")
+        f.addSetting("ssl.server.keystore.keypassword", "bigdata")
+    }
+
+    // Namenode
+    s.role('namenode') { RoleConfiguration r ->
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.namenode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.http.policy", "HTTPS_ONLY")
+    }
+
+    // Datanode
+    s.role('datanode') { RoleConfiguration r ->
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.datanode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.data.transfer.protection", "authentication")
+        r.settingsFile('hdfs-site.xml').addSetting("dfs.http.policy", "HTTPS_ONLY")
+    }
+
+    // Resource Manager
+    s.role('resourcemanager') { RoleConfiguration r ->
+        r.settingsFile('yarn-site.xml').addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
+        r.settingsFile('yarn-site.xml').addSetting("yarn.resourcemanager.principal", "yarn/hadoop.build.elastic.co")
+    }
+
+    // Node Manager
+    s.role('nodemanager') { RoleConfiguration r ->
+        r.settingsFile('yarn-site.xml').addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
+        r.settingsFile('yarn-site.xml').addSetting("yarn.nodemanager.principal", "yarn/hadoop.build.elastic.co")
+    }
+}
+//config.service('hive')
+//config.service('pig')
+//config.service('spark')
+def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
+def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
+//config.addDependency(jar)
+//config.addDependency(testingJar)
+config.addDependency(kdcFixture)
+
 Task testCluster = project.tasks.create("testCluster")
 testCluster.doLast {
     project.logger.lifecycle("TEST FINISHED")
     System.console().readLine("Tear Down? ")
     project.logger.lifecycle("STOPPING CLUSTER")
 }
-
-def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
-def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-
-HadoopClusterConfiguration config = new HadoopClusterConfiguration(project, prefix)
-
-config.service('hadoop')
-config.service('hive')
-config.service('pig')
-config.service('spark')
-config.addDependency(jar)
-config.addDependency(testingJar)
-
-File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
-
-DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
-    clusterConfiguration = config
-    fromLocal project.file(new File(mrItestResourceDir, 'artists.dat'))
-    to new File("/data/artists/artists.dat")
-}
-
-HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
-    clusterConfiguration = config
-    dependsOn(copyData)
-    jobJar = jar.archivePath
-    libJars.add(testingJar.archivePath)
-    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
-    jobSettings = [
-            'es.resource': 'qa_kerberos_mr_data/_doc',
-            'es.nodes': 'localhost:9500',
-            'load.field.names': 'number,name,url,picture,@timestamp,tag'
-    ]
-    args = ['/data/artists/artists.dat']
-}
-esCluster.addTask(mrLoadData)
-
-SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
-    clusterConfiguration = config
-    dependsOn(copyData)
-    jobJar = jar.archivePath
-    libJars.add(testingJar.archivePath)
-    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
-    jobSettings([
-            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
-            'spark.es.nodes': 'localhost:9500',
-            'spark.load.field.names': 'number,name,url,picture,@timestamp,tag'
-    ])
-    args = ['/data/artists/artists.dat']
-}
-esCluster.addTask(sparkLoadData)
-
-File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
-
-HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
-    clusterConfiguration = config
-    dependsOn(copyData)
-    script = new File(resourceDir, 'hive/load_to_es.sql')
-    libJars.add(testingJar.archivePath)
-}
-esCluster.addTask(hiveLoadData)
-
-PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
-    clusterConfiguration = config
-    dependsOn(copyData)
-    script = new File(resourceDir, 'pig/load_to_es.pig')
-    libJars.add(testingJar.archivePath)
-}
-esCluster.addTask(pigLoadData)
-
-testCluster.dependsOn(mrLoadData)
-testCluster.dependsOn(sparkLoadData)
-testCluster.dependsOn(hiveLoadData)
-testCluster.dependsOn(pigLoadData)
-
-esCluster.addTask(testCluster)
+//esCluster.addTask(testCluster)
 config.addClusterTask(testCluster)
+
+//DfsCopy copyData = config.createClusterTask('copyData', DfsCopy.class) {
+//    clusterConfiguration = config
+//    fromLocal project.file(new File(mrItestResourceDir, 'artists.dat'))
+//    to new File("/data/artists/artists.dat")
+//}
+
+//HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
+//    clusterConfiguration = config
+//    dependsOn(copyData)
+//    jobJar = jar.archivePath
+//    libJars.add(testingJar.archivePath)
+//    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
+//    jobSettings = [
+//            'es.resource': 'qa_kerberos_mr_data/_doc',
+//            'es.nodes': 'localhost:9500',
+//            'load.field.names': 'number,name,url,picture,@timestamp,tag'
+//    ]
+//    args = ['/data/artists/artists.dat']
+//}
+//esCluster.addTask(mrLoadData)
+//testCluster.dependsOn(mrLoadData)
+
+//SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
+//    clusterConfiguration = config
+//    dependsOn(copyData)
+//    jobJar = jar.archivePath
+//    libJars.add(testingJar.archivePath)
+//    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
+//    jobSettings([
+//            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+//            'spark.es.nodes': 'localhost:9500',
+//            'spark.load.field.names': 'number,name,url,picture,@timestamp,tag'
+//    ])
+//    args = ['/data/artists/artists.dat']
+//}
+//esCluster.addTask(sparkLoadData)
+//testCluster.dependsOn(sparkLoadData)
+//
+//HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
+//    clusterConfiguration = config
+//    dependsOn(copyData)
+//    script = new File(resourceDir, 'hive/load_to_es.sql')
+//    libJars.add(testingJar.archivePath)
+//}
+//esCluster.addTask(hiveLoadData)
+//testCluster.dependsOn(hiveLoadData)
+//
+//PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
+//    clusterConfiguration = config
+//    dependsOn(copyData)
+//    script = new File(resourceDir, 'pig/load_to_es.pig')
+//    libJars.add(testingJar.archivePath)
+//}
+//esCluster.addTask(pigLoadData)
+//testCluster.dependsOn(pigLoadData)
 
 HadoopClusterFormationTasks.setup(project, config)
