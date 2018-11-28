@@ -63,7 +63,7 @@ class RoleConfiguration extends ProcessConfiguration {
         return instance(instanceNumber, null)
     }
 
-    InstanceConfiguration instance(int instanceNumber, Closure<InstanceConfiguration> configure) {
+    InstanceConfiguration instance(int instanceNumber, Closure<?> configure) {
         if (instances.size() > instanceNumber) {
             InstanceConfiguration instanceConf = instances.get(instanceNumber)
             if (configure != null) {

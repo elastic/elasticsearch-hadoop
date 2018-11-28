@@ -68,7 +68,7 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
         return service(serviceName, null)
     }
 
-    ServiceConfiguration service(String serviceName, Closure<ServiceConfiguration> configure) {
+    ServiceConfiguration service(String serviceName, Closure<?> configure) {
         ServiceDescriptor serviceDescriptor = SUPPORTED_SERVICES.get(serviceName)
         if (serviceDescriptor == null) {
             throw new GradleException("HadoopClusterConfiguration does not support unknown service [${serviceName}]")
@@ -87,7 +87,7 @@ class HadoopClusterConfiguration extends ProcessConfiguration {
         return doGetService(descriptor, null)
     }
 
-    private ServiceConfiguration doGetService(ServiceDescriptor serviceDescriptor, Closure<ServiceConfiguration> configure) {
+    private ServiceConfiguration doGetService(ServiceDescriptor serviceDescriptor, Closure<?> configure) {
         ServiceConfiguration serviceConf = serviceConfigurations.get(serviceDescriptor.id())
         if (serviceConf != null) {
             if (configure != null) {

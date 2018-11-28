@@ -75,7 +75,7 @@ class ServiceConfiguration extends ProcessConfiguration {
         return role(roleName, null)
     }
 
-    RoleConfiguration role(String roleName, Closure<RoleConfiguration> configure) {
+    RoleConfiguration role(String roleName, Closure<?> configure) {
         RoleDescriptor roleDescriptor = supportedRoles.get(roleName)
 
         if (roleDescriptor == null) {
@@ -92,8 +92,8 @@ class ServiceConfiguration extends ProcessConfiguration {
         return doGetRoleConf(roleDescriptor, null)
     }
 
-    private RoleConfiguration doGetRoleConf(RoleDescriptor roleDescriptor, Closure<RoleConfiguration> configure) {
-        String roleName = roleDescriptor.roleName();
+    private RoleConfiguration doGetRoleConf(RoleDescriptor roleDescriptor, Closure<?> configure) {
+        String roleName = roleDescriptor.roleName()
         RoleConfiguration roleConf = roleConfigurations.get(roleName)
         if (roleConf != null) {
             if (configure != null) {
