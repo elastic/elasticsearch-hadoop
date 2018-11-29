@@ -50,8 +50,10 @@ dependencies {
 Map users = ["client":"password", "gmarx":"swordfish"]
 Map keytabUsers = [
         "HTTP/es.build.elastic.co" : "es.keytab",
-        "hdfs/hadoop.build.elastic.co" : "hadoop.keytab",
-        "yarn/hadoop.build.elastic.co" : "hadoop.keytab",
+        "nn/hadoop.build.elastic.co" : "hadoop.keytab",
+        "dn/hadoop.build.elastic.co" : "hadoop.keytab",
+        "rm/hadoop.build.elastic.co" : "hadoop.keytab",
+        "nm/hadoop.build.elastic.co" : "hadoop.keytab",
         "mapred/hadoop.build.elastic.co" : "hadoop.keytab",
         "HTTP/hadoop.build.elastic.co" : "hadoop.keytab"
 ]
@@ -160,7 +162,8 @@ config.service('hadoop') { ServiceConfiguration s ->
     s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
         // Enable Security
         f.addSetting("hadoop.security.authentication", "kerberos")
-        f.addSetting("hadoop.security.authorization", "false")
+        f.addSetting("hadoop.security.authorization", "true")
+        f.addSetting("hadoop.rpc.protection", "authentication")
 
         // Common Core SSL
         f.addSetting("hadoop.ssl.require.client.cert", "false")
@@ -176,25 +179,31 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("ssl.server.keystore.password", "bigdata")
         f.addSetting("ssl.server.keystore.keypassword", "bigdata")
     }
+    // Shared HDFS Site Config
+    s.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+        f.addSetting("dfs.http.policy", "HTTPS_ONLY")
+        f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+        f.addSetting("dfs.web.authentication.kerberos.keytab", "$hadoopKeytab")
+    }
 
     // Namenode Setup
     s.role('namenode') { RoleConfiguration r ->
         r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("dfs.block.access.token.enable", "true")
+            f.addSetting("dfs.namenode.kerberos.principal", "nn/hadoop.build.elastic.co")
             f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.namenode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
-            f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
-            f.addSetting("dfs.http.policy", "HTTPS_ONLY")
+            f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
         }
     }
 
     // Datanode Setup
     s.role('datanode') { RoleConfiguration r ->
         r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
+            f.addSetting("dfs.datanode.data.dir.perm", "700")
+            f.addSetting("dfs.datanode.kerberos.principal", "dn/hadoop.build.elastic.co")
             f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.datanode.kerberos.principal", "hdfs/hadoop.build.elastic.co")
-            f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co")
+            f.addSetting("dfs.encrypt.data.transfer", "false")
             f.addSetting("dfs.data.transfer.protection", "authentication")
-            f.addSetting("dfs.http.policy", "HTTPS_ONLY")
         }
     }
 
@@ -202,7 +211,7 @@ config.service('hadoop') { ServiceConfiguration s ->
     s.role('resourcemanager') { RoleConfiguration r ->
         r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
             f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
-            f.addSetting("yarn.resourcemanager.principal", "yarn/hadoop.build.elastic.co")
+            f.addSetting("yarn.resourcemanager.principal", "rm/hadoop.build.elastic.co")
         }
     }
 
@@ -210,7 +219,7 @@ config.service('hadoop') { ServiceConfiguration s ->
     s.role('nodemanager') { RoleConfiguration r ->
         r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
             f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
-            f.addSetting("yarn.nodemanager.principal", "yarn/hadoop.build.elastic.co")
+            f.addSetting("yarn.nodemanager.principal", "nm/hadoop.build.elastic.co")
         }
     }
 }
@@ -237,6 +246,34 @@ config.addClusterTask(testCluster)
 //    fromLocal project.file(new File(mrItestResourceDir, 'artists.dat'))
 //    to new File("/data/artists/artists.dat")
 //}
+
+HadoopMRJob createDataDir = config.createClusterTask('createDataDir', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(jar)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": "HTTP/es.build.elastic.co",
+            "test.krb5.keytab": esKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    args = ['-mkdir', '-p', '/data/artists/']
+}
+
+HadoopMRJob copyData = config.createClusterTask('copyData', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(createDataDir, jar)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": "HTTP/es.build.elastic.co",
+            "test.krb5.keytab": esKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
+    args = ['-copyFromLocal', project.file(new File(mrItestResourceDir, 'artists.dat')), "/data/artists/artists.dat"]
+}
+testCluster.dependsOn(copyData)
 
 //HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
 //    clusterConfiguration = config

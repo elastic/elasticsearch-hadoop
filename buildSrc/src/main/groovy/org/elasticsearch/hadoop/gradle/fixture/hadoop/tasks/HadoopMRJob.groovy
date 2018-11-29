@@ -33,6 +33,8 @@ class HadoopMRJob extends AbstractClusterTask {
     Map<String, String> jobSettings = [:]
     List<File> libJars = []
     List<String> args = []
+    Map<String, String> systemProperties = [:]
+    Map<String, String> environmentVariables = [:]
 
     void jobSetting(String key, String value) {
         jobSettings.put(key, value)
@@ -40,6 +42,14 @@ class HadoopMRJob extends AbstractClusterTask {
 
     void jobSettings(Map<String, String> settings) {
         jobSettings.putAll(settings)
+    }
+
+    void systemProperty(String key, String value) {
+        systemProperties.put(key, value)
+    }
+
+    void systemProperties(Map<String, String> settings) {
+        systemProperties.putAll(settings)
     }
 
     @TaskAction
@@ -81,9 +91,31 @@ class HadoopMRJob extends AbstractClusterTask {
 
         Map<String, String> finalEnv = hadoopGateway.getEnvironmentVariables()
         hadoopGateway.getServiceDescriptor().finalizeEnv(finalEnv, hadoopGateway)
-        finalEnv.put('YARN_USER_CLASSPATH', libJars.join(":"))
+
+        if (!libJars.isEmpty()) {
+            finalEnv.put('YARN_USER_CLASSPATH', libJars.join(":"))
+        }
+
+        String javaPropertyEnvVariable = hadoopGateway.getServiceDescriptor().javaOptsEnvSetting(hadoopGateway)
+        if (javaPropertyEnvVariable != null) {
+            List<String> javaOpts = [finalEnv.get(javaPropertyEnvVariable, '')]
+            javaOpts.add(hadoopGateway.getJvmArgs())
+            for (Map<String, String> propertyMap : [hadoopGateway.getSystemProperties(), systemProperties]) {
+                String collectedSystemProperties = propertyMap
+                        .collect { key, value -> "-D${key}=${value}" }
+                        .join(" ")
+                if (!collectedSystemProperties.isEmpty()) {
+                    javaOpts.add(collectedSystemProperties)
+                }
+            }
+            finalEnv.put(javaPropertyEnvVariable, javaOpts.join(" "))
+        }
+
+        finalEnv.putAll(environmentVariables)
 
         // Do command
+        project.logger.info("Executing Command: " + commandLine)
+        project.logger.info("Command Env: " + finalEnv)
         project.exec { ExecSpec spec ->
             spec.commandLine(commandLine)
             spec.environment(finalEnv)

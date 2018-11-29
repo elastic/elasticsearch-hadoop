@@ -106,7 +106,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<String> configFiles(InstanceConfiguration configuration) {
-        return ['core-site.xml', 'hdfs-site.xml', 'yarn-site.xml', 'ssl-server.xml']
+        return ['core-site.xml', 'hdfs-site.xml', 'yarn-site.xml', 'mapred-site.xml', 'ssl-server.xml']
     }
 
     @Override
@@ -131,25 +131,25 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
         // default permissions to disabled
         hdfsSite.putIfAbsent('dfs.permissions.enabled', 'false')
-
         files.put('hdfs-site.xml', hdfsSite)
 
         // yarn-site.xml:
         Map<String, String> yarnSite = container.flattenFile('yarn-site.xml')
-
         files.put('yarn-site.xml', yarnSite)
+
+        // mapred-site.xml
+        Map<String, String> mapredSite = container.flattenFile('mapred-site.xml')
+        files.put('mapred-site.xml', mapredSite)
 
         // core-site.xml:
         Map<String, String> coreSite = container.flattenFile('core-site.xml')
 
         // default FS settings
         coreSite.putIfAbsent('fs.defaultFS', "hdfs://${hdfsSite.get('dfs.namenode.rpc-address')}")
-
         files.put('core-site.xml', coreSite)
 
         // ssl server settings (for HTTPS)
         Map<String, String> sslServer = container.flattenFile('ssl-server.xml')
-
         files.put('ssl-server.xml', sslServer)
 
         return files
@@ -196,6 +196,8 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
             return "YARN_RESOURCEMANAGER_OPTS"
         } else if (configuration.roleDescriptor == NODEMANAGER) {
             return "YARN_NODEMANAGER_OPTS"
+        } else if (configuration.roleDescriptor == GATEWAY) {
+            return "YARN_OPTS"
         }
         throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
     }
