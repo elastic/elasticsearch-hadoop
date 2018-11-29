@@ -23,7 +23,7 @@ import org.apache.commons.httpclient.Credentials;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
-import org.junit.Assert;
+import org.elasticsearch.hadoop.util.Assert;
 
 /**
  * Credentials class that produces an EsToken if it is available on the currently logged in user.
@@ -35,15 +35,15 @@ public class EsTokenCredentials implements Credentials {
     private final String clusterName;
 
     public EsTokenCredentials(UserProvider userProvider, String clusterName) {
-        Assert.assertNotNull("userProvider must not be null", userProvider);
-        Assert.assertNotNull("clusterName must not be null", clusterName);
+        Assert.notNull(userProvider, "userProvider must not be null");
+        Assert.notNull(clusterName, "clusterName must not be null");
         this.userProvider = userProvider;
         this.providedToken = null;
         this.clusterName = clusterName;
     }
 
     public EsTokenCredentials(EsToken providedToken) {
-        Assert.assertNotNull("providedToken must not be null", providedToken);
+        Assert.notNull(providedToken, "providedToken must not be null");
         this.userProvider = null;
         this.providedToken = providedToken;
         this.clusterName = null;
