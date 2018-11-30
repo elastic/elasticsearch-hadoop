@@ -455,59 +455,6 @@ public abstract class StringUtils {
         return new IpAndPort(httpAddr);
     }
 
-    public static String normalize(String path) {
-        if (path == null) {
-            return null;
-        }
-        String pathToUse = path.replace("\\", SLASH);
-
-        int prefixIndex = pathToUse.indexOf(":");
-        String prefix = "";
-        if (prefixIndex != -1) {
-            prefix = pathToUse.substring(0, prefixIndex + 1);
-            if (prefix.contains(SLASH)) {
-                prefix = "";
-            }
-            else {
-                pathToUse = pathToUse.substring(prefixIndex + 1);
-            }
-        }
-        if (pathToUse.startsWith(SLASH)) {
-            prefix = prefix + SLASH;
-            pathToUse = pathToUse.substring(1);
-        }
-
-        List<String> pathList = tokenize(pathToUse, SLASH);
-        List<String> pathTokens = new LinkedList<String>();
-        int tops = 0;
-
-        for (int i = pathList.size() - 1; i >= 0; i--) {
-            String element = pathList.get(i);
-            if (PATH_CURRENT.equals(element)) {
-                // current folder, ignore it
-            }
-            else if (PATH_TOP.equals(element)) {
-                // top folder, skip previous element
-                tops++;
-            }
-            else {
-                if (tops > 0) {
-                    // should it be skipped?
-                    tops--;
-                }
-                else {
-                    pathTokens.add(0, element);
-                }
-            }
-        }
-
-        for (int i = 0; i < tops; i++) {
-            pathTokens.add(0, PATH_TOP);
-        }
-
-        return prefix + concatenate(pathTokens, SLASH);
-    }
-
     public static String stripFieldNameSourcePrefix(String fieldName) {
         if (fieldName != null) {
             if (fieldName.startsWith(SOURCE_FIELD_NAME)) {

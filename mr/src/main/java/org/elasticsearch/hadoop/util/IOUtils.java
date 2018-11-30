@@ -20,6 +20,7 @@ package org.elasticsearch.hadoop.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -28,6 +29,9 @@ import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.net.JarURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
 
@@ -208,5 +212,39 @@ public abstract class IOUtils {
             return new BytesArray(byteArrayInputStreamInternalBuffer((ByteArrayInputStream) in));
         }
         return null;
+    }
+
+    /**
+     * Convert either a file or jar url into a local canonical file, or null if the file is a different scheme.
+     * @param fileURL the url to resolve to a canonical file.
+     * @return null if given URL is null, not using the jar scheme, or not using the file scheme. Otherwise, returns the
+     * String path to the local canonical file.
+     * @throws URISyntaxException If the given URL cannot be transformed into a URI
+     * @throws IOException If the jar cannot be read or if the canonical file cannot be determined
+     */
+    public static String toCanonicalFilePath(URL fileURL) throws URISyntaxException, IOException {
+        if (fileURL == null) {
+            return null;
+        }
+
+        // Only handle jar: and file: schemes
+        if (!"jar".equals(fileURL.getProtocol()) && !"file".equals(fileURL.getProtocol())) {
+            return null;
+        }
+
+        // Parse the jar file location from the jar url. Doesn't open any resources.
+        if ("jar".equals(fileURL.getProtocol())) {
+            JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
+            fileURL = jarURLConnection.getJarFileURL();
+        }
+
+        URI fileURI = fileURL.toURI();
+        File file = new File(fileURI);
+
+        // Use filesystem to resolve any sym links or dots in the path to
+        // a singular unique file path
+        File canonicalFile = file.getCanonicalFile();
+
+        return canonicalFile.toURI().toString();
     }
 }
