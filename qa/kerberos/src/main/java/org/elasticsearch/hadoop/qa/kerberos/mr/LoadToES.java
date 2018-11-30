@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.qa.kerberos.mr;
 
 import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,17 +34,26 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
+import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
 
 public class LoadToES extends Configured implements Tool {
 
     public static final String CONF_FIELD_NAMES = "load.field.names";
 
-    public static void main(String[] args) throws Exception {
-        System.exit(ToolRunner.run(new LoadToES(), args));
+    public static void main(final String[] args) throws Exception {
+        KeytabLogin.doLogin();
+        UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
+            @Override
+            public Void run() throws Exception {
+                System.exit(ToolRunner.run(new LoadToES(), args));
+                return null;
+            }
+        });
     }
 
     @Override
@@ -53,7 +63,9 @@ public class LoadToES extends Configured implements Tool {
         }
 
         Job job = Job.getInstance(getConf(), "LoadToES");
-        job.setJarByClass(getClass());
+        // DO NOT SET JAR BY CLASS HERE
+        //
+        // job.setJarByClass(getClass());
 
         TextInputFormat.addInputPath(job, new Path(args[0]));
 
@@ -61,6 +73,8 @@ public class LoadToES extends Configured implements Tool {
         job.setOutputFormatClass(EsOutputFormat.class);
 
         job.setMapperClass(MapperImpl.class);
+        // Secure Hadoop CANNOT perform shuffle phases without native libraries
+        job.setNumReduceTasks(0);
 
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(LinkedMapWritable.class);

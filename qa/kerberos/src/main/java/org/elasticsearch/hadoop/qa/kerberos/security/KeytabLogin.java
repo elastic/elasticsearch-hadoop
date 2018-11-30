@@ -17,31 +17,29 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.qa.kerberos.dfs;
+package org.elasticsearch.hadoop.qa.kerberos.security;
 
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 
-import org.apache.hadoop.fs.FsShell;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
 
-/**
- * Using FsShell requires you to be logged into Kerberos from the command line (kinit).
- * Since it is not expected for the kerberos packages to be locally installed for builds
- * and testing, we wrap the FsShell program to login via keytab.
- */
-public class SecureFsShell {
+public final class KeytabLogin {
 
-    public static void main(final String[] args) throws IOException, InterruptedException {
-        KeytabLogin.doLogin();
-        UserGroupInformation.getCurrentUser().doAs(new PrivilegedExceptionAction<Void>() {
-            @Override
-            public Void run() throws Exception {
-                FsShell.main(args);
-                return null;
-            }
-        });
+    private static final String SYS_PRINCIPAL_NAME = "test.krb5.principal";
+    private static final String SYS_KEYTAB_PATH = "test.krb5.keytab";
+
+    public static void doLogin() throws IOException {
+        String principalName = System.getProperty(SYS_PRINCIPAL_NAME);
+        String keytabPath = System.getProperty(SYS_KEYTAB_PATH);
+
+        if (principalName == null) {
+            throw new IllegalArgumentException("Must specify principal name with ["+SYS_PRINCIPAL_NAME+"] java property");
+        } else if (keytabPath == null) {
+            throw new IllegalArgumentException("Must specify keytab path with ["+SYS_KEYTAB_PATH+"] java property");
+        }
+
+        UserGroupInformation.loginUserFromKeytab(principalName, keytabPath);
     }
 
+    private KeytabLogin() {}
 }

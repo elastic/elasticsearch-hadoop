@@ -135,6 +135,11 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
         // yarn-site.xml:
         Map<String, String> yarnSite = container.flattenFile('yarn-site.xml')
+
+        // Set the shuffle options
+        yarnSite.putIfAbsent("yarn.nodemanager.aux-services", "mapreduce_shuffle")
+        yarnSite.putIfAbsent("yarn.nodemanager.aux-services.mapreduce_shuffle.class", "org.apache.hadoop.mapred.ShuffleHandler")
+
         files.put('yarn-site.xml', yarnSite)
 
         // mapred-site.xml
