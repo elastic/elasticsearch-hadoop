@@ -19,11 +19,9 @@
 
 package org.elasticsearch.hadoop.qa.kerberos.dfs;
 
-import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 
 import org.apache.hadoop.fs.FsShell;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
 
 /**
@@ -33,9 +31,8 @@ import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
  */
 public class SecureFsShell {
 
-    public static void main(final String[] args) throws IOException, InterruptedException {
-        KeytabLogin.doLogin();
-        UserGroupInformation.getCurrentUser().doAs(new PrivilegedExceptionAction<Void>() {
+    public static void main(final String[] args) throws Exception {
+        KeytabLogin.doAfterLogin(new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 FsShell.main(args);

@@ -19,8 +19,11 @@
 
 package org.elasticsearch.hadoop.qa.kerberos.spark
 
+import java.security.PrivilegedExceptionAction
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin
 import org.elasticsearch.spark._
 
 class LoadToES(args: Array[String]) {
@@ -52,8 +55,6 @@ class LoadToES(args: Array[String]) {
       })
 
     parsedData.saveToEs(resource)
-
-    spark.stop()
   }
 }
 
@@ -61,7 +62,8 @@ object LoadToES {
   val CONF_FIELD_NAMES = "spark.load.field.names"
 
   def main(args: Array[String]): Unit = {
-    new LoadToES(args).run()
-    System.exit(0)
+    KeytabLogin.doAfterLogin(new PrivilegedExceptionAction[Unit] {
+      override def run(): Unit = new LoadToES(args).run()
+    })
   }
 }

@@ -34,7 +34,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
@@ -46,8 +45,7 @@ public class LoadToES extends Configured implements Tool {
     public static final String CONF_FIELD_NAMES = "load.field.names";
 
     public static void main(final String[] args) throws Exception {
-        KeytabLogin.doLogin();
-        UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
+        KeytabLogin.doAfterLogin(new PrivilegedExceptionAction<Void>() {
             @Override
             public Void run() throws Exception {
                 System.exit(ToolRunner.run(new LoadToES(), args));

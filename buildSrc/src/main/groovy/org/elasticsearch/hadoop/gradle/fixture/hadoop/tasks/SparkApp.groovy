@@ -41,8 +41,11 @@ class SparkApp extends AbstractClusterTask {
     Master master = Master.YARN
     DeployMode deployMode = DeployMode.CLIENT
     Map<String, String> jobSettings = [:]
+    String principal
+    String keytab
     List<File> libJars = []
     List<String> args = []
+    Map<String, String> env = [:]
 
     void deployMode(DeployMode mode) {
         deployMode = mode
@@ -94,7 +97,14 @@ class SparkApp extends AbstractClusterTask {
 
         String argDeployMode = getDeployModeValue()
 
-        // bin/spark-submit --master yarn --deploy-mode client --class <class> path/to/jar.jar
+        // bin/spark-submit \
+        //          --class <class> \
+        //          --master yarn \
+        //          --deploy-mode client \
+        //          [--conf k=v] \
+        //          [--jars <jar,jar>] \
+        //          [--principal <principal> --keytab <keytab>] \
+        //          path/to/jar.jar
         List<String> commandLine = [command.toString(),
                                     '--class', jobClass,
                                     '--master', argMaster,
@@ -104,7 +114,14 @@ class SparkApp extends AbstractClusterTask {
             commandLine.addAll(['--jars', libJars.join(',')])
         }
 
-        jobSettings.collect { k, v -> "$k=$v" }.forEach { conf -> commandLine.add('--conf'); commandLine.add(conf) }
+        jobSettings.collect { k, v -> /$k=$v/ }.forEach { conf -> commandLine.add('--conf'); commandLine.add(conf) }
+
+        if (DeployMode.CLUSTER.equals(deployMode) && (principal != null || keytab != null)) {
+            if (principal == null || keytab == null) {
+                throw new GradleException("Must specify both principal and keytab! Principal:[$principal] Keytab:[$keytab]")
+            }
+            commandLine.addAll(['--principal', principal, '--keytab', keytab])
+        }
 
         commandLine.add(jobJar.toString())
         commandLine.addAll(args)
@@ -112,8 +129,10 @@ class SparkApp extends AbstractClusterTask {
         // HADOOP_CONF_DIR=..../etc/hadoop
         Map<String, String> finalEnv = sparkGateway.getEnvironmentVariables()
         sparkGateway.getServiceDescriptor().finalizeEnv(finalEnv, sparkGateway)
+        finalEnv.putAll(env)
 
         // Do command
+        project.logger.info("Command Env: " + finalEnv)
         project.exec { ExecSpec spec ->
             spec.commandLine(commandLine)
             spec.environment(finalEnv)

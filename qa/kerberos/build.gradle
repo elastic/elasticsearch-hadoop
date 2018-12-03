@@ -250,9 +250,9 @@ config.service('hadoop') { ServiceConfiguration s ->
         }
     }
 }
+config.service('spark')
 //config.service('hive')
 //config.service('pig')
-//config.service('spark')
 
 // Hadoop cluster should just depend on the jar and test jar artifacts
 def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
@@ -327,22 +327,32 @@ HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.clas
 esCluster.addTask(mrLoadData)
 testCluster.dependsOn(mrLoadData)
 
-//SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
-//    clusterConfiguration = config
-//    dependsOn(copyData)
-//    jobJar = jar.archivePath
-//    libJars.add(testingJar.archivePath)
-//    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
-//    jobSettings([
-//            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
-//            'spark.es.nodes': 'localhost:9500',
-//            'spark.load.field.names': 'number,name,url,picture,@timestamp,tag'
-//    ])
-//    args = ['/data/artists/artists.dat']
-//}
-//esCluster.addTask(sparkLoadData)
-//testCluster.dependsOn(sparkLoadData)
-//
+// Run the Spark job to load data to ES. Ensure Kerberos settings are available.
+SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
+    clusterConfiguration = config
+    dependsOn(copyData)
+//    deployModeCluster()
+//    principal = clientPrincipal + realm
+//    keytab = clientKeytab.toString()
+    jobJar = jar.archivePath
+    libJars.add(testingJar.archivePath)
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
+    jobSettings([
+            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+            'spark.es.nodes': 'localhost:9500',
+            'spark.load.field.names': 'number,name,url,picture,@timestamp,tag',
+            'spark.yarn.am.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ])
+    env.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
+            "-Dtest.krb5.principal=$clientPrincipal$realm " +
+            "-Dtest.krb5.keytab=${clientKeytab.toString()}")
+    args = ['/data/artists/artists.dat']
+}
+esCluster.addTask(sparkLoadData)
+testCluster.dependsOn(sparkLoadData)
+
 //HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
 //    clusterConfiguration = config
 //    dependsOn(copyData)
