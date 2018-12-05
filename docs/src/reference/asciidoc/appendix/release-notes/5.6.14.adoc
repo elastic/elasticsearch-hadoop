@@ -1,6 +1,6 @@
 [[eshadoop-5.6.14]]
 == Elasticsearch for Apache Hadoop version 5.6.14
-December 5, 2018
+TBD
 
-ES-Hadoop 5.6.13 is a version compatibility release, tested specifically against Elasticsearch 5.6.13.
+ES-Hadoop 5.6.14 is a version compatibility release, tested specifically against Elasticsearch 5.6.14.
 
