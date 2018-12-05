@@ -30,6 +30,8 @@ class HiveBeeline extends AbstractClusterTask {
 
     File script
     List<File> libJars = []
+    String hivePrincipal
+    Map<String, String> env = [:]
 
     @TaskAction
     void runBeeline() {
@@ -52,7 +54,7 @@ class HiveBeeline extends AbstractClusterTask {
         File command = new File(binDir, commandName)
 
         // Connection String
-        String connectionString = getConnectionString(hiveServer)
+        String connectionString = getConnectionString(hiveServer, hivePrincipal)
 
         // bin/beeline -u <connection> [-f <scriptFile>]
         List<String> commandLine = [command.toString(), '-u', connectionString]
@@ -65,14 +67,16 @@ class HiveBeeline extends AbstractClusterTask {
         // Use the service descriptor to pick up HADOOP_HOME=<hadoopHome>
         Map<String, String> environment = hiveServer.getEnvironmentVariables()
         hiveServer.getServiceDescriptor().finalizeEnv(environment, hiveServer)
+        environment.putAll(env)
 
+        project.logger.info("Using Environment: $environment")
         project.exec { ExecSpec spec ->
             spec.setCommandLine(commandLine)
             spec.environment(environment)
         }
     }
 
-    static String getConnectionString(InstanceConfiguration hiveServer) {
+    static String getConnectionString(InstanceConfiguration hiveServer, String hivePrincipal) {
         Map<String, String> hiveconf = hiveServer
                 .getServiceDescriptor()
                 .collectConfigFilesContents(hiveServer)
@@ -81,8 +85,13 @@ class HiveBeeline extends AbstractClusterTask {
         String thriftPort = hiveconf.getOrDefault('hive.server2.thrift.port', '10000')
         String thriftBindHost = hiveconf.getOrDefault('hive.server2.thrift.bind.host', 'localhost')
 
+        String authority = ""
+        if (hivePrincipal != null && !hivePrincipal.isEmpty()) {
+            authority = ";principal=$hivePrincipal"
+        }
+
         // jdbc:hive2://localhost:10000
-        return "jdbc:hive2://${thriftBindHost}:${thriftPort}"
+        return "jdbc:hive2://${thriftBindHost}:${thriftPort}/${authority}"
     }
 
     File rewriteScript(File hiveHome) {

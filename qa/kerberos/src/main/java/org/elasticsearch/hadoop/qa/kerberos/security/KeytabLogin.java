@@ -43,6 +43,7 @@ public final class KeytabLogin {
         }
 
         UserGroupInformation.loginUserFromKeytab(principalName, keytabPath);
+        System.out.println("Login complete");
         return UserGroupInformation.getCurrentUser().doAs(action);
     }
 

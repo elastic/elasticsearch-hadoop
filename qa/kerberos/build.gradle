@@ -19,8 +19,10 @@
 
 
 import org.elasticsearch.gradle.test.AntFixture
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
@@ -57,10 +59,12 @@ String datanodePrincipal = 'dn' + hostPart
 String resourceManagerPrincipal = 'rm' + hostPart
 String nodeManagerPrincipal = 'nm' + hostPart
 String mapredPrincipal = 'mapred' + hostPart
+String hivePrincipalName = 'hive' + hostPart
 
 String esKeytabName = 'es.keytab'
 String clientKeytabName = 'client.keytab'
 String hadoopKeytabName = 'hadoop.keytab'
+String hiveKeytabName = 'hive.keytab'
 
 Map users = ["client":"password", "gmarx":"swordfish"]
 Map<String, String> keytabUsers = [:]
@@ -73,6 +77,7 @@ keytabUsers.put(datanodePrincipal, hadoopKeytabName)
 keytabUsers.put(resourceManagerPrincipal, hadoopKeytabName)
 keytabUsers.put(nodeManagerPrincipal, hadoopKeytabName)
 keytabUsers.put(mapredPrincipal, hadoopKeytabName)
+keytabUsers.put(hivePrincipalName, hiveKeytabName)
 
 // Configure MiniKDC
 AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
@@ -104,6 +109,7 @@ java.nio.file.Path krb5Conf = fixtureDir.resolve("krb5.conf")
 java.nio.file.Path esKeytab = fixtureDir.resolve(esKeytabName)
 java.nio.file.Path clientKeytab = fixtureDir.resolve(clientKeytabName)
 java.nio.file.Path hadoopKeytab = fixtureDir.resolve(hadoopKeytabName)
+java.nio.file.Path hiveKeytab = fixtureDir.resolve(hiveKeytabName)
 
 // Configure ES with Kerberos Auth
 esCluster {
@@ -251,7 +257,12 @@ config.service('hadoop') { ServiceConfiguration s ->
     }
 }
 config.service('spark')
-//config.service('hive')
+config.service('hive') { ServiceConfiguration s ->
+    s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
+    s.addSetting('hive.server2.authentication', 'kerberos')
+    s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
+    s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
+}
 //config.service('pig')
 
 // Hadoop cluster should just depend on the jar and test jar artifacts
@@ -350,18 +361,40 @@ SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.clas
             "-Dtest.krb5.keytab=${clientKeytab.toString()}")
     args = ['/data/artists/artists.dat']
 }
-esCluster.addTask(sparkLoadData)
-testCluster.dependsOn(sparkLoadData)
+//esCluster.addTask(sparkLoadData)
+//testCluster.dependsOn(sparkLoadData)
 
-//HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
-//    clusterConfiguration = config
-//    dependsOn(copyData)
-//    script = new File(resourceDir, 'hive/load_to_es.sql')
-//    libJars.add(testingJar.archivePath)
-//}
-//esCluster.addTask(hiveLoadData)
-//testCluster.dependsOn(hiveLoadData)
-//
+// Replace the regular beeline script with our own shimmed one. All we do is perform a keytab login and
+// delegate on regularly. This is easier than re-implementing most of beeline.
+Copy patchBeeline = config.createClusterTask('patchBeeline', Copy.class) {
+    InstanceConfiguration i = config.service('hive').role('hiveserver').instance(0)
+    ServiceDescriptor hive = i.getServiceDescriptor()
+    Object lazyEvalBeelineScript = "${->i.getBaseDir().toPath().resolve(hive.homeDirName(i)).resolve(hive.scriptDir(i)).resolve('ext').toString()}"
+    String patchedBeeline = resourceDir.toPath().resolve('hive').resolve('patches').resolve('1.2.2').resolve('beeline.sh').toString()
+    // Just in case any of the directories in Hive are shifted around, before running the fixture, we resolve
+    // the path to the beeline ext script lazily.
+    from patchedBeeline
+    into lazyEvalBeelineScript
+    setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+}
+
+HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.class) {
+    clusterConfiguration = config
+    dependsOn(jar, copyData, patchBeeline)
+    hivePrincipal = hivePrincipalName + realm
+    script = new File(resourceDir, 'hive/load_to_es.sql')
+    libJars.add(testingJar.archivePath)
+    env.putAll([
+            'HADOOP_CLIENT_OPTS':
+                    "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
+                    "-Dtest.krb5.principal=$clientPrincipal$realm " +
+                    "-Dtest.krb5.keytab=${clientKeytab.toString()} ",
+            'TEST_LIB': jar.archivePath
+    ])
+}
+esCluster.addTask(hiveLoadData)
+testCluster.dependsOn(hiveLoadData)
+
 //PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
 //    clusterConfiguration = config
 //    dependsOn(copyData)
