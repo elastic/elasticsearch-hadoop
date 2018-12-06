@@ -205,25 +205,21 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("ssl.server.keystore.password", "bigdata")
         f.addSetting("ssl.server.keystore.keypassword", "bigdata")
     }
-
     // HDFS Site Config
     s.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("dfs.http.policy", "HTTPS_ONLY")
         f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co$realm")
         f.addSetting("dfs.web.authentication.kerberos.keytab", "$hadoopKeytab")
-
         f.addSetting("dfs.block.access.token.enable", "true")
         f.addSetting("dfs.namenode.kerberos.principal", "$namenodePrincipal$realm")
         f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
         f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
-
         f.addSetting("dfs.datanode.data.dir.perm", "700")
         f.addSetting("dfs.datanode.kerberos.principal", "$datanodePrincipal$realm")
         f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
         f.addSetting("dfs.encrypt.data.transfer", "false")
         f.addSetting("dfs.data.transfer.protection", "authentication")
     }
-
     // Yarn Site Config
     s.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
@@ -231,7 +227,6 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("yarn.nodemanager.principal", "$nodeManagerPrincipal$realm")
         f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
     }
-
     // Mapred Site Config
     s.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("mapreduce.framework.name", "yarn")
@@ -249,7 +244,14 @@ config.service('hive') { ServiceConfiguration s ->
     s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
     s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
 }
-//config.service('pig')
+config.service('pig') { ServiceConfiguration s ->
+    s.addSetting('java.security.krb5.conf', krb5Conf.toString())
+    s.addSetting('hadoop.security.krb5.principal', "$clientPrincipal$realm")
+    s.addSetting('hadoop.security.krb5.keytab', clientKeytab.toString())
+    s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+    s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+    s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+}
 
 // Hadoop cluster should just depend on the jar and test jar artifacts
 def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
@@ -381,13 +383,16 @@ HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.
 esCluster.addTask(hiveLoadData)
 testCluster.dependsOn(hiveLoadData)
 
-//PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
-//    clusterConfiguration = config
-//    dependsOn(copyData)
-//    script = new File(resourceDir, 'pig/load_to_es.pig')
-//    libJars.add(testingJar.archivePath)
-//}
-//esCluster.addTask(pigLoadData)
-//testCluster.dependsOn(pigLoadData)
+PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
+    clusterConfiguration = config
+    dependsOn(copyData)
+    script = new File(resourceDir, 'pig/load_to_es.pig')
+    libJars.add(testingJar.archivePath)
+    env = [
+            'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ]
+}
+esCluster.addTask(pigLoadData)
+testCluster.dependsOn(pigLoadData)
 
 HadoopClusterFormationTasks.setup(project, config)

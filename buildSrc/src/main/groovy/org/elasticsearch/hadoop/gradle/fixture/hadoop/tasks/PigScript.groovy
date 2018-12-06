@@ -30,6 +30,7 @@ class PigScript extends AbstractClusterTask {
 
     File script
     List<File> libJars = []
+    Map<String, String> env = [:]
 
     @TaskAction
     void runPig() {
@@ -69,6 +70,7 @@ class PigScript extends AbstractClusterTask {
         // Use the service descriptor to pick up HADOOP_HOME=<hadoopHome>
         Map<String, String> environment = pigGateway.getEnvironmentVariables()
         pigGateway.getServiceDescriptor().finalizeEnv(environment, pigGateway)
+        environment.putAll(env)
 
         // Additional env's
         // PIG_HEAPSIZE - In MB
@@ -86,6 +88,7 @@ class PigScript extends AbstractClusterTask {
         // -x/-exectype spark/spark_local (If running on Spark is wanted)
         // -useHCatalog (If HCataclog is wanted)
 
+        project.logger.info("Environment: ${environment}")
         project.exec { ExecSpec spec ->
             spec.setCommandLine(commandLine)
             spec.environment(environment)
