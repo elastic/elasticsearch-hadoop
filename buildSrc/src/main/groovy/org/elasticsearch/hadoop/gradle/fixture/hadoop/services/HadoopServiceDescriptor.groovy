@@ -28,8 +28,15 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
+import org.gradle.api.GradleException
 
 class HadoopServiceDescriptor implements ServiceDescriptor {
+
+    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
+    static {
+        VERSION_MAP.put(new Version(2, 7, 7),
+                ['SHA-512': '17c8917211dd4c25f78bf60130a390f9e273b0149737094e45f4ae5c917b1174b97eb90818c5df068e607835120126281bcc07514f38bd7fd3cb8e9d3db1bdde'])
+    }
 
     static final RoleDescriptor NAMENODE = RoleDescriptor.requiredProcess('namenode')
     static final RoleDescriptor DATANODE = RoleDescriptor.requiredProcess('datanode', [NAMENODE])
@@ -85,9 +92,11 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        if (version.major == 2 && version.minor == 7 && version.revision == 7) {
-            return ['SHA-512': '17c8917211dd4c25f78bf60130a390f9e273b0149737094e45f4ae5c917b1174b97eb90818c5df068e607835120126281bcc07514f38bd7fd3cb8e9d3db1bdde']
+        Map<String, String> hashVerifications = VERSION_MAP.get(version)
+        if (hashVerifications == null) {
+            throw new GradleException("Unsupported version [$version] - No download hash configured")
         }
+        return hashVerifcations
     }
 
     @Override

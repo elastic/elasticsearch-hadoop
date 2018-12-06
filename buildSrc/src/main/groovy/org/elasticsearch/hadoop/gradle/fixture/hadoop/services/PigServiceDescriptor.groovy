@@ -27,8 +27,15 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
+import org.gradle.api.GradleException
 
 class PigServiceDescriptor implements ServiceDescriptor {
+
+    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
+    static {
+        VERSION_MAP.put(new Version(0, 17, 0),
+                ['MD5': 'da76998409fe88717b970b45678e00d4'])
+    }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('pig', [])
 
@@ -77,7 +84,11 @@ class PigServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        return ['MD5': 'da76998409fe88717b970b45678e00d4']
+        Map<String, String> hashVerifications = VERSION_MAP.get(version)
+        if (hashVerifications == null) {
+            throw new GradleException("Unsupported version [$version] - No download hash configured")
+        }
+        return hashVerifcations
     }
 
     @Override

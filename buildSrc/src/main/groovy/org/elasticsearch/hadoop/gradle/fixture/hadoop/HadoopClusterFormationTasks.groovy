@@ -126,6 +126,10 @@ class HadoopClusterFormationTasks {
                         instanceDependencies.add(clusterTaskPairs.last().startTask)
                     }
 
+                    // Collect the tasks that are depend on the service being up, and are finalized by
+                    // the service stopping
+                    def instanceClusterTasks = instanceConfiguration.getClusterTasks()
+
                     // Collect the instance info
                     InstanceInfo instanceInfo = new InstanceInfo(instanceConfiguration, project, prefix, sharedDir)
                     nodes.add(instanceInfo)
@@ -133,8 +137,8 @@ class HadoopClusterFormationTasks {
                     // Create the tasks for the instance
                     TaskPair instanceTasks
                     try {
-                        instanceTasks = configureNode(project, prefix, clusterConfiguration.getClusterTasks(),
-                                instanceDependencies, instanceInfo, distributionTasks)
+                        instanceTasks = configureNode(project, prefix, instanceDependencies, instanceInfo,
+                                distributionTasks)
                     } catch (Exception e) {
                         throw new GradleException(
                                 "Exception occurred while initializing instance [${instanceInfo.toString()}]", e)
@@ -146,10 +150,21 @@ class HadoopClusterFormationTasks {
                     clusterTaskPairs.add(instanceTasks)
 
                     // Make each cluster task that needs this instance depend on it, and also be finalized by it.
-                    instanceConfiguration.getClusterTasks().forEach { Task clusterTask ->
+                    instanceClusterTasks.forEach { Task clusterTask ->
                         clusterTask.dependsOn(instanceTasks.startTask)
                         if (instanceTasks.stopTask != null) {
                             clusterTask.finalizedBy(instanceTasks.stopTask)
+                        }
+                    }
+
+                    // Check to see if any dependencies are Fixtures, and if they are, transfer the Fixture stop tasks
+                    // to the cluster task finalized-by tasks.
+                    for (Object dependency : instanceConfiguration.getDependencies()) {
+                        if (dependency instanceof Fixture) {
+                            def depStop = ((Fixture)dependency).stopTask
+                            instanceClusterTasks.forEach { Task clusterTask ->
+                                clusterTask.finalizedBy(depStop)
+                            }
                         }
                     }
                 }
@@ -224,8 +239,8 @@ class HadoopClusterFormationTasks {
         return new DistributionTasks(download: downloadTask, verify: verifyTask)
     }
 
-    static TaskPair configureNode(Project project, String prefix, List<Task> clusterTasks, Object dependsOn,
-                                  InstanceInfo node, DistributionTasks distribution) {
+    static TaskPair configureNode(Project project, String prefix, Object dependsOn, InstanceInfo node,
+                                  DistributionTasks distribution) {
         Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
@@ -282,20 +297,22 @@ class HadoopClusterFormationTasks {
             setup = configureExecTask(taskName(prefix, node, command.getKey()), project, setup, node, args)
         }
 
+        // Configure daemon start task
         Task start = configureStartTask(taskName(prefix, node, 'start'), project, setup, node)
 
         // Configure daemon stop task
         Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
-        // We're running in the background, so make sure that the stop command is called after the runner task
-        // finishes
-        clusterTasks.forEach { Task t -> t.finalizedBy(stop) }
+
+        // We're running in the background, so make sure that the stop command is called after all cluster tasks finish
         start.finalizedBy(stop)
-        // FIXHERE: This should be tested as the instance conf dependencies.
-        for (Object dependency : node.config.getClusterConf().getDependencies()) {
+
+        // Go through the given dependencies for the instance and if any of them are Fixtures, pick the stop tasks off
+        // and set the instance tasks as finalized by them.
+        for (Object dependency : node.config.getDependencies()) {
             if (dependency instanceof Fixture) {
                 def depStop = ((Fixture)dependency).stopTask
-                clusterTasks.forEach { Task t -> t.finalizedBy(depStop) }
                 start.finalizedBy(depStop)
+                stop.finalizedBy(depStop)
             }
         }
         return new TaskPair(startTask: start, stopTask: stop)
@@ -375,7 +392,7 @@ class HadoopClusterFormationTasks {
             }
 
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-                // FIXHERE eventually
+                // TODO Test on Windows
                 exec.executable 'cmd'
                 exec.args '/C', 'call'
                 exec.args execArgs.collect { a -> new EscapeCommaWrapper(arg: a)}
@@ -444,7 +461,6 @@ class HadoopClusterFormationTasks {
     }
 
     static Task configureStopTask(String name, Project project, Object depends, InstanceInfo node) {
-        // FIXHERE: Fix the pidDir vs pidFile resolution when we get the daemon tasks to generate pids correctly
         return project.tasks.create(name: name, type: LoggedExec, dependsOn: depends) {
             group = 'hadoopFixture'
             onlyIf { node.pidFile.exists() }

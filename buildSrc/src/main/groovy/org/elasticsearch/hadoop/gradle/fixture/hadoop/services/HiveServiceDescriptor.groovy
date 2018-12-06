@@ -27,8 +27,15 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
+import org.gradle.api.GradleException
 
 class HiveServiceDescriptor implements ServiceDescriptor {
+
+    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
+    static {
+        VERSION_MAP.put(new Version(1, 2, 2),
+                ['SHA-256' : '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1'])
+    }
 
     static RoleDescriptor HIVESERVER = RoleDescriptor.requiredProcess('hiveserver')
 
@@ -79,8 +86,11 @@ class HiveServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        // FIXHERE only for 1.2.2
-        return ['SHA-256': '763b246a1a1ceeb815493d1e5e1d71836b0c5b9be1c4cd9c8d685565113771d1']
+        Map<String, String> hashVerifications = VERSION_MAP.get(version)
+        if (hashVerifications == null) {
+            throw new GradleException("Unsupported version [$version] - No download hash configured")
+        }
+        return hashVerifcations
     }
 
     @Override
@@ -106,8 +116,6 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
         Map<String, String> hiveSite = configuration.getSettingsContainer().flattenFile('hive-site.xml')
-//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.groups', '*')
-//        hiveSite.putIfAbsent('hadoop.proxyuser.hive.hosts', '*')
         return ['hive-site.xml' : hiveSite]
     }
 
@@ -119,7 +127,6 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         // We specify the hive root logger to print to console via the hiveconf override.
-        // FIXHERE: This might make sense to put in the default settings?
         return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']
     }
 
@@ -151,13 +158,10 @@ class HiveServiceDescriptor implements ServiceDescriptor {
         String homeDirName = hdfsServiceDescriptor.homeDirName(namenodeConfiguration)
         File hadoopHome = new File(hadoopBaseDir, homeDirName)
         env.put('HADOOP_HOME', hadoopHome.toString())
-
-//        env.put('HADOOP_USER_NAME', 'hadoop')
     }
 
     @Override
     Map<String, Object[]> defaultSetupCommands(InstanceConfiguration configuration) {
-        //FIXHERE: Need a tmp dir accessible to all in HDFS
         return [:] // None for now. Hive may require a schema tool to be run in the future though.
     }
 }

@@ -27,8 +27,15 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
+import org.gradle.api.GradleException
 
 class SparkYarnServiceDescriptor implements ServiceDescriptor {
+
+    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
+    static {
+        VERSION_MAP.put(new Version(2, 3, 1),
+                ['SHA-512': 'DC3A97F3D99791D363E4F70A622B84D6E313BD852F6FDBC777D31EAB44CBC112CEEAA20F7BF835492FB654F48AE57E9969F93D3B0E6EC92076D1C5E1B40B4696'])
+    }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
 
@@ -81,8 +88,11 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Map<String, String> packageHashVerification(Version version) {
-        // FIXHERE: Only for 2.3.1
-        return ['SHA-512': 'DC3A97F3D99791D363E4F70A622B84D6E313BD852F6FDBC777D31EAB44CBC112CEEAA20F7BF835492FB654F48AE57E9969F93D3B0E6EC92076D1C5E1B40B4696']
+        Map<String, String> hashVerifications = VERSION_MAP.get(version)
+        if (hashVerifications == null) {
+            throw new GradleException("Unsupported version [$version] - No download hash configured")
+        }
+        return hashVerifcations
     }
 
     @Override
@@ -128,10 +138,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     String javaOptsEnvSetting(InstanceConfiguration configuration) {
-        return '' //FIXHERE: Spark jobs get their jvm opts through spark.executor.extraJavaOptions
-        // or spark.yarn.am.extraJavaOptions for YARN Client Mode
-        // or spark.driver.extraJavaOptions for YARN cluster mode
-        // Heap settings should be done in spark.yarn.am.memory
+        return ''
     }
 
     @Override

@@ -38,28 +38,6 @@ abstract class ProcessConfiguration {
         this.project = project
     }
 
-    /*
-     * FIXHERE: Pick properties to add here
-     * String distribution? Nope, only Tar supported
-     * int num nodes? set this at the role level?
-     * int num bwc nodes? no, hadoop should be homogeneous
-     * Version bwc version? Not set yet. Set this at the service level?
-     * int httpPort? Nah
-     * int transportPort? Nah
-     * Closure<String> dataDirectory? This might be good to set
-     * String clusterName? Defaults to prefix at the moment
-     * boolean daemonize? Should always be true - not sure what we get for it being false
-     * boolean debug? Yeah, add it, super useful if it is ever needed
-     * mimimumMasterNodes? Not needed
-     * String jvmArgs? Yes
-     * boolean cleanShared? Sure, but at the service level
-     * Closure waitCondition? Yes
-     *      takes NodeInfo and AntBuilder (We'll probably have InstanceInfo for each item)
-     *      hits wait URL and writes url contents to wait.success
-     *      returns that wait.success exists
-     * nodeStartupWaitSeconds, yes 30
-     */
-
     private final Project project
     private Map<String, String> systemProperties = new HashMap<>()
     private Map<String, String> environmentVariables = new HashMap<>()

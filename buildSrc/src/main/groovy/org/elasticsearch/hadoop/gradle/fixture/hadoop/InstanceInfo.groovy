@@ -131,8 +131,7 @@ class InstanceInfo {
         failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
 
-        // FIXHERE Is this needed for Hadoop?
-        // Determine Java Version
+        // FIXHERE Determine Java Version
 //        if (version.before("6.2.0")) {
 //            javaVersion = 8
 //        } else if (version.onOrAfter("6.2.0") && version.before("6.3.0")) {
@@ -155,7 +154,7 @@ class InstanceInfo {
         args = []
         List<String> startCommandLine = config.getServiceDescriptor().startCommand(config)
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            // FIXHERE: Test on windows to see if this actually works
+            // TODO: Test on windows to see if this actually works
             executable = 'cmd'
             args.add('/C')
             args.add('"') // quote the entire command
@@ -187,14 +186,6 @@ class InstanceInfo {
         if (startCommandLine.size() > 1) {
             args.addAll(startCommandLine.tail())
         }
-
-        // FIXHERE Is this needed for Hadoop?
-//        for (Map.Entry<String, String> property : System.properties.entrySet()) {
-//            if (property.key.startsWith('tests.es.')) {
-//                args.add("-E")
-//                args.add("${property.key.substring('tests.es.'.size())}=${property.value}")
-//            }
-//        }
 
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
             args.add('"') // end the entire command, quoted
@@ -259,7 +250,7 @@ class InstanceInfo {
 
     void writeWrapperScripts() {
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-            // FIXHERE Eventually support Windows
+            // TODO Eventually support Windows
             throw new GradleException('Full test fixtures on Windows are currently unsupported')
         }
         String pidWrapperScriptContents = "echo \$\$> ${pidFile}; exec \"${startScript}\" \"\$@\" > run.log 2>&1;"
