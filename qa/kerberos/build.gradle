@@ -184,7 +184,7 @@ config.addDependency(kdcFixture)
 
 config.service('hadoop') { ServiceConfiguration s ->
     s.addSystemProperty("java.security.krb5.conf", krb5Conf.toString())
-    // Shared Core Site Config
+    // Core Site Config
     s.settingsFile('core-site.xml') { SettingsContainer.FileSettings f ->
         // Enable Security
         f.addSetting("hadoop.security.authentication", "kerberos")
@@ -195,65 +195,48 @@ config.service('hadoop') { ServiceConfiguration s ->
         f.addSetting("hadoop.ssl.keystores.factory.class", "org.apache.hadoop.security.ssl.FileBasedKeyStoresFactory")
         f.addSetting("hadoop.ssl.server.conf", "ssl-server.xml")
         f.addSetting("hadoop.ssl.client.conf", "ssl-client.xml")
+        f.addSetting("hadoop.proxyuser.hive.hosts", "*")
+        f.addSetting("hadoop.proxyuser.hive.groups", "*")
     }
-    // Shared SSL Server Config
+    // SSL Server Config
     s.settingsFile('ssl-server.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("ssl.server.keystore.type", "jks")
         f.addSetting("ssl.server.keystore.location", "${resourceDir.getAbsolutePath()}/ssl/server.jks")
         f.addSetting("ssl.server.keystore.password", "bigdata")
         f.addSetting("ssl.server.keystore.keypassword", "bigdata")
     }
-    // Shared HDFS Site Config
+
+    // HDFS Site Config
     s.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("dfs.http.policy", "HTTPS_ONLY")
         f.addSetting("dfs.web.authentication.kerberos.principal", "HTTP/hadoop.build.elastic.co$realm")
         f.addSetting("dfs.web.authentication.kerberos.keytab", "$hadoopKeytab")
+
+        f.addSetting("dfs.block.access.token.enable", "true")
+        f.addSetting("dfs.namenode.kerberos.principal", "$namenodePrincipal$realm")
+        f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
+        f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
+
+        f.addSetting("dfs.datanode.data.dir.perm", "700")
+        f.addSetting("dfs.datanode.kerberos.principal", "$datanodePrincipal$realm")
+        f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
+        f.addSetting("dfs.encrypt.data.transfer", "false")
+        f.addSetting("dfs.data.transfer.protection", "authentication")
     }
 
-    // Namenode Setup
-    s.role('namenode') { RoleConfiguration r ->
-        r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("dfs.block.access.token.enable", "true")
-            f.addSetting("dfs.namenode.kerberos.principal", "$namenodePrincipal$realm")
-            f.addSetting("dfs.namenode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.namenode.kerberos.internal.spnego.principal", "HTTP/hadoop.build.elastic.co")
-        }
+    // Yarn Site Config
+    s.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
+        f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
+        f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
+        f.addSetting("yarn.nodemanager.principal", "$nodeManagerPrincipal$realm")
+        f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
     }
 
-    // Datanode Setup
-    s.role('datanode') { RoleConfiguration r ->
-        r.settingsFile('hdfs-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("dfs.datanode.data.dir.perm", "700")
-            f.addSetting("dfs.datanode.kerberos.principal", "$datanodePrincipal$realm")
-            f.addSetting("dfs.datanode.keytab.file", "$hadoopKeytab")
-            f.addSetting("dfs.encrypt.data.transfer", "false")
-            f.addSetting("dfs.data.transfer.protection", "authentication")
-        }
-    }
-
-    // Resource Manager Setup
-    s.role('resourcemanager') { RoleConfiguration r ->
-        r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
-            f.addSetting("yarn.resourcemanager.keytab", "$hadoopKeytab")
-        }
-    }
-
-    // Node Manager Setup
-    s.role('nodemanager') { RoleConfiguration r ->
-        r.settingsFile('yarn-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("yarn.nodemanager.principal", "$nodeManagerPrincipal$realm")
-            f.addSetting("yarn.nodemanager.keytab", "$hadoopKeytab")
-            f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
-        }
-    }
-
-    s.role('hadoop.gateway') { RoleConfiguration r ->
-        r.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
-            f.addSetting("mapreduce.framework.name", "yarn")
-            f.addSetting("mapreduce.shuffle.ssl.enabled", "false")
-            f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
-        }
+    // Mapred Site Config
+    s.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
+        f.addSetting("mapreduce.framework.name", "yarn")
+        f.addSetting("mapreduce.shuffle.ssl.enabled", "false")
+        f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
     }
 }
 config.service('spark')
@@ -262,6 +245,9 @@ config.service('hive') { ServiceConfiguration s ->
     s.addSetting('hive.server2.authentication', 'kerberos')
     s.addSetting('hive.server2.authentication.kerberos.principal', "$hivePrincipalName$realm")
     s.addSetting('hive.server2.authentication.kerberos.keytab', "$hiveKeytab")
+    s.addSetting('yarn.app.mapreduce.am.command-opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+    s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
+    s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
 }
 //config.service('pig')
 
@@ -361,8 +347,8 @@ SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.clas
             "-Dtest.krb5.keytab=${clientKeytab.toString()}")
     args = ['/data/artists/artists.dat']
 }
-//esCluster.addTask(sparkLoadData)
-//testCluster.dependsOn(sparkLoadData)
+esCluster.addTask(sparkLoadData)
+testCluster.dependsOn(sparkLoadData)
 
 // Replace the regular beeline script with our own shimmed one. All we do is perform a keytab login and
 // delegate on regularly. This is easier than re-implementing most of beeline.
@@ -389,7 +375,7 @@ HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.
                     "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
                     "-Dtest.krb5.principal=$clientPrincipal$realm " +
                     "-Dtest.krb5.keytab=${clientKeytab.toString()} ",
-            'TEST_LIB': jar.archivePath
+            'TEST_LIB': jar.archivePath.toString()
     ])
 }
 esCluster.addTask(hiveLoadData)
