@@ -58,6 +58,7 @@ String namenodePrincipal = 'nn' + hostPart
 String datanodePrincipal = 'dn' + hostPart
 String resourceManagerPrincipal = 'rm' + hostPart
 String nodeManagerPrincipal = 'nm' + hostPart
+String historyServerPrincipal = 'jhs' + hostPart
 String mapredPrincipal = 'mapred' + hostPart
 String hivePrincipalName = 'hive' + hostPart
 
@@ -76,6 +77,7 @@ keytabUsers.put(namenodePrincipal, hadoopKeytabName)
 keytabUsers.put(datanodePrincipal, hadoopKeytabName)
 keytabUsers.put(resourceManagerPrincipal, hadoopKeytabName)
 keytabUsers.put(nodeManagerPrincipal, hadoopKeytabName)
+keytabUsers.put(historyServerPrincipal, hadoopKeytabName)
 keytabUsers.put(mapredPrincipal, hadoopKeytabName)
 keytabUsers.put(hivePrincipalName, hiveKeytabName)
 
@@ -231,6 +233,8 @@ config.service('hadoop') { ServiceConfiguration s ->
     s.settingsFile('mapred-site.xml') { SettingsContainer.FileSettings f ->
         f.addSetting("mapreduce.framework.name", "yarn")
         f.addSetting("mapreduce.shuffle.ssl.enabled", "false")
+        f.addSetting("mapreduce.jobhistory.principal", "$historyServerPrincipal$realm")
+        f.addSetting("mapreduce.jobhistory.keytab", "$hadoopKeytab")
         f.addSetting("yarn.resourcemanager.principal", "$resourceManagerPrincipal$realm")
     }
 }
@@ -269,10 +273,44 @@ testCluster.doLast {
 esCluster.addTask(testCluster)
 config.addClusterTask(testCluster)
 
-// We must first create the data directory before copying test data. DfsCopy task does this
+// We need to create a tmp directory in hadoop before history server does, because history server will set permissions
+// wrong.
+HadoopMRJob createTmp = config.service('hadoop').role('datanode').createClusterTask('createTmp', HadoopMRJob.class) {
+    clusterConfiguration = config
+    // Run on namenode since the gateway is not yet set up
+    runOn(config.service('hadoop').role('namenode').instance(0))
+    dependsOn(jar)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": namenodePrincipal,
+            "test.krb5.keytab": hadoopKeytab.toString(),
+    ])
+    args = ['-mkdir', '-p', '/tmp/hadoop-yarn/staging/history']
+}
+HadoopMRJob prepareTmp = config.service('hadoop').role('datanode').createClusterTask('prepareTmp', HadoopMRJob.class) {
+    clusterConfiguration = config
+    // Run on namenode since the gateway is not yet set up
+    runOn(config.service('hadoop').role('namenode').instance(0))
+    dependsOn(jar, createTmp)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": namenodePrincipal,
+            "test.krb5.keytab": hadoopKeytab.toString(),
+    ])
+    // Recursive should be fine here since it's before anything is on the FS
+    args = ['-chmod', '-R', '777', '/tmp']
+}
+testCluster.dependsOn(prepareTmp)
+config.service('hadoop').role('historyserver').addDependency(prepareTmp)
+config.service('hive').addDependency(prepareTmp)
+
+// We must create the data directory before copying test data. DfsCopy task would normally do this
 // automatically, but we have to wrap the fs shell for Kerberos.
 HadoopMRJob createDataDir = config.createClusterTask('createDataDir', HadoopMRJob.class) {
     clusterConfiguration = config
+    executedOn = config.service('hadoop').role('namenode').instance(0)
     dependsOn(jar)
     jobJar = jar.archivePath
     jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
@@ -283,6 +321,7 @@ HadoopMRJob createDataDir = config.createClusterTask('createDataDir', HadoopMRJo
     ])
     args = ['-mkdir', '-p', '/data/artists/']
 }
+testCluster.dependsOn(createDataDir)
 
 // Copy the test data to HDFS using the SecureFsShell instead of dfs copy. We could use the
 // DfsCopy task, but with Kerberos, we would have to kinit before running it. Instead we wrap.
