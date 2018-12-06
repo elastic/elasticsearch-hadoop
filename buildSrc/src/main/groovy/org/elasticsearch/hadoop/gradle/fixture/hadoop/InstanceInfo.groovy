@@ -269,4 +269,11 @@ class InstanceInfo {
         backgroundScript.setText(backgroundScriptContents, 'UTF-8')
         backgroundScript.setExecutable(true)
     }
+
+
+    @Override
+    String toString() {
+        return "InstanceInfo{cluster='${clusterName}', service='${config.serviceDescriptor.serviceName()}', " +
+                "role='${config.roleDescriptor.roleName()}', instance=${instance}"
+    }
 }

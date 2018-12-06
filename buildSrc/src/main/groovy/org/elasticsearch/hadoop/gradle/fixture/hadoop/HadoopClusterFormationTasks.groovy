@@ -25,6 +25,7 @@ import org.elasticsearch.gradle.Version
 import org.elasticsearch.gradle.test.Fixture
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.elasticsearch.hadoop.gradle.tasks.VerifyChecksums
@@ -46,133 +47,12 @@ import java.nio.file.Paths
  */
 class HadoopClusterFormationTasks {
 
-    // Pie in the sky DSL
-//    hadoopFixture {
-//        config 'key', 'value'
-//        jvmArg 'arg'
-//        env 'key', 'value'
-//        hadoop {
-//            config 'key', 'value'
-//            jvmArg 'arg'
-//            env 'key', 'value'
-//            namenode {
-//                config 'key', 'value'
-//                jvmArg 'arg'
-//                env 'key', 'value'
-//            }
-//            datanode {
-//                config 'key', 'value'
-//                jvmArg 'arg'
-//                env 'key', 'value'
-//            }
-//            resourcemanager {
-//                config 'key', 'value'
-//                jvmArg 'arg'
-//                env 'key', 'value'
-//            }
-//            nodemanager {
-//                config 'key', 'value'
-//                jvmArg 'arg'
-//                env 'key', 'value'
-//            }
-//        }
-//        hive {
-//            config 'key', 'value'
-//            jvmArg 'arg'
-//            env 'key', 'value'
-//            hiveserver {
-//                config 'key', 'value'
-//                jvmArg 'arg'
-//                env 'key', 'value'
-//            }
-//        }
-//    }
-
-    static class InstanceTasks {
+    /**
+     * A start and stop task for a fixture
+     */
+    static class TaskPair {
         Task startTask
         Task stopTask
-    }
-
-    /**
-     * Adds dependent tasks to the given task to start and stop a cluster with the given configuration.
-     * <p>
-     * Returns a list of NodeInfo objects for each node in the cluster.
-     *
-     * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
-     */
-    static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration config) {
-        String prefix = config.getName()
-
-        File sharedDir = new File(project.buildDir, "fixtures/shared")
-        Object startDependencies = config.getDependencies()
-
-        /*
-         * First clean the environment
-         */
-        Task cleanup = project.tasks.create(
-            name: "${prefix}#prepareCluster.cleanShared",
-            type: Delete,
-            group: 'hadoopFixture',
-            dependsOn: startDependencies) {
-                delete sharedDir
-                doLast {
-                    sharedDir.mkdirs()
-                }
-        }
-        startDependencies = cleanup
-
-        List<Task> serviceStartTasks = []
-        List<Task> serviceStopTasks = []
-        List<InstanceInfo> nodes = []
-
-        // FIXHERE: Check node topologies
-        // Do we actually need to do this at all?
-        // - check node ranges, (num nodes >= bwc nodes)
-        // - require bwc version on non zero bwc node count
-        for (ServiceConfiguration serviceConfiguration : config.getServices()) {
-            List<Task> instanceStartTasks = []
-            List<Task> instanceStopTasks = []
-
-            // Service depends either on the cluster's start dependencies, or the start task for the previous service
-            List<Object> serviceDependencies = []
-            if (serviceStartTasks.empty) {
-                serviceDependencies.addAll(startDependencies)
-            } else {
-                serviceDependencies.add(serviceStartTasks.last())
-            }
-
-            // Get the download task for this service's package and add it to the service's dependency tasks
-            DistributionTasks distributionTasks = getOrConfigureDistributionDownload(project, serviceConfiguration)
-
-            // Get the instances for this service in their deployment order
-            List<InstanceConfiguration> instances = serviceConfiguration.getRoles()
-                    .collect { role -> role.getInstances() }.flatten() as List<InstanceConfiguration>
-
-            // Set up each instance
-            for (InstanceConfiguration instanceConfiguration : instances) {
-                InstanceInfo instanceInfo = new InstanceInfo(instanceConfiguration, project, prefix, sharedDir)
-                nodes.add(instanceInfo)
-                // First instance in a service needs to also depend on its download task (serviceDependencies)
-                Object dependsOn = serviceStartTasks.empty ? startDependencies : serviceStartTasks.last()
-                InstanceTasks instanceTasks = configureNode(project, prefix, config.getClusterTasks(), dependsOn,
-                        instanceInfo, distributionTasks)
-                serviceStartTasks.add(instanceTasks.startTask)
-                instanceStartTasks.add(instanceTasks.startTask)
-                if (instanceTasks.stopTask != null) {
-                    instanceStopTasks.add(instanceTasks.stopTask)
-                }
-            }
-
-            // FIXHERE: Configure wait command
-            // wait command for entire service
-            // wait depends on last instance start task
-            // runner depends on wait task
-
-            config.getClusterTasks().forEach { Task t -> t.dependsOn(instanceStartTasks) }
-        }
-
-
-        return nodes
     }
 
     /**
@@ -184,8 +64,137 @@ class HadoopClusterFormationTasks {
     }
 
     /**
-     * Returns a download task for this service's packages, either an already created one from the root project, or
-     * a newly created download task.
+     * Adds dependent tasks to the given task to start and stop a cluster with the given configuration.
+     * <p>
+     * Returns a list of NodeInfo objects for each node in the cluster.
+     *
+     * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
+     */
+    static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration clusterConfiguration) {
+        String prefix = clusterConfiguration.getName()
+
+        // The cluster wide dependencies
+        Object clusterDependencies = clusterConfiguration.getDependencies()
+
+        // Create cluster wide shared dir, just in case we ever need one
+        File sharedDir = new File(project.buildDir, "fixtures/shared")
+
+        // First task is to clean the shared directory
+        Task cleanShared = project.tasks.create(
+            name: "${prefix}#prepareCluster.cleanShared",
+            type: Delete,
+            group: 'hadoopFixture',
+            dependsOn: clusterDependencies) {
+                delete sharedDir
+                doLast {
+                    sharedDir.mkdirs()
+                }
+        }
+
+        // This is the initial start dependency that the first instance will pick up.
+        Object startDependency = cleanShared
+
+        // The complete list of fixture nodes that are a part of a cluster.
+        List<InstanceInfo> nodes = []
+
+        // Create the fixtures for each service
+        List<TaskPair> clusterTaskPairs = []
+        for (ServiceConfiguration serviceConfiguration : clusterConfiguration.getServices()) {
+
+            // Get the download task for this service's package and add it to the service's dependency tasks
+            DistributionTasks distributionTasks = getOrConfigureDistributionDownload(project, serviceConfiguration)
+
+            // Keep track of the start tasks in this service
+            List<TaskPair> serviceTaskPairs = []
+
+            // Create fixtures for each role in the service
+            for (RoleConfiguration roleConfiguration : serviceConfiguration.getRoles()) {
+
+                // Keep track of the start tasks in this role
+                List<TaskPair> roleTaskPairs = []
+
+                // Create fixtures for each instance in the role
+                for (InstanceConfiguration instanceConfiguration : roleConfiguration.getInstances()) {
+                    // Every instance depends on its cluster & service & role's start dependencies.
+                    // If it's the first instance, it depends on the start dependency (clean shared)
+                    // If it's a later instance, it depends on the the preceding instance
+                    List<Object> instanceDependencies = []
+                    instanceDependencies.addAll(instanceConfiguration.getDependencies())
+                    if (clusterTaskPairs.empty) {
+                        instanceDependencies.add(startDependency)
+                    } else {
+                        instanceDependencies.add(clusterTaskPairs.last().startTask)
+                    }
+
+                    // Collect the instance info
+                    InstanceInfo instanceInfo = new InstanceInfo(instanceConfiguration, project, prefix, sharedDir)
+                    nodes.add(instanceInfo)
+
+                    // Create the tasks for the instance
+                    TaskPair instanceTasks
+                    try {
+                        instanceTasks = configureNode(project, prefix, clusterConfiguration.getClusterTasks(),
+                                instanceDependencies, instanceInfo, distributionTasks)
+                    } catch (Exception e) {
+                        throw new GradleException(
+                                "Exception occurred while initializing instance [${instanceInfo.toString()}]", e)
+                    }
+
+                    // Add the task pair to the task lists
+                    roleTaskPairs.add(instanceTasks)
+                    serviceTaskPairs.add(instanceTasks)
+                    clusterTaskPairs.add(instanceTasks)
+
+                    // Make each cluster task that needs this instance depend on it, and also be finalized by it.
+                    instanceConfiguration.getClusterTasks().forEach { Task clusterTask ->
+                        clusterTask.dependsOn(instanceTasks.startTask)
+                        if (instanceTasks.stopTask != null) {
+                            clusterTask.finalizedBy(instanceTasks.stopTask)
+                        }
+                    }
+                }
+                // Make each task in the role depend on and also be finalized by each instance in the service.
+                List<Task> startTasks = roleTaskPairs.collect{it.startTask}
+                List<Task> stopTasks = roleTaskPairs.findAll{it.stopTask != null}.collect{it.stopTask}
+                roleConfiguration.getClusterTasks().forEach { Task clusterTask ->
+                    clusterTask.dependsOn(startTasks)
+                    if (!stopTasks.isEmpty()) {
+                        clusterTask.finalizedBy(stopTasks)
+                    }
+                }
+            }
+            // Make each task in the service depend on and also be finalized by each instance in the service.
+            List<Task> startTasks = serviceTaskPairs.collect{it.startTask}
+            List<Task> stopTasks = serviceTaskPairs.findAll{it.stopTask != null}.collect{it.stopTask}
+            serviceConfiguration.getClusterTasks().forEach { Task clusterTask ->
+                clusterTask.dependsOn(startTasks)
+                if (!stopTasks.isEmpty()) {
+                    clusterTask.finalizedBy(stopTasks)
+                }
+            }
+        }
+        // Make each task in the cluster depend on and also be finalized by each instance in the cluster.
+        List<Task> startTasks = clusterTaskPairs.collect{it.startTask}
+        List<Task> stopTasks = clusterTaskPairs.findAll{it.stopTask != null}.collect{it.stopTask}
+        clusterConfiguration.getClusterTasks().forEach { Task clusterTask ->
+            clusterTask.dependsOn(startTasks)
+            if (!stopTasks.isEmpty()) {
+                clusterTask.finalizedBy(stopTasks)
+            }
+        }
+
+        // FIXHERE: Configure wait commands!!!
+        // wait command for entire service
+        // wait depends on last instance start task
+        // runner depends on wait task
+
+        return nodes
+    }
+
+    /**
+     * Returns the distribution tasks. These contain a download task for this service's packages, which itself is
+     * either an already created one from the root project, or a newly created download task. These also contain the
+     * verify task to ensure the download has been securely captured.
      */
     static DistributionTasks getOrConfigureDistributionDownload(Project project, ServiceConfiguration serviceConfiguration) {
         Version serviceVersion = serviceConfiguration.getVersion()
@@ -215,8 +224,8 @@ class HadoopClusterFormationTasks {
         return new DistributionTasks(download: downloadTask, verify: verifyTask)
     }
 
-    static InstanceTasks configureNode(Project project, String prefix, List<Task> clusterTasks, Object dependsOn,
-                                       InstanceInfo node, DistributionTasks distribution) {
+    static TaskPair configureNode(Project project, String prefix, List<Task> clusterTasks, Object dependsOn,
+                                  InstanceInfo node, DistributionTasks distribution) {
         Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
@@ -245,7 +254,7 @@ class HadoopClusterFormationTasks {
 
         // If the role for this instance is not a process, we skip creating start and stop tasks for it.
         if (!node.getConfig().getRoleDescriptor().isExecutableProcess()) {
-            return new InstanceTasks(startTask: setup)
+            return new TaskPair(startTask: setup)
         }
 
         Map<String, Object[]> setupCommands = new LinkedHashMap<>()
@@ -254,6 +263,9 @@ class HadoopClusterFormationTasks {
         for (Map.Entry<String, Object[]> command : setupCommands) {
             // the first argument is the actual script name, relative to home
             Object[] args = command.getValue().clone()
+            if (args == null || args.length == 0) {
+                throw new GradleException("Empty command line for setup command [$command.key]")
+            }
             final Object commandPath
             if (Os.isFamily(Os.FAMILY_WINDOWS)) {
                 /*
@@ -286,7 +298,7 @@ class HadoopClusterFormationTasks {
                 start.finalizedBy(depStop)
             }
         }
-        return new InstanceTasks(startTask: start, stopTask: stop)
+        return new TaskPair(startTask: start, stopTask: stop)
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
