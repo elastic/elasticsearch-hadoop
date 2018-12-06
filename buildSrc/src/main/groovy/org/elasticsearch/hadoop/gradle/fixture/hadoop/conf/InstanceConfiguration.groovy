@@ -37,6 +37,7 @@ class InstanceConfiguration extends ProcessConfiguration {
     private int instance
 
     InstanceConfiguration(Project project, RoleConfiguration serviceConfiguration, String prefix, int instance) {
+        super(project)
         this.project = project
         this.roleConfiguration = serviceConfiguration
         this.prefix = prefix

@@ -49,6 +49,7 @@ class ServiceConfiguration extends ProcessConfiguration {
     private Version version
 
     ServiceConfiguration(Project project, HadoopClusterConfiguration clusterConfiguration, String prefix, ServiceDescriptor serviceDescriptor, List<ServiceConfiguration> dependentServices) {
+        super(project)
         this.project = project
         this.clusterConfiguration = clusterConfiguration
         this.prefix = prefix

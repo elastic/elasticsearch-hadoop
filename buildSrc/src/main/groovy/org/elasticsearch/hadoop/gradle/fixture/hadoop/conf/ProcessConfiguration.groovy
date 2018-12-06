@@ -19,6 +19,9 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
 
+import org.gradle.api.InvalidUserDataException
+import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.util.ConfigureUtil
 
 /**
@@ -30,6 +33,10 @@ import org.gradle.util.ConfigureUtil
 abstract class ProcessConfiguration {
 
     protected abstract ProcessConfiguration parent()
+
+    ProcessConfiguration(Project project) {
+        this.project = project
+    }
 
     /*
      * FIXHERE: Pick properties to add here
@@ -53,12 +60,14 @@ abstract class ProcessConfiguration {
      * nodeStartupWaitSeconds, yes 30
      */
 
+    private final Project project
     private Map<String, String> systemProperties = new HashMap<>()
     private Map<String, String> environmentVariables = new HashMap<>()
     private SettingsContainer settingsContainer = new SettingsContainer()
     private Map<String, Object> extraConfigFiles = new HashMap<>()
     private LinkedHashMap<String, Object[]> setupCommands = new LinkedHashMap<>()
     private List<Object> dependencies = new ArrayList<>()
+    private List<Task> clusterTasks = new ArrayList<>()
     private String jvmArgs = ''
     private boolean debug = false
 
@@ -189,5 +198,56 @@ abstract class ProcessConfiguration {
         }
         // No parent, return value (which should be false)
         return debug
+    }
+
+    Task createClusterTask(Map<String, ?> options) throws InvalidUserDataException {
+        Task task = project.tasks.create(options)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(Map<String, ?> options, Closure configureClosure) throws InvalidUserDataException {
+        Task task = project.tasks.create(options, configureClosure)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(String name) throws InvalidUserDataException {
+        Task task = project.tasks.create(name)
+        addClusterTask(task)
+        return task
+    }
+
+    Task createClusterTask(String name, Closure configureClosure) throws InvalidUserDataException {
+        Task task = project.tasks.create(name, configureClosure)
+        addClusterTask(task)
+        return task
+    }
+
+    public <T extends Task> T createClusterTask(String name, Class<T> type) throws InvalidUserDataException {
+        T task = project.tasks.create(name, type)
+        addClusterTask(task)
+        return task
+    }
+
+    public <T extends Task> T createClusterTask(String name, Class<T> type, Closure configureClosure)
+            throws InvalidUserDataException {
+        T task = project.tasks.create(name, type)
+        ConfigureUtil.configure(configureClosure, task)
+        addClusterTask(task)
+        return task
+    }
+
+    void addClusterTask(Task task) {
+        clusterTasks.add(task)
+    }
+
+    /**
+     * Get all tasks that expect the processes and resources created and maintained by this fixture to exist before
+     * running, and that should be concluded with this fixture's eventual halting.
+     * @return
+     */
+    List<Task> getClusterTasks() {
+        return clusterTasks
     }
 }

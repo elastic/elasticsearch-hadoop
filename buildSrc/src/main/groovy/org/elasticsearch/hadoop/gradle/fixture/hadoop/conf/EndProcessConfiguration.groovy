@@ -29,6 +29,10 @@ package org.elasticsearch.hadoop.gradle.fixture.hadoop.conf
  */
 class EndProcessConfiguration extends ProcessConfiguration {
 
+    EndProcessConfiguration() {
+        super(null)
+    }
+
     @Override
     protected ProcessConfiguration parent() {
         return null

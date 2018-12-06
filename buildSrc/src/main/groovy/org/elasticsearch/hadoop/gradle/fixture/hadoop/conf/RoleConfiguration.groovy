@@ -43,6 +43,7 @@ class RoleConfiguration extends ProcessConfiguration {
     private final List<InstanceConfiguration> instances
 
     RoleConfiguration(Project project, ServiceConfiguration serviceConfiguration, String prefix, RoleDescriptor roleDescriptor, List<RoleConfiguration> dependentRoles) {
+        super(project)
         this.project = project
         this.serviceConfiguration = serviceConfiguration
         this.prefix = prefix
