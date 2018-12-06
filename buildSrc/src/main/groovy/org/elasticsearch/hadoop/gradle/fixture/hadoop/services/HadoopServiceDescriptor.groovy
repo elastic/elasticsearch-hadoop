@@ -35,6 +35,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     static final RoleDescriptor DATANODE = RoleDescriptor.requiredProcess('datanode', [NAMENODE])
     static final RoleDescriptor RESOURCEMANAGER = RoleDescriptor.requiredProcess('resourcemanager')
     static final RoleDescriptor NODEMANAGER = RoleDescriptor.requiredProcess('nodemanager', [RESOURCEMANAGER])
+    static final RoleDescriptor HISTORYSERVER = RoleDescriptor.requiredProcess('historyserver')
     static final RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('hadoop', [NAMENODE, DATANODE, RESOURCEMANAGER, NODEMANAGER])
 
     @Override
@@ -54,7 +55,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
     @Override
     List<RoleDescriptor> roles() {
-        return [NAMENODE, DATANODE, RESOURCEMANAGER, NODEMANAGER, GATEWAY]
+        return [NAMENODE, DATANODE, RESOURCEMANAGER, NODEMANAGER, HISTORYSERVER, GATEWAY]
     }
 
     @Override
@@ -180,6 +181,12 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
             } else {
                 return ['yarn', role.roleName()]
             }
+        } else if (HISTORYSERVER.equals(role)) {
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                return ['mapred.cmd', role.roleName()]
+            } else {
+                return ['mapred', role.roleName()]
+            }
         } else if (GATEWAY.equals(role)) {
             return [""]
         }
@@ -201,6 +208,8 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
             return "YARN_RESOURCEMANAGER_OPTS"
         } else if (configuration.roleDescriptor == NODEMANAGER) {
             return "YARN_NODEMANAGER_OPTS"
+        } else if (configuration.roleDescriptor == HISTORYSERVER) {
+            return "HADOOP_JOB_HISTORYSERVER_OPTS"
         } else if (configuration.roleDescriptor == GATEWAY) {
             return "YARN_OPTS"
         }
