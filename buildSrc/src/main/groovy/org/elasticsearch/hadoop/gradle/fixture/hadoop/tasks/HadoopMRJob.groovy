@@ -67,10 +67,13 @@ class HadoopMRJob extends AbstractClusterTask {
         }
 
         // Gateway conf
-        InstanceConfiguration hadoopGateway = clusterConfiguration
-                .service(HadoopClusterConfiguration.HADOOP)
-                .role(HadoopServiceDescriptor.GATEWAY)
-                .instance(0)
+        InstanceConfiguration hadoopGateway = executedOn
+        if (hadoopGateway == null) {
+            hadoopGateway = clusterConfiguration
+                    .service(HadoopClusterConfiguration.HADOOP)
+                    .role(HadoopServiceDescriptor.GATEWAY)
+                    .instance(0)
+        }
 
         File baseDir = hadoopGateway.getBaseDir()
         File homeDir = new File(baseDir, hadoopGateway.getServiceDescriptor().homeDirName(hadoopGateway))
@@ -108,7 +111,7 @@ class HadoopMRJob extends AbstractClusterTask {
                     javaOpts.add(collectedSystemProperties)
                 }
             }
-            finalEnv.put(javaPropertyEnvVariable, javaOpts.join(" "))
+            finalEnv.put('YARN_OPTS', javaOpts.join(" "))
         }
 
         finalEnv.putAll(environmentVariables)

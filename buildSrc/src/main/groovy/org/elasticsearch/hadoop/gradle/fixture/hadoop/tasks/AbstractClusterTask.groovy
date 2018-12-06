@@ -20,15 +20,21 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks
 
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
+import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.DefaultTask
 
 abstract class AbstractClusterTask extends DefaultTask {
 
     HadoopClusterConfiguration clusterConfiguration
+    InstanceConfiguration executedOn
 
     AbstractClusterTask() {
         super()
         this.clusterConfiguration = project.extensions.findByName('hadoopFixture') as HadoopClusterConfiguration
+    }
+
+    void runOn(InstanceConfiguration instance) {
+        executedOn = instance
     }
 
 }
