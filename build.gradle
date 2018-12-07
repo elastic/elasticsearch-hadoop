@@ -14,6 +14,9 @@ wrapper {
     gradleVersion = '5.0'
 }
 
+targetCompatibility = "8"
+sourceCompatibility = "8"
+
 // Simple utility task to help with downloading artifacts and jars
 if (project.hasProperty("find-artifact")) {
     String artifact = project.getProperty("find-artifact")
