@@ -548,17 +548,43 @@ public class RestClient implements Closeable, StatsAware {
         return (count != null ? count.longValue() : -1);
     }
 
+    @SuppressWarnings("unchecked")
     private long countInES5X(String indexAndType, String shardId, QueryBuilder query) {
         StringBuilder uri = new StringBuilder(indexAndType);
         uri.append("/_search?size=0");
+        // Option added in the 6.x line. This must be set to true or else in 7.X and 6/7 mixed clusters
+        // will return lower bounded count values instead of an accurate count.
+        if (internalVersion.onOrAfter(EsMajorVersion.V_6_X)) {
+            uri.append("&track_total_hits=true");
+        }
         if (StringUtils.hasLength(shardId)) {
             uri.append("&preference=_shards:");
             uri.append(shardId);
         }
         Response response = execute(GET, uri.toString(), searchRequest(query));
         Map<String, Object> content = parseContent(response.body(), "hits");
-        Number count = (Number) content.get("total");
-        return (count != null ? count.longValue() : -1);
+
+        long finalCount;
+        Object total = content.get("total");
+        if (total instanceof Number) {
+            Number count = (Number) total;
+            finalCount = count.longValue();
+        } else if (total instanceof Map) {
+            Map<String, Object> totalObject = (Map<String, Object>) total;
+            String relation = (String) totalObject.get("relation");
+            Number count = (Number) totalObject.get("value");
+            if (count != null) {
+                if (!"eq".equals(relation)) {
+                    throw new EsHadoopParsingException("Count operation returned non-exact count of [" + relation + "][" + count + "]");
+                }
+                finalCount = count.longValue();
+            } else {
+                finalCount = -1;
+            }
+        } else {
+            finalCount = -1;
+        }
+        return finalCount;
     }
 
     static BytesArray searchRequest(QueryBuilder query) {

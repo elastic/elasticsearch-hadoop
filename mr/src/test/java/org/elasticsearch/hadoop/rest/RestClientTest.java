@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.TestSettings;
@@ -134,5 +135,110 @@ public class RestClientTest {
         String id = client.postDocument(writeResource, document);
 
         assertEquals("AbcDefGhiJklMnoPqrS_", id);
+    }
+
+    @Test
+    public void testCount5x() throws Exception {
+        String index = "index/type";
+
+        BytesArray query = new BytesArray("{\"query\":{\"match_all\":{}}}");
+        SimpleRequest request = new SimpleRequest(Request.Method.GET, null, index + "/_search?size=0&track_total_hits=true", null, query);
+        String response =
+                "{\n" +
+                "    \"took\": 6,\n" +
+                "    \"timed_out\": false,\n" +
+                "    \"_shards\": {\n" +
+                "        \"total\": 1,\n" +
+                "        \"successful\": 1,\n" +
+                "        \"skipped\": 0,\n" +
+                "        \"failed\": 0\n" +
+                "    },\n" +
+                "    \"hits\": {\n" +
+                "        \"total\": 5,\n" +
+                "        \"max_score\": null,\n" +
+                "        \"hits\": []\n" +
+                "    }\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        long count = client.count(index, MatchAllQueryBuilder.MATCH_ALL);
+
+        assertEquals(5L, count);
+    }
+
+    @Test
+    public void testCount7x() throws Exception {
+        String index = "index/type";
+
+        BytesArray query = new BytesArray("{\"query\":{\"match_all\":{}}}");
+        SimpleRequest request = new SimpleRequest(Request.Method.GET, null, index + "/_search?size=0&track_total_hits=true", null, query);
+        String response =
+                "{\n" +
+                        "    \"took\": 6,\n" +
+                        "    \"timed_out\": false,\n" +
+                        "    \"_shards\": {\n" +
+                        "        \"total\": 1,\n" +
+                        "        \"successful\": 1,\n" +
+                        "        \"skipped\": 0,\n" +
+                        "        \"failed\": 0\n" +
+                        "    },\n" +
+                        "    \"hits\": {\n" +
+                        "        \"total\": {\n" +
+                        "            \"value\": 5,\n" +
+                        "            \"relation\": \"eq\"\n" +
+                        "        },\n" +
+                        "        \"max_score\": null,\n" +
+                        "        \"hits\": []\n" +
+                        "    }\n" +
+                        "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        long count = client.count(index, MatchAllQueryBuilder.MATCH_ALL);
+
+        assertEquals(5L, count);
+    }
+
+    @Test(expected = EsHadoopParsingException.class)
+    public void testCount7xBadRelation() throws Exception {
+        String index = "index/type";
+
+        BytesArray query = new BytesArray("{\"query\":{\"match_all\":{}}}");
+        SimpleRequest request = new SimpleRequest(Request.Method.GET, null, index + "/_search?size=0&track_total_hits=true", null, query);
+        String response =
+                "{\n" +
+                        "    \"took\": 6,\n" +
+                        "    \"timed_out\": false,\n" +
+                        "    \"_shards\": {\n" +
+                        "        \"total\": 1,\n" +
+                        "        \"successful\": 1,\n" +
+                        "        \"skipped\": 0,\n" +
+                        "        \"failed\": 0\n" +
+                        "    },\n" +
+                        "    \"hits\": {\n" +
+                        "        \"total\": {\n" +
+                        "            \"value\": 5,\n" +
+                        "            \"relation\": \"gte\"\n" +
+                        "        },\n" +
+                        "        \"max_score\": null,\n" +
+                        "        \"hits\": []\n" +
+                        "    }\n" +
+                        "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        long count = client.count(index, MatchAllQueryBuilder.MATCH_ALL);
+
+        assertEquals(5L, count);
     }
 }

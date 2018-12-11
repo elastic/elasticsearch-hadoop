@@ -168,4 +168,43 @@ public class BytesArray implements ByteSequence {
         out.write(bytes, offset, size);
         out.flush();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        BytesArray that = (BytesArray) o;
+
+        if (size != that.size) return false;
+
+        // We want this to be equal if the contents of the bytes defined by the size and offset ranges match
+        if (bytes==that.bytes) {
+            return true;
+        }
+        if (bytes==null || that.bytes==null) {
+            return false;
+        }
+        for (int i=0; i<size; i++) {
+            if (bytes[offset + i] != that.bytes[that.offset + i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        if (bytes == null) {
+            return 0;
+        }
+
+        int result = 1;
+        for (int idx = offset; idx < size; idx++) {
+            result = 31 * result + bytes[idx];
+        }
+        result = 31 * result + offset;
+        result = 31 * result + size;
+        return result;
+    }
 }

@@ -26,15 +26,14 @@ import org.elasticsearch.hadoop.handler.HandlerLoader;
 import org.elasticsearch.hadoop.handler.impl.PreloadedHandlerLoader;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
-import org.elasticsearch.hadoop.serialization.handler.read.DeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.IDeserializationErrorHandler;
 import org.elasticsearch.hadoop.serialization.handler.read.impl.DeserializationHandlerLoader;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 public class ScrollReaderConfigBuilder {
 
-    public static ScrollReaderConfigBuilder builder(ValueReader reader, Mapping resolvedMapping, Settings cfg) {
-        return builder(reader, cfg).setResolvedMapping(resolvedMapping);
+    public static ScrollReaderConfigBuilder builder(ValueReader reader, Mapping resolvedMapping, Settings settings) {
+        return builder(reader, settings).setResolvedMapping(resolvedMapping);
     }
 
     public static ScrollReaderConfigBuilder builder(ValueReader reader, Settings settings) {

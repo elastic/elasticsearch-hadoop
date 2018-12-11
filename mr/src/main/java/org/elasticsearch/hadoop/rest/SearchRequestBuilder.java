@@ -229,6 +229,12 @@ public class SearchRequestBuilder {
             uriParams.put("routing", HttpEncodingTools.encode(routing));
         }
 
+        // Always track total hits on versions that support it. 7.0+ will return lower bounded
+        // hit counts if this is not set, and we want them to be accurate for scroll bookkeeping.
+        if (version.onOrAfter(EsMajorVersion.V_6_X)) {
+            uriParams.put("track_total_hits", "true");
+        }
+
         if (readMetadata) {
             uriParams.put("track_scores", "true");
         }

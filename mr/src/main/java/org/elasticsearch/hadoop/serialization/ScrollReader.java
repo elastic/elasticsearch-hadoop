@@ -824,7 +824,50 @@ public class ScrollReader implements Closeable {
 
     private long hitsTotal(Parser parser) {
         ParsingUtils.seek(parser, TOTAL);
-        long hits = parser.longValue();
+
+        // In ES 7.0, the "hits.total" field changed to be an object
+        // with nested field "hits.total.value" holding the number.
+        long hits = Long.MIN_VALUE;
+        Token token = parser.currentToken();
+        if (token == Token.START_OBJECT) {
+            String relation = null;
+            token = parser.nextToken();
+            while (token != Token.END_OBJECT) {
+                if (token == Token.FIELD_NAME) {
+                    if ("value".equals(parser.currentName())) {
+                        parser.nextToken();
+                        hits = parser.longValue();
+                    } else if ("relation".equals(parser.currentName())) {
+                        parser.nextToken();
+                        relation = parser.text();
+                    } else {
+                        // Skip unknown field
+                        parser.nextToken();
+                    }
+                } else if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
+                    parser.skipChildren();
+                }
+                // Next field
+                token = parser.nextToken();
+            }
+            if (relation == null) {
+                throw new EsHadoopParsingException("Could not discern relative value of total hits. Response missing [relation] field.");
+            } else if (!"eq".equals(relation)) {
+                throw new EsHadoopParsingException(
+                        String.format("Could not discern exact hit count for search response. Received [%s][%s]",
+                                relation,
+                                hits
+                        )
+                );
+            }
+        } else if (token == Token.VALUE_NUMBER) {
+            hits = parser.longValue();
+        }
+
+        if (hits == Long.MIN_VALUE) {
+            throw new EsHadoopParsingException("Could not locate total number of hits for search result.");
+        }
+
         return hits;
     }
 
