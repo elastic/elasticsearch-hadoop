@@ -17,14 +17,14 @@ ES-Hadoop 2.0.x and 2.1.x are compatible with Elasticsearch __1.X__ *only*
 
 ## Installation
 
-### Stable Release (currently `5.6.13`)
+### Stable Release (currently `5.6.14`)
 Available through any Maven-compatible tool:
 
 ```xml
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.6.13</version>
+  <version>5.6.14</version>
 </dependency>
 ```
 or as a stand-alone [ZIP](http://www.elastic.co/downloads/hadoop).
@@ -36,7 +36,7 @@ Grab the latest nightly build from the [repository](http://oss.sonatype.org/cont
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>5.6.14.BUILD-SNAPSHOT</version>
+  <version>5.6.15.BUILD-SNAPSHOT</version>
 </dependency>
 ```
 
