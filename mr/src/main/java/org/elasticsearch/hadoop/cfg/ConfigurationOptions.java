@@ -299,10 +299,16 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS = "es.net.proxy.https.use.system.props";
     String ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 
+    @Deprecated
     String ES_NET_PROXY_SOCKS_HOST = "es.net.proxy.socks.host";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_PORT = "es.net.proxy.socks.port";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USER = "es.net.proxy.socks.user";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_PASS = "es.net.proxy.socks.pass";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS = "es.net.proxy.socks.use.system.props";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 }
