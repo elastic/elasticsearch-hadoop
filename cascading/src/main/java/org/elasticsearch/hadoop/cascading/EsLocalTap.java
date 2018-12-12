@@ -53,7 +53,10 @@ import cascading.tuple.TupleEntrySchemeIterator;
 
 /**
  * Local Cascading Tap.
+ *
+ * @deprecated 6.6.0 - Cascading Integration will be removed in a future release
  */
+@Deprecated
 class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
 
     private static final long serialVersionUID = 8644631529427137615L;
