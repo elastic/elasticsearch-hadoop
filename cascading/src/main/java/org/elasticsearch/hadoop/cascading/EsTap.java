@@ -24,6 +24,7 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.util.Version;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cascading.flow.Flow;
@@ -39,8 +40,11 @@ import cascading.tuple.TupleEntryIterator;
  * Cascading Tap backed by ElasticSearch. Can be used as a source and/or sink, for both local and Hadoop (local or not) flows.
  * If no fields are specified or are associated with the incoming tuple, the Tap will create name each field "field[num]" - this allows the document to be parsed by ES but will most likely conflict with the
  * existing mapping for the given index.
+ *
+ * @deprecated 6.6.0 - Cascading Integration will be removed in a future release
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
+@Deprecated
 public class EsTap extends Tap<Object, Object, Object> {
 
     private static final long serialVersionUID = 2062780701366901965L;
@@ -203,7 +207,9 @@ public class EsTap extends Tap<Object, Object, Object> {
         // use SLF4J just like Cascading
         if (!logVersion) {
             logVersion = true;
-            LoggerFactory.getLogger(EsTap.class).info(String.format("Elasticsearch Hadoop %s initialized", Version.version()));
+            Logger esTapLogger = LoggerFactory.getLogger(EsTap.class);
+            esTapLogger.info(String.format("Elasticsearch Hadoop %s initialized", Version.version()));
+            esTapLogger.warn("ES-Hadoop Cascading Integration is Deprecated as of 6.6.0 and will be removed in a later release.");
         }
     }
 }
