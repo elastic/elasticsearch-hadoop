@@ -357,6 +357,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // we actually have a socks proxy, let's start the setup
         if (StringUtils.hasText(proxyHost)) {
+            log.warn("Connecting to Elasticsearch through SOCKS proxy is deprecated in 6.6.0 and will be removed in a later release.");
             proxyInfo = proxyInfo.concat(String.format("[SOCKS proxy %s:%s]", proxyHost, proxyPort));
 
             if (!StringUtils.hasText(proxyUser)) {
