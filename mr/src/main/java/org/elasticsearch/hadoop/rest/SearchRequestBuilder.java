@@ -68,6 +68,7 @@ public class SearchRequestBuilder {
     private String routing;
     private Slice slice;
     private boolean local = false;
+    private String preference = "";
     private boolean excludeSource = false;
     private boolean readMetadata = false;
 
@@ -165,6 +166,11 @@ public class SearchRequestBuilder {
         return this;
     }
 
+    public SearchRequestBuilder preference(String preference) {
+        this.preference = preference;
+        return this;
+    }
+
     public SearchRequestBuilder excludeSource(boolean value) {
         if (value) {
             Assert.hasNoText(this.fields, String.format("_source section can't be excluded if fields [%s] are requested", this.fields));
@@ -209,7 +215,7 @@ public class SearchRequestBuilder {
             pref.append("_shards:");
             pref.append(shard);
         }
-        if (local) {
+        if (local || StringUtils.hasText(preference)) {
             if (pref.length() > 0) {
                 if (version.onOrAfter(EsMajorVersion.V_5_X)) {
                     pref.append("|");
@@ -217,7 +223,11 @@ public class SearchRequestBuilder {
                     pref.append(";");
                 }
             }
-            pref.append("_local");
+            if (StringUtils.hasText(preference)) {
+                pref.append(preference);
+            } else {
+                pref.append("_local");
+            }
         }
 
         if (pref.length() > 0) {

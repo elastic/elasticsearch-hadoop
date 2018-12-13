@@ -152,6 +152,10 @@ public interface ConfigurationOptions {
     String ES_INDEX_READ_ALLOW_RED_STATUS = "es.index.read.allow.red.status";
     String ES_INDEX_READ_ALLOW_RED_STATUS_DEFAULT = "false";
 
+    /** Elasticsearch shard search preference */
+    String ES_READ_SHARD_PREFERENCE = "es.read.shard.preference";
+    String ES_READ_SHARD_PREFERENCE_DEFAULT = "";
+
     /** Mapping types */
     String ES_MAPPING_DEFAULT_EXTRACTOR_CLASS = "es.mapping.default.extractor.class";
 
