@@ -21,27 +21,29 @@ package org.elasticsearch.hadoop.serialization.bulk;
 import java.util.EnumMap;
 
 import org.elasticsearch.hadoop.EsHadoopUnsupportedOperationException;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 
 // specific implementation that relies on basic field extractors that are computed
 // lazy per entity. Both the pool and extractors are meant to be reused.
-public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtractor {
-
+public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtractor, SettingsAware {
     protected EsMajorVersion version;
     protected Object entity;
+    protected Settings settings;
 
-    public PerEntityPoolingMetadataExtractor(EsMajorVersion version) {
-        this.version = version;
-    }
-
-    private static class StaticFieldExtractor implements FieldExtractor {
+    public static class StaticFieldExtractor implements FieldExtractor {
         private Object field;
         private boolean needsInit = true;
 
         @Override
         public Object field(Object target) {
             return field;
+        }
+        
+        protected Object field() {
+        	return field;
         }
 
         public void setField(Object field) {
@@ -52,6 +54,11 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
         public boolean needsInit() {
             return needsInit;
         }
+    }
+    
+    public void setSettings(Settings settings) {
+    	this.settings = settings;
+    	this.version = settings.getInternalVersionOrThrow();
     }
 
     /**
@@ -76,7 +83,7 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
         }
     }
 
-    private final EnumMap<Metadata, StaticFieldExtractor> pool = new EnumMap<Metadata, StaticFieldExtractor>(Metadata.class);
+    private final EnumMap<Metadata, FieldExtractor> pool = new EnumMap<Metadata, FieldExtractor>(Metadata.class);
 
     public void reset() {
         entity = null;
@@ -84,18 +91,20 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
 
     @Override
     public FieldExtractor get(Metadata metadata) {
-        StaticFieldExtractor fieldExtractor = pool.get(metadata);
+        FieldExtractor fieldExtractor = pool.get(metadata);
 
-        if (fieldExtractor == null || fieldExtractor.needsInit()) {
+        if (fieldExtractor == null || (fieldExtractor instanceof StaticFieldExtractor && ((StaticFieldExtractor)fieldExtractor).needsInit())) {
             Object value = getValue(metadata);
             if (value == null) {
                 return null;
             }
+            
             if (fieldExtractor == null) {
-                fieldExtractor = createExtractorFor(metadata);
+                fieldExtractor = _createExtractorFor(metadata);
             }
-            if (fieldExtractor.needsInit()) {
-                fieldExtractor.setField(value);
+            
+            if(fieldExtractor instanceof StaticFieldExtractor && ((StaticFieldExtractor)fieldExtractor).needsInit()) {
+            	((StaticFieldExtractor)fieldExtractor).setField(value);
             }
             pool.put(metadata, fieldExtractor);
         }
@@ -105,7 +114,7 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
     /**
      * If a metadata tag is unsupported for this version of Elasticsearch then a
      */
-    private StaticFieldExtractor createExtractorFor(Metadata metadata) {
+    private FieldExtractor _createExtractorFor(Metadata metadata) {
         // Boot metadata tags that are not supported in this version of Elasticsearch
         if (version.onOrAfter(EsMajorVersion.V_6_X)) {
             // 6.0 Removed support for TTL and Timestamp metadata on index and update requests.
@@ -116,11 +125,16 @@ public abstract class PerEntityPoolingMetadataExtractor implements MetadataExtra
             }
         }
 
-        return new StaticFieldExtractor();
+        return createExtractorFor(metadata);
+    }
+    
+    protected FieldExtractor createExtractorFor(Metadata metadata) {
+    	return new StaticFieldExtractor();
     }
 
     public abstract Object getValue(Metadata metadata);
-
+    
+    @Override
     public void setObject(Object entity) {
         this.entity = entity;
     }
