@@ -238,6 +238,10 @@ public abstract class Settings {
     public String getMappingDefaultClassExtractor() {
         return getProperty(ES_MAPPING_DEFAULT_EXTRACTOR_CLASS);
     }
+    
+    public String getMappingMetadataExtractorClassName() {
+        return getProperty(ES_MAPPING_METADATA_EXTRACTOR_CLASS);
+    }
 
     public String getMappingIdExtractorClassName() {
         return getProperty(ES_MAPPING_ID_EXTRACTOR_CLASS, getMappingDefaultClassExtractor());

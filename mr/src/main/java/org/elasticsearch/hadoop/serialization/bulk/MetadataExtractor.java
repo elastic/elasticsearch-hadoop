@@ -70,4 +70,5 @@ public interface MetadataExtractor {
     }
 
     FieldExtractor get(Metadata metadata);
+    void setObject(Object entity);
 }
