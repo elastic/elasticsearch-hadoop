@@ -251,6 +251,8 @@ public interface ConfigurationOptions {
     /** Output options **/
     String ES_OUTPUT_JSON = "es.output.json";
     String ES_OUTPUT_JSON_DEFAULT = "no";
+    String ES_OUTPUT_INCLUDE_RESOURCE_NAME = "es.output.include.resource.name";
+    String ES_OUTPUT_INCLUDE_RESOURCE_NAME_DEFAULT = "yes";
 
     /** Network options */
     String ES_NET_TRANSPORT_POOLING_EXPIRATION_TIMEOUT = "es.net.transport.pooling.expiration.timeout";

@@ -19,9 +19,18 @@
 package org.elasticsearch.hadoop.serialization.bulk;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.AbstractBulkFactory.DynamicContentRef;
@@ -37,6 +46,9 @@ class TemplatedBulk implements BulkCommand {
 
     private BytesArray scratchPad = new BytesArray(1024);
     private BytesRef ref = new BytesRef();
+    private Pattern dynamicResourcePanttern = Pattern.compile("(?<=\\{)[^}]*(?=\\})");
+    private ObjectMapper mapper = new ObjectMapper();
+    private Settings settings;
 
     private final ValueWriter valueWriter;
 
@@ -44,6 +56,13 @@ class TemplatedBulk implements BulkCommand {
         this.beforeObject = beforeObject;
         this.afterObject = afterObject;
         this.valueWriter = valueWriter;
+    }
+
+    TemplatedBulk(Collection<Object> beforeObject, Collection<Object> afterObject, ValueWriter<?> valueWriter, Settings settings) {
+        this.beforeObject = beforeObject;
+        this.afterObject = afterObject;
+        this.valueWriter = valueWriter;
+        this.settings = settings;
     }
 
     @Override
@@ -54,6 +73,10 @@ class TemplatedBulk implements BulkCommand {
         Object processed = preProcess(object, scratchPad);
         // write before object
         writeTemplate(beforeObject, processed);
+        // json input and not include resource name
+        if (processed instanceof BytesArray && !settings.getIncludeResourceName() && settings.getInputAsJson()) {
+            processed = notIncludedResourceName(processed);
+        }
         // write object
         doWriteObject(processed, scratchPad, valueWriter);
         ref.add(scratchPad);
@@ -61,6 +84,32 @@ class TemplatedBulk implements BulkCommand {
         writeTemplate(afterObject, processed);
         return ref;
     }
+
+    private Object notIncludedResourceName(Object processed) {
+        try {
+            Matcher matcher = dynamicResourcePanttern.matcher(settings.getResourceWrite());
+            while (matcher.find()) {
+                String dynamicResourceName = matcher.group();
+                JsonNode node = mapper.readTree(processed.toString());
+                if (node.size() > 0 && node.has(dynamicResourceName)) {
+                    ObjectNode result = mapper.createObjectNode();
+                    Iterator<Map.Entry<String, JsonNode>> entryIterator = node.getFields();
+                    while (entryIterator.hasNext()) {
+                        Map.Entry<String, JsonNode> jsonNode = entryIterator.next();
+                        if (!jsonNode.getKey().equals(dynamicResourceName)) {
+                            result.put(jsonNode.getKey(), jsonNode.getValue());
+                        }
+                    }
+                    scratchPad.reset();
+                    processed = preProcess(result.toString(), scratchPad);
+                }
+            }
+        } catch (Exception e) {
+            throw new EsHadoopException("Process not included resource name error.", e);
+        }
+        return processed;
+    }
+
 
     protected Object preProcess(Object object, BytesArray storage) {
         return object;

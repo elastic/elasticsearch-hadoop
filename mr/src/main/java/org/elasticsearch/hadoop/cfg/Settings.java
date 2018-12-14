@@ -34,6 +34,8 @@ import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
 import org.elasticsearch.hadoop.util.unit.TimeValue;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_INCLUDE_RESOURCE_NAME;
+import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OUTPUT_INCLUDE_RESOURCE_NAME_DEFAULT;
 import static org.elasticsearch.hadoop.cfg.InternalConfigurationOptions.*;
 
 /**
@@ -219,6 +221,10 @@ public abstract class Settings {
 
     public String getMappingVersionType() {
         return getProperty(ES_MAPPING_VERSION_TYPE, ES_MAPPING_VERSION_TYPE_EXTERNAL);
+    }
+
+    public boolean getIncludeResourceName() {
+        return Boolean.parseBoolean(getProperty(ES_OUTPUT_INCLUDE_RESOURCE_NAME, ES_OUTPUT_INCLUDE_RESOURCE_NAME_DEFAULT));
     }
 
     public String getMappingRouting() {

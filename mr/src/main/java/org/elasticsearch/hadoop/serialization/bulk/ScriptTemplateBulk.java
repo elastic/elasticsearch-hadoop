@@ -30,8 +30,8 @@ class ScriptTemplateBulk extends TemplatedBulk {
     private final Settings settings;
 
     ScriptTemplateBulk(Settings settings, Collection<Object> beforeObject, Collection<Object> afterObject,
-            ValueWriter<?> valueWriter) {
-        super(beforeObject, afterObject, valueWriter);
+                       ValueWriter<?> valueWriter) {
+        super(beforeObject, afterObject, valueWriter, settings);
         this.settings = settings;
     }
 

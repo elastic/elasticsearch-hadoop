@@ -43,8 +43,8 @@ class JsonTemplatedBulk extends TemplatedBulk {
     protected final Settings settings;
 
     public JsonTemplatedBulk(Collection<Object> beforeObject, Collection<Object> afterObject,
-            JsonFieldExtractors jsonExtractors, Settings settings) {
-        super(beforeObject, afterObject, new NoOpValueWriter());
+                             JsonFieldExtractors jsonExtractors, Settings settings) {
+        super(beforeObject, afterObject, new NoOpValueWriter(), settings);
         this.jsonExtractors = jsonExtractors;
         this.jsonWriter = ObjectUtils.instantiate(settings.getSerializerBytesConverterClassName(), settings);
         this.settings = settings;
