@@ -293,9 +293,9 @@ es.read.field.as.array.include = nested.bar:3
 ----
 
 `es.read.field.as.array.exclude` (default empty)::
-Fields/properties that should be considered as arrays/lists. Similar to `es.read.field.as.array.include` above. Multiple values can be specified by using a comma. 
+Fields/properties that should not be considered as arrays/lists. Similar to `es.read.field.as.array.include` above. Multiple values can be specified by using a comma.
 By default, no value is specified meaning no properties/fields are excluded (and since none is included as indicated above), no field is treated as array
-before-hand.
+before-hand. Note that this setting does not affect nested fields as they are always considered to be arrays.
 
 [float]
 ==== Metadata (when reading from {es})
