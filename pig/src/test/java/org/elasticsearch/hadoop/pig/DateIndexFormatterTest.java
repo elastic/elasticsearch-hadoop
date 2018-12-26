@@ -33,7 +33,7 @@ public class DateIndexFormatterTest {
     @Test
     public void testTimeYMDFormat() {
         formatter.configure("YYYY.MM.dd");
-        String date = convertPigDate("2014-10-05T19:09:52.000Z");
+        String date = convertPigDate("2014-10-05T19:09:52.000");
         assertThat(formatter.format(date), is("2014.10.05"));
     }
 
