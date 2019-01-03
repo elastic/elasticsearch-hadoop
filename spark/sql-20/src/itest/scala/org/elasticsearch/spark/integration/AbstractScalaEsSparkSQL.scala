@@ -2130,6 +2130,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   
   @Test
   def testGeoShapeCircle() {
+    EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "circle geo shape is removed in later 6.6+ versions")
     val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
