@@ -270,16 +270,16 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureBuildTasks(Project project) {
-        // Target Java 1.6 compilation
+        // Target Java 1.8 compilation
         JavaCompile compileJava = project.tasks.getByName('compileJava') as JavaCompile
-        compileJava.setSourceCompatibility('1.6')
-        compileJava.setTargetCompatibility('1.6')
+        compileJava.setSourceCompatibility('1.8')
+        compileJava.setTargetCompatibility('1.8')
         compileJava.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
 
-        // Target Java 1.6 for tests
+        // Target Java 1.8 for tests
         JavaCompile compileTestJava = project.tasks.getByName('compileTestJava') as JavaCompile
-        compileTestJava.setSourceCompatibility('1.6')
-        compileTestJava.setTargetCompatibility('1.6')
+        compileTestJava.setSourceCompatibility('1.8')
+        compileTestJava.setTargetCompatibility('1.8')
 
         // Enable HTML test reports
         Test testTask = project.tasks.getByName('test') as Test
@@ -395,13 +395,9 @@ class BuildPlugin implements Plugin<Project>  {
                 }
             }
             jdt {
-                // use Java 7 since it is required by ES
-                // ES-Hadoop is still on Java 6 (since Hadoop <2.7 is still on 6)
-                // but ES 5.0 is JDK8
                 javaRuntimeName = "JavaSE-1.8"
-                // specify again the compatibility to override the default JavaRE settings
-                sourceCompatibility = 1.6
-                targetCompatibility = 1.6
+                sourceCompatibility = 1.8
+                targetCompatibility = 1.8
             }
         }
     }
