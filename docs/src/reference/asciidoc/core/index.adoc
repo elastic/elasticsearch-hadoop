@@ -6,8 +6,6 @@ include::configuration.adoc[]
 
 include::mr.adoc[]
 
-include::cascading.adoc[]
-
 include::hive.adoc[]
 
 include::pig.adoc[]

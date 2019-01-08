@@ -5,7 +5,7 @@ Before running {eh}, please do check out the requirements below. This is even mo
 
 NOTE: make sure to verify *all* nodes in a cluster when checking the version of a certain artifact.
 
-TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Cascading or Pig) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
+TIP: {eh} adds no extra requirements to Hadoop (or the various libraries built on top of it, such as Pig) or {es} however as a rule of thumb, do use the latest stable version of the said library (checking the compatibility with Hadoop and the JDK, where applicable).
 
 [[requirements-jdk]]
 === JDK
@@ -68,19 +68,6 @@ Hadoop 2.4.1
 === Apache YARN / Hadoop 2.x
 
 {eh} binary is tested against Hadoop 2.x and designed to run on Yarn without any changes or modifications.
-
-[[requirements-cascading]]
-=== Cascading
-
-Cascading version 2.1.x (2.1.6) or higher. We recommend using the latest release of Cascading (currently {cs-v}).
-
-Since Cascading is a library, the best way to find out the target version is to look at its file name:
-
-["source","bash",subs="attributes"]
-----
-$ ls
-cascading-{cs-v}.jar
-----
 
 [[requirements-hive]]
 === Apache Hive

@@ -401,7 +401,7 @@ preferences may cause scroll queries to fail in the event that shards cannot be 
 
 `es.read.source.filter` (default none)::
 Normally when using an integration that allows specifying some form of schema
-(such as Hive, or Cascading), the connector will automatically extract the field
+(such as Hive), the connector will automatically extract the field
 names from the schema and request only those fields from {es} to save on bandwidth.
 When using an integration that _does not_ leverage any data schemas (such as normal
 MR and Spark), this property allows you to specify a comma delimited string of field
@@ -411,7 +411,7 @@ IMPORTANT: If `es.read.source.filter` is set, an exception will be thrown in the
 case that the connector tries to push down a different source field filtering.
 In these cases you should clear this property and trust that the connector knows
 which fields should be returned. This occurs in SparkSQL, Hive, and when
-specifying a schema in Cascading and Pig.
+specifying a schema in Pig.
 
 [source,bash]
 ----
@@ -593,10 +593,10 @@ Number of retries for a given batch in case {es} is overloaded and data is rejec
 Time to wait between batch write retries that are caused by bulk rejections.
 
 `es.ser.reader.value.class` (default _depends on the library used_)::
-Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+Name of the `ValueReader` implementation for converting JSON to objects. This is set by the framework depending on the library ({mr}, Hive, Pig, etc...) used.
 
 `es.ser.writer.value.class` (default _depends on the library used_)::
-Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Cascading, Hive, Pig, etc...) used.
+Name of the `ValueWriter` implementation for converting objects to JSON. This is set by the framework depending on the library ({mr}, Hive, Pig, etc...) used.
 
 [[configuration-runtime]]
 == Runtime options
@@ -759,21 +759,20 @@ use the file's name.
 [[logging]]
 == Logging
 
-{eh} uses http://commons.apache.org/proper/commons-logging/[commons-logging] library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, {eh} logs relevant information about the job progress at `INFO` level. Typically, whatever integration you are using (Map/Reduce, Cascading, Hive, Pig), each job will print in the console at least one message indicating the {eh} version used:
+{eh} uses http://commons.apache.org/proper/commons-logging/[commons-logging] library, same as Hadoop, for its logging infrastructure and thus it shares the same configuration means. Out of the box, no configuration is required - by default, {eh} logs relevant information about the job progress at `INFO` level. Typically, whatever integration you are using (Map/Reduce, Hive, Pig), each job will print in the console at least one message indicating the {eh} version used:
 
 [source,bash]
 ----
 16:13:01,946  INFO main util.Version - Elasticsearch Hadoop v2.0.0.BUILD-SNAPSHOT [f2c5c3e280]
 ----
 
-Configuring logging for Hadoop (or Cascading, Hive and Pig) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
+Configuring logging for Hadoop (or Hive and Pig) is outside the scope of this documentation, however in short, at runtime, Hadoop relies on http://logging.apache.org/log4j/1.2/[log4j 1.2] as an actual logging implementation. In practice, this means adding the package name of interest and its level logging the `log4j.properties` file in the job classpath.
 {eh} provides the following important packages:
 [cols="^,^",options="header"]
 
 |===
 | Package | Purpose
 
-|`org.elasticsearch.hadoop.cascading`       | Cascading integration
 |`org.elasticsearch.hadoop.hive`            | Apache Hive integration
 |`org.elasticsearch.hadoop.mr`              | {mr} functionality
 |`org.elasticsearch.hadoop.pig`             | Apache Pig integration

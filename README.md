@@ -1,6 +1,6 @@
 # Elasticsearch Hadoop [![Build Status](https://travis-ci.org/elastic/elasticsearch-hadoop.svg?branch=master)](https://travis-ci.org/elastic/elasticsearch-hadoop)
 Elasticsearch real-time search and analytics natively integrated with Hadoop.
-Supports [Map/Reduce](#mapreduce), [Cascading](#cascading), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
+Supports [Map/Reduce](#mapreduce), [Apache Hive](#apache-hive), [Apache Pig](#apache-pig), [Apache Spark](#apache-spark) and [Apache Storm](#apache-storm).
 
 See  [project page](http://www.elastic.co/products/hadoop/) and [documentation](http://www.elastic.co/guide/en/elasticsearch/hadoop/current/index.html) for detailed information.
 
@@ -313,23 +313,6 @@ DataFrame df = sqlContext.read.json("examples/people.json")
 JavaEsSparkSQL.saveToEs(df, "spark/docs")
 ```
 
-
-## [Cascading][]
-ES-Hadoop offers a dedicate Elasticsearch [Tap][], `EsTap` that can be used both as a sink or a source. Note that `EsTap` can be used in both local (`LocalFlowConnector`) and Hadoop (`HadoopFlowConnector`) flows:
-
-### Reading
-```java
-Tap in = new EsTap("radio/artists", "?q=me*");
-Tap out = new StdOut(new TextLine());
-new LocalFlowConnector().connect(in, out, new Pipe("read-from-ES")).complete();
-```
-### Writing
-```java
-Tap in = Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), "src/test/resources/artists.dat");
-Tap out = new EsTap("radio/artists", new Fields("name", "url", "picture"));
-new HadoopFlowConnector().connect(in, out, new Pipe("write-to-ES")).complete();
-```
-
 ## [Apache Storm][]
 ES-Hadoop provides native integration with Storm: for reading a dedicated `Spout` and for writing a specialized `Bolt`
 
@@ -397,5 +380,3 @@ under the License.
 [Gradle]: http://www.gradle.org/
 [REST]: http://www.elastic.co/guide/en/elasticsearch/reference/current/api-conventions.html
 [DistributedCache]: http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/filecache/DistributedCache.html
-[Cascading]: http://www.cascading.org/
-[Tap]: http://docs.cascading.org/cascading/2.1/userguide/html/ch03s05.html

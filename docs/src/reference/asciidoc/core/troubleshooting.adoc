@@ -82,7 +82,7 @@ Whichever it is, a *clear* description of the problem will help other users to h
 === What information is useful?
 - OS & JVM version
 - Hadoop / Spark version / distribution
-- if using a certain library (Cascading, Hive, Pig), the version used
+- if using a certain library (Hive, Pig), the version used
 - {eh} version
 - the job or script that is causing the issue
 - Hadoop / Spark cluster size
