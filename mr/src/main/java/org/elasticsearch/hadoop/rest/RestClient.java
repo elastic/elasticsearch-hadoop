@@ -593,6 +593,7 @@ public class RestClient implements Closeable, StatsAware {
         execute(PUT, mapping, new BytesArray(bytes));
     }
 
+    // FIXHERE: Consolidate this with TokenUtil#obtainToken()
     public EsToken getAuthToken(String user, String password) {
         ClusterInfo remoteInfo = clusterInfo;
         if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {

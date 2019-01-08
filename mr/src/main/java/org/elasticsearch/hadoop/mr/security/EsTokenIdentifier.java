@@ -20,7 +20,9 @@
 package org.elasticsearch.hadoop.mr.security;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -28,14 +30,46 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenRenewer;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.security.EsToken;
 
+/**
+ * The Hadoop Token Identifier for any generic token that contains an EsToken within it.
+ * <p>
+ * Hadoop tokens are generic byte holders that can hold any kind of auth information within them.
+ * To identify what specific auth information is within them, they require an "Identifier" to be
+ * provided at creation time. This class is used as that identifier.
+ * </p>
+ * <p>
+ * Also included in this class is the Hadoop defined token renewer interface which allows for any
+ * process that contains the appropriate service loader info to renew and cancel an existing token.
+ * </p>
+ * <p>
+ * Service loader information is at META-INF/services/org.apache.hadoop.security.token.TokenRenewer
+ * and META-INF/services/org.apache.hadoop.security.token.TokenIdentifier
+ * </p>
+ */
 public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
 
     public static final Text KIND_NAME = new Text("ELASTICSEARCH_AUTH_TOKEN");
+
+    public static Token<EsTokenIdentifier> createTokenFrom(EsToken esToken) {
+        EsTokenIdentifier identifier = new EsTokenIdentifier();
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try {
+            esToken.writeOut(new DataOutputStream(buffer));
+        } catch (IOException e) {
+            throw new EsHadoopException("Could not serialize token information", e);
+        }
+        byte[] id = identifier.getBytes();
+        byte[] pw = buffer.toByteArray();
+        Text kind = identifier.getKind();
+        Text service = new Text(esToken.getClusterName());
+        return new Token<EsTokenIdentifier>(id, pw, kind, service);
+    }
 
     @Override
     public Text getKind() {

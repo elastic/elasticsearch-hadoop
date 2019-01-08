@@ -31,13 +31,37 @@ import org.elasticsearch.hadoop.EsHadoopException;
  */
 public interface User {
 
+    /**
+     * Execute the given action as the user
+     * @param action To execute
+     * @param <T> The return type from the action
+     * @return Whatever was returned from the action
+     */
     <T> T doAs(PrivilegedAction<T> action);
 
+    /**
+     * Execute the given action as the user
+     * @param action To execute
+     * @param <T> The return type from the action
+     * @return Whatever was returned from the action
+     * @throws EsHadoopException Should an exception be thrown during the operation
+     */
     <T> T doAs(PrivilegedExceptionAction<T> action) throws EsHadoopException;
 
+    /**
+     * @param clusterName The cluster name
+     * @return a previously added Elasticsearch authentication token, or null if it does not exist
+     */
     EsToken getEsToken(String clusterName);
 
+    /**
+     * Adds the given esToken to the user
+     * @param esToken Authentication token for Elasticsearch
+     */
     void addEsToken(EsToken esToken);
 
+    /**
+     * @return the KerberosPrincipal attached to the user, or null if it does not exist
+     */
     KerberosPrincipal getKerberosPrincipal();
 }

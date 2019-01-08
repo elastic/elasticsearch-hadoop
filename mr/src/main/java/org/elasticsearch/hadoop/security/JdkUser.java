@@ -41,11 +41,11 @@ public class JdkUser implements User {
     static class EsTokenHolder {
         private Map<String, EsToken> creds = new HashMap<String, EsToken>();
 
-        public EsToken getCred(String alias) {
+        EsToken getCred(String alias) {
             return creds.get(alias);
         }
 
-        public void setCred(String alias, EsToken cred) {
+        void setCred(String alias, EsToken cred) {
             creds.put(alias, cred);
         }
     }

@@ -89,18 +89,7 @@ public class HadoopUser implements User {
 
     @Override
     public void addEsToken(EsToken esToken) {
-        EsTokenIdentifier identifier = new EsTokenIdentifier();
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        try {
-            esToken.writeOut(new DataOutputStream(buffer));
-        } catch (IOException e) {
-            throw new EsHadoopException("Could not serialize token information", e);
-        }
-        byte[] id = identifier.getBytes();
-        byte[] pw = buffer.toByteArray();
-        Text kind = identifier.getKind();
-        Text service = new Text(esToken.getClusterName());
-        Token<EsTokenIdentifier> token = new Token<EsTokenIdentifier>(id, pw, kind, service);
+        Token<EsTokenIdentifier> token = EsTokenIdentifier.createTokenFrom(esToken);
         ugi.addToken(token);
     }
 
