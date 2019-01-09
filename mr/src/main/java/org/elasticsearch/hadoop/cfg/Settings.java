@@ -78,10 +78,22 @@ public abstract class Settings {
      * @return the {@link ClusterInfo} extracted from the properties
      */
     public ClusterInfo getClusterInfoOrThrow() {
-        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
-        if (clusterName == null) {
+        ClusterInfo clusterInfo = getClusterInfoOrNull();
+        if (clusterInfo == null) {
             throw new IllegalArgumentException("Elasticsearch cluster name:[ " + InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME +
                     "] not present in configuration");
+        }
+        return clusterInfo;
+    }
+
+    /**
+     * Get the internal cluster name and version or null if not present in the settings
+     * @return the {@link ClusterInfo} extracted from the properties or null if not present
+     */
+    public ClusterInfo getClusterInfoOrNull() {
+        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        if (clusterName == null) {
+            return null;
         }
         String clusterUUID = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
         EsMajorVersion version = getInternalVersionOrThrow();
