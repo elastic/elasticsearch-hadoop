@@ -27,7 +27,7 @@ import javax.security.auth.Subject;
  * Operates by retrieving the currently set subject in a way that ES-Hadoop understands, or
  * a blank subject if there isn't currently one available.
  */
-public class JdkUserProvider implements UserProvider {
+public class JdkUserProvider extends UserProvider {
 
     @Override
     public User getUser() {

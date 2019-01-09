@@ -19,9 +19,36 @@
 
 package org.elasticsearch.hadoop.security;
 
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.serialization.SettingsAware;
+import org.elasticsearch.hadoop.util.ObjectUtils;
+
 /**
  * Provides a platform independent way of retrieving the currently running user.
  */
-public interface UserProvider {
-    User getUser();
+public abstract class UserProvider implements SettingsAware {
+
+    public static UserProvider create(Settings settings) {
+        String className = settings.getSecurityUserProviderClass();
+        if (className == null) {
+            throw new EsHadoopIllegalArgumentException("Could not locate classname for UserProvider. One must be set with " +
+                    ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS);
+        }
+        return ObjectUtils.instantiate(className, settings);
+    }
+
+    private Settings settings;
+
+    @Override
+    public void setSettings(Settings settings) {
+        this.settings = settings;
+    }
+
+    public boolean isKerberosEnabled() {
+        return settings.getSecurityAuthenticationMethod().equals(AuthenticationMethod.KERBEROS);
+    }
+
+    public abstract User getUser();
 }

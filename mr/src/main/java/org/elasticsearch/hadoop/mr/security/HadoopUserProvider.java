@@ -29,7 +29,7 @@ import org.elasticsearch.hadoop.security.UserProvider;
 /**
  * Retrieves the currently logged in Hadoop UGI. Note: If none exists, this will attempt a login.
  */
-public class HadoopUserProvider implements UserProvider {
+public class HadoopUserProvider extends UserProvider {
     @Override
     public User getUser() {
         try {
