@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.cfg;
 
-import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.serialization.field.DateIndexFormatter;
 import org.elasticsearch.hadoop.serialization.field.DefaultIndexExtractor;
 import org.elasticsearch.hadoop.serialization.field.DefaultParamsExtractor;
@@ -309,5 +308,6 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 
     /** Security options **/
+    String ES_SECURITY_AUTHENTICATION = "es.security.authentication";
     String ES_SECURITY_USER_PROVIDER_CLASS = "es.security.user.provider.class";
 }

@@ -26,6 +26,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.security.AuthenticationMethod;
 import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -649,6 +651,28 @@ public abstract class Settings {
 
     public boolean getDataFrameWriteNullValues() {
         return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
+    }
+
+    public AuthenticationMethod getSecurityAuthenticationMethod() {
+        AuthenticationMethod authMode = null;
+        String authSetting = getProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION);
+        // Check for a valid auth setting
+        if (authSetting != null) {
+            authMode = AuthenticationMethod.get(authSetting);
+            if (authMode == null) {
+                // Property was set but was invalid auth mode value
+                throw new EsHadoopIllegalArgumentException("Could not determine auth mode. Property [" +
+                        ConfigurationOptions.ES_SECURITY_AUTHENTICATION + "] was set to unknown mode [" + authSetting + "]. " +
+                        "Use a valid auth mode from the following: " + AuthenticationMethod.getAvailableMethods());
+            }
+        }
+        // Check if user name is set in the settings for backwards compatibility.
+        if (authMode == null && getNetworkHttpAuthUser() != null) {
+            authMode = AuthenticationMethod.BASIC;
+        } else {
+            authMode = AuthenticationMethod.SIMPLE;
+        }
+        return authMode;
     }
 
     public String getSecurityUserProviderClass() {
