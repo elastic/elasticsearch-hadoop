@@ -150,8 +150,7 @@ public class TokenUtil {
      * @throws IOException If making a remote call fails
      * @throws InterruptedException If executing as the given user is interrupted
      */
-    public static void addTokenForJob(final RestClient client, ClusterName clusterName, User user, Job job) throws IOException,
-            InterruptedException {
+    public static void addTokenForJob(final RestClient client, ClusterName clusterName, User user, Job job) {
         Token<EsTokenIdentifier> token = getAuthToken(clusterName, user);
         if (token == null) {
             token = obtainToken(client, user);
@@ -170,8 +169,7 @@ public class TokenUtil {
      * @throws IOException If making a remote call fails
      * @throws InterruptedException If executing as the given user is interrupted
      */
-    public static void addTokenForJobConf(final RestClient client, ClusterName clusterName, User user, JobConf job) throws IOException,
-            InterruptedException {
+    public static void addTokenForJobConf(final RestClient client, ClusterName clusterName, User user, JobConf job) {
         Token<EsTokenIdentifier> token = getAuthToken(clusterName, user);
         if (token == null) {
             token = obtainToken(client, user);
@@ -190,8 +188,7 @@ public class TokenUtil {
      * @throws InterruptedException If executing as the given user is interrupted
      * @return true if the token was added, false if it already existed
      */
-    public static boolean addTokenIfMissing(RestClient client, ClusterName clusterName, User user)
-            throws IOException, InterruptedException {
+    public static boolean addTokenIfMissing(RestClient client, ClusterName clusterName, User user) {
         EsToken token = getEsAuthToken(clusterName, user);
         if (token == null) {
             token = obtainEsToken(client, user);
