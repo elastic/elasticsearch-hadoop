@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -48,7 +49,6 @@ import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
-import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
@@ -298,12 +298,20 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 authPrefs.add(EsHadoopAuthPolicies.BEARER);
             }
             // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
-            KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
-            if (userPrincipal != null && StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
+            if (userProvider.isKerberosEnabled()) {
+                if (!StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
+                    throw new EsHadoopIllegalArgumentException("Missing Elasticsearch Kerberos Principal name. " +
+                            "Specify one with [" + ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL + "]");
+                }
+                KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
+                if (userPrincipal == null) {
+                    throw new EsHadoopIllegalArgumentException("Could not locate Kerberos Principal on currently logged in user.");
+                }
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
                 // TODO: Limit this by hosts and ports
                 AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
+                // TODO: This should just pass in the user provider instead of getting the user principal at this point.
                 Credentials credential = new SpnegoCredentials(userPrincipal.getName(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
                 state.setCredentials(scope, credential);
                 if (log.isDebugEnabled()) {
