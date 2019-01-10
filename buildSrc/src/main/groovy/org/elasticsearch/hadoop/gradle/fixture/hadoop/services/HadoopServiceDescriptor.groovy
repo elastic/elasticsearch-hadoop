@@ -136,8 +136,10 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         hdfsSite.putIfAbsent('dfs.datanode.data.dir', new File(defaultDataDir, "dfs/data/").toURI().toString())
         hdfsSite.putIfAbsent('dfs.namenode.checkpoint.dir', new File(defaultDataDir, "dfs/namesecondary/").toURI().toString())
 
-        // namenode rpc-address
+        // namenode addresses
         hdfsSite.putIfAbsent('dfs.namenode.rpc-address', 'localhost:9000')
+        hdfsSite.putIfAbsent('dfs.namenode.http-address', 'localhost:50070')
+        hdfsSite.putIfAbsent('dfs.namenode.https-address', 'localhost:50470')
 
         // default permissions to disabled
         hdfsSite.putIfAbsent('dfs.permissions.enabled', 'false')
