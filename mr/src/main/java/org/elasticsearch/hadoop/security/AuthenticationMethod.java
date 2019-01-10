@@ -49,7 +49,7 @@ public enum AuthenticationMethod {
      */
     KERBEROS("kerberos");
 
-    private final static Map<String, AuthenticationMethod> REGISTRY = new HashMap<>(4);
+    private final static Map<String, AuthenticationMethod> REGISTRY = new HashMap<String, AuthenticationMethod>(4);
     static {
         REGISTRY.put(SIMPLE.value, SIMPLE);
         REGISTRY.put(BASIC.value, BASIC);

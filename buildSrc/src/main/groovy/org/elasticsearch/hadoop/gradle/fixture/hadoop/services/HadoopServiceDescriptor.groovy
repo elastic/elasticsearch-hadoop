@@ -96,7 +96,7 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         if (hashVerifications == null) {
             throw new GradleException("Unsupported version [$version] - No download hash configured")
         }
-        return hashVerifcations
+        return hashVerifications
     }
 
     @Override
