@@ -108,6 +108,11 @@ interface ServiceDescriptor {
     Closure<String> configFormat(InstanceConfiguration configuration)
 
     /**
+     * Produces the HTTP/S URI to reach the web front end for a running instance, or null if there is no web interface.
+     */
+    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents)
+
+    /**
      * The command line to use for starting the given role and instance.
      */
     List<String> startCommand(InstanceConfiguration configuration)

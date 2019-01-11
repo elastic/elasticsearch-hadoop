@@ -122,6 +122,14 @@ class PigServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+        if (GATEWAY.equals(configuration.roleDescriptor)) {
+            return null
+        }
+        throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
+    }
+
+    @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         return ['']
     }

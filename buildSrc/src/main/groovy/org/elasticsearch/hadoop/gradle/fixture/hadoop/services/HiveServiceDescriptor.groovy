@@ -125,6 +125,14 @@ class HiveServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
+    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+        if (HIVESERVER.equals(configuration.roleDescriptor)) {
+            return null
+        }
+        throw new UnsupportedOperationException("Unknown instance [${configuration.roleDescriptor.roleName()}]")
+    }
+
+    @Override
     List<String> startCommand(InstanceConfiguration configuration) {
         // We specify the hive root logger to print to console via the hiveconf override.
         return ['hiveserver2', '--hiveconf', 'hive.root.logger=INFO,console']

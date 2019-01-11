@@ -141,6 +141,12 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
         hdfsSite.putIfAbsent('dfs.namenode.http-address', 'localhost:50070')
         hdfsSite.putIfAbsent('dfs.namenode.https-address', 'localhost:50470')
 
+        // datanode addresses
+        hdfsSite.putIfAbsent('dfs.datanode.address', 'localhost:50010')
+        hdfsSite.putIfAbsent('dfs.datanode.ipc.address', 'localhost:50020')
+        hdfsSite.putIfAbsent('dfs.datanode.http.address', 'localhost:50075')
+        hdfsSite.putIfAbsent('dfs.datanode.https.address', 'localhost:50475')
+
         // default permissions to disabled
         hdfsSite.putIfAbsent('dfs.permissions.enabled', 'false')
         files.put('hdfs-site.xml', hdfsSite)
@@ -156,6 +162,11 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
 
         // mapred-site.xml
         Map<String, String> mapredSite = container.flattenFile('mapred-site.xml')
+
+        // history server addresses
+        mapredSite.putIfAbsent('mapreduce.jobhistory.address', 'localhost:10020')
+        mapredSite.putIfAbsent('mapreduce.jobhistory.webapp.address', 'localhost:19888')
+
         files.put('mapred-site.xml', mapredSite)
 
         // core-site.xml:
@@ -175,6 +186,46 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     @Override
     Closure<String> configFormat(InstanceConfiguration configuration) {
         return ConfigFormats.hadoopXML()
+    }
+
+    @Override
+    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+        RoleDescriptor role = configuration.roleDescriptor
+        if (NAMENODE.equals(role)) {
+            Map<String, String> hdfsSite = configFileContents.get('hdfs-site.xml')
+            if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
+                return "https://${hdfsSite.get('dfs.namenode.https-address', 'localhost:50470')}"
+            } else {
+                return "http://${hdfsSite.get('dfs.namenode.http-address', 'localhost:50070')}"
+            }
+        } else if (DATANODE.equals(role)) {
+            Map<String, String> hdfsSite = configFileContents.get('hdfs-site.xml')
+            if ('HTTPS_ONLY' == hdfsSite.get('dfs.http.policy')) {
+                return "https://${hdfsSite.get('dfs.datanode.https-address', 'localhost:50475')}"
+            } else {
+                return "http://${hdfsSite.get('dfs.datanode.http-address', 'localhost:50075')}"
+            }
+        } else if (RESOURCEMANAGER.equals(role)) {
+            Map<String, String> yarnSite = configFileContents.get('yarn-site.xml')
+            if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
+                return "https://${yarnSite.get('yarn.resourcemanager.webapp.address', 'localhost:8090')}"
+            } else {
+                return "http://${yarnSite.get('yarn.resourcemanager.webapp.https.address', 'localhost:8088')}"
+            }
+        } else if (NODEMANAGER.equals(role)) {
+            Map<String, String> yarnSite = configFileContents.get('yarn-site.xml')
+            if ('HTTPS_ONLY' == yarnSite.get('yarn.http.policy')) {
+                return "https://${yarnSite.get('yarn.nodemanager.webapp.address', 'localhost:8042')}"
+            } else {
+                return "http://${yarnSite.get('yarn.nodemanager.webapp.address', 'localhost:8042')}"
+            }
+        } else if (HISTORYSERVER.equals(role)) {
+            Map<String, String> mapredSite = configFileContents.get('mapred-site.xml')
+            return "http://${mapredSite.get('mapreduce.jobhistory.webapp.address', 'localhost:19888')}"
+        } else if (GATEWAY.equals(role)) {
+            return null // No web interface for Gateway
+        }
+        throw new UnsupportedOperationException("Unknown instance [${role.roleName()}]")
     }
 
     @Override
