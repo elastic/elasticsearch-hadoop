@@ -34,6 +34,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
@@ -197,12 +198,6 @@ class HadoopClusterFormationTasks {
                 clusterTask.finalizedBy(stopTasks)
             }
         }
-
-        // FIXHERE: Configure wait commands!!!
-        // wait command for entire service
-        // wait depends on last instance start task
-        // runner depends on wait task
-
         return nodes
     }
 
@@ -269,6 +264,14 @@ class HadoopClusterFormationTasks {
 
         // If the role for this instance is not a process, we skip creating start and stop tasks for it.
         if (!node.getConfig().getRoleDescriptor().isExecutableProcess()) {
+            // Go through the given dependencies for the instance and if any of them are Fixtures, pick the stop tasks off
+            // and set the instance tasks as finalized by them.
+            for (Object dependency : node.config.getDependencies()) {
+                if (dependency instanceof Fixture) {
+                    def depStop = ((Fixture)dependency).stopTask
+                    setup.finalizedBy(depStop)
+                }
+            }
             return new TaskPair(startTask: setup)
         }
 
@@ -300,22 +303,25 @@ class HadoopClusterFormationTasks {
         // Configure daemon start task
         Task start = configureStartTask(taskName(prefix, node, 'start'), project, setup, node)
 
+        // Configure wait task
+        Task wait = configureWaitTask(taskName(prefix, node, 'wait'), project, node, start, 30)
+
         // Configure daemon stop task
         Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
 
         // We're running in the background, so make sure that the stop command is called after all cluster tasks finish
-        start.finalizedBy(stop)
+        wait.finalizedBy(stop)
 
         // Go through the given dependencies for the instance and if any of them are Fixtures, pick the stop tasks off
         // and set the instance tasks as finalized by them.
         for (Object dependency : node.config.getDependencies()) {
             if (dependency instanceof Fixture) {
                 def depStop = ((Fixture)dependency).stopTask
-                start.finalizedBy(depStop)
+                wait.finalizedBy(depStop)
                 stop.finalizedBy(depStop)
             }
         }
-        return new TaskPair(startTask: start, stopTask: stop)
+        return new TaskPair(startTask: wait, stopTask: stop)
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
@@ -480,6 +486,92 @@ class HadoopClusterFormationTasks {
                 project.delete(node.pidFile)
             }
         }
+    }
+
+    static Task configureWaitTask(String name, Project project, InstanceInfo instance, Task startTasks, int waitSeconds) {
+        Task wait = project.tasks.create(name: name, dependsOn: startTasks)
+        wait.doLast {
+            // wait until either any failed marker shows up or all pidFiles are present
+            project.ant.waitfor(maxwait: "${waitSeconds}", maxwaitunit: 'second', checkevery: '500', checkeveryunit: 'millisecond', timeoutproperty: "failed${name}") {
+                or {
+                    resourceexists {
+                        file(file: instance.failedMarker.toString())
+                    }
+                    and {
+                        resourceexists {
+                            file(file: instance.pidFile.toString())
+                        }
+                    }
+                }
+            }
+            // Timed out waiting for pidfiles or failures
+            if (project.ant.properties.containsKey("failed${name}".toString())) {
+                waitFailed(project, instance, project.logger, "Failed to start hadoop cluster: timed out after ${waitSeconds} seconds")
+            }
+
+            // Check to see if there were any failed markers
+            boolean anyNodeFailed = false
+            if (instance.failedMarker.exists()) {
+                project.logger.error("Failed to start hadoop cluster: ${instance.failedMarker.toString()} exists")
+                anyNodeFailed = true
+            }
+            if (anyNodeFailed) {
+                waitFailed(project, instance, project.logger, 'Failed to start hadoop cluster')
+            }
+
+            // make sure all the pidfiles exist otherwise we haven't fully started up
+            boolean pidFileExists = instance.pidFile.exists()
+            if (pidFileExists == false) {
+                waitFailed(project, instance, project.logger, 'Hadoop cluster did not complete startup in time allotted')
+            }
+
+            // first bind node info to the closure, then pass to the ant runner so we can get good logging
+            Closure antRunner = instance.waitCondition.curry(instance)
+
+            boolean success
+            if (project.logger.isInfoEnabled()) {
+                success = runAntCommand(project, antRunner, System.out, System.err)
+            } else {
+                PrintStream captureStream = new PrintStream(instance.buffer, true, "UTF-8")
+                success = runAntCommand(project, antRunner, captureStream, captureStream)
+            }
+
+            if (success == false) {
+                waitFailed(project, instance, project.logger, 'Hadoop cluster failed to pass wait condition')
+            }
+        }
+        return wait
+    }
+
+    static void waitFailed(Project project, InstanceInfo instance, Logger logger, String msg) {
+        if (logger.isInfoEnabled() == false) {
+            // We already log the command at info level. No need to do it twice.
+            instance.getCommandString().eachLine { line -> logger.error(line) }
+        }
+        logger.error("Node ${instance.config.roleDescriptor.roleName()} ${instance.instance} output:")
+        logger.error("|-----------------------------------------")
+        logger.error("|  failure marker exists: ${instance.failedMarker.exists()}")
+        logger.error("|  pid file exists: ${instance.pidFile.exists()}")
+        // the waitfor failed, so dump any output we got (if info logging this goes directly to stdout)
+        logger.error("|\n|  [ant output]")
+        instance.buffer.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
+        // also dump the log file for the startup script (which will include ES logging output to stdout)
+        if (instance.startLog.exists()) {
+            logger.error("|\n|  [log]")
+            instance.startLog.eachLine { line -> logger.error("|    ${line}") }
+        }
+//        if (instance.pidFile.exists() && instance.failedMarker.exists() == false) {
+//            logger.error("|\n|  [jstack]")
+//            String pid = instance.pidFile.getText('UTF-8')
+//            ByteArrayOutputStream output = new ByteArrayOutputStream()
+//            project.exec {
+//                commandLine = ["${project.runtimeJavaHome}/bin/jstack", pid]
+//                standardOutput = output
+//            }
+//            output.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
+//        }
+        logger.error("|-----------------------------------------")
+        throw new GradleException(msg)
     }
 
     /**

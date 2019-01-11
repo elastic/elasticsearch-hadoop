@@ -23,12 +23,14 @@ import com.sun.jna.Native
 import com.sun.jna.WString
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.test.JNAKernel32Library
+import org.elasticsearch.hadoop.gradle.util.WaitForURL
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.concurrent.TimeUnit
 
 /**
  * Generic information for any process running in a hadoop ecosystem.
@@ -107,6 +109,29 @@ class InstanceInfo {
 
     /** buffer for ant output when starting this node */
     ByteArrayOutputStream buffer = new ByteArrayOutputStream()
+
+    /**
+     * A closure to call before the cluster is considered ready. The closure is passed the node info,
+     * as well as a groovy AntBuilder, to enable running ant condition checks. The default wait
+     * condition is for http on the http port.
+     */
+    Closure waitCondition = { InstanceInfo instanceInfo, AntBuilder ant ->
+        String waitUrl = instanceInfo.httpUri()
+        if (waitUrl == null) {
+            return true
+        } else {
+            ant.echo(message: "==> [${new Date()}] checking health: ${waitUrl}",
+                    level: 'info')
+            // FIXHERE make maxwait configurable
+            return new WaitForURL()
+                    .setUrl(waitUrl)
+                    .setTrustAllSSLCerts(true)
+                    .setTrustAllHostnames(true)
+                    .setTotalWaitTime(30, TimeUnit.SECONDS)
+                    .setCheckEvery(500, TimeUnit.MILLISECONDS)
+                    .checkAvailability(project)
+        }
+    }
 
     /** Holds node configuration for part of a test cluster. */
     InstanceInfo(InstanceConfiguration config, Project project, String prefix, File sharedDir) {
@@ -256,11 +281,14 @@ class InstanceInfo {
         String pidWrapperScriptContents = "echo \$\$> ${pidFile}; exec \"${startScript}\" \"\$@\" > run.log 2>&1;"
         pidWrapperScript.setText(pidWrapperScriptContents, 'UTF-8')
         pidWrapperScript.setExecutable(true)
-        String backgroundScriptContents = "\"${pidWrapperScript}\" \"\$@\"; if [ \\\$? != 0 ]; then touch run.failed; rm -f ${pidFile}; fi"
+        String backgroundScriptContents = "\"${pidWrapperScript}\" \"\$@\"; if [ \\\$? != 0 ]; then touch ${failedMarker}; rm -f ${pidFile}; fi"
         backgroundScript.setText(backgroundScriptContents, 'UTF-8')
         backgroundScript.setExecutable(true)
     }
 
+    String httpUri() {
+        return config.serviceDescriptor.httpUri(config, configContents)
+    }
 
     @Override
     String toString() {
