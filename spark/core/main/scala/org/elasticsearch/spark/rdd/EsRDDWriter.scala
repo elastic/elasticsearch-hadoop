@@ -31,6 +31,9 @@ import org.elasticsearch.hadoop.serialization.BytesConverter
 import org.elasticsearch.hadoop.serialization.JdkBytesConverter
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor
+import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor
+import org.elasticsearch.hadoop.serialization.bulk.PerEntityPoolingMetadataExtractor
+import org.elasticsearch.hadoop.util.ObjectUtils
 import org.elasticsearch.spark.serialization.ScalaMapFieldExtractor
 import org.elasticsearch.spark.serialization.ScalaMetadataExtractor
 import org.elasticsearch.spark.serialization.ScalaValueWriter
@@ -50,12 +53,13 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     InitializationUtils.setValueWriterIfNotSet(settings, valueWriter, log)
     InitializationUtils.setBytesConverterIfNeeded(settings, bytesConverter, log)
     InitializationUtils.setFieldExtractorIfNotSet(settings, fieldExtractor, log)
+    InitializationUtils.setMetadataExtractorIfNotSet(settings, metadataExtractor, log)
     InitializationUtils.setUserProviderIfNotSet(settings, userProvider, log)
 
     settings
   }
 
-  lazy val metaExtractor = new ScalaMetadataExtractor(settings.getInternalVersionOrThrow)
+  lazy val metaExtractor = ObjectUtils.instantiate[MetadataExtractor](settings.getMappingMetadataExtractorClassName, settings)
 
   def write(taskContext: TaskContext, data: Iterator[T]): Unit = {
     val writer = RestService.createWriter(settings, taskContext.partitionId.toLong, -1, log)
@@ -74,6 +78,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
   protected def valueWriter: Class[_ <: ValueWriter[_]] = classOf[ScalaValueWriter]
   protected def bytesConverter: Class[_ <: BytesConverter] = classOf[JdkBytesConverter]
   protected def fieldExtractor: Class[_ <: FieldExtractor] = classOf[ScalaMapFieldExtractor]
+  protected def metadataExtractor: Class[_ <: MetadataExtractor] = classOf[ScalaMetadataExtractor]
   protected def userProvider: Class[_ <: UserProvider] = classOf[HadoopUserProvider]
 
   protected def processData(data: Iterator[T]): Any = {
@@ -81,7 +86,7 @@ private[spark] class EsRDDWriter[T: ClassTag](val serializedSettings: String,
     if (runtimeMetadata) {
       // use the key to extract metadata && return the value to be used as the document
       val (key, value) = next
-      metaExtractor.setObject(key)
+      metaExtractor.setObject(key);
       value
     } else {
       next

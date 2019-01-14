@@ -152,8 +152,14 @@ public interface ConfigurationOptions {
     String ES_INDEX_READ_ALLOW_RED_STATUS = "es.index.read.allow.red.status";
     String ES_INDEX_READ_ALLOW_RED_STATUS_DEFAULT = "false";
 
+    /** Elasticsearch shard search preference */
+    String ES_READ_SHARD_PREFERENCE = "es.read.shard.preference";
+    String ES_READ_SHARD_PREFERENCE_DEFAULT = "";
+
     /** Mapping types */
     String ES_MAPPING_DEFAULT_EXTRACTOR_CLASS = "es.mapping.default.extractor.class";
+    
+    String ES_MAPPING_METADATA_EXTRACTOR_CLASS = "es.mapping.metadata.extractor.class";
 
     String ES_MAPPING_ID = "es.mapping.id";
     String ES_MAPPING_ID_EXTRACTOR_CLASS = "es.mapping.id.extractor.class";
@@ -300,11 +306,17 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS = "es.net.proxy.https.use.system.props";
     String ES_NET_PROXY_HTTPS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 
+    @Deprecated
     String ES_NET_PROXY_SOCKS_HOST = "es.net.proxy.socks.host";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_PORT = "es.net.proxy.socks.port";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USER = "es.net.proxy.socks.user";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_PASS = "es.net.proxy.socks.pass";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS = "es.net.proxy.socks.use.system.props";
+    @Deprecated
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
 
     /** Security options **/

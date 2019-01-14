@@ -385,6 +385,20 @@ WARN main mr.EsInputFormat - Field(s) [naem, adress] not found
    in the Elasticsearch mapping specified; did you mean [name, location.address]?
 ----
 
+added[6.6]
+`es.read.shard.preference` (default none)::
+The value to use for the shard preference of a search operation when executing a scroll query. If left empty, the
+connector will automatically sense when to use the `_local` shard preference. This is most useful in hot/cold
+architectures when you need direct control over which nodes search operations are executed on:
+
+[source,bash]
+----
+es.read.shard.preference = _only_nodes:abc*
+----
+
+IMPORTANT: {ehtm} makes no attempt to validate this preference setting before running, and incorrectly configured shard
+preferences may cause scroll queries to fail in the event that shards cannot be located with the provided preferences.
+
 `es.read.source.filter` (default none)::
 Normally when using an integration that allows specifying some form of schema
 (such as Hive, or Cascading), the connector will automatically extract the field

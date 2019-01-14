@@ -113,7 +113,7 @@ public class VersionTest {
         File privateTmpOtherDir = new File(privateTmpDir, "other");
         mkdirSafe(privateTmpOtherDir);
         File tmpDir = new File(linkTest, "tmp");
-        linkDir(privateTmpDir, tmpDir);
+        linkDir(tmpDir, privateTmpDir);
 
         // File in original directory
         File testFile = new File(privateTmpDir, "test");
@@ -166,7 +166,7 @@ public class VersionTest {
         }
     }
 
-    private void linkDir(File privateTmpDir, File tmpDir) throws IOException {
+    private void linkDir(File tmpDir, File privateTmpDir) throws IOException {
         try {
             Files.createSymbolicLink(tmpDir.toPath(), privateTmpDir.toPath());
         } catch (UnsupportedOperationException e) {

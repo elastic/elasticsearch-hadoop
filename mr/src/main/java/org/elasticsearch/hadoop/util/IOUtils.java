@@ -216,6 +216,11 @@ public abstract class IOUtils {
 
     /**
      * Convert either a file or jar url into a local canonical file, or null if the file is a different scheme.
+     * @param fileURL the url to resolve to a canonical file.
+     * @return null if given URL is null, not using the jar scheme, or not using the file scheme. Otherwise, returns the
+     * String path to the local canonical file.
+     * @throws URISyntaxException If the given URL cannot be transformed into a URI
+     * @throws IOException If the jar cannot be read or if the canonical file cannot be determined
      */
     public static String toCanonicalFilePath(URL fileURL) throws URISyntaxException, IOException {
         if (fileURL == null) {
@@ -223,12 +228,12 @@ public abstract class IOUtils {
         }
 
         // Only handle jar: and file: schemes
-        if (!fileURL.getProtocol().equals("jar") && !fileURL.getProtocol().equals("file")) {
+        if (!"jar".equals(fileURL.getProtocol()) && !"file".equals(fileURL.getProtocol())) {
             return null;
         }
 
         // Parse the jar file location from the jar url. Doesn't open any resources.
-        if (fileURL.getProtocol().equals("jar")) {
+        if ("jar".equals(fileURL.getProtocol())) {
             JarURLConnection jarURLConnection = (JarURLConnection) fileURL.openConnection();
             fileURL = jarURLConnection.getJarFileURL();
         }

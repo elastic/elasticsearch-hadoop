@@ -16,33 +16,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.serialization.field;
+
+package org.elasticsearch.hadoop.util;
 
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-import static org.hamcrest.Matchers.*;
-
-public class DateIndexFormatterTest {
-
-    private IndexFormatter formatter = new DateIndexFormatter();
+public class BytesArrayTest {
 
     @Test
-    public void testTimeYMDFormat() {
-        formatter.configure("YYYY.MM.dd");
-        assertThat(formatter.format("2014-10-06T19:20:25.000"), is("2014.10.06"));
-    }
+    public void equalsHashCode() {
+        BytesArray a = new BytesArray(10);
+        BytesArray b = new BytesArray(20);
+        BytesArray c = new BytesArray("");
 
-    @Test
-    public void testTimeYMFormat() {
-        formatter.configure("YYYY-MM");
-        assertThat(formatter.format("2014-10-06T19:20:25.000Z"), is("2014-10"));
-    }
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(a, c);
+        assertEquals(b, c);
+        assertEquals(c, a);
+        assertEquals(c, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertEquals(a.hashCode(), c.hashCode());
 
-    @Test
-    public void testDateAndTimezone() {
-        formatter.configure("MM-dd");
-        assertThat(formatter.format("1969-08-20"), is("08-20"));
+        BytesArray d = new BytesArray("test");
+        BytesArray e = new BytesArray(20);
+        e.add("test");
+
+        assertEquals(d, e);
+        assertEquals(e, d);
+        assertEquals(e.hashCode(), d.hashCode());
     }
 }

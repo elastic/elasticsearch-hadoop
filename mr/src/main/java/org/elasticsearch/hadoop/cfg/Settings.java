@@ -134,6 +134,8 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_DISCOVERY), !getNodesWANOnly());
     }
 
+    public String getShardPreference() { return getProperty(ES_READ_SHARD_PREFERENCE, ES_READ_SHARD_PREFERENCE_DEFAULT); }
+
     public String getNodesPathPrefix() {
         return getProperty(ES_NODES_PATH_PREFIX, ES_NODES_PATH_PREFIX_DEFAULT);
     }
@@ -290,6 +292,10 @@ public abstract class Settings {
 
     public String getMappingDefaultClassExtractor() {
         return getProperty(ES_MAPPING_DEFAULT_EXTRACTOR_CLASS);
+    }
+    
+    public String getMappingMetadataExtractorClassName() {
+        return getProperty(ES_MAPPING_METADATA_EXTRACTOR_CLASS);
     }
 
     public String getMappingIdExtractorClassName() {

@@ -72,12 +72,10 @@ public abstract class Version {
                     pathURLs.add(url);
                 } catch (URISyntaxException e) {
                     String message = "Could not parse classpath resource URI: " + url.toString();
-                    LogFactory.getLog(Version.class).fatal(message, e);
-                    throw new Error(message, e);
+                    throw new RuntimeException(message, e);
                 } catch (IOException e) {
                     String message = "Could not retrieve canonical path to classpath resource: " + url.toString();
-                    LogFactory.getLog(Version.class).fatal(message, e);
-                    throw new Error(message, e);
+                    throw new RuntimeException(message, e);
                 }
             }
 
@@ -97,8 +95,7 @@ public abstract class Version {
                     }
                 }
                 if (foundJars > 1) {
-                    LogFactory.getLog(Version.class).fatal(sb);
-                    throw new Error(sb.toString());
+                    throw new RuntimeException(sb.toString());
                 }
             }
         }

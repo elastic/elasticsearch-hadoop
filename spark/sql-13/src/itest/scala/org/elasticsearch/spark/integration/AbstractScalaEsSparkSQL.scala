@@ -2072,6 +2072,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   
   @Test
   def testGeoShapeCircle() {
+    EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "circle geo shape is removed in later 6.6+ versions")
     val mapping = s"""{ "data": {
     |      "properties": {
     |        "name": {
@@ -2092,10 +2093,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
 
     val circle = """{"name":"circle", "location": {"type":"circle", "coordinates":[ -45.0, 45.0], "radius":"100m"} }""".stripMargin
-      
+
     sc.makeRDD(Seq(circle)).saveJsonToEs(indexAndType)
     val df = sqc.read.format("es").load(index)
- 
+
     val dataType = df.schema("location").dataType
     assertEquals("struct", dataType.typeName)
 

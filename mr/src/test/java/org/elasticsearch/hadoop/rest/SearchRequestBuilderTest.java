@@ -19,9 +19,11 @@
 package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class SearchRequestBuilderTest {
 
@@ -35,5 +37,31 @@ public class SearchRequestBuilderTest {
 
         assertTrue(includeVersionBuilder.toString().contains(versionQueryParam));
         assertTrue(!noVersionBuilder.toString().contains(versionQueryParam));
+    }
+
+    @Test
+    public void testPreference() {
+        String preferenceString = "_only_nodes:abc*";
+        String encodedPreferenceString = HttpEncodingTools.encode(preferenceString);
+
+        EsMajorVersion esVersion = EsMajorVersion.LATEST;
+        SearchRequestBuilder localOnlyBuilder = new SearchRequestBuilder(esVersion, true)
+                .local(true);
+        SearchRequestBuilder preferenceOnlyBuilder = new SearchRequestBuilder(esVersion, true)
+                .preference(preferenceString);
+        SearchRequestBuilder localWithPreferenceBuilder = new SearchRequestBuilder(esVersion, true)
+                .local(true)
+                .preference(preferenceString);
+
+        // If local=true and no preference is specified then query string contains "_local"
+        assertTrue(localOnlyBuilder.toString().contains("_local"));
+        // If local=false and a preference is specified then query string contains the preference and not "_local"
+        String preferenceOnlyString = preferenceOnlyBuilder.toString();
+        assertFalse(preferenceOnlyString.contains("_local"));
+        assertTrue(preferenceOnlyString.contains(encodedPreferenceString));
+        // If local=true and a preference is specified then query string contains the preference and not "_local"
+        String localWithPreferenceString = localWithPreferenceBuilder.toString();
+        assertFalse(localWithPreferenceString.contains("_local"));
+        assertTrue(localWithPreferenceString.contains(encodedPreferenceString));
     }
 }
