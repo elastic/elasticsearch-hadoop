@@ -60,7 +60,7 @@ public final class EsMapReduceUtil {
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, LOG);
         UserProvider userProvider = UserProvider.create(settings);
 
-        if (userProvider.isKerberosEnabled()) {
+        if (userProvider.isEsKerberosEnabled()) {
             User user = userProvider.getUser();
             ClusterInfo clusterInfo = settings.getClusterInfoOrNull();
             RestClient bootstrap = new RestClient(settings);
@@ -91,7 +91,7 @@ public final class EsMapReduceUtil {
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, LOG);
         UserProvider userProvider = UserProvider.create(settings);
 
-        if (userProvider.isKerberosEnabled()) {
+        if (userProvider.isEsKerberosEnabled()) {
             User user = userProvider.getUser();
             ClusterInfo clusterInfo = settings.getClusterInfoOrNull();
             RestClient bootstrap = new RestClient(settings);

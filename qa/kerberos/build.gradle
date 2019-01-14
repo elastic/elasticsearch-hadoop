@@ -23,10 +23,8 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
-import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.DfsCopy
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HadoopMRJob
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.HiveBeeline
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.tasks.PigScript

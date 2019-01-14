@@ -298,7 +298,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 authPrefs.add(EsHadoopAuthPolicies.BEARER);
             }
             // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
-            if (userProvider.isKerberosEnabled()) {
+            if (userProvider.isEsKerberosEnabled()) {
                 if (!StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
                     throw new EsHadoopIllegalArgumentException("Missing Elasticsearch Kerberos Principal name. " +
                             "Specify one with [" + ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL + "]");

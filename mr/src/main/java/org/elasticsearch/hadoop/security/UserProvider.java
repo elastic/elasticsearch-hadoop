@@ -46,7 +46,7 @@ public abstract class UserProvider implements SettingsAware {
         this.settings = settings;
     }
 
-    public boolean isKerberosEnabled() {
+    public boolean isEsKerberosEnabled() {
         return settings.getSecurityAuthenticationMethod().equals(AuthenticationMethod.KERBEROS);
     }
 
