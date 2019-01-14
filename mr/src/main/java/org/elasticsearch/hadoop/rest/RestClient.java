@@ -558,7 +558,7 @@ public class RestClient implements Closeable, StatsAware {
         uri.append("/_search?size=0");
         // Option added in the 6.x line. This must be set to true or else in 7.X and 6/7 mixed clusters
         // will return lower bounded count values instead of an accurate count.
-        if (internalVersion.onOrAfter(EsMajorVersion.V_6_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_6_X)) {
             uri.append("&track_total_hits=true");
         }
         if (StringUtils.hasLength(shardId)) {

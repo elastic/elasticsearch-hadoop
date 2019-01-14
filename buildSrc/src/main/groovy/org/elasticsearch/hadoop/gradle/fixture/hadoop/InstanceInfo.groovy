@@ -19,10 +19,7 @@
 
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
-import com.sun.jna.Native
-import com.sun.jna.WString
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.elasticsearch.gradle.test.JNAKernel32Library
 import org.elasticsearch.hadoop.gradle.util.WaitForURL
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.GradleException
@@ -231,20 +228,21 @@ class InstanceInfo {
      * C:\Program Files ---> C:\PROGRA~1\
      */
     static String getShortPathName(String path) {
-        assert Os.isFamily(Os.FAMILY_WINDOWS)
-        final WString longPath = new WString("\\\\?\\" + path)
-        // first we get the length of the buffer needed
-        final int length = JNAKernel32Library.getInstance().GetShortPathNameW(longPath, null, 0)
-        if (length == 0) {
-            throw new IllegalStateException("path [" + path + "] encountered error [" + Native.getLastError() + "]")
-        }
-        final char[] shortPath = new char[length]
-        // knowing the length of the buffer, now we get the short name
-        if (JNAKernel32Library.getInstance().GetShortPathNameW(longPath, shortPath, length) == 0) {
-            throw new IllegalStateException("path [" + path + "] encountered error [" + Native.getLastError() + "]")
-        }
-        // we have to strip the \\?\ away from the path for cmd.exe
-        return Native.toString(shortPath).substring(4)
+//        assert Os.isFamily(Os.FAMILY_WINDOWS)
+//        final WString longPath = new WString("\\\\?\\" + path)
+//        // first we get the length of the buffer needed
+//        final int length = JNAKernel32Library.getInstance().GetShortPathNameW(longPath, null, 0)
+//        if (length == 0) {
+//            throw new IllegalStateException("path [" + path + "] encountered error [" + Native.getLastError() + "]")
+//        }
+//        final char[] shortPath = new char[length]
+//        // knowing the length of the buffer, now we get the short name
+//        if (JNAKernel32Library.getInstance().GetShortPathNameW(longPath, shortPath, length) == 0) {
+//            throw new IllegalStateException("path [" + path + "] encountered error [" + Native.getLastError() + "]")
+//        }
+//        // we have to strip the \\?\ away from the path for cmd.exe
+//        return Native.toString(shortPath).substring(4)
+        throw new UnsupportedOperationException("JNAKernal32Library is compiled for Java 10 and up.")
     }
 
     /** Return the java home used by this node. */

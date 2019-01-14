@@ -14,8 +14,6 @@ LOCATION '/data/artists';
 
 SELECT * FROM artist_data LIMIT 10;
 
-ADD JAR file:///Users/james.baiera/Documents/source/elasticsearch-hadoop/build/libs/elasticsearch-hadoop-7.0.0-alpha1-SNAPSHOT-testing.jar;
-
 DROP TABLE IF EXISTS es_artist_data;
 
 CREATE EXTERNAL TABLE IF NOT EXISTS es_artist_data (
