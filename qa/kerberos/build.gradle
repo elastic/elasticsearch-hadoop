@@ -363,6 +363,58 @@ HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.clas
 esCluster.addTask(mrLoadData)
 testCluster.dependsOn(mrLoadData)
 
+// Run the MR job to read data out of ES. Ensure Kerberos settings are available.
+HadoopMRJob mrReadData = config.createClusterTask('mrReadData', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(mrLoadData)
+    jobJar = jar.archivePath
+    libJars.add(testingJar.archivePath)
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
+    jobSettings = [
+            'es.resource': 'qa_kerberos_mr_data/_doc',
+            'es.nodes': 'localhost:9500',
+            'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ]
+    systemProperties([
+            "test.krb5.principal": clientPrincipal,
+            "test.krb5.keytab": clientKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    args = ['/data/output/mr']
+}
+esCluster.addTask(mrReadData)
+testCluster.dependsOn(mrReadData)
+
+File outputDataDir = project.file(new File(project.buildDir, 'data'))
+Task createOutputDataDir = project.tasks.create("createOutputDataDir") {
+    doLast {
+        if (outputDataDir.exists()) {
+            // Clean out any prior results
+            outputDataDir.deleteDir()
+        }
+        outputDataDir.mkdirs()
+    }
+}
+
+// Copy the test data to HDFS using the SecureFsShell instead of dfs copy. We could use the
+// DfsCopy task, but with Kerberos, we would have to kinit before running it. Instead we wrap.
+HadoopMRJob copyMrOutput = config.createClusterTask('copyMrOutput', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(mrReadData, createOutputDataDir)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": clientPrincipal,
+            "test.krb5.keytab": clientKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
+    args = ['-copyToLocal', "/data/output/mr", outputDataDir]
+}
+testCluster.dependsOn(copyMrOutput)
+
 // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
 SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
     clusterConfiguration = config
@@ -388,6 +440,48 @@ SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.clas
 }
 esCluster.addTask(sparkLoadData)
 testCluster.dependsOn(sparkLoadData)
+
+// Run the Spark job to load data to ES. Ensure Kerberos settings are available.
+SparkApp sparkReadData = config.createClusterTask('sparkReadData', SparkApp.class) {
+    clusterConfiguration = config
+    dependsOn(sparkLoadData)
+//    deployModeCluster()
+//    principal = clientPrincipal + realm
+//    keytab = clientKeytab.toString()
+    jobJar = jar.archivePath
+    libJars.add(testingJar.archivePath)
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
+    jobSettings([
+            'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+            'spark.es.nodes': 'localhost:9500',
+            'spark.yarn.am.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'spark.driver.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'spark.executor.extraJavaOptions': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ])
+    env.put('SPARK_SUBMIT_OPTS', "-Djava.security.krb5.conf=${krb5Conf.toString()} " +
+            "-Dtest.krb5.principal=$clientPrincipal$realm " +
+            "-Dtest.krb5.keytab=${clientKeytab.toString()}")
+    args = ['/data/output/spark']
+}
+esCluster.addTask(sparkReadData)
+testCluster.dependsOn(sparkReadData)
+
+// Copy the test data to HDFS using the SecureFsShell instead of dfs copy. We could use the
+// DfsCopy task, but with Kerberos, we would have to kinit before running it. Instead we wrap.
+HadoopMRJob copySparkOutput = config.createClusterTask('copySparkOutput', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(sparkReadData, createOutputDataDir)
+    jobJar = jar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.dfs.SecureFsShell'
+    systemProperties([
+            "test.krb5.principal": clientPrincipal,
+            "test.krb5.keytab": clientKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
+    args = ['-copyToLocal', "/data/output/spark", outputDataDir]
+}
+testCluster.dependsOn(copySparkOutput)
 
 // Replace the regular beeline script with our own shimmed one. All we do is perform a keytab login and
 // delegate on regularly. This is easier than re-implementing most of beeline.

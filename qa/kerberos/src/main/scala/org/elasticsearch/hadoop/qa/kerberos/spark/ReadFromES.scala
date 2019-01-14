@@ -26,45 +26,29 @@ import org.apache.spark.sql.SparkSession
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin
 import org.elasticsearch.spark._
 
-class LoadToES(args: Array[String]) {
+class ReadFromES(args: Array[String]) {
 
-  val sparkConf: SparkConf = new SparkConf().setAppName("LoadToES")
+  val sparkConf: SparkConf = new SparkConf().setAppName("ReadFromES")
   val spark: SparkSession = SparkSession.builder().config(sparkConf).getOrCreate()
 
   def run(): Unit = {
-    if (!sparkConf.contains(LoadToES.CONF_FIELD_NAMES)) {
-      throw new IllegalArgumentException(LoadToES.CONF_FIELD_NAMES + " is required")
-    }
     val resource = sparkConf.get("spark.es.resource")
-    val fieldNames = sparkConf.get(LoadToES.CONF_FIELD_NAMES).split(",")
 
-    val df = spark.sqlContext.read.textFile(args(0))
-
-    val parsedData = df.rdd
-      .map(line => {
-        var record: Map[String, Object] = Map()
-        val fields = line.split('\t')
-        var fieldNum = 0
-        for (field <- fields) {
-          if (fieldNum < fieldNames.length) {
-            val fieldName = fieldNames(fieldNum)
-            record = record + (fieldName -> field)
-          }
-          fieldNum = fieldNum + 1
-        }
-        record
-      })
-
-    parsedData.saveToEs(resource)
+    spark.sparkContext.esJsonRDD(resource).saveAsTextFile(args(0))
+//    spark.sqlContext
+//      .read
+//      .format("es")
+//      .option("es.output.json", "true")
+//      .load(resource)
+//      .write
+//      .text(args(0))
   }
 }
 
-object LoadToES {
-  val CONF_FIELD_NAMES = "spark.load.field.names"
-
+object ReadFromES {
   def main(args: Array[String]): Unit = {
     KeytabLogin.doAfterLogin(new PrivilegedExceptionAction[Unit] {
-      override def run(): Unit = new LoadToES(args).run()
+      override def run(): Unit = new ReadFromES(args).run()
     })
   }
 }
