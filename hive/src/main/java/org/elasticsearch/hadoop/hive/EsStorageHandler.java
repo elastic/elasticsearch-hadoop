@@ -29,9 +29,11 @@ import org.apache.hadoop.hive.ql.metadata.DefaultStorageHandler;
 import org.apache.hadoop.hive.ql.plan.TableDesc;
 import org.apache.hadoop.hive.serde2.SerDe;
 import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.mr.EsMapReduceUtil;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.util.Assert;
@@ -44,7 +46,7 @@ import static org.elasticsearch.hadoop.hive.HiveConstants.TABLE_LOCATION;
  * Hive storage for writing data into an ElasticSearch index.
  *
  * The ElasticSearch host/port can be specified through Hadoop properties (see package description)
- * or passed to {@link #EsStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
+ * or passed to {@link EsStorageHandler} through Hive <tt>TBLPROPERTIES</tt>
  */
 @SuppressWarnings({ "deprecation", "rawtypes" })
 public class EsStorageHandler extends DefaultStorageHandler {
@@ -119,5 +121,10 @@ public class EsStorageHandler extends DefaultStorageHandler {
     @Deprecated
     public void configureTableJobProperties(TableDesc tableDesc, Map<String, String> jobProperties) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void configureJobConf(TableDesc tableDesc, JobConf jobConf) {
+        EsMapReduceUtil.initCredentials(jobConf);
     }
 }
