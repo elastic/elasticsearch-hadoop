@@ -337,7 +337,6 @@ class BuildPlugin implements Plugin<Project>  {
         }
         javadocOptions.groups = [
                 'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
-                'Elasticsearch Cascading' : ['org.elasticsearch.hadoop.cascading*'],
                 'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
                 'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
                 'Elasticsearch Spark' : ['org.elasticsearch.spark*'],
@@ -349,7 +348,6 @@ class BuildPlugin implements Plugin<Project>  {
                 "https://hadoop.apache.org/docs/stable2/api/",
                 "https://pig.apache.org/docs/r0.15.0/api/",
                 "https://hive.apache.org/javadocs/r1.2.2/api/",
-                "http://docs.cascading.org/cascading/2.6/javadoc/",
                 "https://spark.apache.org/docs/latest/api/java/",
                 "https://storm.apache.org/releases/current/javadocs/"
         ]
@@ -447,23 +445,16 @@ class BuildPlugin implements Plugin<Project>  {
                 it.scope = "provided"
             }
 
-            // Cascading and Storm host their jars outside of maven central.
-            boolean cascading = generatedPom.dependencies.any { it.groupId == 'cascading' }
+            // Storm hosts their jars outside of maven central.
             boolean storm = generatedPom.dependencies.any { it.groupId == 'org.apache.storm' }
 
-            if (cascading || storm)
+            if (storm)
                 generatedPom.project {
                     repositories {
-                        if (cascading)
-                            repository {
-                                id = 'conjars.org'
-                                url = 'https://conjars.org/repo'
-                            }
-                        if (storm)
-                            repository {
-                                id = 'clojars.org'
-                                url = 'https://clojars.org/repo'
-                            }
+                        repository {
+                            id = 'clojars.org'
+                            url = 'https://clojars.org/repo'
+                        }
                     }
                 }
 
