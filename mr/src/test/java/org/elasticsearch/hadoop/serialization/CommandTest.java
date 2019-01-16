@@ -504,8 +504,8 @@ public class CommandTest {
     private Settings settings() {
         Settings set = new TestSettings();
 
+        set.setInternalVersion(version);
         set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
-
 
         InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);

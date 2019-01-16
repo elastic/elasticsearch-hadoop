@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.handler.ErrorCollector;
 import org.elasticsearch.hadoop.handler.ErrorHandler;
 import org.elasticsearch.hadoop.handler.Exceptional;
 import org.elasticsearch.hadoop.handler.HandlerResult;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -151,6 +152,7 @@ public class ElasticsearchHandler<I extends Exceptional, O, C extends ErrorColle
         }
 
         // Ensure no pattern in Index format, and extract the index to send errors to
+        InitializationUtils.discoverEsVersion(clientSettings, LOG);
         Resource resource = new Resource(clientSettings, false);
         IndexExtractor iformat = ObjectUtils.instantiate(clientSettings.getMappingIndexExtractorClassName(), handlerSettings);
         iformat.compile(resource.toString());

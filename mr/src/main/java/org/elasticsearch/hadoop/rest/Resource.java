@@ -18,10 +18,13 @@
  */
 package org.elasticsearch.hadoop.rest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OPERATION_UPDATE;
@@ -33,9 +36,13 @@ import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_OPERATION_UPS
  */
 public class Resource {
 
-    private final String indexAndType;
-    private final String type;
+    private static final Log LOG = LogFactory.getLog(Resource.class);
+
+    public static final String UNDERSCORE_DOC = "_doc";
+
     private final String index;
+    private final boolean typed;
+    private final String type;
     private final String bulk;
     private final String refresh;
 
@@ -69,30 +76,57 @@ public class Resource {
 
         String res = StringUtils.sanitizeResource(resource);
 
-        // 3) Resource must contain an index, but may not necessarily contain a type
+        // 3) Resource must contain an index, but may not necessarily contain a type.
+        // This is dependent on the version of ES we are talking with.
         int slash = res.indexOf("/");
-        if (slash < 0) {
-            // No type is fine for reads since we assume reading from all mappings found for the given index pattern.
-            // No type is fatal for writes since we need a type to hand the bulk api.
-            if (read == false) {
+        boolean typeExists = slash >= 0;
+
+        EsMajorVersion esMajorVersion = settings.getInternalVersionOrThrow();
+        if (esMajorVersion.after(EsMajorVersion.V_7_X)) {
+            // Types can no longer the specified at all! Index names only!
+            if (typeExists) {
                 throw new EsHadoopIllegalArgumentException(String.format(
-                        "No type found; Types are required when writing. Expected [index]/[type], but got [%s]",
+                        "Detected type name in resource [%s]. Remove type name to continue.",
                         resource
                 ));
             }
-            index = res;
-            type = StringUtils.EMPTY;
         }
-        else {
+        if (esMajorVersion.onOrBefore(EsMajorVersion.V_7_X)) {
+            // Type can be specified, but a warning will be returned. An ES 7.X cluster will accept types if include_type_name is true,
+            // which we will set in the case of a type existing.
+            // This is onOrBefore because we want to print the deprecation log no matter what version of ES they're running on.
+            if (typeExists) {
+                LOG.warn(String.format(
+                        "Detected type name in resource [%s]. Type names are deprecated and will be removed in a later release.",
+                        resource
+                ));
+            }
+        }
+        if (esMajorVersion.onOrBefore(EsMajorVersion.V_6_X)) {
+            // Type is required for writing via the bulk API, but not for reading. No type on a read resource means to read all types.
+            // This is important even if we're on a 6.x cluster that enforces a single type per index. 6.x STILL supports opening old 5.x
+            // indices in order to ease the upgrade process!!!!
+            if (!read && !typeExists) {
+                throw new EsHadoopIllegalArgumentException(String.format(
+                        "No type found; Types are required when writing in ES versions 6 and below. Expected [index]/[type], but got [%s]",
+                        resource
+                ));
+            }
+        }
+
+        // Parse out the type if it exists and is valid.
+        if (typeExists) {
             index = res.substring(0, slash);
             type = res.substring(slash + 1);
-
+            typed = true;
             Assert.hasText(type, "No type found; expecting [index]/[type]");
+        } else {
+            index = res;
+            type = UNDERSCORE_DOC;
+            typed = false;
         }
         Assert.hasText(index, "No index found; expecting [index]/[type]");
-        Assert.isTrue(!StringUtils.hasWhitespace(index) && !StringUtils.hasWhitespace(type), "Index and type should not contain whitespaces");
-        
-        indexAndType = index + "/" + type;
+        Assert.isTrue(!StringUtils.hasWhitespace(index) && !StringUtils.hasWhitespace(type), "Index/type should not contain whitespaces");
 
         // 4) Render the other endpoints
         String bulkEndpoint = "/_bulk";
@@ -105,7 +139,13 @@ public class Resource {
         }
 
         // check bulk
-        bulk = (indexAndType.contains("{") ? bulkEndpoint : indexAndType + bulkEndpoint);
+        if (index.contains("{") || (typed && type.contains("{"))) {
+            bulk = bulkEndpoint;
+        } else if (typed){
+            bulk = index + "/" + type + bulkEndpoint;
+        } else {
+            bulk = index + bulkEndpoint;
+        }
         refresh = (index.contains("{") ? "/_refresh" : index + "/_refresh");
     }
 
@@ -114,7 +154,11 @@ public class Resource {
     }
 
     String mapping() {
-        return indexAndType + "/_mapping";
+        if (typed) {
+            return index + "/_mapping/" + type;
+        } else {
+            return index + "/_mapping";
+        }
     }
 
     String aliases() {
@@ -125,13 +169,21 @@ public class Resource {
         return index;
     }
 
+    public boolean isTyped() {
+        return typed;
+    }
+
     public String type() {
         return type;
     }
 
     @Override
     public String toString() {
-        return indexAndType;
+        if (typed) {
+            return index + "/" + type;
+        } else {
+            return index;
+        }
     }
 
     public String refresh() {

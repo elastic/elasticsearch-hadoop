@@ -39,8 +39,19 @@ public class QueryTest {
 
     @Test
     public void testSimpleQuery() {
+        cfg.setInternalVersion(EsMajorVersion.LATEST);
         cfg.setResourceRead("foo/bar");
-        assertTrue(builder.indices("foo").types("bar").toString().contains("foo/bar"));
+        Resource typed = new Resource(cfg, true);
+        assertTrue(builder.resource(typed).toString().contains("foo/bar"));
+    }
+
+    @Test
+    public void testSimpleQueryTypeless() {
+        cfg.setInternalVersion(EsMajorVersion.LATEST);
+        cfg.setResourceRead("foo");
+        Resource typeless = new Resource(cfg, true);
+        assertTrue(builder.resource(typeless).toString().contains("foo"));
+        assertTrue(builder.indices("foo").toString().contains("foo"));
     }
 
     @Test

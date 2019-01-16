@@ -32,6 +32,8 @@ import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.rest.stats.StatsAware;
 import org.elasticsearch.hadoop.serialization.ParsingUtils;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
+import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
@@ -249,6 +251,7 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public String postDocument(Resource resource, BytesArray document) throws IOException {
+        // If untyped, the type() method returns '_doc'
         Request request = new SimpleRequest(Method.POST, null, resource.index() + "/" + resource.type(), null, document);
         Response response = execute(request, true);
         Object id = parseContent(response.body(), "_id");
@@ -292,12 +295,26 @@ public class RestClient implements Closeable, StatsAware {
         return shardsJson;
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getMapping(String query) {
-        return (Map<String, Object>) get(query, null);
+    public MappingSet getMappings(Resource indexResource) {
+        if (indexResource.isTyped()) {
+            return getMappings(indexResource.index() + "/_mapping/" + indexResource.type(), true);
+        } else {
+            return getMappings(indexResource.index() + "/_mapping", false);
+        }
     }
 
-    public Map<String, Object> sampleForFields(String index, String type, Collection<String> fields) {
+    public MappingSet getMappings(String query, boolean includeTypeName) {
+        if (includeTypeName) {
+            query = query + "?include_type_name=true";
+        }
+        Map<String, Object> result = get(query, null);
+        if (result != null && !result.isEmpty()) {
+            return FieldParser.parseMappings(result, includeTypeName);
+        }
+        return null;
+    }
+
+    public Map<String, Object> sampleForFields(Resource resource, Collection<String> fields) {
         if (fields == null || fields.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -333,9 +350,9 @@ public class RestClient implements Closeable, StatsAware {
 
         sb.append("}}");
 
-        String endpoint = index;
-        if (StringUtils.hasText(type)) {
-            endpoint = index + "/" + type;
+        String endpoint = resource.index();
+        if (resource.isTyped()) {
+            endpoint = resource.index() + "/" + resource.type();
         }
 
         Map<String, List<Map<String, Object>>> hits = parseContent(execute(GET, endpoint + "/_search", new BytesArray(sb.toString())).body(), "hits");
@@ -527,13 +544,21 @@ public class RestClient implements Closeable, StatsAware {
         return false;
     }
 
-    public long count(String indexAndType, QueryBuilder query) {
-        return count(indexAndType, null, query);
+    public long count(String index, QueryBuilder query) {
+        return count(index, null, null, query);
     }
 
-    public long count(String indexAndType, String shardId, QueryBuilder query) {
+    public long count(String index, String type, QueryBuilder query) {
+        return count(index, type, null, query);
+    }
+
+    public long countIndexShard(String index, String shardId, QueryBuilder query) {
+        return count(index, null, shardId, query);
+    }
+
+    public long count(String index, String type, String shardId, QueryBuilder query) {
         return internalVersion.onOrAfter(EsMajorVersion.V_5_X) ?
-                countInES5X(indexAndType, shardId, query) : countBeforeES5X(indexAndType, shardId, query);
+                countInES5X(index, type, shardId, query) : countBeforeES5X(index + "/" + type, shardId, query);
     }
 
     private long countBeforeES5X(String indexAndType, String shardId, QueryBuilder query) {
@@ -549,8 +574,18 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     @SuppressWarnings("unchecked")
-    private long countInES5X(String indexAndType, String shardId, QueryBuilder query) {
-        StringBuilder uri = new StringBuilder(indexAndType);
+    private long countInES5X(String index, String type, String shardId, QueryBuilder query) {
+        StringBuilder uri;
+        if (internalVersion.onOrAfter(EsMajorVersion.V_7_X)) {
+            uri = new StringBuilder(index); // Only use index for counting in 7.X and up.
+        } else {
+            // Sanity check. Removal of types has left a lot of previously populated fields as null
+            if (type == null) {
+                uri = new StringBuilder(index);
+            } else {
+                uri = new StringBuilder(index + "/" + type);
+            }
+        }
         uri.append("/_search?size=0");
         // Option added in the 6.x line. This must be set to true or else in 7.X and 6/7 mixed clusters
         // will return lower bounded count values instead of an accurate count.
@@ -608,11 +643,15 @@ public class RestClient implements Closeable, StatsAware {
         return (aliases.size() > 1);
     }
 
-    public void putMapping(String index, String mapping, byte[] bytes) {
+    public void putMapping(String index, String type, byte[] bytes) {
         // create index first (if needed) - it might return 403/404
         touch(index);
 
-        execute(PUT, mapping, new BytesArray(bytes));
+        if (internalVersion.after(EsMajorVersion.V_6_X)) {
+            execute(PUT, index + "/_mapping", new BytesArray(bytes));
+        } else {
+            execute(PUT, index + "/_mapping/" + type, new BytesArray(bytes));
+        }
     }
 
     public EsMajorVersion remoteEsVersion() {

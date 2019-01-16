@@ -110,8 +110,7 @@ class EsLocalTap extends Tap<Properties, ScrollQuery, Object> {
             Resource read = new Resource(settings, true);
             SearchRequestBuilder queryBuilder =
                     new SearchRequestBuilder(esVersion, settings.getReadMetadata() && settings.getReadMetadataVersion())
-                            .types(read.type())
-                            .indices(read.index())
+                            .resource(read)
                             .query(QueryUtils.parseQuery(settings))
                             .scroll(settings.getScrollKeepAlive())
                             .size(settings.getScrollSize())

@@ -49,12 +49,10 @@ class SchemaUtilsTest {
   @Test
   def testConvertToStructSimpleField(): Unit = {
     val mapping = """{
-    |  "simple" : {
-    |      "properties" : {
-    |          "name" : {
-    |              "type" : "string"
-    |          }
-    |      }
+    |  "properties" : {
+    |    "name" : {
+    |      "type" : "string"
+    |    }
     |  }
     |}
     |""".stripMargin
@@ -66,7 +64,7 @@ class SchemaUtilsTest {
 
   @Test
   def testConvertToStructWithObject(): Unit = {
-    val mapping = """{ "nested-array": {
+    val mapping = """{
     | "properties" : {
     |   "arr" : {
     |     "properties" : {
@@ -76,7 +74,6 @@ class SchemaUtilsTest {
     |   },
     |   "top-level" : { "type" : "string" }
     | }
-    |}
     }""".stripMargin
       
     val struct = getStruct(mapping)
@@ -95,12 +92,10 @@ class SchemaUtilsTest {
   @Test
   def testConvertToStructWithSpecifiedArray(): Unit = {
     val mapping = """{
-    |  "simple" : {
-    |      "properties" : {
-    |          "name" : {
-    |              "type" : "string"
-    |          }
-    |      }
+    |  "properties" : {
+    |    "name" : {
+    |      "type" : "string"
+    |    }
     |  }
     |}
     |""".stripMargin
@@ -119,12 +114,10 @@ class SchemaUtilsTest {
   @Test
   def testConvertToStructWithSpecifiedArrayDepth(): Unit = {
     val mapping = """{
-    |  "simple" : {
-    |      "properties" : {
-    |          "name" : {
-    |              "type" : "string"
-    |          }
-    |      }
+    |  "properties" : {
+    |    "name" : {
+    |      "type" : "string"
+    |    }
     |  }
     |}
     |""".stripMargin
@@ -154,13 +147,11 @@ class SchemaUtilsTest {
   def testConvertToStructWithJoinField(): Unit = {
     val mapping =
       """{
-        |  "join": {
-        |    "properties": {
-        |      "my_join": {
-        |        "type": "join",
-        |        "relations": {
-        |          "my_parent": "my_child"
-        |        }
+        |  "properties": {
+        |    "my_join": {
+        |      "type": "join",
+        |      "relations": {
+        |        "my_parent": "my_child"
         |      }
         |    }
         |  }
@@ -182,7 +173,7 @@ class SchemaUtilsTest {
 
   @Test
   def testDetectRowInfoSimple(): Unit = {
-    val mapping = """{ "array-mapping-top-level": {
+    val mapping = """{
     | "properties" : {
     |   "arr" : {
     |     "properties" : {
@@ -192,7 +183,6 @@ class SchemaUtilsTest {
     |   },
     |   "top-level" : { "type" : "string" }
     | }
-    |}
     }""".stripMargin
     
     val struct = getStruct(mapping)
@@ -203,7 +193,7 @@ class SchemaUtilsTest {
 
   @Test
   def testDetectRowInfoWithOneNestedArray(): Unit = {
-    val mapping = """{ "array-mapping-top-level": {
+    val mapping = """{
     | "properties" : {
     |   "arr" : {
     |     "properties" : {
@@ -213,7 +203,6 @@ class SchemaUtilsTest {
     |   },
     |   "top-level" : { "type" : "string" }
     | }
-    |}
     }""".stripMargin
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr")
@@ -227,7 +216,7 @@ class SchemaUtilsTest {
 
   @Test
   def testDetectRowInfoWithMultiDepthArray(): Unit = {
-    val mapping = """{ "array-mapping-top-level": {
+    val mapping = """{
     | "properties" : {
     |   "arr" : {
     |     "properties" : {
@@ -237,7 +226,6 @@ class SchemaUtilsTest {
     |   },
     |   "top-level" : { "type" : "string" }
     | }
-    |}
     }""".stripMargin
     
     cfg.setProperty(ES_READ_FIELD_AS_ARRAY_INCLUDE, "arr:3")
@@ -258,7 +246,7 @@ class SchemaUtilsTest {
        """.stripMargin
 
   private def fieldFromMapping(mapping: String) = {
-    FieldParser.parseMapping(new ObjectMapper().readValue(wrapMappingAsResponse(mapping), classOf[JMap[String, Object]])).getResolvedView
+    FieldParser.parseTypelessMappings(new ObjectMapper().readValue(wrapMappingAsResponse(mapping), classOf[JMap[String, Object]])).getResolvedView
   }
   
   private def getStruct(mapping: String) = {

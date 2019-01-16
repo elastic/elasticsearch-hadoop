@@ -62,7 +62,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         clusterConfig.numNodes = 1
         clusterConfig.httpPort = 9500
         clusterConfig.transportPort = 9600
-        clusterConfig.distribution = "zip" // Full Distribution
+        clusterConfig.distribution = "default" // Full Distribution
 
         // Set BWC if not current ES version:
         if (version != project.elasticsearchVersion) {

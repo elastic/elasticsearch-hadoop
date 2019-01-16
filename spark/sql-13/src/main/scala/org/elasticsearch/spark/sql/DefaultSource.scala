@@ -70,7 +70,7 @@ import org.elasticsearch.hadoop.util.Version
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.serialization.ScalaValueWriter
 import javax.xml.bind.DatatypeConverter
-
+import org.apache.commons.logging.LogFactory
 import org.elasticsearch.hadoop.serialization.field.ConstantFieldExtractor
 
 private[sql] class DefaultSource extends RelationProvider with SchemaRelationProvider with CreatableRelationProvider  {
@@ -146,7 +146,11 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   extends BaseRelation with PrunedFilteredScan with InsertableRelation
   {
 
-  @transient private[sql] lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
+  @transient private[sql] lazy val cfg = {
+    val conf = new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava)
+    InitializationUtils.discoverEsVersion(conf, LogFactory.getLog(classOf[ElasticsearchRelation]))
+    conf
+  }
 
   @transient lazy val lazySchema = { SchemaUtils.discoverMapping(cfg) }
 
@@ -533,7 +537,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")
       val rr = new RestRepository(cfgCopy)
-      if (rr.indexExists(false)) {
+      if (rr.resourceExists(false)) {
         rr.delete()
       }
       rr.close()

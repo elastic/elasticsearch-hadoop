@@ -27,11 +27,9 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
-import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.BytesConverter;
-import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
 import org.elasticsearch.hadoop.serialization.builder.ValueReader;
 import org.elasticsearch.hadoop.serialization.builder.ValueWriter;
@@ -39,9 +37,7 @@ import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
-import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -353,7 +349,7 @@ public abstract class InitializationUtils {
 
     private static void doCheckIndexExistence(Settings settings, RestRepository client) {
         // check index existence
-        if (!client.indexExists(false)) {
+        if (!client.resourceExists(false)) {
             throw new EsHadoopIllegalArgumentException(String.format("Target index [%s] does not exist and auto-creation is disabled [setting '%s' is '%s']",
                     settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
         }
@@ -387,30 +383,6 @@ public abstract class InitializationUtils {
         }
 
         return false;
-    }
-
-    public static <T> void saveSchemaIfNeeded(Object conf, ValueWriter<T> schemaWriter, T schema, Log log) {
-        Settings settings = HadoopSettingsManager.loadFrom(conf);
-
-        if (settings.getIndexAutoCreate()) {
-            RestRepository client = new RestRepository(settings);
-            if (!client.indexExists(false)) {
-                if (schemaWriter == null) {
-                    log.warn(String.format("No mapping found [%s] and no schema found; letting Elasticsearch perform auto-mapping...",  settings.getResourceWrite()));
-                }
-                else {
-                    log.info(String.format("No mapping found [%s], creating one based on given schema", settings.getResourceWrite()));
-                    ContentBuilder builder = ContentBuilder.generate(schemaWriter).value(schema).flush();
-                    BytesArray content = ((FastByteArrayOutputStream) builder.content()).bytes();
-                    builder.close();
-                    client.putMapping(content);
-                    if (log.isDebugEnabled()) {
-                        log.debug(String.format("Creating ES mapping [%s] from schema [%s]", content.toString(), schema));
-                    }
-                }
-            }
-            client.close();
-        }
     }
 
     public static boolean setValueWriterIfNotSet(Settings settings, Class<? extends ValueWriter<?>> clazz, Log log) {

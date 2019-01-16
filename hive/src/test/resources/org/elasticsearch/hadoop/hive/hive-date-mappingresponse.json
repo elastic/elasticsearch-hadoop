@@ -1,11 +1,9 @@
 {
     "index": {
         "mappings": {
-            "data" : {
-                "properties" : {
-                    "&t" : {
-                        "type" : "date"
-                    }
+            "properties" : {
+                "&t" : {
+                    "type" : "date"
                 }
             }
         }

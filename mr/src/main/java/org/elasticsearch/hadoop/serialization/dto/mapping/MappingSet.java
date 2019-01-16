@@ -17,55 +17,61 @@ import org.elasticsearch.hadoop.serialization.FieldType;
  */
 public class MappingSet implements Serializable {
 
+    private static final String RESOLVED_INDEX_NAME = "*";
     private static final String RESOLVED_MAPPING_NAME = "*";
+
+    // For versions of Elasticsearch that do not have types.
+    public static final String TYPELESS_MAPPING_NAME = "";
 
     private final boolean empty;
     private final Map<String, Map<String, Mapping>> indexTypeMap = new HashMap<String, Map<String, Mapping>>();
     private final Mapping resolvedSchema;
 
-    public MappingSet(List<Field> fields) {
-        if (fields.isEmpty()) {
+    public MappingSet(List<Mapping> mappings) {
+        if (mappings.isEmpty()) {
             this.empty = true;
-            this.resolvedSchema = new Mapping(RESOLVED_MAPPING_NAME, Field.NO_FIELDS);
+            this.resolvedSchema = new Mapping(RESOLVED_INDEX_NAME, RESOLVED_MAPPING_NAME, Field.NO_FIELDS);
         } else {
             this.empty = false;
-            for (Field field : fields) {
-                String indexName = field.name();
-                Field[] mappings = field.properties();
-                Map<String, Mapping> mappingsToSchema = new HashMap<String, Mapping>();
-                this.indexTypeMap.put(indexName, mappingsToSchema);
+            for (Mapping mapping: mappings) {
+                String indexName = mapping.getIndex();
+                String typeName = mapping.getType();
 
-                for (Field mappingHeader : mappings) {
-                    // There's only one mapping Header named "mappings". Unwrap it to get the actual mappings.
-                    for (Field mapping : mappingHeader.properties()) {
-                        mappingsToSchema.put(mapping.name(), new Mapping(mapping.name(), mapping.properties()));
-                    }
+                // Create a new mapping of type name to schema and register it with the index type map.
+                Map<String, Mapping> mappingsToSchema = this.indexTypeMap.get(indexName);
+                if (mappingsToSchema == null) {
+                    mappingsToSchema = new HashMap<String, Mapping>();
+                    this.indexTypeMap.put(indexName, mappingsToSchema);
                 }
 
+                // Make sure that we haven't encountered this type already
+                if (mappingsToSchema.containsKey(typeName)) {
+                    String message;
+                    if (typeName.equals(TYPELESS_MAPPING_NAME)) {
+                        message = String.format("Invalid mapping set given. Multiple unnamed mappings in the index [%s].",
+                                indexName);
+                    } else {
+                        message = String.format("Invalid mapping set given. Multiple mappings of the same name [%s] in the index [%s].",
+                                typeName, indexName);
+                    }
+                    throw new EsHadoopIllegalArgumentException(message);
+                }
+
+                mappingsToSchema.put(typeName, mapping);
             }
-            this.resolvedSchema = mergeMappings(fields);
+            this.resolvedSchema = mergeMappings(mappings);
         }
     }
 
-    private static Mapping mergeMappings(List<Field> fields) {
+    private static Mapping mergeMappings(List<Mapping> mappings) {
         Map<String, Object[]> fieldMap = new LinkedHashMap<String, Object[]>();
-        for (Field rootField : fields) {
-            Field[] props = rootField.properties();
-            // handle the common case of mapping by removing the first field (mapping.)
-            if (props.length > 0 && props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
-                // can't return the type as it is an object of properties
-                Field[] mappings = props[0].properties();
-
-                for (Field mapping : mappings) {
-                    // At this point we have the root mapping info
-                    for (Field field : mapping.properties()) {
-                        addToFieldTable(field, "", fieldMap);
-                    }
-                }
+        for (Mapping mapping: mappings) {
+            for (Field field : mapping.getFields()) {
+                addToFieldTable(field, "", fieldMap);
             }
         }
         Field[] collapsed = collapseFields(fieldMap);
-        return new Mapping(RESOLVED_MAPPING_NAME, collapsed);
+        return new Mapping(RESOLVED_INDEX_NAME, RESOLVED_MAPPING_NAME, collapsed);
     }
 
     @SuppressWarnings("unchecked")

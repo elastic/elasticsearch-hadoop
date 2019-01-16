@@ -1,7 +1,7 @@
 {
   "index" : {
     "mappings" : {
-      "type" : {
+      "properties" : {
         "properties" : {
           "field1" : {
             "type" : "string"
