@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.mr.security;
 
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
+import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,6 +44,16 @@ public class TokenUtil {
 
     private static Log LOG = LogFactory.getLog(TokenUtil.class);
 
+    private static final String KEYNAMEPREFIX = "ESHADOOP_";
+
+    /**
+     * Generates a new unique name for an API Key
+     * @return unique api key name
+     */
+    private static String newKeyName() {
+        return KEYNAMEPREFIX + UUID.randomUUID().toString();
+    }
+
     /**
      * Obtain the given user's authentication token from Elasticsearch by performing the getAuthToken operation
      * as the given user, thus ensuring the subject's private credentials available on the thread's access control
@@ -57,8 +68,7 @@ public class TokenUtil {
         return user.doAs(new PrivilegedExceptionAction<EsToken>() {
             @Override
             public EsToken run() {
-                // FIXHERE: This will eventually not require any auth params, and instead will just use the existing user's kerberos auth
-                return client.createNewApiToken(null);
+                return client.createNewApiToken(newKeyName());
             }
         });
     }
