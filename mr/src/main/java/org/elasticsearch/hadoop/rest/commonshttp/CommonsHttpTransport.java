@@ -40,8 +40,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.*;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenAuthScheme;
-import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsTokenCredentials;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsApiKeyAuthScheme;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.bearer.EsApiKeyCredentials;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoAuthScheme;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoCredentials;
 import org.elasticsearch.hadoop.rest.stats.Stats;
@@ -283,19 +283,19 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         // Try auth schemes based on currently logged in user:
         if (userProvider != null) {
             User user = userProvider.getUser();
-            // Add Token Authentication if a token is present
+            // Add ApiKey Authentication if a key is present
             if (user.getEsToken(clusterName) != null) {
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
                 // TODO: Limit this by hosts and ports
-                AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.BEARER);
-                Credentials tokenCredentials = new EsTokenCredentials(userProvider, clusterName);
+                AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.APIKEY);
+                Credentials tokenCredentials = new EsApiKeyCredentials(userProvider, clusterName);
                 state.setCredentials(scope, tokenCredentials);
                 if (log.isDebugEnabled()) {
                     log.info("Using detected Token credentials...");
                 }
                 EsHadoopAuthPolicies.registerAuthSchemes();
-                authPrefs.add(EsHadoopAuthPolicies.BEARER);
+                authPrefs.add(EsHadoopAuthPolicies.APIKEY);
             }
             // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
             if (userProvider.isEsKerberosEnabled()) {
@@ -571,7 +571,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (userProvider != null && userProvider.getUser().getEsToken(clusterName) != null) {
             http.getHostAuthState().setPreemptive();
             http.getHostAuthState().setAuthAttempted(true);
-            http.getHostAuthState().setAuthScheme(new EsTokenAuthScheme());
+            http.getHostAuthState().setAuthScheme(new EsApiKeyAuthScheme());
             if (isProxied && !isSecure) {
                 http.getProxyAuthState().setPreemptive();
                 http.getProxyAuthState().setAuthAttempted(true);

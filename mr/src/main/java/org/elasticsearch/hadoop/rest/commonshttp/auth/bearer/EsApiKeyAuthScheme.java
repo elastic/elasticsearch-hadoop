@@ -19,12 +19,14 @@
 
 package org.elasticsearch.hadoop.rest.commonshttp.auth.bearer;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.auth.AuthenticationException;
 import org.apache.commons.httpclient.auth.BasicScheme;
 import org.apache.commons.httpclient.auth.MalformedChallengeException;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 /**
@@ -34,7 +36,7 @@ import org.elasticsearch.hadoop.util.StringUtils;
  * preemptive authentication that isn't a subclass of BasicScheme. This allows us to send
  * the auth token up front without waiting to be turned down with a 401 Unauthorized response.
  */
-public class EsTokenAuthScheme extends BasicScheme {
+public class EsApiKeyAuthScheme extends BasicScheme {
 
     private boolean complete = false;
 
@@ -51,7 +53,7 @@ public class EsTokenAuthScheme extends BasicScheme {
      */
     @Override
     public String getSchemeName() {
-        return EsHadoopAuthPolicies.BEARER;
+        return EsHadoopAuthPolicies.APIKEY;
     }
 
     /**
@@ -69,16 +71,20 @@ public class EsTokenAuthScheme extends BasicScheme {
      * Implementation method for authentication
      */
     private String authenticate(Credentials credentials) throws AuthenticationException {
-        if (!(credentials instanceof EsTokenCredentials)) {
-            throw new AuthenticationException("Incorrect credentials type provided. Expected [" + EsTokenCredentials.class.getName()
+        if (!(credentials instanceof EsApiKeyCredentials)) {
+            throw new AuthenticationException("Incorrect credentials type provided. Expected [" + EsApiKeyCredentials.class.getName()
                     + "] but got [" + credentials.getClass().getName() + "]");
         }
 
-        EsTokenCredentials esTokenCredentials = ((EsTokenCredentials) credentials);
+        EsApiKeyCredentials esApiKeyCredentials = ((EsApiKeyCredentials) credentials);
         String authString = null;
 
-        if (esTokenCredentials.getToken() != null && StringUtils.hasText(esTokenCredentials.getToken().getAccessToken())) {
-            authString = EsHadoopAuthPolicies.BEARER + " " + esTokenCredentials.getToken().getAccessToken();
+        if (esApiKeyCredentials.getToken() != null && StringUtils.hasText(esApiKeyCredentials.getToken().getName())) {
+            EsToken token = esApiKeyCredentials.getToken();
+            String keyComponents = token.getId() + ":" + token.getApiKey();
+            byte[] base64Encoded = Base64.encodeBase64(keyComponents.getBytes(StringUtils.UTF_8));
+            String tokenText = new String(base64Encoded, StringUtils.UTF_8);
+            authString = EsHadoopAuthPolicies.APIKEY + " " + tokenText;
         }
 
         return authString;
