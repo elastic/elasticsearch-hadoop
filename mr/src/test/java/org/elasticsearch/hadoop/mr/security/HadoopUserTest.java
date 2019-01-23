@@ -43,7 +43,7 @@ public class HadoopUserTest {
     public void getEsToken() throws IOException {
         UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
-        String testClusterName = "testClusterName";
+        String testClusterName = "getEsTokenTest";
 
         User hadoopUser = new HadoopUser(ugi);
         assertThat(hadoopUser.getEsToken(null), is(nullValue()));
@@ -80,7 +80,7 @@ public class HadoopUserTest {
 
     @Test
     public void addEsToken() throws IOException {
-        String testClusterName = "testClusterName";
+        String testClusterName = "addEsTokenTest";
 
         User hadoopUser = new HadoopUser(UserGroupInformation.getCurrentUser());
         assertThat(hadoopUser.getEsToken(null), is(nullValue()));
