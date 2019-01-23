@@ -93,20 +93,7 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
                 throw new IOException("Could not renew token of invalid type [" + token.getKind().toString() + "]");
             }
             EsToken esToken = new EsToken(new DataInputStream(new ByteArrayInputStream(token.getPassword())));
-            Settings settings = HadoopSettingsManager.loadFrom(conf);
-            RestClient client = null;
-            try {
-                client = createClient(settings);
-                // TODO: Does not support multiple clusters yet
-                // the client will need to point to the cluster that this token is associated with in order to refresh it.
-                // FIXHERE: Test after ES supports immutable token refresh
-                EsToken refreshedToken = client.refreshToken(esToken);
-                return refreshedToken.getExpirationTime();
-            } finally {
-                if (client != null) {
-                    client.close();
-                }
-            }
+            return esToken.getExpirationTime();
         }
 
         @Override

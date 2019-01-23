@@ -58,7 +58,7 @@ public class TokenUtil {
             @Override
             public EsToken run() {
                 // FIXHERE: This will eventually not require any auth params, and instead will just use the existing user's kerberos auth
-                return client.getAuthToken(null, null);
+                return client.createNewApiToken(null);
             }
         });
     }

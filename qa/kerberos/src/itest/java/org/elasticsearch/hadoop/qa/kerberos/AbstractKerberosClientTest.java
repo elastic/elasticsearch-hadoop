@@ -142,7 +142,7 @@ public class AbstractKerberosClientTest {
         RestClient restClient = null;
         try {
             restClient = new RestClient(testSettings);
-            EsToken token = restClient.getAuthToken(testSettings.getNetworkHttpAuthUser(), testSettings.getNetworkHttpAuthPass());
+            EsToken token = restClient.createNewApiToken("test_key");
             UserProvider provider = ObjectUtils.instantiate(testSettings.getSecurityUserProviderClass(), testSettings);
             User userInfo = provider.getUser();
             assertNotNull(userInfo);

@@ -28,42 +28,42 @@ import java.io.IOException;
  */
 public class EsToken {
 
-    private final String userName;
-    private final String accessToken;
-    private final String refreshToken;
+    private final String name;
+    private final String id;
+    private final String apiKey;
     private final long expirationTime;
     private final String clusterName;
 
-    public EsToken(String userName, String accessToken, String refreshToken, long expirationTime, String clusterName) {
-        this.userName = userName;
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+    public EsToken(String name, String id, String apiKey, long expirationTime, String clusterName) {
+        this.name = name;
+        this.id = id;
+        this.apiKey = apiKey;
         this.expirationTime = expirationTime;
         this.clusterName = clusterName;
     }
 
     public EsToken(DataInput inputStream) throws IOException {
-        this.userName = inputStream.readUTF();
-        this.accessToken = inputStream.readUTF();
-        this.refreshToken = inputStream.readUTF();
+        this.name = inputStream.readUTF();
+        this.id = inputStream.readUTF();
+        this.apiKey = inputStream.readUTF();
         this.expirationTime = inputStream.readLong();
         this.clusterName = inputStream.readUTF();
     }
 
-    public String getAccessToken() {
-        return accessToken;
+    public String getName() {
+        return name;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getApiKey() {
+        return apiKey;
     }
 
     public long getExpirationTime() {
         return expirationTime;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public String getUserName() {
-        return userName;
     }
 
     public String getClusterName() {
@@ -71,9 +71,9 @@ public class EsToken {
     }
 
     public void writeOut(DataOutput dataOutput) throws IOException {
-        dataOutput.writeUTF(userName);
-        dataOutput.writeUTF(accessToken);
-        dataOutput.writeUTF(refreshToken);
+        dataOutput.writeUTF(name);
+        dataOutput.writeUTF(id);
+        dataOutput.writeUTF(apiKey);
         dataOutput.writeLong(expirationTime);
         dataOutput.writeUTF(clusterName);
     }
@@ -86,17 +86,17 @@ public class EsToken {
         EsToken esToken = (EsToken) o;
 
         if (expirationTime != esToken.expirationTime) return false;
-        if (userName != null ? !userName.equals(esToken.userName) : esToken.userName != null) return false;
-        if (accessToken != null ? !accessToken.equals(esToken.accessToken) : esToken.accessToken != null) return false;
-        if (refreshToken != null ? !refreshToken.equals(esToken.refreshToken) : esToken.refreshToken != null) return false;
+        if (name != null ? !name.equals(esToken.name) : esToken.name != null) return false;
+        if (id != null ? !id.equals(esToken.id) : esToken.id != null) return false;
+        if (apiKey != null ? !apiKey.equals(esToken.apiKey) : esToken.apiKey != null) return false;
         return clusterName != null ? clusterName.equals(esToken.clusterName) : esToken.clusterName == null;
     }
 
     @Override
     public int hashCode() {
-        int result = userName != null ? userName.hashCode() : 0;
-        result = 31 * result + (accessToken != null ? accessToken.hashCode() : 0);
-        result = 31 * result + (refreshToken != null ? refreshToken.hashCode() : 0);
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (apiKey != null ? apiKey.hashCode() : 0);
         result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
         result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
         return result;
@@ -105,10 +105,10 @@ public class EsToken {
     @Override
     public String toString() {
         return "EsToken{" +
-                "userName='" + userName + '\'' +
-                ", accessToken='" + accessToken + '\'' +
-                ", refreshToken='" + refreshToken + '\'' +
-                ", expiresIn=" + expirationTime +
+                "name='" + name + '\'' +
+                ", id='" + id + '\'' +
+                ", apiKey='" + apiKey + '\'' +
+                ", expirationTime=" + expirationTime +
                 ", clusterName='" + clusterName + '\'' +
                 '}';
     }

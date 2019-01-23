@@ -38,6 +38,7 @@ import org.elasticsearch.hadoop.serialization.json.JacksonJsonGenerator;
 import org.elasticsearch.hadoop.serialization.json.JacksonJsonParser;
 import org.elasticsearch.hadoop.serialization.json.JsonFactory;
 import org.elasticsearch.hadoop.serialization.json.ObjectReader;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ClusterInfo;
@@ -619,8 +620,8 @@ public class RestClient implements Closeable, StatsAware {
         execute(PUT, mapping, new BytesArray(bytes));
     }
 
-    // FIXHERE: Consolidate this with TokenUtil#obtainToken()
-    public EsToken getAuthToken(String user, String password) {
+    public EsToken createNewApiToken(String tokenName) {
+        Assert.hasText(tokenName, "Cannot get new token with an empty token name");
         ClusterInfo remoteInfo = clusterInfo;
         if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {
             remoteInfo = mainInfo();
@@ -630,66 +631,28 @@ public class RestClient implements Closeable, StatsAware {
         try {
             generator.writeBeginObject();
             {
-                generator.writeFieldName("grant_type").writeString("password");
-                generator.writeFieldName("username").writeString(user);
-                generator.writeFieldName("password").writeString(password);
+                generator.writeFieldName("name").writeString(tokenName);
+                generator.writeFieldName("role_descriptors").writeBeginObject().writeEndObject();
+                generator.writeFieldName("expiration").writeString("7d");
             }
             generator.writeEndObject();
         } finally {
             generator.close();
         }
-        // Get time right before the token is sent so we have a safe approximation of expiration time.
-        long startTime = System.currentTimeMillis();
-        Response response = execute(POST, "/_xpack/security/oauth2/token", out.bytes());
+
+        Response response = execute(POST, "/_security/api_key", out.bytes());
+
+        // Get expiration time
         Map<String, Object> content = parseContent(response.body(), null);
-        Number expiry = (Number) content.get("expires_in");
-        long expirationTime = startTime + expiry.longValue();
+        Number expiry = (Number) content.get("expiration");
+        long expirationTime = expiry.longValue();
+
         return new EsToken(
-                user,
-                content.get("access_token").toString(),
-                content.get("refresh_token").toString(),
+                content.get("id").toString(),
+                content.get("name").toString(),
+                content.get("api_key").toString(),
                 expirationTime,
                 remoteInfo.getClusterName().getName()
-        );
-    }
-
-    public EsToken refreshToken(EsToken tokenToRefresh) {
-        ClusterInfo remoteInfo = clusterInfo;
-        if (ClusterName.UNNAMED_CLUSTER_NAME.equals(remoteInfo.getClusterName().getName())) {
-            remoteInfo = mainInfo();
-        }
-        String serviceForToken = tokenToRefresh.getClusterName();
-        if (!StringUtils.hasText(serviceForToken)) {
-            throw new EsHadoopIllegalArgumentException("Attempting to refresh access token that has no service name");
-        }
-        if (!serviceForToken.equals(remoteInfo.getClusterName().getName())) {
-            throw new EsHadoopIllegalArgumentException(String.format(
-                    "Attempting to refresh access token for a cluster named [%s] through a differently named cluster [%s]",
-                    serviceForToken,
-                    remoteInfo.getClusterName().getName()
-            ));
-        }
-        FastByteArrayOutputStream out = new FastByteArrayOutputStream(256);
-        JacksonJsonGenerator generator = new JacksonJsonGenerator(out);
-        try {
-            generator.writeBeginObject();
-            {
-                generator.writeFieldName("grant_type").writeString("refresh_token");
-                generator.writeFieldName("username").writeString(tokenToRefresh.getRefreshToken());
-            }
-            generator.writeEndObject();
-        } finally {
-            generator.close();
-        }
-        Response response = execute(POST, "/_xpack/security/oauth2/token", out.bytes());
-        Map<String, Object> content = parseContent(response.body(), null);
-        Number expiry = (Number) content.get("expires_in");
-        return new EsToken(
-                tokenToRefresh.getUserName(),
-                content.get("access_token").toString(),
-                content.get("refresh_token").toString(),
-                expiry.longValue(),
-                serviceForToken
         );
     }
 
@@ -714,15 +677,14 @@ public class RestClient implements Closeable, StatsAware {
         try {
             generator.writeBeginObject();
             {
-                generator.writeFieldName("token").writeString(tokenToCancel.getAccessToken());
+                generator.writeFieldName("name").writeString(tokenToCancel.getName());
             }
             generator.writeEndObject();
         } finally {
             generator.close();
         }
-        Response response = execute(DELETE, "/_xpack/security/oauth2/token", out.bytes());
-        Boolean invalidated = parseContent(response.body(), "created"); // Not intuitive field naming here.
-        return invalidated != null && invalidated;
+        Response response = execute(DELETE, "/_security/api_key", out.bytes());
+        return response.hasSucceeded();
     }
 
     public ClusterInfo mainInfo() {
