@@ -44,14 +44,14 @@ public class TokenUtil {
 
     private static Log LOG = LogFactory.getLog(TokenUtil.class);
 
-    private static final String KEYNAMEPREFIX = "ESHADOOP_";
+    public static final String KEY_NAME_PREFIX = "ESHADOOP_";
 
     /**
      * Generates a new unique name for an API Key
      * @return unique api key name
      */
     private static String newKeyName() {
-        return KEYNAMEPREFIX + UUID.randomUUID().toString();
+        return KEY_NAME_PREFIX + UUID.randomUUID().toString();
     }
 
     /**
