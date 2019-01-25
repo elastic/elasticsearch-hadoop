@@ -212,12 +212,18 @@ public class AbstractMROldApiSaveTest {
         String type = "data";
         String target = index + "/" + type;
 
-        RestUtils.touch(index);
-        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
-
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, target);
+
+        RestUtils.touch(index);
+        if (TestUtils.getEsVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+            conf.set(ConfigurationOptions.ES_RESOURCE, index);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
+        } else {
+            conf.set(ConfigurationOptions.ES_RESOURCE, target);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        }
+
 
         runJob(conf);
     }
@@ -228,12 +234,17 @@ public class AbstractMROldApiSaveTest {
         String type = "data";
         String target = index + "/" + type;
 
-        RestUtils.touch(index);
-        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
-
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
-        conf.set(ConfigurationOptions.ES_RESOURCE, target);
+
+        RestUtils.touch(index);
+        if (TestUtils.getEsVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+            conf.set(ConfigurationOptions.ES_RESOURCE, index);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
+        } else {
+            conf.set(ConfigurationOptions.ES_RESOURCE, target);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        }
 
         runJob(conf);
     }

@@ -8,6 +8,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencyResolveDetails
+import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
@@ -267,6 +268,14 @@ class BuildPlugin implements Plugin<Project>  {
                     }
 
                 }
+            }
+        }
+
+        // Do substitutions for ES fixture downloads
+        project.configurations.all { Configuration configuration ->
+            configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
+                subs.substitute(subs.module("downloads.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
+                        .with(subs.module("org.elasticsearch.distribution.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
             }
         }
     }

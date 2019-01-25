@@ -18,16 +18,42 @@
  */
 package org.elasticsearch.hadoop.serialization.dto.mapping;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
-import org.elasticsearch.hadoop.serialization.FieldType;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
+import static java.lang.System.out;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static org.elasticsearch.hadoop.serialization.FieldType.BINARY;
+import static org.elasticsearch.hadoop.serialization.FieldType.BOOLEAN;
+import static org.elasticsearch.hadoop.serialization.FieldType.BYTE;
+import static org.elasticsearch.hadoop.serialization.FieldType.DATE;
+import static org.elasticsearch.hadoop.serialization.FieldType.DOUBLE;
+import static org.elasticsearch.hadoop.serialization.FieldType.FLOAT;
+import static org.elasticsearch.hadoop.serialization.FieldType.GEO_POINT;
+import static org.elasticsearch.hadoop.serialization.FieldType.HALF_FLOAT;
+import static org.elasticsearch.hadoop.serialization.FieldType.INTEGER;
+import static org.elasticsearch.hadoop.serialization.FieldType.JOIN;
+import static org.elasticsearch.hadoop.serialization.FieldType.KEYWORD;
+import static org.elasticsearch.hadoop.serialization.FieldType.LONG;
+import static org.elasticsearch.hadoop.serialization.FieldType.NESTED;
+import static org.elasticsearch.hadoop.serialization.FieldType.OBJECT;
+import static org.elasticsearch.hadoop.serialization.FieldType.SCALED_FLOAT;
+import static org.elasticsearch.hadoop.serialization.FieldType.SHORT;
+import static org.elasticsearch.hadoop.serialization.FieldType.STRING;
+import static org.elasticsearch.hadoop.serialization.FieldType.TEXT;
+import static org.elasticsearch.hadoop.serialization.dto.mapping.MappingUtils.findTypos;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -35,91 +61,125 @@ import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assume.assumeThat;
+import static org.junit.runners.Parameterized.Parameters;
 
-
+@RunWith(Parameterized.class)
 public class MappingTest {
+
+    @Parameters
+    public static Collection<Object[]> getParameters() {
+        List<Object[]> parameters = new ArrayList<Object[]>();
+        parameters.add(new Object[]{false, "typed"});
+        parameters.add(new Object[]{true, "typeless"});
+        return parameters;
+    }
+
+    boolean typeless;
+    String mappingDirectory;
+
+    public MappingTest(boolean typeless, String mappingTypes) {
+        this.typeless = typeless;
+        this.mappingDirectory = mappingTypes;
+    }
+
+    private MappingSet getMappingsForResource(String resource) throws IOException {
+        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream(mappingDirectory + "/" + resource), Map.class);
+        return FieldParser.parseMappings(value, !typeless);
+    }
+
+    private InputStream getResourceStream(String resource) {
+        return getClass().getResourceAsStream(mappingDirectory + "/" + resource);
+    }
+
+    private Mapping ensureAndGet(String index, String potentialTypeName, MappingSet mappingSet) {
+        if (typeless) {
+            Mapping mapping = mappingSet.getMapping(index, MappingSet.TYPELESS_MAPPING_NAME);
+            assertNotNull(mapping);
+            assertEquals(index, mapping.getIndex());
+            assertEquals(MappingSet.TYPELESS_MAPPING_NAME, mapping.getType());
+            return mapping;
+        } else {
+            Mapping mapping = mappingSet.getMapping(index, potentialTypeName);
+            assertNotNull(mapping);
+            assertEquals(index, mapping.getIndex());
+            assertEquals(potentialTypeName, mapping.getType());
+            return mapping;
+        }
+    }
 
     @Test
     public void testNestedObjectParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
-        assertEquals("artiststimestamp", mapping.getName());
+        MappingSet mappings = getMappingsForResource("multi_level_field_with_same_name.json");
+        Mapping mapping = ensureAndGet("index", "artiststimestamp", mappings);
         Field[] properties = mapping.getFields();
         Field first = properties[0];
         assertEquals("date", first.name());
-        assertEquals(FieldType.DATE, first.type());
+        assertEquals(DATE, first.type());
         Field second = properties[1];
-        assertEquals(FieldType.OBJECT, second.type());
+        assertEquals(OBJECT, second.type());
         assertEquals("links", second.name());
         Field[] secondProps = second.properties();
         assertEquals("url", secondProps[0].name());
-        assertEquals(FieldType.STRING, secondProps[0].type());
+        assertEquals(STRING, secondProps[0].type());
     }
 
     @Test
     public void testBasicParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("basic.json"), Map.class);
-        MappingSet fl = parseMapping(value);
+        getMappingsForResource("basic.json");
     }
 
     @Test
     public void testPrimitivesParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("primitives.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "primitives");
-        assertEquals("primitives", mapping.getName());
+        MappingSet mappings = getMappingsForResource("primitives.json");
+        Mapping mapping = ensureAndGet("index", "primitives", mappings);
         Field[] props = mapping.getFields();
         assertEquals(14, props.length);
         assertEquals("field01", props[0].name());
-        assertEquals(FieldType.BOOLEAN, props[0].type());
+        assertEquals(BOOLEAN, props[0].type());
         assertEquals("field02", props[1].name());
-        assertEquals(FieldType.BYTE, props[1].type());
+        assertEquals(BYTE, props[1].type());
         assertEquals("field03", props[2].name());
-        assertEquals(FieldType.SHORT, props[2].type());
+        assertEquals(SHORT, props[2].type());
         assertEquals("field04", props[3].name());
-        assertEquals(FieldType.INTEGER, props[3].type());
+        assertEquals(INTEGER, props[3].type());
         assertEquals("field05", props[4].name());
-        assertEquals(FieldType.LONG, props[4].type());
+        assertEquals(LONG, props[4].type());
         assertEquals("field06", props[5].name());
-        assertEquals(FieldType.FLOAT, props[5].type());
+        assertEquals(FLOAT, props[5].type());
         assertEquals("field07", props[6].name());
-        assertEquals(FieldType.DOUBLE, props[6].type());
+        assertEquals(DOUBLE, props[6].type());
         assertEquals("field08", props[7].name());
-        assertEquals(FieldType.STRING, props[7].type());
+        assertEquals(STRING, props[7].type());
         assertEquals("field09", props[8].name());
-        assertEquals(FieldType.DATE, props[8].type());
+        assertEquals(DATE, props[8].type());
         assertEquals("field10", props[9].name());
-        assertEquals(FieldType.BINARY, props[9].type());
+        assertEquals(BINARY, props[9].type());
         assertEquals("field11", props[10].name());
-        assertEquals(FieldType.TEXT, props[10].type());
+        assertEquals(TEXT, props[10].type());
         assertEquals("field12", props[11].name());
-        assertEquals(FieldType.KEYWORD, props[11].type());
+        assertEquals(KEYWORD, props[11].type());
         assertEquals("field13", props[12].name());
-        assertEquals(FieldType.HALF_FLOAT, props[12].type());
+        assertEquals(HALF_FLOAT, props[12].type());
         assertEquals("field14", props[13].name());
-        assertEquals(FieldType.SCALED_FLOAT, props[13].type());
+        assertEquals(SCALED_FLOAT, props[13].type());
     }
 
     @Test
     public void testGeoParsingWithOptions() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("geo.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "restaurant");
-        System.out.println(mapping);
-        assertEquals("restaurant", mapping.getName());
+        MappingSet mappings = getMappingsForResource("geo.json");
+        Mapping mapping = ensureAndGet("index", "restaurant", mappings);
+        out.println(mapping);
         Field[] props = mapping.getFields();
         assertEquals(1, props.length);
         assertEquals("location", props[0].name());
-        assertEquals(FieldType.GEO_POINT, props[0].type());
+        assertEquals(GEO_POINT, props[0].type());
     }
 
     @Test
     public void testCompletionParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("completion.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "song");
-        assertEquals("song", mapping.getName());
+        MappingSet mappings = getMappingsForResource("completion.json");
+        Mapping mapping = ensureAndGet("index", "song", mappings);
         Field[] props = mapping.getFields();
         assertEquals(1, props.length);
         assertEquals("name", props[0].name());
@@ -127,52 +187,48 @@ public class MappingTest {
 
     @Test
     public void testIpParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("ip.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "client");
+        MappingSet mappings = getMappingsForResource("ip.json");
+        Mapping mapping = ensureAndGet("index", "client", mappings);
         assertEquals(1, mapping.getFields().length);
     }
 
     @Test
     public void testUnsupportedParsing() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("attachment.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "person");
-        assertEquals("person", mapping.getName());
+        MappingSet mappings = getMappingsForResource("attachment.json");
+        Mapping mapping = ensureAndGet("index", "person", mappings);
         assertEquals(0, mapping.getFields().length);
     }
 
     @Test
     public void testFieldValidation() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
+        MappingSet mappings = getMappingsForResource("multi_level_field_with_same_name.json");
+        Mapping mapping = ensureAndGet("index", "artiststimestamp", mappings);
 
-        List<String>[] findFixes = MappingUtils.findTypos(Collections.singletonList("nam"), mapping);
+        List<String>[] findFixes = findTypos(singletonList("nam"), mapping);
         assertThat(findFixes[1], contains("name"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("link.url"), mapping);
+        findFixes = findTypos(singletonList("link.url"), mapping);
         assertThat(findFixes[1], contains("links.url"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("ulr"), mapping);
+        findFixes = findTypos(singletonList("ulr"), mapping);
         assertThat(findFixes[1], contains("links.url"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("likn"), mapping);
+        findFixes = findTypos(singletonList("likn"), mapping);
         assertThat(findFixes[1], contains("links"));
 
-        findFixes = MappingUtils.findTypos(Collections.singletonList("_uid"), mapping);
+        findFixes = findTypos(singletonList("_uid"), mapping);
         assertThat(findFixes, is(nullValue()));
     }
 
     @Test
     public void testFieldInclude() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
+        MappingSet mappings = getMappingsForResource("multi_level_field_with_same_name.json");
+        Mapping mapping = ensureAndGet("index", "artiststimestamp", mappings);
 
-        Mapping filtered = mapping.filter(Collections.singleton("*a*e"), Collections.<String> emptyList());
+        Mapping filtered = mapping.filter(singleton("*a*e"), Collections.<String>emptyList());
 
-        assertThat(mapping.getName(), is(filtered.getName()));
+        assertThat(mapping.getIndex(), is(filtered.getIndex()));
+        assertThat(mapping.getType(), is(filtered.getType()));
 
         Field[] props = filtered.getFields();
 
@@ -183,13 +239,13 @@ public class MappingTest {
 
     @Test
     public void testFieldNestedInclude() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multi_level_field_with_same_name.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "artiststimestamp");
+        MappingSet mappings = getMappingsForResource("multi_level_field_with_same_name.json");
+        Mapping mapping = ensureAndGet("index", "artiststimestamp", mappings);
 
-        Mapping filtered = mapping.filter(Collections.singleton("links.image.url"), Collections.<String> emptyList());
+        Mapping filtered = mapping.filter(singleton("links.image.url"), Collections.<String>emptyList());
 
-        assertThat(mapping.getName(), is(filtered.getName()));
+        assertThat(mapping.getIndex(), is(filtered.getIndex()));
+        assertThat(mapping.getType(), is(filtered.getType()));
 
         Field[] props = filtered.getFields();
 
@@ -203,13 +259,13 @@ public class MappingTest {
 
     @Test
     public void testFieldExclude() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested_arrays_mapping.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "nested-array-exclude");
+        MappingSet mappings = getMappingsForResource("nested_arrays_mapping.json");
+        Mapping mapping = ensureAndGet("index", "nested-array-exclude", mappings);
 
-        Mapping filtered = mapping.filter(Collections.<String> emptyList(), Collections.singleton("nested.bar"));
+        Mapping filtered = mapping.filter(Collections.<String>emptyList(), singleton("nested.bar"));
 
-        assertThat(mapping.getName(), is(filtered.getName()));
+        assertThat(mapping.getIndex(), is(filtered.getIndex()));
+        assertThat(mapping.getType(), is(filtered.getType()));
 
         Field[] props = filtered.getFields();
 
@@ -222,142 +278,135 @@ public class MappingTest {
 
     @Test
     public void testNestedMapping() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("nested-mapping.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "company");
+        MappingSet mappings = getMappingsForResource("nested-mapping.json");
+        Mapping mapping = ensureAndGet("index", "company", mappings);
 
-        assertEquals("company", mapping.getName());
         Field[] properties = mapping.getFields();
         assertEquals(3, properties.length);
         Field first = properties[0];
         assertEquals("name", first.name());
-        assertEquals(FieldType.STRING, first.type());
+        assertEquals(STRING, first.type());
         Field second = properties[1];
         assertEquals("description", second.name());
-        assertEquals(FieldType.STRING, second.type());
+        assertEquals(STRING, second.type());
         Field nested = properties[2];
         assertEquals("employees", nested.name());
-        assertEquals(FieldType.NESTED, nested.type());
+        assertEquals(NESTED, nested.type());
         Field[] nestedProps = nested.properties();
         assertEquals("name", nestedProps[0].name());
-        assertEquals(FieldType.LONG, nestedProps[1].type());
+        assertEquals(LONG, nestedProps[1].type());
     }
 
     @Test
     public void testMappingWithFieldsNamedPropertiesAndType() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("mapping_with_fields_named_properties_and_type.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
-        Mapping mapping = mappings.getMapping("index", "type");
-        assertEquals("type", mapping.getName());
+        MappingSet mappings = getMappingsForResource("mapping_with_fields_named_properties_and_type.json");
+        Mapping mapping = ensureAndGet("index", "properties", mappings);
         assertEquals("field1", mapping.getFields()[0].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[0].type());
+        assertEquals(STRING, mapping.getFields()[0].type());
         assertEquals("properties", mapping.getFields()[1].name());
-        assertEquals(FieldType.OBJECT, mapping.getFields()[1].type());
+        assertEquals(OBJECT, mapping.getFields()[1].type());
         assertEquals("subfield1", mapping.getFields()[1].properties()[0].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[1].properties()[0].type());
+        assertEquals(STRING, mapping.getFields()[1].properties()[0].type());
         assertEquals("subfield2", mapping.getFields()[1].properties()[1].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[1].properties()[1].type());
+        assertEquals(STRING, mapping.getFields()[1].properties()[1].type());
         assertEquals("field2", mapping.getFields()[2].name());
-        assertEquals(FieldType.OBJECT, mapping.getFields()[2].type());
+        assertEquals(OBJECT, mapping.getFields()[2].type());
         assertEquals("subfield3", mapping.getFields()[2].properties()[0].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[0].type());
+        assertEquals(STRING, mapping.getFields()[2].properties()[0].type());
         assertEquals("properties", mapping.getFields()[2].properties()[1].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[1].type());
+        assertEquals(STRING, mapping.getFields()[2].properties()[1].type());
         assertEquals("type", mapping.getFields()[2].properties()[2].name());
-        assertEquals(FieldType.OBJECT, mapping.getFields()[2].properties()[2].type());
+        assertEquals(OBJECT, mapping.getFields()[2].properties()[2].type());
         assertEquals("properties", mapping.getFields()[2].properties()[2].properties()[0].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[1].type());
+        assertEquals(STRING, mapping.getFields()[2].properties()[2].properties()[1].type());
         assertEquals("subfield5", mapping.getFields()[2].properties()[2].properties()[1].name());
-        assertEquals(FieldType.OBJECT, mapping.getFields()[2].properties()[2].properties()[0].type());
+        assertEquals(OBJECT, mapping.getFields()[2].properties()[2].properties()[0].type());
         assertEquals("properties", mapping.getFields()[2].properties()[2].properties()[0].properties()[0].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[0].type());
+        assertEquals(STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[0].type());
         assertEquals("subfield4", mapping.getFields()[2].properties()[2].properties()[0].properties()[1].name());
-        assertEquals(FieldType.STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[1].type());
+        assertEquals(STRING, mapping.getFields()[2].properties()[2].properties()[0].properties()[1].type());
     }
 
     @Test
     public void testJoinField() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("join-type.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = getMappingsForResource("join-type.json");
 
-        Mapping mapping = mappings.getMapping("index", "join");
-        assertEquals("join", mapping.getName());
+        Mapping mapping = ensureAndGet("index", "join", mappings);
         assertEquals("id", mapping.getFields()[0].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
         assertEquals("company", mapping.getFields()[1].name());
-        assertEquals(FieldType.TEXT, mapping.getFields()[1].type());
+        assertEquals(TEXT, mapping.getFields()[1].type());
         assertEquals("name", mapping.getFields()[2].name());
-        assertEquals(FieldType.TEXT, mapping.getFields()[2].type());
+        assertEquals(TEXT, mapping.getFields()[2].type());
         assertEquals("joiner", mapping.getFields()[3].name());
-        assertEquals(FieldType.JOIN, mapping.getFields()[3].type());
+        assertEquals(JOIN, mapping.getFields()[3].type());
         assertEquals("name", mapping.getFields()[3].properties()[0].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[3].properties()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[3].properties()[0].type());
         assertEquals("parent", mapping.getFields()[3].properties()[1].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[3].properties()[1].type());
+        assertEquals(KEYWORD, mapping.getFields()[3].properties()[1].type());
     }
 
 
     @Test
     public void testMultipleFields() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-types.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        assumeThat("Cannot read multiple types when using typeless mappings", typeless, is(false));
+        MappingSet mappings = getMappingsForResource("multiple-types.json");
 
-        assertNotNull(mappings.getMapping("index", "type1"));
-        assertNotNull(mappings.getMapping("index", "type2"));
+        assertNotNull(ensureAndGet("index", "type1", mappings));
+        assertNotNull(ensureAndGet("index", "type2", mappings));
 
         Mapping mapping = mappings.getResolvedView();
-        assertEquals("*", mapping.getName());
+        assertEquals("*", mapping.getIndex());
+        assertEquals("*", mapping.getType());
         assertEquals("field1", mapping.getFields()[0].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
         assertEquals("field2", mapping.getFields()[1].name());
-        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals(FLOAT, mapping.getFields()[1].type());
         assertEquals("field3", mapping.getFields()[2].name());
-        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
+        assertEquals(INTEGER, mapping.getFields()[2].type());
     }
 
     @Test
     public void testMultipleIndexMultipleFields() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-types.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = getMappingsForResource("multiple-indices-multiple-types.json");
 
-        assertNotNull(mappings.getMapping("index1", "type1"));
-        assertNotNull(mappings.getMapping("index2", "type2"));
+        assertNotNull(ensureAndGet("index1", "type1", mappings));
+        assertNotNull(ensureAndGet("index2", "type2", mappings));
 
         Mapping mapping = mappings.getResolvedView();
-        assertEquals("*", mapping.getName());
+        assertEquals("*", mapping.getIndex());
+        assertEquals("*", mapping.getType());
         assertEquals("field1", mapping.getFields()[0].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
         assertEquals("field2", mapping.getFields()[1].name());
-        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals(FLOAT, mapping.getFields()[1].type());
         assertEquals("field3", mapping.getFields()[2].name());
-        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
+        assertEquals(INTEGER, mapping.getFields()[2].type());
     }
 
     @Test
     public void testDynamicTemplateIndex() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("dynamic-template.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = getMappingsForResource("dynamic-template.json");
 
-        Mapping mapping = mappings.getMapping("index", "friend");
-        assertEquals("friend", mapping.getName());
+        Mapping mapping = ensureAndGet("index", "friend", mappings);
         assertEquals("hobbies", mapping.getFields()[0].name());
-        assertEquals(FieldType.TEXT, mapping.getFields()[0].type());
+        assertEquals(TEXT, mapping.getFields()[0].type());
         assertEquals("job", mapping.getFields()[1].name());
-        assertEquals(FieldType.TEXT, mapping.getFields()[1].type());
+        assertEquals(TEXT, mapping.getFields()[1].type());
         assertEquals("name", mapping.getFields()[2].name());
-        assertEquals(FieldType.TEXT, mapping.getFields()[2].type());
+        assertEquals(TEXT, mapping.getFields()[2].type());
     }
 
     @Test
     public void testMultipleIndexMultipleUpcastableFields() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-upcastable-types.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = getMappingsForResource("multiple-indices-multiple-upcastable-types.json");
 
-        assertNotNull(mappings.getMapping("index1", "type1"));
-        assertNotNull(mappings.getMapping("index2", "type2"));
+        assertNotNull(ensureAndGet("index1", "type1", mappings));
+        assertNotNull(ensureAndGet("index2", "type2", mappings));
 
         Mapping mapping = mappings.getResolvedView();
-        assertEquals("*", mapping.getName());
+        assertEquals("*", mapping.getIndex());
+        assertEquals("*", mapping.getType());
 
         assertEquals("field1_keyword", mapping.getFields()[0].name());
         assertEquals("field2_keyword", mapping.getFields()[1].name());
@@ -369,32 +418,32 @@ public class MappingTest {
         assertEquals("field8_float", mapping.getFields()[7].name());
         assertEquals("field9_integer", mapping.getFields()[8].name());
 
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[1].type());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[2].type());
-        assertEquals(FieldType.INTEGER, mapping.getFields()[3].type());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[4].type());
-        assertEquals(FieldType.FLOAT, mapping.getFields()[5].type());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[6].type());
-        assertEquals(FieldType.FLOAT, mapping.getFields()[7].type());
-        assertEquals(FieldType.INTEGER, mapping.getFields()[8].type());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[1].type());
+        assertEquals(KEYWORD, mapping.getFields()[2].type());
+        assertEquals(INTEGER, mapping.getFields()[3].type());
+        assertEquals(KEYWORD, mapping.getFields()[4].type());
+        assertEquals(FLOAT, mapping.getFields()[5].type());
+        assertEquals(KEYWORD, mapping.getFields()[6].type());
+        assertEquals(FLOAT, mapping.getFields()[7].type());
+        assertEquals(INTEGER, mapping.getFields()[8].type());
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testMultipleIndexMultipleConflictingFields() throws Exception {
-        Map value = new ObjectMapper().readValue(getClass().getResourceAsStream("multiple-indices-multiple-conflicting-types.json"), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = getMappingsForResource("multiple-indices-multiple-conflicting-types.json");
 
-        assertNotNull(mappings.getMapping("index1", "type1"));
-        assertNotNull(mappings.getMapping("index2", "type2"));
+        assertNotNull(ensureAndGet("index1", "type1", mappings));
+        assertNotNull(ensureAndGet("index2", "type2", mappings));
 
         Mapping mapping = mappings.getResolvedView();
-        assertEquals("*", mapping.getName());
+        assertEquals("*", mapping.getIndex());
+        assertEquals("*", mapping.getType());
         assertEquals("field1", mapping.getFields()[0].name());
-        assertEquals(FieldType.KEYWORD, mapping.getFields()[0].type());
+        assertEquals(KEYWORD, mapping.getFields()[0].type());
         assertEquals("field3", mapping.getFields()[1].name());
-        assertEquals(FieldType.FLOAT, mapping.getFields()[1].type());
+        assertEquals(FLOAT, mapping.getFields()[1].type());
         assertEquals("field4", mapping.getFields()[2].name());
-        assertEquals(FieldType.INTEGER, mapping.getFields()[2].type());
+        assertEquals(INTEGER, mapping.getFields()[2].type());
     }
 }

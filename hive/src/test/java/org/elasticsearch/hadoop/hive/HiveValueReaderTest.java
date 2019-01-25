@@ -59,6 +59,6 @@ public class HiveValueReaderTest {
 
     private Mapping mapping(String resource) throws Exception {
         InputStream stream = getClass().getResourceAsStream(resource);
-        return FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class)).getResolvedView();
+        return FieldParser.parseTypelessMappings(new ObjectMapper().readValue(stream, Map.class)).getResolvedView();
     }
 }

@@ -19,6 +19,7 @@
 package org.elasticsearch.hadoop.hive;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,9 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.CompositeSettings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
@@ -173,7 +176,14 @@ public class EsSerDe extends AbstractSerDe {
             return;
         }
         writeInitialized = true;
-        Settings settings = HadoopSettingsManager.loadFrom(tableProperties);
+
+        // We want to use just the table properties here, but we need to add the internal version to the settings.
+        // We don't want to mutate the underlying table properties (the settings implementations differ greatly on
+        // their mutability) so we just use a composite settings object.
+        Settings tableSettings = HadoopSettingsManager.loadFrom(tableProperties);
+        Settings versionSetting = new PropertiesSettings();
+        versionSetting.setInternalVersion(version);
+        Settings settings = new CompositeSettings(Arrays.asList(versionSetting, tableSettings));
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);

@@ -25,6 +25,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -69,6 +70,7 @@ public class FindPartitionsTest {
     public void testEmpty() {
         Settings settings = new PropertiesSettings();
         settings.setMaxDocsPerPartition(10000);
+        settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setProperty(ES_RESOURCE_READ, "_all");
         assertEquals(RestService.findShardPartitions(settings, null,
                 Collections.<String, NodeInfo>emptyMap(), Collections.<List<Map<String,Object>>>emptyList(), LOGGER).size(), 0);
@@ -94,15 +96,16 @@ public class FindPartitionsTest {
                 MAPPER.readValue(getClass().getResourceAsStream("search-shards-response.json"), ArrayList.class);
         RestClient client = Mockito.mock(RestClient.class);
         Settings settings = new PropertiesSettings();
+        settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setProperty(ES_RESOURCE_READ, "index1,index2,index3/type1");
         for (int i = 0; i < 15; i++) {
-            Mockito.when(client.count("index1/type1", Integer.toString(i), MATCH_ALL)).thenReturn(1000L);
+            Mockito.when(client.count("index1", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(1000L);
         }
         for (int i = 0; i < 18; i++) {
-            Mockito.when(client.count("index2/type1", Integer.toString(i), MATCH_ALL)).thenReturn(10000L);
+            Mockito.when(client.count("index2", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(10000L);
         }
         for (int i = 0; i < 1; i++) {
-            Mockito.when(client.count("index3/type1", Integer.toString(i), MATCH_ALL)).thenReturn(100000L);
+            Mockito.when(client.count("index3", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(100000L);
         }
         {
             settings.setMaxDocsPerPartition(1000);
@@ -130,13 +133,13 @@ public class FindPartitionsTest {
             assertEquals(new HashSet(partitions).size(), 34);
         }
         for (int i = 0; i < 15; i++) {
-            Mockito.when(client.count("index1/type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
+            Mockito.when(client.count("index1", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
         }
         for (int i = 0; i < 18; i++) {
-            Mockito.when(client.count("index2/type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
+            Mockito.when(client.count("index2", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
         }
         for (int i = 0; i < 1; i++) {
-            Mockito.when(client.count("index3/type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
+            Mockito.when(client.count("index3", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(0L);
         }
         {
             List<PartitionDefinition> partitions = RestService.findSlicePartitions(client, settings, null,

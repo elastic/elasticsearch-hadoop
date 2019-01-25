@@ -1,0 +1,32 @@
+{
+    "index": {
+        "mappings": {
+            "properties" : {
+                "date" : {
+                    "type" : "date",
+                    "format" : "dateOptionalTime"
+                },
+                "links" : {
+                    "properties" : {
+                        "url" : {
+                            "type" : "string"
+                        },
+                        "image": {
+                            "properties": {
+                                "kind": {
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "name" : {
+                    "type" : "string"
+                }
+            }
+        }
+    }
+}

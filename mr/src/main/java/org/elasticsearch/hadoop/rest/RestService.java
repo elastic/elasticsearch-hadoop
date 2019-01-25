@@ -216,9 +216,9 @@ public abstract class RestService implements Serializable {
         Version.logVersion();
 
         InitializationUtils.validateSettings(settings);
-        InitializationUtils.validateSettingsForReading(settings);
 
         ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
+        InitializationUtils.validateSettingsForReading(settings);
         List<NodeInfo> nodes = InitializationUtils.discoverNodesIfNeeded(settings, log);
         InitializationUtils.filterNonClientNodesIfNeeded(settings, log);
         InitializationUtils.filterNonDataNodesIfNeeded(settings, log);
@@ -226,7 +226,7 @@ public abstract class RestService implements Serializable {
 
         RestRepository client = new RestRepository(settings);
         try {
-            boolean indexExists = client.indexExists(true);
+            boolean indexExists = client.resourceExists(true);
 
             List<List<Map<String, Object>>> shards = null;
 
@@ -324,7 +324,7 @@ public abstract class RestService implements Serializable {
         QueryBuilder query = QueryUtils.parseQueryAndFilters(settings);
         Integer maxDocsPerPartition = settings.getMaxDocsPerPartition();
         Assert.notNull(maxDocsPerPartition, "Attempting to find slice partitions but maximum documents per partition is not set.");
-        String types = new Resource(settings, true).type();
+        Resource readResource = new Resource(settings, true);
         Mapping resolvedMapping = mappingSet == null ? null : mappingSet.getResolvedView();
 
         List<PartitionDefinition> partitions = new ArrayList<PartitionDefinition>(shards.size());
@@ -352,13 +352,13 @@ public abstract class RestService implements Serializable {
                             "Check your cluster status to see if it is unstable!");
                 }
             } else {
-                StringBuilder indexAndType = new StringBuilder(index);
-                if (StringUtils.hasLength(types)) {
-                    indexAndType.append("/");
-                    indexAndType.append(types);
-                }
                 // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
-                long numDocs = client.count(indexAndType.toString(), Integer.toString(shardId), query);
+                long numDocs;
+                if (readResource.isTyped()) {
+                    numDocs = client.count(index, readResource.type(), Integer.toString(shardId), query);
+                } else {
+                    numDocs = client.countIndexShard(index, Integer.toString(shardId), query);
+                }
                 int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
@@ -442,7 +442,8 @@ public abstract class RestService implements Serializable {
         Resource read = new Resource(settings, true);
         SearchRequestBuilder requestBuilder =
                 new SearchRequestBuilder(clusterInfo.getMajorVersion(), includeVersion)
-                        .types(read.type())
+                        .resource(read)
+                        // Overwrite the index name from the resource to be that of the concrete index in the partition definition
                         .indices(partition.getIndex())
                         .query(QueryUtils.parseQuery(settings))
                         .scroll(settings.getScrollKeepAlive())

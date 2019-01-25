@@ -39,14 +39,19 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class PartitionDefinitionTest {
-    @Test
-    public void testWritable() throws IOException {
+
+    private Mapping getTestMapping() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonParser jsonParser = mapper.getJsonFactory()
-                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
+                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/typeless/basic.json"));
         Map<String, Object> map =
                 (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
+        return FieldParser.parseTypelessMappings(map).getResolvedView();
+    }
+
+    @Test
+    public void testWritable() throws IOException {
+        Mapping mapping = getTestMapping();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -59,12 +64,7 @@ public class PartitionDefinitionTest {
 
     @Test
     public void testSerializable() throws IOException, ClassNotFoundException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonParser jsonParser = mapper.getJsonFactory()
-                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
-        Map<String, Object> map =
-                (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
+        Mapping mapping = getTestMapping();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -77,12 +77,7 @@ public class PartitionDefinitionTest {
 
     @Test
     public void testWritableWithSlice() throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonParser jsonParser = mapper.getJsonFactory()
-                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
-        Map<String, Object> map =
-                (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
+        Mapping mapping = getTestMapping();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");
@@ -95,12 +90,7 @@ public class PartitionDefinitionTest {
 
     @Test
     public void testSerializableWithSlice() throws IOException, ClassNotFoundException {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonParser jsonParser = mapper.getJsonFactory()
-                .createJsonParser(getClass().getResourceAsStream("/org/elasticsearch/hadoop/serialization/dto/mapping/basic.json"));
-        Map<String, Object> map =
-                (Map<String, Object>) mapper.readValue(jsonParser, Map.class);
-        Mapping mapping = FieldParser.parseMapping(map).getResolvedView();
+        Mapping mapping = getTestMapping();
         PropertiesSettings settings = new PropertiesSettings();
         settings.setProperty("setting1", "value1");
         settings.setProperty("setting2", "value2");

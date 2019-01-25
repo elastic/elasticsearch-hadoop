@@ -42,6 +42,7 @@ import org.elasticsearch.hadoop.serialization.field.MapWritableFieldExtractor;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.TrackingBytesArray;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -82,6 +83,7 @@ public class AbstractRestSaveTest {
     @Test
     public void testEmptyBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
+        testSettings.setInternalVersion(TestUtils.getEsVersion());
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         RestRepository restRepo = new RestRepository(testSettings);
         RestClient client = restRepo.getRestClient();

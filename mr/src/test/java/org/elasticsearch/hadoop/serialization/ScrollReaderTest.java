@@ -47,7 +47,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -120,13 +119,12 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithNestedFields() throws IOException {
-        InputStream stream = getClass().getResourceAsStream(mappingData("source"));
-        MappingSet fl = FieldParser.parseMapping(JsonUtils.asMap(stream));
+        MappingSet fl = getMappingSet("source");
 
         ScrollReaderConfigBuilder scrollReaderConfig = getScrollReaderCfg().setResolvedMapping(fl.getResolvedView());
         reader = new ScrollReader(scrollReaderConfig);
 
-        stream = getClass().getResourceAsStream(scrollData("source"));
+        InputStream stream = getClass().getResourceAsStream(scrollData("source"));
         List<Object[]> read = reader.read(stream).getHits();
 
         assertEquals(3, read.size());
@@ -179,7 +177,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithJoinField() throws Exception {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("join"))));
+        MappingSet mappings = getMappingSet("join");
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
         ScrollReaderConfigBuilder scrollCfg = getScrollReaderCfg().setResolvedMapping(mappings.getResolvedView());
         ScrollReader myReader = new ScrollReader(scrollCfg);
@@ -300,7 +298,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithMultipleTypes() throws Exception {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("multi-type"))));
+        MappingSet mappings = getLegacyMappingSet("multi-type");
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
         ScrollReaderConfigBuilder scrollCfg = getScrollReaderCfg().setResolvedMapping(mappings.getResolvedView());
         ScrollReader myReader = new ScrollReader(scrollCfg);
@@ -323,9 +321,27 @@ public class ScrollReaderTest {
         assertEquals("value4", ((Map) row3[1]).get("field4"));
     }
 
+    /**
+     * Loads and parses the mapping response content with include_type_name set to true to simulate older ES cluster response formats.
+     * @param s mapping file name
+     * @return MappingSet with type names loaded
+     */
+    private MappingSet getLegacyMappingSet(String s) {
+        return FieldParser.parseTypedMappings(JsonUtils.asMap(getClass().getResourceAsStream(mappingData(s))));
+    }
+
+    /**
+     * Loads and parses the mapping response content located in the resource file based on the given string
+     * @param s the mapping file name
+     * @return MappingSet that has been loaded from the response body in that resource file.
+     */
+    private MappingSet getMappingSet(String s) {
+        return FieldParser.parseTypelessMappings(JsonUtils.asMap(getClass().getResourceAsStream(mappingData(s))));
+    }
+
     @Test
     public void testScrollWithNestedFieldAndArrayIncludes() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("nested-data"))));
+        MappingSet mappings = getMappingSet("nested-data");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("nested-data"));
 
@@ -358,7 +374,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithObjectFieldAndArrayIncludes() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("object-fields"))));
+        MappingSet mappings = getMappingSet("object-fields");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("object-fields"));
 
@@ -391,7 +407,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithNestedArrays() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("nested-list"))));
+        MappingSet mappings = getMappingSet("nested-list");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("nested-list"));
 
@@ -417,7 +433,7 @@ public class ScrollReaderTest {
 
     @Test(expected = EsHadoopParsingException.class)
     public void testScrollWithBreakOnInvalidMapping() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -436,7 +452,7 @@ public class ScrollReaderTest {
 
     @Test(expected = EsHadoopException.class)
     public void testScrollWithThrowingErrorHandler() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -457,7 +473,7 @@ public class ScrollReaderTest {
 
     @Test(expected = EsHadoopParsingException.class)
     public void testScrollWithThrowingAbortErrorHandler() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -478,7 +494,7 @@ public class ScrollReaderTest {
 
     @Test(expected = EsHadoopException.class)
     public void testScrollWithNeverendingHandler() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -499,7 +515,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithIgnoringHandler() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -522,7 +538,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithHandlersThatPassWithMessages() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 
@@ -547,7 +563,7 @@ public class ScrollReaderTest {
 
     @Test
     public void testScrollWithHandlersThatCorrectsError() throws IOException {
-        MappingSet mappings = parseMapping(JsonUtils.asMap(getClass().getResourceAsStream(mappingData("numbers-as-strings"))));
+        MappingSet mappings = getMappingSet("numbers-as-strings");
 
         InputStream stream = getClass().getResourceAsStream(scrollData("numbers-as-strings"));
 

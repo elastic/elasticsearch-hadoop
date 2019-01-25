@@ -515,15 +515,25 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
             keyword = "keyword";
         }
 
-        String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}}";
+        String mapping = "{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}";
+        if (version.onOrBefore(EsMajorVersion.V_6_X)) {
+            mapping = "{\"data\":" + mapping + "}";
+        }
         String index = wrapIndex("spark-test-contact");
         String type = "data";
         String target = index + "/" + type;
+        String docEndpoint = target;
+
+        if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+            target = index;
+            docEndpoint = index + "/_doc";
+        }
 
         RestUtils.touch(index);
         RestUtils.putMapping(index, type, mapping.getBytes());
-        RestUtils.postData(target+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
-        RestUtils.postData(target+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docEndpoint+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docEndpoint+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.refresh(index);
 
         String lang = "painless";
         if (version.onOrBefore(EsMajorVersion.V_2_X)) {
@@ -585,11 +595,11 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         TimeUnit.SECONDS.sleep(2);
         ssc.stop(false, true);
 
-        assertTrue(RestUtils.exists(target + "/1"));
-        assertThat(RestUtils.get(target + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
+        assertTrue(RestUtils.exists(docEndpoint + "/1"));
+        assertThat(RestUtils.get(docEndpoint + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
 
-        assertTrue(RestUtils.exists(target + "/2"));
-        assertThat(RestUtils.get(target + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
+        assertTrue(RestUtils.exists(docEndpoint + "/2"));
+        assertThat(RestUtils.get(docEndpoint + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
     }
 
     private String wrapIndex(String index) {

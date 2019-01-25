@@ -22,8 +22,9 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
-import javax.xml.bind.DatatypeConverter
 
+import javax.xml.bind.DatatypeConverter
+import org.apache.commons.logging.LogFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SaveMode.Append
 import org.apache.spark.sql.SaveMode.ErrorIfExists
@@ -141,6 +142,7 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
         .load(sqlContext.sparkContext.getConf)
         .merge(streamParams(mapConfig.toMap, sparkSession).asJava)
 
+    InitializationUtils.discoverEsVersion(jobSettings, LogFactory.getLog(classOf[DefaultSource]))
     InitializationUtils.checkIdForOperation(jobSettings)
     InitializationUtils.checkIndexExistence(jobSettings)
 
@@ -218,7 +220,11 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
   extends BaseRelation with PrunedFilteredScan with InsertableRelation
   {
 
-  @transient lazy val cfg = { new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava) }
+  @transient lazy val cfg = {
+    val conf = new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava)
+    InitializationUtils.discoverEsVersion(conf, LogFactory.getLog(classOf[ElasticsearchRelation]))
+    conf
+  }
 
   @transient lazy val lazySchema = { SchemaUtils.discoverMapping(cfg) }
 
@@ -606,7 +612,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "1000")
       cfgCopy.setProperty(ConfigurationOptions.ES_BATCH_SIZE_BYTES, "1mb")
       val rr = new RestRepository(cfgCopy)
-      if (rr.indexExists(false)) {
+      if (rr.resourceExists(false)) {
         rr.delete()
       }
       rr.close()

@@ -29,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.serialization.MapFieldExtractor;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
@@ -46,6 +47,7 @@ public class DefaultIndexExtractorTest {
     public void createFieldExtractor() {
         Settings settings = new TestSettings();
         settings.setResourceWrite("test/{field}");
+        settings.setInternalVersion(EsMajorVersion.V_7_X);
         InitializationUtils.setFieldExtractorIfNotSet(settings, MapFieldExtractor.class, LOG);
 
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
@@ -64,6 +66,7 @@ public class DefaultIndexExtractorTest {
     public void createFieldExtractorNull() {
         Settings settings = new TestSettings();
         settings.setResourceWrite("test/{field}");
+        settings.setInternalVersion(EsMajorVersion.V_7_X);
         InitializationUtils.setFieldExtractorIfNotSet(settings, MapFieldExtractor.class, LOG);
 
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);
@@ -83,6 +86,7 @@ public class DefaultIndexExtractorTest {
     public void createFieldExtractorFailure() {
         Settings settings = new TestSettings();
         settings.setResourceWrite("test/{optional}");
+        settings.setInternalVersion(EsMajorVersion.V_7_X);
         InitializationUtils.setFieldExtractorIfNotSet(settings, MapFieldExtractor.class, LOG);
 
         IndexExtractor iformat = ObjectUtils.instantiate(settings.getMappingIndexExtractorClassName(), settings);

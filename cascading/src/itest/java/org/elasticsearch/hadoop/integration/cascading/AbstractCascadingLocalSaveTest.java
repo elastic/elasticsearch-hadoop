@@ -66,10 +66,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-artists/data").toString(),
+        assertThat(RestUtils.getMappings("cascading-local-artists").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[name=STRING, picture=STRING, url=STRING]"));
+                        ? is("*/*=[name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("*/*=[name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -89,10 +89,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-alias/data").toString(),
+        assertThat(RestUtils.getMappings("cascading-local-alias").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[address=TEXT, name=TEXT, picture=TEXT]")
-                        : is("data=[address=STRING, name=STRING, picture=STRING]"));
+                        ? is("*/*=[address=TEXT, name=TEXT, picture=TEXT]")
+                        : is("*/*=[address=STRING, name=STRING, picture=STRING]"));
     }
 
 
@@ -130,10 +130,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testWriteToESWithtestFieldMappingMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-fieldmapping/data").toString(),
+        assertThat(RestUtils.getMappings("cascading-local-fieldmapping").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("*/*=[id=TEXT, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("*/*=[id=STRING, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -149,10 +149,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-pattern-5/data").toString(),
+        assertThat(RestUtils.getMappings("cascading-local-pattern-5").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, tag=TEXT, url=TEXT]")
-                        : is("data=[id=STRING, name=STRING, picture=STRING, tag=STRING, url=STRING]"));
+                        ? is("*/*=[id=TEXT, name=TEXT, picture=TEXT, tag=TEXT, url=TEXT]")
+                        : is("*/*=[id=STRING, name=STRING, picture=STRING, tag=STRING, url=STRING]"));
     }
 
     @Test
@@ -169,10 +169,10 @@ public class AbstractCascadingLocalSaveTest {
 
     @Test
     public void testIndexPatternWithFormatAndAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("cascading-local-pattern-format-2017-10-06/data").toString(),
+        assertThat(RestUtils.getMappings("cascading-local-pattern-format-2017-10-06").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
-                        : is("data=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
+                        ? is("*/*=[id=TEXT, name=TEXT, picture=TEXT, ts=DATE, url=TEXT]")
+                        : is("*/*=[id=STRING, name=STRING, picture=STRING, ts=DATE, url=STRING]"));
     }
 
     @Test

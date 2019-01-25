@@ -17,7 +17,8 @@ import org.elasticsearch.hadoop.serialization.field.FieldFilter;
  */
 public class Mapping implements Serializable {
 
-    private final String name;
+    private final String index;
+    private final String type;
     private final Field[] fields;
 
     /**
@@ -26,16 +27,25 @@ public class Mapping implements Serializable {
      * @param fields The fields in the mapping
      */
     public Mapping(String name, Collection<Field> fields) {
-        this(name, (fields != null ? fields.toArray(new Field[fields.size()]) : Field.NO_FIELDS));
+        this(null, name, (fields != null ? fields.toArray(new Field[fields.size()]) : Field.NO_FIELDS));
     }
 
-    Mapping(String name, Field[] fields) {
-        this.name = name;
+    public Mapping(String index, String name, Collection<Field> fields) {
+        this(index, name, (fields != null ? fields.toArray(new Field[fields.size()]) : Field.NO_FIELDS));
+    }
+
+    Mapping(String index, String type, Field[] fields) {
+        this.index = index;
+        this.type = type;
         this.fields = fields;
     }
 
-    public String getName() {
-        return name;
+    public String getIndex() {
+        return index;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public Field[] getFields() {
@@ -61,7 +71,7 @@ public class Mapping implements Serializable {
             intact &= filterField(fl, null, filtered, convertedIncludes, excludes);
         }
 
-        return (intact ? this : new Mapping(this.getName(), filtered));
+        return (intact ? this : new Mapping(this.getIndex(), this.getType(), filtered));
     }
 
     private static boolean filterField(Field field, String parentName, List<Field> filtered, Collection<FieldFilter.NumberedInclude> includes, Collection<String> excludes) {
@@ -119,6 +129,10 @@ public class Mapping implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s=%s", name, Arrays.toString(fields));
+        if (type != MappingSet.TYPELESS_MAPPING_NAME) {
+            return String.format("%s/%s=%s", index, type, Arrays.toString(fields));
+        } else {
+            return String.format("%s=%s", index, Arrays.toString(fields));
+        }
     }
 }

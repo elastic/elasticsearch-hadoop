@@ -17,30 +17,79 @@ public final class FieldParser {
         // No instances allowed
     }
 
+    public static MappingSet parseTypedMappings(Map<String, Object> content) {
+        return parseMappings(content, true);
+    }
+
+    public static MappingSet parseTypelessMappings(Map<String, Object> content) {
+        return parseMappings(content, false);
+    }
+
     /**
      * Convert the deserialized mapping request body into an object
      * @param content entire mapping request body for all indices and types
+     * @param includeTypeName true if the given content to be parsed includes type names within the structure,
+     *                        or false if it is in the typeless format
      * @return MappingSet for that response.
      */
-    public static MappingSet parseMapping(Map<String, Object> content) {
-        Iterator<Map.Entry<String, Object>> iterator = content.entrySet().iterator();
-        List<Field> fields = new ArrayList<Field>();
-        while(iterator.hasNext()) {
-            Field field = parseField(iterator.next(), null);
-            fields.add(field);
+    public static MappingSet parseMappings(Map<String, Object> content, boolean includeTypeName) {
+        Iterator<Map.Entry<String, Object>> indices = content.entrySet().iterator();
+        List<Mapping> indexMappings = new ArrayList<Mapping>();
+        while(indices.hasNext()) {
+            // These mappings are ordered by index, then optionally type.
+            parseIndexMappings(indices.next(), indexMappings, includeTypeName);
         }
-        return new MappingSet(fields);
+        return new MappingSet(indexMappings);
     }
 
-    private static Field skipHeaders(Field field) {
-        Field[] props = field.properties();
+    private static void parseIndexMappings(Map.Entry<String, Object> indexToMappings, List<Mapping> collector, boolean includeTypeName) {
+        // get Index name from key, mappings fields are in value
+        String indexName = indexToMappings.getKey();
 
-        // handle the common case of mapping by removing the first field (mapping.)
-        if (props.length > 0 && props[0] != null && "mappings".equals(props[0].name()) && FieldType.OBJECT.equals(props[0].type())) {
-            // can't return the type as it is an object of properties
-            return props[0].properties()[0];
+        // The value should be a singleton map with the key "mappings" mapped to the types/mappings
+        // Get the singleton map first
+        if (!(indexToMappings.getValue() instanceof Map)) {
+            throw new EsHadoopIllegalArgumentException("invalid mapping received " + indexToMappings + "; Invalid mapping structure for [" + indexName + "]");
         }
-        return field;
+        Map<String, Object> mappingsObject = (Map<String, Object>) indexToMappings.getValue();
+
+        // Get the types/mappings from the singleton map
+        if (!(mappingsObject.get("mappings") instanceof Map)) {
+            throw new EsHadoopIllegalArgumentException("invalid mapping received " + indexToMappings + "; Missing mappings under [" + indexName + "]");
+        }
+        Map<String, Object> mappingEntries = (Map<String, Object>) mappingsObject.get("mappings");
+
+        // Iterate over the mappings to collect their names and contents
+        // In versions of ES that have a single type system, there will either
+        // be a single named mapping or a single unnamed mapping returned.
+        if (includeTypeName) {
+            // Every entry within mappingEntries is a type name mapped to the actual mappings
+            for (Map.Entry<String, Object> typeToMapping : mappingEntries.entrySet()) {
+                String typeName = typeToMapping.getKey();
+                Mapping mapping = parseMapping(indexName, typeName, typeToMapping);
+                collector.add(mapping);
+            }
+        } else {
+            // Everything under mappingEntries is the contents of a singular actual mapping
+            String typeName = MappingSet.TYPELESS_MAPPING_NAME;
+            // I can't even describe in english what I'm doing anymore
+            if (mappingsObject.entrySet().size() > 1) {
+                throw new EsHadoopIllegalArgumentException("invalid mapping received " + indexToMappings + "; Index [" + indexName +
+                        "] contains invalid mapping structure.");
+            }
+            Map.Entry<String, Object> unnamedMapping = mappingsObject.entrySet().iterator().next();
+            Mapping mapping = parseMapping(indexName, typeName, unnamedMapping);
+            collector.add(mapping);
+        }
+    }
+
+    private static Mapping parseMapping(String indexName, String typeName, Map.Entry<String, Object> mapping) {
+        // Parse the mapping fields
+        Field field = parseField(mapping, null);
+        if (field == null) {
+            throw new EsHadoopIllegalArgumentException("Could not parse mapping contents from [" + mapping + "]");
+        }
+        return new Mapping(indexName, typeName, field.properties());
     }
 
     private static Field parseField(Map.Entry<String, Object> entry, String previousKey) {
