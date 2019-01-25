@@ -125,16 +125,14 @@ esCluster {
 //        setting 'http.host', '127.0.0.1'
 //        setting 'xpack.license.self_generated.type', 'trial'
 //        setting 'xpack.security.enabled', 'true'
-//        setting 'xpack.security.authc.realms.file.type', 'file'
-//        setting 'xpack.security.authc.realms.file.order', '0'
+//        setting 'xpack.security.authc.realms.file.file1.order', '0'
 //        setting 'xpack.ml.enabled', 'false'
 //        setting 'xpack.security.audit.enabled', 'true'
 //        // Kerberos realm
-//        setting 'xpack.security.authc.realms.kerberos.type', 'kerberos'
-//        setting 'xpack.security.authc.realms.kerberos.order', '1'
-//        setting 'xpack.security.authc.realms.kerberos.keytab.path', 'es.keytab'
-//        setting 'xpack.security.authc.realms.kerberos.krb.debug', 'true'
-//        setting 'xpack.security.authc.realms.kerberos.remove_realm_name', 'false'
+//        setting 'xpack.security.authc.realms.kerberos.krb5.order', '1'
+//        setting 'xpack.security.authc.realms.kerberos.krb5.keytab.path', 'es.keytab'
+//        setting 'xpack.security.authc.realms.kerberos.krb5.krb.debug', 'true'
+//        setting 'xpack.security.authc.realms.kerberos.krb5.remove_realm_name', 'false'
 //        // Token realm
 //        setting 'xpack.security.authc.token.enabled', 'true'
 //        setting 'xpack.security.authc.token.timeout', '20m'
@@ -167,9 +165,23 @@ integrationTest.systemProperty("java.security.krb5.conf", krb5Conf.toString())
 integrationTest.systemProperty("es.net.http.auth.user", "test_admin")
 integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 
+// Fixtures will be depending on the jar and test jar artifacts
+def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
+def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
+
 // Need these for SSL items, test data, and scripts
 File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
 File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
+
+JavaExec setupUsers = project.tasks.create("setupUsers", JavaExec.class)
+setupUsers.main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
+setupUsers.classpath = sourceSets.main.runtimeClasspath
+setupUsers.systemProperty('es.nodes', 'localhost:9500')
+setupUsers.systemProperty('es.net.http.auth.user', 'test_admin')
+setupUsers.systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
+setupUsers.systemProperty('principals', "$clientPrincipal$realm")
+//esCluster.addTask(setupUsers)
+//integrationTest.dependsOn(setupUsers)
 
 // =============================================================================
 // Hadoop cluster testing
@@ -254,10 +266,6 @@ config.service('pig') { ServiceConfiguration s ->
     s.addSetting('mapreduce.map.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
     s.addSetting('mapreduce.reduce.java.opts', "-Djava.security.krb5.conf=${krb5Conf.toString()}")
 }
-
-// Hadoop cluster should just depend on the jar and test jar artifacts
-def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
-def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
 config.addDependency(jar)
 config.addDependency(testingJar)
 
