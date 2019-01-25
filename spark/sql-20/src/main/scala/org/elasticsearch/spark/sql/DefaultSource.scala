@@ -142,7 +142,7 @@ private[sql] class DefaultSource extends RelationProvider with SchemaRelationPro
         .load(sqlContext.sparkContext.getConf)
         .merge(streamParams(mapConfig.toMap, sparkSession).asJava)
 
-    InitializationUtils.discoverEsVersion(jobSettings, LogFactory.getLog(classOf[DefaultSource]))
+    InitializationUtils.discoverClusterInfo(jobSettings, LogFactory.getLog(classOf[DefaultSource]))
     InitializationUtils.checkIdForOperation(jobSettings)
     InitializationUtils.checkIndexExistence(jobSettings)
 
@@ -222,7 +222,7 @@ private[sql] case class ElasticsearchRelation(parameters: Map[String, String], @
 
   @transient lazy val cfg = {
     val conf = new SparkSettingsManager().load(sqlContext.sparkContext.getConf).merge(parameters.asJava)
-    InitializationUtils.discoverEsVersion(conf, LogFactory.getLog(classOf[ElasticsearchRelation]))
+    InitializationUtils.discoverClusterInfo(conf, LogFactory.getLog(classOf[ElasticsearchRelation]))
     conf
   }
 

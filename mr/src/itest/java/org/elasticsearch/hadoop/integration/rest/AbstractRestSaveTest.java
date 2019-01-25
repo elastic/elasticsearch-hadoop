@@ -83,7 +83,7 @@ public class AbstractRestSaveTest {
     @Test
     public void testEmptyBulkWrite() throws Exception {
         TestSettings testSettings = new TestSettings("rest/emptybulk");
-        testSettings.setInternalVersion(TestUtils.getEsVersion());
+        testSettings.setInternalClusterInfo(TestUtils.getEsClusterInfo());
         testSettings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         RestRepository restRepo = new RestRepository(testSettings);
         RestClient client = restRepo.getRestClient();
@@ -97,7 +97,7 @@ public class AbstractRestSaveTest {
     public void testRepositoryDelete() throws Exception {
         Settings settings = new TestSettings("rest/deletebulk");
         RestUtils.delete("rest");
-        InitializationUtils.discoverEsVersion(settings, LOG);
+        InitializationUtils.discoverClusterInfo(settings, LOG);
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, ConstantFieldExtractor.class.getName());
         settings.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false");
@@ -123,7 +123,7 @@ public class AbstractRestSaveTest {
     public void testRepositoryDeleteEmptyIndex() throws Exception {
         Settings settings = new TestSettings("delete_empty/test");
         RestUtils.delete("delete_empty");
-        InitializationUtils.discoverEsVersion(settings, LOG);
+        InitializationUtils.discoverClusterInfo(settings, LOG);
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         settings.setProperty(ConfigurationOptions.ES_MAPPING_DEFAULT_EXTRACTOR_CLASS, ConstantFieldExtractor.class.getName());
         settings.setProperty(ConfigurationOptions.ES_BATCH_FLUSH_MANUAL, "false");

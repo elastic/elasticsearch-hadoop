@@ -216,7 +216,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
 
         RestUtils.touch(index);
-        if (TestUtils.getEsVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X)) {
             conf.set(ConfigurationOptions.ES_RESOURCE, index);
             RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
         } else {
@@ -238,7 +238,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
 
         RestUtils.touch(index);
-        if (TestUtils.getEsVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X)) {
             conf.set(ConfigurationOptions.ES_RESOURCE, index);
             RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
         } else {

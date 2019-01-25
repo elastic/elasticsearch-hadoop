@@ -58,7 +58,7 @@ public class AbstractRestQueryTest {
 
     @Before
     public void start() throws IOException {
-        version = TestUtils.getEsVersion();
+        version = TestUtils.getEsClusterInfo().getMajorVersion();
         settings = new TestSettings("rest/savebulk");
         settings.setInternalVersion(version);
         //testSettings.setPort(9200)

@@ -83,7 +83,7 @@ public class AbstractMROldApiSearchTest {
     public void testBasicReadWithConstantRouting() throws Exception {
         String type = "data";
         String target = indexPrefix + "mroldapi-savewithconstantrouting";
-        if (TestUtils.getEsVersion().onOrBefore(EsMajorVersion.V_6_X)) {
+        if (TestUtils.getEsClusterInfo().getMajorVersion().onOrBefore(EsMajorVersion.V_6_X)) {
             target = target + "/" + type;
         }
 
