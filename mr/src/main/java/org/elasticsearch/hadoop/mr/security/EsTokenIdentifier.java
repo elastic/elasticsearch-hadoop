@@ -24,17 +24,28 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.security.PrivilegedAction;
+import java.util.Collections;
 
+import javax.security.auth.Subject;
+
+import org.apache.commons.logging.impl.NoOpLog;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenRenewer;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.cfg.CompositeSettings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.security.EsToken;
+import org.elasticsearch.hadoop.security.JdkUser;
+import org.elasticsearch.hadoop.security.JdkUserProvider;
+import org.elasticsearch.hadoop.util.ClusterInfo;
+import org.elasticsearch.hadoop.util.ClusterName;
 
 /**
  * The Hadoop Token Identifier for any generic token that contains an EsToken within it.
@@ -103,19 +114,40 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
             }
             EsToken esToken = new EsToken(new DataInputStream(new ByteArrayInputStream(token.getPassword())));
             Settings settings = HadoopSettingsManager.loadFrom(conf);
-            RestClient client = null;
-            try {
-                // TODO: Does not support multiple clusters yet
-                // the client will need to point to the cluster that this token is associated with in order to cancel it.
-                client = createClient(settings);
-                client.cancelToken(esToken);
-            } finally {
-                if (client != null) {
-                    client.close();
+            // Create a composite settings object so we can make some changes to the settings without affecting the underlying config
+            CompositeSettings compositeSettings = new CompositeSettings(Collections.singletonList(settings));
+            // Extract the cluster name from the esToken so that the rest client can locate it for auth purposes
+            ClusterInfo info = new ClusterInfo(new ClusterName(esToken.getClusterName(), null), esToken.getMajorVersion());
+            compositeSettings.setInternalClusterInfo(info);
+
+            // The RestClient gets the es token for authentication from the current subject, but the subject running this code
+            // could be ANYONE. We don't want to just give anyone the token in their credentials, so we create a throw away
+            // subject and set it on there. That way we auth with the API key, and once the auth is done, it will be cancelled.
+            // We'll do this with the JDK user to avoid the whole Hadoop Library's weird obsession with a static global user subject.
+            InitializationUtils.setUserProviderIfNotSet(compositeSettings, JdkUserProvider.class, new NoOpLog());
+            Subject subject = new Subject();
+            JdkUser user = new JdkUser(subject);
+            user.addEsToken(esToken);
+            user.doAs(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    RestClient client = null;
+                    try {
+                        // TODO: Does not support multiple clusters yet
+                        // the client will need to point to the cluster that this token is associated with in order to cancel it.
+                        client = createClient(compositeSettings);
+                        client.cancelToken(esToken);
+                    } finally {
+                        if (client != null) {
+                            client.close();
+                        }
+                    }
+                    return null;
                 }
-            }
+            });
         }
 
+        // Visible for testing
         protected RestClient createClient(Settings settings) {
             return new RestClient(settings);
         }
