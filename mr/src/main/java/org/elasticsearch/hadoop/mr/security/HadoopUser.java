@@ -20,17 +20,17 @@
 package org.elasticsearch.hadoop.mr.security;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.security.auth.kerberos.KerberosPrincipal;
 
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -85,6 +85,21 @@ public class HadoopUser implements User {
             }
         }
         return null; // Token not found
+    }
+
+    @Override
+    public Iterable<EsToken> getAllEsTokens() {
+        List<EsToken> tokens = new ArrayList<>();
+        for (Token<? extends TokenIdentifier> token : ugi.getTokens()) {
+            if (EsTokenIdentifier.KIND_NAME.equals(token.getKind())) {
+                try {
+                    tokens.add(new EsToken(new DataInputStream(new ByteArrayInputStream(token.getPassword()))));
+                } catch (IOException e) {
+                    throw new EsHadoopSerializationException("Could not read token information from UGI", e);
+                }
+            }
+        }
+        return Collections.unmodifiableList(tokens);
     }
 
     @Override

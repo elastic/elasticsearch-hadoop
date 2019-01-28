@@ -55,6 +55,11 @@ public interface User {
     EsToken getEsToken(String clusterName);
 
     /**
+     * @return all previously added Elasticsearch authentication tokens, or an empty iterable if none exist
+     */
+    Iterable<EsToken> getAllEsTokens();
+
+    /**
      * Adds the given esToken to the user
      * @param esToken Authentication token for Elasticsearch
      */

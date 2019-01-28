@@ -22,8 +22,12 @@ package org.elasticsearch.hadoop.security;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +47,10 @@ public class JdkUser implements User {
 
         EsToken getCred(String alias) {
             return creds.get(alias);
+        }
+
+        Collection<EsToken> getCreds() {
+            return creds.values();
         }
 
         void setCred(String alias, EsToken cred) {
@@ -86,6 +94,19 @@ public class JdkUser implements User {
         } else {
             EsTokenHolder holder = credSet.iterator().next();
             return holder.getCred(clusterName);
+        }
+    }
+
+    @Override
+    public Iterable<EsToken> getAllEsTokens() {
+        Set<EsTokenHolder> credSet = subject.getPrivateCredentials(EsTokenHolder.class);
+        if (credSet.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            EsTokenHolder holder = credSet.iterator().next();
+            List<EsToken> tokens = new ArrayList<>();
+            tokens.addAll(holder.getCreds());
+            return Collections.unmodifiableList(tokens);
         }
     }
 
