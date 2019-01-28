@@ -36,6 +36,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.elasticsearch.hadoop.mr.EsMapReduceUtil;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
@@ -64,6 +65,8 @@ public class LoadToES extends Configured implements Tool {
         // DO NOT SET JAR BY CLASS HERE
         //
         // job.setJarByClass(getClass());
+
+        EsMapReduceUtil.initCredentials(job);
 
         TextInputFormat.addInputPath(job, new Path(args[0]));
 

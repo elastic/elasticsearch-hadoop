@@ -32,6 +32,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.mr.EsMapReduceUtil;
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
 
 public class ReadFromES extends Configured implements Tool {
@@ -52,6 +53,8 @@ public class ReadFromES extends Configured implements Tool {
         // DO NOT SET JAR BY CLASS HERE
         //
         // job.setJarByClass(getClass());
+
+        EsMapReduceUtil.initCredentials(job);
 
         job.getConfiguration().set("es.output.json", "true");
 
