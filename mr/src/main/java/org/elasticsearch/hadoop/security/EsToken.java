@@ -23,6 +23,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+
 /**
  * Stores token authentication information for an Elasticsearch user.
  */
@@ -33,13 +35,15 @@ public class EsToken {
     private final String apiKey;
     private final long expirationTime;
     private final String clusterName;
+    private final EsMajorVersion majorVersion;
 
-    public EsToken(String name, String id, String apiKey, long expirationTime, String clusterName) {
+    public EsToken(String name, String id, String apiKey, long expirationTime, String clusterName, EsMajorVersion majorVersion) {
         this.name = name;
         this.id = id;
         this.apiKey = apiKey;
         this.expirationTime = expirationTime;
         this.clusterName = clusterName;
+        this.majorVersion = majorVersion;
     }
 
     public EsToken(DataInput inputStream) throws IOException {
@@ -48,6 +52,7 @@ public class EsToken {
         this.apiKey = inputStream.readUTF();
         this.expirationTime = inputStream.readLong();
         this.clusterName = inputStream.readUTF();
+        this.majorVersion = EsMajorVersion.parse(inputStream.readUTF());
     }
 
     public String getName() {
@@ -70,12 +75,17 @@ public class EsToken {
         return clusterName;
     }
 
+    public EsMajorVersion getMajorVersion() {
+        return majorVersion;
+    }
+
     public void writeOut(DataOutput dataOutput) throws IOException {
         dataOutput.writeUTF(name);
         dataOutput.writeUTF(id);
         dataOutput.writeUTF(apiKey);
         dataOutput.writeLong(expirationTime);
         dataOutput.writeUTF(clusterName);
+        dataOutput.writeUTF(majorVersion.toString());
     }
 
     @Override
@@ -89,7 +99,8 @@ public class EsToken {
         if (name != null ? !name.equals(esToken.name) : esToken.name != null) return false;
         if (id != null ? !id.equals(esToken.id) : esToken.id != null) return false;
         if (apiKey != null ? !apiKey.equals(esToken.apiKey) : esToken.apiKey != null) return false;
-        return clusterName != null ? clusterName.equals(esToken.clusterName) : esToken.clusterName == null;
+        if (clusterName != null ? !clusterName.equals(esToken.clusterName) : esToken.clusterName != null) return false;
+        return majorVersion != null ? majorVersion.equals(esToken.majorVersion) : esToken.majorVersion == null;
     }
 
     @Override
@@ -99,6 +110,7 @@ public class EsToken {
         result = 31 * result + (apiKey != null ? apiKey.hashCode() : 0);
         result = 31 * result + (int) (expirationTime ^ (expirationTime >>> 32));
         result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
+        result = 31 * result + (majorVersion != null ? majorVersion.hashCode() : 0);
         return result;
     }
 
@@ -110,6 +122,7 @@ public class EsToken {
                 ", apiKey='" + apiKey + '\'' +
                 ", expirationTime=" + expirationTime +
                 ", clusterName='" + clusterName + '\'' +
+                ", majorVersion=" + majorVersion +
                 '}';
     }
 }

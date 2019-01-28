@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.util.ClusterName;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -51,8 +52,8 @@ public class HadoopUserTest {
         assertThat(hadoopUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(hadoopUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME, EsMajorVersion.LATEST);
 
         EsTokenIdentifier identifier = new EsTokenIdentifier();
         byte[] id = identifier.getBytes();
@@ -88,9 +89,9 @@ public class HadoopUserTest {
         assertThat(hadoopUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(hadoopUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME, EsMajorVersion.LATEST);
 
         hadoopUser.addEsToken(testToken);
         hadoopUser.addEsToken(unnamedToken);

@@ -23,6 +23,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.elasticsearch.hadoop.util.ClusterName;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -44,8 +45,8 @@ public class JdkUserTest {
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(jdkUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME, EsMajorVersion.LATEST);
 
         JdkUser.EsTokenHolder holder = new JdkUser.EsTokenHolder();
         holder.setCred(testClusterName, testToken);
@@ -81,9 +82,9 @@ public class JdkUserTest {
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
         assertThat(jdkUser.getEsToken(testClusterName), is(nullValue()));
 
-        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis() + 100000L, testClusterName);
-        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME);
+        EsToken testToken = new EsToken("gmarx", "swordfish", "mary", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken testToken2 = new EsToken("zmarx", "pantomime", "pantomime", System.currentTimeMillis() + 100000L, testClusterName, EsMajorVersion.LATEST);
+        EsToken unnamedToken = new EsToken("luggage", "12345", "12345", System.currentTimeMillis() + 100000L, ClusterName.UNNAMED_CLUSTER_NAME, EsMajorVersion.LATEST);
 
         jdkUser.addEsToken(testToken);
         jdkUser.addEsToken(unnamedToken);
