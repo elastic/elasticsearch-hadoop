@@ -687,7 +687,7 @@ public abstract class Settings {
         // Check if user name is set in the settings for backwards compatibility.
         if (authMode == null && getNetworkHttpAuthUser() != null) {
             authMode = AuthenticationMethod.BASIC;
-        } else {
+        } else if (authMode == null) {
             authMode = AuthenticationMethod.SIMPLE;
         }
         return authMode;
