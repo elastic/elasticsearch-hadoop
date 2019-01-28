@@ -182,7 +182,7 @@ public class EsSerDe extends AbstractSerDe {
         // their mutability) so we just use a composite settings object.
         Settings tableSettings = HadoopSettingsManager.loadFrom(tableProperties);
         Settings versionSetting = new PropertiesSettings();
-        versionSetting.setInternalVersion(version);
+        versionSetting.setInternalClusterInfo(clusterInfo);
         Settings settings = new CompositeSettings(Arrays.asList(versionSetting, tableSettings));
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
