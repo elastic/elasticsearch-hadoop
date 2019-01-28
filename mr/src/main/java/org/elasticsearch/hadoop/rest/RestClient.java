@@ -691,7 +691,8 @@ public class RestClient implements Closeable, StatsAware {
                 content.get("id").toString(),
                 content.get("api_key").toString(),
                 expirationTime,
-                remoteInfo.getClusterName().getName()
+                remoteInfo.getClusterName().getName(),
+                remoteInfo.getMajorVersion()
         );
     }
 
