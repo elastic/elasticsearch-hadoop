@@ -687,8 +687,8 @@ public class RestClient implements Closeable, StatsAware {
         long expirationTime = expiry.longValue();
 
         return new EsToken(
-                content.get("id").toString(),
                 content.get("name").toString(),
+                content.get("id").toString(),
                 content.get("api_key").toString(),
                 expirationTime,
                 remoteInfo.getClusterName().getName()
