@@ -34,8 +34,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
-import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.ObjectUtils;
@@ -66,8 +66,7 @@ public abstract class CascadingUtils {
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, CascadingLocalBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, CascadingFieldExtractor.class, log);
-        // FIXHERE: Does this make sense for local running
-        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, JdkUserProvider.class, log);
 
         return settings;
     }
