@@ -662,4 +662,12 @@ public abstract class Settings {
     }
 
     public abstract Properties asProperties();
+
+    public String getHttpTransformerFactories() {
+        return getProperty(ES_HTTP_TRANSFORMER_FACTORIES, ES_HTTP_TRANSFORMER_FACTORIES_DEFAULT);
+    }
+
+    public void setHttpTransformerFactories(String transformerFactories) {
+        setProperty(ES_HTTP_TRANSFORMER_FACTORIES, transformerFactories);
+    }
 }
