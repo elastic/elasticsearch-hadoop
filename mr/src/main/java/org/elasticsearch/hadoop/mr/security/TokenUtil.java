@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.util.UUID;
 
+import javax.security.auth.kerberos.KerberosPrincipal;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
@@ -64,7 +66,11 @@ public class TokenUtil {
      */
     private static EsToken obtainEsToken(final RestClient client, User user) {
         // TODO: Should we extend this to basic authentication at some point?
-        Assert.isTrue(user.getKerberosPrincipal() != null, "Kerberos credentials are missing on current user");
+        KerberosPrincipal principal = user.getKerberosPrincipal();
+        if (user.isProxyUser()) {
+            principal = user.getRealUserProvider().getUser().getKerberosPrincipal();
+        }
+        Assert.isTrue(principal != null, "Kerberos credentials are missing on current user");
         return user.doAs(new PrivilegedExceptionAction<EsToken>() {
             @Override
             public EsToken run() {
