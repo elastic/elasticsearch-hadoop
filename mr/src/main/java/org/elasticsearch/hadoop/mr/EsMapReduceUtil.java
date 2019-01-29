@@ -78,6 +78,10 @@ public final class EsMapReduceUtil {
             } finally {
                 bootstrap.close();
             }
+        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ignoring Elasticsearch credentials since Kerberos Auth is not enabled.");
+            }
         }
     }
 
@@ -108,6 +112,10 @@ public final class EsMapReduceUtil {
                         + "a WAN/Cloud instance without the proper setting '%s'", ConfigurationOptions.ES_NODES_WAN_ONLY), ex);
             } finally {
                 bootstrap.close();
+            }
+        } else {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ignoring Elasticsearch credentials since Kerberos Auth is not enabled.");
             }
         }
     }
