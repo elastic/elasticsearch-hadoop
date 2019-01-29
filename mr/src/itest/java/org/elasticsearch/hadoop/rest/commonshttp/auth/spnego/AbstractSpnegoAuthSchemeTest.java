@@ -43,7 +43,9 @@ import org.apache.commons.httpclient.params.HttpParams;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -87,7 +89,7 @@ public class AbstractSpnegoAuthSchemeTest {
                 TestMethod method = new TestMethod();
                 method.setHeaders(new Header[]{new Header("WWW-Authenticate", "Negotiate")});
 
-                Credentials credentials = new SpnegoCredentials(KerberosSuite.PRINCIPAL_CLIENT, KerberosSuite.PRINCIPAL_SERVER);
+                Credentials credentials = new SpnegoCredentials(HadoopUserProvider.create(new TestSettings()), KerberosSuite.PRINCIPAL_SERVER);
 
                 // Parse Challenge
                 Map challenges = AuthChallengeParser.parseChallenges(method.getResponseHeaders("WWW-Authenticate"));
@@ -152,7 +154,7 @@ public class AbstractSpnegoAuthSchemeTest {
                 method.setHeaders(new Header[]{new Header("WWW-Authenticate", "Negotiate")});
                 method.setURI(new org.apache.commons.httpclient.URI("http", null, "es.build.elastic.co", 9200));
 
-                Credentials credentials = new SpnegoCredentials(KerberosSuite.PRINCIPAL_CLIENT, "HTTP/_HOST@BUILD.ELASTIC.CO");
+                Credentials credentials = new SpnegoCredentials(HadoopUserProvider.create(new TestSettings()), "HTTP/_HOST@BUILD.ELASTIC.CO");
 
                 // Parse Challenge
                 Map challenges = AuthChallengeParser.parseChallenges(method.getResponseHeaders("WWW-Authenticate"));
@@ -221,7 +223,7 @@ public class AbstractSpnegoAuthSchemeTest {
                 method.setHeaders(new Header[]{new Header("WWW-Authenticate", "Negotiate")});
                 method.setURI(new org.apache.commons.httpclient.URI("http", null, "127.0.0.1", 9200));
 
-                Credentials credentials = new SpnegoCredentials(KerberosSuite.PRINCIPAL_CLIENT, "HTTP/_HOST@BUILD.ELASTIC.CO");
+                Credentials credentials = new SpnegoCredentials(HadoopUserProvider.create(new TestSettings()), "HTTP/_HOST@BUILD.ELASTIC.CO");
 
                 // Parse Challenge
                 Map challenges = AuthChallengeParser.parseChallenges(method.getResponseHeaders("WWW-Authenticate"));

@@ -31,12 +31,13 @@ import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class HadoopUserTest {
 
@@ -46,7 +47,7 @@ public class HadoopUserTest {
 
         String testClusterName = "getEsTokenTest";
 
-        User hadoopUser = new HadoopUser(ugi);
+        User hadoopUser = new HadoopUser(ugi, new TestSettings());
         assertThat(hadoopUser.getEsToken(null), is(nullValue()));
         assertThat(hadoopUser.getEsToken(""), is(nullValue()));
         assertThat(hadoopUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
@@ -83,7 +84,7 @@ public class HadoopUserTest {
     public void addEsToken() throws IOException {
         String testClusterName = "addEsTokenTest";
 
-        User hadoopUser = new HadoopUser(UserGroupInformation.getCurrentUser());
+        User hadoopUser = new HadoopUser(UserGroupInformation.getCurrentUser(), new TestSettings());
         assertThat(hadoopUser.getEsToken(null), is(nullValue()));
         assertThat(hadoopUser.getEsToken(""), is(nullValue()));
         assertThat(hadoopUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
@@ -111,7 +112,7 @@ public class HadoopUserTest {
 
     @Test
     public void getKerberosPrincipal() throws IOException {
-        User jdkUser = new HadoopUser(UserGroupInformation.getCurrentUser());
+        User jdkUser = new HadoopUser(UserGroupInformation.getCurrentUser(), new TestSettings());
         // This should always be null - We aren't running with Kerberos enabled in this test.
         // See HadoopUserKerberosTest for that.
         assertThat(jdkUser.getKerberosPrincipal(), is(nullValue()));

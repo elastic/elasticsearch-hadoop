@@ -35,8 +35,10 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.EsHadoopSerializationException;
 import org.elasticsearch.hadoop.util.ClusterName;
 
@@ -45,10 +47,12 @@ import org.elasticsearch.hadoop.util.ClusterName;
  */
 public class HadoopUser implements User {
 
+    private final Settings providerSettings;
     private final UserGroupInformation ugi;
 
-    public HadoopUser(UserGroupInformation ugi) {
+    public HadoopUser(UserGroupInformation ugi, Settings providerSettings) {
         this.ugi = ugi;
+        this.providerSettings = providerSettings;
     }
 
     @Override
@@ -109,10 +113,27 @@ public class HadoopUser implements User {
     }
 
     @Override
+    public String getUserName() {
+        return ugi.getUserName();
+    }
+
+    @Override
     public KerberosPrincipal getKerberosPrincipal() {
         if (ugi.hasKerberosCredentials()) {
             return new KerberosPrincipal(ugi.getUserName());
         }
         return null;
+    }
+
+    @Override
+    public boolean isProxyUser() {
+        return UserGroupInformation.AuthenticationMethod.PROXY.equals(ugi.getAuthenticationMethod());
+    }
+
+    @Override
+    public UserProvider getRealUserProvider() {
+        UserProvider realProvider = new HadoopRealUserProvider();
+        realProvider.setSettings(providerSettings);
+        return realProvider;
     }
 }

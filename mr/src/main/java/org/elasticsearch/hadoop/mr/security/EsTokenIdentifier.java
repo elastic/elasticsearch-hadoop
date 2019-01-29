@@ -126,7 +126,7 @@ public class EsTokenIdentifier extends AbstractDelegationTokenIdentifier {
             // We'll do this with the JDK user to avoid the whole Hadoop Library's weird obsession with a static global user subject.
             InitializationUtils.setUserProviderIfNotSet(compositeSettings, JdkUserProvider.class, new NoOpLog());
             Subject subject = new Subject();
-            JdkUser user = new JdkUser(subject);
+            JdkUser user = new JdkUser(subject, settings);
             user.addEsToken(esToken);
             user.doAs(new PrivilegedAction<Void>() {
                 @Override

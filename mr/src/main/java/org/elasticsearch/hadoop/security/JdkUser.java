@@ -35,6 +35,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.ClusterName;
 
 public class JdkUser implements User {
@@ -59,9 +60,11 @@ public class JdkUser implements User {
     }
 
     private final Subject subject;
+    private final Settings providerSettings;
 
-    public JdkUser(Subject subject) {
+    public JdkUser(Subject subject, Settings providerSettings) {
         this.subject = subject;
+        this.providerSettings = providerSettings;
     }
 
     @Override
@@ -124,11 +127,36 @@ public class JdkUser implements User {
     }
 
     @Override
+    public String getUserName() {
+        KerberosPrincipal principal = getKerberosPrincipal();
+        if (principal == null) {
+            return null;
+        }
+        return principal.getName();
+    }
+
+    @Override
     public KerberosPrincipal getKerberosPrincipal() {
         Iterator<KerberosPrincipal> iter = subject.getPrincipals(KerberosPrincipal.class).iterator();
         if (iter.hasNext()) {
             return iter.next();
         }
         return null;
+    }
+
+    @Override
+    public boolean isProxyUser() {
+        // Proxy users are a strictly Hadoop based mechanism.
+        // A basic Subject will never be a Proxy user on its own.
+        return false;
+    }
+
+    @Override
+    public UserProvider getRealUserProvider() {
+        // Since there is no real user under this subject, just return a
+        // new provider with the same settings as this user's provider.
+        UserProvider sameProvider = new JdkUserProvider();
+        sameProvider.setSettings(providerSettings);
+        return sameProvider;
     }
 }

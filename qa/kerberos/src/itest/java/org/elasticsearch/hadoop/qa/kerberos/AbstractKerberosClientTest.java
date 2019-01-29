@@ -26,16 +26,25 @@ import javax.security.auth.login.LoginContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.impl.NoOpLog;
+import org.apache.hadoop.security.SecurityUtil;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.NetworkClient;
+import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoNegotiator;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
+import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assume;
@@ -131,6 +140,137 @@ public class AbstractKerberosClientTest {
             loginCtx.logout();
             RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
         }
+    }
+
+    @Test
+    public void testProxyKerberosAuth() throws Exception {
+        String hivePrincipal = System.getProperty("tests.hive.principal");
+        Assert.hasText(hivePrincipal, "Needs tests.hive.principal system property");
+        String hiveKeytab = System.getProperty("tests.hive.keytab");
+        Assert.hasText(hiveKeytab, "Needs tests.hive.keytab system property");
+        String realUserName = hivePrincipal;
+        String proxyUserName = "client";
+
+        // Create a user that the real user will proxy as
+        LOG.info("Creating proxied user");
+        RestUtils.postData("_xpack/security/user/" + proxyUserName, (
+                "{\n" +
+                "  \"enabled\" : true,\n" +
+                "  \"password\" : \"password\",\n" +
+                "  \"roles\" : [ \"superuser\" ],\n" +
+                "  \"full_name\" : \"Client McClientFace\"\n" +
+                "}").getBytes());
+
+        // This just mirrors the superuser role as they can impersonate all users
+        LOG.info("Creating proxy role");
+        RestUtils.postData("_xpack/security/role/proxier", (
+                "{\n" +
+                "  \"cluster\": [\n" +
+                "    \"all\"\n" +
+                "  ],\n" +
+                "  \"indices\": [\n" +
+                "    {\n" +
+                "      \"names\": [\n" +
+                "        \"*\"\n" +
+                "      ],\n" +
+                "      \"privileges\": [\n" +
+                "        \"all\"\n" +
+                "      ],\n" +
+                "      \"allow_restricted_indices\": true\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"applications\": [\n" +
+                "    {\n" +
+                "      \"application\": \"*\",\n" +
+                "      \"privileges\": [\n" +
+                "        \"*\"\n" +
+                "      ],\n" +
+                "      \"resources\": [\n" +
+                "        \"*\"\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"run_as\": [\n" +
+                "    \"*\"\n" +
+                "  ],\n" +
+                "  \"transient_metadata\": {}\n" +
+                "}").getBytes());
+
+        LOG.info("Creating mapping for hive principal to proxier role");
+        RestUtils.postData("_xpack/security/role_mapping/kerberos_proxy_client_mapping",
+                ("{\"roles\":[\"proxier\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\""+realUserName+"\"}}}").getBytes());
+
+        org.apache.hadoop.conf.Configuration configuration = new org.apache.hadoop.conf.Configuration();
+        SecurityUtil.setAuthenticationMethod(UserGroupInformation.AuthenticationMethod.KERBEROS, configuration);
+        UserGroupInformation.setConfiguration(configuration);
+        UserGroupInformation realUser = UserGroupInformation.loginUserFromKeytabAndReturnUGI(hivePrincipal, hiveKeytab);
+        UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(proxyUserName, realUser);
+        proxyUser.doAs(new PrivilegedExceptionAction<Void>() {
+            @Override
+            public Void run() throws Exception {
+                UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+                System.out.println("currentUser.getUserName() = " + currentUser.getUserName());
+                System.out.println("currentUser.getRealUser().getUserName() = " + currentUser.getRealUser().getUserName());
+                System.out.println("currentUser.hasKerberosCredentials() = " + currentUser.hasKerberosCredentials());
+                System.out.println("currentUser.getAuthenticationMethod() = " + currentUser.getAuthenticationMethod());
+                System.out.println("currentUser.getRealAuthenticationMethod() = " + currentUser.getRealAuthenticationMethod());
+
+                Settings testSettings = new TestSettings();
+                testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
+                testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+
+                InitializationUtils.setUserProviderIfNotSet(testSettings, HadoopUserProvider.class, new NoOpLog());
+                testSettings.setProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+                testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
+
+                UserProvider userProvider = UserProvider.create(testSettings);
+                System.out.println("userProvider.isEsKerberosEnabled() = " + userProvider.isEsKerberosEnabled());
+
+                LOG.info("Getting cluster info");
+                InitializationUtils.discoverClusterInfo(testSettings, LOG);
+
+                LOG.info("Checking authenticate with Proxied User");
+                NetworkClient network = new NetworkClient(testSettings);
+                try {
+                    network.execute(new SimpleRequest(Request.Method.GET, "", "/_security/_authenticate", ""));
+                } finally {
+                    network.close();
+                }
+
+                LOG.info("Getting an API Token");
+                RestClient client = new RestClient(testSettings);
+                EsToken proxyToken;
+                try {
+                    proxyToken = client.createNewApiToken("proxyToken");
+                } finally {
+                    client.close();
+                }
+
+                LOG.info("Making another client without the token available yet");
+                network = new NetworkClient(testSettings);
+                try {
+                    LOG.info("Checking authenticate to make sure it's still SPNEGO");
+                    network.execute(new SimpleRequest(Request.Method.GET, "", "/_security/_authenticate", ""));
+                    LOG.info("Adding token to user now");
+                    userProvider.getUser().addEsToken(proxyToken);
+                    LOG.info("Checking authenticate with same client again to make sure it's still SPNEGO");
+                    network.execute(new SimpleRequest(Request.Method.GET, "", "/_security/_authenticate", ""));
+                } finally {
+                    network.close();
+                }
+
+                LOG.info("Making new client to pick up newly added token");
+                network = new NetworkClient(testSettings);
+                try {
+                    network.execute(new SimpleRequest(Request.Method.GET, "", "/_security/_authenticate", ""));
+                } finally {
+                    network.close();
+                }
+
+                return null;
+            }
+        });
+        RestUtils.delete("_xpack/security/role_mapping/kerberos_proxy_client_mapping");
     }
 
     @Test

@@ -36,6 +36,6 @@ public class JdkUserProvider extends UserProvider {
         if (subject == null) {
             subject = new Subject();
         }
-        return new JdkUser(subject);
+        return new JdkUser(subject, getSettings());
     }
 }

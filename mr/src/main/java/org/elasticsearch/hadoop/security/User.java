@@ -66,7 +66,22 @@ public interface User {
     void addEsToken(EsToken esToken);
 
     /**
+     * @return the most appropriate and available user name for this user, or null if one cannot be found
+     */
+    String getUserName();
+
+    /**
      * @return the KerberosPrincipal attached to the user, or null if it does not exist
      */
     KerberosPrincipal getKerberosPrincipal();
+
+    /**
+     * @return true if the current user is a proxy user with a real user underneath it
+     */
+    boolean isProxyUser();
+
+    /**
+     * @return Returns a user provider that will select the real user from any currently logged in user.
+     */
+    UserProvider getRealUserProvider();
 }

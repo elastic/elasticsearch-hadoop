@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 
@@ -30,10 +31,27 @@ import org.elasticsearch.hadoop.security.UserProvider;
  * Retrieves the currently logged in Hadoop UGI. Note: If none exists, this will attempt a login.
  */
 public class HadoopUserProvider extends UserProvider {
+
+    /**
+     * @deprecated Use {@link UserProvider#create(Settings)} instead, or if it is important that you
+     * explicitly create a HadoopUserProvider, then use {@link HadoopUserProvider#create(Settings)}
+     * instead
+     */
+    public HadoopUserProvider() {
+        super();
+    }
+
+    public static HadoopUserProvider create(Settings settings) {
+        @SuppressWarnings("deprecation")
+        HadoopUserProvider provider = new HadoopUserProvider();
+        provider.setSettings(settings);
+        return provider;
+    }
+
     @Override
     public User getUser() {
         try {
-            return new HadoopUser(UserGroupInformation.getCurrentUser());
+            return new HadoopUser(UserGroupInformation.getCurrentUser(), getSettings());
         } catch (IOException e) {
             throw new EsHadoopException("Could not retrieve the current user", e);
         }

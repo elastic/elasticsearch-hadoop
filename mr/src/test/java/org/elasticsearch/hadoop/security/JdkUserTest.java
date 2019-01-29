@@ -24,12 +24,13 @@ import javax.security.auth.kerberos.KerberosPrincipal;
 
 import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class JdkUserTest {
 
@@ -39,7 +40,7 @@ public class JdkUserTest {
 
         String testClusterName = "testClusterName";
 
-        User jdkUser = new JdkUser(subject);
+        User jdkUser = new JdkUser(subject, new TestSettings());
         assertThat(jdkUser.getEsToken(null), is(nullValue()));
         assertThat(jdkUser.getEsToken(""), is(nullValue()));
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
@@ -76,7 +77,7 @@ public class JdkUserTest {
     public void addEsToken() {
         String testClusterName = "testClusterName";
 
-        User jdkUser = new JdkUser(new Subject());
+        User jdkUser = new JdkUser(new Subject(), new TestSettings());
         assertThat(jdkUser.getEsToken(null), is(nullValue()));
         assertThat(jdkUser.getEsToken(""), is(nullValue()));
         assertThat(jdkUser.getEsToken(ClusterName.UNNAMED_CLUSTER_NAME), is(nullValue()));
@@ -105,7 +106,7 @@ public class JdkUserTest {
     @Test
     public void getKerberosPrincipal() {
         Subject subject = new Subject();
-        User jdkUser = new JdkUser(subject);
+        User jdkUser = new JdkUser(subject, new TestSettings());
 
         assertThat(jdkUser.getKerberosPrincipal(), is(nullValue()));
 

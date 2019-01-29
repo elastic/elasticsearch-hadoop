@@ -39,7 +39,11 @@ public abstract class UserProvider implements SettingsAware {
         return ObjectUtils.instantiate(className, settings);
     }
 
-    private Settings settings;
+    protected Settings settings;
+
+    protected Settings getSettings() {
+        return settings;
+    }
 
     @Override
     public void setSettings(Settings settings) {

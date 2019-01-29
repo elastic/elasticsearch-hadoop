@@ -20,19 +20,20 @@
 package org.elasticsearch.hadoop.rest.commonshttp.auth.spnego;
 
 import org.apache.commons.httpclient.Credentials;
+import org.elasticsearch.hadoop.security.UserProvider;
 
 public class SpnegoCredentials implements Credentials {
 
-    private final String principalName;
+    private final UserProvider userProvider;
     private final String servicePrincipalName;
 
-    public SpnegoCredentials(String principalName, String servicePrincipalName) {
-        this.principalName = principalName;
+    public SpnegoCredentials(UserProvider userProvider, String servicePrincipalName) {
+        this.userProvider = userProvider;
         this.servicePrincipalName = servicePrincipalName;
     }
 
-    public String getPrincipalName() {
-        return principalName;
+    public UserProvider getUserProvider() {
+        return userProvider;
     }
 
     public String getServicePrincipalName() {

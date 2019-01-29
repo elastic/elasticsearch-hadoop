@@ -27,6 +27,7 @@ import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.mr.security.HadoopUser;
 import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class HadoopUserKerberosTest {
 
@@ -56,7 +57,7 @@ public class HadoopUserKerberosTest {
         UserGroupInformation client = UserGroupInformation.loginUserFromKeytabAndReturnUGI(KerberosSuite.PRINCIPAL_CLIENT,
                 KEYTAB_FILE.getAbsolutePath());
 
-        User user = new HadoopUser(client);
+        User user = new HadoopUser(client, new TestSettings());
 
         assertThat(user.getKerberosPrincipal(), is(not(nullValue())));
         assertThat(user.getKerberosPrincipal().getName(), is(equalTo(KerberosSuite.PRINCIPAL_CLIENT + "@" + KerberosSuite.DEFAULT_REALM)));
