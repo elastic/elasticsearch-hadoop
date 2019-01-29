@@ -50,7 +50,6 @@ import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.util.ByteSequence;
-import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.ReflectionUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.encoding.HttpEncodingTools;
@@ -61,6 +60,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -95,6 +95,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final SecureSettings secureSettings;
     private final String clusterName;
     private final UserProvider userProvider;
+    private UserProvider proxyUserProvider = null;
+    private String runAsUser = null;
 
     /** If the HTTP Connection is made through a proxy */
     private boolean isProxied = false;
@@ -172,11 +174,14 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     }
 
     public CommonsHttpTransport(Settings settings, SecureSettings secureSettings, String host) {
+        if (log.isDebugEnabled()) {
+            log.debug("Creating new CommonsHttpTransport");
+        }
         this.settings = settings;
         this.secureSettings = secureSettings;
         this.clusterName = settings.getClusterInfoOrUnnamedLatest().getClusterName().getName(); // May be a bootstrap client.
         if (StringUtils.hasText(settings.getSecurityUserProviderClass())) {
-            this.userProvider = ObjectUtils.instantiate(settings.getSecurityUserProviderClass(), settings);
+            this.userProvider = UserProvider.create(settings);
         } else {
             this.userProvider = null;
         }
@@ -275,7 +280,7 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                     secureSettings.getSecureProperty(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS));
             state.setCredentials(scope, usernamePassword);
             if (log.isDebugEnabled()) {
-                log.info("Using detected HTTP Auth credentials...");
+                log.debug("Using detected HTTP Auth credentials...");
             }
             authPrefs.add(AuthPolicy.BASIC);
             client.getParams().setAuthenticationPreemptive(true); // Preemptive auth only if there's basic creds.
@@ -284,6 +289,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
         if (userProvider != null) {
             User user = userProvider.getUser();
             // Add ApiKey Authentication if a key is present
+            if (log.isDebugEnabled()) {
+                log.debug("checking for token using cluster name [" + clusterName + "]");
+            }
             if (user.getEsToken(clusterName) != null) {
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
@@ -292,34 +300,70 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 Credentials tokenCredentials = new EsApiKeyCredentials(userProvider, clusterName);
                 state.setCredentials(scope, tokenCredentials);
                 if (log.isDebugEnabled()) {
-                    log.info("Using detected Token credentials...");
+                    log.debug("Using detected Token credentials...");
                 }
                 EsHadoopAuthPolicies.registerAuthSchemes();
                 authPrefs.add(EsHadoopAuthPolicies.APIKEY);
-            }
-            // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
-            if (userProvider.isEsKerberosEnabled()) {
+            } else if (userProvider.isEsKerberosEnabled()) {
+                // Add SPNEGO auth if a kerberos principal exists on the user and the elastic principal is set
+                // Only do this if a token does not exist on the current user.
+                // The auth mode may say that it is Kerberos, but the client
+                // could be running in a remote JVM that does not have the
+                // Kerberos credentials available.
                 if (!StringUtils.hasText(settings.getNetworkSpnegoAuthElasticsearchPrincipal())) {
                     throw new EsHadoopIllegalArgumentException("Missing Elasticsearch Kerberos Principal name. " +
                             "Specify one with [" + ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL + "]");
                 }
-                KerberosPrincipal userPrincipal = user.getKerberosPrincipal();
-                if (userPrincipal == null) {
+
+                // Pick the appropriate user provider to get credentials from for SPNEGO auth
+                UserProvider credentialUserProvider;
+                if (user.isProxyUser()) {
+                    // If the user is a proxy user, get a provider for the real
+                    // user and capture the proxy user's name to impersonate
+                    proxyUserProvider = user.getRealUserProvider();
+                    runAsUser = user.getUserName();
+
+                    // Ensure that this real user even has Kerberos Creds:
+                    User realUser = proxyUserProvider.getUser();
+                    KerberosPrincipal realPrincipal = realUser.getKerberosPrincipal();
+                    if (realPrincipal == null) {
+                        throw new EsHadoopIllegalArgumentException("Could not locate Kerberos Principal on real user [" +
+                                realUser.getUserName() + "] underneath proxy user [" + runAsUser + "]");
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using detected SPNEGO credentials for real user [" + realUser.getUserName() + "] to proxy as [" +
+                                runAsUser + "]...");
+                    }
+                    credentialUserProvider = proxyUserProvider;
+                } else if (user.getKerberosPrincipal() != null) {
+                    // Ensure that the user principal exists
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using detected SPNEGO credentials for user [" + user.getUserName() + "]...");
+                    }
+                    credentialUserProvider = userProvider;
+                } else {
                     throw new EsHadoopIllegalArgumentException("Could not locate Kerberos Principal on currently logged in user.");
                 }
+
+                // Add the user provider to credentials
                 HttpState state = (authSettings[1] != null ? (HttpState) authSettings[1] : new HttpState());
                 authSettings[1] = state;
                 // TODO: Limit this by hosts and ports
                 AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM, EsHadoopAuthPolicies.NEGOTIATE);
                 // TODO: This should just pass in the user provider instead of getting the user principal at this point.
-                Credentials credential = new SpnegoCredentials(userPrincipal.getName(), settings.getNetworkSpnegoAuthElasticsearchPrincipal());
+                Credentials credential = new SpnegoCredentials(credentialUserProvider, settings.getNetworkSpnegoAuthElasticsearchPrincipal());
                 state.setCredentials(scope, credential);
-                if (log.isDebugEnabled()) {
-                    log.info("Using detected SPNEGO credentials...");
-                }
                 EsHadoopAuthPolicies.registerAuthSchemes();
                 authPrefs.add(EsHadoopAuthPolicies.NEGOTIATE);
             }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("No UserProvider configured. Skipping Kerberos/Token auth settings");
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Using auth prefs: [" + authPrefs + "]");
         }
         client.getParams().setParameter(AuthPolicy.AUTH_SCHEME_PRIORITY, authPrefs);
     }
@@ -567,8 +611,19 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         headers.applyTo(http);
 
-        // If we are using token authentication, set the auth to be preemptive:
-        if (userProvider != null && userProvider.getUser().getEsToken(clusterName) != null) {
+        // We don't want a token added from a proxy user to collide with the
+        // run_as mechanism from a real user impersonating said proxy, so
+        // make these conditions mutually exclusive.
+        if (runAsUser != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Performing request with runAs user set to ["+runAsUser+"]");
+            }
+            http.addRequestHeader("es-security-runas-user", runAsUser);
+        } else if (userProvider != null && userProvider.getUser().getEsToken(clusterName) != null) {
+            // If we are using token authentication, set the auth to be preemptive:
+            if (log.isDebugEnabled()) {
+                log.debug("Performing preemptive authentication with API Token");
+            }
             http.getHostAuthState().setPreemptive();
             http.getHostAuthState().setAuthAttempted(true);
             http.getHostAuthState().setAuthScheme(new EsApiKeyAuthScheme());
@@ -583,13 +638,19 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
         }
 
-        long start = System.currentTimeMillis();
-        try {
-            client.executeMethod(http);
-            afterExecute(http);
-        } finally {
-            stats.netTotalTime += (System.currentTimeMillis() - start);
-            closeAuthSchemeQuietly(http);
+        if (proxyUserProvider != null) {
+            final HttpMethod method = http;
+            log.debug("Executing request wrapped in proxyUser");
+            proxyUserProvider.getUser().doAs(new PrivilegedExceptionAction<Object>() {
+                @Override
+                public Object run() throws Exception {
+                    doExecute(method);
+                    return null;
+                }
+            });
+        } else {
+            log.debug("Executing request using default settings");
+            doExecute(http);
         }
 
         if (log.isTraceEnabled()) {
@@ -600,6 +661,22 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
+    }
+
+    /**
+     * Actually perform the request
+     * @param method the HTTP method to perform
+     * @throws IOException If there is an issue during the method execution
+     */
+    private void doExecute(HttpMethod method) throws IOException {
+        long start = System.currentTimeMillis();
+        try {
+            client.executeMethod(method);
+            afterExecute(method);
+        } finally {
+            stats.netTotalTime += (System.currentTimeMillis() - start);
+            closeAuthSchemeQuietly(method);
+        }
     }
 
     /**
