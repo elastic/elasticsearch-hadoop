@@ -27,17 +27,19 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.httpclient.ConnectTimeoutException;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.SimpleRequest;
+import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -134,5 +136,149 @@ public class CommonsHttpTransportTests {
             return;
         }
         fail("Should not be able to connect to TEST_NET_1");
+    }
+
+    @Test
+    public void testDefaultTransformers() {
+        // setup
+        CommonsHttpTransport underTest = new CommonsHttpTransport(new PropertiesSettings(), "127.0.0.1");
+
+        // then
+        assertNotNull(underTest.getBeforeHttpTransformers());
+        assertEquals(0, underTest.getBeforeHttpTransformers().size());
+        assertNotNull(underTest.getAfterHttpTransformers());
+        assertEquals(0, underTest.getAfterHttpTransformers().size());
+    }
+
+    public static class TestHttpBeforeTransformerFactory implements HttpTransformerFactory {
+
+        @Override
+        public HttpTransformerExecutionType getExecutionType() {
+            return HttpTransformerExecutionType.BEFORE;
+        }
+
+        @Override
+        public HttpTransformer getHttpTransformer(Settings settings, SecureSettings secureSettings, String hostInfo) {
+            return new TestHttpTransformer();
+        }
+    }
+
+    public static class TestHttpAfterTransformerFactory implements HttpTransformerFactory {
+
+        @Override
+        public HttpTransformerExecutionType getExecutionType() {
+            return HttpTransformerExecutionType.AFTER;
+        }
+
+        @Override
+        public HttpTransformer getHttpTransformer(Settings settings, SecureSettings secureSettings, String hostInfo) {
+            return new TestHttpTransformer();
+        }
+    }
+
+    public static class TestHttpAfterTransformerFactoryNoDefaultConstructor implements HttpTransformerFactory {
+
+        public TestHttpAfterTransformerFactoryNoDefaultConstructor(int nothing) {
+            // no-op
+        }
+
+        @Override
+        public HttpTransformerExecutionType getExecutionType() {
+            return HttpTransformerExecutionType.AFTER;
+        }
+
+        @Override
+        public HttpTransformer getHttpTransformer(Settings settings, SecureSettings secureSettings, String hostInfo) {
+            return new TestHttpTransformer();
+        }
+    }
+
+    public static class TestHttpAfterTransformerFactoryNoRequiredInterface {
+
+        public HttpTransformerFactory.HttpTransformerExecutionType getExecutionType() {
+            return HttpTransformerFactory.HttpTransformerExecutionType.AFTER;
+        }
+
+        public HttpTransformer getHttpTransformer(Settings settings, SecureSettings secureSettings, String hostInfo) {
+            return new TestHttpTransformer();
+        }
+    }
+
+    public static class TestHttpTransformer implements HttpTransformer {
+
+        @Override
+        public HttpMethod transform(HttpMethod httpMethod) {
+            // no-op
+            return httpMethod;
+        }
+    }
+
+    @Test
+    public void testBeforeTransformerConfig() {
+        // setup
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpBeforeTransformerFactory.class.getName());
+        CommonsHttpTransport underTest = new CommonsHttpTransport(settings, "127.0.0.1");
+
+        // then
+        assertNotNull(underTest.getBeforeHttpTransformers());
+        assertEquals(1, underTest.getBeforeHttpTransformers().size());
+        assertEquals(TestHttpTransformer.class, underTest.getBeforeHttpTransformers().get(0).getClass());
+        assertNotNull(underTest.getAfterHttpTransformers());
+        assertEquals(0, underTest.getAfterHttpTransformers().size());
+    }
+
+    @Test
+    public void testAfterTransformerConfig() {
+        // setup
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpAfterTransformerFactory.class.getName());
+        CommonsHttpTransport underTest = new CommonsHttpTransport(settings, "127.0.0.1");
+
+        // then
+        assertNotNull(underTest.getBeforeHttpTransformers());
+        assertEquals(0, underTest.getBeforeHttpTransformers().size());
+        assertNotNull(underTest.getAfterHttpTransformers());
+        assertEquals(1, underTest.getAfterHttpTransformers().size());
+        assertEquals(TestHttpTransformer.class, underTest.getAfterHttpTransformers().get(0).getClass());
+    }
+
+
+    @Test
+    public void testBothTransformersConfig() {
+        // setup
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpBeforeTransformerFactory.class.getName()
+                + " , " + TestHttpAfterTransformerFactory.class.getName());
+        CommonsHttpTransport underTest = new CommonsHttpTransport(settings, "127.0.0.1");
+
+        // then
+        assertNotNull(underTest.getBeforeHttpTransformers());
+        assertEquals(1, underTest.getBeforeHttpTransformers().size());
+        assertEquals(TestHttpTransformer.class, underTest.getBeforeHttpTransformers().get(0).getClass());
+        assertNotNull(underTest.getAfterHttpTransformers());
+        assertEquals(1, underTest.getAfterHttpTransformers().size());
+        assertEquals(TestHttpTransformer.class, underTest.getAfterHttpTransformers().get(0).getClass());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testWrongFactoryClassName() {
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpBeforeTransformerFactory.class.getName() + "123"); // non-existing class name
+        new CommonsHttpTransport(settings, "127.0.0.1");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testFactoryNoDefaultConstructor() {
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpAfterTransformerFactoryNoDefaultConstructor.class.getName());
+        new CommonsHttpTransport(settings, "127.0.0.1");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFactoryNoRequiredInterface() {
+        PropertiesSettings settings = new PropertiesSettings();
+        settings.setHttpTransformerFactories(TestHttpAfterTransformerFactoryNoRequiredInterface.class.getName());
+        new CommonsHttpTransport(settings, "127.0.0.1");
     }
 }

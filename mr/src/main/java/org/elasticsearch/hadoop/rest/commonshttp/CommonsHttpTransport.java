@@ -18,6 +18,9 @@
  */
 package org.elasticsearch.hadoop.rest.commonshttp;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
+import com.google.common.base.Strings;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -47,6 +50,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -73,6 +78,8 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     private final String pathPrefix;
     private final Settings settings;
     private final SecureSettings secureSettings;
+    private final List<HttpTransformer> beforeHttpTransformers = new ArrayList<>();
+    private final List<HttpTransformer> afterHttpTransformers = new ArrayList<>();
 
     private static class ResponseInputStream extends DelegatingInputStream implements ReusableInputStream {
 
@@ -200,8 +207,50 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         this.headers = new HeaderProcessor(settings);
 
+        initializeHttpTransofrmersFromSettings(settings, secureSettings, host);
+
         if (log.isTraceEnabled()) {
             log.trace("Opening HTTP transport to " + httpInfo);
+        }
+    }
+
+    private void initializeHttpTransofrmersFromSettings(Settings settings, SecureSettings secureSettings, String host) {
+        String transformerFactories = settings.getHttpTransformerFactories();
+        if (!Strings.isNullOrEmpty(transformerFactories)) {
+            Iterable<String> transformerFactoriesClassNames = Splitter.on(",").omitEmptyStrings().trimResults().split(transformerFactories);
+            transformerFactoriesClassNames.forEach(className -> {
+                HttpTransformerFactory transformerFactory = loadAndCreateHttpTransformerFactoryInstance(className);
+                HttpTransformer transformer = transformerFactory.getHttpTransformer(settings, secureSettings, host);
+                switch(transformerFactory.getExecutionType()) {
+                    case BEFORE:
+                        addBeforeHttpTransformer(transformer);
+                        break;
+                    case AFTER:
+                        addAfterHttpTransformer(transformer);
+                        break;
+                    default:
+                        throw new IllegalStateException(String.format("Unknown http transformer execution type: %s", transformerFactory.getExecutionType()));
+                }
+            });
+        }
+    }
+
+    private HttpTransformerFactory loadAndCreateHttpTransformerFactoryInstance(String className) {
+        Class<? extends HttpTransformerFactory> cls;
+        try {
+            cls = (Class<? extends HttpTransformerFactory>) CommonsHttpTransport.class.getClassLoader().loadClass(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(String.format("Couldn't load class %s", className), e);
+        }
+
+        if (!HttpTransformerFactory.class.isAssignableFrom(cls)) {
+            throw new IllegalArgumentException(String.format("Http transformer factory class %s is expected to implement %s", className, HttpTransformerFactory.class.getName()));
+        }
+
+        try {
+            return cls.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new IllegalStateException(String.format("Couldn't create new instance of class %s using default no-arg constructor", className), e);
         }
     }
 
@@ -480,26 +529,58 @@ public class CommonsHttpTransport implements Transport, StatsAware {
 
         headers.applyTo(http);
 
-        // when tracing, log everything
-        if (log.isTraceEnabled()) {
-            log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
-        }
-
         long start = System.currentTimeMillis();
         try {
+            // when tracing, log everything
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("OriginalTx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
+            }
+
+            http = executeBeforeHttpTransformers(http);
+
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
+            }
+
+            // execute the http request
             client.executeMethod(http);
+
+            if (log.isTraceEnabled()) {
+                log.trace(String.format("RawRx %s [%s-%s] [%s]", proxyInfo, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+            }
+
+            http = executeAfterHttpTransformers(http);
+
+            if (log.isTraceEnabled()) {
+                Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
+                String addr = sk.getLocalAddress().getHostAddress();
+                log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
+            }
         } finally {
             stats.netTotalTime += (System.currentTimeMillis() - start);
         }
 
-        if (log.isTraceEnabled()) {
-            Socket sk = ReflectionUtils.invoke(GET_SOCKET, conn, (Object[]) null);
-            String addr = sk.getLocalAddress().getHostAddress();
-            log.trace(String.format("Rx %s@[%s] [%s-%s] [%s]", proxyInfo, addr, http.getStatusCode(), HttpStatus.getStatusText(http.getStatusCode()), http.getResponseBodyAsString()));
-        }
-
         // the request URI is not set (since it is retried across hosts), so use the http info instead for source
         return new SimpleResponse(http.getStatusCode(), new ResponseInputStream(http), httpInfo);
+    }
+
+    private HttpMethod executeBeforeHttpTransformers(HttpMethod http) {
+        return executeHttpTransformers(http, beforeHttpTransformers);
+    }
+
+    private HttpMethod executeAfterHttpTransformers(HttpMethod http) {
+        return executeHttpTransformers(http, afterHttpTransformers);
+    }
+
+    private HttpMethod executeHttpTransformers(HttpMethod http, List<HttpTransformer> transformers) {
+        for(HttpTransformer transformer : transformers) {
+            try {
+                http = transformer.transform(http);
+            } catch (Exception e) {
+                throw new EsHadoopTransportException(String.format("Error applying HttpTransformer %s to HTTP Request %s", transformer.toString(), http.toString()), e);
+            }
+        }
+        return http;
     }
 
     @Override
@@ -534,5 +615,43 @@ public class CommonsHttpTransport implements Transport, StatsAware {
     @Override
     public Stats stats() {
         return stats;
+    }
+
+    public void addBeforeHttpTransformer(HttpTransformer transformer) {
+        if (transformer == null) {
+            throw new IllegalArgumentException("transformer cannot be null");
+        }
+        beforeHttpTransformers.add(transformer);
+    }
+
+    public void addAfterHttpTransformer(HttpTransformer transformer) {
+        if (transformer == null) {
+            throw new IllegalArgumentException("transformer cannot be null");
+        }
+        afterHttpTransformers.add(transformer);
+    }
+
+    public void removeBeforeHttpTransformer(HttpTransformer transformer) {
+        if (transformer == null) {
+            throw new IllegalArgumentException("transformer cannot be null");
+        }
+        beforeHttpTransformers.remove(transformer);
+    }
+
+    public void removeAfterHttpTransformer(HttpTransformer transformer) {
+        if (transformer == null) {
+            throw new IllegalArgumentException("transformer cannot be null");
+        }
+        afterHttpTransformers.remove(transformer);
+    }
+
+    @VisibleForTesting
+    /* package */ List<HttpTransformer> getBeforeHttpTransformers() {
+        return new ArrayList<>(beforeHttpTransformers);
+    }
+
+    @VisibleForTesting
+    /* package */ List<HttpTransformer> getAfterHttpTransformers() {
+        return new ArrayList<>(afterHttpTransformers);
     }
 }
