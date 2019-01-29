@@ -15,7 +15,6 @@ This section summarizes the changes in each release.
 [[release-notes-6]]
 ===== 6.x
 * <<eshadoop-6.6.0>>
-* <<eshadoop-6.5.4>>
 * <<eshadoop-6.5.3>>
 * <<eshadoop-6.5.2>>
 * <<eshadoop-6.5.1>>
