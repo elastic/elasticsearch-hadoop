@@ -21,9 +21,14 @@ package org.elasticsearch.hadoop.qa.kerberos.security;
 
 import java.security.PrivilegedExceptionAction;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.security.UserGroupInformation;
 
 public final class KeytabLogin {
+
+    private static final Log LOG = LogFactory.getLog(KeytabLogin.class);
+
     private static final String SYS_PRINCIPAL_NAME = "test.krb5.principal";
     private static final String SYS_KEYTAB_PATH = "test.krb5.keytab";
 
@@ -32,7 +37,7 @@ public final class KeytabLogin {
         String keytabPath = System.getProperty(SYS_KEYTAB_PATH);
 
         if (principalName == null && keytabPath == null) {
-            System.err.println("Principal name and keytab path are not provided. Skipping driver login.");
+            LOG.warn("Principal name and keytab path are not provided. Skipping driver login.");
             return action.run();
         }
 
@@ -43,7 +48,7 @@ public final class KeytabLogin {
         }
 
         UserGroupInformation.loginUserFromKeytab(principalName, keytabPath);
-        System.out.println("Login complete");
+        LOG.info("Login complete");
         return UserGroupInformation.getCurrentUser().doAs(action);
     }
 
