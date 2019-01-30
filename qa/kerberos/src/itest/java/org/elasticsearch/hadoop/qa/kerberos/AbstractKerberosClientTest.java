@@ -302,7 +302,7 @@ public class AbstractKerberosClientTest {
                     innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
                     innerTestSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
-                    innerTestSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+                    innerTestSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
                     innerTestSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_MUTUAL, "true");
 
                     // Rest Client should use token auth
@@ -320,9 +320,58 @@ public class AbstractKerberosClientTest {
         }
     }
 
-    @Ignore("Not yet implemented")
     @Test
     public void testSpnegoIntoTokenAuth() throws Exception {
+        final TestSettings testSettings = new TestSettings();
+        Assume.assumeTrue(testSettings.getNetworkHttpAuthUser() != null);
+        Assume.assumeTrue(testSettings.getNetworkHttpAuthPass() != null);
 
+        // Setup role mapping
+        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+                "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
+
+        // Configure client settings
+        InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, LOG);
+        // Remove the regular auth settings
+        testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
+        testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+        // Add Kerberos auth settings
+        testSettings.setProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+        testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
+
+        // Login and perform test
+        LoginContext loginCtx = LoginUtil.login("client", "password");
+        try {
+            Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    // Discover cluster info and get token using SPNEGO
+                    InitializationUtils.discoverClusterInfo(testSettings, LOG);
+                    RestClient restClient = new RestClient(testSettings);
+                    EsToken token = restClient.createNewApiToken("test_key");
+                    restClient.close();
+
+                    // Add token to current user
+                    UserProvider.create(testSettings).getUser().addEsToken(token);
+
+                    // Remove kerberos information
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_SECURITY_AUTHENTICATION);
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL);
+
+                    // Use token to contact ES
+                    restClient = new RestClient(testSettings);
+                    List<NodeInfo> httpDataNodes = restClient.getHttpDataNodes();
+                    assertThat(httpDataNodes.size(), is(greaterThan(0)));
+
+                    // Cancel the token using the token as the auth method
+                    restClient.cancelToken(token);
+                    restClient.close();
+                    return null;
+                }
+            });
+        } finally {
+            loginCtx.logout();
+            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+        }
     }
 }
