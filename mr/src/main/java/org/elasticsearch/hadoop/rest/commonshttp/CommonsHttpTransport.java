@@ -633,15 +633,27 @@ public class CommonsHttpTransport implements Transport, StatsAware {
             }
         }
 
+        // Determine a user provider to use for executing, or if we even need one at all
+        UserProvider executingProvider;
+        if (proxyUserProvider != null) {
+            log.debug("Using proxyUserProvider to wrap rest request");
+            executingProvider = proxyUserProvider;
+        } else if (userProvider != null) {
+            log.debug("Using regular user provider to wrap rest request");
+            executingProvider = userProvider;
+        } else {
+            log.debug("Skipping user provider request wrapping");
+            executingProvider = null;
+        }
+
         // when tracing, log everything
         if (log.isTraceEnabled()) {
             log.trace(String.format("Tx %s[%s]@[%s][%s]?[%s] w/ payload [%s]", proxyInfo, request.method().name(), httpInfo, request.path(), request.params(), request.body()));
         }
 
-        if (proxyUserProvider != null) {
+        if (executingProvider != null) {
             final HttpMethod method = http;
-            log.debug("Executing request wrapped in proxyUser");
-            proxyUserProvider.getUser().doAs(new PrivilegedExceptionAction<Object>() {
+            executingProvider.getUser().doAs(new PrivilegedExceptionAction<Object>() {
                 @Override
                 public Object run() throws Exception {
                     doExecute(method);
@@ -649,7 +661,6 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 }
             });
         } else {
-            log.debug("Executing request using default settings");
             doExecute(http);
         }
 
