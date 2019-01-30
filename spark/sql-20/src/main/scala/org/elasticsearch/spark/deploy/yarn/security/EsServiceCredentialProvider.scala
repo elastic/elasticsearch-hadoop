@@ -62,6 +62,10 @@ import org.elasticsearch.spark.cfg.SparkSettingsManager
  */
 class EsServiceCredentialProvider extends ServiceCredentialProvider {
 
+  private[this] val LOG = LogFactory.getLog(classOf[EsServiceCredentialProvider])
+
+  LOG.info("Loaded EsServiceCredentialProvider")
+
   /**
    * Name of the service for logging purposes and for the purpose of determining if the
    * service is disabled in the settings using the property
@@ -77,8 +81,13 @@ class EsServiceCredentialProvider extends ServiceCredentialProvider {
    */
   override def credentialsRequired(hadoopConf: Configuration): Boolean = {
     val settings = HadoopSettingsManager.loadFrom(hadoopConf)
-    UserGroupInformation.isSecurityEnabled &&
-      AuthenticationMethod.KERBEROS.equals(settings.getSecurityAuthenticationMethod)
+    val isSecurityEnabled = UserGroupInformation.isSecurityEnabled
+    val esAuthMethod = settings.getSecurityAuthenticationMethod
+    val required = isSecurityEnabled && AuthenticationMethod.KERBEROS.equals(esAuthMethod)
+    LOG.info(s"Hadoop Security Enabled = [$isSecurityEnabled]")
+    LOG.info(s"ES Auth Method = [$esAuthMethod]")
+    LOG.info(s"Are creds required = [$required]")
+    required
   }
 
   /**
@@ -102,6 +111,10 @@ class EsServiceCredentialProvider extends ServiceCredentialProvider {
       val esToken = user.doAs(new PrivilegedExceptionAction[EsToken]() {
         override def run: EsToken = client.createNewApiToken(TokenUtil.KEY_NAME_PREFIX + UUID.randomUUID().toString)
       })
+      if (LOG.isInfoEnabled) {
+        LOG.info(s"getting token for: Elasticsearch[tokenName=${esToken.getName}, " +
+          s"clusterName=${esToken.getClusterName}, user=${user}]")
+      }
       val expiration = esToken.getExpirationTime
       val token = EsTokenIdentifier.createTokenFrom(esToken)
       creds.addToken(token.getService, token)
