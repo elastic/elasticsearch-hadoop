@@ -180,6 +180,8 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
         InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
+        InitializationUtils.discoverClusterInfo(settings, log);
+
         isJSON = settings.getOutputAsJson();
     }
 
