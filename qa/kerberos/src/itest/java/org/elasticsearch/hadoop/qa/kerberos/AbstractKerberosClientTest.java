@@ -53,8 +53,11 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class AbstractKerberosClientTest {
 
@@ -67,7 +70,7 @@ public class AbstractKerberosClientTest {
             Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
-                    SpnegoNegotiator negotiator = new SpnegoNegotiator("client", "HTTP/es.build.elastic.co");
+                    SpnegoNegotiator negotiator = new SpnegoNegotiator("client", "HTTP/build.elastic.co");
                     assertNotNull(negotiator.send());
                     return null;
                 }
@@ -94,7 +97,8 @@ public class AbstractKerberosClientTest {
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
                     // Set kerberos settings
-                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+                    testSettings.setProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
 
                     RestClient restClient = new RestClient(testSettings);
                     List<NodeInfo> httpDataNodes = restClient.getHttpDataNodes();
@@ -126,7 +130,8 @@ public class AbstractKerberosClientTest {
                     testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
 
                     // Set kerberos settings
-                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/es.build.elastic.co@BUILD.ELASTIC.CO");
+                    testSettings.setProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
                     testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_MUTUAL, "true");
 
                     RestClient restClient = new RestClient(testSettings);
@@ -209,11 +214,11 @@ public class AbstractKerberosClientTest {
             @Override
             public Void run() throws Exception {
                 UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-                System.out.println("currentUser.getUserName() = " + currentUser.getUserName());
-                System.out.println("currentUser.getRealUser().getUserName() = " + currentUser.getRealUser().getUserName());
-                System.out.println("currentUser.hasKerberosCredentials() = " + currentUser.hasKerberosCredentials());
-                System.out.println("currentUser.getAuthenticationMethod() = " + currentUser.getAuthenticationMethod());
-                System.out.println("currentUser.getRealAuthenticationMethod() = " + currentUser.getRealAuthenticationMethod());
+                assertEquals("client", currentUser.getUserName());
+                assertEquals("hive/build.elastic.co@BUILD.ELASTIC.CO", currentUser.getRealUser().getUserName());
+                assertFalse(currentUser.hasKerberosCredentials());
+                assertEquals(UserGroupInformation.AuthenticationMethod.PROXY, currentUser.getAuthenticationMethod());
+                assertEquals(UserGroupInformation.AuthenticationMethod.KERBEROS, currentUser.getRealAuthenticationMethod());
 
                 Settings testSettings = new TestSettings();
                 testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
@@ -224,7 +229,7 @@ public class AbstractKerberosClientTest {
                 testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
 
                 UserProvider userProvider = UserProvider.create(testSettings);
-                System.out.println("userProvider.isEsKerberosEnabled() = " + userProvider.isEsKerberosEnabled());
+                assertTrue(userProvider.isEsKerberosEnabled());
 
                 LOG.info("Getting cluster info");
                 InitializationUtils.discoverClusterInfo(testSettings, LOG);
