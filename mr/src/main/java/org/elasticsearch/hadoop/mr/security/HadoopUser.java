@@ -136,4 +136,11 @@ public class HadoopUser implements User {
         realProvider.setSettings(providerSettings);
         return realProvider;
     }
+
+    @Override
+    public String toString() {
+        return "HadoopUser{" +
+                "ugi=" + ugi +
+                '}';
+    }
 }

@@ -159,4 +159,11 @@ public class JdkUser implements User {
         sameProvider.setSettings(providerSettings);
         return sameProvider;
     }
+
+    @Override
+    public String toString() {
+        return "JdkUser{" +
+                "subject=" + subject +
+                '}';
+    }
 }
