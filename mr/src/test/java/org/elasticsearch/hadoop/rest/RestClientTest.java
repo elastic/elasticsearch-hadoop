@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.rest;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.TestSettings;
@@ -278,7 +279,7 @@ public class RestClientTest {
         Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         Settings testSettings = new TestSettings();
-        testSettings.setInternalVersion(EsMajorVersion.V_5_X);
+        testSettings.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(EsMajorVersion.V_5_X));
         RestClient client = new RestClient(testSettings, mock);
 
         long count = client.count(index, type, MatchAllQueryBuilder.MATCH_ALL);
@@ -315,7 +316,7 @@ public class RestClientTest {
         Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         Settings testSettings = new TestSettings();
-        testSettings.setInternalVersion(EsMajorVersion.V_6_X);
+        testSettings.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(EsMajorVersion.V_6_X));
         RestClient client = new RestClient(testSettings, mock);
 
         long count = client.count(index, type, MatchAllQueryBuilder.MATCH_ALL);
