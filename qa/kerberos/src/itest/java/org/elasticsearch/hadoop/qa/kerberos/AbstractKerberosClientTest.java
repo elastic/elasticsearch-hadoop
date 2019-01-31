@@ -48,7 +48,6 @@ import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.greaterThan;
@@ -86,6 +85,44 @@ public class AbstractKerberosClientTest {
                 "{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\"client@BUILD.ELASTIC.CO\"}}}".getBytes());
 
         LoginContext loginCtx = LoginUtil.login("client", "password");
+        try {
+            Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    TestSettings testSettings = new TestSettings();
+                    InitializationUtils.setUserProviderIfNotSet(testSettings, JdkUserProvider.class, null);
+                    // Remove the regular auth settings
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_USER);
+                    testSettings.asProperties().remove(ConfigurationOptions.ES_NET_HTTP_AUTH_PASS);
+
+                    // Set kerberos settings
+                    testSettings.setProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+                    testSettings.setProperty(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
+
+                    RestClient restClient = new RestClient(testSettings);
+                    List<NodeInfo> httpDataNodes = restClient.getHttpDataNodes();
+                    assertThat(httpDataNodes.size(), is(greaterThan(0)));
+
+                    return null;
+                }
+            });
+        } finally {
+            loginCtx.logout();
+            RestUtils.delete("_xpack/security/role_mapping/kerberos_client_mapping");
+        }
+    }
+
+    @Test
+    public void testSpnegoAuthWithKeytabToES() throws Exception {
+        String hivePrincipal = System.getProperty("tests.hive.principal");
+        Assert.hasText(hivePrincipal, "Needs tests.hive.principal system property");
+        String hiveKeytab = System.getProperty("tests.hive.keytab");
+        Assert.hasText(hiveKeytab, "Needs tests.hive.keytab system property");
+
+        RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping",
+                ("{\"roles\":[\"superuser\"],\"enabled\":true,\"rules\":{\"field\":{\"username\":\""+hivePrincipal+"\"}}}").getBytes());
+
+        LoginContext loginCtx = LoginUtil.keytabLogin(hivePrincipal, hiveKeytab);
         try {
             Subject.doAs(loginCtx.getSubject(), new PrivilegedExceptionAction<Void>() {
                 @Override

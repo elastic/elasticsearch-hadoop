@@ -42,9 +42,18 @@ public class LoginUtil {
     public static LoginContext login(String userPrincipal, String password) throws LoginException {
         Set<Principal> principals = Collections.singleton(new KerberosPrincipal(userPrincipal));
         Subject subject = new Subject(false, principals, Collections.emptySet(), Collections.emptySet());
-        Configuration loginConf = new EsHadoopConfiguration(userPrincipal);
-        CallbackHandler callback = new KerberosCallbackHandler(userPrincipal, password);
+        Configuration loginConf = new KerberosPasswordConfiguration(userPrincipal);
+        CallbackHandler callback = new KerberosPasswordCallbackHandler(userPrincipal, password);
         LoginContext loginContext = new LoginContext(KERBEROS_CONFIG_NAME, subject, callback, loginConf);
+        loginContext.login();
+        return loginContext;
+    }
+
+    public static LoginContext keytabLogin(String userPrincipal, String keytab) throws LoginException {
+        Set<Principal> principals = Collections.singleton(new KerberosPrincipal(userPrincipal));
+        Subject subject = new Subject(false, principals, Collections.emptySet(), Collections.emptySet());
+        Configuration loginConf = new KerberosKeytabConfiguration(userPrincipal, keytab);
+        LoginContext loginContext = new LoginContext(KERBEROS_CONFIG_NAME, subject, null, loginConf);
         loginContext.login();
         return loginContext;
     }
@@ -52,10 +61,10 @@ public class LoginUtil {
     private static final String SUN_KRB5_LOGIN_MODULE = "com.sun.security.auth.module.Krb5LoginModule";
     private static final String KERBEROS_CONFIG_NAME = "es-hadoop-user-kerberos";
 
-    private static class EsHadoopConfiguration extends javax.security.auth.login.Configuration {
+    private static class KerberosPasswordConfiguration extends javax.security.auth.login.Configuration {
         private final String principalName;
 
-        public EsHadoopConfiguration(String principalName) {
+        public KerberosPasswordConfiguration(String principalName) {
             this.principalName = principalName;
         }
 
@@ -72,11 +81,11 @@ public class LoginUtil {
         }
     }
 
-    private static class KerberosCallbackHandler implements CallbackHandler {
+    private static class KerberosPasswordCallbackHandler implements CallbackHandler {
         private final String principalName;
         private final String password;
 
-        public KerberosCallbackHandler(String principalName, String password) {
+        public KerberosPasswordCallbackHandler(String principalName, String password) {
             this.principalName = principalName;
             this.password = password;
         }
@@ -92,6 +101,31 @@ public class LoginUtil {
                     }
                 }
             }
+        }
+    }
+
+    private static class KerberosKeytabConfiguration extends javax.security.auth.login.Configuration {
+        private final String principalName;
+        private final String keytabFile;
+
+        public KerberosKeytabConfiguration(String principalName, String keytabFile) {
+            this.principalName = principalName;
+            this.keytabFile = keytabFile;
+        }
+
+        @Override
+        public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+            Map<String, String> options = new HashMap<>();
+            options.put("doNotPrompt", "true");
+            options.put("principal", principalName);
+            options.put("storeKey", "true");
+            options.put("isInitiator", "true");
+            options.put("refreshKrb5Config", "true");
+            options.put("useKeyTab", "true");
+            options.put("keyTab", keytabFile);
+            return new AppConfigurationEntry[] {
+                    new AppConfigurationEntry(SUN_KRB5_LOGIN_MODULE, LoginModuleControlFlag.REQUIRED, options)
+            };
         }
     }
 }
