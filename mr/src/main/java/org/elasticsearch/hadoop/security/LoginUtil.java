@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.hadoop.qa.kerberos;
+package org.elasticsearch.hadoop.security;
 
 import java.io.IOException;
 import java.security.Principal;

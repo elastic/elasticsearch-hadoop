@@ -41,6 +41,7 @@ import org.elasticsearch.hadoop.rest.SimpleRequest;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.SpnegoNegotiator;
 import org.elasticsearch.hadoop.security.EsToken;
 import org.elasticsearch.hadoop.security.JdkUserProvider;
+import org.elasticsearch.hadoop.security.LoginUtil;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
