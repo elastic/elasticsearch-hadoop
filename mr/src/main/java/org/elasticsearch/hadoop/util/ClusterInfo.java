@@ -19,10 +19,14 @@
 
 package org.elasticsearch.hadoop.util;
 
+import java.io.Serializable;
+
 /**
  * Response and container for information provided by a node's "main" root-level action.
  */
-public class ClusterInfo {
+public class ClusterInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final ClusterName clusterName;
     private final EsMajorVersion majorVersion;

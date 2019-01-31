@@ -19,10 +19,14 @@
 
 package org.elasticsearch.hadoop.util;
 
+import java.io.Serializable;
+
 /**
  * Container for a cluster's given name and UUID.
  */
-public class ClusterName {
+public class ClusterName implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public static final String UNNAMED_CLUSTER_NAME = "!UNNAMED!";
 
