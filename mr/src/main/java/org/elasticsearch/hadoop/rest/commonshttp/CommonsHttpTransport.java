@@ -492,6 +492,9 @@ public class CommonsHttpTransport implements Transport, StatsAware {
                 throw new EsHadoopInvalidRequest("URI has query portion on it: [" + uri + "]");
             }
             http.setURI(new URI(escapeUri(uri.toString(), sslEnabled), false));
+        } else {
+            // set the default URI kn the request so that it's available in the transformers
+            http.setURI(new URI(escapeUri(client.getHostConfiguration().getHostURL(), sslEnabled), false));
         }
 
         // NB: initialize the path _after_ the URI otherwise the path gets reset to /
