@@ -68,7 +68,7 @@ public class StreamToEs {
                 ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos",
                 ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO",
                 ConfigurationOptions.ES_INPUT_JSON, "true")
-        )).shuffleGrouping("Input");
+        )).shuffleGrouping("Input").addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 2);
 
         // Nimbus needs to be started with the cred renewer and credentials plugins set in its config file
 
