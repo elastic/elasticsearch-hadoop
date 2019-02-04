@@ -55,12 +55,7 @@ public class StreamFromEs {
 
     public static void submitJob(String principal, String keytab) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("ES", new EsSpout("storm-test", ImmutableMap.of(
-                ConfigurationOptions.ES_PORT, "9500",
-                ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos",
-                ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO",
-                ConfigurationOptions.ES_INPUT_JSON, "true")
-        ));
+        builder.setSpout("ES", new EsSpout("storm-test"));
         builder.setBolt("Output", new CapturingBolt()).shuffleGrouping("ES");
 
         // Nimbus needs to be started with the cred renewer and credentials plugins set in its config file
@@ -70,6 +65,9 @@ public class StreamFromEs {
         plugins.add(AutoElasticsearch.class.getName());
         conf.put(Config.TOPOLOGY_AUTO_CREDENTIALS, plugins);
         conf.put(ConfigurationOptions.ES_PORT, "9500");
+        conf.put(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+        conf.put(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
+        conf.put(ConfigurationOptions.ES_INPUT_JSON, "true");
         StormSubmitter.submitTopology("test-read", conf, builder.createTopology());
     }
 }

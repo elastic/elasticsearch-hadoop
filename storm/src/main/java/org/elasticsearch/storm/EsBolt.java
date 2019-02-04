@@ -37,8 +37,8 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
 import org.elasticsearch.hadoop.security.JdkUserProvider;
-import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.storm.cfg.StormSettings;
+import org.elasticsearch.storm.security.EsClusterInfoSelector;
 import org.elasticsearch.storm.serialization.StormTupleBytesConverter;
 import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
@@ -52,7 +52,6 @@ public class EsBolt implements IRichBolt {
     private transient static Log log = LogFactory.getLog(EsBolt.class);
 
     private Map boltConfig = new LinkedHashMap();
-    private ClusterInfo clusterInfo;
 
     private transient PartitionWriter writer;
     private transient boolean flushOnTickTuple = true;
@@ -62,7 +61,6 @@ public class EsBolt implements IRichBolt {
     private transient int numberOfEntries = 0;
     private transient OutputCollector collector;
 
-    // FIXHERE: We should attempt to get the cluster info, but if we fail, we should just set a dummy cluster info and log a warning
     public EsBolt(String target) {
         this(target, null, null);
     }
@@ -85,10 +83,6 @@ public class EsBolt implements IRichBolt {
         if (configuration != null) {
             boltConfig.putAll(configuration);
         }
-
-        StormSettings stormSettings = new StormSettings(boltConfig);
-        InitializationUtils.setUserProviderIfNotSet(stormSettings, JdkUserProvider.class, log);
-        clusterInfo = InitializationUtils.discoverClusterInfo(stormSettings, log);
     }
 
     @Override
@@ -120,7 +114,7 @@ public class EsBolt implements IRichBolt {
         InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
         InitializationUtils.setUserProviderIfNotSet(settings, JdkUserProvider.class, log);
 
-        settings.setInternalClusterInfo(clusterInfo);
+        EsClusterInfoSelector.populate(settings);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);
     }

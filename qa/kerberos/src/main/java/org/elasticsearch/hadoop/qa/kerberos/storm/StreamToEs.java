@@ -30,7 +30,6 @@ import javax.security.auth.login.LoginContext;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.shade.com.google.common.collect.ImmutableList;
-import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -63,12 +62,9 @@ public class StreamToEs {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("Input", new TestSpout(ImmutableList.of(doc1, doc2), new Fields("json"), true));
-        builder.setBolt("ES", new EsBolt("storm-test", ImmutableMap.of(
-                ConfigurationOptions.ES_PORT, "9500",
-                ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos",
-                ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO",
-                ConfigurationOptions.ES_INPUT_JSON, "true")
-        )).shuffleGrouping("Input").addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 2);
+        builder.setBolt("ES", new EsBolt("storm-test"))
+                .shuffleGrouping("Input")
+                .addConfiguration(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 2);
 
         // Nimbus needs to be started with the cred renewer and credentials plugins set in its config file
 
@@ -77,6 +73,9 @@ public class StreamToEs {
         plugins.add(AutoElasticsearch.class.getName());
         conf.put(Config.TOPOLOGY_AUTO_CREDENTIALS, plugins);
         conf.put(ConfigurationOptions.ES_PORT, "9500");
+        conf.put(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
+        conf.put(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
+        conf.put(ConfigurationOptions.ES_INPUT_JSON, "true");
         StormSubmitter.submitTopology("test-run", conf, builder.createTopology());
     }
 }

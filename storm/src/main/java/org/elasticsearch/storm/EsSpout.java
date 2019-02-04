@@ -35,17 +35,16 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
-import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.MultiReaderIterator;
 import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
-import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
 import org.elasticsearch.storm.cfg.TupleFailureHandling;
+import org.elasticsearch.storm.security.EsClusterInfoSelector;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
@@ -60,7 +59,6 @@ public class EsSpout implements IRichSpout {
     private transient MultiReaderIterator iterator;
 
     private final List<String> tupleFields;
-    private ClusterInfo clusterInfo;
 
     private boolean ackReads = false;
     private int queueSize = 0;
@@ -94,10 +92,7 @@ public class EsSpout implements IRichSpout {
             spoutConfig.put(ES_RESOURCE_READ, target);
         }
 
-        // FIXHERE: We should attempt to get the cluster info, but if we fail, we should just set a dummy cluster info and log a warning
         StormSettings stormSettings = new StormSettings(spoutConfig);
-        InitializationUtils.setUserProviderIfNotSet(stormSettings, JdkUserProvider.class, log);
-        clusterInfo = InitializationUtils.discoverClusterInfo(stormSettings, log);
         tupleFields = stormSettings.getStormSpoutFields();
     }
 
@@ -112,7 +107,8 @@ public class EsSpout implements IRichSpout {
 
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
         InitializationUtils.setUserProviderIfNotSet(settings, JdkUserProvider.class, log);
-        settings.setInternalClusterInfo(clusterInfo);
+
+        EsClusterInfoSelector.populate(settings);
 
         ackReads = settings.getStormSpoutReliable();
 
