@@ -87,6 +87,8 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
      *
      * Interface provides methods for generating authentication credentials on Nimbus to be distributed
      * to worker processes.
+     *
+     * Storm only calls these methods if this is set as an auto credential on a topology's configuration.
      */
 
     /**
@@ -100,9 +102,6 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
 
     @Override
     public void populateCredentials(Map<String, String> credentials, Map<String, Object> topologyConfiguration, String topologyOwnerPrincipal) {
-        // FIXHERE: We should check the topologyConfiguration to see if this is set as an auto cred on the topology
-        // Otherwise, we end up obtaining and refreshing credentials for no reason
-
         LOG.debug("Populating credentials...");
         // These maps can contain any sort of object so we'll rely on StormSettings instead of assuming that they're strings.
         StormSettings topologyConf = new StormSettings(topologyConfiguration);
@@ -228,7 +227,7 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
             }
             LOG.debug("Token expiration is longer than renewal window. Token will be renewed at a later time.");
         } else {
-            LOG.warn("Could not locate token to refresh!");
+            LOG.debug("Could not locate token to refresh!");
         }
     }
 
