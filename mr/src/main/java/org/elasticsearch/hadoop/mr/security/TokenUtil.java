@@ -194,28 +194,6 @@ public class TokenUtil {
     }
 
     /**
-     * Checks if an authentication tokens exists for the given cluster name,
-     * obtaining one if needed and adding it to the user's credentials.
-     *
-     * @param client The client to use to retrieve auth tokens from
-     * @param clusterName The cluster name to check for the existence of tokens.
-     * @param user The user for whom to obtain the token
-     * @throws IOException If making a remote call to the authentication service fails
-     * @throws InterruptedException If executing as the given user is interrupted
-     * @return true if the token was added, false if it already existed
-     */
-    public static boolean addTokenIfMissing(RestClient client, ClusterName clusterName, User user) {
-        EsToken token = getEsAuthToken(clusterName, user);
-        if (token == null) {
-            token = obtainEsToken(client, user);
-            // FIXHERE: Should probably verify the cluster name, or get it from the client directly.
-            user.addEsToken(token);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Get the authentication token of the user for the provided cluster name in its Hadoop Token form.
      * @return null if the user does not have the token, otherwise the auth token for the cluster.
      */
