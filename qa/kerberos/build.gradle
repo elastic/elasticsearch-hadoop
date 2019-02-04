@@ -36,16 +36,45 @@ apply plugin: 'scala'
 
 configurations {
     kdcFixture
+    stormDeps
 }
 
 dependencies {
-    compile 'org.scala-lang:scala-library:2.11.8'
-    compile project(":elasticsearch-spark-20")
-
     compile project(":elasticsearch-hadoop-mr")
     compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
 
+    compile 'org.scala-lang:scala-library:2.11.8'
+    compile project(":elasticsearch-spark-20")
+
+    compile project(":elasticsearch-storm")
+    compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
+
     kdcFixture project(':test:fixtures:minikdc')
+
+    stormDeps('commons-httpclient:commons-httpclient:3.0.1') {
+        exclude group: 'junit'
+    }
+    stormDeps("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    stormDeps("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    stormDeps('commons-codec:commons-codec:1.4') {
+        exclude group: 'junit'
+    }
+}
+
+// Build uber storm jar for testing Storm remotely (es-hadoop + es-storm + qa tests)
+Jar qaKerberosStormJar = project.tasks.create('kerberosStormJar', Jar)
+qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('jar'))
+qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('hadoopTestingJar'))
+qaKerberosStormJar.classifier = 'storm-testing'
+
+// Add projects to the storm testing uber-jar
+[project, project(":elasticsearch-hadoop-mr"), project(":elasticsearch-storm")].forEach { proj ->
+    qaKerberosStormJar.from(proj.sourceSets.test.output)
+    qaKerberosStormJar.from(proj.sourceSets.main.output)
+    qaKerberosStormJar.from(proj.sourceSets.itest.output)
+}
+qaKerberosStormJar.from {
+    configurations.stormDeps.collect { dep -> zipTree(dep) }
 }
 
 String realm = '@BUILD.ELASTIC.CO'
