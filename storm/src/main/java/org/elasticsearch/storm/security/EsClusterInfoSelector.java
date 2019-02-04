@@ -59,7 +59,7 @@ public class EsClusterInfoSelector {
         if (iterator.hasNext()) {
             EsToken esToken = iterator.next();
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Reading token: " + esToken);
+                LOG.debug("Using token: " + esToken);
             }
             ClusterInfo clusterInfo = new ClusterInfo(new ClusterName(esToken.getClusterName(), null), esToken.getMajorVersion());
             if (LOG.isDebugEnabled()) {
