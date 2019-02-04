@@ -90,6 +90,15 @@ public class TestSpout extends BaseRichSpout {
         }
     }
 
+    public TestSpout(List<List> tuples, Fields output, boolean noDoneTuple) {
+        this.tuples = tuples;
+        this.fields = output;
+        this.spout = null;
+        if (noDoneTuple) {
+            DONE_TUPLE = null;
+        }
+    }
+
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = new InterceptingSpoutOutputCollector(collector);
@@ -97,6 +106,7 @@ public class TestSpout extends BaseRichSpout {
         if (spout != null) {
             spout.open(conf, context, this.collector);
         }
+        log.info("Opened TestSpout");
     }
 
     @Override
@@ -115,15 +125,18 @@ public class TestSpout extends BaseRichSpout {
         }
         else {
             for (List tuple : tuples) {
+                log.info("Emitting tuple...");
                 collector.emit(tuple);
             }
             done = true;
         }
 
-        if (done) {
+        if (done && DONE_TUPLE != null) {
             log.info("Spout finished emitting; sending signal");
             // done
             collector.emit(DONE_TUPLE);
+        } else {
+            log.info("Spout finished emitting");
         }
     }
 
