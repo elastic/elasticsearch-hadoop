@@ -36,12 +36,15 @@ apply plugin: 'scala'
 
 configurations {
     kdcFixture
+    cascadingDeps
     stormDeps
 }
 
 dependencies {
     compile project(":elasticsearch-hadoop-mr")
     compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+
+    compile project(":elasticsearch-hadoop-cascading")
 
     compile 'org.scala-lang:scala-library:2.11.8'
     compile project(":elasticsearch-spark-20")
@@ -51,6 +54,16 @@ dependencies {
 
     kdcFixture project(':test:fixtures:minikdc')
 
+    cascadingDeps('commons-httpclient:commons-httpclient:3.0.1') {
+        exclude group: 'junit'
+    }
+    cascadingDeps("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    cascadingDeps("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    cascadingDeps('commons-codec:commons-codec:1.4') {
+        exclude group: 'junit'
+    }
+    cascadingDeps("cascading:cascading-hadoop:$cascadingVersion")
+
     stormDeps('commons-httpclient:commons-httpclient:3.0.1') {
         exclude group: 'junit'
     }
@@ -59,6 +72,24 @@ dependencies {
     stormDeps('commons-codec:commons-codec:1.4') {
         exclude group: 'junit'
     }
+}
+
+// Build uber cascading jar for testing
+Jar qaKerberosCascadingJar = project.tasks.create('kerberosCascadingJar', Jar)
+qaKerberosCascadingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
+qaKerberosCascadingJar.dependsOn(project.rootProject.tasks.getByName('hadoopTestingJar'))
+qaKerberosCascadingJar.classifier = 'cascading-testing'
+
+// Add projects and dependencies to the Cascading testing uber-jar
+[project, project(":elasticsearch-hadoop-mr"), project(":elasticsearch-hadoop-cascading")].forEach { proj ->
+    qaKerberosCascadingJar.from(proj.sourceSets.test.output)
+    qaKerberosCascadingJar.from(proj.sourceSets.main.output)
+    qaKerberosCascadingJar.from(proj.sourceSets.itest.output)
+}
+qaKerberosCascadingJar.from {
+    configurations.cascadingDeps.collect { dep -> zipTree(dep).matching{pattern ->
+        pattern.exclude("META-INF/*")
+    }}
 }
 
 // Build uber storm jar for testing Storm remotely (es-hadoop + es-storm + qa tests)
@@ -594,8 +625,8 @@ PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class)
             'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
     ]
 }
-esCluster.addTask(pigLoadData)
-//pigLoadData.dependsOn(esStandIn)
+//esCluster.addTask(pigLoadData)
+pigLoadData.dependsOn(esStandIn)
 testCluster.dependsOn(pigLoadData)
 
 PigScript pigReadData = config.createClusterTask('pigReadData', PigScript.class) {
@@ -611,7 +642,67 @@ esCluster.addTask(pigReadData)
 //pigReadData.dependsOn(esStandIn)
 testCluster.dependsOn(pigReadData)
 
-Map<String, Task> readJobs = ['mr': mrReadData, 'spark': sparkReadData, 'hive': hiveReadData, 'pig': pigReadData]
+// Run the MR job to load data to ES. Ensure Kerberos settings are available.
+HadoopMRJob cascadingLoadData = config.createClusterTask('cascadingLoadData', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(qaKerberosCascadingJar, copyData, setupUsers)
+    jobJar = qaKerberosCascadingJar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.cascading.LoadToES'
+    jobSettings = [
+            'es.resource': 'qa_kerberos_cascading_data/_doc',
+            'es.nodes': 'localhost:9500',
+            'es.security.authentication': 'kerberos',
+            'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
+            'load.field.names': 'number,name,url,picture,@timestamp,tag',
+            'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ]
+    systemProperties([
+            "test.krb5.principal": clientPrincipal,
+            "test.krb5.keytab": clientKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    args = ['/data/artists/artists.dat']
+}
+esCluster.addTask(cascadingLoadData)
+//cascadingLoadData.dependsOn(esStandIn)
+testCluster.dependsOn(cascadingLoadData)
+
+// Run the MR job to read data out of ES. Ensure Kerberos settings are available.
+HadoopMRJob cascadingReadData = config.createClusterTask('cascadingReadData', HadoopMRJob.class) {
+    clusterConfiguration = config
+    dependsOn(cascadingLoadData)
+    jobJar = qaKerberosCascadingJar.archivePath
+    jobClass = 'org.elasticsearch.hadoop.qa.kerberos.cascading.ReadFromES'
+    jobSettings = [
+            'es.resource': 'qa_kerberos_cascading_data/_doc',
+            'es.nodes': 'localhost:9500',
+            'es.security.authentication': 'kerberos',
+            'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
+            'read.field.names': 'number,name,url,picture,@timestamp,tag',
+            'mapreduce.map.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'mapreduce.reduce.java.opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}",
+            'yarn.app.mapreduce.am.command-opts': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
+    ]
+    systemProperties([
+            "test.krb5.principal": clientPrincipal,
+            "test.krb5.keytab": clientKeytab.toString(),
+            "java.security.krb5.conf": krb5Conf.toString()
+    ])
+    args = ['/data/output/cascading']
+}
+esCluster.addTask(cascadingReadData)
+//cascadingReadData.dependsOn(esStandIn)
+testCluster.dependsOn(cascadingReadData)
+
+Map<String, Task> readJobs = [
+        'mr': mrReadData,
+        'spark': sparkReadData,
+        'hive': hiveReadData,
+        'pig': pigReadData,
+        'cascading': cascadingReadData
+]
 
 readJobs.forEach { integrationName, integrationReadTask ->
     // Copy the test data to HDFS using the SecureFsShell instead of dfs copy. We could use the
