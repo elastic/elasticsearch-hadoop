@@ -332,7 +332,7 @@ class HadoopClusterFormationTasks {
         List extractDependsOn = [distribution.verify, setup]
         return project.tasks.create(name: name, type: Copy, dependsOn: extractDependsOn) {
             group = 'hadoopFixture'
-            // FIXHERE: Switch logic if a service is ever not a tar distribution
+            // TODO: Switch logic if a service is ever not a tar distribution
             from {
                 project.tarTree(project.resources.gzip(distribution.download.outputFile()))
             }

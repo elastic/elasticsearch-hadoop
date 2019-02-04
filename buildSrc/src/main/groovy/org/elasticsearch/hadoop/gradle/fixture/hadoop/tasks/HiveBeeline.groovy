@@ -37,7 +37,6 @@ class HiveBeeline extends AbstractClusterTask {
     void runBeeline() {
         // Verification
         if (clusterConfiguration == null) {
-            // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("No cluster configuration found")
         }
 

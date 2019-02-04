@@ -36,7 +36,6 @@ class PigScript extends AbstractClusterTask {
     void runPig() {
         // Verification
         if (clusterConfiguration == null) {
-            // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("No cluster configuration found")
         }
         if (script == null) {

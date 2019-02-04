@@ -71,7 +71,6 @@ class SparkApp extends AbstractClusterTask {
     void runSparkSubmit() {
         //Verification
         if (clusterConfiguration == null) {
-            // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("no cluster configuration found")
         }
         if (jobClass == null) {

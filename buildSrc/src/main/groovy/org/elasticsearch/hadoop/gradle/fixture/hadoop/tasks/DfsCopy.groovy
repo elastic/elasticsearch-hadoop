@@ -115,7 +115,6 @@ class DfsCopy extends AbstractClusterTask {
     void runHdfsDfsCp() {
         // Verification
         if (clusterConfiguration == null) {
-            // FIXHERE: Remove once we have a plugin and extension
             throw new GradleException("No cluster configuration found")
         }
         if (localSource == null && dfsSource == null) {
