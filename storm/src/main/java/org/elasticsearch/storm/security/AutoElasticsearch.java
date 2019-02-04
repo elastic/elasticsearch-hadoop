@@ -28,6 +28,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -88,8 +89,17 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
      * to worker processes.
      */
 
+    /**
+     * {@inheritDoc}
+     * @deprecated This is available for any storm cluster that operates against the older method of obtaining credentials
+     */
     @Override
     public void populateCredentials(Map<String, String> credentials, Map topologyConfiguration) {
+        populateCredentials(credentials, topologyConfiguration, null);
+    }
+
+    @Override
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topologyConfiguration, String topologyOwnerPrincipal) {
         // FIXHERE: We should check the topologyConfiguration to see if this is set as an auto cred on the topology
         // Otherwise, we end up obtaining and refreshing credentials for no reason
 
@@ -157,15 +167,7 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
         if (LOG.isDebugEnabled()) {
             LOG.debug(String.format("Obtained token [%s] for principal [%s]", token.getName(), userPrincipal));
         }
-        FastByteArrayOutputStream stream = new FastByteArrayOutputStream();
-        DataOutput output = new DataOutputStream(stream);
-        try {
-            token.writeOut(output);
-        } catch (IOException e) {
-            throw new EsHadoopException("Could not serialize EsToken", e);
-        }
-        String credential = new String(Base64.encodeBase64(stream.bytes().bytes()), StringUtils.UTF_8);
-        credentials.put(ELASTICSEARCH_CREDENTIALS, credential);
+        putCred(ELASTICSEARCH_CREDENTIALS, token, credentials);
     }
 
     @Override
@@ -179,14 +181,55 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
      * Interface that is called on Nimbus to update or generate new credentials
      */
 
+    /**
+     * {@inheritDoc}
+     * @deprecated This is available for any storm cluster that operates against the older method of credential renewal
+     */
     @Override
     public void renew(Map<String, String> credentials, Map topologyConf) {
+        renew(credentials, topologyConf, null);
+    }
+
+    @Override
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
         // Just get new credentials from the initial populate credentials call since API keys are not renewable.
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Checking for credential renewal");
+        LOG.debug("Checking for credential renewal");
+        EsToken token = getCred(ELASTICSEARCH_CREDENTIALS, credentials);
+        if (token != null) {
+            LOG.debug("Checking token lifetime to see if refresh is required...");
+            // Check the time to live on the token against when the next refresh is likely to occur
+            long currentTime = System.currentTimeMillis();
+            long expiration = token.getExpirationTime();
+
+            if (currentTime > expiration) {
+                // Token is already expired, just renew it.
+                LOG.debug("ES Token expired. Renewing token...");
+                populateCredentials(credentials, topologyConf, topologyOwnerPrincipal);
+                return;
+            }
+
+            int renewalWindowSeconds = clusterSettings.getNimbusCredentialRenewersFrequencySeconds();
+
+            if (renewalWindowSeconds < 0) {
+                // No renewal window found, or invalid window given. Do the renewal
+                LOG.debug("Invalid renewal window configured. Renewing token...");
+                populateCredentials(credentials, topologyConf, topologyOwnerPrincipal);
+                return;
+            }
+
+            long renewalWindow = TimeUnit.SECONDS.convert(renewalWindowSeconds, TimeUnit.MILLISECONDS);
+            long nextRenewal = currentTime + renewalWindow;
+
+            if (nextRenewal > expiration) {
+                // Token will expire by the next renewal window. Do the renewal
+                LOG.debug("ES Token will expire before next renewal window. Renewing token...");
+                populateCredentials(credentials, topologyConf, topologyOwnerPrincipal);
+                return;
+            }
+            LOG.debug("Token expiration is longer than renewal window. Token will be renewed at a later time.");
+        } else {
+            LOG.warn("Could not locate token to refresh!");
         }
-        // FIXHERE: We should check the credential expiration time as well as the renewal rate to see if we actually need to get a new one
-        populateCredentials(credentials, topologyConf);
     }
 
     /*
@@ -210,20 +253,8 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
         if (LOG.isDebugEnabled()) {
             LOG.debug("Loading credentials to subject on worker side");
         }
-        // Deserializes entire Credentials object(s) from map, adding them all to the subject
-        // For each Credentials object added, all of their tokens are collected and placed on the UGI Current user
-        String serializedToken = credentials.get(ELASTICSEARCH_CREDENTIALS);
-        if (serializedToken != null && !serializedToken.equals("placeholder")) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Found token entry");
-            }
-            byte[] rawData = Base64.decodeBase64(serializedToken);
-            EsToken token;
-            try {
-                token = new EsToken(new DataInputStream(new FastByteArrayInputStream(rawData)));
-            } catch (IOException e) {
-                throw new EsHadoopException("Could not deserialize EsToken", e);
-            }
+        EsToken token = getCred(ELASTICSEARCH_CREDENTIALS, credentials);
+        if (token != null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug(String.format("Loaded token [%s]. Adding to subject...", token.getName()));
             }
@@ -243,5 +274,35 @@ public class AutoElasticsearch implements IAutoCredentials, ICredentialsRenewer,
             LOG.debug("Performing subject update");
         }
         populateSubject(subject, credentials);
+    }
+
+    /*
+     * Utility methods
+     */
+
+    private void putCred(String key, EsToken token, Map<String, String> credentials) {
+        FastByteArrayOutputStream stream = new FastByteArrayOutputStream();
+        DataOutput output = new DataOutputStream(stream);
+        try {
+            token.writeOut(output);
+        } catch (IOException e) {
+            throw new EsHadoopException("Could not serialize EsToken", e);
+        }
+        String credential = new String(Base64.encodeBase64(stream.bytes().bytes()), StringUtils.UTF_8);
+        credentials.put(key, credential);
+    }
+
+    private EsToken getCred(String key, Map<String, String> credentials) {
+        EsToken token = null;
+        String serializedToken = credentials.get(key);
+        if (serializedToken != null && !serializedToken.equals("placeholder")) {
+            byte[] rawData = Base64.decodeBase64(serializedToken);
+            try {
+                token = new EsToken(new DataInputStream(new FastByteArrayInputStream(rawData)));
+            } catch (IOException e) {
+                throw new EsHadoopException("Could not deserialize EsToken", e);
+            }
+        }
+        return token;
     }
 }
