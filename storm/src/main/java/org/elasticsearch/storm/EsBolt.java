@@ -63,25 +63,29 @@ public class EsBolt implements IRichBolt {
     private transient OutputCollector collector;
 
     // FIXHERE: We should attempt to get the cluster info, but if we fail, we should just set a dummy cluster info and log a warning
-    // FIXHERE: Consolodate these constructors
     public EsBolt(String target) {
-        boltConfig.put(ES_RESOURCE_WRITE, target);
-        StormSettings stormSettings = new StormSettings(boltConfig);
-        InitializationUtils.setUserProviderIfNotSet(stormSettings, JdkUserProvider.class, log);
-        clusterInfo = InitializationUtils.discoverClusterInfo(stormSettings, log);
+        this(target, null, null);
     }
 
     public EsBolt(String target, boolean writeAck) {
-        boltConfig.put(ES_RESOURCE_WRITE, target);
-        boltConfig.put(ES_STORM_BOLT_ACK, Boolean.toString(writeAck));
-        StormSettings stormSettings = new StormSettings(boltConfig);
-        InitializationUtils.setUserProviderIfNotSet(stormSettings, JdkUserProvider.class, log);
-        clusterInfo = InitializationUtils.discoverClusterInfo(stormSettings, log);
+        this(target, writeAck, null);
     }
 
     public EsBolt(String target, Map configuration) {
-        boltConfig.putAll(configuration);
+        this(target, null, configuration);
+    }
+
+    private EsBolt(String target, Boolean writeAck, Map configuration) {
         boltConfig.put(ES_RESOURCE_WRITE, target);
+
+        if (writeAck != null) {
+            boltConfig.put(ES_STORM_BOLT_ACK, Boolean.toString(writeAck));
+        }
+
+        if (configuration != null) {
+            boltConfig.putAll(configuration);
+        }
+
         StormSettings stormSettings = new StormSettings(boltConfig);
         InitializationUtils.setUserProviderIfNotSet(stormSettings, JdkUserProvider.class, log);
         clusterInfo = InitializationUtils.discoverClusterInfo(stormSettings, log);
