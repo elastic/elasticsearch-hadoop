@@ -26,7 +26,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractKerberosClientTest.class })
+@Suite.SuiteClasses({ AbstractKerberosClientTest.class, AbstractClusterVerificationTests.class })
+//@Suite.SuiteClasses({ AbstractKerberosClientTest.class })
 public class KerberosQaSuite {
     @ClassRule
     public static ExternalResource resource = new LocalEs();

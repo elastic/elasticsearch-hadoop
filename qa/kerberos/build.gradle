@@ -74,6 +74,10 @@ dependencies {
     }
 }
 
+// =============================================================================
+// Testing jars
+// =============================================================================
+
 // Build uber cascading jar for testing
 Jar qaKerberosCascadingJar = project.tasks.create('kerberosCascadingJar', Jar)
 qaKerberosCascadingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
@@ -107,6 +111,10 @@ qaKerberosStormJar.classifier = 'storm-testing'
 qaKerberosStormJar.from {
     configurations.stormDeps.collect { dep -> zipTree(dep) }
 }
+
+// =============================================================================
+// Kerberos configuration
+// =============================================================================
 
 String realm = '@BUILD.ELASTIC.CO'
 String hostPart = '/build.elastic.co'
@@ -172,6 +180,10 @@ java.nio.file.Path clientKeytab = fixtureDir.resolve(clientKeytabName)
 java.nio.file.Path hadoopKeytab = fixtureDir.resolve(hadoopKeytabName)
 java.nio.file.Path hiveKeytab = fixtureDir.resolve(hiveKeytabName)
 
+// =============================================================================
+// Elasticsearch cluster configuration
+// =============================================================================
+
 // Configure ES with Kerberos Auth
 esCluster {
     clusterConf {
@@ -224,13 +236,6 @@ esCluster {
     }
 }
 
-//Task esStandIn = project.tasks.create("esStandIn")
-//esStandIn.doLast {
-//    project.logger.lifecycle("Please start ES Cluster")
-//    System.console().readLine("Press enter when it is started: ")
-//}
-//esStandIn.dependsOn(kdcFixture)
-
 // Configure Integration Test Task
 Test integrationTest = project.tasks.findByName('integrationTest') as Test
 integrationTest.dependsOn(kdcFixture)
@@ -240,8 +245,7 @@ integrationTest.systemProperty("java.security.krb5.conf", krb5Conf.toString())
 integrationTest.systemProperty("es.net.http.auth.user", "test_admin")
 integrationTest.systemProperty("es.net.http.auth.pass", "x-pack-test-password")
 integrationTest.systemProperty("tests.hive.principal", "${hivePrincipalName}${realm}")
-integrationTest.systemProperty("tests.hive.keytab", "${hiveKeytab}")
-//integrationTest.dependsOn(esStandIn)
+integrationTest.systemProperty("tests.hive.keytab", hiveKeytab.toString())
 
 // Fixtures will be depending on the jar and test jar artifacts
 def jar = project.tasks.getByName('jar') as org.gradle.jvm.tasks.Jar
@@ -251,21 +255,21 @@ def testingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
 File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
 File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
 
-JavaExec setupUsers = project.tasks.create("setupUsers", JavaExec.class)
-setupUsers.main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
-setupUsers.classpath = sourceSets.main.runtimeClasspath
-setupUsers.systemProperty('es.nodes', 'localhost:9500')
-setupUsers.systemProperty('es.net.http.auth.user', 'test_admin')
-setupUsers.systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
-setupUsers.systemProperty('principals', "$clientPrincipal$realm")
-setupUsers.systemProperty('users', "client")
-setupUsers.systemProperty('proxiers', "$hivePrincipalName$realm")
+JavaExec setupUsers = project.tasks.create("setupUsers", JavaExec.class) {
+    main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
+    classpath = sourceSets.main.runtimeClasspath
+    systemProperty('es.nodes', 'localhost:9500')
+    systemProperty('es.net.http.auth.user', 'test_admin')
+    systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
+    systemProperty('principals', "$clientPrincipal$realm")
+    systemProperty('users', "client")
+    systemProperty('proxiers', "$hivePrincipalName$realm")
+}
 esCluster.addTask(setupUsers)
-//setupUsers.dependsOn(esStandIn)
 integrationTest.dependsOn(setupUsers)
 
 // =============================================================================
-// Hadoop cluster testing
+// Hadoop test cluster configuration
 // =============================================================================
 
 // Project instance available implicitly
@@ -373,7 +377,6 @@ testCluster.doLast {
     project.logger.lifecycle("STOPPING CLUSTER")
 }
 esCluster.addTask(testCluster)
-//testCluster.dependsOn(esStandIn)
 config.addClusterTask(testCluster)
 
 // We need to create a tmp directory in hadoop before history server does, because history server will set permissions
@@ -391,6 +394,7 @@ HadoopMRJob createTmp = config.service('hadoop').role('datanode').createClusterT
     ])
     args = ['-mkdir', '-p', '/tmp/hadoop-yarn/staging/history']
 }
+
 HadoopMRJob prepareTmp = config.service('hadoop').role('datanode').createClusterTask('prepareTmp', HadoopMRJob.class) {
     clusterConfiguration = config
     // Run on namenode since the gateway is not yet set up
@@ -405,7 +409,6 @@ HadoopMRJob prepareTmp = config.service('hadoop').role('datanode').createCluster
     // Recursive should be fine here since it's before anything is on the FS
     args = ['-chmod', '-R', '777', '/tmp']
 }
-testCluster.dependsOn(prepareTmp)
 config.service('hadoop').role('historyserver').addDependency(prepareTmp)
 config.service('hive').addDependency(prepareTmp)
 
@@ -424,7 +427,6 @@ HadoopMRJob createDataDir = config.createClusterTask('createDataDir', HadoopMRJo
     ])
     args = ['-mkdir', '-p', '/data/artists/']
 }
-testCluster.dependsOn(createDataDir)
 
 // Copy the test data to HDFS using the SecureFsShell instead of dfs copy. We could use the
 // DfsCopy task, but with Kerberos, we would have to kinit before running it. Instead we wrap.
@@ -441,7 +443,10 @@ HadoopMRJob copyData = config.createClusterTask('copyData', HadoopMRJob.class) {
     environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
     args = ['-copyFromLocal', project.file(new File(mrItestResourceDir, 'artists.dat')), "/data/artists/artists.dat"]
 }
-testCluster.dependsOn(copyData)
+
+// =============================================================================
+// Map Reduce Jobs
+// =============================================================================
 
 // Run the MR job to load data to ES. Ensure Kerberos settings are available.
 HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.class) {
@@ -468,8 +473,6 @@ HadoopMRJob mrLoadData = config.createClusterTask('mrLoadData', HadoopMRJob.clas
     args = ['/data/artists/artists.dat']
 }
 esCluster.addTask(mrLoadData)
-//mrLoadData.dependsOn(esStandIn)
-testCluster.dependsOn(mrLoadData)
 
 // Run the MR job to read data out of ES. Ensure Kerberos settings are available.
 HadoopMRJob mrReadData = config.createClusterTask('mrReadData', HadoopMRJob.class) {
@@ -495,19 +498,10 @@ HadoopMRJob mrReadData = config.createClusterTask('mrReadData', HadoopMRJob.clas
     args = ['/data/output/mr']
 }
 esCluster.addTask(mrReadData)
-//mrReadData.dependsOn(esStandIn)
-testCluster.dependsOn(mrReadData)
 
-File outputDataDir = project.file(new File(project.buildDir, 'data'))
-Task createOutputDataDir = project.tasks.create("createOutputDataDir") {
-    doLast {
-        if (outputDataDir.exists()) {
-            // Clean out any prior results
-            outputDataDir.deleteDir()
-        }
-        outputDataDir.mkdirs()
-    }
-}
+// =============================================================================
+// Spark Jobs
+// =============================================================================
 
 // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
 SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.class) {
@@ -535,8 +529,6 @@ SparkApp sparkLoadData = config.createClusterTask('sparkLoadData', SparkApp.clas
     args = ['/data/artists/artists.dat']
 }
 esCluster.addTask(sparkLoadData)
-//sparkLoadData.dependsOn(esStandIn)
-testCluster.dependsOn(sparkLoadData)
 
 // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
 SparkApp sparkReadData = config.createClusterTask('sparkReadData', SparkApp.class) {
@@ -563,8 +555,10 @@ SparkApp sparkReadData = config.createClusterTask('sparkReadData', SparkApp.clas
     args = ['/data/output/spark']
 }
 esCluster.addTask(sparkReadData)
-//sparkReadData.dependsOn(esStandIn)
-testCluster.dependsOn(sparkReadData)
+
+// =============================================================================
+// Hive Jobs
+// =============================================================================
 
 // Replace the regular beeline script with our own shimmed one. All we do is perform a keytab login and
 // delegate on regularly. This is easier than re-implementing most of beeline.
@@ -595,8 +589,6 @@ HiveBeeline hiveLoadData = config.createClusterTask('hiveLoadData', HiveBeeline.
     ])
 }
 esCluster.addTask(hiveLoadData)
-//hiveLoadData.dependsOn(esStandIn)
-testCluster.dependsOn(hiveLoadData)
 
 HiveBeeline hiveReadData = config.createClusterTask('hiveReadData', HiveBeeline.class) {
     clusterConfiguration = config
@@ -613,8 +605,10 @@ HiveBeeline hiveReadData = config.createClusterTask('hiveReadData', HiveBeeline.
     ])
 }
 esCluster.addTask(hiveReadData)
-//hiveReadData.dependsOn(esStandIn)
-testCluster.dependsOn(hiveReadData)
+
+// =============================================================================
+// Pig Jobs
+// =============================================================================
 
 PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class) {
     clusterConfiguration = config
@@ -625,9 +619,7 @@ PigScript pigLoadData = config.createClusterTask('pigLoadData', PigScript.class)
             'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
     ]
 }
-//esCluster.addTask(pigLoadData)
-pigLoadData.dependsOn(esStandIn)
-testCluster.dependsOn(pigLoadData)
+esCluster.addTask(pigLoadData)
 
 PigScript pigReadData = config.createClusterTask('pigReadData', PigScript.class) {
     clusterConfiguration = config
@@ -639,8 +631,10 @@ PigScript pigReadData = config.createClusterTask('pigReadData', PigScript.class)
     ]
 }
 esCluster.addTask(pigReadData)
-//pigReadData.dependsOn(esStandIn)
-testCluster.dependsOn(pigReadData)
+
+// =============================================================================
+// Cascading Jobs
+// =============================================================================
 
 // Run the MR job to load data to ES. Ensure Kerberos settings are available.
 HadoopMRJob cascadingLoadData = config.createClusterTask('cascadingLoadData', HadoopMRJob.class) {
@@ -666,8 +660,6 @@ HadoopMRJob cascadingLoadData = config.createClusterTask('cascadingLoadData', Ha
     args = ['/data/artists/artists.dat']
 }
 esCluster.addTask(cascadingLoadData)
-//cascadingLoadData.dependsOn(esStandIn)
-testCluster.dependsOn(cascadingLoadData)
 
 // Run the MR job to read data out of ES. Ensure Kerberos settings are available.
 HadoopMRJob cascadingReadData = config.createClusterTask('cascadingReadData', HadoopMRJob.class) {
@@ -693,8 +685,21 @@ HadoopMRJob cascadingReadData = config.createClusterTask('cascadingReadData', Ha
     args = ['/data/output/cascading']
 }
 esCluster.addTask(cascadingReadData)
-//cascadingReadData.dependsOn(esStandIn)
-testCluster.dependsOn(cascadingReadData)
+
+// =============================================================================
+// Copy job outputs
+// =============================================================================
+
+File outputDataDir = project.file(new File(project.buildDir, 'data'))
+Task createOutputDataDir = project.tasks.create("createOutputDataDir") {
+    doLast {
+        if (outputDataDir.exists()) {
+            // Clean out any prior results
+            outputDataDir.deleteDir()
+        }
+        outputDataDir.mkdirs()
+    }
+}
 
 Map<String, Task> readJobs = [
         'mr': mrReadData,
@@ -720,7 +725,14 @@ readJobs.forEach { integrationName, integrationReadTask ->
         environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
         args = ['-copyToLocal', "/data/output/$integrationName", outputDataDir]
     }
+    // When using testCluster, it should depend on the copy
+    // output tasks to ensure all jobs have run.
     testCluster.dependsOn(copyOutputTask)
+    // Integration test needs to depend on copy output tasks
+    // to ensure all integrations have their output files on
+    // disk
+    integrationTest.dependsOn(copyOutputTask)
 }
 
+// Finish cluster setup
 HadoopClusterFormationTasks.setup(project, config)
