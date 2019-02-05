@@ -78,7 +78,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     private String prefix;
     private String commitLogDir;
-    private EsMajorVersion version = TestUtils.getEsVersion();
+    private EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
     public AbstractJavaEsSparkStructuredStreamingTest(String prefix) throws Exception {
         this.prefix = prefix;

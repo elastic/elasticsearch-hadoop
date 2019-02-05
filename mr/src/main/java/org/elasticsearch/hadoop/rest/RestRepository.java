@@ -135,7 +135,7 @@ public class RestRepository implements Closeable, StatsAware {
             this.writeInitialized = true;
             this.bulkProcessor = new BulkProcessor(client, resources.getResourceWrite(), settings);
             this.trivialBytesRef = new BytesRef();
-            this.bulkEntryWriter = new BulkEntryWriter(settings, BulkCommands.create(settings, metaExtractor, client.internalVersion));
+            this.bulkEntryWriter = new BulkEntryWriter(settings, BulkCommands.create(settings, metaExtractor, client.clusterInfo.getMajorVersion()));
         }
     }
 
@@ -359,7 +359,7 @@ public class RestRepository implements Closeable, StatsAware {
     }
 
     public void delete() {
-        if (client.internalVersion.on(EsMajorVersion.V_1_X)) {
+        if (client.clusterInfo.getMajorVersion().on(EsMajorVersion.V_1_X)) {
             // ES 1.x - delete as usual
             // Delete just the mapping
             client.delete(resources.getResourceWrite().index() + "/" + resources.getResourceWrite().type());
@@ -390,7 +390,7 @@ public class RestRepository implements Closeable, StatsAware {
             }
             sb.append("/_search?scroll=10m&_source=false&size=");
             sb.append(batchSize);
-            if (client.internalVersion.onOrAfter(EsMajorVersion.V_5_X)) {
+            if (client.clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
                 sb.append("&sort=_doc");
             }
             else {
@@ -417,7 +417,7 @@ public class RestRepository implements Closeable, StatsAware {
                 // delete each retrieved batch, keep routing in mind:
                 String baseFormat = "{\"delete\":{\"_id\":\"%s\"}}\n";
                 String routedFormat;
-                if (client.internalVersion.onOrAfter(EsMajorVersion.V_7_X)) {
+                if (client.clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X)) {
                     routedFormat = "{\"delete\":{\"_id\":\"%s\", \"routing\":\"%s\"}}\n";
                 } else {
                     routedFormat = "{\"delete\":{\"_id\":\"%s\", \"_routing\":\"%s\"}}\n";

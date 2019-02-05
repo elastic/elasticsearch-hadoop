@@ -51,7 +51,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class AbstractCascadingHadoopSaveTest {
 
     private static final String INPUT = TestUtils.sampleArtistsDat(CascadingHadoopSuite.configuration);
-    private static final EsMajorVersion VERSION = TestUtils.getEsVersion();
+    private static final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @Test
     public void testWriteToES() throws Exception {

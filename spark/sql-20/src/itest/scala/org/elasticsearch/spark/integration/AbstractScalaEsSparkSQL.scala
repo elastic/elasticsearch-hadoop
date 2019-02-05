@@ -112,7 +112,7 @@ object AbstractScalaEsScalaSparkSQL {
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
 
-    val version = TestUtils.getEsVersion
+    val version = TestUtils.getEsClusterInfo.getMajorVersion
     if (version.before(EsMajorVersion.V_5_X)) {
       keywordType = "string"
       textType = "string"
@@ -216,7 +216,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
                 "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString(),
                 "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
-  val version = TestUtils.getEsVersion
+  val version = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword = AbstractScalaEsScalaSparkSQL.keywordType
   val text = AbstractScalaEsScalaSparkSQL.textType
 

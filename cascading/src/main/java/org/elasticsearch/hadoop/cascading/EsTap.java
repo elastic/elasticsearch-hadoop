@@ -19,10 +19,21 @@
 package org.elasticsearch.hadoop.cascading;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.elasticsearch.hadoop.EsHadoopException;
+import org.elasticsearch.hadoop.cfg.CompositeSettings;
+import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
+import org.elasticsearch.hadoop.mr.security.TokenUtil;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,6 +221,30 @@ public class EsTap extends Tap<Object, Object, Object> {
             Logger esTapLogger = LoggerFactory.getLogger(EsTap.class);
             esTapLogger.info(String.format("Elasticsearch Hadoop %s initialized", Version.version()));
             esTapLogger.warn("ES-Hadoop Cascading Integration is Deprecated as of 6.6.0 and will be removed in a later release.");
+        }
+    }
+
+    /**
+     * If Kerberos Security is enabled for Hadoop and Elasticsearch, this function will securely contact Elasticsearch
+     * using Kerberos to authenticate, and retrieve a delegation token for use by worker processes on the cluster.
+     * @param flowConnectorProperties The runtime properties for the Hadoop Flow Connector. Hadoop settings will also be loaded from
+     *                                the classpath.
+     */
+    public static void initCredentials(Properties flowConnectorProperties) {
+        Settings flowSettings = HadoopSettingsManager.loadFrom(flowConnectorProperties);
+        Settings hadoopClasspathSettings = HadoopSettingsManager.loadFrom(new Configuration());
+        Settings combinedSettings = new CompositeSettings(Arrays.asList(flowSettings, hadoopClasspathSettings));
+        InitializationUtils.setUserProviderIfNotSet(combinedSettings, HadoopUserProvider.class, log);
+        UserProvider userProvider = UserProvider.create(combinedSettings);
+        if (userProvider.isEsKerberosEnabled()) {
+            RestClient restClient = new RestClient(combinedSettings);
+            try {
+                TokenUtil.obtainAndCache(restClient, userProvider.getUser());
+            } catch (IOException e) {
+                throw new EsHadoopException("Could not obtain delegation token for Elasticsearch", e);
+            } finally {
+                restClient.close();
+            }
         }
     }
 }

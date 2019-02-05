@@ -40,7 +40,7 @@ import cascading.tuple.Fields;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractCascadingLocalJsonSaveTest {
 
-    EsMajorVersion version = TestUtils.getEsVersion();
+    EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @Test
     public void testWriteToES() throws Exception {

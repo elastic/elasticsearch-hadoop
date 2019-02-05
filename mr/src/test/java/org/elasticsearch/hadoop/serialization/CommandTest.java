@@ -26,6 +26,7 @@ import java.util.Map;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
@@ -510,6 +511,7 @@ public class CommandTest {
         InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
         InitializationUtils.setBytesConverterIfNeeded(set, JdkBytesConverter.class, null);
+        InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, null);
 
         set.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         set.setResourceWrite("foo/bar");

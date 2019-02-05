@@ -26,8 +26,12 @@ import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.security.AuthenticationMethod;
+import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.unit.Booleans;
 import org.elasticsearch.hadoop.util.unit.ByteSizeValue;
@@ -55,13 +59,64 @@ public abstract class Settings {
     /**
      * Get the internal version or {@link EsMajorVersion#LATEST} if not present
      * @return The {@link EsMajorVersion} extracted from the properties or {@link EsMajorVersion#LATEST} if not present
+     * @deprecated This is kind of a dangerous method to use, because it assumes that you care about which version you are working with,
+     *             but the version you receive from this call may not be accurate, and thus, cannot be trusted to let you make accurate
+     *             decisions about the version of ES you are speaking with. Prefer to use the {@link Settings#getInternalVersionOrThrow()}
+     *             instead.
      */
+    @Deprecated
     public EsMajorVersion getInternalVersionOrLatest() {
         String version = getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION, null);
         if (version == null) {
             return EsMajorVersion.LATEST;
         }
         return EsMajorVersion.parse(version);
+    }
+
+    /**
+     * Get the internal cluster name and version or throw an {@link IllegalArgumentException} if not present
+     * @return the {@link ClusterInfo} extracted from the properties
+     */
+    public ClusterInfo getClusterInfoOrThrow() {
+        ClusterInfo clusterInfo = getClusterInfoOrNull();
+        if (clusterInfo == null) {
+            throw new IllegalArgumentException("Elasticsearch cluster name:[ " + InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME +
+                    "] not present in configuration");
+        }
+        return clusterInfo;
+    }
+
+    /**
+     * Get the internal cluster name and version or null if not present in the settings
+     * @return the {@link ClusterInfo} extracted from the properties or null if not present
+     */
+    public ClusterInfo getClusterInfoOrNull() {
+        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        if (clusterName == null) {
+            return null;
+        }
+        String clusterUUID = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
+        EsMajorVersion version = getInternalVersionOrThrow();
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), version);
+    }
+
+    /**
+     * Get the internal cluster name and version or throw an {@link IllegalArgumentException} if not present
+     * @return the {@link ClusterInfo} extracted from the properties
+     * @deprecated This is a dangerous method to use, because it assumes that you care about which cluster you are working with,
+     *     but the info you receive from this call may not be accurate, and thus, cannot be trusted to let you make accurate
+     *     decisions about the ES cluster you are speaking with. Prefer to use the {@link Settings#getClusterInfoOrThrow()}
+     *     instead.
+     */
+    @Deprecated
+    public ClusterInfo getClusterInfoOrUnnamedLatest() {
+        String clusterName = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        if (clusterName == null) {
+            return ClusterInfo.unnamedLatest();
+        }
+        String clusterUUID = getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
+        EsMajorVersion version = getInternalVersionOrLatest();
+        return new ClusterInfo(new ClusterName(clusterName, clusterUUID), version);
     }
 
     public String getNodes() {
@@ -441,6 +496,14 @@ public abstract class Settings {
         return getProperty(ES_NET_HTTP_AUTH_PASS);
     }
 
+    public String getNetworkSpnegoAuthElasticsearchPrincipal() {
+        return getProperty(ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL);
+    }
+
+    public boolean getNetworkSpnegoAuthMutual() {
+        return Booleans.parseBoolean(getProperty(ES_NET_SPNEGO_AUTH_MUTUAL, ES_NET_SPNEGO_AUTH_MUTUAL_DEFAULT));
+    }
+
     public String getNetworkProxyHttpHost() {
         return getProperty(ES_NET_PROXY_HTTP_HOST);
     }
@@ -511,6 +574,19 @@ public abstract class Settings {
         return Booleans.parseBoolean(getProperty(ES_NODES_RESOLVE_HOST_NAME), !getNodesWANOnly());
     }
 
+    public Settings setInternalClusterInfo(ClusterInfo clusterInfo) {
+        setProperty(INTERNAL_ES_CLUSTER_NAME, clusterInfo.getClusterName().getName());
+        if (clusterInfo.getClusterName().getUUID() != null) {
+            setProperty(INTERNAL_ES_CLUSTER_UUID, clusterInfo.getClusterName().getUUID());
+        }
+        setProperty(INTERNAL_ES_VERSION, clusterInfo.getMajorVersion().toString());
+        return this;
+    }
+
+    /**
+     * @deprecated prefer to use Settings#setInternalClusterInfo
+     */
+    @Deprecated
     public Settings setInternalVersion(EsMajorVersion version) {
         setProperty(INTERNAL_ES_VERSION, version.toString());
         return this;
@@ -593,6 +669,32 @@ public abstract class Settings {
 
     public boolean getDataFrameWriteNullValues() {
         return Booleans.parseBoolean(getProperty(ES_SPARK_DATAFRAME_WRITE_NULL_VALUES, ES_SPARK_DATAFRAME_WRITE_NULL_VALUES_DEFAULT));
+    }
+
+    public AuthenticationMethod getSecurityAuthenticationMethod() {
+        AuthenticationMethod authMode = null;
+        String authSetting = getProperty(ConfigurationOptions.ES_SECURITY_AUTHENTICATION);
+        // Check for a valid auth setting
+        if (authSetting != null) {
+            authMode = AuthenticationMethod.get(authSetting);
+            if (authMode == null) {
+                // Property was set but was invalid auth mode value
+                throw new EsHadoopIllegalArgumentException("Could not determine auth mode. Property [" +
+                        ConfigurationOptions.ES_SECURITY_AUTHENTICATION + "] was set to unknown mode [" + authSetting + "]. " +
+                        "Use a valid auth mode from the following: " + AuthenticationMethod.getAvailableMethods());
+            }
+        }
+        // Check if user name is set in the settings for backwards compatibility.
+        if (authMode == null && getNetworkHttpAuthUser() != null) {
+            authMode = AuthenticationMethod.BASIC;
+        } else if (authMode == null) {
+            authMode = AuthenticationMethod.SIMPLE;
+        }
+        return authMode;
+    }
+
+    public String getSecurityUserProviderClass() {
+        return getProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS);
     }
 
     public abstract InputStream loadResource(String location);

@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.cfg.HadoopSettings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -156,6 +157,7 @@ public class EsInputFormat<K, V> extends InputFormat<K, V> implements org.apache
 
             // initialize mapping/ scroll reader
             InitializationUtils.setValueReaderIfNotSet(settings, WritableValueReader.class, log);
+            InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
             PartitionDefinition part = esSplit.getPartition();
             PartitionReader partitionReader = RestService.createReader(settings, part, log);

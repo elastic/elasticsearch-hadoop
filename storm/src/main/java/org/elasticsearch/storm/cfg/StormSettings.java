@@ -78,6 +78,17 @@ public class StormSettings extends Settings {
         return StringUtils.tokenize(getProperty(ES_STORM_SPOUT_FIELDS, ES_STORM_SPOUT_FIELDS_DEFAULT));
     }
 
+    public int getNimbusCredentialRenewersFrequencySeconds() {
+        Object seconds = cfg.get("nimbus.credential.renewers.freq.secs");
+        if (seconds == null) {
+            return -1;
+        } else if (seconds instanceof Number) {
+            return ((Number) seconds).intValue();
+        } else {
+            return Integer.parseInt(seconds.toString());
+        }
+    }
+
     @Override
     public InputStream loadResource(String location) {
         return IOUtils.open(location);

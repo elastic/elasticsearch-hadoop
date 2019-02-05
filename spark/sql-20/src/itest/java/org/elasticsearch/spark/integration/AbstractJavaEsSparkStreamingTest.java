@@ -39,6 +39,7 @@ import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted;
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped;
 import org.apache.spark.streaming.scheduler.StreamingListenerStreamingStarted;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
+import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -115,7 +116,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     private String prefix;
     private Map<String, String> cfg = new HashMap<>();
     private JavaStreamingContext ssc = null;
-    private EsMajorVersion version = TestUtils.getEsVersion();
+    private EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
     public AbstractJavaEsSparkStreamingTest(String prefix, boolean readMetadata) {
         this.prefix = prefix;
@@ -383,10 +384,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
 
     @Test
     public void testEsRDDIngest() throws Exception {
-        try (RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient()) {
-            EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
-            Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
-        }
+        EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
 
         RestUtils.ExtendedRestClient client = new RestUtils.ExtendedRestClient();
         String pipelineName =  prefix + "-pipeline";

@@ -50,7 +50,7 @@ public class AbstractHiveSaveTest {
     @Before
     public void before() throws Exception {
         HiveSuite.before();
-        targetVersion = TestUtils.getEsVersion();
+        targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
     }
 
     @After

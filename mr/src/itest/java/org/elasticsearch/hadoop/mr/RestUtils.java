@@ -30,8 +30,8 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -43,13 +43,13 @@ public class RestUtils {
 
     public static class ExtendedRestClient extends RestClient {
 
-        private static EsMajorVersion TEST_VERSION = null;
+        private static ClusterInfo TEST_CLUSTER = null;
 
         private static Settings withVersion(Settings settings) {
-            if (TEST_VERSION == null) {
-                TEST_VERSION = TestUtils.getEsVersion();
+            if (TEST_CLUSTER == null) {
+                TEST_CLUSTER = TestUtils.getEsClusterInfo();
             }
-            settings.setInternalVersion(TEST_VERSION);
+            settings.setInternalClusterInfo(TEST_CLUSTER);
             return settings;
         }
 

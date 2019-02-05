@@ -52,7 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class AbstractCascadingLocalSaveTest {
 
     private static final String INPUT = TestUtils.sampleArtistsDat();
-    private static final EsMajorVersion VERSION = TestUtils.getEsVersion();
+    private static final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @Test
     public void testWriteToES() throws Exception {

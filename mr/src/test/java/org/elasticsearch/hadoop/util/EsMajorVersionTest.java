@@ -68,10 +68,12 @@ public class EsMajorVersionTest {
         for (int i = 0; i < SORTED_VERSIONS.size(); i++) {
             Version official = SORTED_VERSIONS.get(i);
             EsMajorVersion version = EsMajorVersion.parse(official.toString());
+            EsMajorVersion version2 = EsMajorVersion.parse(official.toString());
             assertThat(version.major,
                     equalTo(official.major));
             assertTrue(version.onOrAfter(version));
             assertTrue(version.equals(version));
+            assertTrue(version.equals(version2));
             for (int j = i + 1; j < SORTED_VERSIONS.size(); j++) {
                 Version cmp_official = SORTED_VERSIONS.get(j);
                 EsMajorVersion cmp_version = EsMajorVersion.parse(cmp_official.toString());

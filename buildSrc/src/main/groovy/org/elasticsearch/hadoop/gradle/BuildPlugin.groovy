@@ -214,6 +214,7 @@ class BuildPlugin implements Plugin<Project>  {
                 exclude group: "org.elasticsearch", module: "elasticsearch-core"
                 exclude group: "org.elasticsearch", module: "elasticsearch-secure-sm"
             }
+
             testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
             testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
             testRuntime "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}"
@@ -224,6 +225,11 @@ class BuildPlugin implements Plugin<Project>  {
             testRuntime "com.vividsolutions:jts:1.13"
 
             // TODO: Remove when we merge ITests to test dirs
+            itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+                // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
+                // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
+                exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+            }
             itestCompile project.sourceSets.main.output
             itestCompile project.configurations.testCompile
             itestCompile project.configurations.provided
