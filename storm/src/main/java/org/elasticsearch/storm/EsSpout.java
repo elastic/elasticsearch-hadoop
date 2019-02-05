@@ -39,10 +39,12 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.PartitionDefinition;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.MultiReaderIterator;
+import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.storm.cfg.StormSettings;
 import org.elasticsearch.storm.cfg.TupleFailureHandling;
+import org.elasticsearch.storm.security.EsClusterInfoSelector;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
 
@@ -75,6 +77,10 @@ public class EsSpout implements IRichSpout {
         this(target, query, null);
     }
 
+    public EsSpout(String target, Map configuration) {
+        this(target, null, configuration);
+    }
+
     public EsSpout(String target, String query, Map configuration) {
         if (configuration != null) {
             spoutConfig.putAll(configuration);
@@ -86,7 +92,8 @@ public class EsSpout implements IRichSpout {
             spoutConfig.put(ES_RESOURCE_READ, target);
         }
 
-        tupleFields = new StormSettings(spoutConfig).getStormSpoutFields();
+        StormSettings stormSettings = new StormSettings(spoutConfig);
+        tupleFields = stormSettings.getStormSpoutFields();
     }
 
     @Override
@@ -99,6 +106,9 @@ public class EsSpout implements IRichSpout {
         StormSettings settings = new StormSettings(copy);
 
         InitializationUtils.setValueReaderIfNotSet(settings, JdkValueReader.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, JdkUserProvider.class, log);
+
+        EsClusterInfoSelector.populate(settings);
 
         ackReads = settings.getStormSpoutReliable();
 

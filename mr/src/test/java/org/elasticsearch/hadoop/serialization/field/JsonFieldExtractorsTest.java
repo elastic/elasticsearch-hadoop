@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.serialization.field;
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -35,6 +36,7 @@ public class JsonFieldExtractorsTest {
     @Test
     public void indexAndType() {
         Settings settings = new TestSettings();
+        settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setResourceWrite("test/{field}");
         JsonFieldExtractors jsonFieldExtractors = new JsonFieldExtractors(settings);
 
@@ -50,6 +52,7 @@ public class JsonFieldExtractorsTest {
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void indexAndTypeNull() {
         Settings settings = new TestSettings();
+        settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setResourceWrite("test/{optional}");
         JsonFieldExtractors jsonFieldExtractors = new JsonFieldExtractors(settings);
 
@@ -66,6 +69,7 @@ public class JsonFieldExtractorsTest {
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void indexAndTypeFailure() {
         Settings settings = new TestSettings();
+        settings.setInternalVersion(EsMajorVersion.LATEST);
         settings.setResourceWrite("test/{optional}");
         JsonFieldExtractors jsonFieldExtractors = new JsonFieldExtractors(settings);
 

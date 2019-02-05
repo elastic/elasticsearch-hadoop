@@ -25,6 +25,8 @@ import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
+import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.RestService
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.hadoop.util.ObjectUtils
@@ -69,6 +71,8 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @transient private[spark] lazy val esCfg = {
     val cfg = new SparkSettingsManager().load(sc.getConf).copy();
     cfg.merge(params)
+    InitializationUtils.setUserProviderIfNotSet(cfg, classOf[HadoopUserProvider], logger)
+    cfg
   }
 
   @transient private[spark] lazy val esPartitions = {

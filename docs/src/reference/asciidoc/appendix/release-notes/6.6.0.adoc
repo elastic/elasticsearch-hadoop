@@ -1,0 +1,26 @@
+[[eshadoop-6.6.0]]
+== Elasticsearch for Apache Hadoop version 6.6.0
+January 29, 2019
+
+[[deprecation-6.6.0]]
+=== Deprecations
+* Cascading is now deprecated and will be removed in 7.0
+https://github.com/elastic/elasticsearch-hadoop/issues/1222[#1222]
+* Using SOCKS proxy to connect to Elasticsearch is new deprecated and will be removed in a future release
+https://github.com/elastic/elasticsearch-hadoop/issues/1223[#1223]
+
+[[enhancements-6.6.0]]
+=== Enhancements
+REST::
+* Be able to specify preference query string option when querying Elasticsearch
+https://github.com/elastic/elasticsearch-hadoop/issues/1213[#1213]
+https://github.com/elastic/elasticsearch-hadoop/pull/1214[#1214]
+Serialization::
+* Support for custom MetadataExtractor within Spark flows
+https://github.com/elastic/elasticsearch-hadoop/pull/1159[#1159]
+
+[[bugs-6.6.0]]
+=== Bug Fixes
+Core::
+* Duplicated jars in classpath when submitting a spark job with Elasticsearch to YARN
+https://github.com/elastic/elasticsearch-hadoop/issues/1097[#1097][#1216]

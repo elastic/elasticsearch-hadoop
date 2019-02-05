@@ -96,11 +96,11 @@ private[sql] object SchemaUtils {
 
   def discoverMappingAndGeoFields(cfg: Settings): (Mapping, JMap[String, GeoField]) = {
     InitializationUtils.validateSettings(cfg)
-    InitializationUtils.discoverEsVersion(cfg, Utils.LOGGER)
+    InitializationUtils.discoverClusterInfo(cfg, Utils.LOGGER)
 
     val repo = new RestRepository(cfg)
     try {
-      if (repo.indexExists(true)) {
+      if (repo.resourceExists(true)) {
         var mappingSet = repo.getMappings
         if (mappingSet == null || mappingSet.isEmpty) {
           throw new EsHadoopIllegalArgumentException(s"Cannot find mapping for ${cfg.getResourceRead} - one is required before using Spark SQL")

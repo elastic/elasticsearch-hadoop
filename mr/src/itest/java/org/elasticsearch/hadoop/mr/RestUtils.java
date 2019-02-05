@@ -26,13 +26,12 @@ import org.elasticsearch.hadoop.rest.Request;
 import org.elasticsearch.hadoop.rest.Response;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.rest.RestClient.Health;
-import org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser;
 import org.elasticsearch.hadoop.serialization.dto.mapping.Mapping;
 import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.BytesArray;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.IOUtils;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -44,13 +43,13 @@ public class RestUtils {
 
     public static class ExtendedRestClient extends RestClient {
 
-        private static EsMajorVersion TEST_VERSION = null;
+        private static ClusterInfo TEST_CLUSTER = null;
 
         private static Settings withVersion(Settings settings) {
-            if (TEST_VERSION == null) {
-                TEST_VERSION = TestUtils.getEsVersion();
+            if (TEST_CLUSTER == null) {
+                TEST_CLUSTER = TestUtils.getEsClusterInfo();
             }
-            settings.setInternalVersion(TEST_VERSION);
+            settings.setInternalClusterInfo(TEST_CLUSTER);
             return settings;
         }
 
@@ -87,24 +86,20 @@ public class RestUtils {
     public static void putMapping(String index, String type, byte[] content) throws Exception {
         RestClient rc = new ExtendedRestClient();
         BytesArray bs = new BytesArray(content);
-        rc.putMapping(index, index + "/" + type + "/_mapping", bs.bytes());
+        rc.putMapping(index, type, bs.bytes());
         rc.close();
     }
 
-    public static Mapping getMapping(String indexAndType) throws Exception {
-        int slash = indexAndType.indexOf('/');
-        if (slash != -1) {
-            String index = indexAndType.substring(0, slash);
-            String type = indexAndType.substring(slash+1);
-            return getMappings(index).getMapping(index, type);
-        } else {
-            return getMappings(indexAndType).getResolvedView();
-        }
+    public static Mapping getMapping(String index, String type) throws Exception {
+        ExtendedRestClient rc = new ExtendedRestClient();
+        MappingSet parseField = rc.getMappings(index + "/_mapping/" + type, true);
+        rc.close();
+        return parseField.getMapping(index, type);
     }
 
     public static MappingSet getMappings(String index) throws Exception {
         ExtendedRestClient rc = new ExtendedRestClient();
-        MappingSet parseField = FieldParser.parseMapping(rc.getMapping(index + "/_mapping"));
+        MappingSet parseField = rc.getMappings(index + "/_mapping", false);
         rc.close();
         return parseField;
     }

@@ -26,6 +26,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 import org.elasticsearch.hadoop.cfg.Settings
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.hadoop.rest.InitializationUtils
 import org.elasticsearch.hadoop.rest.PartitionDefinition
 import org.elasticsearch.spark.rdd.AbstractEsRDD
@@ -57,6 +58,7 @@ private[spark] class ScalaEsRowRDDIterator(
 
   override def initReader(settings: Settings, log: Log) = {
     InitializationUtils.setValueReaderIfNotSet(settings, classOf[ScalaRowValueReader], log)
+    InitializationUtils.setUserProviderIfNotSet(settings, classOf[HadoopUserProvider], log)
 
     // parse the structure and save the order (requested by Spark) for each Row (root and nested)
     // since the data returned from Elastic is likely to not be in the same order

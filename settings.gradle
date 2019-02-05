@@ -17,3 +17,10 @@ project(":sql-20").name = "elasticsearch-spark-20"
 
 include 'storm'
 project(":storm").name = "elasticsearch-storm"
+
+include 'test'
+include 'test:fixtures'
+include 'test:fixtures:minikdc'
+
+include 'qa'
+include 'qa:kerberos'

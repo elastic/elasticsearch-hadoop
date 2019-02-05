@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
+import static org.elasticsearch.hadoop.util.EsMajorVersion.V_6_X;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
@@ -49,7 +50,7 @@ public class AbstractHiveSaveTest {
     @Before
     public void before() throws Exception {
         HiveSuite.before();
-        targetVersion = TestUtils.getEsVersion();
+        targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
     }
 
     @After
@@ -121,10 +122,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testBasicSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-artists/data").toString(),
+        assertThat(RestUtils.getMappings("hive-artists").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -178,10 +179,10 @@ public class AbstractHiveSaveTest {
     @Test
     public void testCompoundSaveMapping() throws Exception {
         assertThat(
-                RestUtils.getMapping("hive-compound/data").toString(),
+                RestUtils.getMappings("hive-compound").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[mapids=LONG, rdata=[1=TEXT, 10=TEXT, 11=TEXT, 12=TEXT, 13=TEXT, 2=TEXT, 3=TEXT, 4=TEXT, 5=TEXT, 6=TEXT, 7=TEXT, 8=TEXT, 9=TEXT], rid=LONG]")
-                        : is("data=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
+                        ? is("*/*=[mapids=LONG, rdata=[1=TEXT, 10=TEXT, 11=TEXT, 12=TEXT, 13=TEXT, 2=TEXT, 3=TEXT, 4=TEXT, 5=TEXT, 6=TEXT, 7=TEXT, 8=TEXT, 9=TEXT], rid=LONG]")
+                        : is("*/*=[mapids=LONG, rdata=[1=STRING, 10=STRING, 11=STRING, 12=STRING, 13=STRING, 2=STRING, 3=STRING, 4=STRING, 5=STRING, 6=STRING, 7=STRING, 8=STRING, 9=STRING], rid=LONG]"));
     }
 
 
@@ -217,10 +218,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testTimestampSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-artiststimestamp/data").toString(),
+        assertThat(RestUtils.getMappings("hive-artiststimestamp").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[dte=DATE, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[dte=DATE, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[dte=DATE, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -251,10 +252,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-aliassave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-aliassave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[@timestamp=DATE, links=[picture=TEXT, url_123=TEXT], name=TEXT]")
-                        : is("data=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
+                        ? is("*/*=[@timestamp=DATE, links=[picture=TEXT, url_123=TEXT], name=TEXT]")
+                        : is("*/*=[@timestamp=DATE, links=[picture=STRING, url_123=STRING], name=STRING]"));
     }
 
     @Test
@@ -292,10 +293,10 @@ public class AbstractHiveSaveTest {
     @Test
     @Ignore
     public void testDateSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-datesave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-datesave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, date=LONG, name=TEXT, links=[url=TEXT, picture=TEXT]]")
-                        : is("data=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
+                        ? is("*/*=[id=LONG, date=LONG, name=TEXT, links=[url=TEXT, picture=TEXT]]")
+                        : is("*/*=[id=LONG, date=LONG, name=STRING, links=[url=STRING, picture=STRING]]"));
     }
 
     @Test
@@ -325,10 +326,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCharMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-charsave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-charsave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                    ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                    : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                    ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                    : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -360,10 +361,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testExternalSerDeMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-externalserde/data").toString(),
+        assertThat(RestUtils.getMappings("hive-externalserde").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[data=TEXT]")
-                        : is("data=[data=STRING]"));
+                        ? is("*/*=[data=TEXT]")
+                        : is("*/*=[data=STRING]"));
     }
 
     @Test
@@ -393,10 +394,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testVarcharSaveMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-varcharsave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-varcharsave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -434,10 +435,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testCreateMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-createsave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-createsave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -508,10 +509,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-updatesave/data").toString(),
+        assertThat(RestUtils.getMappings("hive-updatesave").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test(expected = HiveSQLException.class)
@@ -584,7 +585,7 @@ public class AbstractHiveSaveTest {
     @Test
     public void testParentChildMapping() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
-        assertThat(RestUtils.getMapping("hive-pc/child").toString(),
+        assertThat(RestUtils.getMapping("hive-pc", "child").toString(),
                 targetVersion.onOrAfter(V_5_X)
                         ? is("child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
                         : is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
@@ -623,10 +624,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-pattern-12/data").toString(),
+        assertThat(RestUtils.getMappings("hive-pattern-12").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
@@ -663,10 +664,10 @@ public class AbstractHiveSaveTest {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("hive-pattern-format-2012-10-06/data").toString(),
+        assertThat(RestUtils.getMappings("hive-pattern-format-2012-10-06").getResolvedView().toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT, ts=DATE]")
-                        : is("data=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
+                        ? is("*/*=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT, ts=DATE]")
+                        : is("*/*=[id=LONG, links=[picture=STRING, url=STRING], name=STRING, ts=DATE]"));
     }
 
     @Test
@@ -701,7 +702,7 @@ public class AbstractHiveSaveTest {
         string = RestUtils.get("hive-fieldexclude/data/7");
         assertThat(string, containsString("Manson"));
 
-        assertFalse(RestUtils.getMapping("hive-fieldexclude/data").toString().contains("id="));
+        assertFalse(RestUtils.getMappings("hive-fieldexclude").getResolvedView().toString().contains("id="));
     }
 
     private String createTable(String tableName) {

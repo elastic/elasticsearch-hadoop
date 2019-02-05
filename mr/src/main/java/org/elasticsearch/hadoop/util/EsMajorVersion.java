@@ -18,12 +18,17 @@
  */
 package org.elasticsearch.hadoop.util;
 
+import java.io.Serializable;
+
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 
 /**
  * Elasticsearch major version information, useful to check client's query compatibility with the Rest API.
  */
-public class EsMajorVersion {
+public class EsMajorVersion implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     public static final EsMajorVersion V_0_X = new EsMajorVersion((byte) 0, "0.x");
     public static final EsMajorVersion V_1_X = new EsMajorVersion((byte) 1, "1.x");
     public static final EsMajorVersion V_2_X = new EsMajorVersion((byte) 2, "2.x");
@@ -99,7 +104,7 @@ public class EsMajorVersion {
         EsMajorVersion version = (EsMajorVersion) o;
 
         return major == version.major &&
-                version.equals(version.version);
+                this.version.equals(version.version);
     }
 
     @Override

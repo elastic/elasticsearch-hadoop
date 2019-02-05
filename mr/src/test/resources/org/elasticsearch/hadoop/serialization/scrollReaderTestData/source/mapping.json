@@ -1,27 +1,25 @@
 {
   "pig" : {
     "mappings" : {
-      "tupleartists" : {
-        "properties" : {
-          "_source" : {
-            "type" : "string"
-          },
-          "links" : {
-            "properties" : {
-              "picture" : {
-                "type" : "string"
-              },
-              "url" : {
-                "type" : "string"
-              },
-              "number" : {
-                "type" : "short"
-              }
+      "properties" : {
+        "_source" : {
+          "type" : "string"
+        },
+        "links" : {
+          "properties" : {
+            "picture" : {
+              "type" : "string"
+            },
+            "url" : {
+              "type" : "string"
+            },
+            "number" : {
+              "type" : "short"
             }
-          },
-          "name" : {
-            "type" : "string"
           }
+        },
+        "name" : {
+          "type" : "string"
         }
       }
     }

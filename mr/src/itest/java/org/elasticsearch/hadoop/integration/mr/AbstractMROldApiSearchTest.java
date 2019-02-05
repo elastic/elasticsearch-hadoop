@@ -82,7 +82,10 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicReadWithConstantRouting() throws Exception {
         String type = "data";
-        String target = "mroldapi-savewithconstantrouting/" + type;
+        String target = indexPrefix + "mroldapi-savewithconstantrouting";
+        if (TestUtils.getEsClusterInfo().getMajorVersion().onOrBefore(EsMajorVersion.V_6_X)) {
+            target = target + "/" + type;
+        }
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");

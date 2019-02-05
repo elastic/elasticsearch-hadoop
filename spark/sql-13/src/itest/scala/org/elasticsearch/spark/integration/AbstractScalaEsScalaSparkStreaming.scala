@@ -29,6 +29,7 @@ import org.apache.spark.{SparkConf, SparkContext, SparkException}
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings}
@@ -88,7 +89,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   val sc = AbstractScalaEsScalaSparkStreaming.sc
   val cfg = Map(ConfigurationOptions.ES_READ_METADATA -> readMetadata.toString)
-  val version = TestUtils.getEsVersion
+  val version = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
   val text = if (version.onOrAfter(EsMajorVersion.V_5_X)) "text" else "string"
 
@@ -261,15 +262,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsRDDIngest(): Unit = {
-    try {
-      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-      try {
-        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
-      } finally {
-        if (versionTestingClient != null) versionTestingClient.close()
-      }
-    }
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only")
 
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val pipelineName: String = prefix + "-pipeline"
@@ -335,8 +328,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString(): Unit = {
-    val mapping = s"""{
-                    |  "data": {
+    val mapping = wrapMapping("data", s"""{
                     |    "properties": {
                     |      "id": {
                     |        "type": "$keyword"
@@ -352,16 +344,19 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
                     |        }
                     |      }
                     |    }
-                    |  }
-                    |}""".stripMargin
+                    |}""".stripMargin)
 
     val index = "spark-streaming-test-contact"
     val typed = "data"
-    val target = s"$index/$typed"
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      (index, s"$index/_doc")
+    } else {
+      (s"$index/$typed", s"$index/$typed")
+    }
     RestUtils.touch(index)
     RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$target/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$docEndpoint/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$docEndpoint/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
     val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
     val props = Map("es.write.operation" -> "upsert",
@@ -393,11 +388,11 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     runStream(notes)(_.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script)))
 
-    assertTrue(RestUtils.exists(s"$target/1"))
-    assertThat(RestUtils.get(s"$target/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
+    assertTrue(RestUtils.exists(s"$docEndpoint/1"))
+    assertThat(RestUtils.get(s"$docEndpoint/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
 
-    assertTrue(RestUtils.exists(s"$target/2"))
-    assertThat(RestUtils.get(s"$target/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
+    assertTrue(RestUtils.exists(s"$docEndpoint/2"))
+    assertThat(RestUtils.get(s"$docEndpoint/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
   }
 
   @Test
@@ -413,6 +408,14 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     runStream(batch)(_.saveToEs(target))
 
     assertEquals(3, EsSpark.esRDD(sc, target, cfg).count())
+  }
+
+  def wrapMapping(typeName: String, typelessMapping: String): String = {
+    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      typelessMapping
+    } else {
+      s"""{"$typeName":$typelessMapping}"""
+    }
   }
 
   /**

@@ -1,0 +1,12 @@
+{
+    "index": {
+        "mappings": {
+            "properties" : {
+                "location" : {
+                    "type" : "ip",
+                    "ip" : "192.168.0.1"
+                }
+            }
+        }
+    }
+}

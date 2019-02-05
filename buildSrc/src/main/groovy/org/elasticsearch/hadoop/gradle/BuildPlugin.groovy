@@ -8,6 +8,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.DependencyResolveDetails
+import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
@@ -213,6 +214,7 @@ class BuildPlugin implements Plugin<Project>  {
                 exclude group: "org.elasticsearch", module: "elasticsearch-core"
                 exclude group: "org.elasticsearch", module: "elasticsearch-secure-sm"
             }
+
             testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
             testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
             testRuntime "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}"
@@ -223,6 +225,11 @@ class BuildPlugin implements Plugin<Project>  {
             testRuntime "com.vividsolutions:jts:1.13"
 
             // TODO: Remove when we merge ITests to test dirs
+            itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+                // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
+                // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
+                exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+            }
             itestCompile project.sourceSets.main.output
             itestCompile project.configurations.testCompile
             itestCompile project.configurations.provided
@@ -261,6 +268,14 @@ class BuildPlugin implements Plugin<Project>  {
                     }
 
                 }
+            }
+        }
+
+        // Do substitutions for ES fixture downloads
+        project.configurations.all { Configuration configuration ->
+            configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
+                subs.substitute(subs.module("downloads.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
+                        .with(subs.module("org.elasticsearch.distribution.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
             }
         }
     }

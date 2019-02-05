@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.handler.impl.DropAndLog;
 import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.BytesRef;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.IOUtils;
@@ -48,7 +49,7 @@ import static org.junit.Assert.fail;
 public class BulkProcessorTest {
 
     private BulkOutputGenerator generator;
-    private EsMajorVersion esMajorVersion;
+    private ClusterInfo esClusterInfo;
 
     private Settings testSettings;
     private String inputEntry;
@@ -68,7 +69,7 @@ public class BulkProcessorTest {
     }
 
     public BulkProcessorTest(EsMajorVersion version, BulkOutputGenerator generator) {
-        this.esMajorVersion = version;
+        this.esClusterInfo = ClusterInfo.unnamedClusterWithVersion(version);
         this.generator = generator;
     }
 
@@ -78,7 +79,7 @@ public class BulkProcessorTest {
 
         testSettings = new TestSettings();
         testSettings.setResourceWrite("foo/bar");
-        testSettings.setInternalVersion(esMajorVersion);
+        testSettings.setInternalClusterInfo(esClusterInfo);
         testSettings.setProperty(ConfigurationOptions.ES_BATCH_SIZE_ENTRIES, "10");
         testSettings.setProperty(ConfigurationOptions.ES_BATCH_WRITE_RETRY_WAIT, "1ms");
 

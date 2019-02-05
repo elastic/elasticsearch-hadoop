@@ -131,7 +131,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   val sc = AbstractScalaEsScalaSpark.sc
   val cfg = Map(ES_READ_METADATA -> readMetadata.toString())
-  val version: EsMajorVersion = TestUtils.getEsVersion
+  val version: EsMajorVersion = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword: String = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
 
   private def readAsRDD(uri: URI) = {
@@ -220,37 +220,6 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
   
-  //@Test - disabled since alpha4
-  def testEsRDDWriteWithMappingTimestamp() {
-    val mapping = """{ "data": {
-      | "_timestamp" : {
-      |   "enabled":true
-      | }
-      |}
-      }""".stripMargin
-
-    val index = "spark-test-scala-timestamp-write"
-    val typed = "data"
-    val target = s"$index/$typed"
-    RestUtils.touch(index)
-    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    
-    
-    val doc1 = Map("one" -> null, "two" -> Set("2"), "number" -> 1, "date" -> "2016-05-18T16:39:39.317Z")
-    val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2, "date" -> "2016-03-18T10:11:28.123Z")
-
-    sc.makeRDD(Seq(doc1, doc2)).saveToEs(target, Map(ES_MAPPING_ID -> "number", ES_MAPPING_TIMESTAMP -> "date", ES_MAPPING_EXCLUDE -> "date"))
-
-    assertEquals(2, EsSpark.esRDD(sc, target).count());
-    assertTrue(RestUtils.exists(target + "/1"))
-    assertTrue(RestUtils.exists(target + "/2"))
-
-    val search = RestUtils.get(target + "/_search?")
-    assertThat(search, containsString("SFO"))
-    assertThat(search, not(containsString("date")))
-    assertThat(search, containsString("_timestamp"))
-  }
-
   @Test
   def testEsRDDWriteWithDynamicMapping() {
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
@@ -354,14 +323,19 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     {
       val index = wrapIndex("spark-test-scala-write-join-separate")
       val typename = "join"
-      val target = s"$index/$typename"
-      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+      val (target, getEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+        RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
+        (index, s"$index/_doc")
+      } else {
+        RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
+        (s"$index/$typename", s"$index/$typename")
+      }
 
       sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
       sc.makeRDD(children).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
 
-      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
-      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+      assertThat(RestUtils.get(getEndpoint + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(getEndpoint + "/10?routing=1"), containsString(""""_routing":"1""""))
 
       val data = sc.esRDD(target).collectAsMap()
 
@@ -386,13 +360,18 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     {
       val index = wrapIndex("spark-test-scala-write-join-combined")
       val typename = "join"
-      val target = s"$index/$typename"
-      RestUtils.putMapping(index, typename, "data/join/mapping.json")
+      val (target, getEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+        RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
+        (index, s"$index/_doc")
+      } else {
+        RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
+        (s"$index/$typename", s"$index/$typename")
+      }
 
       sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
 
-      assertThat(RestUtils.get(target + "/10?routing=1"), containsString("kimchy"))
-      assertThat(RestUtils.get(target + "/10?routing=1"), containsString(""""_routing":"1""""))
+      assertThat(RestUtils.get(getEndpoint + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(getEndpoint + "/10?routing=1"), containsString(""""_routing":"1""""))
 
       val data = sc.esRDD(target).collectAsMap()
 
@@ -417,15 +396,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDIngest() {
-    try {
-      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-      try {
-        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
-      } finally {
-        if (versionTestingClient != null) versionTestingClient.close()
-      }
-    }
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only")
 
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val prefix: String = "spark"
@@ -503,9 +474,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     // assumes you have a script named "increment" as a file. I don't think there's a way to verify this before
     // the test runs. Maybe a quick poke before the job runs?
 
-    val mapping =
+    val mapping = wrapMapping("data",
       s"""{
-         |  "data": {
          |    "properties": {
          |      "id": {
          |        "type": "$keyword"
@@ -514,21 +484,29 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
          |        "type": "long"
          |      }
          |    }
-         |  }
-         |}""".stripMargin
+         |}""".stripMargin)
 
     val index = wrapIndex("spark-test-stored")
-    val typed = "data"
-    val target = s"$index/$typed"
     RestUtils.touch(index)
-    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
+
+    val typename = "data"
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      RestUtils.putMapping(index, typename, mapping)
+      (index, s"$index/_doc")
+    } else {
+      RestUtils.putMapping(index, typename, mapping)
+      (s"$index/$typename", s"$index/$typename")
+    }
+
     RestUtils.refresh(index)
-    RestUtils.put(s"$target/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
+    RestUtils.put(s"$docEndpoint/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
 
     // Test assumption:
     try {
       if (version.onOrBefore(EsMajorVersion.V_2_X)) {
         RestUtils.postData(s"$target/1/_update", """{"script_file":"increment"}""".getBytes(StringUtils.UTF_8))
+      } else if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+        RestUtils.postData(s"$index/_update/1", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
       } else {
         RestUtils.postData(s"$target/1/_update", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
       }
@@ -554,9 +532,8 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDWriteStoredScriptUpdate(): Unit = {
-    val mapping =
+    val mapping = wrapMapping("data",
       s"""{
-        |  "data": {
         |    "properties": {
         |      "id": {
         |        "type": "$keyword"
@@ -565,15 +542,19 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
         |        "type": "long"
         |      }
         |    }
-        |  }
-        |}""".stripMargin
+        |}""".stripMargin)
 
     val index = wrapIndex("spark-test-stored")
-    val typed = "data"
-    val target = s"$index/$typed"
+    val typename = "data"
     RestUtils.touch(index)
-    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    RestUtils.put(s"$target/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      RestUtils.putMapping(index, typename, mapping.getBytes())
+      (index, s"$index/_doc")
+    } else {
+      RestUtils.putMapping(index, typename, mapping.getBytes())
+      (s"$index/$typename", s"$index/$typename")
+    }
+    RestUtils.put(s"$docEndpoint/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
 
     val scriptName = "increment"
     val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
@@ -599,8 +580,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDWriteWithUpsertScriptUsingBothObjectAndRegularString() {
-    val mapping = s"""{
-                    |  "data": {
+    val mapping = wrapMapping("data", s"""{
                     |    "properties": {
                     |      "id": {
                     |        "type": "$keyword"
@@ -616,16 +596,21 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
                     |        }
                     |      }
                     |    }
-                    |  }
-                    |}""".stripMargin
+                    |}""".stripMargin)
 
     val index = wrapIndex("spark-test-contact")
-    val typed = "data"
-    val target = s"$index/$typed"
+    val typename = "data"
     RestUtils.touch(index)
-    RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$target/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$target/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      RestUtils.putMapping(index, typename, mapping.getBytes())
+      (index, s"$index/_doc")
+    } else {
+      RestUtils.putMapping(index, typename, mapping.getBytes())
+      (s"$index/$typename", s"$index/$typename")
+    }
+    RestUtils.postData(s"$docEndpoint/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$docEndpoint/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
     val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
     val props = Map("es.write.operation" -> "upsert",
@@ -658,11 +643,11 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     }
     notes.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script))
 
-    assertTrue(RestUtils.exists(s"$target/1"))
-    assertThat(RestUtils.get(s"$target/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
+    assertTrue(RestUtils.exists(s"$docEndpoint/1"))
+    assertThat(RestUtils.get(s"$docEndpoint/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
 
-    assertTrue(RestUtils.exists(s"$target/2"))
-    assertThat(RestUtils.get(s"$target/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
+    assertTrue(RestUtils.exists(s"$docEndpoint/2"))
+    assertThat(RestUtils.get(s"$docEndpoint/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
   }
 
   @Test
@@ -683,6 +668,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDReadNoType(): Unit = {
+    EsAssume.versionOnOrBefore(EsMajorVersion.V_6_X, "after 6.x, it is assumed that new types are unnamed.")
     val doc =
       """{
         |  "id": 1,
@@ -701,13 +687,23 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDReadQuery() {
-    val target = "spark-test-scala-basic-query-read/data"
-    RestUtils.touch("spark-test-scala-basic-query-read")
-    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.refresh("spark-test-scala-basic-query-read");
+    val index = "spark-test-scala-basic-query-read"
+    val typename = "data"
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      (index, s"$index/_doc")
+    } else {
+      (s"$index/$typename", s"$index/$typename")
+    }
+    RestUtils.touch(index)
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.refresh(index)
 
-    val queryTarget = "*-scala-basic-query-read/data"
+    val queryTarget = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      "*-scala-basic-query-read"
+    } else {
+      "*-scala-basic-query-read/" + typename
+    }
     val esData = EsSpark.esRDD(sc, queryTarget, "?q=message:Hello World", cfg)
     val newData = EsSpark.esRDD(sc, collection.mutable.Map(cfg.toSeq: _*) += (
       ES_RESOURCE -> queryTarget,
@@ -725,10 +721,16 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDReadAsJson() {
-    val target = wrapIndex("spark-test-scala-basic-json-read/data")
-    RestUtils.touch(wrapIndex("spark-test-scala-basic-json-read"))
-    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    val index = wrapIndex("spark-test-scala-basic-json-read")
+    val typename = "data"
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      (index, s"$index/_doc")
+    } else {
+      (s"$index/$typename", s"$index/$typename")
+    }
+    RestUtils.touch(index)
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
     RestUtils.refresh(wrapIndex("spark-test-scala-basic-json-read"))
 
     val esData = EsSpark.esJsonRDD(sc, target, cfg)
@@ -741,11 +743,17 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testEsRDDReadWithSourceFilter() {
-    val target = wrapIndex("spark-test-scala-source-filter-read/data")
-    RestUtils.touch(wrapIndex("spark-test-scala-source-filter-read"))
-    RestUtils.postData(target, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.postData(target, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
-    RestUtils.refresh(wrapIndex("spark-test-scala-source-filter-read"))
+    val index = wrapIndex("spark-test-scala-source-filter-read")
+    val typename = "data"
+    val (target, docEndpoint) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      (index, s"$index/_doc")
+    } else {
+      (s"$index/$typename", s"$index/$typename")
+    }
+    RestUtils.touch(index)
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.postData(docEndpoint, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
+    RestUtils.refresh(index)
 
     val testCfg = cfg + (ConfigurationOptions.ES_READ_SOURCE_FILTER -> "message_date")
 
@@ -762,17 +770,23 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val doc = """
         | { "number" : 1, "list" : [ "an array", "some value"], "song" : "Golden Eyes" }
         """.stripMargin
-    val indexA = wrapIndex("spark-alias-indexa/type")
-    val indexB = wrapIndex("spark-alias-indexb/type")
+    val typename = wrapIndex("type")
+    val indexA = wrapIndex("spark-alias-indexa")
+    val indexB = wrapIndex("spark-alias-indexb")
     val alias = wrapIndex("spark-alias-alias")
+    val (aliasTarget, docEndpointA, docEndpointB) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      (alias, s"$indexA/_doc", s"$indexB/_doc")
+    } else {
+      (s"$alias/$typename", s"$indexA/$typename", s"$indexB/$typename")
+    }
 
-    RestUtils.postData(indexA + "/1", doc.getBytes())
-    RestUtils.postData(indexB + "/1", doc.getBytes())
+    RestUtils.postData(docEndpointA + "/1", doc.getBytes())
+    RestUtils.postData(docEndpointB + "/1", doc.getBytes())
 
     val aliases = """
         |{"actions" : [
-          | {"add":{"index":"""".stripMargin + wrapIndex("spark-alias-indexa") + """" ,"alias": """" + wrapIndex("spark-alias-alias") + """"}},
-          | {"add":{"index":"""".stripMargin + wrapIndex("spark-alias-indexb") + """" ,"alias": """" + wrapIndex("spark-alias-alias") + """"}}
+          | {"add":{"index":"""".stripMargin + indexA + """" ,"alias": """" + alias + """"}},
+          | {"add":{"index":"""".stripMargin + indexB + """" ,"alias": """" + alias + """"}}
         |]}
         """.stripMargin
 
@@ -780,7 +794,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     RestUtils.postData("_aliases", aliases.getBytes())
     RestUtils.refresh(alias)
 
-    val aliasRDD = EsSpark.esJsonRDD(sc, alias + "/type", cfg)
+    val aliasRDD = EsSpark.esJsonRDD(sc, aliasTarget, cfg)
     assertEquals(2, aliasRDD.count())
   }
 
@@ -791,7 +805,13 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       Map("field2" -> "bar"),
       Map("field1" -> 0.0, "field2" -> "baz")
     )
-    val target = wrapIndex("spark-test-nullasempty/data")
+    val index = wrapIndex("spark-test-nullasempty")
+    val typename = "data"
+    val target = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      index
+    } else {
+      s"$index/$typename"
+    }
     sc.makeRDD(data).saveToEs(target)
 
     assertEquals(3, EsSpark.esRDD(sc, target, cfg).count())
@@ -799,32 +819,37 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
   @Test
   def testNewIndexWithTemplate() {
-    val target = wrapIndex("spark-template-index/alias")
+    val index = wrapIndex("spark-template-index")
+    val typename = "alias"
+    val target = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      index
+    } else {
+      s"$index/alias"
+    }
 
-    val template = """
-       |{"template" : """".stripMargin + "spark-template-*" + s"""",
+    val template = s"""
+        |{
+        |"template" : "spark-template-*",
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
         |},
-        |"mappings" : {
-        |  "alias" : {
+        |"mappings" : ${wrapMapping("alias", s"""{
         |    "properties" : {
-        |      "name" : { "type" : "$keyword" },
+        |      "name" : { "type" : "${keyword}" },
         |      "number" : { "type" : "long" },
         |      "@ImportDate" : { "type" : "date" }
         |     }
-        |   }
-        | },
+        |   }}""".stripMargin)},
         |"aliases" : { "spark-temp-index" : {} }
-      |}""".stripMargin
+        |}""".stripMargin
     RestUtils.put("_template/" + wrapIndex("test_template"), template.getBytes)
 
     val rdd = readAsRDD(TestUtils.sampleArtistsJsonUri())
     EsSpark.saveJsonToEs(rdd, target)
     val esRDD = EsSpark.esRDD(sc, target, cfg)
     println(esRDD.count)
-    println(RestUtils.getMapping(target))
+    println(RestUtils.getMappings(index).getResolvedView)
 
     val erc = new ExtendedRestClient()
     erc.delete("_template/" + wrapIndex("test_template"))
@@ -834,7 +859,13 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   
   @Test
   def testEsSparkVsScCount() {
-    val target = wrapIndex("spark-test-check-counting/data")
+    val index = wrapIndex("spark-test-check-counting")
+    val typename = "data"
+    val target = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      index
+    } else {
+      s"$index/$typename"
+    }
     val rawCore = List( Map("colint" -> 1, "colstr" -> "s"),
                          Map("colint" -> null, "colstr" -> null) )
     sc.parallelize(rawCore, 1).saveToEs(target)
@@ -853,28 +884,15 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     assertEquals(0, rdd.count)
   }
 
-  //@Test
-  def testLoadJsonFile() {
-    val target = "lost/id"
-
-    val createIndex = """
-      |{"settings" : {
-        |"index" : {
-        |    "number_of_shards" : 10,
-        |    "number_of_replicas" : 1
-        |}
-      |}
-      |}""".stripMargin
-    RestUtils.postData("lost", createIndex.getBytes());
-
-    val rdd = readAsRDD(getClass().getResource("some.json").toURI())
-    EsSpark.saveJsonToEs(rdd, target, collection.mutable.Map(cfg.toSeq: _*) += (
-      ES_MAPPING_ID -> "id"))
-    val esRDD = EsSpark.esRDD(sc, target, cfg)
-    println(esRDD.count)
-  }
-
   def wrapIndex(index: String) = {
     prefix + index
+  }
+
+  def wrapMapping(mappingName: String, mapping: String): String = {
+    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
+      s"""{"$mappingName":$mapping}"""
+    } else {
+      mapping
+    }
   }
 }

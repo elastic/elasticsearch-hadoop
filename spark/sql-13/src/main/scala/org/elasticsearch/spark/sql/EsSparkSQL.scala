@@ -73,7 +73,7 @@ object EsSparkSQL {
       esCfg.merge(cfg.asJava)
 
       // Need to discover es version before checking index existence
-      InitializationUtils.discoverEsVersion(esCfg, LOG)
+      InitializationUtils.discoverClusterInfo(esCfg, LOG)
       InitializationUtils.checkIdForOperation(esCfg)
       InitializationUtils.checkIndexExistence(esCfg)
 

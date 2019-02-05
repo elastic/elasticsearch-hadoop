@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseMapping;
+import static org.elasticsearch.hadoop.serialization.dto.mapping.FieldParser.parseTypelessMappings;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -116,7 +116,7 @@ public class ScrollReaderJsonTest {
     @Test
     public void testScrollWithNestedFields() throws IOException {
         InputStream stream = getClass().getResourceAsStream(mappingData("source"));
-        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
+        MappingSet fl = parseTypelessMappings(new ObjectMapper().readValue(stream, Map.class));
 
         ScrollReaderConfigBuilder scrollCfg = getScrollCfg().setResolvedMapping(fl.getResolvedView());
         reader = new ScrollReader(scrollCfg);
@@ -193,7 +193,7 @@ public class ScrollReaderJsonTest {
     @Test
     public void testScrollWithJoinField() throws Exception {
         Map value = new ObjectMapper().readValue(getClass().getResourceAsStream(mappingData("join")), Map.class);
-        MappingSet mappings = parseMapping(value);
+        MappingSet mappings = parseTypelessMappings(value);
         // Make our own scroll reader, that ignores unmapped values like the rest of the code
         ScrollReaderConfigBuilder scrollCfg = getScrollCfg().setResolvedMapping(mappings.getResolvedView()).setIgnoreUnmappedFields(false);
         ScrollReader myReader = new ScrollReader(scrollCfg);
@@ -249,7 +249,7 @@ public class ScrollReaderJsonTest {
     @Test(expected = EsHadoopParsingException.class)
     public void testScrollWithParsingValueException() throws IOException {
         InputStream stream = getClass().getResourceAsStream(mappingData("numbers-as-strings"));
-        MappingSet fl = FieldParser.parseMapping(new ObjectMapper().readValue(stream, Map.class));
+        MappingSet fl = FieldParser.parseTypelessMappings(new ObjectMapper().readValue(stream, Map.class));
         ScrollReaderConfigBuilder scrollCfg = getScrollCfg()
                 .setResolvedMapping(fl.getResolvedView())
                 .setReturnRawJson(false);

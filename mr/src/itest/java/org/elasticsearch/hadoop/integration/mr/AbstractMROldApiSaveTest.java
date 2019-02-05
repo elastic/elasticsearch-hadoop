@@ -51,14 +51,13 @@ import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.MultiOutputFormat;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
-import org.junit.Assume;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -71,7 +70,7 @@ import static org.junit.Assume.assumeFalse;
 @RunWith(Parameterized.class)
 public class AbstractMROldApiSaveTest {
 
-    private EsMajorVersion version = TestUtils.getEsVersion();
+    private ClusterInfo clusterInfo = TestUtils.getEsClusterInfo();
 
     public static class TabMapper extends MapReduceBase implements Mapper {
 
@@ -213,12 +212,18 @@ public class AbstractMROldApiSaveTest {
         String type = "data";
         String target = index + "/" + type;
 
-        RestUtils.touch(index);
-        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
-
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, target);
+
+        RestUtils.touch(index);
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+            conf.set(ConfigurationOptions.ES_RESOURCE, index);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
+        } else {
+            conf.set(ConfigurationOptions.ES_RESOURCE, target);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        }
+
 
         runJob(conf);
     }
@@ -229,12 +234,17 @@ public class AbstractMROldApiSaveTest {
         String type = "data";
         String target = index + "/" + type;
 
-        RestUtils.touch(index);
-        RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
-
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
-        conf.set(ConfigurationOptions.ES_RESOURCE, target);
+
+        RestUtils.touch(index);
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X)) {
+            conf.set(ConfigurationOptions.ES_RESOURCE, index);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\"_routing\": {\"required\":true}}"));
+        } else {
+            conf.set(ConfigurationOptions.ES_RESOURCE, target);
+            RestUtils.putMapping(index, type, StringUtils.toUTF("{\""+ type + "\":{\"_routing\": {\"required\":true}}}"));
+        }
 
         runJob(conf);
     }
@@ -256,10 +266,7 @@ public class AbstractMROldApiSaveTest {
 
     @Test
     public void testSaveWithIngest() throws Exception {
-        RestUtils.ExtendedRestClient versionTestingClient = new RestUtils.ExtendedRestClient();
-        EsMajorVersion esMajorVersion = versionTestingClient.remoteEsVersion();
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X));
-        versionTestingClient.close();
+        EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only");
 
         JobConf conf = createJobConf();
 
@@ -317,7 +324,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_UPDATE_RETRY_ON_CONFLICT, "3");
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = 3");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
@@ -338,7 +345,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, " param1:<1>,   param2:number ");
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; String anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
@@ -359,7 +366,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"param1\":1, \"param2\":2}");
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "int counter = params.param1; int anothercounter = params.param2");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
@@ -380,7 +387,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"some_list\": [\"one\", \"two\"]}");
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet list = new HashSet(); list.add(ctx._source.list); list.add(params.some_list); ctx._source.list = list.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
@@ -419,7 +426,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS_JSON, "{ \"new_date\": [\"add me\", \"and me\"]}");
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "HashSet tmp = new HashSet(); tmp.addAll(ctx._source.tags); tmp.addAll(params.new_date); ctx._source.tags = tmp.toArray()");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {
@@ -487,7 +494,7 @@ public class AbstractMROldApiSaveTest {
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "<1>");
         conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_PARAMS, (conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true") ? "update_tags:name" :"update_tags:list"));
 
-        if (version.onOrAfter(EsMajorVersion.V_5_X)) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_5_X)) {
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_INLINE, "ctx._source.tags = params.update_tags");
             conf.set(ConfigurationOptions.ES_UPDATE_SCRIPT_LANG, "painless");
         } else {

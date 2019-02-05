@@ -40,6 +40,7 @@ import org.elasticsearch.hadoop.serialization.dto.mapping.MappingSet;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,10 +54,13 @@ public class AbstractRestQueryTest {
     private static Log log = LogFactory.getLog(AbstractRestQueryTest.class);
     private RestRepository client;
     private Settings settings;
+    private EsMajorVersion version;
 
     @Before
     public void start() throws IOException {
+        version = TestUtils.getEsClusterInfo().getMajorVersion();
         settings = new TestSettings("rest/savebulk");
+        settings.setInternalVersion(version);
         //testSettings.setPort(9200)
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
         settings.setProperty(ConfigurationOptions.ES_SERIALIZATION_WRITER_VALUE_CLASS, JdkValueWriter.class.getName());
@@ -80,12 +84,11 @@ public class AbstractRestQueryTest {
     public void testQueryBuilder() throws Exception {
         Settings sets = settings.copy();
         sets.setProperty(ConfigurationOptions.ES_QUERY, "?q=me*");
-        EsMajorVersion esVersion = EsMajorVersion.V_5_X;
+        sets.setInternalVersion(version);
         Resource read = new Resource(settings, true);
         SearchRequestBuilder qb =
-                new SearchRequestBuilder(esVersion, settings.getReadMetadata() && settings.getReadMetadataVersion())
-                        .types(read.type())
-                        .indices(read.index())
+                new SearchRequestBuilder(version, settings.getReadMetadata() && settings.getReadMetadataVersion())
+                        .resource(read)
                         .query(QueryUtils.parseQuery(settings))
                         .scroll(settings.getScrollKeepAlive())
                         .size(settings.getScrollSize())

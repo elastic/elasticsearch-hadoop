@@ -20,7 +20,6 @@ package org.elasticsearch.spark.rdd
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 import scala.collection.Map
-
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -30,6 +29,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_READ
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_RESOURCE_WRITE
 import org.elasticsearch.hadoop.cfg.PropertiesSettings
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.hadoop.rest.InitializationUtils
 
@@ -100,7 +100,8 @@ object EsSpark {
     config.merge(cfg.asJava)
 
     // Need to discover the EsVersion here before checking if the index exists
-    InitializationUtils.discoverEsVersion(config, LOG)
+    InitializationUtils.setUserProviderIfNotSet(config, classOf[HadoopUserProvider], LOG)
+    InitializationUtils.discoverClusterInfo(config, LOG)
     InitializationUtils.checkIdForOperation(config)
     InitializationUtils.checkIndexExistence(config)
 

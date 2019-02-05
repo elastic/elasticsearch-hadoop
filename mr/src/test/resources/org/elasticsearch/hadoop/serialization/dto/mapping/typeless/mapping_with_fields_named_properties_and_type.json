@@ -1,0 +1,48 @@
+{
+  "index" : {
+    "mappings" : {
+      "properties" : {
+        "field1" : {
+          "type" : "string"
+        },
+        "properties" : {
+          "properties" : {
+            "subfield1" : {
+              "type" : "string"
+            },
+            "subfield2" : {
+              "type" : "string"
+            }
+          }
+        },
+        "field2" : {
+          "properties" : {
+            "subfield3" : {
+              "type" : "string"
+            },
+            "properties" : {
+              "type" : "string"
+            },
+            "type" : {
+              "properties" : {
+                "properties" : {
+                  "properties" : {
+                    "properties" : {
+                      "type" : "string"
+                    },
+                    "subfield4" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "subfield5" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

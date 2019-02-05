@@ -211,10 +211,9 @@ public abstract class SettingsUtils {
 
     /**
      * Whether the settings indicate a ES 5.0.x (which introduces breaking changes) or otherwise.
-     *
-     * @param settings
-     * @return
+     * @deprecated Prefer to use {@link Settings#getClusterInfoOrThrow()} to check version is on or after 5.X
      */
+    @Deprecated
     public static boolean isEs50(Settings settings) {
         EsMajorVersion version = settings.getInternalVersionOrLatest();
         return version.onOrAfter(EsMajorVersion.V_5_X);

@@ -46,7 +46,7 @@ import static org.hamcrest.CoreMatchers.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractPigSaveTest extends AbstractPigTests {
 
-    private final EsMajorVersion VERSION = TestUtils.getEsVersion();
+    private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @BeforeClass
     public static void localStartup() throws Exception {
@@ -86,10 +86,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTupleMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-tupleartists/data").toString(),
+        assertThat(RestUtils.getMappings("pig-tupleartists").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[links=TEXT, name=TEXT]")
-                        : is("data=[links=STRING, name=STRING]"));
+                        ? is("*/*=[links=TEXT, name=TEXT]")
+                        : is("*/*=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -106,10 +106,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testBagMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-bagartists/data").toString(),
+        assertThat(RestUtils.getMappings("pig-bagartists").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[links=TEXT, name=TEXT]")
-                        : is("data=[links=STRING, name=STRING]"));
+                        ? is("*/*=[links=TEXT, name=TEXT]")
+                        : is("*/*=[links=STRING, name=STRING]"));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testTimestampMapping() throws Exception {
-        String mapping = RestUtils.getMapping("pig-timestamp/data").toString();
+        String mapping = RestUtils.getMappings("pig-timestamp").getResolvedView().toString();
         assertThat(mapping, containsString("date=DATE"));
     }
 
@@ -148,10 +148,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testFieldAliasMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-fieldalias/data").toString(),
+        assertThat(RestUtils.getMappings("pig-fieldalias").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]")
-                        : is("data=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
+                        ? is("*/*=[@timestamp=DATE, name=TEXT, picture=TEXT, url=TEXT]")
+                        : is("*/*=[@timestamp=DATE, name=STRING, picture=STRING, url=STRING]"));
     }
 
     @Test
@@ -169,10 +169,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCaseSensitivityMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-casesensitivity/data").toString(),
+        assertThat(RestUtils.getMappings("pig-casesensitivity").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]")
-                        : is("data=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
+                        ? is("*/*=[Name=TEXT, pIctUre=TEXT, uRL=TEXT]")
+                        : is("*/*=[Name=STRING, pIctUre=STRING, uRL=STRING]"));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testEmptyComplexStructuresMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-emptyconst/data").toString(), is("data=[]"));
+        assertThat(RestUtils.getMappings("pig-emptyconst").getResolvedView().toString(), is("*/*=[]"));
     }
 
     @Test
@@ -206,10 +206,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testCreateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-createwithid/data").toString(),
+        assertThat(RestUtils.getMappings("pig-createwithid").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=TEXT, name=TEXT]")
-                        : is("data=[id=LONG, links=STRING, name=STRING]"));
+                        ? is("*/*=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("*/*=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -242,10 +242,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testUpdateWithIdMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-update/data").toString(),
+        assertThat(RestUtils.getMappings("pig-update").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, links=TEXT, name=TEXT]")
-                        : is("data=[id=LONG, links=STRING, name=STRING]"));
+                        ? is("*/*=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("*/*=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
@@ -279,7 +279,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
     @Test
     public void testParentChildMapping() throws Exception {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
-        assertThat(RestUtils.getMapping("pig-pc/child").toString(),
+        assertThat(RestUtils.getMapping("pig-pc", "child").toString(),
                 VERSION.onOrAfter(V_5_X)
                         ? is("child=[id=LONG, links=TEXT, name=TEXT]")
                         : is("child=[id=LONG, links=STRING, name=STRING]"));
@@ -290,7 +290,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
             "data field into a joiner is bunk right now. Fix this when we figure " +
             "out how to handle tuples well in Pig...")
     public void testJoin() throws Exception {
-        RestUtils.putMapping("pig-join", "join", "data/join/mapping.json");
+        RestUtils.putMapping("pig-join", "join", "data/join/mapping/typed.json");
         RestUtils.refresh("pig-join");
 
         String script =
@@ -327,10 +327,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-pattern-9/data").toString(),
+        assertThat(RestUtils.getMappings("pig-pattern-9").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
-                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
+                        ? is("*/*=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("*/*=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     @Test
@@ -345,10 +345,10 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testIndexPatternFormatMapping() throws Exception {
-        assertThat(RestUtils.getMapping("pig-pattern-format-2001-10-06/data").toString(),
+        assertThat(RestUtils.getMappings("pig-pattern-format-2001-10-06").getResolvedView().toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("data=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
-                        : is("data=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
+                        ? is("*/*=[id=LONG, name=TEXT, picture=TEXT, tag=LONG, timestamp=DATE, url=TEXT]")
+                        : is("*/*=[id=LONG, name=STRING, picture=STRING, tag=LONG, timestamp=DATE, url=STRING]"));
     }
 
     private String loadArtistSource() {

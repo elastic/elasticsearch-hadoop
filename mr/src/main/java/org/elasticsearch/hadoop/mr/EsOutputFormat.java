@@ -35,6 +35,7 @@ import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.Resource;
 import org.elasticsearch.hadoop.rest.RestRepository;
@@ -169,6 +170,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
             InitializationUtils.setValueWriterIfNotSet(settings, WritableValueWriter.class, log);
             InitializationUtils.setBytesConverterIfNeeded(settings, WritableBytesConverter.class, log);
             InitializationUtils.setFieldExtractorIfNotSet(settings, MapWritableFieldExtractor.class, log);
+            InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
 
             PartitionWriter pw = RestService.createWriter(settings, currentInstance, -1, log);
 
@@ -257,7 +259,7 @@ public class EsOutputFormat extends OutputFormat implements org.apache.hadoop.ma
         Assert.hasText(settings.getResourceWrite(), String.format("No resource ['%s'] (index/query/location) specified", ES_RESOURCE));
 
         // Need to discover the ESVersion before checking if index exists.
-        InitializationUtils.discoverEsVersion(settings, log);
+        InitializationUtils.discoverClusterInfo(settings, log);
         InitializationUtils.checkIdForOperation(settings);
         InitializationUtils.checkIndexExistence(settings);
 
