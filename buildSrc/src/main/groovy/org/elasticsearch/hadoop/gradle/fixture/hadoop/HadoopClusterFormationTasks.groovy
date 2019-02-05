@@ -251,7 +251,6 @@ class HadoopClusterFormationTasks {
                 outputs.dir node.cwd
                 group = 'hadoopFixture'
             }
-            // FIXHERE: Check Previous
             setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
             setup = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, setup, node)
         }
@@ -259,7 +258,6 @@ class HadoopClusterFormationTasks {
         // Always extract the package contents, and configure the files
         setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distribution)
         setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
-        // FIXHERE: Extra Config Files
         setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
 
         // If the role for this instance is not a process, we skip creating start and stop tasks for it.
@@ -325,6 +323,8 @@ class HadoopClusterFormationTasks {
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
+        // TODO - This is a later item for CI stability
+        // This is here for the moment to keep parity with the ES fixture
         return setup
     }
 
@@ -360,6 +360,9 @@ class HadoopClusterFormationTasks {
     }
 
     static Task configureExtraConfigFilesTask(String name, Project project, Task setup, InstanceInfo node) {
+        // TODO: Extra Config Files
+        // We don't really need them at the moment, but might in the future.
+        // This is just here to keep parity with the ES fixture
         return setup
     }
 
@@ -411,10 +414,6 @@ class HadoopClusterFormationTasks {
     static Task configureStartTask(String name, Project project, Task setup, InstanceInfo node) {
         Task start = project.tasks.create(name: name, type: DefaultTask, dependsOn: setup)
         start.group = 'hadoopFixture'
-        // FIXHERE Do we need this?
-        //if (node.javaVersion != null) {
-        //    BuildPlugin.requireJavaHome(start, node.javaVersion)
-        //}
         start.doFirst {
             // Configure HADOOP_OPTS (or similar env) - adds system properties, assertion flags, remote debug etc
             String javaOptsEnvKey = node.config.getServiceDescriptor().javaOptsEnvSetting(node.config)
@@ -560,16 +559,6 @@ class HadoopClusterFormationTasks {
             logger.error("|\n|  [log]")
             instance.startLog.eachLine { line -> logger.error("|    ${line}") }
         }
-//        if (instance.pidFile.exists() && instance.failedMarker.exists() == false) {
-//            logger.error("|\n|  [jstack]")
-//            String pid = instance.pidFile.getText('UTF-8')
-//            ByteArrayOutputStream output = new ByteArrayOutputStream()
-//            project.exec {
-//                commandLine = ["${project.runtimeJavaHome}/bin/jstack", pid]
-//                standardOutput = output
-//            }
-//            output.toString('UTF-8').eachLine { line -> logger.error("|    ${line}") }
-//        }
         logger.error("|-----------------------------------------")
         throw new GradleException(msg)
     }

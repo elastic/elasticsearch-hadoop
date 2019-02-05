@@ -119,7 +119,7 @@ class InstanceInfo {
         } else {
             ant.echo(message: "==> [${new Date()}] checking health: ${waitUrl}",
                     level: 'info')
-            // FIXHERE make maxwait configurable
+            // TODO make maxwait configurable
             return new WaitForURL()
                     .setUrl(waitUrl)
                     .setTrustAllSSLCerts(true)
@@ -153,18 +153,7 @@ class InstanceInfo {
         failedMarker = new File(cwd, 'run.failed')
         startLog = new File(cwd, 'run.log')
 
-        // FIXHERE Determine Java Version
-//        if (version.before("6.2.0")) {
-//            javaVersion = 8
-//        } else if (version.onOrAfter("6.2.0") && version.before("6.3.0")) {
-//            javaVersion = 9
-//        } else if (project.inFipsJvm && version.onOrAfter("6.3.0") && version.before("6.4.0")) {
-//            /*
-//             * Elasticsearch versions before 6.4.0 cannot be run in a FIPS-140 JVM. If we're running
-//             * bwc tests in a FIPS-140 JVM, ensure that the pre v6.4.0 nodes use a Java 10 JVM instead.
-//             */
-//            javaVersion = 10
-//        }
+        // We just default to the current runtime at this time
         javaVersion = 8
 
         // Prepare Environment
