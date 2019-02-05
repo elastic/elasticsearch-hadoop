@@ -91,6 +91,9 @@ dependencies {
         exclude group: 'org.apache.hadoop'
     }
 
+    optional("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
     optional("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
@@ -103,6 +106,9 @@ dependencies {
 
     itestCompile(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
 
+    itestCompile("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'org.apache.hadoop'
+    }
     itestCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }

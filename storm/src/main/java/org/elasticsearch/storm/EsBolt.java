@@ -36,7 +36,9 @@ import org.elasticsearch.hadoop.rest.bulk.BulkResponse;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.rest.RestService;
 import org.elasticsearch.hadoop.rest.RestService.PartitionWriter;
+import org.elasticsearch.hadoop.security.JdkUserProvider;
 import org.elasticsearch.storm.cfg.StormSettings;
+import org.elasticsearch.storm.security.EsClusterInfoSelector;
 import org.elasticsearch.storm.serialization.StormTupleBytesConverter;
 import org.elasticsearch.storm.serialization.StormTupleFieldExtractor;
 import org.elasticsearch.storm.serialization.StormValueWriter;
@@ -60,17 +62,27 @@ public class EsBolt implements IRichBolt {
     private transient OutputCollector collector;
 
     public EsBolt(String target) {
-        boltConfig.put(ES_RESOURCE_WRITE, target);
+        this(target, null, null);
     }
 
     public EsBolt(String target, boolean writeAck) {
-        boltConfig.put(ES_RESOURCE_WRITE, target);
-        boltConfig.put(ES_STORM_BOLT_ACK, Boolean.toString(writeAck));
+        this(target, writeAck, null);
     }
 
     public EsBolt(String target, Map configuration) {
-        boltConfig.putAll(configuration);
+        this(target, null, configuration);
+    }
+
+    private EsBolt(String target, Boolean writeAck, Map configuration) {
         boltConfig.put(ES_RESOURCE_WRITE, target);
+
+        if (writeAck != null) {
+            boltConfig.put(ES_STORM_BOLT_ACK, Boolean.toString(writeAck));
+        }
+
+        if (configuration != null) {
+            boltConfig.putAll(configuration);
+        }
     }
 
     @Override
@@ -100,6 +112,9 @@ public class EsBolt implements IRichBolt {
         InitializationUtils.setValueWriterIfNotSet(settings, StormValueWriter.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, StormTupleBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, StormTupleFieldExtractor.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, JdkUserProvider.class, log);
+
+        EsClusterInfoSelector.populate(settings);
 
         writer = RestService.createWriter(settings, context.getThisTaskIndex(), totalTasks, log);
     }

@@ -291,6 +291,10 @@ public interface ConfigurationOptions {
     String ES_NET_HTTP_AUTH_USER = "es.net.http.auth.user";
     String ES_NET_HTTP_AUTH_PASS = "es.net.http.auth.pass";
 
+    String ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL = "es.net.spnego.auth.elasticsearch.principal";
+    String ES_NET_SPNEGO_AUTH_MUTUAL = "es.net.spnego.auth.mutual";
+    String ES_NET_SPNEGO_AUTH_MUTUAL_DEFAULT = "false";
+
     String ES_NET_PROXY_HTTP_HOST = "es.net.proxy.http.host";
     String ES_NET_PROXY_HTTP_PORT = "es.net.proxy.http.port";
     String ES_NET_PROXY_HTTP_USER = "es.net.proxy.http.user";
@@ -317,4 +321,8 @@ public interface ConfigurationOptions {
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS = "es.net.proxy.socks.use.system.props";
     @Deprecated
     String ES_NET_PROXY_SOCKS_USE_SYSTEM_PROPS_DEFAULT = "yes";
+
+    /** Security options **/
+    String ES_SECURITY_AUTHENTICATION = "es.security.authentication";
+    String ES_SECURITY_USER_PROVIDER_CLASS = "es.security.user.provider.class";
 }

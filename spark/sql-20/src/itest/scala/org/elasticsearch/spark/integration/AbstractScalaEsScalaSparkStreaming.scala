@@ -29,6 +29,7 @@ import org.apache.spark.{SparkConf, SparkContext, SparkException}
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
+import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestUtils
 import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings}
@@ -86,7 +87,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   val sc = AbstractScalaEsScalaSparkStreaming.sc
   val cfg = Map(ConfigurationOptions.ES_READ_METADATA -> readMetadata.toString)
-  val version = TestUtils.getEsVersion
+  val version = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword = if (version.onOrAfter(EsMajorVersion.V_5_X)) "keyword" else "string"
 
   var ssc: StreamingContext = _
@@ -242,15 +243,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
   @Test
   def testEsRDDIngest(): Unit = {
-    try {
-      val versionTestingClient: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
-      try {
-        val esMajorVersion: EsMajorVersion = versionTestingClient.remoteEsVersion
-        Assume.assumeTrue("Ingest Supported in 5.x and above only", esMajorVersion.onOrAfter(EsMajorVersion.V_5_X))
-      } finally {
-        if (versionTestingClient != null) versionTestingClient.close()
-      }
-    }
+    EsAssume.versionOnOrAfter(EsMajorVersion.V_5_X, "Ingest Supported in 5.x and above only")
 
     val client: RestUtils.ExtendedRestClient = new RestUtils.ExtendedRestClient
     val pipelineName: String = prefix + "-pipeline"

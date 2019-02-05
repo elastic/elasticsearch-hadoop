@@ -34,6 +34,7 @@ import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 
 /**
@@ -87,6 +88,8 @@ public class EsHiveOutputFormat extends EsOutputFormat implements HiveOutputForm
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
+
         // set write resource
         settings.setResourceWrite(settings.getResourceWrite());
 

@@ -56,7 +56,12 @@ import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
+import org.elasticsearch.hadoop.mr.security.TokenUtil;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.rest.RestClient;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.util.IOUtils;
 import org.elasticsearch.hadoop.util.ObjectUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -81,6 +86,8 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
 
     private static final Log log = LogFactory.getLog(EsStorage.class);
     private final boolean trace = log.isTraceEnabled();
+
+    private static final String CREDENTIALS_ADDED = "es.pig.credentials.added";
 
     private Properties properties = new Properties();
 
@@ -141,6 +148,24 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
     @Override
     public void setStoreLocation(String location, Job job) throws IOException {
         init(location, job, false);
+
+        // We don't set a property here to guard against adding a token to the
+        // Job multiple times. This is because setStoreLocation is called a
+        // bunch of times with DIFFERENT Job objects during job setup. Only
+        // the last Job object given is actually executed. There's no way to
+        // know which Job will be the last one passed in, and there's no other
+        // way to set options on that job.
+        //
+        // Additionally It's not really safe to cache a token on the current
+        // user and use that either since it will be cancelled at the end of
+        // the job by the resource manager. If there are other jobs running in
+        // this script, they will fail at start up because they shared a now-
+        // canceled token.
+        //
+        // We just need to live with this until Pig figures itself out.
+        Configuration cfg = job.getConfiguration();
+        Settings settings = HadoopSettingsManager.loadFrom(cfg);
+        addEsApiKeyToken(settings, job);
     }
 
     private void init(String location, Job job, boolean read) {
@@ -153,6 +178,9 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         InitializationUtils.setValueReaderIfNotSet(settings, PigValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, PigBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, PigFieldExtractor.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
+
+        InitializationUtils.discoverClusterInfo(settings, log);
 
         isJSON = settings.getOutputAsJson();
     }
@@ -228,8 +256,17 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         init(location, job, true);
 
         Configuration cfg = job.getConfiguration();
-
         Settings settings = HadoopSettingsManager.loadFrom(cfg);
+
+        // This method is called multiple times before the job is submitted.
+        // Use a property to check if we've already set credentials to keep
+        // us from creating new ones every call.
+        Properties udfProperties = getUDFProperties();
+        String delegationTokenSet = udfProperties.getProperty(CREDENTIALS_ADDED);
+        if (delegationTokenSet == null) {
+            addEsApiKeyToken(settings, job);
+            udfProperties.setProperty(CREDENTIALS_ADDED, "true");
+        }
 
         if (settings.getScrollFields() == null) {
             extractProjection(cfg);
@@ -354,6 +391,26 @@ public class EsStorage extends LoadFunc implements LoadMetadata, LoadPushDown, S
         this.signature = signature;
     }
 
+    private void addEsApiKeyToken(Settings esSettings, Job job) {
+        if (!UDFContext.getUDFContext().isFrontend()) {
+            return;
+        }
+
+        UserProvider userProvider = UserProvider.create(esSettings);
+        if (userProvider.isEsKerberosEnabled()) {
+            User user = userProvider.getUser();
+            if (user.getKerberosPrincipal() != null) {
+                RestClient tokenBootstrap = new RestClient(esSettings);
+                try {
+                    TokenUtil.obtainTokenForJob(tokenBootstrap, user, job);
+                } finally {
+                    tokenBootstrap.close();
+                }
+            } else {
+                log.info("Not loading Elasticsearch API Key for auth delegation since no Kerberos TGT exist.");
+            }
+        }
+    }
 
     private void extractProjection(Configuration cfg) throws IOException {
         String fields = getUDFProperties().getProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS);

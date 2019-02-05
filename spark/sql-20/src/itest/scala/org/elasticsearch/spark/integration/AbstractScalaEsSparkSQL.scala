@@ -112,7 +112,7 @@ object AbstractScalaEsScalaSparkSQL {
     sc = new SparkContext(conf)
     sqc = SparkSession.builder().config(conf).getOrCreate().sqlContext
 
-    val version = TestUtils.getEsVersion
+    val version = TestUtils.getEsClusterInfo.getMajorVersion
     if (version.before(EsMajorVersion.V_5_X)) {
       keywordType = "string"
       textType = "string"
@@ -216,6 +216,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
                 "es.internal.spark.sql.pushdown.strict" -> strictPushDown.toString(),
                 "es.internal.spark.sql.pushdown.keep.handled.filters" -> doubleFiltering.toString())
 
+  val version = TestUtils.getEsClusterInfo.getMajorVersion
   val keyword = AbstractScalaEsScalaSparkSQL.keywordType
   val text = AbstractScalaEsScalaSparkSQL.textType
 
@@ -1194,7 +1195,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val index2Name = wrapIndex("sparksql-test-scala-basic-write-id-mapping/data")
 
     val table1 = sqc.read.format("org.elasticsearch.spark.sql").load(index1Name)
-    val table2 = sqc.read.format("org.elasticsearch.spark.sql").load(index2Name) 
+    val table2 = sqc.read.format("org.elasticsearch.spark.sql").load(index2Name)
 
     table1.persist(DISK_ONLY)
     table2.persist(DISK_ONLY_2)
@@ -1380,7 +1381,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val index = wrapIndex("sparksql-test-savemode_append/data")
     val table = wrapIndex("save_mode_append")
 
-    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Append).save(index) 
+    srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Append).save(index)
     val df = EsSparkSQL.esDF(sqc, index)
 
     assertEquals(3, df.count())

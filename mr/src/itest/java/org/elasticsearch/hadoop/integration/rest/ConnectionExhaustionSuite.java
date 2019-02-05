@@ -118,7 +118,7 @@ public class ConnectionExhaustionSuite {
                             info("Processing... (Cycles : " + cycles + ")");
                         }
                         RestClient client = new RestClient(workerSettings);
-                        client.remoteEsVersion();
+                        client.getHttpDataNodes();
                         client.close();
                         cycles++;
                         if (SLEEP) TimeUnit.MILLISECONDS.sleep(SLEEP_TIME);

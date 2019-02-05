@@ -27,16 +27,24 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.elasticsearch.hadoop.EsHadoopException;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
+import org.elasticsearch.hadoop.mr.security.EsTokenIdentifier;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.security.EsToken;
+import org.elasticsearch.hadoop.security.User;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueReader;
 import org.elasticsearch.hadoop.util.FieldAlias;
-import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import cascading.flow.FlowProcess;
@@ -123,10 +131,30 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         sinkCall.setContext(null);
     }
 
+    private void obtainToken(Settings esSettings, JobConf jobConf) {
+        UserProvider provider = UserProvider.create(esSettings);
+        if (provider.isEsKerberosEnabled()) {
+            try {
+                UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
+                User user = provider.getUser();
+                Credentials credentials = jobConf.getCredentials();
+                for (EsToken esToken : user.getAllEsTokens()) {
+                    Token<EsTokenIdentifier> token = EsTokenIdentifier.createTokenFrom(esToken);
+                    credentials.addToken(token.getService(), token);
+                }
+            } catch (IOException e) {
+                throw new EsHadoopException("Could not obtain delegation tokens for Elasticsearch", e);
+            }
+        }
+    }
+
     @Override
     public void sourceConfInit(FlowProcess<JobConf> flowProcess, Tap<JobConf, RecordReader, OutputCollector> tap, JobConf conf) {
         conf.setInputFormat(EsInputFormat.class);
         Settings set = loadSettings(conf, true);
+
+        InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, log);
+        obtainToken(set, conf);
 
         Collection<String> fields = CascadingUtils.fieldToAlias(set, getSourceFields());
         // load only the necessary fields
@@ -149,6 +177,8 @@ class EsHadoopScheme extends Scheme<JobConf, RecordReader, OutputCollector, Obje
         InitializationUtils.setValueReaderIfNotSet(set, JdkValueReader.class, log);
         InitializationUtils.setBytesConverterIfNeeded(set, CascadingLocalBytesConverter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(set, CascadingFieldExtractor.class, log);
+        InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, log);
+        obtainToken(set, conf);
 
         // NB: we need to set this property even though it is not being used - and since and URI causes problem, use only the resource/file
         //conf.set("mapred.output.dir", set.getTargetUri() + "/" + set.getTargetResource());

@@ -46,7 +46,7 @@ import static org.hamcrest.CoreMatchers.*;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractPigSaveTest extends AbstractPigTests {
 
-    private final EsMajorVersion VERSION = TestUtils.getEsVersion();
+    private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @BeforeClass
     public static void localStartup() throws Exception {

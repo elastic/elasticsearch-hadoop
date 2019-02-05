@@ -30,6 +30,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.security.UserProvider;
 import org.elasticsearch.hadoop.serialization.BytesConverter;
 import org.elasticsearch.hadoop.serialization.builder.ContentBuilder;
 import org.elasticsearch.hadoop.serialization.builder.NoOpValueWriter;
@@ -39,6 +40,8 @@ import org.elasticsearch.hadoop.serialization.bulk.MetadataExtractor;
 import org.elasticsearch.hadoop.serialization.dto.NodeInfo;
 import org.elasticsearch.hadoop.serialization.field.FieldExtractor;
 import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.ClusterInfo;
+import org.elasticsearch.hadoop.util.ClusterName;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.FastByteArrayOutputStream;
@@ -305,25 +308,38 @@ public abstract class InitializationUtils {
         }
     }
 
-    public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {
+    /**
+     * Retrieves the Elasticsearch cluster name and version from the settings, or, if they should be missing,
+     * creates a bootstrap client and obtains their values.
+     */
+    public static ClusterInfo discoverClusterInfo(Settings settings, Log log) {
+        ClusterName remoteClusterName = null;
+        EsMajorVersion remoteVersion = null;
+        String clusterName = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_NAME);
+        String clusterUUID = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_CLUSTER_UUID);
         String version = settings.getProperty(InternalConfigurationOptions.INTERNAL_ES_VERSION);
-        if (StringUtils.hasText(version)) {
+        if (StringUtils.hasText(clusterName) && StringUtils.hasText(version)) { // UUID is optional for now
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Elasticsearch version [%s] already present in configuration; skipping discovery", version));
+                log.debug(String.format("Elasticsearch cluster [NAME:%s][UUID:%s][VERSION:%s] already present in configuration; skipping discovery",
+                        clusterName, clusterUUID, version));
             }
-
-            return EsMajorVersion.parse(version);
+            remoteClusterName = new ClusterName(clusterName, clusterUUID);
+            remoteVersion = EsMajorVersion.parse(version);
+            return new ClusterInfo(remoteClusterName, remoteVersion);
         }
 
         RestClient bootstrap = new RestClient(settings);
-        // first get ES version
+        // first get ES main action info
         try {
-            EsMajorVersion esVersion = bootstrap.remoteEsVersion();
+            ClusterInfo mainInfo = bootstrap.mainInfo();
             if (log.isDebugEnabled()) {
-                log.debug(String.format("Discovered Elasticsearch version [%s]", esVersion));
+                log.debug(String.format("Discovered Elasticsearch cluster [%s/%s], version [%s]",
+                        mainInfo.getClusterName().getName(),
+                        mainInfo.getClusterName().getUUID(),
+                        mainInfo.getMajorVersion()));
             }
-            settings.setInternalVersion(esVersion);
-            return esVersion;
+            settings.setInternalClusterInfo(mainInfo);
+            return mainInfo;
         } catch (EsHadoopException ex) {
             throw new EsHadoopIllegalArgumentException(String.format("Cannot detect ES version - "
                     + "typically this happens if the network/Elasticsearch cluster is not accessible or when targeting "
@@ -331,6 +347,14 @@ public abstract class InitializationUtils {
         } finally {
             bootstrap.close();
         }
+    }
+
+    /**
+     * @deprecated Use {@link InitializationUtils#discoverClusterInfo(Settings, Log)} instead
+     */
+    @Deprecated
+    public static EsMajorVersion discoverEsVersion(Settings settings, Log log) {
+        return discoverClusterInfo(settings, log).getMajorVersion();
     }
 
     public static void checkIndexExistence(RestRepository client) {
@@ -458,6 +482,18 @@ public abstract class InitializationUtils {
             return true;
         }
 
+        return false;
+    }
+
+    public static boolean setUserProviderIfNotSet(Settings settings, Class<? extends UserProvider> clazz, Log log) {
+        if (!StringUtils.hasText(settings.getSecurityUserProviderClass())) {
+            settings.setProperty(ConfigurationOptions.ES_SECURITY_USER_PROVIDER_CLASS, clazz.getName());
+            Log logger = (log != null ? log : LogFactory.getLog(clazz));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Using pre-defined user provider [%s] as default", settings.getSecurityUserProviderClass()));
+            }
+            return true;
+        }
         return false;
     }
 }

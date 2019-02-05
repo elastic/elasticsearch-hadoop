@@ -58,7 +58,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     public AbstractPigReadAsJsonTest(String query, boolean metadata) {
         this.query = query;
         this.readMetadata = metadata;
-        this.testVersion = TestUtils.getEsVersion();
+        this.testVersion = TestUtils.getEsClusterInfo().getMajorVersion();
 
         if (!query.equals(previousQuery)) {
             previousQuery = query;

@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
@@ -102,6 +103,7 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         Log log = LogFactory.getLog(getClass());
         // move on to initialization
         InitializationUtils.setValueReaderIfNotSet(settings, HiveValueReader.class, log);
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
         if (settings.getOutputAsJson() == false) {
             // Only set the fields if we aren't asking for raw JSON
             settings.setProperty(InternalConfigurationOptions.INTERNAL_ES_TARGET_FIELDS, StringUtils.concatenate(HiveUtils.columnToAlias(settings), ","));

@@ -43,18 +43,23 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.elasticsearch.hadoop.EsHadoopIllegalStateException;
+import org.elasticsearch.hadoop.cfg.CompositeSettings;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.cfg.Settings;
+import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
-import org.elasticsearch.hadoop.util.*;
+import org.elasticsearch.hadoop.util.Assert;
+import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ClusterInfo;
+import org.elasticsearch.hadoop.util.FieldAlias;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class EsSerDe extends AbstractSerDe {
 
     private static Log log = LogFactory.getLog(EsSerDe.class);
 
-    private Properties tableProperties;
     private Configuration cfg;
     private Settings settings;
     private StructObjectInspector inspector;
@@ -65,7 +70,6 @@ public class EsSerDe extends AbstractSerDe {
     private final HiveBytesArrayWritable result = new HiveBytesArrayWritable();
     private StructTypeInfo structTypeInfo;
     private FieldAlias alias;
-    private EsMajorVersion version;
     private BulkCommand command;
 
     private boolean writeInitialized = false;
@@ -81,13 +85,15 @@ public class EsSerDe extends AbstractSerDe {
         inspector = HiveUtils.structObjectInspector(tbl);
         structTypeInfo = HiveUtils.typeInfo(inspector);
         cfg = conf;
-        settings = (cfg != null ? HadoopSettingsManager.loadFrom(cfg).merge(tbl) : HadoopSettingsManager.loadFrom(tbl));
+        List<Settings> settingSources = new ArrayList<Settings>();
+        settingSources.add(HadoopSettingsManager.loadFrom(tbl));
+        if (cfg != null) {
+            settingSources.add(HadoopSettingsManager.loadFrom(cfg));
+        }
+        settings = new CompositeSettings(settingSources);
         alias = HiveUtils.alias(settings);
 
-        version = InitializationUtils.discoverEsVersion(settings, log);
-
         HiveUtils.fixHive13InvalidComments(settings, tbl);
-        this.tableProperties = tbl;
 
         trace = log.isTraceEnabled();
         outputJSON = settings.getOutputAsJson();
@@ -172,12 +178,14 @@ public class EsSerDe extends AbstractSerDe {
             return;
         }
         writeInitialized = true;
-        Settings settings = HadoopSettingsManager.loadFrom(tableProperties);
+
+        InitializationUtils.setUserProviderIfNotSet(settings, HadoopUserProvider.class, log);
+        ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(settings, log);
 
         InitializationUtils.setValueWriterIfNotSet(settings, HiveValueWriter.class, log);
         InitializationUtils.setFieldExtractorIfNotSet(settings, HiveFieldExtractor.class, log);
         InitializationUtils.setBytesConverterIfNeeded(settings, HiveBytesConverter.class, log);
-        this.command = BulkCommands.create(settings, null, version);
+        this.command = BulkCommands.create(settings, null, clusterInfo.getMajorVersion());
     }
 
 
