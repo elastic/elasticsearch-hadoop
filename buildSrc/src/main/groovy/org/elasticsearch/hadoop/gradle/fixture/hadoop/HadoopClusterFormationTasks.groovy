@@ -38,7 +38,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
-import shadow.org.codehaus.plexus.util.Os
+import org.apache.tools.ant.taskdefs.condition.Os
 
 import java.nio.file.Paths
 
