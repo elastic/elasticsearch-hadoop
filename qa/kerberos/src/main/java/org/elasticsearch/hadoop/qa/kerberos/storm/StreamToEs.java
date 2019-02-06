@@ -34,7 +34,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.security.LoginUtil;
-import org.elasticsearch.integration.storm.TestSpout;
 import org.elasticsearch.storm.EsBolt;
 import org.elasticsearch.storm.security.AutoElasticsearch;
 

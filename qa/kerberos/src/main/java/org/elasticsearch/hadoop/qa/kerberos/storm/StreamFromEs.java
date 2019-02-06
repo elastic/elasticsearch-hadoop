@@ -27,11 +27,9 @@ import javax.security.auth.login.LoginContext;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.shade.com.google.common.collect.ImmutableMap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.security.LoginUtil;
-import org.elasticsearch.integration.storm.CapturingBolt;
 import org.elasticsearch.storm.EsSpout;
 import org.elasticsearch.storm.security.AutoElasticsearch;
 

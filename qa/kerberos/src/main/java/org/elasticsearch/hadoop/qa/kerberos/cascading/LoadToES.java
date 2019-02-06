@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.qa.kerberos.cascading;
 
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import cascading.flow.FlowConnector;
@@ -32,10 +33,10 @@ import cascading.scheme.hadoop.TextDelimited;
 import cascading.tap.Tap;
 import cascading.tap.hadoop.Dfs;
 import cascading.tuple.Fields;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.cascading.EsTap;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
 import org.elasticsearch.hadoop.qa.kerberos.security.KeytabLogin;
@@ -63,7 +64,7 @@ public class LoadToES extends Configured implements Tool {
 
         String resource = HadoopSettingsManager.loadFrom(getConf()).getResourceWrite();
 
-        Properties properties = HdpBootstrap.asProperties(getConf());
+        Properties properties = asProperties(getConf());
 
         EsTap.initCredentials(properties);
 
@@ -80,5 +81,17 @@ public class LoadToES extends Configured implements Tool {
         flow.connect(flowDef).complete();
 
         return 0;
+    }
+
+    public static Properties asProperties(Configuration cfg) {
+        Properties props = new Properties();
+
+        if (cfg != null) {
+            for (Map.Entry<String, String> entry : cfg) {
+                props.setProperty(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return props;
     }
 }
