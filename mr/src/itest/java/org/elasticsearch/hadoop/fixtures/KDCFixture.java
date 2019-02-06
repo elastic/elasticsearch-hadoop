@@ -27,6 +27,7 @@ import java.util.Properties;
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.hadoop.security.authentication.util.KerberosName;
 import org.apache.hadoop.security.authentication.util.KerberosUtil;
+import org.elasticsearch.hadoop.rest.commonshttp.auth.spnego.UgiUtil;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 
@@ -92,5 +93,6 @@ public class KDCFixture extends ExternalResource {
         } catch (NoSuchFieldException e) {
             throw new RuntimeException("Couldn't find defaultRealm field on KerberosName", e);
         }
+        UgiUtil.resetUGI();
     }
 }
