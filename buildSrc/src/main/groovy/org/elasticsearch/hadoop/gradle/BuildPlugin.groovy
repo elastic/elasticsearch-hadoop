@@ -12,12 +12,12 @@ import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
+import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.file.CopySpec
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
@@ -35,8 +35,6 @@ import org.springframework.build.gradle.propdep.PropDepsEclipsePlugin
 import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
 import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
 import org.springframework.build.gradle.propdep.PropDepsPlugin
-
-import java.util.regex.Matcher
 
 class BuildPlugin implements Plugin<Project>  {
 
@@ -183,6 +181,16 @@ class BuildPlugin implements Plugin<Project>  {
         project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
         project.repositories.maven { url "https://oss.sonatype.org/content/groups/public/" } // oss-only
 
+        // Add Ivy repos in order to pull Elasticsearch distributions that have bundled JDKs
+        for (String repo : ['snapshots', 'artifacts']) {
+            project.repositories.ivy {
+                url "https://${repo}.elastic.co/downloads"
+                patternLayout {
+                    artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
+                }
+            }
+        }
+
         // For Lucene Snapshots, Use the lucene version interpreted from elasticsearch-build-tools version file.
         if (project.ext.luceneVersion.contains('-snapshot')) {
             // Extract the revision number of the snapshot via regex:
@@ -274,8 +282,14 @@ class BuildPlugin implements Plugin<Project>  {
         // Do substitutions for ES fixture downloads
         project.configurations.all { Configuration configuration ->
             configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
-                subs.substitute(subs.module("downloads.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
-                        .with(subs.module("org.elasticsearch.distribution.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
+                // TODO: Build tools requests a version format that does not match the version id of the distribution.
+                // Fix this when it is fixed in the mainline
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}linux-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-linux-x86_64"))
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}windows-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-windows-x86_64"))
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}darwin-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-darwin-x86_64"))
             }
         }
     }
