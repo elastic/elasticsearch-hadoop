@@ -19,10 +19,14 @@
 
 package org.elasticsearch.hadoop.qa.kerberos.setup;
 
+import java.util.Properties;
+
+import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;
-import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.qa.kerberos.ExtendedClient;
+import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
-import org.elasticsearch.hadoop.util.TestSettings;
 
 public class SetupKerberosUsers {
 
@@ -35,15 +39,19 @@ public class SetupKerberosUsers {
         String rawPrincipals = getProperty(PRINCIPALS);
         String rawProxiers = getProperty(PROXIERS);
 
-        Settings settings = new TestSettings();
+        Settings settings = new PropertiesSettings();
+        settings.asProperties().putAll(System.getProperties());
         System.out.println(settings.getNodes());
         System.out.println(settings.getNetworkHttpAuthUser());
         System.out.println(settings.getNetworkHttpAuthPass());
 
+        InitializationUtils.discoverClusterInfo(settings, LogFactory.getLog(SetupKerberosUsers.class));
+
         int idx = 0;
+        ExtendedClient client = new ExtendedClient(settings);
 
         for (String user : StringUtils.tokenize(rawUsers)) {
-            RestUtils.postData("_xpack/security/user/" + user, (
+            client.post("_xpack/security/user/" + user, (
                     "{\n" +
                     "  \"enabled\" : true,\n" +
                     "  \"password\" : \"password\",\n" +
@@ -55,7 +63,7 @@ public class SetupKerberosUsers {
         }
 
         for (String principal : StringUtils.tokenize(rawPrincipals)) {
-            RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
+            client.post("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
                     ("{" +
                         "\"roles\":[\"superuser\"]," +
                         "\"enabled\":true," +
@@ -71,7 +79,7 @@ public class SetupKerberosUsers {
         }
 
         System.out.println("Creating proxy role");
-        RestUtils.postData("_xpack/security/role/proxier", (
+        client.post("_xpack/security/role/proxier", (
                 "{\n" +
                 "  \"cluster\": [\n" +
                 "    \"all\"\n" +
@@ -105,7 +113,7 @@ public class SetupKerberosUsers {
                 "}").getBytes());
 
         for (String proxier : StringUtils.tokenize(rawProxiers)) {
-            RestUtils.postData("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
+            client.post("_xpack/security/role_mapping/kerberos_client_mapping_"+idx,
                     ("{" +
                         "\"roles\":[\"proxier\"]," +
                         "\"enabled\":true," +
