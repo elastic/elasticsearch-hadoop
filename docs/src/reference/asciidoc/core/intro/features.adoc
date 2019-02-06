@@ -25,8 +25,6 @@ Apache Hive support:: Run Hive queries against {es} for advanced analystics and 
 
 Apache Pig support:: {eh} supports Apache Pig exposing {es} as a _native_ Pig `Storage`. Run your Pig scripts against {es} without any modifications to your configuration or the Pig client.
 
-Cascading support:: Cascading is an application framework for Java developers to simply develop robust applications on Apache Hadoop. And with {eh}, Cascading can run its flows directly onto {es}.
-
 Apache Spark:: Run fast transformations directly against {es}, either by streaming data or indexing _arbitrary_ ++RDD++s. Available in both Java and Scala flavors.
 
 Apache Storm:: {eh} supports Apache Storm exposing {es} as both a +Spout+ (source) or a +Bolt+ (sink).

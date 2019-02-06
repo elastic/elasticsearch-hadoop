@@ -3,9 +3,9 @@
 
 [partintro]
 --
-{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, Pig or Cascading or new upcoming libraries like {sp} ) to 'interact' with {es}. One can think of it as a _connector_ that allows data to flow 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
+{ehtm} is an <<license, open-source>>, stand-alone, self-contained, small library that allows Hadoop jobs (whether using {mr} or libraries built upon it such as Hive, or Pig or new upcoming libraries like {sp} ) to 'interact' with {es}. One can think of it as a _connector_ that allows data to flow 'bi-directionaly' so that applications can leverage transparently the {es} engine capabilities to significantly enrich their capabilities and increase the performance.
 
-{ehtm} offers first-class support for vanilla {mr}, Cascading, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. As such,
+{ehtm} offers first-class support for vanilla {mr}, Pig and Hive so that using {es} is literally like using resources within the Hadoop cluster. As such,
 {ehtm} is a _passive_ component, allowing Hadoop jobs to use it as a library and interact with {es} through {ehtm} APIs.
 
 [[project-name-alias]]
@@ -33,8 +33,6 @@ We recommend going through the entire documentation even superficially when tryi
 <<configuration>>:: explore the various configuration switches in {eh}
 
 <<mapreduce>>:: describes how to use {eh} in vanilla {mr} environments - typically useful for those interested in data loading and saving to/from {es} without little, if any, ETL (extract-transform-load).
-
-<<cascading>>:: describes how to use Cascading and {eh}.
 
 <<hive>>:: Hive users should refer to this section.
 
