@@ -28,6 +28,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.mr.security.HadoopUser;
 import org.elasticsearch.hadoop.security.User;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,6 +45,11 @@ public class AbstractHadoopUserKerberosTest {
     @BeforeClass
     public static void setUp() throws Exception {
         KEYTAB_FILE = KerberosSuite.getKeytabFile();
+    }
+
+    @After
+    public void resetUGI() {
+        UgiUtil.resetUGI();
     }
 
     @Test

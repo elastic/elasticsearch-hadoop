@@ -46,6 +46,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.commonshttp.auth.EsHadoopAuthPolicies;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -62,6 +63,11 @@ public class AbstractSpnegoAuthSchemeTest {
     @BeforeClass
     public static void setUp() throws Exception {
         KEYTAB_FILE = KerberosSuite.getKeytabFile();
+    }
+
+    @After
+    public void resetUGI() {
+        UgiUtil.resetUGI();
     }
 
     @Test

@@ -23,6 +23,7 @@ import java.io.File;
 
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.fixtures.KDCFixture;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ChainedExternalResource;
@@ -54,6 +55,11 @@ public class KerberosSuite {
 
         KEYTAB_FILE = temporaryFolder.newFile("test.keytab");
         kdcFixture.createPrincipal(KEYTAB_FILE, PRINCIPAL_CLIENT, PRINCIPAL_SERVER, PRINCIPAL_HTTP);
+    }
+
+    @AfterClass
+    public static void resetUGI() {
+        UgiUtil.resetUGI();
     }
 
     public static File getKeytabFile() {

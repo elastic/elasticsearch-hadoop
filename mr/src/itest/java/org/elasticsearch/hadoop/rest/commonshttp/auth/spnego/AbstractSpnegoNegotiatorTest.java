@@ -36,6 +36,7 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -49,6 +50,11 @@ public class AbstractSpnegoNegotiatorTest {
     @BeforeClass
     public static void setUp() throws Exception {
         KEYTAB_FILE = KerberosSuite.getKeytabFile();
+    }
+
+    @After
+    public void resetUGI() {
+        UgiUtil.resetUGI();
     }
 
     @Test(expected = EsHadoopIllegalStateException.class)
