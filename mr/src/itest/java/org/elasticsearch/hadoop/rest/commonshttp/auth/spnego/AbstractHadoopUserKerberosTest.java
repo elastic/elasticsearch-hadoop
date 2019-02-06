@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-public class HadoopUserKerberosTest {
+public class AbstractHadoopUserKerberosTest {
 
     private static File KEYTAB_FILE;
 

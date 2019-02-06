@@ -85,6 +85,7 @@ public class KDCFixture extends ExternalResource {
          */
         try {
             Field defaultRealm = KerberosName.class.getDeclaredField("defaultRealm");
+            defaultRealm.setAccessible(true);
             defaultRealm.set(null, previousDefaultRealm);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Couldn't access defaultRealm field on KerberosName", e);

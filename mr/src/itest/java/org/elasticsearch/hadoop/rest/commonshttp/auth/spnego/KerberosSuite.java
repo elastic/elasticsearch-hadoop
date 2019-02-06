@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ AbstractSpnegoNegotiatorTest.class, AbstractSpnegoAuthSchemeTest.class, HadoopUserKerberosTest.class })
+@Suite.SuiteClasses({ AbstractSpnegoNegotiatorTest.class, AbstractSpnegoAuthSchemeTest.class, AbstractHadoopUserKerberosTest.class })
 public class KerberosSuite {
 
     public static String PRINCIPAL_CLIENT = "client";
