@@ -215,14 +215,17 @@ if (!localRepo) {
             setting 'xpack.security.enabled', 'true'
             setting 'xpack.security.audit.enabled', 'true'
             // Configure File Realm
-            setting 'xpack.security.authc.realms.file.myfile.order', '0'
+            setting 'xpack.security.authc.realms.myfile.type', 'file'
+            setting 'xpack.security.authc.realms.myfile.order', '0'
             // Configure Native Realm
-            setting 'xpack.security.authc.realms.native.mynative.order', '1'
+            setting 'xpack.security.authc.realms.mynative.type', 'native'
+            setting 'xpack.security.authc.realms.mynative.order', '1'
             // Configure Kerberos Realm
-            setting 'xpack.security.authc.realms.kerberos.krb5.order', '2'
-            setting 'xpack.security.authc.realms.kerberos.krb5.keytab.path', 'es.keytab'
-            setting 'xpack.security.authc.realms.kerberos.krb5.krb.debug', 'true'
-            setting 'xpack.security.authc.realms.kerberos.krb5.remove_realm_name', 'false'
+            setting 'xpack.security.authc.realms.krb5.type', 'kerberos'
+            setting 'xpack.security.authc.realms.krb5.order', '2'
+            setting 'xpack.security.authc.realms.krb5.keytab.path', 'es.keytab'
+            setting 'xpack.security.authc.realms.krb5.krb.debug', 'true'
+            setting 'xpack.security.authc.realms.krb5.remove_realm_name', 'false'
             // Configure API Key Realm
             setting 'xpack.security.authc.api_key.enabled', 'true'
     
