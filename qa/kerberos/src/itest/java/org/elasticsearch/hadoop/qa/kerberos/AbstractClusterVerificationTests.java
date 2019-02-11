@@ -39,21 +39,21 @@ public class AbstractClusterVerificationTests {
     @Parameters
     public static Collection<Object[]> params() {
         List<Object[]> params = new ArrayList<>();
-        params.add(new Object[]{"mr",        "part-m-00000", 345, true});
-        params.add(new Object[]{"spark",     "part-00000",   345, true});
+        params.add(new Object[]{"mr",        "part-m-", 345, true});
+        params.add(new Object[]{"spark",     "part-",   345, true});
         params.add(new Object[]{"hive",      "000000_0",     345, false});
-        params.add(new Object[]{"pig",       "part-m-00000", 345, true});
+        params.add(new Object[]{"pig",       "part-m-", 345, true});
         return params;
     }
 
     private String integrationName;
-    private String dataFileName;
+    private String dataFilePrefix;
     private int expectedLineCount;
     private boolean hasSuccessMarker;
 
-    public AbstractClusterVerificationTests(String integrationName, String dataFileName, int expectedLineCount, boolean hasSuccessMarker) {
+    public AbstractClusterVerificationTests(String integrationName, String dataFilePrefix, int expectedLineCount, boolean hasSuccessMarker) {
         this.integrationName = integrationName;
-        this.dataFileName = dataFileName;
+        this.dataFilePrefix = dataFilePrefix;
         this.expectedLineCount = expectedLineCount;
         this.hasSuccessMarker = hasSuccessMarker;
     }
@@ -69,14 +69,16 @@ public class AbstractClusterVerificationTests {
                     successMarker.exists());
         }
 
-        File dataFile = new File(integrationDataDir, dataFileName);
-        Assert.assertTrue("Expected data file [" + dataFile + "] to exist but could not find it.", dataFile.exists());
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(dataFile)));
         int lines = 0;
-        while (reader.readLine() != null) {
-            lines++;
+        for (File directoryFile : integrationDataDir.listFiles()) {
+            if (directoryFile.getName().startsWith(dataFilePrefix)) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(directoryFile)));
+                while (reader.readLine() != null) {
+                    lines++;
+                }
+                reader.close();
+            }
         }
-        reader.close();
         Assert.assertEquals(expectedLineCount, lines);
     }
 }
