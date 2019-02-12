@@ -5,7 +5,7 @@ added[6.7]
 
 Securing Hadoop means using {krb}. As of version 6.4, {es} supports {krb} as an authentication method. While the use of
 {krb} is not required for securing {es}, it is a convenient option for those who already deploy {krb} to secure their
-Hadoop clusters. This chapter aims to explain the steps needed to set up {eh} for {krb} authentication.
+Hadoop clusters. This chapter aims to explain the steps needed to set up {eh} to use {krb} authentication for {es}.
 
 {ehtm} communicates with {es} entirely over HTTP. In order to support {krb} authentication over HTTP, {eh} uses
 the https://tools.ietf.org/html/rfc4178[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)] to negotiate which
@@ -16,16 +16,16 @@ the negotiation. Once the negotiation between the client and server is complete,
 successful response is returned.
 
 {ehtm} makes use of Hadoop's user management processes; The {krb} credentials of the current Hadoop user are used when
-authenticating to {es}. This means that Hadoop security must be enabled in order for {eh} to obtain a user's {krb}
-credentials. In the case of using an integration that does not depend on Hadoop's runtime (e.g. Storm), additional
-steps may be required to ensure that a running process has {krb} credentials available for authentication. It is
-recommended that you consult the documentation of each framework that you are using on how to configure security.
+authenticating to {es}. This means that {krb} authentication in Hadoop must be enabled in order for {eh} to obtain a
+user's {krb} credentials. In the case of using an integration that does not depend on Hadoop's runtime (e.g. Storm),
+additional steps may be required to ensure that a running process has {krb} credentials available for authentication.
+It is recommended that you consult the documentation of each framework that you are using on how to configure security.
 
 [[kerberos-settings]]
 === Setting up your environment
 
-NOTE: This documentation assumes that you have already provisioned a secure Hadoop cluster. The general process of
-deploying {krb} and securing Hadoop is beyond the scope of this documentation.
+NOTE: This documentation assumes that you have already provisioned a Hadoop cluster with {krb} authentication enabled.
+The general process of deploying {krb} and securing Hadoop is beyond the scope of this documentation.
 
 Before starting, you will need to ensure that principals for your users are provisioned in your {krb} deployment,
 as well as service principals for each {es} node. To enable {krb} authentication on {es}, it must be
@@ -54,11 +54,11 @@ Required. Similar to most Hadoop integrations, this property signals which metho
 authentication, `pki` if relying on certificates, and `kerberos` if {krb} authentication over SPNEGO should be used.
 
 `es.net.spnego.auth.elasticsearch.principal` (default none)::
-Required. Details the name of the service principal that the Elasticsearch server is running as. This will usually be
-of the form `HTTP/node.address@REALM`. Since {es} is distributed and should be using a service principal per node, you
-can use the `_HOST` pattern (like so `HTTP/_HOST@REALM`) to have {eh} substitute the address of the node it is
-communicating with at runtime. Note that {eh} will attempt to reverse resolve node IP addresses to hostnames in order
-to perform this substitution.
+Required if `es.security.authentication` is set to `kerberos`. Details the name of the service principal that the
+Elasticsearch server is running as. This will usually be of the form `HTTP/node.address@REALM`. Since {es} is
+distributed and should be using a service principal per node, you can use the `_HOST` pattern
+(like so `HTTP/_HOST@REALM`) to have {eh} substitute the address of the node it is communicating with at runtime. Note
+that {eh} will attempt to reverse resolve node IP addresses to hostnames in order to perform this substitution.
 
 `es.net.spnego.auth.mutual` (default false)::
 Optional. The SPNEGO mechanism assumes that authentication may take multiple back and forth request-response cycles for
@@ -174,8 +174,9 @@ JobClient.runJob(jobConf).waitForCompletion(); <3>
 [[kerberos-hive-requirements]]
 ==== Requirements
 
-Before using {krb} authentication to {es} in Hive, Hadoop Security must be enabled. Make sure you have done all the
-required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> for use with {es} and {krb}.
+Before using {krb} authentication to {es} in Hive, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> before using {krb}
+authentication for {es}.
 
 Using {krb} auth on {es} via {eh} and Hive is only supported using HiveServer2.
 
@@ -237,7 +238,7 @@ PUT _xpack/security/role/hive_proxier
 Now that there are users to impersonate, and a role that can impersonate them, make sure to map the Hive principal to
 the proxier role, as well as any of the roles that the users it is impersonating would have. This allows the Hive
 principal to create and read indices, documents, or do anything else its impersonated users might be able to do.
-While hive is impersonating the user, it must have these roles or else it will not be able to fully impersonate that
+While Hive is impersonating the user, it must have these roles or else it will not be able to fully impersonate that
 user.
 
 [source,js]
@@ -258,7 +259,7 @@ POST /_xpack/security/role_mapping/hive_hiveserver2_mapping
 // CONSOLE
 <1> Any number of roles that the clients that Hive must impersonate would have
 <2> The added role that allows Hive to impersonate users
-<3> The name of the hive server principal to match against
+<3> The name of the Hive server principal to match against
 
 Additionally, if managing these role mappings via the API's is not desired, they can instead be managed in a
 https://www.elastic.co/guide/en/elastic-stack-overview/current/mapping-roles.html#mapping-roles-file[role mapping file].
@@ -275,8 +276,9 @@ there should be no differences in creating Hive queries from before.
 [[kerberos-pig-requirements]]
 ==== Requirements
 
-Before using {krb} authentication to {es} in Pig, Hadoop Security must be enabled. Make sure you have done all the
-required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> for use with {es} and {krb}.
+Before using {krb} authentication to {es} in Pig, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> before using {krb}
+authentication for {es}.
 
 If {eh} is configured for {krb} authentication and Hadoop security is enabled, {eh}'s storage functions in Pig will
 automatically obtain delegation tokens for jobs when submitting them to the cluster.
@@ -294,8 +296,9 @@ deployments (Mesos, Standalone).
 2. Your version of Spark must be on or above version 2.1.0. It is this version that Spark added the ability to plug in
 third-party credential providers to obtain delegation tokens.
 
-Before using {krb} authentication to {es} from Spark, Hadoop Security must be enabled. Make sure you have done all the
-required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> for use with {es} and {krb}.
+Before using {krb} authentication to {es} in Spark, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> before using {krb}
+authentication for {es}.
 
 [[kerberos-spark-credprovider]]
 ==== EsServiceCredentialProvider
@@ -314,7 +317,7 @@ the job is a long lived process like a Spark Streaming job, the credential provi
 delegation tokens when the current tokens approach their expiration time.
 
 The time that Spark's credential providers are loaded and called depends on the cluster deploy mode when submitting your
-spark app. When running in `client` deploy mode, Spark runs the user's driver code in the local JVM, and launches the
+Spark app. When running in `client` deploy mode, Spark runs the user's driver code in the local JVM, and launches the
 YARN application to oversee the processing as needed. The providers are loaded and run whenever the YARN application
 first comes online. When running in `cluster` deploy mode, Spark launches the YARN application immediately, and the
 user's driver code is run from the resulting Application Master in YARN. The providers are loaded and run _immediately_,
@@ -330,7 +333,7 @@ All implementations of the Spark credential providers use settings from only a f
 3. The entries that are specified from the command line when the job is initially launched
 
 Settings that are configured from the user code are not used because the provider must run once for all jobs that are
-submitted for a particular spark application. User code is not guaranteed to be run before the provider is loaded.
+submitted for a particular Spark application. User code is not guaranteed to be run before the provider is loaded.
 To make things more complicated, a credential provider is only given the local Hadoop configuration to determine if
 they should load delegation tokens.
 
@@ -399,8 +402,8 @@ property is still accepted in Spark 2.3.0+, but is marked as deprecated.
 
 Your Storm deployment should be secured, but configuring it for security is not strictly required.
 
-Storm is not always deployed alongside a Hadoop distribution. Thus, configuring Hadoop Security is not required for
-using {eh}'s {krb} authentication mode on Storm.
+Storm is not always deployed alongside a Hadoop distribution. Thus, configuring {krb} authentication for Hadoop is not
+required for using {krb} authentication to {es} on Storm.
 
 [[kerberos-storm-autocred]]
 ==== Using Storm's AutoCredential plugins
