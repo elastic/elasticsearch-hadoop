@@ -1,0 +1,24 @@
+[[eshadoop-7.0.0-beta1]]
+== Elasticsearch for Apache Hadoop version 7.0.0-beta1
+February 14, 2019
+
+[[breaking-7.0.0-beta1]]
+=== Breaking Changes
+* Deprecate and Remove Cascading
+https://github.com/elastic/elasticsearch-hadoop/issues/1222[#1222]
+https://github.com/elastic/elasticsearch-hadoop/pull/1235[#1235]
+* Remove support for Java 6 and 7
+https://github.com/elastic/elasticsearch-hadoop/issues/1200[#1200]
+
+[[new-7.0.0-beta1]]
+=== New Features
+Core::
+* Add support for Kerberized Elasticsearch
+https://github.com/elastic/elasticsearch-hadoop/issues/1175[#1175]
+https://github.com/elastic/elasticsearch-hadoop/pull/1244[#1244]
+
+[[bugs-7.0.0-beta1]]
+=== Bug Fixes
+Testing::
+* Fix DateIndexFormatterTest
+https://github.com/elastic/elasticsearch-hadoop/pull/1232[#1232]
