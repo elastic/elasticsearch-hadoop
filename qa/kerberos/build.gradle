@@ -82,17 +82,26 @@ dependencies {
 // Testing jars
 // =============================================================================
 
-// We don't want to attempt compiling integration or test code when using a local repo because it depends on
-// the elasticsearch jar which will not be reachable.
-// Additionally, when using a local repo, the esCluster plugin is not applied, and thus, cannot be referenced in the
-// build script.
-if (!localRepo) {
+// Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
+// in the file path on CI.
+boolean disableTests = true
+if (disableTests) {
+    // Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
+    // in the file path on CI.
+    Test integrationTest = project.tasks.findByName('integrationTest') as Test
+    integrationTest.setEnabled(false)
+} else if (!localRepo) {
+    // We don't want to attempt compiling integration or test code when using a local repo because it depends on
+    // the elasticsearch jar which will not be reachable.
+    // Additionally, when using a local repo, the esCluster plugin is not applied, and thus, cannot be referenced in the
+    // build script.
+
     // Build uber cascading jar for testing
     Jar qaKerberosCascadingJar = project.tasks.create('kerberosCascadingJar', Jar)
     qaKerberosCascadingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
     qaKerberosCascadingJar.dependsOn(project.rootProject.tasks.getByName('hadoopTestingJar'))
     qaKerberosCascadingJar.classifier = 'cascading-testing'
-    
+
     // Add projects and dependencies to the Cascading testing uber-jar
     [project, project(":elasticsearch-hadoop-mr"), project(":elasticsearch-hadoop-cascading")].forEach { proj ->
         qaKerberosCascadingJar.from(proj.sourceSets.test.output)
