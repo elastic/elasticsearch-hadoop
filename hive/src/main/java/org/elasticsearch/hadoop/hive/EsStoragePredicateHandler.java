@@ -78,19 +78,6 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
         //create a es tree parser for converting OpNode to JsonObj.
         EsTreeParser parser = new EsTreeParser(sargableParser, isES50);
 
-        String preFilterQuery = settings.getQuery();
-        // if exists es.query prop, then it is a necessary condition to add to the pushdown optimization plan
-        if (StringUtils.isNotEmpty(preFilterQuery)) {
-            QueryBuilder rawQuery = QueryUtils.parseQuery(settings);
-
-            if (rawQuery != null && !(rawQuery instanceof MatchAllQueryBuilder)) {
-                log.info("[PushDown][Pre Filter " + ES_QUERY + "] : " + preFilterQuery);
-                JsonObj preFilterJson = new EsQueryParser(rawQuery, isES50).parse();
-                //add a pre filter condition.
-                parser.setPreFilterJson(preFilterJson);
-            }
-        }
-
         //build a operator node tree
         OpNode root = hiveTreeBuilder.build(exprNodeDesc);
 

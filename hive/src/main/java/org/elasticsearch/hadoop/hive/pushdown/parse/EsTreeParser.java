@@ -35,23 +35,13 @@ import java.util.*;
  */
 public class EsTreeParser implements Serializable {
 
-    protected final SargableParser sargableParser;
+    private final SargableParser sargableParser;
 
-    private JsonObj preFilterJson = null;
     private final boolean isES50;
 
     public EsTreeParser(SargableParser sargableParser, boolean isES50) {
         this.sargableParser = sargableParser;
         this.isES50 = isES50;
-    }
-
-    /**
-     * user-defined filter conditions, from the es.query property when creating the table
-     *
-     * @param preFilterJson
-     */
-    public void setPreFilterJson(JsonObj preFilterJson) {
-        this.preFilterJson = preFilterJson;
     }
 
     private boolean isStrictType(FieldNode node) {
@@ -65,9 +55,6 @@ public class EsTreeParser implements Serializable {
         if (isES50) {
             BoolJson wrapper = new BoolJson();
 
-            if (preFilterJson != null && !preFilterJson.isEmpty()) {
-                wrapper.filter(preFilterJson);
-            }
             if (pushdown != null && !pushdown.isEmpty()) {
                 wrapper.filter(pushdown);
             }
@@ -85,8 +72,7 @@ public class EsTreeParser implements Serializable {
             }
         } else {
             AndJson andJson = new AndJson();
-            if (preFilterJson != null && !preFilterJson.isEmpty())
-                andJson.filters(preFilterJson);
+
             if (pushdown != null && !pushdown.isEmpty())
                 andJson.filters(pushdown);
 
@@ -132,7 +118,7 @@ public class EsTreeParser implements Serializable {
         }
     }
 
-    public JsonObj parseLogicOp(OpNode opNode) {
+    protected JsonObj parseLogicOp(OpNode opNode) {
         String op = opNode.getOperator();
 
         List<JsonObj> filters = new ArrayList<JsonObj>();
@@ -163,7 +149,7 @@ public class EsTreeParser implements Serializable {
         return null;
     }
 
-    public JsonObj parseSargableOp(OpNode opNode) {
+    protected JsonObj parseSargableOp(OpNode opNode) {
         String op = opNode.getOperator();
 
         if ("=".equals(op)) {
@@ -266,7 +252,7 @@ public class EsTreeParser implements Serializable {
         return new Pair<String, List<Object>>(field, vals);
     }
 
-    public boolean isAllNotNull(Object... objs) {
+    private boolean isAllNotNull(Object... objs) {
         for (Object o : objs) {
             if (o == null)
                 return false;
@@ -274,13 +260,13 @@ public class EsTreeParser implements Serializable {
         return true;
     }
 
-    public String stripStrVal(String val) {
+    private String stripStrVal(String val) {
         if (val.startsWith("'") && val.endsWith("'"))
             val = val.substring(1, val.length() - 1);
         return val;
     }
 
-    public <T> T safeget(List<T> list, int index) {
+    private <T> T safeget(List<T> list, int index) {
         if (list != null && list.size() > index) {
             try {
                 return list.get(index);

@@ -36,6 +36,7 @@ import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.mr.EsInputFormat;
 import org.elasticsearch.hadoop.mr.security.HadoopUserProvider;
 import org.elasticsearch.hadoop.rest.InitializationUtils;
+import org.elasticsearch.hadoop.util.SettingsUtils;
 import org.elasticsearch.hadoop.util.StringUtils;
 
 import java.io.DataInput;
@@ -118,10 +119,10 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         // then the result write es.query prop.
         String filterObjectStr = job.get(TableScanDesc.FILTER_OBJECT_CONF_STR);
         if (filterObjectStr != null && filterObjectStr.length() > 0) {
-            String esQuery = Utilities.deserializeObject(filterObjectStr, String.class);
-            if (esQuery != null && esQuery.length() > 0) {
-                log.info("[EsHiveInputFormat][Pushdown][Es.query] : " + esQuery);
-                settings.setQuery(esQuery);
+            String filters = Utilities.deserializeObject(filterObjectStr, String.class);
+            if (filters != null && filters.length() > 0) {
+                log.info(String.format("[EsHiveInputFormat][Pushdown][Filters] %s", InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, filters));
+                SettingsUtils.setFilters(settings, filters);
             }
         }
 
