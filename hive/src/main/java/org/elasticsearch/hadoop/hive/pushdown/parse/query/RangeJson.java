@@ -75,12 +75,15 @@ public class RangeJson extends JsonObj {
      * @return
      */
     public RangeJson singleRange(String operator, String field, Object v) {
-        if (">".equals(operator))
+        if (">".equals(operator)) {
             return gt(field, v);
-        else if ("<".equals(operator))
+        }
+        else if ("<".equals(operator)) {
             return lt(field, v);
-        else if (">=".equals(operator))
+        }
+        else if (">=".equals(operator)) {
             return gte(field, v);
+        }
         else if ("<=".equals(operator)) {
             return lte(field, v);
         }

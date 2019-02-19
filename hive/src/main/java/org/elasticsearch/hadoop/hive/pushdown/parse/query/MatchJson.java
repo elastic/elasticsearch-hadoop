@@ -37,8 +37,9 @@ public class MatchJson extends JsonObj {
     public MatchJson(String field, String value, Integer slop) {
         this();
         JsonObj body = new JsonObj("query", value);
-        if (slop != null)
+        if (slop != null) {
             body.put("slop", slop);
+        }
         put(field, body);
     }
 }

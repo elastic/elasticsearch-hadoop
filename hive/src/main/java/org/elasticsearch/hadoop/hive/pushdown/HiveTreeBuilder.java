@@ -36,14 +36,14 @@ import java.util.List;
  */
 public class HiveTreeBuilder {
 
-    protected static Log log = LogFactory.getLog(HiveTreeBuilder.class);
+    private static Log log = LogFactory.getLog(HiveTreeBuilder.class);
 
-    protected SargableParser sargableParser = null;
+    private final SargableParser sargableParser;
 
     /**
      * load es.mapping,names ,then get the field mmaping of hive to elasticsearch
      */
-    protected FieldAlias fieldAlias = null;
+    private final FieldAlias fieldAlias;
 
     public HiveTreeBuilder(FieldAlias fieldAlias, SargableParser sargableParser) {
         this.sargableParser = sargableParser;
@@ -57,24 +57,26 @@ public class HiveTreeBuilder {
      * @return when mapping contain filed, return the mapping value. otherwise return itself.
      */
     private String getMappingField(String field) {
-        if (fieldAlias == null) return field;
+        if (fieldAlias == null){ return field;}
         String mappingField = fieldAlias.toES(field);
-        if (mappingField == null)
+        if (mappingField == null) {
             return field;
-        else
+        }
+        else {
             return mappingField;
+        }
     }
 
     public OpNode build(ExprNodeDesc exprNodeDesc) {
         OpNode root = OpNode.createRootNode();
-        _build(root, exprNodeDesc);
+        doBuild(root, exprNodeDesc);
         root.checkNeedScanAllTable(sargableParser);
         root.checkIsAllOptimizable(sargableParser);
 
         return root;
     }
 
-    private void _build(Node nowParent, ExprNodeDesc hiveNode) {
+    private void doBuild(Node nowParent, ExprNodeDesc hiveNode) {
         if (hiveNode.getChildren() == null || hiveNode.getChildren().isEmpty()) {
             if (hiveNode.getName().endsWith("ExprNodeColumnDesc") && !hiveNode.getCols().isEmpty()) {
                 FieldNode node = new FieldNode(hiveNode.getExprString());
@@ -121,7 +123,7 @@ public class HiveTreeBuilder {
             }
 
             for (ExprNodeDesc nodeDesc : hiveNode.getChildren()) {
-                _build(opNode, nodeDesc);
+                doBuild(opNode, nodeDesc);
             }
 
             // finally, check whether is current node need scan all data from the target table or not.
@@ -144,16 +146,19 @@ public class HiveTreeBuilder {
      */
     protected String findOp(ExprNodeDesc exprNodeDesc) {
         String udfName = getGenericUDFNameFromExprDesc(exprNodeDesc);
-        if (udfName == null)
+        if (udfName == null) {
             return null;
+        }
 
-        String[] arr = udfName.split("\\.");
-        udfName = arr[arr.length - 1];
+        int index = udfName.lastIndexOf(".");
+        udfName = udfName.substring(index + 1);
         String op = sargableParser.udfOp(udfName);
-        if (op == null)
+        if (op == null) {
             return udfName;
-        else
+        }
+        else {
             return sargableParser.synonymOp(op);
+        }
     }
 
     public String getGenericUDFNameFromExprDesc(ExprNodeDesc desc) {

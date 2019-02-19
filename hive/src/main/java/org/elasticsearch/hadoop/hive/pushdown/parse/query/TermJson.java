@@ -41,8 +41,9 @@ public class TermJson extends JsonObj {
     }
 
     public TermJson term(String field, List<String> terms) {
-        if (terms.size() == 1)
+        if (terms.size() == 1) {
             put(field, terms.get(0));
+        }
         else if (terms.size() > 1) {
             put(field, terms);
             key = "terms";

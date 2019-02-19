@@ -39,8 +39,9 @@ public class BoolJson extends JsonObj {
         List<JsonObj> l = (List<JsonObj>) (bool.get(key));
         if (l == null && ("must".equals(key) || "should".equals(key) || "must_not".equals(key) || "filter".equals(key))) {
             synchronized (this) {
-                if (!bool.containsKey(key))
+                if (!bool.containsKey(key)) {
                     bool.put(key, new ArrayList<JsonObj>());
+                }
             }
             l = (List<JsonObj>) (bool.get(key));
         }
@@ -48,12 +49,14 @@ public class BoolJson extends JsonObj {
     }
 
     public BoolJson filter(JsonObj obj) {
-        if (obj == null)
+        if (obj == null) {
             return this;
+        }
 
         String key = obj.getKey();
-        if (StringUtils.hasText(key))
+        if (StringUtils.hasText(key)) {
             getList("filter").add(new JsonObj(obj.getKey(), obj));
+        }
         else {
             getList("filter").add(obj);
         }
@@ -61,12 +64,14 @@ public class BoolJson extends JsonObj {
     }
 
     public BoolJson must(JsonObj obj) {
-        if (obj == null)
+        if (obj == null) {
             return this;
+        }
 
         String key = obj.getKey();
-        if (StringUtils.hasText(key))
+        if (StringUtils.hasText(key)) {
             getList("must").add(new JsonObj(obj.getKey(), obj));
+        }
         else {
             getList("must").add(obj);
         }
@@ -74,12 +79,14 @@ public class BoolJson extends JsonObj {
     }
 
     public BoolJson mustNot(JsonObj obj) {
-        if (obj == null)
+        if (obj == null) {
             return this;
+        }
 
         String key = obj.getKey();
-        if (StringUtils.hasText(key))
+        if (StringUtils.hasText(key)) {
             getList("must_not").add(new JsonObj(obj.getKey(), obj));
+        }
         else {
             getList("must_not").add(obj);
         }
@@ -87,12 +94,14 @@ public class BoolJson extends JsonObj {
     }
 
     public BoolJson should(JsonObj obj) {
-        if (obj == null)
+        if (obj == null) {
             return this;
+        }
 
         String key = obj.getKey();
-        if (StringUtils.hasText(key))
+        if (StringUtils.hasText(key)) {
             getList("should").add(new JsonObj(obj.getKey(), obj));
+        }
         else {
             getList("should").add(obj);
         }

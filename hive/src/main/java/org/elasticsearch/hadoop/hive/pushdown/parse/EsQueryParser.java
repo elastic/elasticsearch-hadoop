@@ -54,13 +54,14 @@ public class EsQueryParser {
      * @return
      */
     public JsonObj parse() {
-        if (rawQuery == null)
+        if (rawQuery == null) {
             return null;
+        }
 
         try {
             //transform QueryBuilder to custom jsonObj
             JsonObj jsonObj = new ObjectMapper().readValue(rawQuery.toString(), JsonObj.class);
-            if (jsonObj == null) return null;
+            if (jsonObj == null) { return null;}
 
             if (isES50) {
                 //if is es5.X or more, using bool to wrapper

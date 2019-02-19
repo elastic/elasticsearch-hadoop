@@ -48,19 +48,22 @@ public class JsonObj extends HashMap<String, Object> {
             }
         }
 
-        if (canPut)
+        if (canPut) {
             put(key, value);
+        }
     }
 
     public JsonObj addByKey(JsonObj obj) {
-        if (!obj.isEmpty())
+        if (!obj.isEmpty()) {
             put(obj.getKey(), obj);
+        }
         return this;
     }
 
     public JsonObj add(String dftKey, JsonObj obj) {
-        if (obj.isEmpty())
+        if (obj.isEmpty()) {
             return this;
+        }
 
         if (obj.getKey() != null) {
             obj = new JsonObj().addByKey(obj);

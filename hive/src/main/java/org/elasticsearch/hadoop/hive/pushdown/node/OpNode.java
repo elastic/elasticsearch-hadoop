@@ -52,7 +52,7 @@ public class OpNode extends Node {
     }
 
     public boolean isRootOp() {
-        if (getOperator() == null) return false;
+        if (getOperator() == null) { return false;}
         return ROOT_NAME.equals(getOperator());
     }
 
@@ -62,8 +62,9 @@ public class OpNode extends Node {
     }
 
     public boolean checkIsAllOptimizable(SargableParser sargableParser) {
-        if (operator == null || operator.isEmpty())
+        if (operator == null || operator.isEmpty()) {
             return isAllOptimizable = true;
+        }
 
         boolean scan = true;
         for (Node n : getChildren()) {
@@ -80,8 +81,9 @@ public class OpNode extends Node {
      * @return
      */
     public boolean checkNeedScanAllTable(SargableParser sargableParser) {
-        if (operator == null || operator.isEmpty())
+        if (operator == null || operator.isEmpty()) {
             return scanAllTable = true;
+        }
 
         if ("and".equals(operator.toLowerCase())) {
             boolean scan = true;
@@ -100,7 +102,7 @@ public class OpNode extends Node {
                     scan &= ((OpNode) n).isScanAllTable();
                 }
             }
-            if (!hasOpChildren) scan = false;
+            if (!hasOpChildren) { scan = false;}
             return scanAllTable = scan;
         } else if (sargableParser.isLogicOp(getOperator()) || ROOT_NAME.equals(getOperator())) {
             boolean scan = false;
@@ -110,8 +112,9 @@ public class OpNode extends Node {
                 }
             }
             return scanAllTable = scan;
-        } else
+        } else {
             return scanAllTable = true;
+        }
     }
 
     public String getOperator() {

@@ -18,15 +18,9 @@
  */
 package org.elasticsearch.hadoop.hive.pushdown;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import org.apache.hadoop.hive.ql.udf.UDFRegExp;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Es Sargable Parser class
@@ -60,7 +54,7 @@ public class EsSargableParser implements SargableParser {
     /**
      * Semantic conversion from hive udf to es
      */
-    protected BiMap<String, String> sargableOpUDFClassMapping = HashBiMap.create();
+    protected Map<String, String> sargableOpUDFClassMapping = new HashMap<String, String>();
 
     protected Set<String> rangeOp = new HashSet<String>(Arrays.asList(
             "<", ">", "<=", ">=", "between"
@@ -120,23 +114,29 @@ public class EsSargableParser implements SargableParser {
     }
 
     public String reverseOp(String op) {
-        if (op == null) return null;
+        if (op == null) {
+            return null;
+        }
         String rop = reverseOps.get(op);
         return rop;
     }
 
     public String udfOp(String op) {
-        if (op == null) return null;
+        if (op == null) {
+            return null;
+        }
         String uOp = sargableOpUDFClassMapping.get(op);
         return uOp;
     }
 
     public String synonymOp(String op) {
         String sop = synonymOps.get(op);
-        if (sop == null)
+        if (sop == null) {
             return op.toLowerCase();
-        else
+        }
+        else {
             return sop;
+        }
     }
 
 }

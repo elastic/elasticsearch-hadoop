@@ -144,7 +144,7 @@ public class EsStorageHandler extends DefaultStorageHandler implements HiveStora
     public DecomposedPredicate decomposePredicate(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
         Settings settings = HadoopSettingsManager.loadFrom(jobConf);
         if (HiveUtils.isPushDown(settings)) {
-            PredicateHandler predicateHander = EsStoragePredicateHandler.getInstance();
+            EsStoragePredicateHandler predicateHander = EsStoragePredicateHandler.getInstance();
             if (predicateHander != null) {
                 return predicateHander.decomposePredicate(jobConf, deserializer, exprNodeDesc);
             }

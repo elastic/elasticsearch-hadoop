@@ -40,8 +40,9 @@ public class AndJson extends JsonObj {
         List<JsonObj> l = (List<JsonObj>) (bool.get(key));
         if (l == null && ("filters".equals(key))) {
             synchronized (this) {
-                if (!bool.containsKey(key))
+                if (!bool.containsKey(key)) {
                     bool.put(key, new ArrayList<JsonObj>());
+                }
             }
             l = (List<JsonObj>) (bool.get(key));
         }
@@ -49,8 +50,9 @@ public class AndJson extends JsonObj {
     }
 
     public AndJson filters(JsonObj obj) {
-        if (obj == null)
+        if (obj == null) {
             return this;
+        }
 
         String key = obj.getKey();
         if (StringUtils.hasText(key)) {

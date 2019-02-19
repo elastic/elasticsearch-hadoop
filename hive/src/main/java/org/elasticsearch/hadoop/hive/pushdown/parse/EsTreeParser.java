@@ -20,36 +20,28 @@ package org.elasticsearch.hadoop.hive.pushdown.parse;
 
 import org.elasticsearch.hadoop.hive.pushdown.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.SargableParser;
-import org.elasticsearch.hadoop.hive.pushdown.TreeParser;
 import org.elasticsearch.hadoop.hive.pushdown.node.ConstantNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.FieldNode;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.AndJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.BoolJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.ExistsJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObjManager;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.MatchJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.MissingJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.QueryJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.RangeJson;
-import org.elasticsearch.hadoop.hive.pushdown.parse.query.TermJson;
+import org.elasticsearch.hadoop.hive.pushdown.parse.query.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.*;
 
-public class EsTreeParser extends TreeParser<JsonObj> {
-    JsonObj preFilterJson = null;
-    List<JsonObj> queries = new LinkedList<JsonObj>();
-    final boolean isES50;
+/**
+ * Parse The structure of the tree parse
+ *
+ */
+public class EsTreeParser implements Serializable {
+
+    protected final SargableParser sargableParser;
+
+    private JsonObj preFilterJson = null;
+    private final boolean isES50;
 
     public EsTreeParser(SargableParser sargableParser, boolean isES50) {
-        super(sargableParser);
+        this.sargableParser = sargableParser;
         this.isES50 = isES50;
     }
 
@@ -68,33 +60,29 @@ public class EsTreeParser extends TreeParser<JsonObj> {
 
     public JsonObj parse(OpNode root) {
 
-        JsonObj pushdown = _parse(root);
+        JsonObj pushdown = doParse(root);
 
         if (isES50) {
             BoolJson wrapper = new BoolJson();
 
-            if (preFilterJson != null && !preFilterJson.isEmpty())
+            if (preFilterJson != null && !preFilterJson.isEmpty()) {
                 wrapper.filter(preFilterJson);
-            if (pushdown != null && !pushdown.isEmpty())
+            }
+            if (pushdown != null && !pushdown.isEmpty()) {
                 wrapper.filter(pushdown);
+            }
 
             JsonObj ret = new JsonObj();
             if (!wrapper.isEmpty()) {
                 ret.addByKey(wrapper);
             }
 
-            if (!queries.isEmpty()) {
-                for (JsonObj queryJson : queries) {
-                    if (!queryJson.isEmpty()) {
-                        ret.addByKey(queryJson);
-                    }
-                }
-            }
-
-            if (!ret.isEmpty())
+            if (!ret.isEmpty()) {
                 return ret;
-            else
+            }
+            else {
                 return null;
+            }
         } else {
             AndJson andJson = new AndJson();
             if (preFilterJson != null && !preFilterJson.isEmpty())
@@ -106,21 +94,44 @@ public class EsTreeParser extends TreeParser<JsonObj> {
             if (!andJson.isEmpty())
                 ret.addByKey(andJson);
 
-            if (!queries.isEmpty()) {
-                for (JsonObj queryJson : queries) {
-                    ret.addByKey(queryJson);
-                }
-            }
-
-            if (!ret.isEmpty())
+            if (!ret.isEmpty()) {
                 return ret;
-            else
+            }
+            else {
                 return null;
+            }
         }
     }
 
+    protected JsonObj doParse(OpNode opNode) {
+        if (opNode == null) { return null;}
+        String op = opNode.getOperator();
+        if (opNode.isRootOp()) {
+            return parseRootNode(opNode);
+        } else if (sargableParser.isLogicOp(op)) {
+            return parseLogicOp(opNode);
+        } else if (sargableParser.isSargableOp(op)) {
+            return parseSargableOp(opNode);
+        } else {
+            return null;
+        }
+    }
 
-    @Override
+    /**
+     * parse from root
+     *
+     * @param root
+     * @return
+     */
+    protected JsonObj parseRootNode(OpNode root) {
+        Node wn = safeget(root.getChildren(), 0);
+        if (wn != null && wn instanceof OpNode) {
+            return doParse((OpNode) wn);
+        } else {
+            return null;
+        }
+    }
+
     public JsonObj parseLogicOp(OpNode opNode) {
         String op = opNode.getOperator();
 
@@ -128,7 +139,7 @@ public class EsTreeParser extends TreeParser<JsonObj> {
         for (Node node : opNode.getChildren()) {
             if (node instanceof OpNode) {
                 OpNode n = (OpNode) node;
-                JsonObj childRes = _parse(n);
+                JsonObj childRes = doParse(n);
                 if (childRes == null) {
                     if ("or".equals(op)) {
                         return null;
@@ -152,7 +163,6 @@ public class EsTreeParser extends TreeParser<JsonObj> {
         return null;
     }
 
-    @Override
     public JsonObj parseSargableOp(OpNode opNode) {
         String op = opNode.getOperator();
 
@@ -268,5 +278,18 @@ public class EsTreeParser extends TreeParser<JsonObj> {
         if (val.startsWith("'") && val.endsWith("'"))
             val = val.substring(1, val.length() - 1);
         return val;
+    }
+
+    public <T> T safeget(List<T> list, int index) {
+        if (list != null && list.size() > index) {
+            try {
+                return list.get(index);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
     }
 }

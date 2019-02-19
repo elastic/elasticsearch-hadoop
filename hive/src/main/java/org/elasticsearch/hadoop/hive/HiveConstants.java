@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import org.elasticsearch.hadoop.hive.pushdown.EsSargableParser;
-
 /**
  * Holder class for various Hive configuration options. Exists mainly since the Hive classes have been refactored/renamed between releases which are not backwards compatible.
  */
