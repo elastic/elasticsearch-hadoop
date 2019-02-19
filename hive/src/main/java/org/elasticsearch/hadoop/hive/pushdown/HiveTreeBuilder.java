@@ -36,8 +36,6 @@ import java.util.List;
  */
 public class HiveTreeBuilder {
 
-    private static Log log = LogFactory.getLog(HiveTreeBuilder.class);
-
     private final SargableParser sargableParser;
 
     /**

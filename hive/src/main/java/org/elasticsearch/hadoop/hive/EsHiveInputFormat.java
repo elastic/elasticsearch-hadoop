@@ -116,12 +116,12 @@ public class EsHiveInputFormat extends EsInputFormat<Text, Writable> {
         HiveUtils.init(settings, log);
 
         // read filter obj str and deserialize it as pushdown optimization result,
-        // then the result write es.query prop.
+        // then the result write es filters prop.
         String filterObjectStr = job.get(TableScanDesc.FILTER_OBJECT_CONF_STR);
         if (filterObjectStr != null && filterObjectStr.length() > 0) {
             String filters = Utilities.deserializeObject(filterObjectStr, String.class);
             if (filters != null && filters.length() > 0) {
-                log.info(String.format("[EsHiveInputFormat][Pushdown][Filters] %s", InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS, filters));
+                log.info(String.format("[EsHiveInputFormat][Pushdown][Filters] %s", filters));
                 SettingsUtils.setFilters(settings, filters);
             }
         }

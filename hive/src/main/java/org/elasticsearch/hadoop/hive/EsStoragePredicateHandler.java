@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.hadoop.hive;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hive.ql.metadata.HiveStoragePredicateHandler;
@@ -28,6 +27,7 @@ import org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPAnd;
 import org.apache.hadoop.hive.serde2.Deserializer;
 import org.apache.hadoop.mapred.JobConf;
 import org.elasticsearch.hadoop.cfg.HadoopSettingsManager;
+import org.elasticsearch.hadoop.cfg.InternalConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.hive.pushdown.EsSargableParser;
 import org.elasticsearch.hadoop.hive.pushdown.HiveTreeBuilder;
@@ -35,19 +35,13 @@ import org.elasticsearch.hadoop.hive.pushdown.Pair;
 import org.elasticsearch.hadoop.hive.pushdown.SargableParser;
 import org.elasticsearch.hadoop.hive.pushdown.node.Node;
 import org.elasticsearch.hadoop.hive.pushdown.node.OpNode;
-import org.elasticsearch.hadoop.hive.pushdown.parse.EsQueryParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.EsTreeParser;
 import org.elasticsearch.hadoop.hive.pushdown.parse.query.JsonObj;
-import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
-import org.elasticsearch.hadoop.rest.query.QueryBuilder;
-import org.elasticsearch.hadoop.rest.query.QueryUtils;
 import org.elasticsearch.hadoop.util.FieldAlias;
 import org.elasticsearch.hadoop.util.SettingsUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.ES_QUERY;
 
 
 /**
@@ -65,7 +59,6 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
         // load settings
         Settings settings = HadoopSettingsManager.loadFrom(jobConf);
         boolean isES50 = SettingsUtils.isEs50(settings);
-        log.info("[PushDown][isES50] : " + isES50);
 
         SargableParser sargableParser = new EsSargableParser();
 
@@ -83,11 +76,11 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
 
         if (root != null) {
             //parser the operator node tree and get a json format elasticsearch-query.
-            JsonObj esQuery = parser.parse(root);
-            if (esQuery != null) {
-                log.info("[PushDown][Final Filter " + ES_QUERY + "] : " + esQuery.toQuery());
+            JsonObj filters = parser.parse(root);
+            if (filters != null) {
+                log.info("[PushDown][Final Filter " + InternalConfigurationOptions.INTERNAL_ES_QUERY_FILTERS + "] : " + filters.toQuery());
             }
-            return new Pair<Node, JsonObj>(root, esQuery);
+            return new Pair<Node, JsonObj>(root, filters);
         }
 
         return new Pair<Node, JsonObj>(null, null);
