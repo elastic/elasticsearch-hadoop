@@ -57,22 +57,6 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
 
     private static Log log = LogFactory.getLog(EsStoragePredicateHandler.class);
 
-    private static EsStoragePredicateHandler _instance;
-
-    private EsStoragePredicateHandler() {
-    }
-
-    public static EsStoragePredicateHandler getInstance() {
-        if (_instance == null) {
-            synchronized (EsStoragePredicateHandler.class) {
-                if (_instance == null) {
-                    _instance = new EsStoragePredicateHandler();
-                }
-            }
-        }
-        return _instance;
-    }
-
     private Pair<Node, JsonObj> optimizePushdown(JobConf jobConf, Deserializer deserializer, ExprNodeDesc exprNodeDesc) {
         if (exprNodeDesc == null) {
             return new Pair<Node, JsonObj>(null, null);
@@ -83,10 +67,7 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
         boolean isES50 = SettingsUtils.isEs50(settings);
         log.info("[PushDown][isES50] : " + isES50);
 
-        SargableParser sargableParser = EsSargableParser.getInstance();
-        if (sargableParser == null) {
-            return new Pair<Node, JsonObj>(null, null);
-        }
+        SargableParser sargableParser = new EsSargableParser();
 
         //get hive to es field alias mapping
         FieldAlias fieldAlias = HiveUtils.alias(settings);
@@ -148,6 +129,7 @@ public class EsStoragePredicateHandler implements HiveStoragePredicateHandler {
         if (exprNodeDesc == null) {
             return null;
         }
+        // start pushdown optimize
         Pair<Node, JsonObj> pair = this.optimizePushdown(jobConf, deserializer, exprNodeDesc);
 
         OpNode root = (OpNode) pair.getFirst();

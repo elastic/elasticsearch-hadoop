@@ -37,7 +37,7 @@ public class ParseTest {
         String exprNodeDescSeri = "AQEAamF2YS51dGlsLkFycmF5TGlz9AECAQFvcmcuYXBhY2hlLmhhZG9vcC5oaXZlLnFsLnBsYW4uRXhwck5vZGVHZW5lcmljRnVuY0Rlc+MBAQABAgECb3JnLmFwYWNoZS5oYWRvb3AuaGl2ZS5xbC5wbGFuLkV4cHJOb2RlQ29sdW1uRGVz4wEBdHlw5QAAAWVzX3Rlc3RfswEDb3JnLmFwYWNoZS5oYWRvb3AuaGl2ZS5zZXJkZTIudHlwZWluZm8uUHJpbWl0aXZlVHlwZUluZu8BAXN0cmlu5wEEb3JnLmFwYWNoZS5oYWRvb3AuaGl2ZS5xbC5wbGFuLkV4cHJOb2RlQ29uc3RhbnREZXPjAQEDCQMBgjEBBW9yZy5hcGFjaGUuaGFkb29wLmhpdmUucWwudWRmLmdlbmVyaWMuR2VuZXJpY1VERk9QRXF1YewBAAABgj0BRVFVQcwBBm9yZy5hcGFjaGUuaGFkb29wLmlvLkJvb2xlYW5Xcml0YWJs5QEAAAEDAQFib29sZWHuAQEBAQABAgECAQFwdWJsaXNoX2RhdOUAAAgBAwEBaW70AQQBAQMXAoCmyKQLAQdvcmcuYXBhY2hlLmhhZG9vcC5oaXZlLnFsLnVkZi5nZW5lcmljLkdlbmVyaWNVREZPUEdyZWF0ZXJUaGHuAQAAAYI+AUdSRUFURVIgVEhBzgEGAQAAAQMRAQhvcmcuYXBhY2hlLmhhZG9vcC5oaXZlLnFsLnVkZi5nZW5lcmljLkdlbmVyaWNVREZPUEFu5AEBBgEAAAEDEQ==";
         ExprNodeGenericFuncDesc exprNodeDesc = Utilities.deserializeExpression(exprNodeDescSeri);
 
-        EsSargableParser sargableParser = EsSargableParser.getInstance();
+        EsSargableParser sargableParser = new EsSargableParser();
         HiveTreeBuilder hiveTreeBuilder = new HiveTreeBuilder(null, sargableParser);
         EsTreeParser parser = new EsTreeParser(sargableParser, true);
 

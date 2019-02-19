@@ -27,50 +27,54 @@ import java.util.*;
  */
 public class EsSargableParser implements SargableParser {
 
-    private static EsSargableParser _instance;
-
-    private EsSargableParser() {
-        init();
-    }
-
-    public static EsSargableParser getInstance() {
-        if (_instance == null) {
-            synchronized (EsSargableParser.class) {
-                if (_instance == null) {
-                    _instance = new EsSargableParser();
-                }
-            }
-        }
-        return _instance;
-    }
-
     /**
      * All sargable operators
      */
-    protected Set<String> sargableOp = new HashSet<String>(Arrays.asList(
-            "=", "<", ">", "<=", ">=", "between", "is null", "is not null"
-    ));
+    private static Set<String> sargableOp;
 
     /**
      * Semantic conversion from hive udf to es
      */
-    protected Map<String, String> sargableOpUDFClassMapping = new HashMap<String, String>();
+    private static Map<String, String> sargableOpUDFClassMapping;
 
-    protected Set<String> rangeOp = new HashSet<String>(Arrays.asList(
-            "<", ">", "<=", ">=", "between"
-    ));
-    protected Map<String, String> reverseOps = new HashMap<String, String>();
+    /**
+     * Range operator,such as > , < ,=
+     */
+    private static Set<String> rangeOp;
+
+    /**
+     * Take reverse operator mapping,such as != ---> =
+     */
+    private static Map<String, String> reverseOps;
 
     /**
      * Semantic conversion from hive to es
      */
-    protected Map<String, String> synonymOps = new HashMap<String, String>();
+    private static Map<String, String> synonymOps;
 
-    protected Set<String> logicOp = new HashSet<String>(Arrays.asList(
-            "and", "or", "not"
-    ));
+    /**
+     * Login operator,such as and, or , not
+     */
+    private static Set<String> logicOp;
 
-    public void init() {
+    static {
+        init();
+    }
+
+    private static void init() {
+        sargableOp = new HashSet<String>(Arrays.asList(
+                "=", "<", ">", "<=", ">=", "between", "is null", "is not null"
+        ));
+
+        rangeOp = new HashSet<String>(Arrays.asList(
+                "<", ">", "<=", ">=", "between"
+        ));
+
+        logicOp = new HashSet<String>(Arrays.asList(
+                "and", "or", "not"
+        ));
+
+        reverseOps = new HashMap<String, String>();
         reverseOps.put(">", "<");
         reverseOps.put(">=", "<=");
         reverseOps.put("<", ">");
@@ -78,6 +82,7 @@ public class EsSargableParser implements SargableParser {
         reverseOps.put("=", "!=");
         reverseOps.put("!=", "=");
 
+        synonymOps = new HashMap<String, String>();
         synonymOps.put("==", "=");
         synonymOps.put("<>", "!=");
         synonymOps.put("!", "not");
@@ -85,6 +90,7 @@ public class EsSargableParser implements SargableParser {
         synonymOps.put("||", "or");
         synonymOps.put("rlike", "regex");
 
+        sargableOpUDFClassMapping = new HashMap<String, String>();
         sargableOpUDFClassMapping.put("GenericUDFOPAnd", "and");
         sargableOpUDFClassMapping.put("GenericUDFOPOr", "or");
         sargableOpUDFClassMapping.put("GenericUDFOPNot", "not");
@@ -133,8 +139,7 @@ public class EsSargableParser implements SargableParser {
         String sop = synonymOps.get(op);
         if (sop == null) {
             return op.toLowerCase();
-        }
-        else {
+        } else {
             return sop;
         }
     }
