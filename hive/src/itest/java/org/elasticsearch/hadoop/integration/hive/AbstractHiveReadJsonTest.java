@@ -25,6 +25,7 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +49,7 @@ public class AbstractHiveReadJsonTest {
 
     private static int testInstance = 0;
     private final boolean readMetadata;
+    private EsMajorVersion targetVersion;
 
     @Parameters
     public static Collection<Object[]> queries() {
@@ -65,6 +67,7 @@ public class AbstractHiveReadJsonTest {
     public void before() throws Exception {
         provisionEsLib();
         RestUtils.refresh("json-hive*");
+        targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
     }
 
     @After
@@ -77,7 +80,7 @@ public class AbstractHiveReadJsonTest {
     public void basicLoad() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE jsonartistsread" + testInstance + " (data INT, garbage INT, garbage2 STRING) "
-                + tableProps("json-hive-artists/data", "'es.output.json' = 'true'", "'es.mapping.names'='garbage2:refuse'");
+                + tableProps(resource("json-hive-artists", "data"), "'es.output.json' = 'true'", "'es.mapping.names'='garbage2:refuse'");
 
         String select = "SELECT * FROM jsonartistsread" + testInstance;
 
@@ -93,7 +96,7 @@ public class AbstractHiveReadJsonTest {
     public void basicLoadWithNameMappings() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE jsonartistsread" + testInstance + " (refuse INT, garbage INT, data STRING) "
-                + tableProps("json-hive-artists/data", "'es.output.json' = 'true'", "'es.mapping.names'='data:boomSomethingYouWerentExpecting'");
+                + tableProps(resource("json-hive-artists", "data"), "'es.output.json' = 'true'", "'es.mapping.names'='data:boomSomethingYouWerentExpecting'");
 
         String select = "SELECT * FROM jsonartistsread" + testInstance;
 
@@ -109,7 +112,7 @@ public class AbstractHiveReadJsonTest {
     public void basicLoadWithNoGoodCandidateField() throws Exception {
 
         String create = "CREATE EXTERNAL TABLE jsonartistsread" + testInstance + " (refuse INT, garbage INT) "
-                + tableProps("json-hive-artists/data", "'es.output.json' = 'true'");
+                + tableProps(resource("json-hive-artists", "data"), "'es.output.json' = 'true'");
 
         String select = "SELECT * FROM jsonartistsread" + testInstance;
 
@@ -122,7 +125,7 @@ public class AbstractHiveReadJsonTest {
     @Test
     public void testMissingIndex() throws Exception {
         String create = "CREATE EXTERNAL TABLE jsonmissingread" + testInstance + " (data STRING) "
-                + tableProps("foobar/missing", "'es.index.read.missing.as.empty' = 'true'", "'es.output.json' = 'true'");
+                + tableProps(resource("foobar", "missing"), "'es.index.read.missing.as.empty' = 'true'", "'es.output.json' = 'true'");
 
         String select = "SELECT * FROM jsonmissingread" + testInstance;
 
@@ -153,7 +156,7 @@ public class AbstractHiveReadJsonTest {
 
         String create = "CREATE EXTERNAL TABLE jsonartistscollisionread" + testInstance + " (data INT, garbage INT, garbage2 STRING) "
                 + tableProps(
-                    "json-hive-artists/data",
+                    resource("json-hive-artists", "data"),
                     "'es.output.json' = 'true'",
                     "'es.read.source.filter'='name'"
                 );
@@ -167,6 +170,14 @@ public class AbstractHiveReadJsonTest {
         assertContains(result, "Marilyn");
         assertThat(result, not(hasItem(containsString("last.fm/music/MALICE"))));
         assertThat(result, not(hasItem(containsString("last.fm/serve/252/5872875.jpg"))));
+    }
+
+    private String resource(String index, String type) {
+        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
     }
 
     private static boolean containsNoNull(List<String> str) {

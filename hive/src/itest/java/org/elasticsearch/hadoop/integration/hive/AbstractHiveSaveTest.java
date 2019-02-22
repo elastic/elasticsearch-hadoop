@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
-import static org.elasticsearch.hadoop.util.EsMajorVersion.V_6_X;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
@@ -72,7 +71,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-artists/data");
+                        + tableProps(resource("hive-artists", "data"));
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM source s";
 
@@ -103,7 +102,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "ts       STRING) "
-                        + tableProps("hive-savemeta/data", "'es.mapping.id' = 'id'", "'es.mapping.version' = '<\"5\">'");
+                        + tableProps(resource("hive-savemeta", "data"), "'es.mapping.id' = 'id'", "'es.mapping.version' = '<\"5\">'");
 
         String selectTest = "SELECT s.name, s.ts FROM sourcewithmetadata s";
 
@@ -159,7 +158,7 @@ public class AbstractHiveSaveTest {
                         + "rid      INT, "
                         + "mapids   ARRAY<INT>, "
                         + "rdata    MAP<INT, STRING>) "
-                        + tableProps("hive-compound/data");
+                        + tableProps(resource("hive-compound", "data"));
 
         String selectTest = "SELECT rid, mapids, rdata FROM compoundsource";
 
@@ -198,7 +197,7 @@ public class AbstractHiveSaveTest {
                         + "dte     TIMESTAMP, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-artiststimestamp/data");
+                        + tableProps(resource("hive-artiststimestamp", "data"));
 
         String currentDate = "SELECT *, from_unixtime(unix_timestamp()) from timestampsource";
 
@@ -235,7 +234,7 @@ public class AbstractHiveSaveTest {
                         + "dTE     TIMESTAMP, "
                         + "Name     STRING, "
                         + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                        + tableProps("hive-aliassave/data", "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
+                        + tableProps(resource("hive-aliassave", "data"), "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
 
         // since the date format is different in Hive vs ISO8601/Joda, save only the date (which is the same) as a string
         // we do this since unix_timestamp() saves the date as a long (in seconds) and w/o mapping the date is not recognized as data
@@ -271,7 +270,7 @@ public class AbstractHiveSaveTest {
                         + "date     DATE, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-datesave/data");
+                        + tableProps(resource("hive-datesave", "data"));
 
         // this works
         String someDate = "SELECT cast('2013-10-21' as date) from datesource";
@@ -310,7 +309,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     CHAR(20), "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-charsave/data");
+                        + tableProps(resource("hive-charsave", "data"));
 
         // this does not
         String insert =
@@ -346,7 +345,7 @@ public class AbstractHiveSaveTest {
         String ddl =
                 "CREATE EXTERNAL TABLE externalserdetest ("
                         + "data     STRING)"
-                        + tableProps("hive-externalserde/data");
+                        + tableProps(resource("hive-externalserde", "data"));
 
         String insert =
                 "INSERT OVERWRITE TABLE externalserdetest "
@@ -378,7 +377,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     VARCHAR(10), "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-varcharsave/data");
+                        + tableProps(resource("hive-varcharsave", "data"));
 
         // transfer data
         String insert =
@@ -414,7 +413,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-createsave/data",
+                        + tableProps(resource("hive-createsave", "data"),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -455,7 +454,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-createsave/data",
+                        + tableProps(resource("hive-createsave", "data"),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -488,7 +487,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-updatesave/data",
+                        + tableProps(resource("hive-updatesave", "data"),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
@@ -529,7 +528,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-updatewoupsertsave/data",
+                        + tableProps(resource("hive-updatewoupsertsave", "data"),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='id'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
@@ -605,7 +604,7 @@ public class AbstractHiveSaveTest {
                         + "id       BIGINT, "
                         + "name     STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-pattern-{id}/data");
+                        + tableProps(resource("hive-pattern-{id}", "data"));
 
         String selectTest = "SELECT s.name, struct(s.url, s.picture) FROM sourcepattern s";
 
@@ -645,7 +644,7 @@ public class AbstractHiveSaveTest {
                         + "name     STRING, "
                         + "ts       STRING, "
                         + "links    STRUCT<url:STRING, picture:STRING>) "
-                        + tableProps("hive-pattern-format-{ts|YYYY-MM-dd}/data");
+                        + tableProps(resource("hive-pattern-format-{ts|YYYY-MM-dd}", "data"));
 
         String selectTest = "SELECT s.name, s.ts, struct(s.url, s.picture) FROM sourcepatternformat s";
 
@@ -680,7 +679,7 @@ public class AbstractHiveSaveTest {
                 "CREATE EXTERNAL TABLE fieldexclude ("
                         + "id       BIGINT, "
                         + "name     STRING)"
-                        + tableProps("hive-fieldexclude/data", "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
+                        + tableProps(resource("hive-fieldexclude", "data"), "'es.mapping.id'='id'", "'es.mapping.exclude'='id'");
 
         String selectTest = "SELECT s.id, s.name FROM sourcefieldexclude s";
 
@@ -696,13 +695,25 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
 
-        String string = RestUtils.get("hive-fieldexclude/data/1");
+        String docEndpoint = resource("hive-fieldexclude", "data");
+        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+            docEndpoint = docEndpoint + "/_doc";
+        }
+        String string = RestUtils.get(docEndpoint + "/1");
         assertThat(string, containsString("MALICE"));
 
-        string = RestUtils.get("hive-fieldexclude/data/7");
+        string = RestUtils.get(docEndpoint + "/7");
         assertThat(string, containsString("Manson"));
 
         assertFalse(RestUtils.getMappings("hive-fieldexclude").getResolvedView().toString().contains("id="));
+    }
+
+    private String resource(String index, String type) {
+        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
     }
 
     private String createTable(String tableName) {

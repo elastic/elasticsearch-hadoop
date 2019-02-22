@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.integration.hive;
 import java.util.List;
 
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,11 +52,17 @@ public class AbstractHiveExtraTests {
 
     @Test
     public void testQuery() throws Exception {
-        if (!RestUtils.exists("cars/transactions")) {
-            RestUtils.bulkData("cars/transactions", "cars-bulk.txt");
-            RestUtils.refresh("cars");
+        String resource;
+        if (TestUtils.getEsClusterInfo().getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+            resource = "cars";
+        } else {
+            resource = "cars/transactions";
         }
 
+        if (!RestUtils.exists(resource)) {
+            RestUtils.bulkData(resource, "cars-bulk.txt");
+            RestUtils.refresh("cars");
+        }
 
         String drop = "DROP TABLE IF EXISTS cars2";
         String create = "CREATE EXTERNAL TABLE cars2 ("
@@ -62,7 +70,7 @@ public class AbstractHiveExtraTests {
                 + "price BIGINT,"
                 + "sold TIMESTAMP, "
                 + "alias STRING) "
-                + HiveSuite.tableProps("cars/transactions", null, "'es.mapping.names'='alias:&c'");
+                + HiveSuite.tableProps(resource, null, "'es.mapping.names'='alias:&c'");
 
         String query = "SELECT * from cars2";
         String count = "SELECT count(1) from cars2";
@@ -82,7 +90,11 @@ public class AbstractHiveExtraTests {
         RestUtils.touch("hive-date-as-long");
         RestUtils.putMapping("hive-date-as-long", "data", "org/elasticsearch/hadoop/hive/hive-date-typeless-mapping.json");
 
-        RestUtils.postData(resource + "/_doc/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
+        if (TestUtils.getEsClusterInfo().getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+            RestUtils.postData(resource + "/_doc/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
+        } else {
+            RestUtils.postData(resource + "/data/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
+        }
 
         RestUtils.refresh("hive-date-as-long");
 
