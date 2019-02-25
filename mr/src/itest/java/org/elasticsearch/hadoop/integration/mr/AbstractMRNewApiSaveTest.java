@@ -138,7 +138,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testBasicMultiSave() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-multi-save/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-multi-save", "data"));
 
         MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
         MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
@@ -155,7 +155,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testBasicSave() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-save/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-save", "data"));
 
         runJob(conf);
     }
@@ -163,7 +163,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testSaveWithId() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-savewithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-savewithid", "data"));
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
         runJob(conf);
@@ -174,7 +174,7 @@ public class AbstractMRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-createwithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-createwithid", "data"));
 
         runJob(conf);
     }
@@ -184,7 +184,7 @@ public class AbstractMRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-createwithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-createwithid", "data"));
 
         assertFalse("job should have failed", runJob(conf));
     }
@@ -201,7 +201,7 @@ public class AbstractMRNewApiSaveTest {
         client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
         client.close();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-ingested/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-ingested", "data"));
         conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mrnewapi-pipeline");
         conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
 
@@ -212,7 +212,7 @@ public class AbstractMRNewApiSaveTest {
     public void testUpdateWithoutId() throws Exception {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-update/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-update", "data"));
 
         runJob(conf);
     }
@@ -222,7 +222,7 @@ public class AbstractMRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-update/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-update", "data"));
 
         runJob(conf);
     }
@@ -232,7 +232,7 @@ public class AbstractMRNewApiSaveTest {
         Configuration conf = createConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-updatewoupsert/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-updatewoupsert", "data"));
 
         assertFalse("job should have failed", runJob(conf));
     }
@@ -241,7 +241,7 @@ public class AbstractMRNewApiSaveTest {
     public void testUpdateOnlyScript() throws Exception {
         Configuration conf = createConf();
         // use an existing id to allow the update to succeed
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-createwithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-createwithid", "data"));
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
@@ -262,7 +262,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testUpdateOnlyParamScript() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-createwithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-createwithid", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -283,7 +283,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScript() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-createwithid/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-createwithid", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -304,7 +304,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testUpsertScript() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-upsert-script/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-upsert-script", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -316,7 +316,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testUpsertParamScript() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-upsert-script-param/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-upsert-script-param", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -336,7 +336,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testUpsertParamJsonScript() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-upsert-script-param/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-upsert-script-param", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -356,7 +356,7 @@ public class AbstractMRNewApiSaveTest {
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-non-existing/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-non-existing", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         runJob(conf);
@@ -388,7 +388,7 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-{tag}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-pattern-{tag}", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -397,10 +397,18 @@ public class AbstractMRNewApiSaveTest {
     @Test
     public void testIndexPatternWithFormatting() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mrnewapi-pattern-format-{@timestamp|YYYY-MM-dd}/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mrnewapi-pattern-format-{@timestamp|YYYY-MM-dd}", "data"));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
+    }
+
+    private String resource(String index, String type) {
+        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
     }
 
     private Configuration createConf() throws IOException {
