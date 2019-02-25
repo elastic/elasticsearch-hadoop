@@ -26,6 +26,7 @@ import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.rest.RestClient;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -34,6 +35,8 @@ import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractPigSaveJsonTest extends AbstractPigTests {
+
+    private final EsMajorVersion VERSION = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @BeforeClass
     public static void startup() throws Exception {
@@ -54,7 +57,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
                 //"ILLUSTRATE A;" +
-                "STORE A INTO 'json-pig-tupleartists/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO '"+resource("json-pig-tupleartists", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
         //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         pig.executeScript(script);
     }
@@ -64,7 +67,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-fieldalias/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true','es.mapping.names=data:@json');";
+                "STORE A INTO '"+resource("json-pig-fieldalias", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true','es.mapping.names=data:@json');";
 
         pig.executeScript(script);
     }
@@ -74,7 +77,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-createwithid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO '"+resource("json-pig-createwithid", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -91,7 +94,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-updatewoid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO '"+resource("json-pig-updatewoid", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update',"
                                 + "'es.input.json=true');";
         pig.executeScript(script);
@@ -102,7 +105,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-update/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO '"+resource("json-pig-update", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -114,7 +117,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-updatewoupsert/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE A INTO '"+resource("json-pig-updatewoupsert", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=number',"
                                 + "'es.input.json=true');";
@@ -142,7 +145,7 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO '"+resource("json-pig-pattern-{tag}", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
         pig.executeScript(script);
     }
@@ -152,9 +155,25 @@ public class AbstractPigSaveJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadSource() +
-                "STORE A INTO 'json-pig-pattern-format-{@timestamp|YYYY-MM-dd}/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
+                "STORE A INTO '"+resource("json-pig-pattern-format-{@timestamp|YYYY-MM-dd}", "data")+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');";
 
         pig.executeScript(script);
+    }
+
+    private String resource(String index, String type) {
+        if (VERSION.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
+    }
+
+    private String docEndpoint(String index, String type) {
+        if (VERSION.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index + "/_doc";
+        } else {
+            return index + "/" + type;
+        }
     }
 
     private String loadSource() {
