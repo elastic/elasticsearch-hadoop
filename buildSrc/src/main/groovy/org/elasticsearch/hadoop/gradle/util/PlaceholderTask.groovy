@@ -27,6 +27,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.LoggingManager
 import org.gradle.api.plugins.Convention
 import org.gradle.api.plugins.ExtensionContainer
+import org.gradle.api.provider.Property
 import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.TaskDependency
 import org.gradle.api.tasks.TaskDestroyables
@@ -169,16 +170,6 @@ class PlaceholderTask implements Task {
     }
 
     @Override
-    Task leftShift(Closure action) {
-        throw new UnsupportedOperationException("Placeholder task cannot perform operations")
-    }
-
-    @Override
-    Task deleteAllActions() {
-        throw new UnsupportedOperationException("Placeholder task cannot perform operations")
-    }
-
-    @Override
     boolean getEnabled() {
         throw new UnsupportedOperationException("Placeholder task cannot perform operations")
     }
@@ -240,11 +231,6 @@ class PlaceholderTask implements Task {
 
     @Override
     void setGroup(String group) {
-        throw new UnsupportedOperationException("Placeholder task cannot perform operations")
-    }
-
-    @Override
-    boolean dependsOnTaskDidWork() {
         throw new UnsupportedOperationException("Placeholder task cannot perform operations")
     }
 
@@ -315,6 +301,11 @@ class PlaceholderTask implements Task {
 
     @Override
     ExtensionContainer getExtensions() {
+        throw new UnsupportedOperationException("Placeholder task cannot perform operations")
+    }
+
+    @Override
+    Property getTimeout() {
         throw new UnsupportedOperationException("Placeholder task cannot perform operations")
     }
 }
