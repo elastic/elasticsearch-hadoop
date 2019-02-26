@@ -92,6 +92,22 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         this.commitLogDir = logDir.getAbsolutePath();
     }
 
+    private String resource(String index, String type) {
+        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
+    }
+
+    private String docPath(String index, String type) {
+        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+            return index + "/_doc";
+        } else {
+            return index + "/" + type;
+        }
+    }
+
     private String wrapIndex(String index) {
         return prefix + index;
     }
@@ -126,7 +142,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void test0FailOnIndexCreationDisabled() throws Exception {
-        String target = wrapIndex("test-nonexisting/data");
+        String target = wrapIndex(resource("test-nonexisting", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -161,7 +177,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     @Test
     public void test1BasicWrite() throws Exception {
-        String target = wrapIndex("test-write/data");
+        String target = wrapIndex(resource("test-write", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -197,7 +213,8 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     @Test
     public void test1WriteWithMappingId() throws Exception {
-        String target = wrapIndex("test-write-id/data");
+        String target = wrapIndex(resource("test-write-id", "data"));
+        String docEndpoint = wrapIndex(docPath("test-write-id", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -227,16 +244,16 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         );
 
         assertEquals(3, JavaEsSpark.esRDD(new JavaSparkContext(spark.sparkContext()), target).count());
-        assertTrue(RestUtils.exists(target + "/1"));
-        assertTrue(RestUtils.exists(target + "/2"));
-        assertTrue(RestUtils.exists(target + "/3"));
+        assertTrue(RestUtils.exists(docEndpoint + "/1"));
+        assertTrue(RestUtils.exists(docEndpoint + "/2"));
+        assertTrue(RestUtils.exists(docEndpoint + "/3"));
 
         assertThat(RestUtils.get(target + "/_search?"), containsString("Spark"));
     }
 
     @Test
     public void test1WriteWithMappingExclude() throws Exception {
-        String target = wrapIndex("test-mapping-exclude/data");
+        String target = wrapIndex(resource("test-mapping-exclude", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -279,7 +296,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         String pipeline = "{\"description\":\"Test Pipeline\",\"processors\":[{\"set\":{\"field\":\"pipeTEST\",\"value\":true,\"override\":true}}]}";
         RestUtils.put("/_ingest/pipeline/" + pipelineName, StringUtils.toUTF(pipeline));
 
-        String target = wrapIndex("test-write-ingest/data");
+        String target = wrapIndex(resource("test-write-ingest", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -315,7 +332,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
 
     @Test
     public void test1MultiIndexWrite() throws Exception {
-        String target = wrapIndex("test-write-tech-{name}/data");
+        String target = wrapIndex(resource("test-write-tech-{name}", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -338,11 +355,11 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
                 target
         );
 
-        assertTrue(RestUtils.exists(wrapIndex("test-write-tech-spark/data")));
-        assertTrue(RestUtils.exists(wrapIndex("test-write-tech-hadoop/data")));
+        assertTrue(RestUtils.exists(wrapIndex(resource("test-write-tech-spark", "data"))));
+        assertTrue(RestUtils.exists(wrapIndex(resource("test-write-tech-hadoop", "data"))));
 
-        assertThat(RestUtils.get(wrapIndex("test-write-tech-spark/data/_search?")), containsString("\"name\":\"spark\""));
-        assertThat(RestUtils.get(wrapIndex("test-write-tech-hadoop/data/_search?")), containsString("\"name\":\"hadoop\""));
+        assertThat(RestUtils.get(wrapIndex(resource("test-write-tech-spark", "data") + "/_search?")), containsString("\"name\":\"spark\""));
+        assertThat(RestUtils.get(wrapIndex(resource("test-write-tech-hadoop", "data") + "/_search?")), containsString("\"name\":\"hadoop\""));
     }
 
     public static class ContactBean implements Serializable {
@@ -411,12 +428,13 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         String mapping = "{\"data\":{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}}";
         String index = wrapIndex("test-script-upsert");
         String type = "data";
-        String target = index + "/" + type;
+        String target = resource(index, type);
+        String docEndpoint = docPath(index, type);
 
         RestUtils.touch(index);
         RestUtils.putMapping(index, type, mapping.getBytes());
-        RestUtils.postData(target+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
-        RestUtils.postData(target+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docEndpoint+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docEndpoint+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
 
         // Common configurations
         Map<String, String> updateProperties = new HashMap<>();
@@ -488,10 +506,10 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
             );
 
         // Validate
-        assertTrue(RestUtils.exists(target + "/1"));
-        assertThat(RestUtils.get(target + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
+        assertTrue(RestUtils.exists(docEndpoint + "/1"));
+        assertThat(RestUtils.get(docEndpoint + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
 
-        assertTrue(RestUtils.exists(target + "/2"));
-        assertThat(RestUtils.get(target + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
+        assertTrue(RestUtils.exists(docEndpoint + "/2"));
+        assertThat(RestUtils.get(docEndpoint + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
     }
 }

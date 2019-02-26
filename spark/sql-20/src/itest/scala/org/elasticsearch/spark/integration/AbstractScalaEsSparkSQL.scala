@@ -1394,7 +1394,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame60DataSourceSaveModeError() {
     val srcFrame = artistsJsonAsDataFrame
-    val index = wrapIndex("sparksql-test-savemode_error/data")
+    val index = wrapIndex("sparksql-test-savemode_error")
     val (target, _) = makeTargets(index, "data")
     val table = wrapIndex("save_mode_error")
 
@@ -2308,6 +2308,22 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def zzzz_clearEnvironment() {
     // Nuke the whole environment after the tests run.
     RestUtils.delete("_all")
+  }
+
+  def resource(index: String, typeName: String): String = {
+    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+      index
+    } else {
+      s"$index/$typeName"
+    }
+  }
+
+  def docPath(index: String, typeName: String): String = {
+    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+      s"$index/_doc"
+    } else {
+      s"$index/$typeName"
+    }
   }
 
   def wrapIndex(index: String) = {

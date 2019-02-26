@@ -41,6 +41,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
@@ -69,6 +70,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	
 	private static transient JavaSparkContext sc = null;
 	private static transient SQLContext sqc = null;
+	private transient EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
 	@BeforeClass
 	public static void setup() {
@@ -100,7 +102,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsDataset1Write() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-		String target = "sparksql-test-scala-basic-write/data";
+		String target = resource("sparksql-test-scala-basic-write", "data");
         JavaEsSparkSQL.saveToEs(dataset, target);
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
@@ -110,19 +112,21 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsDataset1WriteWithId() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-		String target = "sparksql-test-scala-basic-write-id-mapping/data";
+		String target = resource("sparksql-test-scala-basic-write-id-mapping", "data");
+		String docEndpoint = docPath("sparksql-test-scala-basic-write-id-mapping", "data");
+
         JavaEsSparkSQL.saveToEs(dataset, target,
 				ImmutableMap.of(ES_MAPPING_ID, "id"));
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
-		assertThat(RestUtils.exists(target + "/1"), is(true));
+		assertThat(RestUtils.exists(docEndpoint + "/1"), is(true));
 	}
 
     @Test
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
         Dataset<Row> dataset = artistsAsDataset();
 
-        String target = "sparksql-test-scala-basic-write-exclude-mapping/data";
+        String target = resource("sparksql-test-scala-basic-write-exclude-mapping", "data");
         JavaEsSparkSQL.saveToEs(dataset, target,
                 ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
         assertTrue(RestUtils.exists(target));
@@ -131,7 +135,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     
 	@Test
     public void testEsDataset2Read() throws Exception {
-		String target = "sparksql-test-scala-basic-write/data";
+		String target = resource("sparksql-test-scala-basic-write", "data");
 
         // Dataset<Row> dataset = JavaEsSparkSQL.esDF(sqc, target);
         Dataset<Row> dataset = sqc.read().format("es").load(target);
@@ -154,7 +158,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 
 	@Test
 	public void testEsDatasetReadMetadata() throws Exception {
-		String target = "sparksql-test-scala-basic-write/data";
+		String target = resource("sparksql-test-scala-basic-write", "data");
 
 		Dataset<Row> dataset = sqc.read().format("es").option("es.read.metadata", "true").load(target).where("id = 1");
 
@@ -196,5 +200,21 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		});
 
         return sqc.createDataFrame(rowData, schema);
+	}
+
+	private String resource(String index, String type) {
+		if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+			return index;
+		} else {
+			return index + "/" + type;
+		}
+	}
+
+	private String docPath(String index, String type) {
+		if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+			return index + "/_doc";
+		} else {
+			return index + "/" + type;
+		}
 	}
 }
