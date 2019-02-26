@@ -32,6 +32,7 @@ import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.rdd.Metadata;
 import org.elasticsearch.spark.rdd.api.java.JavaEsSpark;
 import org.junit.AfterClass;
@@ -61,6 +62,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
                     .set("spark.io.compression.codec", "lz4")
                     .setAppName("estest");
     private static transient JavaSparkContext sc = null;
+
+    private final EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
     @BeforeClass
     public static void setup() {
@@ -315,12 +318,13 @@ public class AbstractJavaEsSparkTest implements Serializable {
 
     @Test
     public void testEsRDDZReadWithGroupBy() throws Exception {
-        String target = "spark-test-java-basic-group/data";
+        String target = resource("spark-test-java-basic-group", "data");
+        String docEndpoint = docEndpoint("spark-test-java-basic-group", "data");
 
         RestUtils.touch("spark-test-java-basic-group");
-        RestUtils.postData(target,
+        RestUtils.postData(docEndpoint,
                 "{\"message\" : \"Hello World\",\"message_date\" : \"2014-05-25\"}".getBytes());
-        RestUtils.postData(target,
+        RestUtils.postData(docEndpoint,
                 "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes());
         RestUtils.refresh("spark-test-java-basic-group");
 
@@ -331,5 +335,21 @@ public class AbstractJavaEsSparkTest implements Serializable {
     public void testNoResourceSpecified() throws Exception {
         JavaRDD<Map<String, Object>> rdd = JavaEsSpark.esRDD(sc).values();
         rdd.count();
+    }
+
+    public String resource(String index, String type) {
+        if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
+    }
+
+    public String docEndpoint(String index, String type) {
+        if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+            return index + "/_doc";
+        } else {
+            return index + "/" + type;
+        }
     }
 }
