@@ -40,6 +40,10 @@ class ScalaVariantPlugin implements Plugin<Project> {
             Task distribution = project.getTasks().getByName('distribution')
             distribution.dependsOn(crossBuild)
 
+            // Ensure that all project cross-building happens after the standard Jar task.
+            Task jar = project.getTasks().getByName('jar')
+            crossBuild.dependsOn(jar)
+
             // For all variants make a crossBuild#variant per variant version
             variantExtension.variants.all { String variantVersion ->
                 String variantBaseVersion = baseVersionFromFullVersion(variantVersion)
