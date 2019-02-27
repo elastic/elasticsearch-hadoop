@@ -330,7 +330,7 @@ NOTE: You may not have to perform this step if you are deploying
 https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ldap-realm.html[LDAP] or
 https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ad-realm.html[Active Directory] along
 with {krb}. {es} will perform user impersonation by looking up the user names in those realms as long as the simple
-names on the {krb} principals match the user names LDAP or Active Directory exactly.
+names (e.g. hive.user.1) on the {krb} principals match the user names LDAP or Active Directory exactly.
 
 Mirroring the user to the native realm will allow {es} to accept authentication requests from the original principal
 as well as accept requests from Hive which is impersonating the user. You can create a user in the native realm like
@@ -513,10 +513,15 @@ settings. Thus, it is advised to set them in the <<kerberos-yarn,cluster wide Ha
 NOTE: In the event that you are running a streaming job, it is best to use the `cluster` deploy mode to allow YARN to
 manage running the driver code for the streaming application.
 
-The delegation tokens from {es} that are retrieved are capped at a maximum lifetime of 7 days. After that time passes,
-the tokens will no longer successfully authenticate connections. Since streaming jobs are expected to run continuously
-without stopping, you should configure Spark so that the credential provider can obtain new tokens before the original
-tokens expire.
+Since streaming jobs are expected to run continuously without stopping, you should configure Spark so that the
+credential provider can obtain new tokens before the original tokens expire.
+
+Configuring Spark to obtain new tokens is different from <<kerberos-yarn,configuring YARN to renew and cancel
+tokens>>. YARN can only renew existing tokens up to their maximum lifetime. Tokens from {es} are not renewable.
+Instead, they have a simple lifetime of 7 days. After those 7 days elapse, the tokens are expired. In order for
+an ongoing streaming job to continue running without interruption, completely new tokens must be obtained and
+sent to worker tasks. Spark has facilities for automatically obtaining and distributing completely new tokens
+once the original token lifetime has ended.
 
 When submitting a Spark application on YARN, users can provide a principal and keytab file to the `spark-submit`
 command. Spark will log in with these credentials instead of depending on the local {krb} TGT Cache for the current
