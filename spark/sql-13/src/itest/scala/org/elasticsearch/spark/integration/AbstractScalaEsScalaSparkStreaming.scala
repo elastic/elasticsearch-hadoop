@@ -411,7 +411,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   def wrapMapping(typeName: String, typelessMapping: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       typelessMapping
     } else {
       s"""{"$typeName":$typelessMapping}"""
@@ -419,7 +419,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   def resource(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       index
     } else {
       s"$index/$typeName"
@@ -427,7 +427,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
   }
 
   def docPath(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       s"$index/_doc"
     } else {
       s"$index/$typeName"

@@ -696,7 +696,7 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(insert));
 
         String docEndpoint = resource("hive-fieldexclude", "data");
-        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
             docEndpoint = docEndpoint + "/_doc";
         }
         String string = RestUtils.get(docEndpoint + "/1");
@@ -709,7 +709,7 @@ public class AbstractHiveSaveTest {
     }
 
     private String resource(String index, String type) {
-        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
             return index;
         } else {
             return index + "/" + type;

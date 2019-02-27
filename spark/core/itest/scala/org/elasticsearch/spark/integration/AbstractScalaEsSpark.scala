@@ -326,7 +326,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       val target = resource(index, typename)
       val getEndpoint = docPath(index, typename)
 
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -364,7 +364,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
       val target = resource(index, typename)
       val getEndpoint = docPath(index, typename)
 
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -495,11 +495,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = resource(index, typename)
     val docEndpoint = docPath(index, typename)
 
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-      RestUtils.putMapping(index, typename, mapping)
-    } else {
-      RestUtils.putMapping(index, typename, mapping)
-    }
+    RestUtils.putMapping(index, typename, mapping)
 
     RestUtils.refresh(index)
     RestUtils.put(s"$docEndpoint/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
@@ -508,7 +504,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     try {
       if (version.onOrBefore(EsMajorVersion.V_2_X)) {
         RestUtils.postData(s"$target/1/_update", """{"script_file":"increment"}""".getBytes(StringUtils.UTF_8))
-      } else if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      } else if (TestUtils.isTypelessVersion(version)) {
         RestUtils.postData(s"$index/_update/1", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
       } else {
         RestUtils.postData(s"$target/1/_update", """{"script": { "file":"increment" } }""".getBytes(StringUtils.UTF_8))
@@ -553,11 +549,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val docEndpoint = docPath(index, typename)
 
     RestUtils.touch(index)
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-      RestUtils.putMapping(index, typename, mapping.getBytes())
-    } else {
-      RestUtils.putMapping(index, typename, mapping.getBytes())
-    }
+    RestUtils.putMapping(index, typename, mapping.getBytes())
     RestUtils.put(s"$docEndpoint/1", """{"id":"1", "counter":5}""".getBytes(StringUtils.UTF_8))
 
     val scriptName = "increment"
@@ -609,11 +601,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
 
     RestUtils.touch(index)
 
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-      RestUtils.putMapping(index, typename, mapping.getBytes())
-    } else {
-      RestUtils.putMapping(index, typename, mapping.getBytes())
-    }
+    RestUtils.putMapping(index, typename, mapping.getBytes())
     RestUtils.postData(s"$docEndpoint/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
     RestUtils.postData(s"$docEndpoint/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
@@ -703,11 +691,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     RestUtils.postData(docEndpoint, "{\"message\" : \"Goodbye World\",\"message_date\" : \"2014-05-25\"}".getBytes())
     RestUtils.refresh(index)
 
-    val queryTarget = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-      "*-scala-basic-query-read"
-    } else {
-      "*-scala-basic-query-read/" + typename
-    }
+    val queryTarget = resource("*-scala-basic-query-read", typename)
     val esData = EsSpark.esRDD(sc, queryTarget, "?q=message:Hello World", cfg)
     val newData = EsSpark.esRDD(sc, collection.mutable.Map(cfg.toSeq: _*) += (
       ES_RESOURCE -> queryTarget,
@@ -774,11 +758,9 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val indexA = wrapIndex("spark-alias-indexa")
     val indexB = wrapIndex("spark-alias-indexb")
     val alias = wrapIndex("spark-alias-alias")
-    val (aliasTarget, docEndpointA, docEndpointB) = if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-      (alias, s"$indexA/_doc", s"$indexB/_doc")
-    } else {
-      (s"$alias/$typename", s"$indexA/$typename", s"$indexB/$typename")
-    }
+    val aliasTarget = resource(alias, typename)
+    val docEndpointA = docPath(indexA, typename)
+    val docEndpointB = docPath(indexB, typename)
 
     RestUtils.postData(docEndpointA + "/1", doc.getBytes())
     RestUtils.postData(docEndpointB + "/1", doc.getBytes())
@@ -876,7 +858,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   def resource(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       index
     } else {
       s"$index/$typeName"
@@ -884,7 +866,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   def docPath(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       s"$index/_doc"
     } else {
       s"$index/$typeName"
@@ -896,10 +878,10 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
   }
 
   def wrapMapping(mappingName: String, mapping: String): String = {
-    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
-      s"""{"$mappingName":$mapping}"""
-    } else {
+    if (TestUtils.isTypelessVersion(version)) {
       mapping
+    } else {
+      s"""{"$mappingName":$mapping}"""
     }
   }
 }

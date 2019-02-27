@@ -50,7 +50,17 @@ public class TestUtils {
     }
 
     public static ClusterInfo getEsClusterInfo() {
-        return new RestClient(new TestSettings()).mainInfo();
+        RestClient client = new RestClient(new TestSettings());
+        try {
+            return client.mainInfo();
+        } finally {
+            client.close();
+        }
+    }
+
+    public static boolean isTypelessVersion(EsMajorVersion version) {
+        // Types have been deprecated in 7.0.0, and will be removed at a later date
+        return version.onOrAfter(EsMajorVersion.V_7_X);
     }
 
     public static boolean isWindows() {

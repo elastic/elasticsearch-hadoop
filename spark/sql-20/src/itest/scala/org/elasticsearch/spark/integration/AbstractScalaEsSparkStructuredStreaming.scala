@@ -129,7 +129,7 @@ class AbstractScalaEsSparkStructuredStreaming(prefix: String, something: Boolean
   import spark.implicits._
 
   def resource(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       index
     } else {
       s"$index/$typeName"
@@ -137,7 +137,7 @@ class AbstractScalaEsSparkStructuredStreaming(prefix: String, something: Boolean
   }
 
   def docPath(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       s"$index/_doc"
     } else {
       s"$index/$typeName"

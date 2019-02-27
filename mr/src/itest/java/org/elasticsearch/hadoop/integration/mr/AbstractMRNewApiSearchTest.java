@@ -151,7 +151,7 @@ public class AbstractMRNewApiSearchTest {
     }
 
     private String resource(String index, String type) {
-        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
             return index;
         } else {
             return index + "/" + type;

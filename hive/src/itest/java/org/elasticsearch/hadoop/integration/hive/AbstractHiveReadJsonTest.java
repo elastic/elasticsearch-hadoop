@@ -173,7 +173,7 @@ public class AbstractHiveReadJsonTest {
     }
 
     private String resource(String index, String type) {
-        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
             return index;
         } else {
             return index + "/" + type;

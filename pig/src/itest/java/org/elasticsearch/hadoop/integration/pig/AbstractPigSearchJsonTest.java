@@ -168,7 +168,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
     }
 
     private String resource(String index, String type) {
-        if (VERSION.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(VERSION)) {
             return index;
         } else {
             return index + "/" + type;

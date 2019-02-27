@@ -191,7 +191,7 @@ public class AbstractMROldApiSearchTest {
 
 
     private String resource(String index, String type) {
-        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
             return index;
         } else {
             return index + "/" + type;
@@ -199,7 +199,7 @@ public class AbstractMROldApiSearchTest {
     }
 
     private String docEndpoint(String index, String type) {
-        if (clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
             return index + "/_doc";
         } else {
             return index + "/" + type;

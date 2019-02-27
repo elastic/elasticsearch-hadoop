@@ -164,7 +164,7 @@ public class AbstractExtraMRTests {
         String targetB = resource(targetPrefix + "b", "type");
         String docEndpointA = targetA;
         String docEndpointB = targetB;
-        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
             docEndpointA = docEndpointA + "/_doc";
             docEndpointB = docEndpointB + "/_doc";
         }
@@ -188,7 +188,7 @@ public class AbstractExtraMRTests {
     }
 
     private String resource(String index, String type) {
-        if (targetVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
             return index;
         } else {
             return index + "/" + type;

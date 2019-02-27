@@ -1318,7 +1318,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val (target, docEndpoint) = makeTargets(index, typename)
     RestUtils.delete(index)
     RestUtils.touch(index)
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
     } else {
       RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1615,7 +1615,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-separate")
       val typename = "join"
       val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1650,7 +1650,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-combined")
       val typename = "join"
       val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -2311,7 +2311,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def resource(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       index
     } else {
       s"$index/$typeName"
@@ -2319,7 +2319,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def docPath(index: String, typeName: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       s"$index/_doc"
     } else {
       s"$index/$typeName"
@@ -2331,7 +2331,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def wrapMapping(typename: String, mapping: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       mapping
     } else {
       s"""{"$typename":$mapping}"""
@@ -2339,10 +2339,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def makeTargets(index: String, typeName: String): (String, String) = {
-    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
-      (s"$index/$typeName", s"$index/$typeName")
-    } else {
+    if (TestUtils.isTypelessVersion(version)) {
       (index, s"$index/_doc")
+    } else {
+      (s"$index/$typeName", s"$index/$typeName")
     }
   }
 

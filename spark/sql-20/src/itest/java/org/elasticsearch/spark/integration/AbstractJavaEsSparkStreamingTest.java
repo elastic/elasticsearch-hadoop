@@ -518,7 +518,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         }
 
         String mapping = "{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}";
-        if (version.onOrBefore(EsMajorVersion.V_6_X)) {
+        if (!TestUtils.isTypelessVersion(version)) {
             mapping = "{\"data\":"+mapping+"}";
         }
         String index = wrapIndex("spark-streaming-test-contact");
@@ -598,7 +598,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     }
 
     private String resource(String index, String type) {
-        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(version)) {
             return index;
         } else {
             return index + "/" + type;
@@ -606,7 +606,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
     }
 
     private String docPath(String index, String type) {
-        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(version)) {
             return index + "/_doc";
         } else {
             return index + "/" + type;

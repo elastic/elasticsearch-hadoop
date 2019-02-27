@@ -199,7 +199,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	}
 
 	private String resource(String index, String type) {
-		if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+		if (TestUtils.isTypelessVersion(version)) {
 			return index;
 		} else {
 			return index + "/" + type;
@@ -207,7 +207,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	}
 
 	private String docEndpoint(String index, String type) {
-		if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+		if (TestUtils.isTypelessVersion(version)) {
 			return index + "/_doc";
 		} else {
 			return index + "/" + type;

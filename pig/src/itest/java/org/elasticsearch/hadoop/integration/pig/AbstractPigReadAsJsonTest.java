@@ -88,7 +88,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testtuple");
 
         String metaType = "data";
-        if (testVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
             metaType = "_doc";
         }
 
@@ -133,7 +133,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testtupleschema");
 
         String metaType = "data";
-        if (testVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
             metaType = "_doc";
         }
 
@@ -177,7 +177,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testfieldalias");
 
         String metaType = "data";
-        if (testVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
             metaType = "_doc";
         }
 
@@ -287,7 +287,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
 
 
     private String resource(String index, String type) {
-        if (testVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
             return index;
         } else {
             return index + "/" + type;
@@ -295,7 +295,7 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
     }
 
     private String docEndpoint(String index, String type) {
-        if (testVersion.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
             return index + "/_doc";
         } else {
             return index + "/" + type;

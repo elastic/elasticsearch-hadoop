@@ -133,7 +133,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
 
 
     private String resource(String index, String type) {
-        if (VERSION.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(VERSION)) {
             return index;
         } else {
             return index + "/" + type;
@@ -141,7 +141,7 @@ public class AbstractPigExtraTests extends AbstractPigTests {
     }
 
     private String docEndpoint(String index, String type) {
-        if (VERSION.onOrAfter(EsMajorVersion.V_8_X)) {
+        if (TestUtils.isTypelessVersion(VERSION)) {
             return index + "/_doc";
         } else {
             return index + "/" + type;
