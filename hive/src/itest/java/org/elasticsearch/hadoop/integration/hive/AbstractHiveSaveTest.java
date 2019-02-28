@@ -695,10 +695,7 @@ public class AbstractHiveSaveTest {
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
 
-        String docEndpoint = resource("hive-fieldexclude", "data");
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            docEndpoint = docEndpoint + "/_doc";
-        }
+        String docEndpoint = docEndpoint("hive-fieldexclude", "data");
         String string = RestUtils.get(docEndpoint + "/1");
         assertThat(string, containsString("MALICE"));
 
@@ -711,6 +708,14 @@ public class AbstractHiveSaveTest {
     private String resource(String index, String type) {
         if (TestUtils.isTypelessVersion(targetVersion)) {
             return index;
+        } else {
+            return index + "/" + type;
+        }
+    }
+
+    private String docEndpoint(String index, String type) {
+        if (TestUtils.isTypelessVersion(targetVersion)) {
+            return index + "/_doc";
         } else {
             return index + "/" + type;
         }
