@@ -9,9 +9,9 @@ build {
     dependsOn 'hadoopTestingJar'
 }
 
-project.getTasks().getByName('wrapper') {
+task wrapper(type: Wrapper) {
     description = 'Generates gradlew[.bat] scripts'
-    gradleVersion = '5.0'
+    gradleVersion = '4.5'
 }
 
 // Simple utility task to help with downloading artifacts and jars
