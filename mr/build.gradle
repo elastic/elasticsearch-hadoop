@@ -19,18 +19,17 @@ sourceSets {
 }
 
 task generateGitHash {
-    def buildPropsFile = new File(generatedResources, "esh-build.properties")
-    
     inputs.file project.ext.gitHead
-    outputs.file buildPropsFile
+    outputs.file generatedResources
 
     doLast {
         Properties props = new Properties()
         props.put("version", version)
         props.put("hash", project.ext.revHash)
+        File output = new File(generatedResources, "esh-build.properties")
         new File(generatedResources).mkdirs()
-        buildPropsFile.createNewFile()
-        props.store(buildPropsFile.newWriter(), null)
+        output.createNewFile()
+        props.store(output.newWriter(), null)
     }
 }
 
