@@ -48,6 +48,8 @@ import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.ImmutableMap;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
@@ -100,7 +102,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	public void testEsdataFrame1Write() throws Exception {
 		DataFrame dataFrame = artistsAsDataFrame();
 
-		String target = resource("sparksql-test-scala-basic-write", "data");
+		String target = resource("sparksql-test-scala-basic-write", "data", version);
 		JavaEsSparkSQL.saveToEs(dataFrame, target);
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
@@ -110,8 +112,8 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	public void testEsdataFrame1WriteWithId() throws Exception {
 		DataFrame dataFrame = artistsAsDataFrame();
 
-		String target = resource("sparksql-test-scala-basic-write-id-mapping", "data");
-		String docEndpoint = docEndpoint("sparksql-test-scala-basic-write-id-mapping", "data");
+		String target = resource("sparksql-test-scala-basic-write-id-mapping", "data", version);
+		String docEndpoint = docEndpoint("sparksql-test-scala-basic-write-id-mapping", "data", version);
 
 		JavaEsSparkSQL.saveToEs(dataFrame, target,
 				ImmutableMap.of(ES_MAPPING_ID, "id"));
@@ -124,7 +126,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
     	DataFrame dataFrame = artistsAsDataFrame();
 
-        String target = resource("sparksql-test-scala-basic-write-exclude-mapping", "data");
+        String target = resource("sparksql-test-scala-basic-write-exclude-mapping", "data", version);
         JavaEsSparkSQL.saveToEs(dataFrame, target,ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
         assertTrue(RestUtils.exists(target));
         assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")));
@@ -132,7 +134,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     
 	@Test
 	public void testEsdataFrame2Read() throws Exception {
-		String target = resource("sparksql-test-scala-basic-write", "data");
+		String target = resource("sparksql-test-scala-basic-write", "data", version);
 
         // DataFrame dataFrame = JavaEsSparkSQL.esDF(sqc, target);
         DataFrame dataFrame = sqc.read().format("es").load(target);
@@ -156,7 +158,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	@Test
 	public void testEsDataFrameReadMetadata() throws Exception {
 		DataFrame artists = artistsAsDataFrame();
-		String target = resource("sparksql-test-scala-dataframe-read-metadata", "data");
+		String target = resource("sparksql-test-scala-dataframe-read-metadata", "data", version);
 		JavaEsSparkSQL.saveToEs(artists, target);
 
 		DataFrame dataframe = sqc.read().format("es").option("es.read.metadata", "true").load(target).where("id = 1");
@@ -196,21 +198,5 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		});
 
 		return sqc.createDataFrame(rowData, schema);
-	}
-
-	private String resource(String index, String type) {
-		if (TestUtils.isTypelessVersion(version)) {
-			return index;
-		} else {
-			return index + "/" + type;
-		}
-	}
-
-	private String docEndpoint(String index, String type) {
-		if (TestUtils.isTypelessVersion(version)) {
-			return index + "/_doc";
-		} else {
-			return index + "/" + type;
-		}
 	}
 }

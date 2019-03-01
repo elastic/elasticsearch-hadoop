@@ -19,6 +19,7 @@
 package org.elasticsearch.spark.integration;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,8 @@ import org.junit.runners.MethodSorters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
@@ -318,8 +321,8 @@ public class AbstractJavaEsSparkTest implements Serializable {
 
     @Test
     public void testEsRDDZReadWithGroupBy() throws Exception {
-        String target = resource("spark-test-java-basic-group", "data");
-        String docEndpoint = docEndpoint("spark-test-java-basic-group", "data");
+        String target = resource("spark-test-java-basic-group", "data", version);
+        String docEndpoint = docEndpoint("spark-test-java-basic-group", "data", version);
 
         RestUtils.touch("spark-test-java-basic-group");
         RestUtils.postData(docEndpoint,
@@ -337,19 +340,4 @@ public class AbstractJavaEsSparkTest implements Serializable {
         rdd.count();
     }
 
-    public String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(version)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
-    }
-
-    public String docEndpoint(String index, String type) {
-        if (TestUtils.isTypelessVersion(version)) {
-            return index + "/_doc";
-        } else {
-            return index + "/" + type;
-        }
-    }
 }

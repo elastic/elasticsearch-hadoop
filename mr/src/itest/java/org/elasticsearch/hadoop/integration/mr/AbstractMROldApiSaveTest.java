@@ -64,6 +64,8 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assume.assumeFalse;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -162,7 +164,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testBasicMultiSave() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("oldapi-multi-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("oldapi-multi-save", "data", clusterInfo.getMajorVersion()));
 
         MultiOutputFormat.addOutputFormat(conf, EsOutputFormat.class);
         MultiOutputFormat.addOutputFormat(conf, PrintStreamOutputFormat.class);
@@ -183,7 +185,7 @@ public class AbstractMROldApiSaveTest {
 
         // use only when dealing with constant input
         assumeFalse(conf.get(ConfigurationOptions.ES_INPUT_JSON).equals("true"));
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-constant", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-constant", "data", clusterInfo.getMajorVersion()));
         conf.setMapperClass(ConstantMapper.class);
 
         runJob(conf);
@@ -192,7 +194,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testBasicIndex() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-save", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -201,7 +203,7 @@ public class AbstractMROldApiSaveTest {
     public void testBasicIndexWithId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-savewithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-savewithid", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -210,7 +212,7 @@ public class AbstractMROldApiSaveTest {
     public void testBasicIndexWithExtractedRouting() throws Exception {
         String index = indexPrefix + "mroldapi-savewithdynamicrouting";
         String type = "data";
-        String target = resource(index, type);
+        String target = resource(index, type, clusterInfo.getMajorVersion());
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "number");
@@ -232,7 +234,7 @@ public class AbstractMROldApiSaveTest {
     public void testBasicIndexWithConstantRouting() throws Exception {
         String index = indexPrefix + "mroldapi-savewithconstantrouting";
         String type = "data";
-        String target = resource(index, type);
+        String target = resource(index, type, clusterInfo.getMajorVersion());
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
@@ -254,7 +256,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "create");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -276,7 +278,7 @@ public class AbstractMROldApiSaveTest {
         client.put("/_ingest/pipeline/" + prefix + "-pipeline", StringUtils.toUTF(pipeline));
         client.close();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-ingested", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-ingested", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INGEST_PIPELINE, "mroldapi-pipeline");
         conf.set(ConfigurationOptions.ES_NODES_INGEST_ONLY, "true");
 
@@ -288,7 +290,7 @@ public class AbstractMROldApiSaveTest {
     public void testUpdateWithoutId() throws Exception {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-update", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-update", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -298,7 +300,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-update", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-update", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -308,7 +310,7 @@ public class AbstractMROldApiSaveTest {
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-updatewoupsert", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-updatewoupsert", "data", clusterInfo.getMajorVersion()));
 
         runJob(conf);
     }
@@ -317,7 +319,7 @@ public class AbstractMROldApiSaveTest {
     public void testUpdateOnlyScript() throws Exception {
         JobConf conf = createJobConf();
         // use an existing id to allow the update to succeed
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
@@ -338,7 +340,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -359,7 +361,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -380,7 +382,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScriptWithArray() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -413,13 +415,13 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpdateOnlyParamJsonScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
-        String docEndpoint = docEndpoint(indexPrefix + "mroldapi-createwitharray", "data");
+        String docEndpoint = docEndpoint(indexPrefix + "mroldapi-createwitharray", "data", clusterInfo.getMajorVersion());
         RestUtils.postData(docEndpoint + "/1", docWithArray.getBytes());
         RestUtils.refresh(indexPrefix + "mroldapi-createwitharray");
         RestUtils.waitForYellow(indexPrefix + "mroldapi-createwitharray");
 
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwitharray", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwitharray", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "update");
@@ -441,7 +443,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -453,7 +455,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertParamScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script-param", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script-param", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -467,7 +469,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertParamJsonScript() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script-json-param", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-upsert-script-json-param", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
@@ -481,13 +483,13 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
         String docWithArray = "{ \"counter\" : 1 , \"tags\" : [\"an array\", \"with multiple values\"], \"more_tags\" : [ \"I am tag\"], \"even_more_tags\" : \"I am a tag too\" } ";
-        String docEndpoint = docEndpoint(indexPrefix + "mroldapi-createwitharrayupsert", "data");
+        String docEndpoint = docEndpoint(indexPrefix + "mroldapi-createwitharrayupsert", "data", clusterInfo.getMajorVersion());
         RestUtils.postData(docEndpoint + "/1", docWithArray.getBytes());
         RestUtils.refresh(indexPrefix + "mroldapi-createwitharrayupsert");
         RestUtils.waitForYellow(indexPrefix + "mroldapi-createwitharrayupsert");
 
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwitharrayupsert", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-createwitharrayupsert", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         conf.set(ConfigurationOptions.ES_WRITE_OPERATION, "upsert");
@@ -509,7 +511,7 @@ public class AbstractMROldApiSaveTest {
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testIndexAutoCreateDisabled() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-non-existing", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-non-existing", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         runJob(conf);
@@ -518,7 +520,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexWithVersionMappingImpliesVersionTypeExternal() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-external-version-implied", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-external-version-implied", "data", clusterInfo.getMajorVersion()));
         // an id must be provided if version type or value are set
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
         conf.set(ConfigurationOptions.ES_MAPPING_VERSION, "number");
@@ -562,7 +564,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPattern() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-{tag}", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-{tag}", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -571,7 +573,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormatting() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -580,7 +582,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexPatternWithFormattingAndId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}-with-id", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-pattern-format-{@timestamp|YYYY-MM-dd}-with-id", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "number");
 
         runJob(conf);
@@ -589,7 +591,7 @@ public class AbstractMROldApiSaveTest {
     @Test
     public void testIndexWithEscapedJson() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-simple-escaped-fields", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-simple-escaped-fields", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "yes");
 
         runJob(conf);
@@ -599,28 +601,12 @@ public class AbstractMROldApiSaveTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-nested", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-nested", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         RestUtils.putMapping(indexPrefix + "mroldapi-nested", "data", "org/elasticsearch/hadoop/integration/mr-nested.json");
 
         runJob(conf);
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
-    }
-
-    private String docEndpoint(String index, String type) {
-        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
-            return index + "/_doc";
-        } else {
-            return index + "/" + type;
-        }
     }
 
     private JobConf createJobConf() {

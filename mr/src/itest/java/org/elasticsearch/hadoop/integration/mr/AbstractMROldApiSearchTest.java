@@ -28,7 +28,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -43,12 +42,13 @@ import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
@@ -85,7 +85,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicReadWithConstantRouting() throws Exception {
         String type = "data";
-        String target = resource(indexPrefix + "mroldapi-savewithconstantrouting", type);
+        String target = resource(indexPrefix + "mroldapi-savewithconstantrouting", type, clusterInfo.getMajorVersion());
 
         JobConf conf = createJobConf();
         conf.set(ConfigurationOptions.ES_MAPPING_ROUTING, "<foobar/>");
@@ -97,7 +97,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicSearch() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-save", "data", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -106,7 +106,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testBasicSearchWithWildCard() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrold*-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrold*-save", "data", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -114,7 +114,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-savewithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-savewithid", "data", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -123,7 +123,7 @@ public class AbstractMROldApiSearchTest {
     public void testSearchNonExistingIndex() throws Exception {
         JobConf conf = createJobConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("foobar", "save"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("foobar", "save", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -131,7 +131,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-createwithid", "data", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -139,7 +139,7 @@ public class AbstractMROldApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-update", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-update", "data", clusterInfo.getMajorVersion()));
 
         JobClient.runJob(conf);
     }
@@ -159,21 +159,21 @@ public class AbstractMROldApiSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-1", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-5", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-9", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-1", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-5", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-9", "data", clusterInfo.getMajorVersion())));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2001-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2005-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2017-10-06", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2001-10-06", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2005-10-06", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mroldapi-pattern-format-2017-10-06", "data", clusterInfo.getMajorVersion())));
     }
 
     @Test
     public void testUpsertOnlyParamScriptWithArrayOnArrayField() throws Exception {
-        String target = docEndpoint("mroldapi-createwitharrayupsert", "data") + "/1";
+        String target = docEndpoint("mroldapi-createwitharrayupsert", "data", clusterInfo.getMajorVersion()) + "/1";
         Assert.assertTrue(RestUtils.exists(target));
         String result = RestUtils.get(target);
         assertThat(result, not(containsString("ArrayWritable@")));
@@ -182,28 +182,11 @@ public class AbstractMROldApiSearchTest {
     //@Test
     public void testNested() throws Exception {
         JobConf conf = createJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-nested", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-nested", "data", clusterInfo.getMajorVersion()));
         conf.set(ConfigurationOptions.ES_INDEX_AUTO_CREATE, "no");
 
         //conf.set(Stream.class.getName(), "OUT");
         JobClient.runJob(conf);
-    }
-
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
-    }
-
-    private String docEndpoint(String index, String type) {
-        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
-            return index + "/_doc";
-        } else {
-            return index + "/" + type;
-        }
     }
 
     private JobConf createJobConf() throws IOException {

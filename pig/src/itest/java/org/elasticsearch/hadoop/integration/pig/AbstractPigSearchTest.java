@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.hamcrest.Matchers.*;
@@ -74,7 +75,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD '"+resource("pig-tupleartists", "data")+"' USING EsStorage();" +
+                "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' USING EsStorage();" +
                 "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
                 "STORE A INTO '" + tmpPig() + "/testtuple';";
@@ -87,7 +88,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
 
     @Test
     public void testTupleCount() throws Exception {
-        String script = "A = LOAD '"+resource("pig-tupleartists", "data")+"' using org.elasticsearch.hadoop.pig.EsStorage();" +
+        String script = "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' using org.elasticsearch.hadoop.pig.EsStorage();" +
                 "COUNT = FOREACH (GROUP A ALL) GENERATE COUNT(A);" +
                 "DUMP COUNT;";
 
@@ -99,7 +100,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD '"+resource("pig-tupleartists", "data")+"' USING EsStorage() AS (name:chararray);" +
+                "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' USING EsStorage() AS (name:chararray);" +
                 "X = LIMIT A 3;" +
                 "STORE A INTO '" + tmpPig() + "/testtupleschema';";
         pig.executeScript(script);
@@ -114,7 +115,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "');"
-                      + "A = LOAD '"+resource("pig-bagartists", "data")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("pig-bagartists", "data", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testbag';";
         pig.executeScript(script);
@@ -130,7 +131,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "', 'es.mapping.names=data:name','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("pig-bagartists", "data")+"' USING EsStorage() AS (data: chararray);"
+                      + "A = LOAD '"+resource("pig-bagartists", "data", VERSION)+"' USING EsStorage() AS (data: chararray);"
                       + "B = ORDER A BY * DESC;"
                       + "X = LIMIT B 3;"
                       + "STORE X INTO '" + tmpPig() + "/testbagschema';";
@@ -146,7 +147,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("pig-timestamp", "data")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("pig-timestamp", "data", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testtimestamp';";
         pig.executeScript(script);
@@ -159,7 +160,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage(" +
                       "'es.mapping.names=nAme:name, timestamp:@timestamp, uRL:url, picturE:picture', 'es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("pig-fieldalias", "data")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("pig-fieldalias", "data", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testfieldlalias';";
         pig.executeScript(script);
@@ -176,7 +177,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("foo", "bar")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("foo", "bar", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE X INTO '" + tmpPig() + "/testmissingindex';";
         pig.executeScript(script);
@@ -206,7 +207,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" // , 'es.mapping.names=links:links.url'
-                + "A = LOAD '"+resource("pig-tupleartists", "data")+"' USING EsStorage() AS (name: chararray, links: tuple(chararray));"
+                + "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' USING EsStorage() AS (name: chararray, links: tuple(chararray));"
                 + "B = FOREACH A GENERATE name, links;"
                 + "C = ORDER B BY name DESC;"
                 + "D = LIMIT C 3;"
@@ -224,7 +225,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                         "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata + "','es.read.source.filter=name');" +
-                        "A = LOAD '"+resource("pig-tupleartists", "data")+"' USING EsStorage();" +
+                        "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' USING EsStorage();" +
                         "X = LIMIT A 3;" +
                         "DUMP X;" +
                         "STORE A INTO '" + tmpPig() + "/nocollision';";
@@ -240,7 +241,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                         "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"','es.read.source.filter=name');" +
-                        "A = LOAD '"+resource("pig-tupleartists", "data")+"' USING EsStorage() AS (name: chararray, links: chararray);" +
+                        "A = LOAD '"+resource("pig-tupleartists", "data", VERSION)+"' USING EsStorage() AS (name: chararray, links: chararray);" +
                         "B = FOREACH A GENERATE name;" +
                         "X = LIMIT B 3;" +
                         //"DESCRIBE A;";
@@ -251,16 +252,16 @@ public class AbstractPigSearchTest extends AbstractPigTests {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-1", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-5", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-9", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-1", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-5", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-9", "data", VERSION)));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2001-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2005-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2017-10-06", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2001-10-06", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2005-10-06", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("pig-pattern-format-2017-10-06", "data", VERSION)));
     }
 
     @Test
@@ -268,7 +269,7 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String script = "REGISTER " + Provisioner.ESHADOOP_TESTING_JAR + ";"
                 + "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('');"
                 //+ "A = LOAD 'pig-nestedtuple/data' USING EsStorage() AS (my_array:tuple(x:chararray));"
-                + "A = LOAD '"+resource("pig-nestedtuple", "data")+"' USING EsStorage() AS (my_array:tuple());"
+                + "A = LOAD '"+resource("pig-nestedtuple", "data", VERSION)+"' USING EsStorage() AS (my_array:tuple());"
                 //+ "B = FOREACH A GENERATE COUNT(my_array) AS count;"
                 //+ "ILLUSTRATE B;"
                 + "X = LIMIT A 3;"
@@ -277,14 +278,6 @@ public class AbstractPigSearchTest extends AbstractPigTests {
         String results = getResults("" + tmpPig() + "/testnestedtuple");
         assertThat(results, containsString("(1.a,1.b)"));
         assertThat(results, containsString("(2.a,2.b)"));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(VERSION)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
     }
 
     private static String tmpPig() {

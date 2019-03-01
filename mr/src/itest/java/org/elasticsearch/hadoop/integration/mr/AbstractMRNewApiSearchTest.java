@@ -26,7 +26,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.HdpBootstrap;
 import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
@@ -45,6 +44,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 
 @RunWith(Parameterized.class)
 public class AbstractMRNewApiSearchTest {
@@ -77,7 +78,7 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testBasicSearch() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-save", "data", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -85,7 +86,7 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testBasicWildSearch() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnew*-save", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnew*-save", "data", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -93,7 +94,7 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testSearchWithId() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-savewithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-savewithid", "data", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -102,7 +103,7 @@ public class AbstractMRNewApiSearchTest {
     public void testSearchNonExistingIndex() throws Exception {
         Configuration conf = createConf();
         conf.setBoolean(ConfigurationOptions.ES_INDEX_READ_MISSING_AS_EMPTY, true);
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "foobar", "save"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "foobar", "save", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -110,7 +111,7 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testSearchCreated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-createwithid", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-createwithid", "data", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -118,7 +119,7 @@ public class AbstractMRNewApiSearchTest {
     @Test
     public void testSearchUpdated() throws Exception {
         Configuration conf = createConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-update", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mrnewapi-update", "data", clusterInfo.getMajorVersion()));
 
         new Job(conf).waitForCompletion(true);
     }
@@ -138,24 +139,16 @@ public class AbstractMRNewApiSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-1", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-5", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-9", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-1", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-5", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-9", "data", clusterInfo.getMajorVersion())));
     }
 
     @Test
     public void testDynamicPatternWithFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2001-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2005-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2017-10-06", "data")));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(clusterInfo.getMajorVersion())) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2001-10-06", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2005-10-06", "data", clusterInfo.getMajorVersion())));
+        Assert.assertTrue(RestUtils.exists(resource("mrnewapi-pattern-format-2017-10-06", "data", clusterInfo.getMajorVersion())));
     }
 
     private Configuration createConf() throws IOException {

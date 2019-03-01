@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -81,7 +82,7 @@ public class AbstractHiveSearchJsonTest {
     @Test
     public void loadMultiNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
-        String docEndpoint = resource("json-hive-nestedmap", "data");
+        String docEndpoint = resource("json-hive-nestedmap", "data", targetVersion);
         if (TestUtils.isTypelessVersion(targetVersion)) {
             docEndpoint = docEndpoint + "/_doc";
         }
@@ -95,13 +96,13 @@ public class AbstractHiveSearchJsonTest {
 
         String createList = "CREATE EXTERNAL TABLE jsonnestedmaplistload" + testInstance + "("
                 + "nested   ARRAY<INT>) "
-                + tableProps(resource("json-hive-nestedmap", "data"), "'es.mapping.names' = 'nested:data.map.key'");
+                + tableProps(resource("json-hive-nestedmap", "data", targetVersion), "'es.mapping.names' = 'nested:data.map.key'");
 
         String selectList = "SELECT * FROM jsonnestedmaplistload" + testInstance;
 
         String createMap = "CREATE EXTERNAL TABLE jsonnestedmapmapload" + testInstance + "("
                 + "nested   MAP<STRING,ARRAY<INT>>) "
-                + tableProps(resource("json-hive-nestedmap", "data"), "'es.mapping.names' = 'nested:data.map'");
+                + tableProps(resource("json-hive-nestedmap", "data", targetVersion), "'es.mapping.names' = 'nested:data.map'");
 
         String selectMap = "SELECT * FROM jsonnestedmapmapload" + testInstance;
 
@@ -122,7 +123,7 @@ public class AbstractHiveSearchJsonTest {
     @Test
     public void loadSingleNestedField() throws Exception {
         Assume.assumeTrue(testInstance == 0);
-        String docEndpoint = resource("json-hive-nestedmap", "data");
+        String docEndpoint = resource("json-hive-nestedmap", "data", targetVersion);
         if (TestUtils.isTypelessVersion(targetVersion)) {
             docEndpoint = docEndpoint + "/_doc";
         }
@@ -134,13 +135,13 @@ public class AbstractHiveSearchJsonTest {
 
         String createList = "CREATE EXTERNAL TABLE jsonnestedsinglemaplistload" + testInstance + "("
                 + "nested   ARRAY<INT>) "
-                + tableProps(resource("json-hive-nestedmap", "data"), "'es.mapping.names' = 'nested:data.single.key'");
+                + tableProps(resource("json-hive-nestedmap", "data", targetVersion), "'es.mapping.names' = 'nested:data.single.key'");
 
         String selectList = "SELECT * FROM jsonnestedsinglemaplistload" + testInstance;
 
         String createMap = "CREATE EXTERNAL TABLE jsonnestedsinglemapmapload" + testInstance + "("
                 + "nested   MAP<STRING,ARRAY<INT>>) "
-                + tableProps(resource("json-hive-nestedmap", "data"), "'es.mapping.names' = 'nested:data.single'");
+                + tableProps(resource("json-hive-nestedmap", "data", targetVersion), "'es.mapping.names' = 'nested:data.single'");
 
         String selectMap = "SELECT * FROM jsonnestedsinglemapmapload" + testInstance;
 
@@ -165,7 +166,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps(resource("json-hive-artists", "data"));
+                + tableProps(resource("json-hive-artists", "data", targetVersion));
 
         String select = "SELECT * FROM jsonartistsload" + testInstance;
 
@@ -184,7 +185,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps(resource("json-hive-artists", "data"));
+                + tableProps(resource("json-hive-artists", "data", targetVersion));
 
         String select = "SELECT count(*) FROM jsonartistscount" + testInstance;
 
@@ -201,7 +202,7 @@ public class AbstractHiveSearchJsonTest {
                 + "dTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps(resource("foobar", "missing"), "'es.index.read.missing.as.empty' = 'true'");
+                + tableProps(resource("foobar", "missing", targetVersion), "'es.index.read.missing.as.empty' = 'true'");
 
         String select = "SELECT * FROM jsonmissing" + testInstance;
 
@@ -218,7 +219,7 @@ public class AbstractHiveSearchJsonTest {
                 + "name     STRING, "
                 + "url  STRING, "
                 + "picture  STRING) "
-                + tableProps(resource("json-hive-varcharsave", "data"));
+                + tableProps(resource("json-hive-varcharsave", "data", targetVersion));
 
         String select = "SELECT * FROM jsonvarcharload" + testInstance;
 
@@ -255,24 +256,16 @@ public class AbstractHiveSearchJsonTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-7", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-10", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-3", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-7", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-10", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-3", "data", targetVersion)));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2007-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2001-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2000-10-06", "data")));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2007-10-06", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2001-10-06", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("json-hive-pattern-format-2000-10-06", "data", targetVersion)));
     }
 
     private static boolean containsNoNull(List<String> str) {

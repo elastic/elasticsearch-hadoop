@@ -32,6 +32,8 @@ import org.elasticsearch.hadoop.cfg.ConfigurationOptions._
 import org.elasticsearch.hadoop.mr.EsAssume
 import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.hadoop.util.TestUtils.resource
+import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
 import org.elasticsearch.hadoop.util.{EsMajorVersion, StringUtils, TestSettings}
 import org.elasticsearch.spark.rdd.EsSpark
 import org.elasticsearch.spark.rdd.Metadata._
@@ -114,7 +116,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex(resource("spark-test-nonexisting", "scala-basic-write"))
+    val target = wrapIndex(resource("spark-test-nonexisting", "scala-basic-write", version))
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
     runStream(batch)(_.saveToEs(target, cfg + (ES_INDEX_AUTO_CREATE -> "no")))
@@ -128,7 +130,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-basic-write", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-basic-write", "data", version))
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
 
@@ -144,7 +146,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" ->(".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-בְּדִיקָה-write", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-בְּדִיקָה-write", "data", version))
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
 
@@ -160,7 +162,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val expected = ExpectingToThrow(classOf[SparkException]).from(ssc)
     val doc = Map("itemId" -> "1", "map" -> Map("lat" -> 1.23, "lon" -> -70.12), "list" -> ("A", "B", "C"), "unknown" -> new Garbage(5))
     val batch = sc.makeRDD(Seq(doc))
-    runStream(batch)(_.saveToEs(wrapIndex(resource("spark-streaming-test-nested-map", "data")), cfg))
+    runStream(batch)(_.saveToEs(wrapIndex(resource("spark-streaming-test-nested-map", "data", version)), cfg))
     expected.assertExceptionFound()
   }
 
@@ -172,7 +174,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     val vals = ReflectionUtils.caseClassValues(caseClass2)
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-basic-write-objects", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-basic-write-objects", "data", version))
 
     val batch = sc.makeRDD(Seq(javaBean, caseClass1))
     runStreamRecoverably(batch)(_.saveToEs(target, cfg))
@@ -190,15 +192,15 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-id-write", "data"))
-    val docEndpoint = wrapIndex(docPath("spark-streaming-test-scala-id-write", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-id-write", "data", version))
+    val docPath = wrapIndex(docEndpoint("spark-streaming-test-scala-id-write", "data", version))
 
     val batch = sc.makeRDD(Seq(doc1, doc2))
     runStream(batch)(_.saveToEs(target, Map(ES_MAPPING_ID -> "number")))
 
     assertEquals(2, EsSpark.esRDD(sc, target).count())
-    assertTrue(RestUtils.exists(docEndpoint + "/1"))
-    assertTrue(RestUtils.exists(docEndpoint + "/2"))
+    assertTrue(RestUtils.exists(docPath + "/1"))
+    assertTrue(RestUtils.exists(docPath + "/2"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
@@ -208,8 +210,8 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-dyn-id-write", "data"))
-    val docEndpoint = wrapIndex(docPath("spark-streaming-test-scala-dyn-id-write", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-dyn-id-write", "data", version))
+    val docPath = wrapIndex(docEndpoint("spark-streaming-test-scala-dyn-id-write", "data", version))
 
     val pairRDD = sc.makeRDD(Seq((3, doc1), (4, doc2)))
     runStream(pairRDD)(_.saveToEsWithMeta(target, cfg))
@@ -217,8 +219,8 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     println(RestUtils.get(target + "/_search?"))
 
     assertEquals(2, EsSpark.esRDD(sc, target).count())
-    assertTrue(RestUtils.exists(docEndpoint + "/3"))
-    assertTrue(RestUtils.exists(docEndpoint + "/4"))
+    assertTrue(RestUtils.exists(docPath + "/3"))
+    assertTrue(RestUtils.exists(docPath + "/4"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
@@ -228,8 +230,8 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."), "number" -> 1)
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran", "number" -> 2)
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-dyn-id-write-map", "data"))
-    val docEndpoint = wrapIndex(docPath("spark-streaming-test-scala-dyn-id-write-map", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-dyn-id-write-map", "data", version))
+    val docPath = wrapIndex(docEndpoint("spark-streaming-test-scala-dyn-id-write-map", "data", version))
 
     val metadata1 = Map(ID -> 5)
     val metadata2 = Map(ID -> 6, VERSION -> "23")
@@ -241,8 +243,8 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     runStream(pairRDD)(_.saveToEsWithMeta(target, cfg))
 
-    assertTrue(RestUtils.exists(docEndpoint + "/5"))
-    assertTrue(RestUtils.exists(docEndpoint + "/6"))
+    assertTrue(RestUtils.exists(docPath + "/5"))
+    assertTrue(RestUtils.exists(docPath + "/6"))
 
     assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"))
   }
@@ -252,7 +254,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val trip1 = Map("reason" -> "business", "airport" -> "SFO")
     val trip2 = Map("participants" -> 5, "airport" -> "OTP")
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-write-exclude", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-write-exclude", "data", version))
 
     val batch = sc.makeRDD(Seq(trip1, trip2))
     runStream(batch)(_.saveToEs(target, Map(ES_MAPPING_EXCLUDE -> "airport")))
@@ -276,7 +278,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val doc1 = Map("one" -> null, "two" -> Set("2"), "three" -> (".", "..", "..."))
     val doc2 = Map("OTP" -> "Otopeni", "SFO" -> "San Fran")
 
-    val target = wrapIndex(resource("spark-streaming-test-scala-ingest-write", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-scala-ingest-write", "data", version))
 
     val ingestCfg = cfg + (ConfigurationOptions.ES_INGEST_PIPELINE -> pipelineName) + (ConfigurationOptions.ES_NODES_INGEST_ONLY -> "true")
 
@@ -294,15 +296,15 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val trip1 = Map("reason" -> "business", "airport" -> "sfo")
     val trip2 = Map("participants" -> 5, "airport" -> "otp")
 
-    val target = wrapIndex(resource("spark-streaming-test-trip-{airport}", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-trip-{airport}", "data", version))
     val batch = sc.makeRDD(Seq(trip1, trip2))
     runStream(batch)(_.saveToEs(target, cfg))
 
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-trip-otp", "data"))))
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-trip-sfo", "data"))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-trip-otp", "data", version))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-trip-sfo", "data", version))))
 
-    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-trip-sfo", "data") + "/_search?")), containsString("business"))
-    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-trip-otp", "data") + "/_search?")), containsString("participants"))
+    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-trip-sfo", "data", version) + "/_search?")), containsString("business"))
+    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-trip-otp", "data", version) + "/_search?")), containsString("participants"))
   }
 
   @Test
@@ -311,22 +313,22 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
     val json2 = "{\"participants\" : 5,\"airport\" : \"otp\"}"
 
     val batch = sc.makeRDD(Seq(json1, json2))
-    runStreamRecoverably(batch)(_.saveJsonToEs(wrapIndex(resource("spark-streaming-test-json-{airport}", "data")), cfg))
+    runStreamRecoverably(batch)(_.saveJsonToEs(wrapIndex(resource("spark-streaming-test-json-{airport}", "data", version)), cfg))
 
     val json1BA = json1.getBytes()
     val json2BA = json2.getBytes()
 
     val batch2 = sc.makeRDD(Seq(json1BA, json2BA))
-    runStream(batch2)(_.saveJsonToEs(wrapIndex(resource("spark-streaming-test-json-ba-{airport}", "data")), cfg))
+    runStream(batch2)(_.saveJsonToEs(wrapIndex(resource("spark-streaming-test-json-ba-{airport}", "data", version)), cfg))
 
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-sfo", "data"))))
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-otp", "data"))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-sfo", "data", version))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-otp", "data", version))))
 
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-ba-sfo", "data"))))
-    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-ba-otp", "data"))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-ba-sfo", "data", version))))
+    assertTrue(RestUtils.exists(wrapIndex(resource("spark-streaming-test-json-ba-otp", "data", version))))
 
-    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-json-sfo", "data") + "/_search?")), containsString("business"))
-    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-json-otp", "data") + "/_search?")), containsString("participants"))
+    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-json-sfo", "data", version) + "/_search?")), containsString("business"))
+    assertThat(RestUtils.get(wrapIndex(resource("spark-streaming-test-json-otp", "data", version) + "/_search?")), containsString("participants"))
   }
 
   @Test
@@ -351,12 +353,12 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     val index = "spark-streaming-test-contact"
     val typed = "data"
-    val target = resource(index, typed)
-    val docEndpoint = docPath(index, typed)
+    val target = resource(index, typed, version)
+    val docPath = docEndpoint(index, typed, version)
     RestUtils.touch(index)
     RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$docEndpoint/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
-    RestUtils.postData(s"$docEndpoint/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$docPath/1", """{ "id" : "1", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
+    RestUtils.postData(s"$docPath/2", """{ "id" : "2", "note": "First", "address": [] }""".getBytes(StringUtils.UTF_8))
 
     val lang = if (version.onOrAfter(EsMajorVersion.V_5_X)) "painless" else "groovy"
     val props = Map("es.write.operation" -> "upsert",
@@ -388,11 +390,11 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
 
     runStream(notes)(_.saveToEs(target, props + ("es.update.script.params" -> note_up_params) + ("es.update.script" -> note_up_script)))
 
-    assertTrue(RestUtils.exists(s"$docEndpoint/1"))
-    assertThat(RestUtils.get(s"$docEndpoint/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
+    assertTrue(RestUtils.exists(s"$docPath/1"))
+    assertThat(RestUtils.get(s"$docPath/1"), both(containsString(""""zipcode":"12345"""")).and(containsString(""""note":"First"""")))
 
-    assertTrue(RestUtils.exists(s"$docEndpoint/2"))
-    assertThat(RestUtils.get(s"$docEndpoint/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
+    assertTrue(RestUtils.exists(s"$docPath/2"))
+    assertThat(RestUtils.get(s"$docPath/2"), both(not(containsString(""""zipcode":"12345""""))).and(containsString(""""note":"Second"""")))
   }
 
   @Test
@@ -402,7 +404,7 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
       Map("field2" -> "bar"),
       Map("field1" -> 0.0, "field2" -> "baz")
     )
-    val target = wrapIndex(resource("spark-streaming-test-nullasempty", "data"))
+    val target = wrapIndex(resource("spark-streaming-test-nullasempty", "data", version))
     val batch = sc.makeRDD(data)
 
     runStream(batch)(_.saveToEs(target))
@@ -415,22 +417,6 @@ class AbstractScalaEsScalaSparkStreaming(val prefix: String, readMetadata: jl.Bo
       typelessMapping
     } else {
       s"""{"$typeName":$typelessMapping}"""
-    }
-  }
-
-  def resource(index: String, typeName: String): String = {
-    if (TestUtils.isTypelessVersion(version)) {
-      index
-    } else {
-      s"$index/$typeName"
-    }
-  }
-
-  def docPath(index: String, typeName: String): String = {
-    if (TestUtils.isTypelessVersion(version)) {
-      s"$index/_doc"
-    } else {
-      s"$index/$typeName"
     }
   }
 

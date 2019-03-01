@@ -58,6 +58,9 @@ import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
+
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
 public class AbstractExtraMRTests {
@@ -127,14 +130,14 @@ public class AbstractExtraMRTests {
     @Test
     public void testSaveDocWithEscapedChars() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish", "data", targetVersion));
         runJob(conf);
     }
 
     @Test
     public void testSaveDocWithEscapedCharsAndMapping() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish-with-mapping", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish-with-mapping", "data", targetVersion));
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "@id");
         runJob(conf);
     }
@@ -143,7 +146,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDoc() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish", "data", targetVersion));
         JobClient.runJob(conf);
     }
 
@@ -151,7 +154,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDocWithMapping() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish-with-mapping", "data"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish-with-mapping", "data", targetVersion));
         JobClient.runJob(conf);
     }
 
@@ -160,14 +163,10 @@ public class AbstractExtraMRTests {
         String simpleDoc = "{ \"number\" : 1 , \"list\" : [\"an array\", \"with multiple values\"], \"song\" : \"Three Headed Guardian\" } ";
         String targetPrefix = indexPrefix + "index";
         String alias = indexPrefix + "alias";
-        String targetA = resource(targetPrefix + "a", "type");
-        String targetB = resource(targetPrefix + "b", "type");
-        String docEndpointA = targetA;
-        String docEndpointB = targetB;
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            docEndpointA = docEndpointA + "/_doc";
-            docEndpointB = docEndpointB + "/_doc";
-        }
+        String targetA = resource(targetPrefix + "a", "type", targetVersion);
+        String targetB = resource(targetPrefix + "b", "type", targetVersion);
+        String docEndpointA = docEndpoint(targetPrefix + "a", "type", targetVersion);
+        String docEndpointB = docEndpoint(targetPrefix + "b", "type", targetVersion);
         RestUtils.postData(docEndpointA + "/1", simpleDoc.getBytes());
         RestUtils.postData(docEndpointB + "/1", simpleDoc.getBytes());
 
@@ -183,16 +182,8 @@ public class AbstractExtraMRTests {
 
         // run MR job
         JobConf conf = createReadJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "alias", "type"));
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "alias", "type", targetVersion));
         JobClient.runJob(conf);
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
     }
 
     private void runJob(JobConf conf) throws Exception {

@@ -37,6 +37,7 @@ import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.isLocal;
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.server;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AbstractHiveSaveJsonTest {
@@ -72,7 +73,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonartistssave ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-artists", "data"));
+                        + tableProps(resource("json-hive-artists", "data", targetVersion));
 
         // transfer data
         String insert =
@@ -100,7 +101,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonexternalserdetest ("
                         + "data     STRING) "
-                        + tableProps(resource("json-hive-externalserde", "data"));
+                        + tableProps(resource("json-hive-externalserde", "data", targetVersion));
 
         String insert =
                 "INSERT OVERWRITE TABLE jsonexternalserdetest "
@@ -122,7 +123,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonvarcharsave ("
                         + "json     VARCHAR(255))"
-                        + tableProps(resource("json-hive-varcharsave", "data"));
+                        + tableProps(resource("json-hive-varcharsave", "data", targetVersion));
 
         // transfer data
         String insert =
@@ -148,7 +149,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsoncreatesave ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-createsave", "data"),
+                        + tableProps(resource("json-hive-createsave", "data", targetVersion),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -176,7 +177,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsoncreatesaveduplicate ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-createsave", "data"),
+                        + tableProps(resource("json-hive-createsave", "data", targetVersion),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='create'");
 
@@ -207,7 +208,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonupdatesave ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-updatesave", "data"),
+                        + tableProps(resource("json-hive-updatesave", "data", targetVersion),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='upsert'");
 
@@ -239,7 +240,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonupdatewoupsertsave ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-updatewoupsertsave", "data"),
+                        + tableProps(resource("json-hive-updatewoupsertsave", "data", targetVersion),
                                 "'" + ConfigurationOptions.ES_MAPPING_ID + "'='number'",
                                 "'" + ConfigurationOptions.ES_WRITE_OPERATION + "'='update'");
 
@@ -303,7 +304,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonpattern ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-pattern-{number}", "data"));
+                        + tableProps(resource("json-hive-pattern-{number}", "data", targetVersion));
 
         String selectTest = "SELECT s.json FROM jsonsourcepattern s";
 
@@ -333,7 +334,7 @@ public class AbstractHiveSaveJsonTest {
         String ddl =
                 "CREATE EXTERNAL TABLE jsonpatternformat ("
                         + "json     STRING) "
-                        + tableProps(resource("json-hive-pattern-format-{@timestamp|YYYY-MM-dd}", "data"));
+                        + tableProps(resource("json-hive-pattern-format-{@timestamp|YYYY-MM-dd}", "data", targetVersion));
 
         String selectTest = "SELECT s.json FROM jsonsourcepatternformat s";
 
@@ -348,14 +349,6 @@ public class AbstractHiveSaveJsonTest {
         System.out.println(server.execute(load));
         System.out.println(server.execute(selectTest));
         System.out.println(server.execute(insert));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
     }
 
     private String createTable(String tableName) {

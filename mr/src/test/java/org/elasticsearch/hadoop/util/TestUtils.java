@@ -58,6 +58,22 @@ public class TestUtils {
         }
     }
 
+    public static String resource(String index, String type, EsMajorVersion testVersion) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
+            return index;
+        } else {
+            return index + "/" + type;
+        }
+    }
+
+    public static String docEndpoint(String index, String type, EsMajorVersion testVersion) {
+        if (TestUtils.isTypelessVersion(testVersion)) {
+            return index + "/_doc";
+        } else {
+            return index + "/" + type;
+        }
+    }
+
     public static boolean isTypelessVersion(EsMajorVersion version) {
         // Types have been deprecated in 7.0.0, and will be removed at a later date
         return version.onOrAfter(EsMajorVersion.V_7_X);

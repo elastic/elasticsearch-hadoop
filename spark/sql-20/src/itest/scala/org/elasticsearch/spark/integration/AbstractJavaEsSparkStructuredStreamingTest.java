@@ -214,7 +214,7 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
     @Test
     public void test1WriteWithMappingId() throws Exception {
         String target = wrapIndex(resource("test-write-id", "data"));
-        String docEndpoint = wrapIndex(docPath("test-write-id", "data"));
+        String docPath = wrapIndex(docPath("test-write-id", "data"));
         JavaStreamingQueryTestHarness<RecordBean> test = new JavaStreamingQueryTestHarness<>(spark, Encoders.bean(RecordBean.class));
 
         RecordBean doc1 = new RecordBean();
@@ -244,9 +244,9 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         );
 
         assertEquals(3, JavaEsSpark.esRDD(new JavaSparkContext(spark.sparkContext()), target).count());
-        assertTrue(RestUtils.exists(docEndpoint + "/1"));
-        assertTrue(RestUtils.exists(docEndpoint + "/2"));
-        assertTrue(RestUtils.exists(docEndpoint + "/3"));
+        assertTrue(RestUtils.exists(docPath + "/1"));
+        assertTrue(RestUtils.exists(docPath + "/2"));
+        assertTrue(RestUtils.exists(docPath + "/3"));
 
         assertThat(RestUtils.get(target + "/_search?"), containsString("Spark"));
     }
@@ -429,12 +429,12 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
         String index = wrapIndex("test-script-upsert");
         String type = "data";
         String target = resource(index, type);
-        String docEndpoint = docPath(index, type);
+        String docPath = docPath(index, type);
 
         RestUtils.touch(index);
         RestUtils.putMapping(index, type, mapping.getBytes());
-        RestUtils.postData(docEndpoint+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
-        RestUtils.postData(docEndpoint+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docPath+"/1", "{\"id\":\"1\",\"note\":\"First\",\"address\":[]}".getBytes());
+        RestUtils.postData(docPath+"/2", "{\"id\":\"2\",\"note\":\"First\",\"address\":[]}".getBytes());
 
         // Common configurations
         Map<String, String> updateProperties = new HashMap<>();
@@ -506,10 +506,10 @@ public class AbstractJavaEsSparkStructuredStreamingTest {
             );
 
         // Validate
-        assertTrue(RestUtils.exists(docEndpoint + "/1"));
-        assertThat(RestUtils.get(docEndpoint + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
+        assertTrue(RestUtils.exists(docPath + "/1"));
+        assertThat(RestUtils.get(docPath + "/1"), both(containsString("\"zipcode\":\"12345\"")).and(containsString("\"note\":\"First\"")));
 
-        assertTrue(RestUtils.exists(docEndpoint + "/2"));
-        assertThat(RestUtils.get(docEndpoint + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
+        assertTrue(RestUtils.exists(docPath + "/2"));
+        assertThat(RestUtils.get(docPath + "/2"), both(not(containsString("\"zipcode\":\"12345\""))).and(containsString("\"note\":\"Second\"")));
     }
 }

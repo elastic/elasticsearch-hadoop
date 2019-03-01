@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.integration.hive.HiveSuite.*;
@@ -87,7 +88,7 @@ public class AbstractHiveSearchTest {
                 + "id         BIGINT, "
                 + "name     STRING, "
                 + "links     STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String select = "SELECT * FROM artistsload" + testInstance;
 
@@ -107,7 +108,7 @@ public class AbstractHiveSearchTest {
                 + "name     STRING, "
                 + "links     STRUCT<url:STRING, picture:STRING>, "
                 + "meta     MAP<STRING, STRING>) "
-                + tableProps(resource("hive-artists", "data"), "'es.read.metadata.field'='meta'");
+                + tableProps(resource("hive-artists", "data", targetVersion), "'es.read.metadata.field'='meta'");
 
         String select = "SELECT meta FROM artistsload" + testInstance;
 
@@ -124,7 +125,7 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String select = "SELECT count(*) FROM artistscount" + testInstance;
 
@@ -141,7 +142,7 @@ public class AbstractHiveSearchTest {
                 + "rid      BIGINT, "
                 + "mapids   ARRAY<BIGINT>, "
                 + "rdata    MAP<STRING, STRING>) "
-                + tableProps(resource("hive-compound", "data"));
+                + tableProps(resource("hive-compound", "data", targetVersion));
 
         String select = "SELECT * FROM compoundarray" + testInstance;
 
@@ -160,7 +161,7 @@ public class AbstractHiveSearchTest {
                 + "date     TIMESTAMP, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artiststimestamp", "data"));
+                + tableProps(resource("hive-artiststimestamp", "data", targetVersion));
 
         String select = "SELECT date FROM timestampload" + testInstance;
         String select2 = "SELECT unix_timestamp(), date FROM timestampload" + testInstance;
@@ -187,7 +188,7 @@ public class AbstractHiveSearchTest {
                 + "date     DATE, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-datesave", "data"));
+                + tableProps(resource("hive-datesave", "data", targetVersion));
 
         String select = "SELECT date FROM dateload" + testInstance;
         String select2 = "SELECT unix_timestamp(), date FROM dateload" + testInstance;
@@ -205,7 +206,7 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         long currentTimeMillis = System.currentTimeMillis();
 
@@ -223,7 +224,7 @@ public class AbstractHiveSearchTest {
                 + "dTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps(resource("hive-aliassave", "data"), "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
+                + tableProps(resource("hive-aliassave", "data", targetVersion), "'es.mapping.names' = 'dTE:@timestamp, uRl:url_123'");
 
         String select = "SELECT * FROM aliasload" + testInstance;
 
@@ -242,7 +243,7 @@ public class AbstractHiveSearchTest {
                 + "dTE     TIMESTAMP, "
                 + "Name     STRING, "
                 + "links    STRUCT<uRl:STRING, pICture:STRING>) "
-                + tableProps(resource("foobar", "missing"), "'es.index.read.missing.as.empty' = 'true'");
+                + tableProps(resource("foobar", "missing", targetVersion), "'es.index.read.missing.as.empty' = 'true'");
 
         String select = "SELECT * FROM missing" + testInstance;
 
@@ -258,7 +259,7 @@ public class AbstractHiveSearchTest {
                 + "id         BIGINT, "
                 + "name     STRING, "
                 + "links     STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"), "'es.read.source.filter' = 'name,links'");
+                + tableProps(resource("hive-artists", "data", targetVersion), "'es.read.source.filter' = 'name,links'");
 
         String select = "SELECT * FROM collisiontest" + testInstance;
 
@@ -274,7 +275,7 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-varcharsave", "data"));
+                + tableProps(resource("hive-varcharsave", "data", targetVersion));
 
         String select = "SELECT * FROM varcharload" + testInstance;
 
@@ -294,7 +295,7 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-charsave", "data"));
+                + tableProps(resource("hive-charsave", "data", targetVersion));
 
         // this does not
         String select = "SELECT * FROM charload" + testInstance;
@@ -335,14 +336,14 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-rwwrite", "data"));
+                + tableProps(resource("hive-rwwrite", "data", targetVersion));
 
 
         String read = "CREATE EXTERNAL TABLE rwread" + testInstance + " ("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String selectInsert = "INSERT OVERWRITE TABLE rwwrite" + testInstance + " SELECT * FROM rwread" + testInstance;
         String select = "SELECT * FROM rwwrite" + testInstance;
@@ -366,13 +367,13 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String right = "CREATE EXTERNAL TABLE right" + testInstance + "("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String select = "SELECT * FROM left" + testInstance + " l JOIN right" + testInstance + " r ON l.id = r.id";
         //String select = "SELECT * FROM left" + testInstance + " l JOIN source r ON l.id = r.id";
@@ -396,13 +397,13 @@ public class AbstractHiveSearchTest {
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-artists", "data"));
+                + tableProps(resource("hive-artists", "data", targetVersion));
 
         String unionB = "CREATE EXTERNAL TABLE unionb" + testInstance + " ("
                 + "id       BIGINT, "
                 + "name     STRING, "
                 + "links    STRUCT<url:STRING, picture:STRING>) "
-                + tableProps(resource("hive-varcharsave", "data"));
+                + tableProps(resource("hive-varcharsave", "data", targetVersion));
 
         //create two external table
         server.execute(unionA);
@@ -431,24 +432,16 @@ public class AbstractHiveSearchTest {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-7", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-10", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-15", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-7", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-10", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-15", "data", targetVersion)));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2007-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2011-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2001-10-06", "data")));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(targetVersion)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2007-10-06", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2011-10-06", "data", targetVersion)));
+        Assert.assertTrue(RestUtils.exists(resource("hive-pattern-format-2001-10-06", "data", targetVersion)));
     }
 
     private static boolean containsNoNull(List<String> str) {

@@ -25,7 +25,6 @@ import org.elasticsearch.hadoop.QueryTestParams;
 import org.elasticsearch.hadoop.mr.EsAssume;
 import org.elasticsearch.hadoop.mr.RestUtils;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
-import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.hamcrest.Matchers.*;
@@ -73,7 +73,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD '"+resource("json-pig-tupleartists", "data")+"' USING EsStorage();" +
+                "A = LOAD '"+resource("json-pig-tupleartists", "data", VERSION)+"' USING EsStorage();" +
                 "X = LIMIT A 3;" +
                 //"DESCRIBE A;";
                 "STORE A INTO '" + tmpPig() + "/testtuple';";
@@ -92,7 +92,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query=" + query + "','es.read.metadata=" + readMetadata +"');" +
-                "A = LOAD '"+resource("json-pig-tupleartists", "data")+"' USING EsStorage() AS (name:chararray);" +
+                "A = LOAD '"+resource("json-pig-tupleartists", "data", VERSION)+"' USING EsStorage() AS (name:chararray);" +
                 "B = ORDER A BY name DESC;" +
                 "X = LIMIT B 3;" +
                 "STORE B INTO '" + tmpPig() + "/testtupleschema';";
@@ -109,7 +109,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                        "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.query="+ query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("json-pig-fieldalias", "data")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("json-pig-fieldalias", "data", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testfieldalias';";
         pig.executeScript(script);
@@ -126,7 +126,7 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
         String script =
                       "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                       "DEFINE EsStorage org.elasticsearch.hadoop.pig.EsStorage('es.index.read.missing.as.empty=true','es.query=" + query + "','es.read.metadata=" + readMetadata +"');"
-                      + "A = LOAD '"+resource("foo", "bar")+"' USING EsStorage();"
+                      + "A = LOAD '"+resource("foo", "bar", VERSION)+"' USING EsStorage();"
                       + "X = LIMIT A 3;"
                       + "STORE A INTO '" + tmpPig() + "/testmissingindex';";
         pig.executeScript(script);
@@ -155,24 +155,16 @@ public class AbstractPigSearchJsonTest extends AbstractPigTests {
 
     @Test
     public void testDynamicPattern() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-1", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-5", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-9", "data")));
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-1", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-5", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-9", "data", VERSION)));
     }
 
     @Test
     public void testDynamicPatternFormat() throws Exception {
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2001-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2005-10-06", "data")));
-        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2017-10-06", "data")));
-    }
-
-    private String resource(String index, String type) {
-        if (TestUtils.isTypelessVersion(VERSION)) {
-            return index;
-        } else {
-            return index + "/" + type;
-        }
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2001-10-06", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2005-10-06", "data", VERSION)));
+        Assert.assertTrue(RestUtils.exists(resource("json-pig-pattern-format-2017-10-06", "data", VERSION)));
     }
 
     private static String tmpPig() {
