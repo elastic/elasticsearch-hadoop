@@ -5,23 +5,15 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.plugins.scala.ScalaBasePlugin
 import org.gradle.api.tasks.GradleBuild
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.Test
 
 class ScalaVariantPlugin implements Plugin<Project> {
 
     private static final String NESTED_BUILD_RUN = 'scala.variant'
-
-    // Gradle 5.0 does some sort of locking on the main build script when performing builds. Since our variant compile
-    // tasks are based on launching sub-builds of Gradle, in some cases Gradle tries to pipeline and mix the tasks
-    // together. This leads to multiple tasks hitting some deep locking code and instead of waiting, fail fast. This
-    // mechanism ensures that no variant build tasks are pipelined with any other variant builds.
-    private static final List<Task> variantTasks = new ArrayList<Task>()
 
     @Override
     void apply(Project project) {
@@ -40,23 +32,10 @@ class ScalaVariantPlugin implements Plugin<Project> {
             Task distribution = project.getTasks().getByName('distribution')
             distribution.dependsOn(crossBuild)
 
-            // Ensure that all project cross-building happens after the standard Jar task.
-            Task jar = project.getTasks().getByName('jar')
-            crossBuild.dependsOn(jar)
-
             // For all variants make a crossBuild#variant per variant version
             variantExtension.variants.all { String variantVersion ->
                 String variantBaseVersion = baseVersionFromFullVersion(variantVersion)
                 GradleBuild crossBuildForVariant = project.getTasks().create("variants#${variantBaseVersion.replace('.', '_')}", GradleBuild.class)
-
-                // Ensure that no variant build tasks are pipelined with any other variant builds.
-                // We lock explicitly here to ensure no mutations between checking and setting.
-                synchronized (variantTasks) {
-                    if (!variantTasks.isEmpty()) {
-                        crossBuildForVariant.mustRunAfter(variantTasks.last())
-                    }
-                    variantTasks.add(crossBuildForVariant)
-                }
 
                 // The crossBuild runs the distribution task with a different scala property, and 'nestedRun' set to true
                 Map<String, String> properties = new HashMap<>()
@@ -92,9 +71,8 @@ class ScalaVariantPlugin implements Plugin<Project> {
             String variantSuffix = (project.ext.scalaMajorVersion as String).replace('.', '')
 
             // When working with a variant use a different folder to cache the artifacts between builds
-            project.sourceSets.each { SourceSet sourceSet ->
-                sourceSet.java.outputDir = project.file(sourceSet.java.outputDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
-                sourceSet.scala.outputDir = project.file(sourceSet.scala.outputDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
+            project.sourceSets.each {
+                it.output.classesDir = project.file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
             }
 
             Javadoc javadoc = project.getTasks().getByName('javadoc') as Javadoc
@@ -163,10 +141,10 @@ class ScalaVariantPlugin implements Plugin<Project> {
         }
     }
 
-    /**
-     * Takes an epoch.major.minor version and returns the epoch.major version form of it.
-     * @return
-     */
+/**
+ * Takes an epoch.major.minor version and returns the epoch.major version form of it.
+ * @return
+ */
     static String baseVersionFromFullVersion(String fullVersion) {
         List<String> versionParts = fullVersion.tokenize('.')
         if (versionParts.size() != 3) {
