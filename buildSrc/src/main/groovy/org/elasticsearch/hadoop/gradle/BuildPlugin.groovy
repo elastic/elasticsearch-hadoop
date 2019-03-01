@@ -102,6 +102,8 @@ class BuildPlugin implements Plugin<Project>  {
 
             println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
 
+            println "Using Gradle [${project.gradle.gradleVersion}]"
+
             // Hadoop versions
             project.rootProject.ext.hadoopClient = []
             project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
