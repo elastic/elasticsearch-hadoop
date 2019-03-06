@@ -33,8 +33,8 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     static final Map<Version, Map<String, String>> VERSION_MAP = [:]
     static {
-        VERSION_MAP.put(new Version(2, 3, 2),
-                ['SHA-512': 'E61D9330125746A24D7784166A15B41514546CAD874357C98DCA0A2C39FA7303D8FA7C049BA6CDF5A24C172D4F47A2E5B6E1F658A57A9B2A30D46D9858CDB531'])
+        VERSION_MAP.put(new Version(2, 3, 3),
+                ['SHA-512': '27CF9AD268E684D6926201BB5478F7F5A410659972BC79FC14AF61245EFF50C9A4363E400311B2FA9E1326E8AF1EB6DDE1D359B88B9143F25A49B3E11596B002'])
     }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
@@ -61,7 +61,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 2)
+        return new Version(2, 3, 3)
     }
 
     @Override
