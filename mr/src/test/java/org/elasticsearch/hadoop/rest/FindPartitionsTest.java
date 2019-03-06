@@ -97,15 +97,18 @@ public class FindPartitionsTest {
         RestClient client = Mockito.mock(RestClient.class);
         Settings settings = new PropertiesSettings();
         settings.setInternalVersion(EsMajorVersion.LATEST);
-        settings.setProperty(ES_RESOURCE_READ, "index1,index2,index3/type1");
+        settings.setProperty(ES_RESOURCE_READ, "index1,index2,index3");
         for (int i = 0; i < 15; i++) {
             Mockito.when(client.count("index1", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(1000L);
+            Mockito.when(client.countIndexShard("index1", Integer.toString(i), MATCH_ALL)).thenReturn(1000L);
         }
         for (int i = 0; i < 18; i++) {
             Mockito.when(client.count("index2", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(10000L);
+            Mockito.when(client.countIndexShard("index2", Integer.toString(i), MATCH_ALL)).thenReturn(10000L);
         }
         for (int i = 0; i < 1; i++) {
             Mockito.when(client.count("index3", "type1", Integer.toString(i), MATCH_ALL)).thenReturn(100000L);
+            Mockito.when(client.countIndexShard("index3", Integer.toString(i), MATCH_ALL)).thenReturn(100000L);
         }
         {
             settings.setMaxDocsPerPartition(1000);

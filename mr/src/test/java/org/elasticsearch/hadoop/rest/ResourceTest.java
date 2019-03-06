@@ -45,11 +45,13 @@ public class ResourceTest {
         parameters.add(new Object[]{EsMajorVersion.LATEST, true});
         parameters.add(new Object[]{EsMajorVersion.LATEST, false});
 
+        parameters.add(new Object[]{EsMajorVersion.V_8_X, true});
         parameters.add(new Object[]{EsMajorVersion.V_7_X, true});
         parameters.add(new Object[]{EsMajorVersion.V_6_X, true});
         parameters.add(new Object[]{EsMajorVersion.V_5_X, true});
         parameters.add(new Object[]{EsMajorVersion.V_2_X, true});
 
+        parameters.add(new Object[]{EsMajorVersion.V_8_X, false});
         parameters.add(new Object[]{EsMajorVersion.V_7_X, false});
         parameters.add(new Object[]{EsMajorVersion.V_6_X, false});
         parameters.add(new Object[]{EsMajorVersion.V_5_X, false});
@@ -67,54 +69,56 @@ public class ResourceTest {
 
     @Test
     public void testJustIndex() throws Exception {
+        assumeTyped();
         Resource res = createResource("foo/_all");
         assertEquals("foo/_all", res.toString());
     }
 
     @Test
     public void testJustType() throws Exception {
+        assumeTyped();
         Resource res = createResource("_all/foo");
         assertEquals("_all/foo", res.toString());
     }
 
     @Test
     public void testAllTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Resource res = createResource("_all");
         assertEquals("_all", res.toString());
     }
 
     @Test
     public void testIndexAndType() throws Exception {
+        assumeTyped();
         Resource res = createResource("foo/bar");
         assertEquals("foo/bar", res.toString());
     }
 
     @Test
     public void testIndexTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Resource res = createResource("foo");
         assertEquals("foo", res.toString());
     }
 
     @Test
     public void testUnderscore() throws Exception {
+        assumeTyped();
         Resource res = createResource("fo_o/ba_r");
         assertEquals("fo_o/ba_r", res.toString());
     }
 
     @Test
     public void testUnderscoreTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Resource res = createResource("fo_o");
         assertEquals("fo_o", res.toString());
     }
 
     @Test
     public void testQueryUri() throws Exception {
+        assumeTyped();
         Settings s = new TestSettings();
         Resource res = createResource("foo/bar/_search=?somequery", s);
         assertEquals("foo/bar", res.toString());
@@ -123,8 +127,7 @@ public class ResourceTest {
 
     @Test
     public void testQueryUriTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Settings s = new TestSettings();
         Resource res = createResource("foo/_search=?somequery", s);
         assertEquals("foo", res.toString());
@@ -133,6 +136,7 @@ public class ResourceTest {
 
     @Test
     public void testQueryUriWithParams() throws Exception {
+        assumeTyped();
         Settings s = new TestSettings();
         Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
         assertEquals("foo/bar", res.toString());
@@ -141,8 +145,7 @@ public class ResourceTest {
 
     @Test
     public void testQueryUriWithParamsTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Settings s = new TestSettings();
         Resource res = createResource("foo/_search=?somequery&bla=bla", s);
         assertEquals("foo", res.toString());
@@ -151,6 +154,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUriConflict() throws Exception {
+        assumeTyped();
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/bar/_search=?somequery", s);
@@ -159,8 +163,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUriConflictTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/_search=?somequery", s);
@@ -169,6 +172,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUriConflictWithParams() throws Exception {
+        assumeTyped();
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/bar/_search=?somequery&bla=bla", s);
@@ -177,8 +181,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testQueryUriConflictWithParamsTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Settings s = new TestSettings();
         s.setProperty(ConfigurationOptions.ES_QUERY, "{\"match_all\":{}}");
         Resource res = createResource("foo/_search=?somequery&bla=bla", s);
@@ -187,32 +190,33 @@ public class ResourceTest {
 
     @Test
     public void testDynamicFieldLowercase() throws Exception {
+        assumeTyped();
         Resource res = createResource("foo/Fbar");
         res = createResource("foo-{F}/bar");
     }
 
     @Test
     public void testDynamicFieldTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Resource res = createResource("foo");
         res = createResource("foo-{F}");
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testNoWhitespaceAllowed() throws Exception {
+        assumeTyped();
         createResource("foo, bar/far");
     }
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testNoWhitespaceAllowedTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         createResource("foo, bar");
     }
 
     @Test
     public void testBulkWithIngestPipeline() throws Exception {
+        assumeTyped();
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
         Resource res = createResource("pipeline/test", settings);
@@ -224,8 +228,7 @@ public class ResourceTest {
 
     @Test
     public void testBulkWithIngestPipelineTypeless() throws Exception {
-        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
-                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+        assumeTypeless();
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
         Resource res = createResource("pipeline", settings);
@@ -238,6 +241,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testBulkWithBadIngestPipeline() throws Exception {
+        assumeTyped();
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest pipeline");
         createResource("pipeline/test", settings);
@@ -245,6 +249,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testBulkUpdateBreaksWithIngestPipeline() throws Exception {
+        assumeTyped();
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
         settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPDATE);
@@ -253,6 +258,7 @@ public class ResourceTest {
 
     @Test(expected = EsHadoopIllegalArgumentException.class)
     public void testBulkUpsertBreaksWithIngestPipeline() throws Exception {
+        assumeTyped();
         Settings settings = new TestSettings();
         settings.setProperty(ConfigurationOptions.ES_INGEST_PIPELINE, "ingest-pipeline");
         settings.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, ConfigurationOptions.ES_OPERATION_UPSERT);
@@ -267,6 +273,16 @@ public class ResourceTest {
         s.setInternalVersion(testVersion);
         s.setProperty(ConfigurationOptions.ES_RESOURCE, target);
         return new Resource(s, true);
+    }
+
+    private void assumeTyped() {
+        Assume.assumeTrue("Typed api only accepted 7.X and before. Running [" + testVersion + ", " + readResource + "]",
+                (testVersion.onOrBefore(EsMajorVersion.V_7_X)));
+    }
+
+    private void assumeTypeless() {
+        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
+                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
     }
 
     @Test

@@ -36,7 +36,8 @@ public class JsonFieldExtractorsTest {
     @Test
     public void indexAndType() {
         Settings settings = new TestSettings();
-        settings.setInternalVersion(EsMajorVersion.LATEST);
+        // Types will not be supported in 8.x
+        settings.setInternalVersion(EsMajorVersion.V_7_X);
         settings.setResourceWrite("test/{field}");
         JsonFieldExtractors jsonFieldExtractors = new JsonFieldExtractors(settings);
 
