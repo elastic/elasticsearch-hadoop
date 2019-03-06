@@ -150,6 +150,9 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.runtimeJavaHome = javaHome
             project.rootProject.ext.javaVersions = javaVersions
 
+            // Force any Elasticsearch test clusters to use packaged java versions if they have them available
+            project.rootProject.ext.isRuntimeJavaHomeSet = false
+
             File gitHead = gitBranch(project)
             project.rootProject.ext.gitHead = gitHead
             project.rootProject.ext.revHash = gitHash(gitHead)
@@ -162,6 +165,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
         project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
         project.ext.inFipsJvm = project.rootProject.ext.inFipsJvm
     }
 
