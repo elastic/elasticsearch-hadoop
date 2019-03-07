@@ -37,6 +37,8 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import static org.elasticsearch.hadoop.util.EsMajorVersion.V_5_X;
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -72,7 +74,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;" +
                 "DESCRIBE B;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig-tupleartists/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO '"+resource("pig-tupleartists", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
         //"es_total = LOAD 'radio/artists/_count?q=me*' USING org.elasticsearch.hadoop.pig.EsStorage();" +
         //"DUMP es_total;" +
         //"bartists = FILTER B BY name MATCHES 'me.*';" +
@@ -100,7 +102,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadArtistSource() +
                 "B = FOREACH A GENERATE name, TOBAG(url, picture) AS links;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig-bagartists/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO '"+resource("pig-bagartists", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
         pig.executeScript(script);
     }
 
@@ -121,7 +123,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadArtistSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS date, url;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig-timestamp/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO '"+resource("pig-timestamp", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -141,7 +143,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadArtistSource() +
                 "B = FOREACH A GENERATE name, ToDate(" + millis + "l) AS timestamp, url, picture;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig-fieldalias/data' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
+                "STORE B INTO '"+resource("pig-fieldalias", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('es.mapping.names=nAme:@name, timestamp:@timestamp, uRL:url, picturE:picture');";
 
         pig.executeScript(script);
     }
@@ -162,7 +164,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "A = LOAD '" + TestUtils.sampleArtistsDat() + "' USING PigStorage() AS (id:long, Name:chararray, uRL:chararray, pIctUre: chararray, timestamp: chararray); " +
                 "B = FOREACH A GENERATE Name, uRL, pIctUre;" +
                 "ILLUSTRATE B;" +
-                "STORE B INTO 'pig-casesensitivity/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO '"+resource("pig-casesensitivity", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -182,7 +184,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 loadArtistSource() +
                 "AL = LIMIT A 10;" +
                 "B = FOREACH AL GENERATE (), [], {};" +
-                "STORE B INTO 'pig-emptyconst/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE B INTO '"+resource("pig-emptyconst", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -198,7 +200,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig-createwithid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO '"+resource("pig-createwithid", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=create','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -223,7 +225,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig-updatewoid/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO '"+resource("pig-updatewoid", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update');";
         pig.executeScript(script);
     }
@@ -234,7 +236,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig-update/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO '"+resource("pig-update", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=upsert','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -254,7 +256,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
                 "B = FOREACH A GENERATE id, name, TOBAG(url, picture) AS links;" +
-                "STORE B INTO 'pig-updatewoupsert/data' USING org.elasticsearch.hadoop.pig.EsStorage('"
+                "STORE B INTO '"+resource("pig-updatewoupsert", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage('"
                                 + ConfigurationOptions.ES_WRITE_OPERATION + "=update','"
                                 + ConfigurationOptions.ES_MAPPING_ID + "=id');";
         pig.executeScript(script);
@@ -309,8 +311,8 @@ public class AbstractPigSaveTest extends AbstractPigTests {
 
     @Test
     public void testNestedTuple() throws Exception {
-        RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
-        RestUtils.postData("pig-nestedtuple/data", "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.postData(docEndpoint("pig-nestedtuple", "data", VERSION), "{\"my_array\" : [\"1.a\",\"1.b\"]}".getBytes(StringUtils.UTF_8));
+        RestUtils.postData(docEndpoint("pig-nestedtuple", "data", VERSION), "{\"my_array\" : [\"2.a\",\"2.b\"]}".getBytes(StringUtils.UTF_8));
         RestUtils.waitForYellow("pig-nestedtuple");
     }
 
@@ -320,7 +322,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
-                "STORE A INTO 'pig-pattern-{tag}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE A INTO '"+resource("pig-pattern-{tag}", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }
@@ -338,7 +340,7 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         String script =
                 "REGISTER "+ Provisioner.ESHADOOP_TESTING_JAR + ";" +
                 loadArtistSource() +
-                "STORE A INTO 'pig-pattern-format-{timestamp|YYYY-MM-dd}/data' USING org.elasticsearch.hadoop.pig.EsStorage();";
+                "STORE A INTO '"+resource("pig-pattern-format-{timestamp|YYYY-MM-dd}", "data", VERSION)+"' USING org.elasticsearch.hadoop.pig.EsStorage();";
 
         pig.executeScript(script);
     }

@@ -36,6 +36,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.spark.sql.api.java.JavaEsSparkSQL;
@@ -47,6 +48,8 @@ import org.junit.runners.MethodSorters;
 
 import com.google.common.collect.ImmutableMap;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.*;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
@@ -66,6 +69,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	
 	private static transient JavaSparkContext sc = null;
 	private static transient SQLContext sqc = null;
+	private EsMajorVersion version = TestUtils.getEsClusterInfo().getMajorVersion();
 
 	@BeforeClass
 	public static void setup() {
@@ -98,7 +102,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	public void testEsdataFrame1Write() throws Exception {
 		DataFrame dataFrame = artistsAsDataFrame();
 
-		String target = "sparksql-test-scala-basic-write/data";
+		String target = resource("sparksql-test-scala-basic-write", "data", version);
 		JavaEsSparkSQL.saveToEs(dataFrame, target);
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
@@ -108,19 +112,21 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	public void testEsdataFrame1WriteWithId() throws Exception {
 		DataFrame dataFrame = artistsAsDataFrame();
 
-		String target = "sparksql-test-scala-basic-write-id-mapping/data";
+		String target = resource("sparksql-test-scala-basic-write-id-mapping", "data", version);
+		String docEndpoint = docEndpoint("sparksql-test-scala-basic-write-id-mapping", "data", version);
+
 		JavaEsSparkSQL.saveToEs(dataFrame, target,
 				ImmutableMap.of(ES_MAPPING_ID, "id"));
 		assertTrue(RestUtils.exists(target));
 		assertThat(RestUtils.get(target + "/_search?"), containsString("345"));
-		assertThat(RestUtils.exists(target + "/1"), is(true));
+		assertThat(RestUtils.exists(docEndpoint + "/1"), is(true));
 	}
 
     @Test
     public void testEsSchemaRDD1WriteWithMappingExclude() throws Exception {
     	DataFrame dataFrame = artistsAsDataFrame();
 
-        String target = "sparksql-test-scala-basic-write-exclude-mapping/data";
+        String target = resource("sparksql-test-scala-basic-write-exclude-mapping", "data", version);
         JavaEsSparkSQL.saveToEs(dataFrame, target,ImmutableMap.of(ES_MAPPING_EXCLUDE, "url"));
         assertTrue(RestUtils.exists(target));
         assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")));
@@ -128,7 +134,7 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
     
 	@Test
 	public void testEsdataFrame2Read() throws Exception {
-		String target = "sparksql-test-scala-basic-write/data";
+		String target = resource("sparksql-test-scala-basic-write", "data", version);
 
         // DataFrame dataFrame = JavaEsSparkSQL.esDF(sqc, target);
         DataFrame dataFrame = sqc.read().format("es").load(target);
@@ -152,18 +158,18 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 	@Test
 	public void testEsDataFrameReadMetadata() throws Exception {
 		DataFrame artists = artistsAsDataFrame();
-		String target = "sparksql-test/scala-dataframe-read-metadata";
+		String target = resource("sparksql-test-scala-dataframe-read-metadata", "data", version);
 		JavaEsSparkSQL.saveToEs(artists, target);
 
 		DataFrame dataframe = sqc.read().format("es").option("es.read.metadata", "true").load(target).where("id = 1");
 
 		// Since _metadata field isn't a part of _source,
 		// we want to check that it could be fetched in any position.
-		assertEquals("sparksql-test", dataframe.selectExpr("_metadata['_index']").takeAsList(1).get(0).get(0));
-		assertEquals("sparksql-test", dataframe.selectExpr("_metadata['_index']", "name").takeAsList(1).get(0).get(0));
+		assertEquals("sparksql-test-scala-dataframe-read-metadata", dataframe.selectExpr("_metadata['_index']").takeAsList(1).get(0).get(0));
+		assertEquals("sparksql-test-scala-dataframe-read-metadata", dataframe.selectExpr("_metadata['_index']", "name").takeAsList(1).get(0).get(0));
 		assertEquals("MALICE MIZER", dataframe.selectExpr("_metadata['_index']", "name").takeAsList(1).get(0).get(1));
 		assertEquals("MALICE MIZER", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(0));
-		assertEquals("sparksql-test", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(1));
+		assertEquals("sparksql-test-scala-dataframe-read-metadata", dataframe.selectExpr("name", "_metadata['_index']").takeAsList(1).get(0).get(1));
 	}
 
 	private DataFrame artistsAsDataFrame() {

@@ -46,15 +46,20 @@ import org.elasticsearch.hadoop.mr.EsOutputFormat;
 import org.elasticsearch.hadoop.mr.HadoopCfgUtils;
 import org.elasticsearch.hadoop.mr.LinkedMapWritable;
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
 import org.elasticsearch.hadoop.util.WritableUtils;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @RunWith(Parameterized.class)
@@ -108,6 +113,7 @@ public class AbstractExtraMRTests {
 
     private String indexPrefix = "";
     private final JobConf config;
+    private EsMajorVersion targetVersion;
 
     public AbstractExtraMRTests(JobConf config, String indexPrefix) {
         this.indexPrefix = indexPrefix;
@@ -116,18 +122,22 @@ public class AbstractExtraMRTests {
         HdpBootstrap.addProperties(config, TestSettings.TESTING_PROPS, false);
     }
 
+    @Before
+    public void before() {
+        targetVersion = TestUtils.getEsClusterInfo().getMajorVersion();
+    }
 
     @Test
     public void testSaveDocWithEscapedChars() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-gibberish/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish", "data", targetVersion));
         runJob(conf);
     }
 
     @Test
     public void testSaveDocWithEscapedCharsAndMapping() throws Exception {
         JobConf conf = new JobConf(config);
-        conf.set(ConfigurationOptions.ES_RESOURCE, "mroldapi-gibberish-with-mapping/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource("mroldapi-gibberish-with-mapping", "data", targetVersion));
         conf.set(ConfigurationOptions.ES_MAPPING_ID, "@id");
         runJob(conf);
     }
@@ -136,7 +146,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDoc() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-gibberish/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish", "data", targetVersion));
         JobClient.runJob(conf);
     }
 
@@ -144,7 +154,7 @@ public class AbstractExtraMRTests {
     public void testXLoadDocWithMapping() throws Exception {
         JobConf conf = createReadJobConf();
 
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "mroldapi-gibberish-with-mapping/data");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "mroldapi-gibberish-with-mapping", "data", targetVersion));
         JobClient.runJob(conf);
     }
 
@@ -153,10 +163,12 @@ public class AbstractExtraMRTests {
         String simpleDoc = "{ \"number\" : 1 , \"list\" : [\"an array\", \"with multiple values\"], \"song\" : \"Three Headed Guardian\" } ";
         String targetPrefix = indexPrefix + "index";
         String alias = indexPrefix + "alias";
-        String targetA = targetPrefix + "a/type";
-        String targetB = targetPrefix + "b/type";
-        RestUtils.postData(targetA + "/1", simpleDoc.getBytes());
-        RestUtils.postData(targetB + "/1", simpleDoc.getBytes());
+        String targetA = resource(targetPrefix + "a", "type", targetVersion);
+        String targetB = resource(targetPrefix + "b", "type", targetVersion);
+        String docEndpointA = docEndpoint(targetPrefix + "a", "type", targetVersion);
+        String docEndpointB = docEndpoint(targetPrefix + "b", "type", targetVersion);
+        RestUtils.postData(docEndpointA + "/1", simpleDoc.getBytes());
+        RestUtils.postData(docEndpointB + "/1", simpleDoc.getBytes());
 
         // put alias
         String aliases =
@@ -170,7 +182,7 @@ public class AbstractExtraMRTests {
 
         // run MR job
         JobConf conf = createReadJobConf();
-        conf.set(ConfigurationOptions.ES_RESOURCE, indexPrefix + "alias/type");
+        conf.set(ConfigurationOptions.ES_RESOURCE, resource(indexPrefix + "alias", "type", targetVersion));
         JobClient.runJob(conf);
     }
 

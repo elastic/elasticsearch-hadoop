@@ -1265,7 +1265,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val (target, docEndpoint) = makeTargets(index, typename)
     RestUtils.delete(index)
     RestUtils.touch(index)
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
     } else {
       RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1557,7 +1557,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-separate")
       val typename = "join"
       val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1592,7 +1592,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       val index = wrapIndex("sparksql-test-scala-write-join-combined")
       val typename = "join"
       val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -2237,18 +2237,18 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def wrapMapping(typeName: String, typelessMapping: String): String = {
-    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
-      s"""{"$typeName":$typelessMapping}"""
-    } else {
+    if (TestUtils.isTypelessVersion(version)) {
       typelessMapping
+    } else {
+      s"""{"$typeName":$typelessMapping}"""
     }
   }
 
   def makeTargets(index: String, typeName: String): (String, String) = {
-    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
-      (s"$index/$typeName", s"$index/$typeName")
-    } else {
+    if (TestUtils.isTypelessVersion(version)) {
       (index, s"$index/_doc")
+    } else {
+      (s"$index/$typeName", s"$index/$typeName")
     }
   }
 
