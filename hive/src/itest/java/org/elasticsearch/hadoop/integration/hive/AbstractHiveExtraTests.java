@@ -21,10 +21,13 @@ package org.elasticsearch.hadoop.integration.hive;
 import java.util.List;
 
 import org.elasticsearch.hadoop.mr.RestUtils;
+import org.elasticsearch.hadoop.util.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -50,11 +53,12 @@ public class AbstractHiveExtraTests {
 
     @Test
     public void testQuery() throws Exception {
-        if (!RestUtils.exists("cars/transactions")) {
-            RestUtils.bulkData("cars/transactions", "cars-bulk.txt");
+        String resource = resource("cars", "transactions", TestUtils.getEsClusterInfo().getMajorVersion());
+
+        if (!RestUtils.exists(resource)) {
+            RestUtils.bulkData(resource, "cars-bulk.txt");
             RestUtils.refresh("cars");
         }
-
 
         String drop = "DROP TABLE IF EXISTS cars2";
         String create = "CREATE EXTERNAL TABLE cars2 ("
@@ -62,7 +66,7 @@ public class AbstractHiveExtraTests {
                 + "price BIGINT,"
                 + "sold TIMESTAMP, "
                 + "alias STRING) "
-                + HiveSuite.tableProps("cars/transactions", null, "'es.mapping.names'='alias:&c'");
+                + HiveSuite.tableProps(resource, null, "'es.mapping.names'='alias:&c'");
 
         String query = "SELECT * from cars2";
         String count = "SELECT count(1) from cars2";
@@ -82,7 +86,9 @@ public class AbstractHiveExtraTests {
         RestUtils.touch("hive-date-as-long");
         RestUtils.putMapping("hive-date-as-long", "data", "org/elasticsearch/hadoop/hive/hive-date-typeless-mapping.json");
 
-        RestUtils.postData(resource + "/_doc/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
+        String docEndpoint = docEndpoint(resource, "data", TestUtils.getEsClusterInfo().getMajorVersion());
+
+        RestUtils.postData(docEndpoint + "/1", "{\"type\" : 1, \"&t\" : 1407239910771}".getBytes());
 
         RestUtils.refresh("hive-date-as-long");
 
@@ -94,7 +100,7 @@ public class AbstractHiveExtraTests {
 
         String query = "SELECT * from nixtime WHERE type = 1";
 
-        String string = RestUtils.get(resource + "/_doc/1");
+        String string = RestUtils.get(docEndpoint + "/1");
         assertThat(string, containsString("140723"));
 
         server.execute(drop);
