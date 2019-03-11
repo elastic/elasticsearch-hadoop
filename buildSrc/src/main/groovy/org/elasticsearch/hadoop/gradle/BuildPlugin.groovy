@@ -695,7 +695,8 @@ class BuildPlugin implements Plugin<Project>  {
 
     private static void configurePrecommit(Project project) {
         if (project != project.rootProject) {
-            project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+            LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+            project.tasks.getByName('check').dependsOn(licenseHeaders)
         }
     }
 }
