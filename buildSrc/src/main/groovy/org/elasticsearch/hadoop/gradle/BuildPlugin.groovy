@@ -1,7 +1,9 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
+import org.elasticsearch.gradle.precommit.UpdateShasTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -728,9 +730,31 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configurePrecommit(Project project) {
-        if (project != project.rootProject) {
-            LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
-            project.tasks.getByName('check').dependsOn(licenseHeaders)
+        List<Task> precommitTasks = []
+
+        LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+        precommitTasks.add(licenseHeaders)
+
+        if (!project.path.startsWith(":qa")) {
+            DependencyLicensesTask dependencyLicenses = project.tasks.create('dependencyLicenses', DependencyLicensesTask.class) {
+                dependencies = project.configurations.runtime.fileCollection {
+                    !(it instanceof ProjectDependency)
+                }
+                mapping from: /hadoop-.*/, to: 'hadoop'
+                mapping from: /hive-.*/, to: 'hive'
+                mapping from: /jackson-.*/, to: 'jackson'
+                mapping from: /spark-.*/, to: 'spark'
+                mapping from: /scala-.*/, to: 'scala'
+            }
+            // we also create the updateShas helper task that is associated with dependencyLicenses
+            UpdateShasTask updateShas = project.tasks.create('updateShas', UpdateShasTask.class)
+            updateShas.parentTask = dependencyLicenses
+
+            precommitTasks.add(dependencyLicenses)
         }
+
+        Task precommit = project.tasks.create('precommit')
+        precommit.dependsOn(precommitTasks)
+        project.tasks.getByName('check').dependsOn(precommit)
     }
 }
