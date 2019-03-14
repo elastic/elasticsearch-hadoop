@@ -48,6 +48,11 @@ dependencies {
     compile 'org.scala-lang:scala-library:2.11.8'
     compile project(":elasticsearch-spark-20")
 
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
+    compileOnly("org.slf4j:slf4j-api:1.7.6")
+
     if (!localRepo) {
         // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
         compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
