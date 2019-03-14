@@ -8,12 +8,14 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.artifacts.DependencySubstitutions
+import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
-import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.file.CopySpec
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
@@ -46,6 +48,7 @@ class BuildPlugin implements Plugin<Project>  {
         configureVersions(project)
         configureRuntimeSettings(project)
         configureRepositories(project)
+        configureConfigurations(project)
         configureDependencies(project)
         configureBuildTasks(project)
         configureEclipse(project)
@@ -208,6 +211,37 @@ class BuildPlugin implements Plugin<Project>  {
                 url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
+    }
+
+    /** Return the configuration name used for finding transitive deps of the given dependency. */
+    private static String transitiveDepConfigName(String groupId, String artifactId, String version) {
+        return "_transitive_${groupId}_${artifactId}_${version}"
+    }
+
+    private static void configureConfigurations(Project project) {
+        if (project.path.startsWith(":qa")) {
+            return
+        }
+
+        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
+        Closure disableTransitiveDeps = { Dependency dep ->
+            if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
+                dep.transitive = false
+
+                // also create a configuration just for this dependency version, so that later
+                // we can determine which transitive dependencies it has
+                String depConfig = transitiveDepConfigName(dep.group, dep.name, dep.version)
+                if (project.configurations.findByName(depConfig) == null) {
+                    project.configurations.create(depConfig)
+                    project.dependencies.add(depConfig, "${dep.group}:${dep.name}:${dep.version}")
+                }
+            }
+        }
+
+        project.configurations.compile.dependencies.all(disableTransitiveDeps)
+        project.configurations.provided.dependencies.all(disableTransitiveDeps)
+        project.configurations.optional.dependencies.all(disableTransitiveDeps)
+        project.configurations.compileOnly.dependencies.all(disableTransitiveDeps)
     }
 
     /**
