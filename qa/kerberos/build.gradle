@@ -449,7 +449,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -475,7 +475,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -507,7 +507,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -534,7 +534,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
