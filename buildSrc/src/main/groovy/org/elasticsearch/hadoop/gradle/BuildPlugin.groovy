@@ -3,6 +3,7 @@ package org.elasticsearch.hadoop.gradle
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.VersionProperties
 import org.elasticsearch.gradle.info.BuildParams
+import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -52,6 +53,7 @@ class BuildPlugin implements Plugin<Project> {
         configureMaven(project)
         configureIntegrationTestTask(project)
         configureTestReports(project)
+        configurePrecommit(project)
     }
 
     /**
@@ -689,5 +691,12 @@ class BuildPlugin implements Plugin<Project> {
             result.rethrowFailure()
         }
         return stdout.toString('UTF-8').trim()
+    }
+
+    private static void configurePrecommit(Project project) {
+        if (project != project.rootProject) {
+            LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+            project.tasks.getByName('check').dependsOn(licenseHeaders)
+        }
     }
 }
