@@ -53,6 +53,9 @@ dependencies {
     compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
     compileOnly("org.slf4j:slf4j-api:1.7.6")
 
+    compile("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
+    compile("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
+
     if (!localRepo) {
         // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
         compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
