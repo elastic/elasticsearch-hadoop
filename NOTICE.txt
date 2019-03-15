@@ -3,3 +3,19 @@ Copyright 2009-2016 Elastic
 
 This product includes software developed by The Apache Software
 Foundation (http://www.apache.org/).
+
+This product includes code derived from the Elasticsearch project
+(https://github.com/elastic/elasticsearch)
+License: The Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+This product includes code (ArrayUtils, Constants, UnicodeUtil)
+developed by the Apache Lucene Project (http://lucene.apache.org)
+License: The Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+This product includes code derived from the Jackson project
+(https://github.com/FasterXML/jackson) for backwards compatibility
+purposes.
+License: The Apache License, Version 2.0
+(http://www.apache.org/licenses/LICENSE-2.0.txt)
