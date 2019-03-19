@@ -18,7 +18,7 @@ Simply download elasticsearch-yarn-<version>.jar in a location of choice and mak
 
 
     > ls
-    elasticsearch-yarn-5.6.15
+    elasticsearch-yarn-5.6.16
 
     > hadoop version
     Hadoop 2.4.1
@@ -54,7 +54,7 @@ Each command should be self-explanatory. The typical usage scenario is:
 This is a _one-time_ action; if you already have Elasticsearch at hand, deploy it under `downloads` folder. To wit:
 
     > hadoop jar elasticsearch-yarn-<version> -download-es
-    Downloading Elasticsearch 5.6.15
+    Downloading Elasticsearch 5.6.16
     Downloading ......................................................................................DONE
 
 ### Provision Elasticsearch into HDFS
