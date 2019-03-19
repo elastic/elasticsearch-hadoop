@@ -645,7 +645,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static String gitHash(File gitHead) {
         String rev = "unknown"
 
-        if (gitHead.exists()) {
+        if (gitHead != null && gitHead.exists()) {
             rev = gitHead.text.trim()
         }
         return rev
