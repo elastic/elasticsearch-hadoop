@@ -50,11 +50,9 @@ import org.elasticsearch.spark.streaming.api.java.JavaEsSparkStreaming;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
@@ -75,6 +73,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.hadoop.cfg.ConfigurationOptions.*;
+import static org.elasticsearch.hadoop.util.TestUtils.docEndpoint;
+import static org.elasticsearch.hadoop.util.TestUtils.resource;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static scala.collection.JavaConversions.propertiesAsScalaMap;
@@ -154,7 +154,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(doc1);
         docs.add(doc2);
 
-        String target = wrapIndex("spark-test-nonexisting/scala-basic-write");
+        String target = wrapIndex(resource("spark-test-nonexisting-scala-basic-write", "data", version));
 
         Map<String, String> localConf = new HashMap<>(cfg);
         localConf.put(ES_INDEX_AUTO_CREATE, "no");
@@ -190,7 +190,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(doc1);
         docs.add(doc2);
 
-        String target = wrapIndex("spark-test-scala-basic-write/data");
+        String target = wrapIndex(resource("spark-test-scala-basic-write", "data", version));
 
         JavaRDD<Map<String, Object>> batch = sc.parallelize(docs);
         Queue<JavaRDD<Map<String, Object>>> rddQueue = new LinkedList<>();
@@ -228,7 +228,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         Map<String, String> localConf = new HashMap<>(cfg);
         localConf.put("es.mapping.id", "number");
 
-        String target = wrapIndex("spark-test-scala-id-write/data");
+        String target = wrapIndex(resource("spark-test-scala-id-write", "data", version));
+        String docEndpoint = wrapIndex(docEndpoint("spark-test-scala-id-write", "data", version));
 
         JavaRDD<Map<String,Object>> batch = sc.parallelize(docs);
         Queue<JavaRDD<Map<String, Object>>> rddQueue = new LinkedList<>();
@@ -240,8 +241,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         ssc.stop(false, true);
 
         assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
-        assertTrue(RestUtils.exists(target + "/1"));
-        assertTrue(RestUtils.exists(target + "/2"));
+        assertTrue(RestUtils.exists(docEndpoint + "/1"));
+        assertTrue(RestUtils.exists(docEndpoint + "/2"));
 
         assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"));
     }
@@ -265,7 +266,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(doc1);
         docs.add(doc2);
 
-        String target = wrapIndex("spark-test-scala-dyn-id-write/data");
+        String target = wrapIndex(resource("spark-test-scala-dyn-id-write", "data", version));
+        String docEndpoint = wrapIndex(docEndpoint("spark-test-scala-dyn-id-write", "data", version));
 
         JavaRDD<Map<String,Object>> batch = sc.parallelize(docs);
         Queue<JavaRDD<Map<String, Object>>> rddQueue = new LinkedList<>();
@@ -280,8 +282,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         ssc.stop(false, true);
 
         assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
-        assertTrue(RestUtils.exists(target + "/3"));
-        assertTrue(RestUtils.exists(target + "/4"));
+        assertTrue(RestUtils.exists(docEndpoint + "/3"));
+        assertTrue(RestUtils.exists(docEndpoint + "/4"));
 
         assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"));
     }
@@ -315,7 +317,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(doc1);
         docs.add(doc2);
 
-        String target = wrapIndex("spark-test-scala-dyn-id-write-map/data");
+        String target = wrapIndex(resource("spark-test-scala-dyn-id-write-map", "data", version));
+        String docEndpoint = wrapIndex(docEndpoint("spark-test-scala-dyn-id-write-map", "data", version));
 
         JavaRDD<Map<String,Object>> batch = sc.parallelize(docs);
         Queue<JavaRDD<Map<String, Object>>> rddQueue = new LinkedList<>();
@@ -330,8 +333,8 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         ssc.stop(false, true);
 
         assertEquals(2, JavaEsSpark.esRDD(sc, target).count());
-        assertTrue(RestUtils.exists(target + "/5"));
-        assertTrue(RestUtils.exists(target + "/6"));
+        assertTrue(RestUtils.exists(docEndpoint + "/5"));
+        assertTrue(RestUtils.exists(docEndpoint + "/6"));
 
         assertThat(RestUtils.get(target + "/_search?"), containsString("SFO"));
     }
@@ -362,7 +365,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(trip1);
         docs.add(trip2);
 
-        String target = wrapIndex("spark-test-scala-write-exclude/data");
+        String target = wrapIndex(resource("spark-test-scala-write-exclude", "data", version));
 
         Map<String, String> localConf = new HashMap<>(cfg);
         localConf.put(ES_MAPPING_EXCLUDE, "airport");
@@ -407,7 +410,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(doc1);
         docs.add(doc2);
 
-        String target = wrapIndex("spark-test-scala-ingest-write/data");
+        String target = wrapIndex(resource("spark-test-scala-ingest-write", "data", version));
 
         Map<String, String> localConf = new HashMap<>(cfg);
         localConf.put(ES_INGEST_PIPELINE, pipelineName);
@@ -440,7 +443,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(trip1);
         docs.add(trip2);
 
-        String target = wrapIndex("spark-test-trip-{airport}/data");
+        String target = wrapIndex(resource("spark-test-trip-{airport}", "data", version));
 
         JavaRDD<Map<String, Object>> batch = sc.parallelize(docs);
         Queue<JavaRDD<Map<String, Object>>> rddQueue = new LinkedList<>();
@@ -451,11 +454,11 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         TimeUnit.SECONDS.sleep(2);
         ssc.stop(false, true);
 
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-trip-otp/data")));
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-trip-sfo/data")));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-trip-otp", "data", version))));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-trip-sfo", "data", version))));
 
-        assertThat(RestUtils.get(wrapIndex("spark-test-trip-sfo/data/_search?")), containsString("business"));
-        assertThat(RestUtils.get(wrapIndex("spark-test-trip-otp/data/_search?")), containsString("participants"));
+        assertThat(RestUtils.get(wrapIndex(resource("spark-test-trip-sfo", "data", version) + "/_search?")), containsString("business"));
+        assertThat(RestUtils.get(wrapIndex(resource("spark-test-trip-otp", "data", version) + "/_search?")), containsString("participants"));
     }
 
     @Test
@@ -467,7 +470,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         docs.add(json1);
         docs.add(json2);
 
-        String jsonTarget = wrapIndex("spark-test-json-{airport}/data");
+        String jsonTarget = wrapIndex(resource("spark-test-json-{airport}", "data", version));
 
         JavaRDD<String> batch1 = sc.parallelize(docs);
         Queue<JavaRDD<String>> rddQueue1 = new LinkedList<>();
@@ -486,7 +489,7 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         byteDocs.add(json1BA);
         byteDocs.add(json2BA);
 
-        String jsonBATarget = wrapIndex("spark-test-json-ba-{airport}/data");
+        String jsonBATarget = wrapIndex(resource("spark-test-json-ba-{airport}", "data", version));
 
         JavaRDD<byte[]> batch2 = sc.parallelize(byteDocs);
         Queue<JavaRDD<byte[]>> rddQueue2 = new LinkedList<>();
@@ -497,14 +500,14 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         TimeUnit.SECONDS.sleep(2);
         ssc.stop(false, true);
 
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-json-sfo/data")));
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-json-otp/data")));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-json-sfo", "data", version))));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-json-otp", "data", version))));
 
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-json-ba-sfo/data")));
-        assertTrue(RestUtils.exists(wrapIndex("spark-test-json-ba-otp/data")));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-json-ba-sfo", "data", version))));
+        assertTrue(RestUtils.exists(wrapIndex(resource("spark-test-json-ba-otp", "data", version))));
 
-        assertThat(RestUtils.get(wrapIndex("spark-test-json-sfo/data/_search?")), containsString("business"));
-        assertThat(RestUtils.get(wrapIndex("spark-test-json-otp/data/_search?")), containsString("participants"));
+        assertThat(RestUtils.get(wrapIndex(resource("spark-test-json-sfo", "data", version) + "/_search?")), containsString("business"));
+        assertThat(RestUtils.get(wrapIndex(resource("spark-test-json-otp", "data", version) + "/_search?")), containsString("participants"));
     }
 
     @Test
@@ -516,18 +519,13 @@ public class AbstractJavaEsSparkStreamingTest implements Serializable {
         }
 
         String mapping = "{\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"note\":{\"type\":\""+keyword+"\"},\"address\":{\"type\":\"nested\",\"properties\":{\"id\":{\"type\":\""+keyword+"\"},\"zipcode\":{\"type\":\""+keyword+"\"}}}}}";
-        if (version.onOrBefore(EsMajorVersion.V_6_X)) {
+        if (!TestUtils.isTypelessVersion(version)) {
             mapping = "{\"data\":" + mapping + "}";
         }
         String index = wrapIndex("spark-test-contact");
         String type = "data";
-        String target = index + "/" + type;
-        String docEndpoint = target;
-
-        if (version.onOrAfter(EsMajorVersion.V_7_X)) {
-            target = index;
-            docEndpoint = index + "/_doc";
-        }
+        String target = resource(index, type, version);
+        String docEndpoint = docEndpoint(index, type, version);
 
         RestUtils.touch(index);
         RestUtils.putMapping(index, type, mapping.getBytes());

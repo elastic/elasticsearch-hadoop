@@ -56,6 +56,8 @@ import org.elasticsearch.hadoop.mr.RestUtils
 import org.elasticsearch.hadoop.util.StringUtils
 import org.elasticsearch.hadoop.util.TestSettings
 import org.elasticsearch.hadoop.util.TestUtils
+import org.elasticsearch.hadoop.util.TestUtils.resource
+import org.elasticsearch.hadoop.util.TestUtils.docEndpoint
 import org.elasticsearch.spark.cfg.SparkSettingsManager
 import org.elasticsearch.spark.sparkRDDFunctions
 import org.elasticsearch.spark.sparkStringJsonRDDFunctions
@@ -265,14 +267,14 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val index = wrapIndex("sparksql-test-array-mapping-top-level")
     val typename = "data"
-    val (target, docEndpoint) = makeTargets(index, typename)
+    val (target, docPath) = makeTargets(index, typename)
     RestUtils.touch(index)
     RestUtils.putMapping(index, typename, mapping.getBytes(StringUtils.UTF_8))
 
     // add some data
     val doc1 = """{"arr" : [{"one" : "1", "two" : "2"}, {"one" : "unu", "two" : "doi"}], "top-level" : "root" }""".stripMargin
 
-    RestUtils.postData(docEndpoint, doc1.getBytes(StringUtils.UTF_8))
+    RestUtils.postData(docPath, doc1.getBytes(StringUtils.UTF_8))
     RestUtils.refresh(index)
 
     val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_AS_ARRAY_INCLUDE -> "arr")
@@ -306,7 +308,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testMultiFieldsWithSameName {
     val index = wrapIndex("sparksql-test-array-mapping-nested")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     RestUtils.touch(index)
 
     // add some data
@@ -331,7 +333,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     |  "level1" : "$text"
     |}
     """.stripMargin
-    RestUtils.postData(docEndpoint, jsonDoc.getBytes(StringUtils.UTF_8))
+    RestUtils.postData(docPath, jsonDoc.getBytes(StringUtils.UTF_8))
     RestUtils.refresh(index)
 
     val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_READ_FIELD_AS_ARRAY_INCLUDE -> "bar.bar.bar", "es.resource" -> target)
@@ -447,7 +449,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def test1ReadFieldNameWithPercentage() {
     val index = wrapIndex("spark-test-scala-sql-field-with-percentage")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     sqc.esDF(target).count()
   }
 
@@ -476,20 +478,20 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dataFrame = artistsAsDataFrame
 
     val index = wrapIndex("sparksql-test-scala-basic-write-id-mapping")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     val newCfg = collection.mutable.Map(cfg.toSeq: _*) += (ES_MAPPING_ID -> "id", ES_MAPPING_EXCLUDE -> "url")
 
     dataFrame.saveToEs(target, newCfg)
     assertTrue(RestUtils.exists(target))
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
-    assertThat(RestUtils.exists(docEndpoint + "/1"), is(true))
+    assertThat(RestUtils.exists(docPath + "/1"), is(true))
     assertThat(RestUtils.get(target + "/_search?"), not(containsString("url")))
   }
 
   @Test
   def testEsDataFrame1WriteNullValue() {
     val index = wrapIndex("spark-test-null-data-test-0")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
 
     val docs = Seq(
       """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
@@ -501,8 +503,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docEndpoint/1/_source")
-    val hit2 = RestUtils.get(s"$docEndpoint/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1/_source")
+    val hit2 = RestUtils.get(s"$docPath/2/_source")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
@@ -511,7 +513,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame12CheckYesWriteNullValue() {
     val index = wrapIndex("spark-test-null-data-test-1")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
 
     val docs = Seq(
       """{"id":"1","name":{"first":"Robert","last":"Downey","suffix":"Jr"}}""",
@@ -523,8 +525,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docEndpoint/1/_source")
-    val hit2 = RestUtils.get(s"$docEndpoint/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1/_source")
+    val hit2 = RestUtils.get(s"$docPath/2/_source")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, containsString("suffix"))
@@ -534,7 +536,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame11CheckNoWriteNullValueFromRows() {
     val index = wrapIndex("spark-test-null-data-test-2")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
 
     val data = Seq(
       Row("1", "Robert", "Downey", "Jr"),
@@ -552,8 +554,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = sqc.createDataFrame(rdd, schema)
     df.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docEndpoint/1/_source")
-    val hit2 = RestUtils.get(s"$docEndpoint/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1/_source")
+    val hit2 = RestUtils.get(s"$docPath/2/_source")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
@@ -562,7 +564,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame12CheckYesWriteNullValueFromRows() {
     val index = wrapIndex("spark-test-null-data-test-3")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     val data = Seq(
       Row("1", "Robert", "Downey", "Jr"),
       Row("2", "Chris", "Evans", null)
@@ -579,8 +581,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = sqc.createDataFrame(rdd, schema)
     df.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docEndpoint/1/_source")
-    val hit2 = RestUtils.get(s"$docEndpoint/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1/_source")
+    val hit2 = RestUtils.get(s"$docPath/2/_source")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, containsString("suffix"))
@@ -719,11 +721,11 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dataFrame = sqc.createDataFrame(rowRDD, schema)
 
     val index = wrapIndex("sparksql-test-scala-basic-write-rich-mapping-id-mapping")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     dataFrame.saveToEs(target, Map(ES_MAPPING_ID -> "id"))
     assertTrue(RestUtils.exists(target))
     assertThat(RestUtils.get(target + "/_search?"), containsString("345"))
-    assertThat(RestUtils.exists(docEndpoint + "/1"), is(true))
+    assertThat(RestUtils.exists(docPath + "/1"), is(true))
   }
 
   @Test(expected = classOf[SparkException])
@@ -838,7 +840,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testScrollLimitWithEmptyPartition(): Unit = {
     val index = wrapIndex("scroll-limit")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
 
     // Make index with two shards
     RestUtils.delete(index)
@@ -1173,7 +1175,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     println(input.schema.simpleString)
 
     val index = wrapIndex("spark-test-json-file")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     input.saveToEs(target, cfg)
 
     val basic = sqc.read.json(readAsRDD(this.getClass.getResource("/basic.json").toURI()))
@@ -1191,7 +1193,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val sample = input.take(1)(0).toString()
 
     val index = wrapIndex("spark-test-json-file-schema")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     input.saveToEs(target, cfg)
 
     val dsCfg = collection.mutable.Map(cfg.toSeq: _*) += ("path" -> target)
@@ -1315,10 +1317,10 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
     val index = wrapIndex("sparksql-test-scala-overwrite-join")
     val typename = "join"
-    val (target, docEndpoint) = makeTargets(index, typename)
+    val (target, docPath) = makeTargets(index, typename)
     RestUtils.delete(index)
     RestUtils.touch(index)
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
     } else {
       RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1330,8 +1332,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       .options(Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
       .save(target)
 
-    assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString("kimchy"))
-    assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString(""""_routing":"1""""))
+    assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString("kimchy"))
+    assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString(""""_routing":"1""""))
 
     // Overwrite the data using a new dataset:
     val newChildren = Seq(
@@ -1348,9 +1350,9 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       .mode(SaveMode.Overwrite)
       .save(target)
 
-    assertFalse(RestUtils.exists(docEndpoint + "/10?routing=1"))
-    assertThat(RestUtils.get(docEndpoint + "/110?routing=1"), containsString("costinl"))
-    assertThat(RestUtils.get(docEndpoint + "/110?routing=1"), containsString(""""_routing":"1""""))
+    assertFalse(RestUtils.exists(docPath + "/10?routing=1"))
+    assertThat(RestUtils.get(docPath + "/110?routing=1"), containsString("costinl"))
+    assertThat(RestUtils.get(docPath + "/110?routing=1"), containsString(""""_routing":"1""""))
   }
 
   @Test
@@ -1394,7 +1396,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   @Test
   def testEsDataFrame60DataSourceSaveModeError() {
     val srcFrame = artistsJsonAsDataFrame
-    val index = wrapIndex("sparksql-test-savemode_error/data")
+    val index = wrapIndex("sparksql-test-savemode_error")
     val (target, _) = makeTargets(index, "data")
     val table = wrapIndex("save_mode_error")
 
@@ -1456,7 +1458,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   def testEsDataFrame60DataSourceSaveModeIgnore() {
     val srcFrame = artistsJsonAsDataFrame
     val index = wrapIndex("sparksql-test-savemode_ignore")
-    val (target, docEndpoint) = makeTargets(index, "data")
+    val (target, docPath) = makeTargets(index, "data")
     val table = wrapIndex("save_mode_ignore")
 
     srcFrame.write.format("org.elasticsearch.spark.sql").mode(SaveMode.Ignore).save(target)
@@ -1614,8 +1616,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     {
       val index = wrapIndex("sparksql-test-scala-write-join-separate")
       val typename = "join"
-      val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      val (target, docPath) = makeTargets(index, typename)
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1624,8 +1626,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
       sc.makeRDD(parents).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
       sc.makeRDD(children).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
 
-      assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString("kimchy"))
-      assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString(""""_routing":"1""""))
+      assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString(""""_routing":"1""""))
 
       val df = sqc.read.format("es").load(target)
       val data = df.where(df("id").equalTo("1").or(df("id").equalTo("10"))).sort(df("id")).collect()
@@ -1649,8 +1651,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     {
       val index = wrapIndex("sparksql-test-scala-write-join-combined")
       val typename = "join"
-      val (target, docEndpoint) = makeTargets(index, typename)
-      if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+      val (target, docPath) = makeTargets(index, typename)
+      if (TestUtils.isTypelessVersion(version)) {
         RestUtils.putMapping(index, typename, "data/join/mapping/typeless.json")
       } else {
         RestUtils.putMapping(index, typename, "data/join/mapping/typed.json")
@@ -1658,8 +1660,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
 
       sc.makeRDD(docs).saveToEs(target, Map(ES_MAPPING_ID -> "id", ES_MAPPING_JOIN -> "joiner"))
 
-      assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString("kimchy"))
-      assertThat(RestUtils.get(docEndpoint + "/10?routing=1"), containsString(""""_routing":"1""""))
+      assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString("kimchy"))
+      assertThat(RestUtils.get(docPath + "/10?routing=1"), containsString(""""_routing":"1""""))
 
       val df = sqc.read.format("es").load(target)
       val data = df.where(df("id").equalTo("1").or(df("id").equalTo("10"))).sort(df("id")).collect()
@@ -1703,7 +1705,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     
     val index = wrapIndex("sparksql-test-geopoint-latlonstring-geopoint")
     val typed = "data"
-    val (target, docEndpoint) = makeTargets(index, typed)
+    val (target, docPath) = makeTargets(index, typed)
     RestUtils.touch(index)
     RestUtils.putMapping(index, typed, mapping.getBytes(StringUtils.UTF_8))
 
@@ -2315,7 +2317,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def wrapMapping(typename: String, mapping: String): String = {
-    if (version.onOrAfter(EsMajorVersion.V_7_X)) {
+    if (TestUtils.isTypelessVersion(version)) {
       mapping
     } else {
       s"""{"$typename":$mapping}"""
@@ -2323,11 +2325,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
   }
 
   def makeTargets(index: String, typeName: String): (String, String) = {
-    if (version.onOrBefore(EsMajorVersion.V_6_X)) {
-      (s"$index/$typeName", s"$index/$typeName")
-    } else {
-      (index, s"$index/_doc")
-    }
+    (resource(index, typeName, version), docEndpoint(index, typeName, version))
   }
 
   /**

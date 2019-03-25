@@ -39,7 +39,8 @@ public class QueryTest {
 
     @Test
     public void testSimpleQuery() {
-        cfg.setInternalVersion(EsMajorVersion.LATEST);
+        // Types will not be supported in 8.x
+        cfg.setInternalVersion(EsMajorVersion.V_7_X);
         cfg.setResourceRead("foo/bar");
         Resource typed = new Resource(cfg, true);
         assertTrue(builder.resource(typed).toString().contains("foo/bar"));

@@ -70,11 +70,20 @@ dependencies {
 // Testing jars
 // =============================================================================
 
-// We don't want to attempt compiling integration or test code when using a local repo because it depends on
-// the elasticsearch jar which will not be reachable.
-// Additionally, when using a local repo, the esCluster plugin is not applied, and thus, cannot be referenced in the
-// build script.
-if (!localRepo) {
+// Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
+// in the file path on CI.
+boolean disableTests = true
+if (disableTests) {
+    // Disable the integration tests for Kerberos until we can find a solution to the failures due to + sign 
+    // in the file path on CI.
+    Test integrationTest = project.tasks.findByName('integrationTest') as Test
+    integrationTest.setEnabled(false)
+} else if (!localRepo) {
+    // We don't want to attempt compiling integration or test code when using a local repo because it depends on
+    // the elasticsearch jar which will not be reachable.
+    // Additionally, when using a local repo, the esCluster plugin is not applied, and thus, cannot be referenced in the
+    // build script.
+    
     // Build uber storm jar for testing Storm remotely (es-hadoop + es-storm + qa tests)
     Jar qaKerberosStormJar = project.tasks.create('kerberosStormJar', Jar)
     qaKerberosStormJar.dependsOn(project.rootProject.tasks.getByName('jar'))

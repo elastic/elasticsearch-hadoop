@@ -60,7 +60,7 @@ public class CommandTest {
     public static Collection<Object[]> data() {
 
         // make sure all versions are tested. Throw if a new one is seen:
-        if (EsMajorVersion.LATEST != EsMajorVersion.V_7_X) {
+        if (EsMajorVersion.LATEST != EsMajorVersion.V_8_X) {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
@@ -95,6 +95,12 @@ public class CommandTest {
                 { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X },
                 { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X },
                 { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_8_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_8_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_8_X },
+                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_8_X },
+                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_8_X },
+                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_8_X }
         });
     }
 
@@ -253,10 +259,20 @@ public class CommandTest {
     @Test
     public void testIdPattern() throws Exception {
         Settings settings = settings();
-        settings.setResourceWrite("foo/{n}");
+        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+            settings.setResourceWrite("{n}");
+        } else {
+            settings.setResourceWrite("foo/{n}");
+        }
 
         create(settings).write(data).copyTo(ba);
-        String result = "{\"" + operation + "\":{\"_index\":\"foo\",\"_type\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}}" + map();
+        String header;
+        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+            header = "{\"_index\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
+        } else {
+            header = "{\"_index\":\"foo\",\"_type\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
+        }
+        String result = "{\"" + operation + "\":" + header + "}" + map();
         assertEquals(result, ba.toString());
     }
 
@@ -514,7 +530,11 @@ public class CommandTest {
         InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, null);
 
         set.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
-        set.setResourceWrite("foo/bar");
+        if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+            set.setResourceWrite("foo");
+        } else {
+            set.setResourceWrite("foo/bar");
+        }
         if (isUpdateOp()) {
             set.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<2>");
         }

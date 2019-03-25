@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -12,12 +13,12 @@ import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
+import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.file.CopySpec
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
-import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
@@ -36,8 +37,6 @@ import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
 import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
 import org.springframework.build.gradle.propdep.PropDepsPlugin
 
-import java.util.regex.Matcher
-
 class BuildPlugin implements Plugin<Project>  {
 
     @Override
@@ -53,6 +52,7 @@ class BuildPlugin implements Plugin<Project>  {
         configureMaven(project)
         configureIntegrationTestTask(project)
         configureTestReports(project)
+        configurePrecommit(project)
     }
 
     /**
@@ -104,6 +104,8 @@ class BuildPlugin implements Plugin<Project>  {
 
             println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
 
+            println "Using Gradle [${project.gradle.gradleVersion}]"
+
             // Hadoop versions
             project.rootProject.ext.hadoopClient = []
             project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
@@ -150,6 +152,9 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.runtimeJavaHome = javaHome
             project.rootProject.ext.javaVersions = javaVersions
 
+            // Force any Elasticsearch test clusters to use packaged java versions if they have them available
+            project.rootProject.ext.isRuntimeJavaHomeSet = false
+
             File gitHead = gitBranch(project)
             project.rootProject.ext.gitHead = gitHead
             project.rootProject.ext.revHash = gitHash(gitHead)
@@ -162,6 +167,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
         project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
         project.ext.inFipsJvm = project.rootProject.ext.inFipsJvm
     }
 
@@ -182,6 +188,16 @@ class BuildPlugin implements Plugin<Project>  {
         // Elastic artifacts
         project.repositories.maven { url "https://artifacts.elastic.co/maven/" } // default
         project.repositories.maven { url "https://oss.sonatype.org/content/groups/public/" } // oss-only
+
+        // Add Ivy repos in order to pull Elasticsearch distributions that have bundled JDKs
+        for (String repo : ['snapshots', 'artifacts']) {
+            project.repositories.ivy {
+                url "https://${repo}.elastic.co/downloads"
+                layout "pattern", {
+                    artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
+                }
+            }
+        }
 
         // For Lucene Snapshots, Use the lucene version interpreted from elasticsearch-build-tools version file.
         if (project.ext.luceneVersion.contains('-snapshot')) {
@@ -274,8 +290,14 @@ class BuildPlugin implements Plugin<Project>  {
         // Do substitutions for ES fixture downloads
         project.configurations.all { Configuration configuration ->
             configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
-                subs.substitute(subs.module("downloads.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
-                        .with(subs.module("org.elasticsearch.distribution.zip:elasticsearch:${project.ext.elasticsearchVersion}"))
+                // TODO: Build tools requests a version format that does not match the version id of the distribution.
+                // Fix this when it is fixed in the mainline
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}linux-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-linux-x86_64"))
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}windows-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-windows-x86_64"))
+                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}darwin-x86_64"))
+                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-darwin-x86_64"))
             }
         }
     }
@@ -623,7 +645,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static String gitHash(File gitHead) {
         String rev = "unknown"
 
-        if (gitHead.exists()) {
+        if (gitHead != null && gitHead.exists()) {
             rev = gitHead.text.trim()
         }
         return rev
@@ -669,5 +691,12 @@ class BuildPlugin implements Plugin<Project>  {
             result.rethrowFailure()
         }
         return stdout.toString('UTF-8').trim()
+    }
+
+    private static void configurePrecommit(Project project) {
+        if (project != project.rootProject) {
+            LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+            project.tasks.getByName('check').dependsOn(licenseHeaders)
+        }
     }
 }
