@@ -7,6 +7,7 @@
 :mr: 	Map/Reduce
 :sp:	Apache Spark
 :st:	Apache Storm
+:krb:   Kerberos
 :ey:	Elasticsearch on YARN
 :ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/5.0
 :description: Reference documentation of {eh}
