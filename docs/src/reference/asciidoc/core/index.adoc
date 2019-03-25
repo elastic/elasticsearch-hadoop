@@ -18,6 +18,8 @@ include::mapping.adoc[]
 
 include::errorhandlers.adoc[]
 
+include::kerberos.adoc[]
+
 include::metrics.adoc[]
 
 include::performance.adoc[]
