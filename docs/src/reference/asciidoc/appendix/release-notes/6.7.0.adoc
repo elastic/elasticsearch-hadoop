@@ -1,0 +1,21 @@
+[[eshadoop-6.7.0]]
+== Elasticsearch for Apache Hadoop version 6.7.0
+March 26, 2019
+
+[[new-6.7.0]]
+=== New Features
+Core::
+* Add support for Kerberized Elasticsearch
+https://github.com/elastic/elasticsearch-hadoop/pull/1244[#1244]
+https://github.com/elastic/elasticsearch-hadoop/issues/1175[#1175]
+
+[[bugs-6.7.0]]
+=== Bug Fixes
+Core::
+* Fix missing service files in ES-Hadoop jars
+https://github.com/elastic/elasticsearch-hadoop/pull/1265[#1265]
+
+[[docs-6.7.0]]
+=== Documentation
+* Add documentation for Kerberos Authentication mode
+https://github.com/elastic/elasticsearch-hadoop/pull/1249[#1249]
