@@ -563,6 +563,47 @@ The property to set is dependent on your version of Spark:
 * For Spark 2.1.0-2.3.0: set the `spark.yarn.security.credentials.elasticsearch.enabled` property to `false`. This
 property is still accepted in Spark 2.3.0+, but is marked as deprecated.
 
+[[kerberos-cascading]]
+=== {krb} with Cascading
+
+[[kerberos-cascading-requirements]]
+==== Requirements
+
+Before using {krb} authentication to {es} in Cascading, {krb} authentication must be enabled for Hadoop. Make sure you
+have done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> as well as the
+steps for <<kerberos-yarn,configuring your YARN services>> before using {krb} authentication for {es}.
+
+[[kerberos-cascading-api]]
+=== {krb} with Cascading
+
+The ES-Hadoop Cascading integration only supports {krb} authentication using the Hadoop flow connector.
+
+When running in Hadoop mode, before launching your job, you must add a delegation token for {es} to the currently
+logged in user's credential set. When launching the job, ensure that the process can obtain your {krb} credentials,
+either by being logged in with kinit, or performing the login manually using Hadoop's UserGroupInformation class. Once
+you are logged in, simply use the provided `EsTap.initCredentials(Properties)` method to obtain a token and cache it
+on the current user.
+
+[source,java]
+----
+EsTap.initCredentials(properties); <1>
+
+AppProps.setApplicationJarClass(properties, MyApplication.class); <2>
+FlowConnector flow = new HadoopFlowConnector(properties); <3>
+
+// Configure flow ...
+
+flow.connect(flowDef).complete(); <4>
+----
+<1> Initialize the current user with an Elasticsearch delegation token
+<2> Setup your process as usual
+<3> Use the HadoopFlowConnector for executing the job
+<4> Run the application once it has been configured
+
+The `EsTap.initCredentials` method uses the properties available to connect to Elasticsearch using {krb}, obtain
+delegation tokens, and stores them on the current user. Obtaining credentials should ideally be done on a per job basis
+to avoid issues with token cancellation.
+
 [[kerberos-storm]]
 === {krb} with Storm
 
