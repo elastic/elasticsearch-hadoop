@@ -44,9 +44,10 @@ With Pig, one can specify the <<configuration,configuration>> properties (as an 
 
 [source,sql]
 ----
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage
-             ('es.http.timeout = 5m<2>',
-              'es.index.auto.create = false' <3>);
+STORE B INTO 'radio/artists' <1>
+       USING org.elasticsearch.hadoop.pig.EsStorage
+             ('es.http.timeout = 5m', <2>
+              'es.index.auto.create = false'); <3>
 ----
 
 <1> {eh} configuration (target resource)
@@ -163,12 +164,10 @@ For example:
 [source,sql]
 ----
 STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
-	'<1>es.mapping.names=date:@timestamp<2>, uRL:url<3>')
+	'es.mapping.names=date:@timestamp, uRL:url')         <1>
 ----
 
-<1> name mapping for two fields
-<2> Pig column `date` mapped in {es} to `@timestamp`
-<3> Pig column `uRL` mapped in {es} to `url`
+<1> Pig column `date` mapped in {es} to `@timestamp`; Pig column `uRL` mapped in {es} to `url`
 
 TIP: Since {eh} 2.1, the Pig schema case sensitivity is preserved to {es} and back. 
 
@@ -185,11 +184,13 @@ A = LOAD 'src/test/resources/artists.dat' USING PigStorage()
 -- transform data
 B = FOREACH A GENERATE name, TOTUPLE(url, picture) AS links;
 -- save the result to Elasticsearch
-STORE B INTO 'radio/artists'<1> USING org.elasticsearch.hadoop.pig.EsStorage(<2>);
+STORE B INTO 'radio/artists'<1>
+       USING org.elasticsearch.hadoop.pig.EsStorage(); <2>
 ----
 
 <1> {es} resource (index and type) associated with the given storage
-<2> additional configuration parameters can be passed here - in this case the defaults are used
+<2> additional configuration parameters can be passed inside the `()` - in this
+case the defaults are used
 
 For cases where the id (or other metadata fields like +ttl+ or +timestamp+) of the document needs to be specified, one can do so by setting the appropriate <<cfg-mapping, mapping>>, namely +es.mapping.id+. Following the previous example, to indicate to {es} to use the field +id+ as the document id, update the +Storage+ configuration:
 
@@ -219,9 +220,9 @@ IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content
 
 [source,sql]
 ----
-A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray<1>);"
+A = LOAD '/resources/artists.json' USING PigStorage() AS (json:chararray);" <1>
 STORE B INTO 'radio/artists' 
-    USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true'<2>...);
+    USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true'...); <2>
 ----
 
 <1> Load the (JSON) data as a single field (`json`)
@@ -235,8 +236,9 @@ One can index the data to a different resource, depending on the 'row' being rea
 [source,sql]
 ----
 A = LOAD 'src/test/resources/media.dat' USING PigStorage()
-            AS (name:chararray, type:chararray <1>, year: chararray);
-STORE B INTO 'my-collection/{type}'<2> USING org.elasticsearch.hadoop.pig.EsStorage();
+            AS (name:chararray, type:chararray, year: chararray); <1>
+STORE B INTO 'my-collection/{type}' <2>
+       USING org.elasticsearch.hadoop.pig.EsStorage();
 ----
 
 <1> Tuple field used by the resource pattern. Any of the declared fields can be used.
@@ -262,8 +264,8 @@ the table declaration can be as follows:
 
 [source,sql]
 ----
-A = LOAD '/resources/media.json' USING PigStorage() AS (json:chararray<1>);"
-STORE B INTO 'my-collection/{media_type}'<2>
+A = LOAD '/resources/media.json' USING PigStorage() AS (json:chararray);" <1>
+STORE B INTO 'my-collection/{media_type}' <2>
     USING org.elasticsearch.hadoop.pig.EsStorage('es.input.json=true');
 ----
 
@@ -278,8 +280,8 @@ As you would expect, loading the data is straight forward:
 [source,sql]
 ----
 -- execute Elasticsearch query and load data into Pig
-A = LOAD 'radio/artists'<1> 
-    USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?me*'<2>);
+A = LOAD 'radio/artists' <1>
+    USING org.elasticsearch.hadoop.pig.EsStorage('es.query=?me*'); <2>
 DUMP A;
 ----
 
