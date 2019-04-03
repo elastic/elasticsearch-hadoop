@@ -50,7 +50,7 @@ For those that want to set the properties through the command-line (either direc
 
 [source, bash]
 ----
-$ ./bin/spark-submit --conf spark.es.resource<1>=index/type ...
+$ ./bin/spark-submit --conf spark.es.resource=index/type ... <1>
 ----
 
 <1> Notice the +es.resource+ property which became +spark.es.resource+
@@ -83,7 +83,9 @@ val sc = new SparkContext(conf)         <3>
 val numbers = Map("one" -> 1, "two" -> 2, "three" -> 3)
 val airports = Map("arrival" -> "Otopeni", "SFO" -> "San Fran")
 
-sc.makeRDD<4>(Seq(numbers, airports)).saveToEs<5>("spark/docs")
+sc.makeRDD( <4>
+  Seq(numbers, airports)
+).saveToEs("spark/docs") <5>
 ----
 
 <1> Spark Scala imports
@@ -234,7 +236,7 @@ String json1 = "{\"reason\" : \"business\",\"airport\" : \"SFO\"}";  <1>
 String json2 = "{\"participants\" : 5,\"airport\" : \"OTP\"}";
 
 JavaSparkContext jsc = ...
-JavaRDD<String><2> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
+JavaRDD<String> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2)); <2>
 JavaEsSpark.saveJsonToEs(stringRDD, "spark/json-trips");             <3>
 ----
 
@@ -254,7 +256,10 @@ For cases when the data being written to {es} needs to be indexed under differen
 
 [source,scala]
 ----
-val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
+val game = Map(
+  "media_type"->"game", <1>
+      "title" -> "FF VI",
+       "year" -> "1994")
 val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
 val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
 
@@ -313,8 +318,9 @@ val sfo = Map("iata" -> "SFO", "name" -> "San Fran")
 // instance of SparkContext
 val sc = ...
 
-val airportsRDD<1> = sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
-airportsRDD.saveToEsWithMeta<3>("airports/2015")
+val airportsRDD = <1>
+  sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
+airportsRDD.saveToEsWithMeta("airports/2015")    <3>
 ----
 
 <1> +airportsRDD+ is a __key-value__ pair +RDD+; it is created from a +Seq+ of ++tuple++s
@@ -340,7 +346,8 @@ val sfoMeta = Map(ID -> 3)                             <4>
 // instance of SparkContext
 val sc = ...
 
-val airportsRDD = sc.makeRDD<5>(Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
+val airportsRDD = sc.makeRDD( <5>
+  Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
 airportsRDD.saveToEsWithMeta("airports/2015") <6>
 ----
 
@@ -368,7 +375,7 @@ Map<String, ?> jfk = ImmutableMap.of("iata", "JFK", "name", "JFK NYC");
 JavaSparkContext jsc = ...
 
 // create a pair RDD between the id and the docs
-JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<1>(ImmutableList.of(
+JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs(ImmutableList.of( <1>
         new Tuple2<Object, Object>(1, otp),          <2>
         new Tuple2<Object, Object>(2, jfk)));        <3>
 JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <4>
@@ -394,26 +401,25 @@ Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
 
 // metadata for each document
 // note it's not required for them to have the same structure
-Map<Metadata, Object> otpMeta<3> = ImmutableMap.<Metadata, Object><4> of(ID, 1, TTL, "1d");
-Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+Map<Metadata, Object> otpMeta = ImmutableMap.<Metadata, Object>of(ID, 1, TTL, "1d"); <3>
+Map<Metadata, Object> sfoMeta = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23"); <4>
 
 JavaSparkContext jsc = ...
 
 // create a pair RDD between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<(ImmutableList.of(
-        new Tuple2<Object, Object>(otpMeta, otp),    <6>
-        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
-JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <8>
+        new Tuple2<Object, Object>(otpMeta, otp),    <5>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <6>
+JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <7>
 ----
 
 <1> +Metadata+ +enum+ describing the document metadata that can be declared
 <2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
 <3> Metadata for +otp+ document
-<4> Boiler-plate construct for forcing the +of+ method generic signature
-<5> Metadata for +sfo+ document
-<6> Tuple between +otp+ (as the value) and its metadata (as the key)
-<7> Tuple associating +sfo+ and its metadata
-<8> +saveToEsWithMeta+ invoked over the +JavaPairRDD+ containing documents and their respective metadata
+<4> Metadata for +sfo+ document
+<5> Tuple between +otp+ (as the value) and its metadata (as the key)
+<6> Tuple associating +sfo+ and its metadata
+<7> +saveToEsWithMeta+ invoked over the +JavaPairRDD+ containing documents and their respective metadata
 
 [[spark-read]]
 [float]
@@ -497,8 +503,9 @@ Let us see how this looks, but this time around using http://docs.oracle.com/jav
 import static org.elasticsearch.spark.rdd.api.java.JavaEsSpark.*;   <1>
 
 ...
-JavaRDD<Map<String, Object>> esRDD =
-                        esRDD(jsc, "radio/artists", "?q=me*"<2>).values()<3>;
+JavaRDD<Map<String, Object>> rdd =
+        esRDD(jsc, "radio/artists", "?q=me*")  <2>
+            .values(); <3>
 ----
 
 <1> statically import `JavaEsSpark` class
@@ -655,7 +662,7 @@ val airports = Map("arrival" -> "Otopeni", "SFO" -> "San Fran")
 val rdd = sc.makeRDD(Seq(numbers, airports))
 val microbatches = mutable.Queue(rdd)                <5>
 
-ssc.queueStream(microbatches).saveToEs<6>("spark/docs")
+ssc.queueStream(microbatches).saveToEs("spark/docs") <6>
 
 ssc.start()
 ssc.awaitTermination() <7>
@@ -845,7 +852,7 @@ JavaStreamingContext jssc = ...
 JavaRDD<String> stringRDD = jsc.parallelize(ImmutableList.of(json1, json2));
 Queue<JavaRDD<String>> microbatches = new LinkedList<JavaRDD<String>>();      <2>
 microbatches.add(stringRDD);
-JavaDStream<String><3> stringDStream = jssc.queueStream(microbatches);
+JavaDStream<String> stringDStream = jssc.queueStream(microbatches);  <3>
 
 JavaEsSparkStreaming.saveJsonToEs(stringRDD, "spark/json-trips");    <4>
 
@@ -870,7 +877,10 @@ For cases when the data being written to {es} needs to be indexed under differen
 
 [source,scala]
 ----
-val game = Map("media_type"<1>->"game","title" -> "FF VI","year" -> "1994")
+val game = Map(
+  "media_type" -> "game", <1>
+       "title" -> "FF VI",
+        "year" -> "1994")
 val book = Map("media_type" -> "book","title" -> "Harry Potter","year" -> "2010")
 val cd = Map("media_type" -> "music","title" -> "Surfing With The Alien")
 
@@ -940,10 +950,12 @@ val sc = ...
 // instance of StreamingContext
 val ssc = ...
 
-val airportsRDD<1> = sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
+val airportsRDD = <1>
+  sc.makeRDD(Seq((1, otp), (2, muc), (3, sfo)))  <2>
 val microbatches = mutable.Queue(airportsRDD)
 
-ssc.queueStream<3>(microbatches).saveToEsWithMeta<4>("airports/2015")
+ssc.queueStream(microbatches)        <3>
+  .saveToEsWithMeta("airports/2015") <4>
 ssc.start()
 ----
 
@@ -973,10 +985,12 @@ val sc = ...
 // instance of StreamingContext
 val ssc = ...
 
-val airportsRDD = sc.makeRDD<5>(Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
+val airportsRDD = sc.makeRDD( <5>
+  Seq((otpMeta, otp), (mucMeta, muc), (sfoMeta, sfo)))
 val microbatches = mutable.Queue(airportsRDD)
 
-ssc.queueStream<6>(microbatches).saveToEsWithMeta<7>("airports/2015")
+ssc.queueStream(microbatches)        <6>
+  .saveToEsWithMeta("airports/2015") <7>
 ssc.start()
 ----
 
@@ -1021,7 +1035,8 @@ JavaSparkContext jsc = ...
 JavaStreamingContext jssc = ...
 
 // create an RDD of between the id and the docs
-JavaRDD<Tuple2<?, ?>> rdd = jsc.parallelize<1>(ImmutableList.of(
+JavaRDD<Tuple2<?, ?>> rdd = jsc.parallelize(         <1>
+      ImmutableList.of(
         new Tuple2<Object, Object>(1, otp),          <2>
         new Tuple2<Object, Object>(2, jfk)));        <3>
 
@@ -1056,35 +1071,34 @@ Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
 
 // metadata for each document
 // note it's not required for them to have the same structure
-Map<Metadata, Object> otpMeta<3> = ImmutableMap.<Metadata, Object><4> of(ID, 1, TTL, "1d");
-Map<Metadata, Object> sfoMeta<5> = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+Map<Metadata, Object> otpMeta = ImmutableMap.<Metadata, Object>of(ID, 1, TTL, "1d"); <3>
+Map<Metadata, Object> sfoMeta = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23"); <4>
 
 JavaSparkContext jsc = ...
 
 // create a pair RDD between the id and the docs
 JavaRDD<Tuple2<?, ?>> pairRdd = jsc.parallelize<(ImmutableList.of(
-        new Tuple2<Object, Object>(otpMeta, otp),    <6>
-        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
+        new Tuple2<Object, Object>(otpMeta, otp),    <5>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <6>
 
 Queue<JavaRDD<Tuple2<?, ?>>> microbatches = ...
-JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <8>
+JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <7>
 
-JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()) <9>
+JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()) <8>
 
-JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <10>
+JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <9>
 jssc.start();
 ----
 
 <1> +Metadata+ +enum+ describing the document metadata that can be declared
 <2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
 <3> Metadata for +otp+ document
-<4> Boiler-plate construct for forcing the +of+ method generic signature
-<5> Metadata for +sfo+ document
-<6> Tuple between +otp+ (as the value) and its metadata (as the key)
-<7> Tuple associating +sfo+ and its metadata
-<8> Create a +JavaDStream+ out of the +JavaRDD+
-<9> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
-<10> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
+<4> Metadata for +sfo+ document
+<5> Tuple between +otp+ (as the value) and its metadata (as the key)
+<6> Tuple associating +sfo+ and its metadata
+<7> Create a +JavaDStream+ out of the +JavaRDD+
+<8> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
+<9> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
 
 [float]
 [[spark-streaming-type-conversion]]
@@ -1286,7 +1300,9 @@ When using Spark SQL, {eh} allows access to {es} through +SQLContext+ +load+ met
 ----
 val sql = new SQLContext...
 // Spark 1.3 style
-val df = sql.load<1>("spark/index"<2>, "org.elasticsearch.spark.sql"<3>)
+val df = sql.load( <1>
+  "spark/index",   <2>
+  "org.elasticsearch.spark.sql") <3>
 ----
 
 <1> +SQLContext+ _experimental_ +load+ method for arbitrary data sources
@@ -1298,7 +1314,9 @@ In Spark 1.4, one would use the following similar API calls:
 [source,scala]
 ----
 // Spark 1.4 style
-val df = sql.read<1>.format("org.elasticsearch.spark.sql"<2>).load("spark/index"<3>)
+val df = sql.read      <1>
+  .format("org.elasticsearch.spark.sql") <2>
+  .load("spark/index") <3>
 ----
 
 <1> +SQLContext+ _experimental_ +read+ method for arbitrary data sources
@@ -1310,7 +1328,8 @@ In Spark 1.5, this can be further simplified to:
 [source,scala]
 ----
 // Spark 1.5 style
-val df = sql.read.format("es"<1>).load("spark/index")
+val df = sql.read.format("es")<1>
+  .load("spark/index")
 ----
 
 <1> Use +es+ as an alias instead of the full package name for the +DataSource+ provider
@@ -1344,18 +1363,22 @@ For example:
 val sql = new SQLContext...
 // options for Spark 1.3 need to include the target path/resource
 val options13 = Map("path" -> "spark/index",
-                    "pushdown"<1> -> "true",
-                    "es.nodes"<2> -> "someNode", "es.port" -> "9200")
+                    "pushdown" -> "true",     <1>
+                    "es.nodes" -> "someNode", <2>
+                     "es.port" -> "9200")
 
 // Spark 1.3 style
-val spark13DF = sql.load("org.elasticsearch.spark.sql", options13<3>)
+val spark13DF = sql.load("org.elasticsearch.spark.sql", options13) <3>
 
 // options for Spark 1.4 - the path/resource is specified separately
-val options = Map("pushdown"<1> -> "true", "es.nodes"<2> -> "someNode", "es.port" -> "9200")
+val options = Map("pushdown" -> "true",     <1>
+                  "es.nodes" -> "someNode", <2>
+                   "es.port" -> "9200")
 
 // Spark 1.4 style
 val spark14DF = sql.read.format("org.elasticsearch.spark.sql")
-                        .options<3>(options).load("spark/index")
+                        .options(options) <3>
+                        .load("spark/index")
 ----
 
 <1> `pushdown` option - specific to Spark data sources
@@ -1368,7 +1391,7 @@ val spark14DF = sql.read.format("org.elasticsearch.spark.sql")
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (<3> resource 'spark/index', nodes 'someNode')" ) "
+   "OPTIONS (resource 'spark/index', nodes 'someNode')" ) " <3>
 ----
 
 <1> Spark's temporary table name
@@ -1456,7 +1479,8 @@ Available since Spark SQL 1.2, one can also access a data source by declaring it
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS (resource 'spark/index'<3>, scroll_size<4> '20')" )
+   "OPTIONS (resource 'spark/index', " + <3>
+            "scroll_size '20')" ) <4>
 ----
 
 <1> Spark's temporary table name
@@ -1522,7 +1546,7 @@ And just as with the Spark _core_ support, additional parameters can be specifie
 [source,scala]
 ----
 // get only the Smiths
-val smiths = sqlContext.esDF("spark/people","?q=Smith" <1>)
+val smiths = sqlContext.esDF("spark/people","?q=Smith") <1>
 ----
 
 <1> {es} query whose results comprise the +DataFrame+
@@ -1569,7 +1593,7 @@ Better yet, the +DataFrame+ can be backed by a query result:
 
 [source,java]
 ----
-DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"  <1>);
+DataFrame people = JavaEsSparkSQL.esDF(sql, "spark/people", "?q=Smith"); <1>
 ----
 
 <1> {es} query backing the {eh} +DataFrame+
