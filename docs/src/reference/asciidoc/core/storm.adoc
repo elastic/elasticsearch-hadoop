@@ -97,8 +97,13 @@ import org.elasticsearch.storm.EsBolt; <1>
 
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("spout", new RandomSentenceSpout(), 10);
-builder.setBolt("es-bolt", new EsBolt<2>("storm/docs"<3>), 5<4>)
-                                    .shuffleGrouping("spout");
+builder.setBolt(
+    "es-bolt",
+    new EsBolt(<2>
+        "storm/docs"<3>
+    ),
+    5)<4>
+    .shuffleGrouping("spout");
 ----
 
 <1> {eh} +EsBolt+ package import
@@ -133,8 +138,8 @@ Map conf = new HashMap();
 conf.put("es.input.json", "true"); <2>
 
 TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout("json-spout", new StringSpout<3>(Arrays.asList(json1, json2));
-builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf<4>))
+builder.setSpout("json-spout", new StringSpout(Arrays.asList(json1, json2)); <3>
+builder.setBolt("es-bolt", new EsBolt("storm/json-trips", conf)) <4>
                                     .shuffleGrouping("json-spout");
 ----
 
@@ -152,7 +157,8 @@ In cases where the data needs to be indexed based on its content, one can choose
 [source, java]
 ----
 builder.setBolt("es-bolt", 
-    new EsBolt("my-collection/{media_type}"<1>)).shuffleGrouping("spout");
+    new EsBolt("my-collection/{media_type}") <1>
+).shuffleGrouping("spout");
 ----
 
 <1> Resource pattern using field +type+
@@ -180,7 +186,10 @@ Map conf = new HashMap();
 conf.put("es.input.json", "true"); <1>
 
 builder.setBolt("es-bolt", 
-    new EsBolt("my-collection-{media_type}/{year}"<2>, conf<3>)).shuffleGrouping("spout");
+    new EsBolt(
+        "my-collection-{year}/{media_type}",<2>
+        conf) <3>
+    ).shuffleGrouping("spout");
 ----
 
 <1> Option indicating the input is in JSON format
@@ -199,7 +208,12 @@ As you can expect, for reading data (typically executing queries) {eh} offers a 
 import org.elasticsearch.storm.EsSpout; <1>
 
 TopologyBuilder builder = new TopologyBuilder();
-builder.setSpout("es-spout", new EsSpout<2>("storm/docs"<3>, "?q=me*<4>), 5<5>);
+builder.setSpout(
+    "es-spout",
+    new EsSpout(      <2>
+        "storm/docs", <3>
+        "?q=me*),     <4>
+    5);               <5>
 builder.setBolt("bolt", new PrinterBolt()).shuffleGrouping("es-spout");
 ----
 
