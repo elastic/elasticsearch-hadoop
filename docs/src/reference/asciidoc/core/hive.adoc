@@ -59,7 +59,7 @@ When using Hive, one can use `TBLPROPERTIES` to specify the <<configuration,conf
 CREATE EXTERNAL TABLE artists (...)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists',
-              'es.index.auto.create' = 'false') <1>;
+              'es.index.auto.create' = 'false'); <1>
 ----
 
 <1> {eh} setting
@@ -78,7 +78,9 @@ To wit:
 CREATE EXTERNAL TABLE artists (...)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists',
-            <1>'es.mapping.names' = 'date:@timestamp <2>, url:url_123 <3>');
+            'es.mapping.names' =  <1>
+                'date:@timestamp, <2>
+            url:url_123');        <3>
 ----
 
 <1> name mapping for two fields
@@ -102,7 +104,7 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists'<2>);
+TBLPROPERTIES('es.resource' = 'radio/artists'); <2>
 
 -- insert data to Elasticsearch from another table called 'source'
 INSERT OVERWRITE TABLE artists 
@@ -148,10 +150,10 @@ IMPORTANT: Make sure the data is properly encoded, in `UTF-8`. The field content
 
 [source,java]
 ----
-CREATE EXTERNAL TABLE json (data STRING<1>)
+CREATE EXTERNAL TABLE json (data STRING) <1>
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = '...',
-              'es.input.json` = 'yes'<2>);
+              'es.input.json` = 'yes'); <2>
 ...
 ----
 
@@ -170,7 +172,7 @@ CREATE EXTERNAL TABLE media (
     type    STRING,<1>
     year    STRING,
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'my-collection-{type}/doc'<2>);
+TBLPROPERTIES('es.resource' = 'my-collection-{type}/doc'); <2>
 ----
 
 <1> Table field used by the resource pattern. Any of the declared fields can be used.
@@ -195,9 +197,9 @@ the table declaration can be as follows:
 
 [source,sql]
 ----
-CREATE EXTERNAL TABLE json (data STRING<1>)
+CREATE EXTERNAL TABLE json (data STRING) <1>
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'my-collection-{media_type}/doc'<2>,
+TBLPROPERTIES('es.resource' = 'my-collection-{media_type}/doc', <2>
               'es.input.json` = 'yes');
 ----
 
@@ -216,7 +218,8 @@ CREATE EXTERNAL TABLE artists (
     name    STRING,
     links   STRUCT<url:STRING, picture:STRING>)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'<1>
-TBLPROPERTIES('es.resource' = 'radio/artists'<2>, 'es.query' = '?q=me*'<3>);
+TBLPROPERTIES('es.resource' = 'radio/artists', <2>
+              'es.query' = '?q=me*');          <3>
 
 -- stream data from Elasticsearch
 SELECT * FROM artists;
