@@ -95,7 +95,8 @@ Simply hook, `EsTap` into the Cascading flow:
 ----
 Tap in = new Lfs(new TextDelimited(new Fields("id", "name", "url", "picture")), 
                  "/resources/artists.dat");
-Tap out = new EsTap("radio/artists" <1>, new Fields("name", "url", "picture") <2>);
+Tap out = new EsTap("radio/artists", <1>
+                    new Fields("name", "url", "picture")); <2>
 new HadoopFlowConnector().connect(in, out, new Pipe("write-to-Es")).complete();
 ----
 
@@ -132,8 +133,8 @@ One can index the data to a different resource, depending on the tuple being rea
 
 [source,java]
 ----
-Tap out = new EsTap("my-collection/{media.type}" <1>, 
-                    new Fields("name", "media.type", "year") <2>);
+Tap out = new EsTap("my-collection/{media.type}", <1>
+                    new Fields("name", "media.type", "year")); <2>
 ----
 
 <1> Resource pattern using field `media.type`
@@ -146,7 +147,7 @@ The functionality is available when dealing with raw JSON as well - in this case
 [source,js]
 ----
 {
-    "media_type":"book",<1>
+    "media_type":"book", <1>
     "title":"Harry Potter",
     "year":"2010"
 }
@@ -159,7 +160,8 @@ the `Tap` declaration can be as follows:
 ----
 props.setProperty("es.input.json", "true");                                     
 Tap in = new Lfs(new TextLine(new Fields("line")),"/archives/collection.json");
-Tap out = new EsTap("my-collection/{media_type}" <1>, new Fields("line") <2>);
+Tap out = new EsTap("my-collection/{media_type}", <1>
+                    new Fields("line")); <2>
 ----
 
 <1> Resource pattern relying on fields _within_ the JSON document and _not_ on the `Tap` schema
@@ -172,7 +174,8 @@ Just the same, add `EsTap` on the other end of a pipe, to read (instead of writi
 
 [source,java]
 ----
-Tap in = new EsTap("radio/artists/"<1>,"?q=me*"<2>);
+Tap in = new EsTap("radio/artists/", <1>
+                   "?q=me*"); <2>
 Tap out = new StdOut(new TextLine());
 new LocalFlowConnector().connect(in, out, new Pipe("read-from-Es")).complete();
 ----

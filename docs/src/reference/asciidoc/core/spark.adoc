@@ -28,8 +28,8 @@ The good news is, one can easily enable a different serialization (https://githu
 SparkConf sc = new SparkConf(); //.setMaster("local");
 sc.set("spark.serializer", KryoSerializer.class.getName()); <1>
 
-// needed only when using the Java API      
-JavaSparkContext jsc = new JavaSparkContext(sc);    
+// needed only when using the Java API
+JavaSparkContext jsc = new JavaSparkContext(sc);
 ----
 
 <1> Enable the Kryo serialization support with Spark
@@ -60,7 +60,7 @@ JobConf conf = new JobConf();                   <1>
 conf.set("es.resource", "radio/artists");       <2>
 conf.set("es.query", "?q=me*");                 <3>
 
-JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class, 
+JavaPairRDD esRDD = jsc.hadoopRDD(conf, EsInputFormat.class,
                                         Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
@@ -68,7 +68,7 @@ long docCount = esRDD.count();
 <1> Create the Hadoop object (use the old API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
 
 The Scala version is below:
 
@@ -85,7 +85,7 @@ val docCount = esRDD.count();
 <1> Create the Hadoop object (use the old API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat`
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat`
 
 [float]
 ==== 'New' (`org.apache.hadoop.mapreduce`) API
@@ -98,7 +98,7 @@ Configuration conf = new Configuration();                   <1>
 conf.set("es.resource", "radio/artists");       <2>
 conf.set("es.query", "?q=me*");                 <3>
 
-JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class, 
+JavaPairRDD esRDD = jsc.newAPIHadoopRDD(conf, EsInputFormat.class,
                                               Text.class, MapWritable.class); <4>
 long docCount = esRDD.count();
 ----
@@ -106,7 +106,7 @@ long docCount = esRDD.count();
 <1> Create the Hadoop object (use the new API)
 <2> Configure the source (index)
 <3> Setup the query (optional)
-<4> Create a Spark RDD on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
+<4> Create a Spark +RDD+ on top of {es} through `EsInputFormat` - the key represent the doc id, the value the doc itself
 
 The Scala version is below:
 

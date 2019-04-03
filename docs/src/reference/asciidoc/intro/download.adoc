@@ -27,7 +27,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop-mr<1></artifactId>
+  <artifactId>elasticsearch-hadoop-mr</artifactId> <1>
   <version>{ver}</version>
 </dependency>
 ----
@@ -39,7 +39,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop-hive<1></artifactId>
+  <artifactId>elasticsearch-hadoop-hive</artifactId> <1>
   <version>{ver}</version>
 </dependency>
 ----
@@ -51,7 +51,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop-pig<1></artifactId>
+  <artifactId>elasticsearch-hadoop-pig</artifactId> <1>
   <version>{ver}</version>
 </dependency>
 ----
@@ -63,7 +63,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 ----
 <dependency>
   <groupId>org.elasticsearch</groupId>
-  <artifactId>elasticsearch-hadoop-cascading<1></artifactId>
+  <artifactId>elasticsearch-hadoop-cascading</artifactId> <1>
   <version>{ver}</version>
 </dependency>
 ----
