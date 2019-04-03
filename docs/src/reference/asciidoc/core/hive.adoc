@@ -78,14 +78,10 @@ To wit:
 CREATE EXTERNAL TABLE artists (...)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
 TBLPROPERTIES('es.resource' = 'radio/artists',
-            'es.mapping.names' =  <1>
-                'date:@timestamp, <2>
-            url:url_123');        <3>
+            'es.mapping.names' = 'date:@timestamp, url:url_123'); <1>
 ----
 
-<1> name mapping for two fields
-<2> Hive column `date` mapped in {es} to `@timestamp`
-<3> Hive column `url` mapped in {es} to `url_123`
+<1> Hive column `date` mapped in {es} to `@timestamp`; Hive column `url` mapped in {es} to `url_123`
 
 TIP: Hive is case **insensitive** while {es} is not. The loss of information can create invalid queries (as the column in Hive might not match the one in {es}). To avoid this, {eh} will always convert Hive column names to lower-case. 
 This being said, it is recommended to use the default Hive style and use upper-case names only for Hive commands and avoid mixed-case names.

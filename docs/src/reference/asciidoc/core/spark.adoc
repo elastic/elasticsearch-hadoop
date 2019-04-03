@@ -400,28 +400,25 @@ Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
 
 // metadata for each document
 // note it's not required for them to have the same structure
-Map<Metadata, Object> otpMeta = <3>
-  ImmutableMap.<Metadata, Object> of(ID, 1, TTL, "1d"); <4>
-Map<Metadata, Object> sfoMeta = <5>
-  ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+Map<Metadata, Object> otpMeta = ImmutableMap.<Metadata, Object>of(ID, 1, TTL, "1d"); <3>
+Map<Metadata, Object> sfoMeta = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23"); <4>
 
 JavaSparkContext jsc = ...
 
 // create a pair RDD between the id and the docs
 JavaPairRDD<?, ?> pairRdd = jsc.parallelizePairs<(ImmutableList.of(
-        new Tuple2<Object, Object>(otpMeta, otp),    <6>
-        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
-JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <8>
+        new Tuple2<Object, Object>(otpMeta, otp),    <5>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <6>
+JavaEsSpark.saveToEsWithMeta(pairRDD, target);       <7>
 ----
 
 <1> +Metadata+ +enum+ describing the document metadata that can be declared
 <2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
 <3> Metadata for +otp+ document
-<4> Boiler-plate construct for forcing the +of+ method generic signature
-<5> Metadata for +sfo+ document
-<6> Tuple between +otp+ (as the value) and its metadata (as the key)
-<7> Tuple associating +sfo+ and its metadata
-<8> +saveToEsWithMeta+ invoked over the +JavaPairRDD+ containing documents and their respective metadata
+<4> Metadata for +sfo+ document
+<5> Tuple between +otp+ (as the value) and its metadata (as the key)
+<6> Tuple associating +sfo+ and its metadata
+<7> +saveToEsWithMeta+ invoked over the +JavaPairRDD+ containing documents and their respective metadata
 
 [[spark-read]]
 [float]
@@ -505,12 +502,9 @@ Let us see how this looks, but this time around using http://docs.oracle.com/jav
 import static org.elasticsearch.spark.rdd.api.java.JavaEsSpark.*;   <1>
 
 ...
-JavaRDD<Map<String, Object>> esRDD =
-  esRDD(
-    jsc,
-    "radio/artists",
-    "?q=me*"  <2>
-  ).values(); <3>
+JavaRDD<Map<String, Object>> rdd =
+        esRDD(jsc, "radio/artists", "?q=me*")  <2>
+            .values(); <3>
 ----
 
 <1> statically import `JavaEsSpark` class
@@ -1075,37 +1069,34 @@ Map<String, ?> sfo = ImmutableMap.of("iata", "SFO", "name", "San Fran");
 
 // metadata for each document
 // note it's not required for them to have the same structure
-Map<Metadata, Object> otpMeta = <3>
-  ImmutableMap.<Metadata, Object>of(ID, 1, TTL, "1d"); <4>
-Map<Metadata, Object> sfoMeta = <5>
-  ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23");
+Map<Metadata, Object> otpMeta = ImmutableMap.<Metadata, Object>of(ID, 1, TTL, "1d"); <3>
+Map<Metadata, Object> sfoMeta = ImmutableMap.<Metadata, Object> of(ID, "2", VERSION, "23"); <4>
 
 JavaSparkContext jsc = ...
 
 // create a pair RDD between the id and the docs
 JavaRDD<Tuple2<?, ?>> pairRdd = jsc.parallelize<(ImmutableList.of(
-        new Tuple2<Object, Object>(otpMeta, otp),    <6>
-        new Tuple2<Object, Object>(sfoMeta, sfo)));  <7>
+        new Tuple2<Object, Object>(otpMeta, otp),    <5>
+        new Tuple2<Object, Object>(sfoMeta, sfo)));  <6>
 
 Queue<JavaRDD<Tuple2<?, ?>>> microbatches = ...
-JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <8>
+JavaDStream<Tuple2<?, ?>> dStream = jssc.queueStream(microbatches); <7>
 
-JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()) <9>
+JavaPairDStream<?, ?> pairDStream = dstream.mapToPair(new ExtractTuples()) <8>
 
-JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <10>
+JavaEsSparkStreaming.saveToEsWithMeta(pairDStream, target);       <9>
 jssc.start();
 ----
 
 <1> +Metadata+ +enum+ describing the document metadata that can be declared
 <2> static import for the +enum+ to refer to its values in short format (+ID+, +TTL+, etc...)
 <3> Metadata for +otp+ document
-<4> Boiler-plate construct for forcing the +of+ method generic signature
-<5> Metadata for +sfo+ document
-<6> Tuple between +otp+ (as the value) and its metadata (as the key)
-<7> Tuple associating +sfo+ and its metadata
-<8> Create a +JavaDStream+ out of the +JavaRDD+
-<9> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
-<10> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
+<4> Metadata for +sfo+ document
+<5> Tuple between +otp+ (as the value) and its metadata (as the key)
+<6> Tuple associating +sfo+ and its metadata
+<7> Create a +JavaDStream+ out of the +JavaRDD+
+<8> Repack the +JavaDStream+ into a +JavaPairDStream+ by mapping the +Tuple2+ identity function over it.
+<9> +saveToEsWithMeta+ invoked over the +JavaPairDStream+ containing documents and their respective metadata
 
 [float]
 [[spark-streaming-type-conversion]]
@@ -1510,9 +1501,8 @@ Available since Spark SQL 1.2, one can also access a data source by declaring it
 sqlContext.sql(
    "CREATE TEMPORARY TABLE myIndex    " + <1>
    "USING org.elasticsearch.spark.sql " + <2>
-   "OPTIONS ( " +
-     "resource 'spark/index', " +         <3>
-     "scroll_size '20')" ) v              <4>
+   "OPTIONS (resource 'spark/index', " + <3>
+            "scroll_size '20')" ) <4>
 ----
 
 <1> Spark's temporary table name

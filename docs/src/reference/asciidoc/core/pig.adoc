@@ -164,14 +164,10 @@ For example:
 [source,sql]
 ----
 STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
-	'es.mapping.names' + <1>
-    '=date:@timestamp' + <2>
-    ', uRL:url')         <3>
+	'es.mapping.names=date:@timestamp, uRL:url')         <1>
 ----
 
-<1> name mapping for two fields
-<2> Pig column `date` mapped in {es} to `@timestamp`
-<3> Pig column `uRL` mapped in {es} to `url`
+<1> Pig column `date` mapped in {es} to `@timestamp`; Pig column `uRL` mapped in {es} to `url`
 
 TIP: Since {eh} 2.1, the Pig schema case sensitivity is preserved to {es} and back. 
 
@@ -240,9 +236,7 @@ One can index the data to a different resource, depending on the 'row' being rea
 [source,sql]
 ----
 A = LOAD 'src/test/resources/media.dat' USING PigStorage()
-            AS (name:chararray,
-                type:chararray, <1>
-                year: chararray);
+            AS (name:chararray, type:chararray, year: chararray); <1>
 STORE B INTO 'my-collection-{type}/doc' <2>
        USING org.elasticsearch.hadoop.pig.EsStorage();
 ----
