@@ -10,6 +10,12 @@ versions (e.g. 5.x to 6.y).
 For clarity, we always list any breaking changes at the top of the
 <<release-notes,release notes>> for each version.
 
+//NOTE: The notable-breaking-changes tagged regions are re-used in the
+//Installation and Upgrade Guide
+// tag::notable-v8-breaking-changes[]
+
+// end::notable-v8-breaking-changes[]
+
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
 
