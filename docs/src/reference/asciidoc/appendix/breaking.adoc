@@ -13,6 +13,20 @@ For clarity, we always list any breaking changes at the top of the
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
 
+==== Cascading Integration has been removed
+Each integration that we support incurs a cost for testing and maintenance as new
+features are added in {esh}. We've seen the usage statistics dropping for the
+Cascading integration over the last couple of years. These include download numbers,
+community posts, and open issues. Additionally, {esh} only supports the
+Cascading 2 line. Cascading is already into it's 3.X line and we haven't seen much
+interest or pressure to get on to any of the newer versions. Due to these factors,
+Cascading was deprecated in the 6.6 release, and has been removed in the 7.0.0
+release.
+
+==== Java 8 or higher now required
+{esh} 7.0.0 and above requires a minimum Java version of 1.8 or above. The library
+will no longer be compiled for Java 1.6 or Java 1.7.
+
 ==== Configuration Changes
 `es.input.use.sliced.partitions` has been removed.
 

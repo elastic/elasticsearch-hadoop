@@ -2,6 +2,7 @@
 
 :icons:
 :ehtm: 	Elasticsearch for Apache Hadoop
+:esh: 	ES-Hadoop
 :eh: 	elasticsearch-hadoop
 :es: 	Elasticsearch
 :mr: 	Map/Reduce
