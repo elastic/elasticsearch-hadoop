@@ -10,9 +10,13 @@ versions (e.g. 5.x to 6.y).
 For clarity, we always list any breaking changes at the top of the
 <<release-notes,release notes>> for each version.
 
+//NOTE: The notable-breaking-changes tagged regions are re-used in the
+//Installation and Upgrade Guide
+
 [[breaking-changes-7.0]]
 === Breaking Changes in 7.0
 
+// tag::notable-v7-breaking-changes[]
 ==== Cascading Integration has been removed
 Each integration that we support incurs a cost for testing and maintenance as new
 features are added in {esh}. We've seen the usage statistics dropping for the
@@ -29,6 +33,8 @@ will no longer be compiled for Java 1.6 or Java 1.7.
 
 ==== Configuration Changes
 `es.input.use.sliced.partitions` has been removed.
+
+// end::notable-v7-breaking-changes[]
 
 [[breaking-changes-6.0]]
 === Breaking Changes in 6.0
