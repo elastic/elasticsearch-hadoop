@@ -554,12 +554,16 @@ added[2.1]
 
 added[2.2]
 `es.net.proxy.https.host`:: Https proxy host name
+
 added[2.2]
 `es.net.proxy.https.port`:: Https proxy port
+
 added[2.2]
 `es.net.proxy.https.user`:: Https proxy user name
+
 added[2.2]
 `es.net.proxy.https.pass`:: <<keystore,Securable>>. Https proxy password
+
 added[2.2]
 `es.net.proxy.https.use.system.props`(default yes):: Whether the use the system Https proxy properties (namely `https.proxyHost` and `https.proxyPort`) or not
 
