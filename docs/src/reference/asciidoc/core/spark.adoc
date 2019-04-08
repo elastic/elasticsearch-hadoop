@@ -294,7 +294,7 @@ saveToEs(javaRDD, "my-collection-{media_type}/doc");  <1>
 [[spark-write-meta]]
 ==== Handling document metadata
 
-{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+{es} allows each document to have its own {ref}/mapping-fields.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
 In other words, for ++RDD++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
 The metadata is described through the +Metadata+ Java http://docs.oracle.com/javase/tutorial/java/javaOO/enum.html[enum] within +org.elasticsearch.spark.rdd+ package which identifies its type - +id+, +ttl+, +version+, etc...
@@ -922,7 +922,7 @@ jssc.start();
 [[spark-streaming-write-meta]]
 ==== Handling document metadata
 
-{es} allows each document to have its own http://www.elasticsearch.org/guide/en/elasticsearch/guide/current/\_document\_metadata.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
+{es} allows each document to have its own {ref}/mapping-fields.html[metadata]. As explained above, through the various <<cfg-mapping, mapping>> options one can customize these parameters so that their values are extracted from their belonging document. Further more, one can even include/exclude what parts of the data are sent back to {es}. In Spark, {eh} extends this functionality allowing metadata to be supplied _outside_ the document itself through the use of http://spark.apache.org/docs/latest/programming-guide.html#working-with-key-value-pairs[_pair_ ++RDD++s].
 
 This is no different in Spark Streaming. For ++DStreams++s containing a key-value tuple, the metadata can be extracted from the key and the value used as the document source.
 
