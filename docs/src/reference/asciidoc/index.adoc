@@ -8,7 +8,6 @@
 :st:	Apache Storm
 :krb:   Kerberos
 :ey:	Elasticsearch on YARN
-:ref:  	http://www.elastic.co/guide/en/elasticsearch/reference/5.0
 :description: Reference documentation of {eh}
 :ver:	8.0.0
 :ver-d: 8.0.0-SNAPSHOT
@@ -19,6 +18,7 @@
 :hv-v:	1.2.1
 :cs-v:	2.6.3
 
+include::{asciidoc-dir}/../../shared/versions.asciidoc[]
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 
 [[float]]
