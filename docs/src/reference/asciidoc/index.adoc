@@ -2,9 +2,7 @@
 
 :icons:
 :ehtm: 	Elasticsearch for Apache Hadoop
-:esh: 	ES-Hadoop
 :eh: 	elasticsearch-hadoop
-:es: 	Elasticsearch
 :mr: 	Map/Reduce
 :sp:	Apache Spark
 :st:	Apache Storm
@@ -21,7 +19,7 @@
 :hv-v:	1.2.1
 :cs-v:	2.6.3
 
-
+include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 
 [[float]]
 [preface]
