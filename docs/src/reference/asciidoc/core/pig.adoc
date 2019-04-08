@@ -164,7 +164,7 @@ For example:
 [source,sql]
 ----
 STORE B INTO  '...' USING org.elasticsearch.hadoop.pig.EsStorage(
-	'es.mapping.names=date:@timestamp, uRL:url')         <1>
+    'es.mapping.names=date:@timestamp, uRL:url')         <1>
 ----
 
 <1> Pig column `date` mapped in {es} to `@timestamp`; Pig column `uRL` mapped in {es} to `url`
