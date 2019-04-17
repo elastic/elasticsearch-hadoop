@@ -1,7 +1,6 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.elasticsearch.gradle.VersionProperties
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -98,7 +97,7 @@ class BuildPlugin implements Plugin<Project>  {
 
             project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
-            project.rootProject.ext.luceneVersion = VersionProperties.lucene
+            project.rootProject.ext.luceneVersion = EshVersionProperties.ELASTICSEARCH_VERSION
             project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 

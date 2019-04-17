@@ -7,6 +7,7 @@ class EshVersionProperties {
 
     public static final String ESHADOOP_VERSION
     public static final String ELASTICSEARCH_VERSION
+    public static final String LUCENE_VERSION
     public static final Map<String, String> VERSIONS
     static {
         Properties versionProperties = new Properties()
@@ -17,6 +18,7 @@ class EshVersionProperties {
         versionProperties.load(propertyStream)
         ESHADOOP_VERSION = versionProperties.getProperty('eshadoop')
         ELASTICSEARCH_VERSION = versionProperties.getProperty('elasticsearch')
+        LUCENE_VERSION = versionProperties.getProperty('lucene')
         VERSIONS = new HashMap<>()
         for (String propertyName: versionProperties.stringPropertyNames()) {
             VERSIONS.put(propertyName, versionProperties.getProperty(propertyName))
