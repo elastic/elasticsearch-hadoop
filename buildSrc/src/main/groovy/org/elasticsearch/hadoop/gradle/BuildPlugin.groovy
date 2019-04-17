@@ -13,7 +13,6 @@ import org.gradle.api.artifacts.DependencySubstitutions
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
-import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.file.CopySpec
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
@@ -93,13 +92,13 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureVersions(Project project) {
         if (!project.rootProject.ext.has('versionsConfigured')) {
-            project.rootProject.version = VersionProperties.ESHADOOP_VERSION
+            project.rootProject.version = EshVersionProperties.ESHADOOP_VERSION
             println "Building version [${project.rootProject.version}]"
 
-            project.rootProject.ext.eshadoopVersion = VersionProperties.ESHADOOP_VERSION
-            project.rootProject.ext.elasticsearchVersion = VersionProperties.ELASTICSEARCH_VERSION
-            project.rootProject.ext.luceneVersion = org.elasticsearch.gradle.VersionProperties.lucene
-            project.rootProject.ext.versions = VersionProperties.VERSIONS
+            project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
+            project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
+            project.rootProject.ext.luceneVersion = EshVersionProperties.ELASTICSEARCH_VERSION
+            project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 
             println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
