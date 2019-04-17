@@ -3,14 +3,14 @@ package org.elasticsearch.hadoop.gradle
 /**
  * Loads the locally available version information from the build source.
  */
-class VersionProperties {
+class EshVersionProperties {
 
     public static final String ESHADOOP_VERSION
     public static final String ELASTICSEARCH_VERSION
     public static final Map<String, String> VERSIONS
     static {
         Properties versionProperties = new Properties()
-        InputStream propertyStream = VersionProperties.class.getResourceAsStream('/esh-version.properties')
+        InputStream propertyStream = EshVersionProperties.class.getResourceAsStream('/esh-version.properties')
         if (propertyStream == null) {
             throw new RuntimeException("Could not locate the esh-version.properties file!")
         }
