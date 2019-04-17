@@ -32,6 +32,7 @@ subprojects {
     // a local repo if we're currently in the release manager (unlikely, but be future proof).
     buildscript {
         boolean localRepo = project.getProperties().containsKey("localRepo")
+        localRepo = false // TODO: Remove this once we can safely depend on build-tools again.
         repositories {
             jcenter()
             mavenCentral()
@@ -46,7 +47,7 @@ subprojects {
             if (localRepo) {
                 classpath name: "build-tools-${version}"
             } else {
-                classpath group: 'org.elasticsearch.gradle', name: 'build-tools', version: project.ext.elasticsearchVersion
+                classpath group: 'org.elasticsearch.gradle', name: 'build-tools', version: project.ext.buildToolsVersion
             }
         }
     }

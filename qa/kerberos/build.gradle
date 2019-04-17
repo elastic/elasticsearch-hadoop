@@ -40,6 +40,7 @@ configurations {
 }
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
+localRepo = false // TODO: Remove this once we can safely depend on build-tools again.
 
 dependencies {
     compile project(":elasticsearch-hadoop-mr")
