@@ -97,7 +97,7 @@ class BuildPlugin implements Plugin<Project>  {
 
             project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
-            project.rootProject.ext.luceneVersion = EshVersionProperties.ELASTICSEARCH_VERSION
+            project.rootProject.ext.luceneVersion = EshVersionProperties.LUCENE_VERSION
             project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 
@@ -204,7 +204,7 @@ class BuildPlugin implements Plugin<Project>  {
             String revision = (project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
             project.repositories.maven {
                 name 'lucene-snapshots'
-                url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
+                url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
     }
