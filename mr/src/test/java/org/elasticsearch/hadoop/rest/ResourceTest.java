@@ -68,6 +68,13 @@ public class ResourceTest {
     }
 
     @Test
+    public void testToString() throws Exception {
+        assumeTyped();
+        Resource res = createResource("foo/bar");
+        assertEquals("foo/bar", res.toString());
+    }
+
+    @Test
     public void testJustIndex() throws Exception {
         assumeTyped();
         Resource res = createResource("foo/_all");

@@ -309,12 +309,16 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     public MappingSet getMappings(String query, boolean includeTypeName) {
-        if (includeTypeName) {
+        // If the version is not at least 7, then the property isn't guaranteed to exist. If it is, then defer to the flag.
+        boolean requestTypeNameInResponse = clusterInfo.getMajorVersion().onOrAfter(EsMajorVersion.V_7_X) && includeTypeName;
+        // Response will always have the type name in it if node version is before 7, and if it is not, defer to the flag.
+        boolean typeNameInResponse = clusterInfo.getMajorVersion().before(EsMajorVersion.V_7_X) || includeTypeName;
+        if (requestTypeNameInResponse) {
             query = query + "?include_type_name=true";
         }
         Map<String, Object> result = get(query, null);
         if (result != null && !result.isEmpty()) {
-            return FieldParser.parseMappings(result, includeTypeName);
+            return FieldParser.parseMappings(result, typeNameInResponse);
         }
         return null;
     }
