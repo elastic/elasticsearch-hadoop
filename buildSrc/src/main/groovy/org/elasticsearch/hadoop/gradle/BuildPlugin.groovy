@@ -223,12 +223,7 @@ class BuildPlugin implements Plugin<Project>  {
             testCompile "junit:junit:${project.ext.junitVersion}"
             testCompile "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}"
 
-            testCompile("org.elasticsearch:elasticsearch:${project.ext.elasticsearchVersion}") {
-                exclude group: "org.apache.logging.log4j", module: "log4j-api"
-                exclude group: "org.elasticsearch", module: "elasticsearch-cli"
-                exclude group: "org.elasticsearch", module: "elasticsearch-core"
-                exclude group: "org.elasticsearch", module: "elasticsearch-secure-sm"
-            }
+            testCompile "joda-time:joda-time:2.8"
 
             testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
             testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
