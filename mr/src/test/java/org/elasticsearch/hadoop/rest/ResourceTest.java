@@ -276,6 +276,16 @@ public class ResourceTest {
         return new Resource(s, true);
     }
 
+    private void assumeTyped() {
+        Assume.assumeTrue("Typed api only accepted 7.X and before. Running [" + testVersion + ", " + readResource + "]",
+                (testVersion.onOrBefore(EsMajorVersion.V_7_X)));
+    }
+
+    private void assumeTypeless() {
+        Assume.assumeTrue("Typeless api only accepted 7.X and up for writes. Running [" + testVersion + ", " + readResource + "]",
+                (testVersion.onOrAfter(EsMajorVersion.V_7_X) || readResource));
+    }
+
     @Test
     public void testURiEscaping() throws Exception {
         assertEquals("http://localhost:9200/index/type%7Cfoo?q=foo%7Cbar:bar%7Cfoo", HttpEncodingTools.encodeUri("http://localhost:9200/index/type|foo?q=foo|bar:bar|foo"));
