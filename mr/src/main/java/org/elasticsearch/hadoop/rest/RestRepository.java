@@ -310,7 +310,13 @@ public class RestRepository implements Closeable, StatsAware {
     Scroll scroll(String query, BytesArray body, ScrollReader reader) throws IOException {
         InputStream scroll = client.execute(POST, query, body).body();
         try {
-            return reader.read(scroll);
+            Scroll scrollResult = reader.read(scroll);
+            if (settings.getInternalVersionOrThrow().onOrBefore(EsMajorVersion.V_2_X)) {
+                // On ES 2.X and before, a scroll response does not contain any hits to start with.
+                // Another request will be needed.
+                scrollResult = new Scroll(scrollResult.getScrollId(), scrollResult.getTotalHits(), false);
+            }
+            return scrollResult;
         } finally {
             if (scroll instanceof StatsAware) {
                 stats.aggregate(((StatsAware) scroll).stats());
