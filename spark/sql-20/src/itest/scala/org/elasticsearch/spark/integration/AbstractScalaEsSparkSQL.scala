@@ -751,7 +751,7 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val dataIndex = wrapIndex("sparksql-test-scala-error-handler-es")
     val errorIndex = wrapIndex("sparksql-test-scala-error-handler-es-errors")
 
-    val typeName = "/data"
+    val typeName = "data"
 
     val (dataTarget, _) = makeTargets(dataIndex, typeName)
     val (errorTarget, _) = makeTargets(errorIndex, typeName)

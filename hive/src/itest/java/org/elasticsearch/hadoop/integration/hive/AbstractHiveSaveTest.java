@@ -588,8 +588,8 @@ public class AbstractHiveSaveTest {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         assertThat(RestUtils.getMapping("hive-pc", "child").toString(),
                 targetVersion.onOrAfter(V_5_X)
-                        ? is("child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
-                        : is("child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
+                        ? is("hive-pc/child=[id=LONG, links=[picture=TEXT, url=TEXT], name=TEXT]")
+                        : is("hive-pc/child=[id=LONG, links=[picture=STRING, url=STRING], name=STRING]"));
     }
 
     @Test
