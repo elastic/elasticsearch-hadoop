@@ -497,7 +497,7 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val target = resource(index, typename, version)
     val docPath = docEndpoint(index, typename, version)
 
-    RestUtils.putMapping(index, typename, mapping)
+    RestUtils.putMapping(index, typename, mapping.getBytes)
 
     RestUtils.refresh(index)
     RestUtils.put(s"$docPath/1", """{"id":"1", "counter":4}""".getBytes(StringUtils.UTF_8))
