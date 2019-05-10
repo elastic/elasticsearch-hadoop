@@ -283,8 +283,8 @@ public class AbstractPigSaveTest extends AbstractPigTests {
         EsAssume.versionOnOrBefore(EsMajorVersion.V_5_X, "Parent Child Disabled in 6.0");
         assertThat(RestUtils.getMapping("pig-pc", "child").toString(),
                 VERSION.onOrAfter(V_5_X)
-                        ? is("child=[id=LONG, links=TEXT, name=TEXT]")
-                        : is("child=[id=LONG, links=STRING, name=STRING]"));
+                        ? is("pig-pc/child=[id=LONG, links=TEXT, name=TEXT]")
+                        : is("pig-pc/child=[id=LONG, links=STRING, name=STRING]"));
     }
 
     @Test
