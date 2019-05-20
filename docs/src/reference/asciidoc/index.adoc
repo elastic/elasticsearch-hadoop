@@ -10,7 +10,7 @@
 :ey:	Elasticsearch on YARN
 :description: Reference documentation of {eh}
 :ver:	7.1.0
-:ver-d: 7.1.0-SNAPSHOT
+:ver-d: 7.1.1-SNAPSHOT
 :es-v:	7.1.0
 :sp-v:	2.2.0
 :st-v:	1.0.1
