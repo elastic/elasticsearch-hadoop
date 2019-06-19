@@ -737,7 +737,7 @@ public class RestClient implements Closeable, StatsAware {
             throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch main cluster info.");
         }
         String clusterName = result.get("cluster_name").toString();
-        String clusterUUID = result.get("cluster_uuid").toString();
+        String clusterUUID = (String)result.get("cluster_uuid");
         @SuppressWarnings("unchecked")
         Map<String, String> versionBody = (Map<String, String>) result.get("version");
         if (versionBody == null || !StringUtils.hasText(versionBody.get("number"))) {
