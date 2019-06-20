@@ -20,3 +20,4 @@ metastore_db
 /spark/sql-13/with_meta_*
 out/
 localRepo/
+.DS_Store
