@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class RestClientTest {
@@ -406,4 +408,50 @@ public class RestClientTest {
 
         assertEquals(5L, count);
     }
+
+    @Test
+    public void testMainInfoWithClusterNotProvidingUUID() {
+        String response = "{\n" +
+                "\"name\": \"node\",\n" +
+                "\"cluster_name\": \"cluster\",\n" +
+                "\"version\": {\n" +
+                "  \"number\": \"2.0.1\"\n" +
+                "},\n" +
+                "\"tagline\": \"You Know, for Search\"\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        ClusterInfo clusterInfo = client.mainInfo();
+
+        assertNotNull(clusterInfo.getClusterName());
+        assertNull(clusterInfo.getClusterName().getUUID());
+    }
+
+    @Test
+    public void testMainInfoWithClusterProvidingUUID() {
+        String response = "{\n" +
+                "\"name\": \"node\",\n" +
+                "\"cluster_name\": \"cluster\",\n" +
+                "\"cluster_uuid\": \"uuid\",\n" +
+                "\"version\": {\n" +
+                "  \"number\": \"6.7.0\"\n" +
+                "},\n" +
+                "\"tagline\": \"You Know, for Search\"\n" +
+                "}";
+
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        ClusterInfo clusterInfo = client.mainInfo();
+
+        assertNotNull(clusterInfo.getClusterName());
+        assertEquals("uuid", clusterInfo.getClusterName().getUUID());
+    }
+
 }
