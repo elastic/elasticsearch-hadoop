@@ -22,6 +22,7 @@ package org.elasticsearch.hadoop.rest;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
 import org.elasticsearch.hadoop.util.BytesArray;
+import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
