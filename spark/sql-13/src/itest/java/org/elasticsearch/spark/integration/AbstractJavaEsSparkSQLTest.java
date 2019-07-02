@@ -95,7 +95,8 @@ public class AbstractJavaEsSparkSQLTest implements Serializable {
 		assertEquals(5, dataFrame.take(5).length);
 		DataFrame results = sqc
 				.sql("SELECT name FROM datfile WHERE id >=1 AND id <=10");
-		assertEquals(10, dataFrame.take(10).length);
+		assertEquals(10, results.take(10).length);
+		assertEquals(10L, results.count());
 	}
 
 	@Test
