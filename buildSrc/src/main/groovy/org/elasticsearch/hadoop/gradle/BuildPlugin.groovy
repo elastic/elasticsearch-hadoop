@@ -98,6 +98,7 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
             project.rootProject.ext.luceneVersion = EshVersionProperties.LUCENE_VERSION
+            project.rootProject.ext.buildToolsVersion = EshVersionProperties.BUILD_TOOLS_VERSION
             project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 
@@ -128,6 +129,7 @@ class BuildPlugin implements Plugin<Project>  {
         project.ext.eshadoopVersion = project.rootProject.ext.eshadoopVersion
         project.ext.elasticsearchVersion = project.rootProject.ext.elasticsearchVersion
         project.ext.luceneVersion = project.rootProject.ext.luceneVersion
+        project.ext.buildToolsVersion = project.rootProject.ext.buildToolsVersion
         project.ext.versions = project.rootProject.ext.versions
         project.ext.hadoopVersion = project.rootProject.ext.hadoopVersion
         project.ext.hadoopClient = project.rootProject.ext.hadoopClient
