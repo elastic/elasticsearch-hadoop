@@ -7,7 +7,7 @@ apply plugin: 'groovy'
  */
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
-localRepo = false // TODO: Remove this once we can safely depend on build-tools again.
+
 
 Properties props = new Properties()
 props.load(project.file('esh-version.properties').newDataInputStream())
@@ -59,11 +59,12 @@ dependencies {
     // Provided/Optional Dependencies
     compile 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
 
-    if (localRepo) {
-        compile name: "build-tools-${buildToolsVersion}"
-    } else {
+    // TODO: Un-comment this once we can safely depend on build-tools again.
+//    if (localRepo) {
+//        compile name: "build-tools-${buildToolsVersion}"
+//    } else {
         compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
-    }
+//    }
 }
 
 // write the updated properties to a temp property file
