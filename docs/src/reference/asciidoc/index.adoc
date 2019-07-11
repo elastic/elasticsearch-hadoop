@@ -9,7 +9,7 @@
 :krb:   Kerberos
 :ey:	Elasticsearch on YARN
 :description: Reference documentation of {eh}
-:ver:	7.2.0
+:ver:	7.2.1
 :ver-d: 7.2.1-SNAPSHOT
 :es-v:	7.2.1-SNAPSHOT
 :sp-v:	2.2.0
