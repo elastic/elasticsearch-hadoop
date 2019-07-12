@@ -211,7 +211,7 @@ Will not work on Elasticsearch 6.0+ index versions, but support will continue fo
 added[2.1]
 `es.mapping.include` (default none)::
 Field/property to be included in the document sent to {es}. Useful for _extracting_ the needed data from entities. The syntax is similar
-to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
+to that of {es} {ref}/search-request-body.html#search-request-source-filtering[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
 
 IMPORTANT: The `es.mapping.include` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
@@ -220,7 +220,7 @@ data that is implicitly excluded, any jobs with these property conflicts will re
 added[2.1]
 `es.mapping.exclude` (default none)::
 Field/property to be excluded in the document sent to {es}. Useful for _eliminating_ unneeded data from entities. The syntax is similar
-to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
+to that of {es} {ref}/search-request-body.html#search-request-source-filtering[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded.
 
 IMPORTANT: The `es.mapping.exclude` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
@@ -279,7 +279,7 @@ added[2.2]
 Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
 whether to instantiate one value or a array type (depending on the library type). When encountering multiple values, {eh} will automatically use 
 the array/list type but in strict mapping scenarios (like Spark SQL) this might lead to an unexpected schema change.
-The syntax is similar to that of {es} {ref}/search-request-source-filtering.html[include/exclude]. 
+The syntax is similar to that of {es} {ref}/search-request-body.html#search-request-source-filtering[include/exclude]. 
 Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are included.
 
 For example:
