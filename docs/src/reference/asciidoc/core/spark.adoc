@@ -1577,7 +1577,7 @@ val smiths = sqlContext.esDF("spark/people","?q=Smith") <1>
 
 In some cases, especially when the index in {es} contains a lot of fields, it is desireable to create a +DataFrame+ that contains only a _subset_ of them. While one can modify the +DataFrame+ (by working on its backing +RDD+) through the official Spark API or through dedicated queries, {eh} allows the user to specify what fields to include and exclude from {es} when creating the +DataFrame+.
 
-Through +es.read.field.include+ and +es.read.field.exclude+ properties, one can indicate what fields to include or exclude from the index mapping. The syntax is similar to that of {es} {ref}/search-request-source-filtering.html[include/exclude]. Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included and no properties/fields are excluded.
+Through +es.read.field.include+ and +es.read.field.exclude+ properties, one can indicate what fields to include or exclude from the index mapping. The syntax is similar to that of {es} {ref}/search-request-body.html#request-body-search-source-filtering[include/exclude]. Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included and no properties/fields are excluded.
 
 For example:
 [source,ini]
