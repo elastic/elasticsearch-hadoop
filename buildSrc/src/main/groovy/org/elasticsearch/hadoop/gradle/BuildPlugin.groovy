@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.VersionProperties
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -35,7 +36,7 @@ import org.springframework.build.gradle.propdep.PropDepsIdeaPlugin
 import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
 import org.springframework.build.gradle.propdep.PropDepsPlugin
 
-class BuildPlugin implements Plugin<Project>  {
+class BuildPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
@@ -95,7 +96,7 @@ class BuildPlugin implements Plugin<Project>  {
 
             project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
             project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
-            project.rootProject.ext.luceneVersion = EshVersionProperties.LUCENE_VERSION
+            project.rootProject.ext.luceneVersion = VersionProperties.lucene
             project.rootProject.ext.buildToolsVersion = EshVersionProperties.BUILD_TOOLS_VERSION
             project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
@@ -198,13 +199,16 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
 
-        // For Lucene Snapshots, Use the lucene version interpreted from elasticsearch-build-tools version file.
-        if (project.ext.luceneVersion.contains('-snapshot')) {
-            // Extract the revision number of the snapshot via regex:
-            String revision = (project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
+        // For Lucene Snapshots, use the lucene version automatically retrieved by build-tools
+        // to fetch it from the snapshots repository
+        String luceneVersion = project.rootProject.ext.luceneVersion
+        if (luceneVersion.contains('-snapshot')) {
+            // extract the revision number from the version with a regex matcher
+            List<String> matches = (luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/).getAt(0) as List<String>
+            String revision = matches.get(1)
             project.repositories.maven {
-                name 'lucene-snapshots'
-                url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
+                name = 'lucene-snapshots'
+                url = "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
     }
