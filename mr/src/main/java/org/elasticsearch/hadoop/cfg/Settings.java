@@ -221,6 +221,11 @@ public abstract class Settings {
         return getProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS);
     }
 
+    public Settings setSerializerValueWriterClassName(String className) {
+        setProperty(ES_SERIALIZATION_WRITER_VALUE_CLASS, className);
+        return this;
+    }
+
     public String getSerializerBytesConverterClassName() {
         return getProperty(ES_SERIALIZATION_WRITER_BYTES_CLASS);
     }

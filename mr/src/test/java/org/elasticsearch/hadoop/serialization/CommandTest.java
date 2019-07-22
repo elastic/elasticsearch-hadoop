@@ -31,6 +31,7 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
+import org.elasticsearch.hadoop.serialization.bulk.DeleteBulkFactory;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -64,43 +65,55 @@ public class CommandTest {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
-        return Arrays.asList(new Object[][] {
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_1_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_2_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_5_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_6_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_8_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_8_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_8_X },
-                { ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_8_X },
-                { ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_8_X },
-                { ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_8_X }
+        return Arrays.asList(new Object[][]{
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_1_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_2_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_5_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_6_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_7_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_8_X},
+                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_8_X}
         });
     }
 
@@ -127,6 +140,7 @@ public class CommandTest {
     @Test
     public void testNoHeader() throws Exception {
         assumeFalse(ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation));
+        assumeFalse(ConfigurationOptions.ES_OPERATION_DELETE.equals(operation));
         create(settings()).write(data).copyTo(ba);
         String result = prefix() + "}}" + map();
         assertEquals(result, ba.toString());
@@ -135,6 +149,7 @@ public class CommandTest {
     @Test
     // check user friendliness and escape the string if needed
     public void testConstantId() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         noId = true;
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "<foobar>");
@@ -148,6 +163,7 @@ public class CommandTest {
     @Test
     public void testParent() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
@@ -159,6 +175,7 @@ public class CommandTest {
     @Test
     public void testParent7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_PARENT, "<5>");
 
@@ -170,6 +187,7 @@ public class CommandTest {
     @Test
     public void testVersion() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
@@ -181,6 +199,7 @@ public class CommandTest {
     @Test
     public void testVersion7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_VERSION, "<3>");
 
@@ -191,6 +210,7 @@ public class CommandTest {
 
     @Test
     public void testTtl() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
 
@@ -201,6 +221,7 @@ public class CommandTest {
 
     @Test
     public void testTimestamp() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TIMESTAMP, "<3>");
         create(settings).write(data).copyTo(ba);
@@ -211,6 +232,7 @@ public class CommandTest {
     @Test
     public void testRouting() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
@@ -222,6 +244,7 @@ public class CommandTest {
     @Test
     public void testRouting7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ROUTING, "<4>");
 
@@ -233,6 +256,7 @@ public class CommandTest {
     @Test
     public void testAll() throws Exception {
         assumeTrue(version.onOrBefore(EsMajorVersion.V_6_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
@@ -246,6 +270,7 @@ public class CommandTest {
     @Test
     public void testAll7X() throws Exception {
         assumeTrue(version.onOrAfter(EsMajorVersion.V_7_X));
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         settings.setProperty(ConfigurationOptions.ES_MAPPING_ID, "n");
         settings.setProperty(ConfigurationOptions.ES_MAPPING_TTL, "<2>");
@@ -258,10 +283,12 @@ public class CommandTest {
 
     @Test
     public void testIdPattern() throws Exception {
+        assumeFalse(isDeleteOP() && jsonInput);
         Settings settings = settings();
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             settings.setResourceWrite("{n}");
-        } else {
+        }
+        else {
             settings.setResourceWrite("foo/{n}");
         }
 
@@ -269,7 +296,8 @@ public class CommandTest {
         String header;
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             header = "{\"_index\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
-        } else {
+        }
+        else {
             header = "{\"_index\":\"foo\",\"_type\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
         }
         String result = "{\"" + operation + "\":" + header + "}" + map();
@@ -317,7 +345,7 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
+                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -447,7 +475,7 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
+                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
         assertEquals(result, ba.toString());
     }
@@ -523,8 +551,12 @@ public class CommandTest {
 
         set.setInternalVersion(version);
         set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
-
-        InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
+        if (isDeleteOP()) {
+            InitializationUtils.setValueWriterIfNotSet(set, DeleteBulkFactory.NoDataWriter.class, null);
+        }
+        else {
+            InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
+        }
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
         InitializationUtils.setBytesConverterIfNeeded(set, JdkBytesConverter.class, null);
         InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, null);
@@ -532,7 +564,8 @@ public class CommandTest {
         set.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             set.setResourceWrite("foo");
-        } else {
+        }
+        else {
             set.setResourceWrite("foo/bar");
         }
         if (isUpdateOp()) {
@@ -550,6 +583,9 @@ public class CommandTest {
     }
 
     private String map() {
+        if (isDeleteOP()) {
+            return "\n";
+        }
         StringBuilder sb = new StringBuilder("\n{");
         if (isUpdateOp()) {
             sb.append("\"doc\":{");
@@ -565,5 +601,9 @@ public class CommandTest {
 
     private boolean isUpdateOp() {
         return ConfigurationOptions.ES_OPERATION_UPDATE.equals(operation);
+    }
+
+    private boolean isDeleteOP() {
+        return ConfigurationOptions.ES_OPERATION_DELETE.equals(operation);
     }
 }

@@ -152,7 +152,7 @@ public abstract class InitializationUtils {
         }
 
         RestClient bootstrap = new RestClient(settings);
-        try  {
+        try {
             String message = "No data nodes with HTTP-enabled available";
             List<NodeInfo> dataNodes = bootstrap.getHttpDataNodes();
             if (dataNodes.isEmpty()) {
@@ -253,10 +253,18 @@ public abstract class InitializationUtils {
             Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When writing data as JSON, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
         }
 
+        //check the configuration is coherent in order to use the delete operation
+        if (ConfigurationOptions.ES_OPERATION_DELETE.equals(settings.getOperation())) {
+            Assert.isTrue(!settings.getInputAsJson(), "When using delete operation, providing data as JSON is not coherent because this operation does not need document as a payload. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingIncludes().isEmpty(), "When using delete operation, the field inclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingExcludes().isEmpty(), "When using delete operation, the field exclusion feature is ignored. This is most likely not what the user intended. Bailing out...");
+            Assert.isTrue(settings.getMappingId() != null && !StringUtils.EMPTY.equals(settings.getMappingId()), "When using delete operation, the property " + ConfigurationOptions.ES_MAPPING_ID + " must be set and must not be empty since we need the document id in order to delete it. Bailing out...");
+        }
+
         // Check to make sure user doesn't specify more than one script type
         boolean hasScript = false;
         String[] scripts = {settings.getUpdateScriptInline(), settings.getUpdateScriptFile(), settings.getUpdateScriptStored()};
-        for (String script: scripts) {
+        for (String script : scripts) {
             boolean isSet = StringUtils.hasText(script);
             Assert.isTrue((hasScript && isSet) == false, "Multiple scripts are specified. Please specify only one via [es.update.script.inline], [es.update.script.file], or [es.update.script.stored]");
             hasScript = hasScript || isSet;
@@ -291,7 +299,8 @@ public abstract class InitializationUtils {
                 throw new EsHadoopIllegalArgumentException("Cannot use TTL on index/update requests in ES 6.x and " +
                         "above. Please remove the [" + ConfigurationOptions.ES_MAPPING_TTL + "] setting.");
             }
-        } else {
+        }
+        else {
             if (StringUtils.hasText(settings.getMappingTtl())) {
                 LOG.warn("Setting [" + ConfigurationOptions.ES_MAPPING_TTL + "] is deprecated! Support for [ttl] on " +
                         "indexing and update requests has been removed in ES 6.x and above!");
@@ -378,7 +387,7 @@ public abstract class InitializationUtils {
                     settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
         }
     }
-    
+
     public static boolean setMetadataExtractorIfNotSet(Settings settings, Class<? extends MetadataExtractor> clazz, Log log) {
         if (!StringUtils.hasText(settings.getMappingMetadataExtractorClassName())) {
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
