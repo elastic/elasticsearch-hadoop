@@ -941,7 +941,7 @@ from the source code management (SCM) system project uses.
 
 
 ================================================================================
-jackson NOTICE
+jackson LICENSE
 ================================================================================
 
                                  Apache License
