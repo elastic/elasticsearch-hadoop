@@ -128,6 +128,7 @@ jar {
     from(zipTree(project(":elasticsearch-hadoop-mr").jar.archivePath)) {
         include "org/elasticsearch/hadoop/**"
         include "esh-build.properties"
+        include "META-INF/services/*"
     }
 }
 

@@ -1,0 +1,30 @@
+[[eshadoop-7.0.0]]
+== Elasticsearch for Apache Hadoop version 7.0.0
+April 10, 2019
+
+[[breaking-7.0.0]]
+=== Breaking Changes
+* Remove Cascading
+https://github.com/elastic/elasticsearch-hadoop/pull/1235[#1235]
+* Upgrade class compilation level to Java 8
+https://github.com/elastic/elasticsearch-hadoop/issues/1200[#1200]
+* Removed es.input.use.sliced.partitions setting
+https://github.com/elastic/elasticsearch-hadoop/issues/1196[#1196]
+
+[[bugs-7.0.0]]
+=== Bug Fixes
+REST::
+* Conform to new underscore rules in ES 7
+https://github.com/elastic/elasticsearch-hadoop/issues/1078[#1078]
+Testing::
+* Fix DateIndexFormatterTest
+https://github.com/elastic/elasticsearch-hadoop/pull/1232[#1232]
+* [CI] unknown setting [indices.breaker.total.use_real_memory]
+https://github.com/elastic/elasticsearch-hadoop/issues/1181[#1181]
+
+[[docs-7.0.0]]
+=== Documentation
+* Update README.md
+https://github.com/elastic/elasticsearch-hadoop/pull/1090[#1090]
+* Add pushdown filters table for es-spark documentation
+https://github.com/elastic/elasticsearch-hadoop/pull/1052[#1052]

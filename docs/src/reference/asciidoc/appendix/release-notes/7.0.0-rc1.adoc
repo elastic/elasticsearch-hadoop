@@ -1,0 +1,14 @@
+[[eshadoop-7.0.0-rc1]]
+== Elasticsearch for Apache Hadoop version 7.0.0-rc1
+March 27, 2019
+
+[[bugs-7.0.0-rc1]]
+=== Bug Fixes
+Core::
+* Fix missing service files in ES-Hadoop jars
+https://github.com/elastic/elasticsearch-hadoop/pull/1265[#1265]
+
+[[docs-7.0.0-rc1]]
+=== Documentation
+* Add documentation for Kerberos Authentication mode
+https://github.com/elastic/elasticsearch-hadoop/pull/1249[#1249]

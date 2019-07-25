@@ -98,13 +98,13 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureVersions(Project project) {
         if (!project.rootProject.ext.has('versionsConfigured')) {
-            project.rootProject.version = VersionProperties.ESHADOOP_VERSION
+            project.rootProject.version = EshVersionProperties.ESHADOOP_VERSION
             println "Building version [${project.rootProject.version}]"
 
-            project.rootProject.ext.eshadoopVersion = VersionProperties.ESHADOOP_VERSION
-            project.rootProject.ext.elasticsearchVersion = VersionProperties.ELASTICSEARCH_VERSION
-            project.rootProject.ext.luceneVersion = org.elasticsearch.gradle.VersionProperties.lucene
-            project.rootProject.ext.versions = VersionProperties.VERSIONS
+            project.rootProject.ext.eshadoopVersion = EshVersionProperties.ESHADOOP_VERSION
+            project.rootProject.ext.elasticsearchVersion = EshVersionProperties.ELASTICSEARCH_VERSION
+            project.rootProject.ext.luceneVersion = EshVersionProperties.LUCENE_VERSION
+            project.rootProject.ext.versions = EshVersionProperties.VERSIONS
             project.rootProject.ext.versionsConfigured = true
 
             println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
@@ -210,7 +210,7 @@ class BuildPlugin implements Plugin<Project>  {
             String revision = (project.ext.luceneVersion =~ /\w+-snapshot-([a-z0-9]+)/)[0][1]
             project.repositories.maven {
                 name 'lucene-snapshots'
-                url "http://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
+                url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
     }
@@ -260,12 +260,7 @@ class BuildPlugin implements Plugin<Project>  {
             testCompile "junit:junit:${project.ext.junitVersion}"
             testCompile "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}"
 
-            testCompile("org.elasticsearch:elasticsearch:${project.ext.elasticsearchVersion}") {
-                exclude group: "org.apache.logging.log4j", module: "log4j-api"
-                exclude group: "org.elasticsearch", module: "elasticsearch-cli"
-                exclude group: "org.elasticsearch", module: "elasticsearch-core"
-                exclude group: "org.elasticsearch", module: "elasticsearch-secure-sm"
-            }
+            testCompile "joda-time:joda-time:2.8"
 
             testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
             testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
@@ -681,7 +676,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static String gitHash(File gitHead) {
         String rev = "unknown"
 
-        if (gitHead.exists()) {
+        if (gitHead != null && gitHead.exists()) {
             rev = gitHead.text.trim()
         }
         return rev

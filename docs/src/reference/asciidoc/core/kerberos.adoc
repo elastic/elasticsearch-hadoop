@@ -1,0 +1,653 @@
+[[kerberos]]
+== {krb}
+
+added[6.7]
+
+IMPORTANT: {krb} support for {ehtm} requires {es} 6.7 or greater
+
+Securing Hadoop means using {krb}. {es} supports {krb} as an authentication method. While the use of
+{krb} is not required for securing {es}, it is a convenient option for those who already deploy {krb} to secure their
+Hadoop clusters. This chapter aims to explain the steps needed to set up {eh} to use {krb} authentication for {es}.
+
+{ehtm} communicates with {es} entirely over HTTP. In order to support {krb} authentication over HTTP, {eh} uses
+the https://tools.ietf.org/html/rfc4178[Simple and Protected GSSAPI Negotiation Mechanism (SPNEGO)] to negotiate which
+underlying authentication method to use (in this case, {krb}) and to transmit the agreed upon credentials to the server.
+This authentication mechanism is performed using the https://tools.ietf.org/html/rfc4559[HTTP Negotiate] authentication
+standard, where a request is sent to the server and a response is received back with a payload that further advances
+the negotiation. Once the negotiation between the client and server is complete, the request is accepted and a
+successful response is returned.
+
+{ehtm} makes use of Hadoop's user management processes; The {krb} credentials of the current Hadoop user are used when
+authenticating to {es}. This means that {krb} authentication in Hadoop must be enabled in order for {eh} to obtain a
+user's {krb} credentials. In the case of using an integration that does not depend on Hadoop's runtime (e.g. Storm),
+additional steps may be required to ensure that a running process has {krb} credentials available for authentication.
+It is recommended that you consult the documentation of each framework that you are using on how to configure security.
+
+[[kerberos-settings]]
+=== Setting up your environment
+
+NOTE: This documentation assumes that you have already provisioned a Hadoop cluster with {krb} authentication enabled
+(required). The general process of deploying {krb} and securing Hadoop is beyond the scope of this documentation.
+
+Before starting, you will need to ensure that principals for your users are provisioned in your {krb} deployment,
+as well as service principals for each {es} node. To enable {krb} authentication on {es}, it must be
+https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-kerberos-realm.html[configured with a
+{krb} realm]. It is recommended that you familiarize yourself with how to configure {es} {krb} realms so that you
+can make appropriate adjustments to fit your deployment. You can find more information on how they work in the
+https://www.elastic.co/guide/en/elastic-stack-overview/current/kerberos-realm.html[Elastic Stack documentation].
+
+Additionally, you will need to https://www.elastic.co/guide/en/elasticsearch/reference/current/security-settings.html[
+configure the API Key Realm] in {es}. Hadoop and other distributed data processing frameworks only authenticate with
+{krb} in the process that launches a job. Once a job has been launched, the worker processes are often cut off from
+the original {krb} credentials and need some other form of authentication. Hadoop services often provide mechanisms for
+obtaining _Delegation Tokens_ during job submission. These tokens are then distributed to worker processes which use
+the tokens to authenticate on behalf of the user running the job. {ehtm} obtains API Keys in order to provide tokens
+for worker processes to authenticate with.
+
+[[kerberos-settings-eshadoop]]
+==== Connector Settings
+
+The following settings are used to configure {eh} to use {krb} authentication:
+
+`es.security.authentication` (default `simple`, or `basic` if `es.net.http.auth.user` is set)::
+Required. Similar to most Hadoop integrations, this property signals which method to use in order to authenticate with
+{es}. By default, the value is `simple`, unless `es.net.http.auth.user` is set, in which case it will default to
+`basic`. The available options for this setting are `simple` for no authentication, `basic` for basic http
+authentication, `pki` if relying on certificates, and `kerberos` if {krb} authentication over SPNEGO should be used.
+
+`es.net.spnego.auth.elasticsearch.principal` (default none)::
+Required if `es.security.authentication` is set to `kerberos`. Details the name of the service principal that the
+Elasticsearch server is running as. This will usually be of the form `HTTP/node.address@REALM`. Since {es} is
+distributed and should be using a service principal per node, you can use the `_HOST` pattern
+(like so `HTTP/_HOST@REALM`) to have {eh} substitute the address of the node it is communicating with at runtime. Note
+that {eh} will attempt to reverse resolve node IP addresses to hostnames in order to perform this substitution.
+
+`es.net.spnego.auth.mutual` (default false)::
+Optional. The SPNEGO mechanism assumes that authentication may take multiple back and forth request-response cycles for
+a request to be fully accepted by the server. When a request is finally accepted by the server, the response contains a
+payload that can be verified to ensure that the server is the principal they say they are. Setting this to `true`
+instructs {eh} to perform this mutual authentication, and to fail the response if it detects invalid credentials from
+the server.
+
+[[kerberos-hadoop]]
+=== {krb} on Hadoop
+
+[[kerberos-hadoop-requirements]]
+==== Requirements
+
+Before using {krb} authentication to {es}, {krb} authentication must be enabled in Hadoop.
+
+[[kerberos-hadoop-requirements-conf]]
+===== Configure {eh}
+
+{ehtm} only needs <<kerberos-settings-eshadoop,a few settings>> to configure {krb} authentication. It is best to
+set these properties in your `core-site.xml` configuration so that they can be obtained across your entire Hadoop
+deployment, just like you would for turning on security options for services in Hadoop.
+
+[source,xml]
+----
+<configuration>
+    ...
+    <property>
+        <name>es.security.authentication</name>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>es.net.spnego.auth.elasticsearch.principal</name>
+        <value>HTTP/_HOST@REALM.NAME.HERE</value>
+    </property>
+    ...
+</configuration>
+----
+
+[[kerberos-yarn]]
+=== {krb} on YARN
+
+When applications launch on a YARN cluster, they send along all of their application credentials to the Resource
+Manager process for them to be distributed to the containers. The Resource Manager has the ability to renew any tokens
+in those credentials that are about to expire and to cancel tokens once a job has completed. The tokens from {es} have
+a default lifespan of 7 days and they are not renewable. It is a best practice to configure YARN so that it is able to
+cancel those tokens at the end of a run in order to lower the risk of unauthorized use, and to lower the amount of
+bookkeeping {es} must perform to maintain them.
+
+In order to configure YARN to allow it to cancel {es} tokens at the end of a run, you must add the {eh} jar to the
+Resource Manager's classpath. You can do that by placing the jar on the Resource Manager's local filesystem, and setting
+the path to the jar in the `YARN_USER_CLASSPATH` environment variable. Once the jar is added, the Resource Manager will
+need to be restarted.
+
+[source,ini]
+----
+export YARN_USER_CLASSPATH=/path/to/elasticsearch-hadoop.jar
+----
+
+Additionally, the connection information for {eh} should be present in the Hadoop configuration,
+preferably the `core-site.xml`. This is because when Resource Manager cancels a token, it does not take the job
+configuration into account. Without the connection settings in the Hadoop configuration, the Resource Manager will not
+be able to communicate to {es} in order to cancel the token.
+
+Here is a few common security properties that you will need in order for the Resource Manager to contact {es} to cancel
+tokens:
+
+[source,xml]
+----
+<configuration>
+    ...
+    <property>
+        <name>es.nodes</name>
+        <value>es-master-1,es-master-2,es-master-3</value> <1>
+    </property>
+    <property>
+        <name>es.security.authentication</name> <2>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>es.net.spnego.auth.elasticsearch.principal</name> <3>
+        <value>HTTP/_HOST@REALM</value>
+    </property>
+    <property>
+        <name>es.net.ssl</name> <4>
+        <value>true</value>
+    </property>
+    <property>
+        <name>es.net.ssl.keystore.location</name> <5>
+        <value>file:///path/to/ssl/keystore</value>
+    </property>
+    <property>
+        <name>es.net.ssl.truststore.location</name> <6>
+        <value>file:///path/to/ssl/truststore</value>
+    </property>
+    <property>
+        <name>es.keystore.location</name> <7>
+        <value>file:///path/to/es/secure/store</value>
+    </property>
+    ...
+</configuration>
+----
+<1> The addresses of some {es} nodes. These can be any nodes (or all of them) as long as they all belong to the same
+cluster.
+<2> Authentication must be configured as `kerberos` in the settings.
+<3> The name of the {es} service principal is not required for token cancellation but having the property in the
+`core-site.xml` is required for some integrations like Spark.
+<4> SSL should be enabled if you are using a secured {es} deployment.
+<5> Location on the local filesystem to reach the SSL Keystore.
+<6> Location on the local filesystem to reach the SSL Truststore.
+<7> Location on the local filesystem to reach the <<keystore,{eh} secure store for secure settings>>.
+
+[[kerberos-mr]]
+=== {krb} with {mr}
+
+Before launching your {mr} job, you must add a delegation token for {es} to the job's credential set. The
+`EsMapReduceUtil` utility class can be used to do this for you. Simply pass your job to it before submitting it to the
+cluster. Using the local {krb} credentials, the utility will establish a connection to {es}, request an API Key, and
+stow the key in the job's credential set for the worker processes to use.
+
+[source,java]
+----
+Job job = Job.getInstance(getConf(), "My-Job-Name"); <1>
+
+// Configure Job Here...
+
+EsMapReduceUtil.initCredentials(job); <2>
+
+if (!job.waitForCompletion(true)) { <3>
+    return 1;
+}
+----
+<1> Creating a new job instance
+<2> EsMapReduceUtil obtains job delegation tokens for {es}
+<3> Submit the job to the cluster
+
+You can obtain the job delegation tokens at any time during the configuration of the Job object, as long as your {eh}
+specific configurations are set. It's usually sufficient to do it right before submitting the job. You should only do
+this once per job since each call will wastefully obtain another API Key.
+
+Additionally, the utility is also compatible with the `mapred` API classes:
+
+[source,java]
+----
+JobConf jobConf = new JobConf(getConf()); <1>
+jobConf.setJobName("My-Job-Name");
+
+// Configure JobConf Here...
+
+EsMapReduceUtil.initCredentials(jobConf); <2>
+
+JobClient.runJob(jobConf).waitForCompletion(); <3>
+----
+<1> Creating a new job configuration
+<2> Obtain {es} delegation tokens
+<3> Submit the job to the cluster
+
+[[kerberos-hive]]
+=== {krb} with Hive
+
+[[kerberos-hive-requirements]]
+==== Requirements
+
+IMPORTANT: Using {krb} auth on {es} is only supported using HiveServer2.
+
+Before using {krb} authentication to {es} in Hive, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> as well as the steps
+for <<kerberos-yarn,configuring your YARN services>> before using {krb} authentication for {es}.
+
+Finally, ensure that Hive Security is enabled.
+
+Since Hive relies on user impersonation in {es} it is advised that you familiarise yourself with
+https://www.elastic.co/guide/en/elastic-stack-overview/current/setting-up-authentication.html[{es} authentication] and
+https://www.elastic.co/guide/en/elastic-stack-overview/current/authorization.html[authorization].
+
+[[kerberos-hive-proxy]]
+==== Configure user impersonation settings for Hive
+
+Hive's security model follows a proxy-based approach. When a client submits a query to a secured Hive server, Hive
+authenticates the client using {krb}. Once Hive is sure of the client's identity, it wraps its own identity with a
+_proxy user_. The proxy user contains the client's simple user name, but contains no credentials. Instead, it is
+expected that all interactions are executed as the Hive principal impersonating the client user. This is why when
+configuring Hive security, one must specify in the Hadoop configuration which users Hive is allowed to impersonate:
+
+[source,xml]
+----
+<property>
+    <name>hadoop.proxyuser.hive.hosts</name>
+    <value>*</value>
+</property>
+<property>
+    <name>hadoop.proxyuser.hive.groups</name>
+    <value>*</value>
+</property>
+----
+
+{es} https://www.elastic.co/guide/en/elastic-stack-overview/current/run-as-privilege.html[supports user impersonation],
+but only users from certain realm implementations can be impersonated. Most deployments of {krb} include other identity
+management components like
+https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ldap-realm.html[LDAP] or
+https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ad-realm.html[Active Directory].
+In those cases, you can configure those realms in {es} to allow for user impersonation.
+
+If you are only using {krb}, or you are using a solution for which {es} does not support user impersonation, you must
+mirror your {krb} principals to either a
+https://www.elastic.co/guide/en/elastic-stack-overview/current/native-realm.html[native realm] or a
+https://www.elastic.co/guide/en/elastic-stack-overview/current/file-realm.html[file realm] in {es}. When mirroring a
+{krb} principal to one of these realms, set the new user's username to just the main part of the principal name, without
+any realm or host information. For instance, `client@REALM` would just be `client` and `someservice/domain.name@REALM`
+would just be `someservice`.
+
+You can follow this step by step process for mirroring users:
+
+[[kerberos-hive-proxy-user-role]]
+===== Create End User Roles
+
+Create a role for your end users that will be querying Hive. In this example, we will make a simple role for accessing
+indices that match `hive-index-*`. All our Hive users will end up using this role to read, write, and update indices
+in {es}.
+
+[source,js]
+----
+PUT _xpack/security/role/hive_user_role <1>
+{
+  "run_as": [],
+  "cluster": ["monitor", "manage_token"], <2>
+  "indices": [
+      {
+        "names": [ "hive-index-*" ],  <3>
+        "privileges": [ "read", "write", "manage" ]
+      }
+  ]
+}
+----
+// CONSOLE
+<1> Our example role name is `hive_user_role`.
+<2> User should be able to query basic cluster information and manage tokens.
+<3> Our user will be able to perform read write and management operations on an index.
+
+[[kerberos-hive-proxy-user-mapping]]
+===== Create role mapping for {krb} user principal
+
+Now that the user role is created, we must map the {krb} user principals to the role. {es} does not know the complete
+list of principals that are managed by {krb}. As such, each principal that wishes to connect to {es} must be mapped to
+a list of roles that they will be granted after authentication.
+
+[source,js]
+----
+POST /_xpack/security/role_mapping/hive_user_1_mapping
+{
+  "roles": [ "hive_user_role" ], <1>
+  "enabled": true,
+  "rules": {
+    "field" : { "username" : "hive.user.1@REALM" } <2>
+  }
+}
+----
+// CONSOLE
+<1> We set the roles for this mapping to be our example role `hive_user_role`.
+<2> When the user principal `hive.user.1@REALM` authenticates, it will be given the permissions from the
+`hive_user_role`.
+
+[[kerberos-hive-proxy-user-mirror]]
+===== Mirror the user to the native realm
+
+NOTE: You may not have to perform this step if you are deploying
+https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ldap-realm.html[LDAP] or
+https://www.elastic.co/guide/en/elasticsearch/reference/current/configuring-ad-realm.html[Active Directory] along
+with {krb}. {es} will perform user impersonation by looking up the user names in those realms as long as the simple
+names (e.g. hive.user.1) on the {krb} principals match the user names LDAP or Active Directory exactly.
+
+Mirroring the user to the native realm will allow {es} to accept authentication requests from the original principal
+as well as accept requests from Hive which is impersonating the user. You can create a user in the native realm like
+so:
+
+[source,js]
+----
+PUT /_xpack/security/user/hive.user.1 <1>
+{
+  "enabled" : true,
+  "password" : "swordfish", <2>
+  "roles" : [ "hive_user_role" ], <3>
+  "metadata" : {
+    "principal" : "hive.user.1@REALM" <4>
+  }
+}
+----
+// CONSOLE
+<1> The user name is `hive.user.1`, which is the simple name format of the `hive.user.1@REALM` principal we are
+mirroring.
+<2> Provide a password here for the user. This should ideally be a securely generated random password since this
+mirrored user is just for impersonation purposes.
+<3> Setting the user's roles to be the example role `hive_user_role`.
+<4> This is not required, but setting the original principal on the user as metadata may be helpful for your own
+bookkeeping.
+
+[[kerberos-hive-proxy-service-role]]
+===== Create a role to impersonate Hive users
+
+Once you have configured {es} with a role mapping for your {krb} principals and native users for impersonation, you
+must create a role that Hive will use to impersonate those users.
+
+[source,js]
+----
+PUT _xpack/security/role/hive_proxier
+{
+  "run_as": ["hive.user.1"] <1>
+}
+----
+// CONSOLE
+<1> Hive's proxy role should be limited to only run as the users who will be using Hive.
+
+[[kerberos-hive-proxy-service-mapping]]
+===== Create role mapping for Hive's service principal
+
+Now that there are users to impersonate, and a role that can impersonate them, make sure to map the Hive principal to
+the proxier role, as well as any of the roles that the users it is impersonating would have. This allows the Hive
+principal to create and read indices, documents, or do anything else its impersonated users might be able to do.
+While Hive is impersonating the user, it must have these roles or else it will not be able to fully impersonate that
+user.
+
+[source,js]
+----
+POST /_xpack/security/role_mapping/hive_hiveserver2_mapping
+{
+  "roles": [
+    "hive_user_role", <1>
+    "hive_proxier" <2>
+  ],
+  "enabled": true,
+  "rules": {
+    "field" : { "username" : "hive/hiveserver2.address@REALM" } <3>
+  }
+}
+----
+// CONSOLE
+<1> Here we set the roles to be the superset of the roles from the users we want to impersonate. In our example, the
+`hive_user_role` role is set.
+<2> The role that allows Hive to impersonate Hive end users.
+<3> The name of the Hive server principal to match against.
+
+NOTE: If managing {krb} role mappings via the API's is not desired, they can instead be managed in a
+https://www.elastic.co/guide/en/elastic-stack-overview/current/mapping-roles.html#mapping-roles-file[role mapping file].
+
+[[kerberos-hive-running]]
+==== Running your Hive queries
+
+Once all user accounts are configured and all previous steps for enabling {krb} auth in Hadoop and Hive are complete,
+there should be no differences in creating Hive queries from before.
+
+[[kerberos-pig]]
+=== {krb} with Pig
+
+[[kerberos-pig-requirements]]
+==== Requirements
+
+Before using {krb} authentication to {es} in Pig, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> as well as the steps
+for <<kerberos-yarn,configuring your YARN services>> before using {krb} authentication for {es}.
+
+If {eh} is configured for {krb} authentication and Hadoop security is enabled, {eh}'s storage functions in Pig will
+automatically obtain delegation tokens for jobs when submitting them to the cluster.
+
+[[kerberos-spark]]
+=== {krb} with Spark
+
+[[kerberos-spark-requirements]]
+==== Requirements
+
+Using {krb} authentication in {eh} for Spark has the following requirements:
+
+1. Your Spark jobs must be deployed on YARN. Using {krb} authentication in {eh} does not support any other Spark cluster
+deployments (Mesos, Standalone).
+2. Your version of Spark must be on or above version 2.1.0. It is this version that Spark added the ability to plug in
+third-party credential providers to obtain delegation tokens.
+
+Before using {krb} authentication to {es} in Spark, {krb} authentication must be enabled for Hadoop. Make sure you have
+done all the required steps for <<kerberos-hadoop-requirements,configuring your Hadoop cluster>> as well as the steps
+for <<kerberos-yarn,configuring your YARN services>> before using {krb} authentication for {es}.
+
+[[kerberos-spark-credprovider]]
+==== EsServiceCredentialProvider
+
+Before Spark submits an application to a YARN cluster,
+https://spark.apache.org/docs/2.1.0/running-on-yarn.html#running-in-a-secure-cluster[it loads a number of
+credential provider implementations] that are used to determine if any additional credentials must be obtained before
+the application is started. These implementations are loaded using Java's `ServiceLoader` architecture. Thus, any jar
+that is on the classpath when the Spark application is submitted can offer implementations to be loaded and used.
+`EsServiceCredentialProvider` is one such implementation that is loaded whenever {eh} is on the job's classpath.
+
+Once loaded, `EsServiceCredentialProvider` determines if {krb} authentication is enabled for {eh}. If it is determined
+that {krb} authentication is enabled for {eh}, then the credential provider will automatically obtain delegation tokens
+from {es} and add them to the credentials on the YARN application submission context. Additionally, in the case that
+the job is a long lived process like a Spark Streaming job, the credential provider is used to update or obtain new
+delegation tokens when the current tokens approach their expiration time.
+
+The time that Spark's credential providers are loaded and called depends on the cluster deploy mode when submitting your
+Spark app. When running in `client` deploy mode, Spark runs the user's driver code in the local JVM, and launches the
+YARN application to oversee the processing as needed. The providers are loaded and run whenever the YARN application
+first comes online. When running in `cluster` deploy mode, Spark launches the YARN application immediately, and the
+user's driver code is run from the resulting Application Master in YARN. The providers are loaded and run _immediately_,
+before any user code is executed.
+
+[[kerberos-spark-credprovider-conf]]
+===== Configuring the credential provider
+
+All implementations of the Spark credential providers use settings from only a few places:
+
+1. The entries from the local Hadoop configuration files
+2. The entries of the local Spark configuration file
+3. The entries that are specified from the command line when the job is initially launched
+
+Settings that are configured from the user code are not used because the provider must run once for all jobs that are
+submitted for a particular Spark application. User code is not guaranteed to be run before the provider is loaded.
+To make things more complicated, a credential provider is only given the local Hadoop configuration to determine if
+they should load delegation tokens.
+
+These limitations mean that the settings to configure {eh} for {krb} authentication need to be in specific places:
+
+First, `es.security.authentication` MUST be set in the local Hadoop configuration files as 'kerberos'. If it is not set
+in the Hadoop configurations, then the credential provider will assume that 'simple' authentication is to be used, and
+will not obtain delegation tokens.
+
+Secondly, all general connection settings for {eh} (like `es.nodes`, `es.ssl.enabled`, etc...) must be specified either
+<<kerberos-yarn,in the local Hadoop configuration files>>, in the local Spark configuration file, or from the command
+line. If these settings are not available here, then the credential provider will not be able to contact {es} in order
+to obtain the delegation tokens that it requires.
+
+[source,bash]
+----
+$> bin/spark-submit \
+    --class org.myproject.MyClass \
+    --master yarn \
+    --deploy-mode cluster \
+    --jars path/to/elasticsearch-hadoop.jar \
+    --conf 'spark.es.nodes=es-node-1,es-node-2,es-node-3' <1>
+    --conf 'spark.es.ssl.enabled=true'
+    --conf 'spark.es.net.spnego.auth.elasticsearch.principal=HTTP/_HOST@REALM' <2>
+    path/to/jar.jar
+----
+<1> An example of some connection settings specified at submission time
+<2> Be sure to include the {es} service principal.
+
+NOTE: Specifying this many configurations in the spark-submit command line is a pretty sure fire way to miss important
+settings. Thus, it is advised to set them in the <<kerberos-yarn,cluster wide Hadoop config>>.
+
+[[kerberos-spark-credprovider-streaming]]
+===== Renewing credentials for streaming jobs
+
+NOTE: In the event that you are running a streaming job, it is best to use the `cluster` deploy mode to allow YARN to
+manage running the driver code for the streaming application.
+
+Since streaming jobs are expected to run continuously without stopping, you should configure Spark so that the
+credential provider can obtain new tokens before the original tokens expire.
+
+Configuring Spark to obtain new tokens is different from <<kerberos-yarn,configuring YARN to renew and cancel
+tokens>>. YARN can only renew existing tokens up to their maximum lifetime. Tokens from {es} are not renewable.
+Instead, they have a simple lifetime of 7 days. After those 7 days elapse, the tokens are expired. In order for
+an ongoing streaming job to continue running without interruption, completely new tokens must be obtained and
+sent to worker tasks. Spark has facilities for automatically obtaining and distributing completely new tokens
+once the original token lifetime has ended.
+
+When submitting a Spark application on YARN, users can provide a principal and keytab file to the `spark-submit`
+command. Spark will log in with these credentials instead of depending on the local {krb} TGT Cache for the current
+user. In the event that any delegation tokens are close to expiring, the loaded credential providers are given the
+chance to obtain new tokens using the given principal and keytab before the current tokens fully expire. Any new tokens
+are automatically distributed by Spark to the containers on the YARN cluster.
+
+[source,bash]
+----
+$> bin/spark-submit \
+    --class org.myproject.MyClass \
+    --master yarn \ <1>
+    --deploy-mode cluster \ <2>
+    --jars path/to/elasticsearch-hadoop.jar \
+    --principal client@REALM <3>
+    --keytab path/to/keytab.kt \ <4>
+    path/to/jar.jar
+----
+<1> YARN deployment is required for {krb}
+<2> Use cluster deploy mode to allow for the driver to be run in the YARN Application Master
+<3> Specify the principal to run the job as
+<4> The path to the keytab that will be used to reauthenticate when credentials expire
+
+[[kerberos-spark-credprovider-disable]]
+===== Disabling the credential provider
+
+When {eh} is on the classpath, `EsServiceCredentialProvider` is ALWAYS loaded by Spark. If {krb} authentication is
+enabled for {eh} in the local Hadoop configuration, then the provider will attempt to load delegation tokens for {es}
+regardless of if they are needed for that particular job.
+
+It is advised that you do not add {eh} libraries to jobs that are not configured to connect to or interact with {es}.
+This is the easiest way to avoid the confusion of unrelated jobs failing to launch because they cannot connect to {es}.
+
+If you find yourself in a place where you cannot easily remove {eh} from the classpath of jobs that do not need to
+interact with {es}, then you can explicitly disable the credential provider by setting a property at launch time.
+The property to set is dependent on your version of Spark:
+
+* For Spark 2.3.0 and up: set the `spark.security.credentials.elasticsearch.enabled` property to `false`.
+* For Spark 2.1.0-2.3.0: set the `spark.yarn.security.credentials.elasticsearch.enabled` property to `false`. This
+property is still accepted in Spark 2.3.0+, but is marked as deprecated.
+
+[[kerberos-storm]]
+=== {krb} with Storm
+
+[[kerberos-storm-requirements]]
+==== Requirements
+
+Your Storm deployment should be secured, but configuring it for security is not strictly required.
+
+Storm is not always deployed alongside a Hadoop distribution. Thus, configuring {krb} authentication for Hadoop is not
+required for using {krb} authentication to {es} on Storm.
+
+[[kerberos-storm-autocred]]
+==== Using Storm's AutoCredential plugins
+
+Storm provides a http://storm.apache.org/releases/2.0.0-SNAPSHOT/SECURITY.html#automatic-credentials-push-and-renewal[
+myriad of plugin interfaces] that can be loaded and used to collect, update, and renew credentials over the lifetime of
+a running topology. {eh} provides the `AutoElasticsearch` class which Storm can use to automatically obtain and renew
+{es} delegation tokens for a topology.
+
+`AutoElasticsearch` implements Storm's `INimbusCredentialPlugin`, `IAutoCredentials`, and `ICredentialsRenewer`
+interfaces. The first of which is used to obtain delegation tokens on Nimbus before submitting a topology. The second
+is used for updating the credentials on the worker nodes, and the third is used for obtaining new delegation tokens
+when the current tokens are close to expiring.
+
+[[kerberos-storm-autocred-settings]]
+===== Configuring AutoElasticsearch
+
+In order for the `AutoElasticsearch` plugin to obtain credentials, {krb} authentication must be enabled for {eh} in its
+settings. You must specify the `es.security.authentication` setting in either the storm.yaml file or on the topology
+configuration.
+
+The `AutoElasticsearch` plugin provides two settings for denoting the principal and keytab to be used when executing:
+
+`es.storm.autocredentials.user.principal` (default none)::
+Required. The principal that the plugin should use for obtaining credentials for this topology. Can be set in the storm.yaml
+configuration or in the topology configuration.
+
+`es.storm.autocredentials.user.keytab` (default none)::
+Required. The path to the keytab on Nimbus that will be used for logging in as the given principal. This can be set in the
+storm.yaml configuration or in the topology configuration. The file must exist on Nimbus.
+
+[[kerberos-storm-autocred-nimbus]]
+===== Configuring Nimbus
+
+Nimbus must be configured to use `AutoElasticsearch` as a credential plugin from the `storm.yaml` configuration file.
+It is safe to specify `AutoElasticsearch` in these settings even if your topology does not interact with {es}. The
+plugin will perform no operations unless `AutoElasticsearch` is explicitly enabled on the topology.
+
+[source,yaml]
+----
+nimbus.autocredential.plugins.classes: ["org.elasticsearch.storm.security.AutoElasticsearch"] <1>
+nimbus.credential.renewers.classes: ["org.elasticsearch.storm.security.AutoElasticsearch"] <2>
+nimbus.credential.renewers.freq.secs: 30 <3>
+----
+<1> The list of auto credential plugins to be run on Nimbus when submitting a topology
+<2> The list of all the credential renewers available for Nimbus to run
+<3> The frequency at which the credential renewers on Nimbus should be executed to check and update credentials.
+
+In order for the plugin to be loaded, {eh} must be present on the Nimbus classpath. You can add it to the classpath by
+using an environment variable on Nimbus.
+
+[source,bash]
+----
+export STORM_EXT_CLASSPATH=/path/to/elasticsearch-hadoop.jar
+----
+
+[[kerberos-storm-autocred-topology]]
+===== Configuring topologies
+
+Once Nimbus is configured, you must add `AutoElasticsearch` to your topology configuration in order for delegation
+tokens to be obtained and updated. If you do not specify it in the topology configuration, then Storm will not attempt
+to obtain {es} delegation tokens when the topology is submitted.
+
+[source,java]
+----
+Config conf = new Config();
+List plugins = new ArrayList();
+plugins.add(AutoElasticsearch.class.getName());
+conf.put(Config.TOPOLOGY_AUTO_CREDENTIALS, plugins); <1>
+...
+conf.put(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos"); <2>
+conf.put(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/elasticsearch.node.address@REALM");
+...
+----
+<1> Configure the topology with `AutoElasticsearch` as one of the auto credential plugins for the topology. This list
+of plugins may contain other auto credential plugins if you have need of them.
+<2> If you have not enabled {krb} authentication for {eh} in the storm.yaml configuration file, you will need to set
+the properties here.

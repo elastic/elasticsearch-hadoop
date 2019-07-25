@@ -42,7 +42,8 @@ class IntegrationBuildPlugin implements Plugin<Project> {
             Jar rootJar = project.rootProject.getTasks().getByName('jar') as Jar
             rootJar.dependsOn(project.tasks.jar)
             rootJar.from(project.zipTree(project.tasks.jar.archivePath)) {
-                exclude "META-INF/**"
+                exclude "META-INF/*"
+                include "META-INF/services"
                 include "**/*"
             }
 
