@@ -22,9 +22,6 @@ package org.elasticsearch.hadoop;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.mr.RestUtils;
-import org.elasticsearch.hadoop.rest.InitializationUtils;
-import org.elasticsearch.hadoop.util.ClusterInfo;
-import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.elasticsearch.hadoop.util.TestUtils;
@@ -39,7 +36,6 @@ public class LocalEs extends ExternalResource {
     protected void before() throws Throwable {
         if (Booleans.parseBoolean(HdpBootstrap.hadoopConfig().get(EsEmbeddedCluster.DISABLE_LOCAL_ES))) {
             LogFactory.getLog(getClass()).warn("local ES disable; assuming an external instance...");
-            setSingleNodeTemplate();
             clearState();
             return;
         }
@@ -47,7 +43,6 @@ public class LocalEs extends ExternalResource {
         String host = HdpBootstrap.hadoopConfig().get(ConfigurationOptions.ES_NODES);
         if (StringUtils.hasText(host)) {
             LogFactory.getLog(getClass()).warn("es.nodes/host specified; assuming an external instance...");
-            setSingleNodeTemplate();
             clearState();
             return;
         }
@@ -62,20 +57,7 @@ public class LocalEs extends ExternalResource {
 
             // force initialization of test properties
             new TestSettings();
-            setSingleNodeTemplate();
             clearState();
-        }
-    }
-
-    private void setSingleNodeTemplate() throws Exception {
-        LogFactory.getLog(getClass()).warn("Installing single node template...");
-        ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(new TestSettings(), LogFactory.getLog(this.getClass()));
-        if (clusterInfo.getMajorVersion().onOrBefore(EsMajorVersion.V_5_X)) {
-            RestUtils.put("_template/single-node-template",
-                    "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
-        } else {
-            RestUtils.put("_template/single-node-template",
-                    "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
         }
     }
 
