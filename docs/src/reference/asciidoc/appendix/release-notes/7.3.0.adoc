@@ -1,0 +1,12 @@
+[[eshadoop-7.3.0]]
+== Elasticsearch for Apache Hadoop version 7.3.0
+July 31, 2019
+
+[[docs-7.3.0]]
+=== Documentation
+* [DOCS] Update anchors and links for Elasticserach API relocation.
+https://github.com/elastic/elasticsearch-hadoop/pull/1322[#1322]
+* [DOCS] Fix broken links for ES API docs move
+https://github.com/elastic/elasticsearch-hadoop/pull/1317[#1317]
+* [DOCS] Updates version attribute file
+https://github.com/elastic/elasticsearch-hadoop/pull/1296[#1296]
