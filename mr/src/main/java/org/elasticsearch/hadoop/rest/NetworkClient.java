@@ -20,8 +20,6 @@ package org.elasticsearch.hadoop.rest;
 
 import java.io.Closeable;
 import java.net.BindException;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +38,6 @@ import org.elasticsearch.hadoop.security.SecureSettings;
 import org.elasticsearch.hadoop.util.Assert;
 import org.elasticsearch.hadoop.util.ByteSequence;
 import org.elasticsearch.hadoop.util.SettingsUtils;
-
 
 public class NetworkClient implements StatsAware, Closeable {
     private static Log log = LogFactory.getLog(NetworkClient.class);
@@ -104,6 +101,10 @@ public class NetworkClient implements StatsAware, Closeable {
     }
 
     public Response execute(Request request) {
+        return execute(request, true);
+    }
+
+    public Response execute(Request request, boolean retry) {
         Response response = null;
 
         boolean newNode;
@@ -143,6 +144,13 @@ public class NetworkClient implements StatsAware, Closeable {
                 failedNodes.put(failed, ex);
 
                 newNode = selectNextNode();
+
+                if (retry == false) {
+                    String message =
+                            String.format("Node [%s] failed (%s); Retrying has been disabled. Aborting...", failed, ex.getMessage());
+                    log.error(message);
+                    throw new EsHadoopException(message, ex);
+                }
 
                 log.error(String.format("Node [%s] failed (%s); "
                         + (newNode ? "selected next node [" + currentNode + "]" : "no other nodes left - aborting..."),

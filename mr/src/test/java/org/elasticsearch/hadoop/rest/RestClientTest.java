@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.rest;
 
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.rest.query.MatchAllQueryBuilder;
+import org.elasticsearch.hadoop.rest.stats.Stats;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.ClusterInfo;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
@@ -28,6 +29,8 @@ import org.elasticsearch.hadoop.util.FastByteArrayInputStream;
 import org.elasticsearch.hadoop.util.TestSettings;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,7 +65,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -97,7 +101,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -135,7 +140,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(400, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(400, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -173,7 +179,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(400, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(400, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -208,7 +215,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -243,7 +251,8 @@ public class RestClientTest {
                         "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -278,7 +287,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         Settings testSettings = new TestSettings();
         testSettings.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(EsMajorVersion.V_5_X));
@@ -315,7 +325,8 @@ public class RestClientTest {
                         "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         Settings testSettings = new TestSettings();
         testSettings.setInternalClusterInfo(ClusterInfo.unnamedClusterWithVersion(EsMajorVersion.V_6_X));
@@ -356,7 +367,7 @@ public class RestClientTest {
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
         // Queue up two responses
-        Mockito.when(mock.execute(Mockito.eq(request)))
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
                 .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"))
                 .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
@@ -400,7 +411,8 @@ public class RestClientTest {
                         "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.eq(request))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.eq(request), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -421,7 +433,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -444,7 +457,8 @@ public class RestClientTest {
                 "}";
 
         NetworkClient mock = Mockito.mock(NetworkClient.class);
-        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class))).thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(true)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
 
         RestClient client = new RestClient(new TestSettings(), mock);
 
@@ -452,6 +466,25 @@ public class RestClientTest {
 
         assertNotNull(clusterInfo.getClusterName());
         assertEquals("uuid", clusterInfo.getClusterName().getUUID());
+    }
+
+    @Test
+    public void testScroll() {
+        NetworkClient mock = Mockito.mock(NetworkClient.class);
+        Stats stats = new Stats();
+        Mockito.when(mock.transportStats()).thenReturn(stats);
+
+        String response = "{}";
+        // Note: scroll cannot use retries:
+        Mockito.when(mock.execute(Mockito.any(SimpleRequest.class), Mockito.eq(false)))
+                .thenReturn(new SimpleResponse(201, new FastByteArrayInputStream(new BytesArray(response)), "localhost:9200"));
+
+        RestClient client = new RestClient(new TestSettings(), mock);
+
+        InputStream result = client.scroll("_id");
+        assertNotNull(result);
+
+        Mockito.verify(mock).execute(Mockito.any(SimpleRequest.class), Mockito.eq(false));
     }
 
 }
