@@ -195,7 +195,7 @@ a join field is not specified, then this defaults to none.
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
 `es.mapping.version.type` (default depends on +es.mapping.version+)::
-Indicates the {ref}/docs-index_.html#_version_types[type of versioning] used.
+Indicates the {ref}/docs-index_.html#index-version-types[type of versioning] used.
 If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
 
 deprecated[6.0.0]
