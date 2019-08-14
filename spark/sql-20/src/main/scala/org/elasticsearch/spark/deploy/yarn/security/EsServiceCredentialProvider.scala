@@ -75,12 +75,31 @@ class EsServiceCredentialProvider extends ServiceCredentialProvider {
   override def serviceName: String = "elasticsearch"
 
   /**
-   * Given a configuration, check to see if tokens would be required.
-   * @param hadoopConf the current configuration
-   * @return true if tokens should be gathered, false if they should not be
-   */
+    *  Given a configuration, check to see if tokens would be required.
+    *
+    * @param hadoopConf the current Hadoop configuration
+    * @return true if tokens should be gathered, false if they should not be
+    */
   override def credentialsRequired(hadoopConf: Configuration): Boolean = {
-    val settings = HadoopSettingsManager.loadFrom(hadoopConf)
+    credentialsRequired(null, hadoopConf)
+  }
+
+  /**
+    *  Given a configuration, check to see if tokens would be required.
+    *
+    * @param sparkConf the current Spark configuration - used by Cloudera's CDS Spark fork (#1301)
+    * @param hadoopConf the current Hadoop configuration
+    * @return true if tokens should be gathered, false if they should not be
+    */
+  def credentialsRequired(sparkConf: SparkConf, hadoopConf: Configuration): Boolean = {
+    val settings = if (sparkConf != null) {
+      new CompositeSettings(util.Arrays.asList(
+        new SparkSettingsManager().load(sparkConf),
+        new HadoopSettingsManager().load(hadoopConf)
+      ))
+    } else {
+      HadoopSettingsManager.loadFrom(hadoopConf)
+    }
     val isSecurityEnabled = UserGroupInformation.isSecurityEnabled
     val esAuthMethod = settings.getSecurityAuthenticationMethod
     val required = isSecurityEnabled && AuthenticationMethod.KERBEROS.equals(esAuthMethod)
