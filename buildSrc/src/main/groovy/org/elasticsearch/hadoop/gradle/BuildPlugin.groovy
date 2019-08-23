@@ -143,7 +143,7 @@ class BuildPlugin implements Plugin<Project> {
         if (!project.rootProject.ext.has('settingsConfigured')) {
             project.rootProject.ext.java8 = JavaVersion.current().isJava8Compatible()
 
-            String javaHome = findJavaHome()
+            File javaHome = findJavaHome()
             // Register the currently running JVM version under its version number.
             final Map<Integer, String> javaVersions = [:]
             javaVersions.put(Integer.parseInt(JavaVersion.current().getMajorVersion()), javaHome)
@@ -657,7 +657,7 @@ class BuildPlugin implements Plugin<Project> {
     /**
      * @return the location of the JDK for the currently executing JVM
      */
-    private static String findJavaHome() {
+    private static File findJavaHome() {
         String javaHome = System.getenv('JAVA_HOME')
         if (javaHome == null) {
             if (System.getProperty("idea.active") != null || System.getProperty("eclipse.launcher") != null) {
@@ -667,11 +667,11 @@ class BuildPlugin implements Plugin<Project> {
                 throw new GradleException('JAVA_HOME must be set to build Elasticsearch')
             }
         }
-        return javaHome
+        return new File(javaHome);
     }
 
     /** Runs the given javascript using jjs from the jdk, and returns the output */
-    private static String runJavascript(Project project, String javaHome, String script) {
+    private static String runJavascript(Project project, File javaHome, String script) {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream()
         ByteArrayOutputStream stderr = new ByteArrayOutputStream()
         if (Os.isFamily(Os.FAMILY_WINDOWS)) {
