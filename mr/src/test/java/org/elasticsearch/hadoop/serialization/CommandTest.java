@@ -18,8 +18,10 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -65,56 +67,29 @@ public class CommandTest {
             throw new IllegalStateException("CommandTest needs new version updates.");
         }
 
-        return Arrays.asList(new Object[][]{
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_1_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_2_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_5_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_6_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_7_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, false, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, false, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, false, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, false, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_INDEX, true, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_CREATE, true, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_UPDATE, true, EsMajorVersion.V_8_X},
-                {ConfigurationOptions.ES_OPERATION_DELETE, true, EsMajorVersion.V_8_X}
-        });
+        Collection<Object[]> result = new ArrayList<>();
+
+        String[] operations = new String[]{ConfigurationOptions.ES_OPERATION_INDEX,
+                ConfigurationOptions.ES_OPERATION_CREATE,
+                ConfigurationOptions.ES_OPERATION_UPDATE,
+                ConfigurationOptions.ES_OPERATION_DELETE};
+        boolean[] asJsons = new boolean[]{false, true};
+        EsMajorVersion[] versions = new EsMajorVersion[]{EsMajorVersion.V_1_X,
+                EsMajorVersion.V_2_X,
+                EsMajorVersion.V_5_X,
+                EsMajorVersion.V_6_X,
+                EsMajorVersion.V_7_X,
+                EsMajorVersion.V_8_X};
+
+        for (EsMajorVersion version : versions) {
+            for (boolean asJson : asJsons) {
+                for (String operation : operations) {
+                    result.add(new Object[]{ operation, asJson, version });
+                }
+            }
+        }
+
+        return result;
     }
 
     public CommandTest(String operation, boolean jsonInput, EsMajorVersion version) {
@@ -131,8 +106,7 @@ public class CommandTest {
             map.put("n", 1);
             map.put("s", "v");
             data = map;
-        }
-        else {
+        } else {
             data = "{\"n\":1,\"s\":\"v\"}";
         }
     }
@@ -287,8 +261,7 @@ public class CommandTest {
         Settings settings = settings();
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             settings.setResourceWrite("{n}");
-        }
-        else {
+        } else {
             settings.setResourceWrite("foo/{n}");
         }
 
@@ -296,8 +269,7 @@ public class CommandTest {
         String header;
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             header = "{\"_index\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
-        }
-        else {
+        } else {
             header = "{\"_index\":\"foo\",\"_type\":\"1\"" + (isUpdateOp() ? ",\"_id\":2" : "") + "}";
         }
         String result = "{\"" + operation + "\":" + header + "}" + map();
@@ -345,7 +317,7 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
+                "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -475,7 +447,7 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
+                "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
         assertEquals(result, ba.toString());
     }
@@ -553,8 +525,7 @@ public class CommandTest {
         set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
         if (isDeleteOP()) {
             InitializationUtils.setValueWriterIfNotSet(set, DeleteBulkFactory.NoDataWriter.class, null);
-        }
-        else {
+        } else {
             InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         }
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
@@ -564,8 +535,7 @@ public class CommandTest {
         set.setProperty(ConfigurationOptions.ES_WRITE_OPERATION, operation);
         if (version.onOrAfter(EsMajorVersion.V_8_X)) {
             set.setResourceWrite("foo");
-        }
-        else {
+        } else {
             set.setResourceWrite("foo/bar");
         }
         if (isUpdateOp()) {

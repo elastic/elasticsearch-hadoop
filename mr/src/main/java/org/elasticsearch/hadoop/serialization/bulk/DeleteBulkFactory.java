@@ -18,7 +18,19 @@
  */
 package org.elasticsearch.hadoop.serialization.bulk;
 
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.BooleanWritable;
+import org.apache.hadoop.io.ByteWritable;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.MD5Hash;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.UTF8;
+import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.VLongWritable;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
 import org.elasticsearch.hadoop.serialization.Generator;
@@ -34,47 +46,35 @@ public class DeleteBulkFactory extends AbstractBulkFactory {
 
         @Override
         public Result write(Object writable, Generator generator) {
-            ///delete doesn't require any content but it needs to extract metadata associated to a document
+            //delete doesn't require any content but it needs to extract metadata associated to a document
             if (writable == null || writable instanceof NullWritable) {
                 generator.writeNull();
-            }
-            else if (writable instanceof Text) {
+            } else if (writable instanceof Text) {
                 Text text = (Text) writable;
                 generator.writeUTF8String(text.getBytes(), 0, text.getLength());
-            }
-            else if (writable instanceof UTF8) {
+            } else if (writable instanceof UTF8) {
                 UTF8 utf8 = (UTF8) writable;
                 generator.writeUTF8String(utf8.getBytes(), 0, utf8.getLength());
-            }
-            else if (writable instanceof IntWritable) {
+            } else if (writable instanceof IntWritable) {
                 generator.writeNumber(((IntWritable) writable).get());
-            }
-            else if (writable instanceof LongWritable) {
+            } else if (writable instanceof LongWritable) {
                 generator.writeNumber(((LongWritable) writable).get());
-            }
-            else if (writable instanceof VLongWritable) {
+            } else if (writable instanceof VLongWritable) {
                 generator.writeNumber(((VLongWritable) writable).get());
-            }
-            else if (writable instanceof VIntWritable) {
+            } else if (writable instanceof VIntWritable) {
                 generator.writeNumber(((VIntWritable) writable).get());
-            }
-            else if (writable instanceof ByteWritable) {
+            } else if (writable instanceof ByteWritable) {
                 generator.writeNumber(((ByteWritable) writable).get());
-            }
-            else if (writable instanceof DoubleWritable) {
+            } else if (writable instanceof DoubleWritable) {
                 generator.writeNumber(((DoubleWritable) writable).get());
-            }
-            else if (writable instanceof FloatWritable) {
+            } else if (writable instanceof FloatWritable) {
                 generator.writeNumber(((FloatWritable) writable).get());
-            }
-            else if (writable instanceof BooleanWritable) {
+            } else if (writable instanceof BooleanWritable) {
                 generator.writeBoolean(((BooleanWritable) writable).get());
-            }
-            else if (writable instanceof BytesWritable) {
+            } else if (writable instanceof BytesWritable) {
                 BytesWritable bw = (BytesWritable) writable;
                 generator.writeBinary(bw.getBytes(), 0, bw.getLength());
-            }
-            else if (writable instanceof MD5Hash) {
+            } else if (writable instanceof MD5Hash) {
                 generator.writeString(writable.toString());
             }
             return Result.SUCCESFUL();

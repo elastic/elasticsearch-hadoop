@@ -299,8 +299,7 @@ public abstract class InitializationUtils {
                 throw new EsHadoopIllegalArgumentException("Cannot use TTL on index/update requests in ES 6.x and " +
                         "above. Please remove the [" + ConfigurationOptions.ES_MAPPING_TTL + "] setting.");
             }
-        }
-        else {
+        } else {
             if (StringUtils.hasText(settings.getMappingTtl())) {
                 LOG.warn("Setting [" + ConfigurationOptions.ES_MAPPING_TTL + "] is deprecated! Support for [ttl] on " +
                         "indexing and update requests has been removed in ES 6.x and above!");
@@ -387,7 +386,7 @@ public abstract class InitializationUtils {
                     settings.getResourceWrite(), ConfigurationOptions.ES_INDEX_AUTO_CREATE, settings.getIndexAutoCreate()));
         }
     }
-
+    
     public static boolean setMetadataExtractorIfNotSet(Settings settings, Class<? extends MetadataExtractor> clazz, Log log) {
         if (!StringUtils.hasText(settings.getMappingMetadataExtractorClassName())) {
             Log logger = (log != null ? log : LogFactory.getLog(clazz));
