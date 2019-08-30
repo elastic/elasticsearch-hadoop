@@ -37,6 +37,7 @@ if (snapshot) {
 
 props.put("eshadoop", eshVersion)
 props.put("elasticsearch", esVersion)
+props.put("build-tools", buildToolsVersion)
 
 repositories {
     jcenter()
