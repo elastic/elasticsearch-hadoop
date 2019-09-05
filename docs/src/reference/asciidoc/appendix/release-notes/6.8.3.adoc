@@ -1,0 +1,9 @@
+[[eshadoop-6.8.3]]
+== Elasticsearch for Apache Hadoop version 6.8.3
+September 5, 2019
+
+[[bugs-6.8.3]]
+=== Bug Fixes
+Core::
+* Fix for Cloudera CDS 2.2.0+ Spark credentialsRequired method
+https://github.com/elastic/elasticsearch-hadoop/pull/1332[#1332]
