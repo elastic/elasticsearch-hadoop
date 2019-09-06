@@ -20,7 +20,7 @@ sourceSets {
 
 task generateGitHash {
     inputs.file project.ext.gitHead
-    outputs.file generatedResources
+    outputs.dir generatedResources
 
     doLast {
         Properties props = new Properties()
