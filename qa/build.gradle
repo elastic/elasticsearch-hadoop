@@ -35,12 +35,13 @@ subprojects {
         repositories {
             jcenter()
             mavenCentral()
-            if (localRepo) {
-                // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
-                flatDir { dirs new File(project.rootProject.rootDir, "localRepo") }
-            } else {
+            // TODO: Uncomment this once we can safely depend on build-tools again.
+//            if (localRepo) {
+//                // For some reason the root dirs all point to the buildSrc folder. The local Repo will be one above that.
+//                flatDir { dirs new File(project.rootProject.rootDir, "localRepo") }
+//            } else {
                 maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-            }
+//            }
         }
         dependencies {
             // TODO: Uncomment this once we can safely depend on build-tools again.

@@ -103,7 +103,7 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.versionsConfigured = true
 
             println "Testing against Elasticsearch [${project.rootProject.ext.elasticsearchVersion}] with Lucene [${project.rootProject.ext.luceneVersion}]"
-
+            println "Using Elasticsearch Build Tools [${project.rootProject.ext.buildToolsVersion}]"
             println "Using Gradle [${project.gradle.gradleVersion}]"
 
             // Hadoop versions
