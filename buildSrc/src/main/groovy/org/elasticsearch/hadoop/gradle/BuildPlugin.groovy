@@ -94,12 +94,20 @@ class BuildPlugin implements Plugin<Project>  {
                 )
             }
 
+            // Set on global build info
             GenerateGlobalBuildInfoTask generateTask = project.getTasks().getByName("generateGlobalBuildInfo") as GenerateGlobalBuildInfoTask
             generateTask.setMinimumRuntimeVersion(minimumRuntimeVersion)
-            generateTask.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome)
+            generateTask.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome.getAbsoluteFile())
+
+            // Set on build settings
+            project.rootProject.ext.runtimeJavaHome = esHadoopRuntimeJava.javaHome.getAbsoluteFile()
+            project.rootProject.ext.minimumRuntimeVersion = minimumRuntimeVersion
 
             project.rootProject.ext.buildInfoConfigured = true
         }
+        // Propagate to current project
+        project.ext.runtimeJavaHome = project.rootProject.ext.runtimeJavaHome
+        project.ext.minimumRuntimeVersion = project.rootProject.ext.minimumRuntimeVersion
     }
 
     /**
@@ -180,6 +188,7 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureRuntimeSettings(Project project) {
         if (!project.rootProject.ext.has('settingsConfigured')) {
+            // TODO: Is this needed any longer?
             project.rootProject.ext.java8 = JavaVersion.current().isJava8Compatible()
 
             // FIXHERE: Still needed at all?
@@ -354,6 +363,10 @@ class BuildPlugin implements Plugin<Project>  {
         JavaCompile compileTestJava = project.tasks.getByName('compileTestJava') as JavaCompile
         compileTestJava.setSourceCompatibility('1.8')
         compileTestJava.setTargetCompatibility('1.8')
+
+        JavaCompile compileItestJava = project.tasks.getByName('compileItestJava') as JavaCompile
+        compileItestJava.setSourceCompatibility('1.8')
+        compileItestJava.setTargetCompatibility('1.8')
 
         // Enable HTML test reports
         Test testTask = project.tasks.getByName('test') as Test
@@ -602,11 +615,9 @@ class BuildPlugin implements Plugin<Project>  {
 
         integrationTest.ignoreFailures = false
 
+        integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
         integrationTest.minHeapSize = "256m"
         integrationTest.maxHeapSize = "2g"
-        if (!project.ext.java8) {
-            integrationTest.jvmArgs '-XX:MaxPermSize=496m'
-        }
 
         integrationTest.testLogging {
             displayGranularity 0
