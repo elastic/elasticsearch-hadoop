@@ -1,8 +1,11 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
+import org.elasticsearch.gradle.info.JavaHome
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
+import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -42,6 +45,7 @@ class BuildPlugin implements Plugin<Project>  {
     @Override
     void apply(Project project) {
         greet(project)
+        configureBuildInfo(project)
         configurePlugins(project)
         configureVersions(project)
         configureRuntimeSettings(project)
@@ -66,16 +70,43 @@ class BuildPlugin implements Plugin<Project>  {
         }
     }
 
+    private static void configureBuildInfo(Project project) {
+        // Make sure the global build info plugin is applied to the root project first and foremost
+        // FIXHERE: Make a proper random test seed?
+        project.rootProject.ext.testSeed = "DEADBEEF"
+        project.rootProject.pluginManager.apply(GlobalBuildInfoPlugin.class)
+
+        // Hack new defaults into Global build info
+        if (!project.rootProject.ext.has('buildInfoConfigured')) {
+
+            JavaVersion minimumRuntimeVersion = JavaVersion.toVersion(Resources.getResourceContents("/minimumRuntimeVersion"))
+
+            // We snap the runtime to java 8 since Hadoop needs to see some significant
+            // upgrades to support any runtime higher than that
+            // Todo: Should this be provided via the ENV like the existing $RUNTIME_JAVA_HOME that we're overriding?
+            List<JavaHome> javaVersions = project.rootProject.ext.javaVersions as List<JavaHome>
+            JavaHome esHadoopRuntimeJava = javaVersions.find { it.version == 8 }
+            if (esHadoopRuntimeJava == null) {
+                throw new GradleException(
+                        '$JAVA8_HOME must be set to build ES-Hadoop. ' +
+                            "Note that if the variable was just set you might have to run `./gradlew --stop` for " +
+                            "it to be picked up. See https://github.com/elastic/elasticsearch/issues/31399 details."
+                )
+            }
+
+            GenerateGlobalBuildInfoTask generateTask = project.getTasks().getByName("generateGlobalBuildInfo") as GenerateGlobalBuildInfoTask
+            generateTask.setMinimumRuntimeVersion(minimumRuntimeVersion)
+            generateTask.setRuntimeJavaHome(esHadoopRuntimeJava.javaHome)
+
+            project.rootProject.ext.buildInfoConfigured = true
+        }
+    }
+
     /**
      * Ensure that all common plugins required for the build to work are applied.
      * @param project to be configured
      */
     private static void configurePlugins(Project project) {
-        // make sure the global build info plugin is applied to the root project
-        // FIXHERE: Make a proper random test seed?
-        project.rootProject.ext.testSeed = "DEADBEEF"
-        project.rootProject.pluginManager.apply(GlobalBuildInfoPlugin.class)
-
         // Every project will need Java in it for the time being.
         project.getPluginManager().apply(JavaPlugin.class)
 
