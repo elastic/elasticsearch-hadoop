@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -64,11 +65,17 @@ class BuildPlugin implements Plugin<Project>  {
             println '==================================='
         }
     }
+
     /**
      * Ensure that all common plugins required for the build to work are applied.
      * @param project to be configured
      */
     private static void configurePlugins(Project project) {
+        // make sure the global build info plugin is applied to the root project
+        // FIXHERE: Make a proper random test seed?
+        project.rootProject.ext.testSeed = "DEADBEEF"
+        project.rootProject.pluginManager.apply(GlobalBuildInfoPlugin.class)
+
         // Every project will need Java in it for the time being.
         project.getPluginManager().apply(JavaPlugin.class)
 
@@ -144,14 +151,15 @@ class BuildPlugin implements Plugin<Project>  {
         if (!project.rootProject.ext.has('settingsConfigured')) {
             project.rootProject.ext.java8 = JavaVersion.current().isJava8Compatible()
 
-            File javaHome = findJavaHome()
-            // Register the currently running JVM version under its version number.
-            final Map<Integer, String> javaVersions = [:]
-            javaVersions.put(Integer.parseInt(JavaVersion.current().getMajorVersion()), javaHome)
-
-            project.rootProject.ext.javaHome = javaHome
-            project.rootProject.ext.runtimeJavaHome = javaHome
-            project.rootProject.ext.javaVersions = javaVersions
+            // FIXHERE: Still needed at all?
+//            File javaHome = findJavaHome()
+//            // Register the currently running JVM version under its version number.
+//            final Map<Integer, String> javaVersions = [:]
+//            javaVersions.put(Integer.parseInt(JavaVersion.current().getMajorVersion()), javaHome)
+//
+//            project.rootProject.ext.javaHome = javaHome
+//            project.rootProject.ext.runtimeJavaHome = javaHome
+//            project.rootProject.ext.javaVersions = javaVersions
 
             // Force any Elasticsearch test clusters to use packaged java versions if they have them available
             project.rootProject.ext.isRuntimeJavaHomeSet = false
@@ -161,8 +169,10 @@ class BuildPlugin implements Plugin<Project>  {
             project.rootProject.ext.revHash = gitHash(gitHead)
             project.rootProject.ext.settingsConfigured = true
 
-            String inFipsJvmScript = 'print(java.security.Security.getProviders()[0].name.toLowerCase().contains("fips"));'
-            project.rootProject.ext.inFipsJvm = Boolean.parseBoolean(runJavascript(project, javaHome, inFipsJvmScript))
+//            String inFipsJvmScript = 'print(java.security.Security.getProviders()[0].name.toLowerCase().contains("fips"));'
+//            project.rootProject.ext.inFipsJvm = Boolean.parseBoolean(runJavascript(project, javaHome, inFipsJvmScript))
+            // FIXHERE
+            project.rootProject.ext.inFipsJvm = false
         }
         project.ext.java8 = project.rootProject.ext.java8
         project.ext.gitHead = project.rootProject.ext.gitHead

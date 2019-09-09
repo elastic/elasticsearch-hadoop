@@ -1,13 +1,26 @@
 import java.nio.file.Files
+import org.gradle.util.GradleVersion
 
 apply plugin: 'groovy'
+
+/*
+ * Build checks
+ */
+
+String minimumGradleVersion = file('src/main/resources/minimumGradleVersion').text.trim()
+if (GradleVersion.current() < GradleVersion.version(minimumGradleVersion)) {
+    throw new GradleException("Gradle ${minimumGradleVersion}+ is required to build es-hadoop")
+}
+
+if (JavaVersion.current() < JavaVersion.VERSION_11) {
+    throw new GradleException('At least Java 11 is required to use elasticsearch gradle tools')
+}
 
 /*
  * Configure Project Versions
  */
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
-
 
 Properties props = new Properties()
 props.load(project.file('esh-version.properties').newDataInputStream())
