@@ -18,7 +18,7 @@
 :hv-v:	1.2.1
 :cs-v:	2.6.3
 
-include::{asciidoc-dir}/../../shared/versions74.asciidoc[]
+include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 
 [[float]]
