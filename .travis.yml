@@ -1,8 +1,8 @@
 language: java
 jdk:
-  - oraclejdk8
+  - openjdk12
 
-dist: trusty
+dist: xenial
 
 before_install:
  - "chmod +x gradlew"
