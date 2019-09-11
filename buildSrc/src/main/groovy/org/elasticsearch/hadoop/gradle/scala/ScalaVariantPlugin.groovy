@@ -55,6 +55,11 @@ class ScalaVariantPlugin implements Plugin<Project> {
                 crossBuildForVariant.args(distribution.getPath())
                 crossBuildForVariant.args(properties.collect { key, val -> "-P${key}=${val}" })
                 crossBuildForVariant.args('-S')
+                if (project.logger.isDebugEnabled()) {
+                    crossBuildForVariant.args('--debug')
+                } else if (project.logger.isInfoEnabled()) {
+                    crossBuildForVariant.args('--info')
+                }
                 crossBuildForVariant.workingDir(project.rootDir)
 
                 // The crossBuild depends on each variant build
