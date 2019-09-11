@@ -411,6 +411,8 @@ class BuildPlugin implements Plugin<Project>  {
                 "org/elasticsearch/hadoop/util/**",
                 "org/apache/hadoop/hive/**"
         ]
+        // Set javadoc executable to runtime Java (1.8)
+        javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
 
         MinimalJavadocOptions javadocOptions = javadoc.getOptions()
         javadocOptions.docFilesSubDirs = true
@@ -430,7 +432,7 @@ class BuildPlugin implements Plugin<Project>  {
                 'Elasticsearch Storm' : ['org.elasticsearch.storm*'],
         ]
         javadocOptions.links = [ // External doc links
-                "https://docs.oracle.com/javase/6/docs/api/",
+                "https://docs.oracle.com/javase/8/docs/api/",
                 "https://commons.apache.org/proper/commons-logging/apidocs/",
                 "https://hadoop.apache.org/docs/stable2/api/",
                 "https://pig.apache.org/docs/r0.15.0/api/",
