@@ -1,6 +1,5 @@
 language: java
 jdk:
-  - openjdk12
   - oraclejdk8
 
 dist: xenial
@@ -11,5 +10,7 @@ before_install:
 
 install:
  - export JAVA8_HOME=~/oraclejdk8
+ - export JAVA12_HOME=~/openjdk12
+ - ~/bin/install-jdk.sh --target $JAVA12_HOME --workspace "/home/travis/.cache/install-jdk" --feature "12" --license "GPL" --cacerts
  - jdk_switcher use openjdk12
  - ./gradlew assemble -Pskip.signing
