@@ -1,6 +1,7 @@
 language: java
 jdk:
   - openjdk12
+  - oraclejdk8
 
 dist: xenial
 
@@ -9,7 +10,6 @@ before_install:
  - export JAVA_OPTS="-Xmx2048m -XX:MaxPermSize=386m"
 
 install:
- - export JAVA8_HOME=$HOME/oraclejdk8
- - ~/bin/install-jdk.sh --install oraclejdk8 --target $JAVA8_HOME
+ - export JAVA8_HOME=~/oraclejdk8
  - jdk_switcher use openjdk12
  - ./gradlew assemble -Pskip.signing
