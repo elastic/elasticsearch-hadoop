@@ -333,19 +333,11 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureBuildTasks(Project project) {
         // Target Java 1.8 compilation
+        project.sourceCompatibility = '1.8'
+        project.targetCompatibility = '1.8'
+
         JavaCompile compileJava = project.tasks.getByName('compileJava') as JavaCompile
-        compileJava.setSourceCompatibility('1.8')
-        compileJava.setTargetCompatibility('1.8')
         compileJava.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
-
-        // Target Java 1.8 for tests
-        JavaCompile compileTestJava = project.tasks.getByName('compileTestJava') as JavaCompile
-        compileTestJava.setSourceCompatibility('1.8')
-        compileTestJava.setTargetCompatibility('1.8')
-
-        JavaCompile compileItestJava = project.tasks.getByName('compileItestJava') as JavaCompile
-        compileItestJava.setSourceCompatibility('1.8')
-        compileItestJava.setTargetCompatibility('1.8')
 
         // Enable HTML test reports
         Test testTask = project.tasks.getByName('test') as Test
