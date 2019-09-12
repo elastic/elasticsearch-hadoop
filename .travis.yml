@@ -7,7 +7,9 @@ dist: xenial
 before_install:
  - "chmod +x gradlew"
  - export JAVA_OPTS="-Xmx2048m -XX:MaxPermSize=386m"
+
+script:
  - export JAVA8_HOME=$HOME/oraclejdk8
  - $TRAVIS_BUILD_DIR/install-jdk.sh --install oraclejdk8 --target $JAVA8_HOME
-
-install: ./gradlew assemble -Pskip.signing
+ - jdk_switcher use openjdk12
+ - ./gradlew assemble -Pskip.signing
