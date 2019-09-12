@@ -9,7 +9,7 @@ apply plugin: 'scala.variants'
 
 variants {
     defaultVersion '2.11.12'
-    targetVersions '2.10.7', '2.11.12'
+    targetVersions '2.11.12'
 }
 
 configurations {
