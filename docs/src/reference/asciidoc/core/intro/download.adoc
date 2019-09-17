@@ -8,7 +8,7 @@
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop</artifactId>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
@@ -29,7 +29,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-mr</artifactId> <1>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
@@ -41,7 +41,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-hive</artifactId> <1>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
@@ -53,7 +53,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-hadoop-pig</artifactId> <1>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
@@ -65,7 +65,7 @@ These are available under the same `groupId`, using an `artifactId` with the pat
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-spark-20_2.10</artifactId> <1>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
@@ -93,7 +93,7 @@ The Spark connector framework is the most sensitive to version incompatibilities
 <dependency>
   <groupId>org.elasticsearch</groupId>
   <artifactId>elasticsearch-storm</artifactId> <1>
-  <version>{ver}</version>
+  <version>{version}</version>
 </dependency>
 ----
 
