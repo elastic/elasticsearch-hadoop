@@ -23,7 +23,7 @@ java version "1.8.0_45"
 [[requirements-es]]
 === {es}
 
-We *highly* recommend using the latest Elasticsearch (currently {es-v}). While {eh} maintains backwards compatibility
+We *highly* recommend using the latest Elasticsearch (currently {elasticsearch_version}). While {eh} maintains backwards compatibility
 with previous versions of {es}, we strongly recommend using the latest, stable version of Elasticsearch. You can
 find a matrix of supported versions https://www.elastic.co/support/matrix#matrix_compatibility[here].
 
@@ -32,7 +32,7 @@ The {es} version is shown in its folder name:
 ["source","bash",subs="attributes"]
 ----
 $ ls
-elasticsearch-{es-v}
+elasticsearch-{elasticsearch_version}
 ----
 
 If {es} is running (locally or remotely), one can find out its version through REST:
@@ -44,7 +44,7 @@ $ curl -XGET http://localhost:9200
   "status" : 200,
   "name" : "Dazzler",
   "version" : {
-    "number" : "{es-v}",
+    "number" : "{elasticsearch_version}",
     ...
   },
   "tagline" : "You Know, for Search"
