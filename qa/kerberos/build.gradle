@@ -39,6 +39,11 @@ configurations {
     stormDeps
 }
 
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
+}
+
 boolean localRepo = project.getProperties().containsKey("localRepo")
 
 dependencies {

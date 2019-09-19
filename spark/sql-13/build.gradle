@@ -25,6 +25,11 @@ configurations {
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
 String sparkVersion = spark13Version
 
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
+}
+
 compileScala {
     configure(scalaCompileOptions.forkOptions) {
         memoryMaximumSize = '1g'
