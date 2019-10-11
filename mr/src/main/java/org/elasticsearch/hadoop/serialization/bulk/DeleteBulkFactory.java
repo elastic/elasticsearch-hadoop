@@ -42,48 +42,9 @@ import java.util.List;
 
 public class DeleteBulkFactory extends AbstractBulkFactory {
 
-    public static final class NoDataWriter implements ValueWriter<Object> {
-
-        @Override
-        public Result write(Object writable, Generator generator) {
-            //delete doesn't require any content but it needs to extract metadata associated to a document
-            if (writable == null || writable instanceof NullWritable) {
-                generator.writeNull();
-            } else if (writable instanceof Text) {
-                Text text = (Text) writable;
-                generator.writeUTF8String(text.getBytes(), 0, text.getLength());
-            } else if (writable instanceof UTF8) {
-                UTF8 utf8 = (UTF8) writable;
-                generator.writeUTF8String(utf8.getBytes(), 0, utf8.getLength());
-            } else if (writable instanceof IntWritable) {
-                generator.writeNumber(((IntWritable) writable).get());
-            } else if (writable instanceof LongWritable) {
-                generator.writeNumber(((LongWritable) writable).get());
-            } else if (writable instanceof VLongWritable) {
-                generator.writeNumber(((VLongWritable) writable).get());
-            } else if (writable instanceof VIntWritable) {
-                generator.writeNumber(((VIntWritable) writable).get());
-            } else if (writable instanceof ByteWritable) {
-                generator.writeNumber(((ByteWritable) writable).get());
-            } else if (writable instanceof DoubleWritable) {
-                generator.writeNumber(((DoubleWritable) writable).get());
-            } else if (writable instanceof FloatWritable) {
-                generator.writeNumber(((FloatWritable) writable).get());
-            } else if (writable instanceof BooleanWritable) {
-                generator.writeBoolean(((BooleanWritable) writable).get());
-            } else if (writable instanceof BytesWritable) {
-                BytesWritable bw = (BytesWritable) writable;
-                generator.writeBinary(bw.getBytes(), 0, bw.getLength());
-            } else if (writable instanceof MD5Hash) {
-                generator.writeString(writable.toString());
-            }
-            return Result.SUCCESFUL();
-        }
-    }
 
     public DeleteBulkFactory(Settings settings, MetadataExtractor metaExtractor, EsMajorVersion version) {
-        // we only want a specific serializer for this particular bulk factory
-        super(settings.copy().setSerializerValueWriterClassName(NoDataWriter.class.getName()), metaExtractor, version);
+        super(settings, metaExtractor, version);
     }
 
     @Override
@@ -97,3 +58,4 @@ public class DeleteBulkFactory extends AbstractBulkFactory {
         list.add(StringUtils.EMPTY);
     }
 }
+

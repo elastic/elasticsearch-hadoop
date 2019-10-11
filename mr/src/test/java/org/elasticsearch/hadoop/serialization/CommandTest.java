@@ -18,13 +18,6 @@
  */
 package org.elasticsearch.hadoop.serialization;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.elasticsearch.hadoop.EsHadoopIllegalArgumentException;
 import org.elasticsearch.hadoop.cfg.ConfigurationOptions;
 import org.elasticsearch.hadoop.cfg.Settings;
@@ -33,7 +26,6 @@ import org.elasticsearch.hadoop.rest.InitializationUtils;
 import org.elasticsearch.hadoop.serialization.builder.JdkValueWriter;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommand;
 import org.elasticsearch.hadoop.serialization.bulk.BulkCommands;
-import org.elasticsearch.hadoop.serialization.bulk.DeleteBulkFactory;
 import org.elasticsearch.hadoop.util.BytesArray;
 import org.elasticsearch.hadoop.util.EsMajorVersion;
 import org.elasticsearch.hadoop.util.StringUtils;
@@ -44,8 +36,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -84,7 +80,7 @@ public class CommandTest {
         for (EsMajorVersion version : versions) {
             for (boolean asJson : asJsons) {
                 for (String operation : operations) {
-                    result.add(new Object[]{ operation, asJson, version });
+                    result.add(new Object[]{operation, asJson, version});
                 }
             }
         }
@@ -317,7 +313,7 @@ public class CommandTest {
         create(set).write(data).copyTo(ba);
         String result =
                 "{\"" + operation + "\":{\"_id\":2,\"_retry_on_conflict\":3}}\n" +
-                "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
+                        "{\"script\":{\"inline\":\"counter = 3\",\"lang\":\"groovy\"}}\n";
         assertEquals(result, ba.toString());
     }
 
@@ -447,7 +443,7 @@ public class CommandTest {
 
         String result =
                 "{\"" + operation + "\":{\"_id\":1}}\n" +
-                "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
+                        "{\"script\":{\"inline\":\"counter = param1; anothercounter = param2\",\"lang\":\"groovy\",\"params\":{\"param1\":1,\"param2\":1}}}\n";
 
         assertEquals(result, ba.toString());
     }
@@ -523,11 +519,7 @@ public class CommandTest {
 
         set.setInternalVersion(version);
         set.setProperty(ConfigurationOptions.ES_INPUT_JSON, Boolean.toString(jsonInput));
-        if (isDeleteOP()) {
-            InitializationUtils.setValueWriterIfNotSet(set, DeleteBulkFactory.NoDataWriter.class, null);
-        } else {
-            InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
-        }
+        InitializationUtils.setValueWriterIfNotSet(set, JdkValueWriter.class, null);
         InitializationUtils.setFieldExtractorIfNotSet(set, MapFieldExtractor.class, null);
         InitializationUtils.setBytesConverterIfNeeded(set, JdkBytesConverter.class, null);
         InitializationUtils.setUserProviderIfNotSet(set, HadoopUserProvider.class, null);
@@ -577,3 +569,4 @@ public class CommandTest {
         return ConfigurationOptions.ES_OPERATION_DELETE.equals(operation);
     }
 }
+
