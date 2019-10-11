@@ -97,24 +97,36 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
                 "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc1.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc1.add("\",\"_score\":");
+            doc1.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc1.add("\"_type\":\""+metaType+"\"");
+            }
+            doc1.add("\"_id\":\"");
+            doc1.add("\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
                 "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc2.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc2.add("\",\"_score\":");
+            doc2.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc2.add("\"_type\":\""+metaType+"\"");
+            }
+            doc2.add("\"_id\":\"");
+            doc2.add("\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
                 "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc3.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc3.add("\",\"_score\":");
+            doc3.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc3.add("\"_type\":\""+metaType+"\"");
+            }
+            doc3.add("\"_id\":\"");
+            doc3.add("\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
@@ -142,24 +154,36 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
                 "{\"number\":\"999\",\"name\":\"Thompson Twins\",\"url\":\"http://www.last.fm/music/Thompson+Twins\",\"picture\":\"http://userserve-ak.last.fm/serve/252/6943589.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc1.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc1.add("\",\"_score\":");
+            doc1.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc1.add("\"_type\":\""+metaType+"\"");
+            }
+            doc1.add("\"_id\":\"");
+            doc1.add("\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
                 "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc2.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc2.add("\",\"_score\":");
+            doc2.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc2.add("\"_type\":\""+metaType+"\"");
+            }
+            doc2.add("\"_id\":\"");
+            doc2.add("\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
                 "{\"number\":\"230\",\"name\":\"Green Day\",\"url\":\"http://www.last.fm/music/Green+Day\",\"picture\":\"http://userserve-ak.last.fm/serve/252/15291249.jpg\",\"@timestamp\":\"2005-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc3.add(",\"_metadata\":{\"_index\":\"json-pig-tupleartists\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc3.add("\",\"_score\":");
+            doc3.add("\"_metadata\":{\"_index\":\"json-pig-tupleartists\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc3.add("\"_type\":\""+metaType+"\"");
+            }
+            doc3.add("\"_id\":\"");
+            doc3.add("\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
@@ -186,24 +210,36 @@ public class AbstractPigReadAsJsonTest extends AbstractPigTests {
                 "{\"number\":\"12\",\"name\":\"Behemoth\",\"url\":\"http://www.last.fm/music/Behemoth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/54196161.jpg\",\"@timestamp\":\"2001-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc1.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc1.add("\",\"_score\":");
+            doc1.add("\"_metadata\":{\"_index\":\"json-pig-fieldalias\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc1.add("\"_type\":\""+metaType+"\"");
+            }
+            doc1.add("\"_id\":\"");
+            doc1.add("\"_score\":");
         }
 
         List<String> doc2 = Lists.newArrayList(
                 "{\"number\":\"918\",\"name\":\"Megadeth\",\"url\":\"http://www.last.fm/music/Megadeth\",\"picture\":\"http://userserve-ak.last.fm/serve/252/8129787.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc2.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc2.add("\",\"_score\":");
+            doc2.add("\"_metadata\":{\"_index\":\"json-pig-fieldalias\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc2.add("\"_type\":\""+metaType+"\"");
+            }
+            doc2.add("\"_id\":\"");
+            doc2.add("\"_score\":");
         }
 
         List<String> doc3 = Lists.newArrayList(
                 "{\"number\":\"982\",\"name\":\"Foo Fighters\",\"url\":\"http://www.last.fm/music/Foo+Fighters\",\"picture\":\"http://userserve-ak.last.fm/serve/252/59495563.jpg\",\"@timestamp\":\"2017-10-06T19:20:25.000Z\",\"list\":[\"quick\", \"brown\", \"fox\"]"
         );
         if (readMetadata) {
-            doc3.add(",\"_metadata\":{\"_index\":\"json-pig-fieldalias\",\"_type\":\""+metaType+"\",\"_id\":\"");
-            doc3.add("\",\"_score\":");
+            doc3.add("\"_metadata\":{\"_index\":\"json-pig-fieldalias\"");
+            if (testVersion.before(EsMajorVersion.V_8_X)) {
+                doc3.add("\"_type\":\""+metaType+"\"");
+            }
+            doc3.add("\"_id\":\"");
+            doc3.add("\"_score\":");
         }
 
         assertThat(results, stringContainsInOrder(doc1));
