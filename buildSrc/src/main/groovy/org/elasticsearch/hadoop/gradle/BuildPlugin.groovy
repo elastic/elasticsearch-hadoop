@@ -5,6 +5,7 @@ import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.info.JavaHome
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
+import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
 import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -577,7 +578,7 @@ class BuildPlugin implements Plugin<Project>  {
         hadoopTestingJar.from(project.sourceSets.main.output)
         hadoopTestingJar.from(project.sourceSets.itest.output)
 
-        Test integrationTest = project.tasks.create('integrationTest', Test.class)
+        Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
         integrationTest.dependsOn(hadoopTestingJar)
 
         integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs

@@ -236,7 +236,7 @@ class InstanceInfo {
 
     /** Return the java home used by this node. */
     String getJavaHome() {
-        return javaVersion == null ? project.runtimeJavaHome : project.javaVersions.get(javaVersion)
+        return javaVersion == null ? project.runtimeJavaHome : project.javaVersions.find { it.version == javaVersion }.javaHome.absolutePath
     }
 
     /** Returns debug string for the command that started this node. */
