@@ -54,11 +54,9 @@ dependencies {
     compile 'org.scala-lang:scala-library:2.11.8'
     compile project(":elasticsearch-spark-20")
 
-    if (!localRepo) {
-        // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
-        compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
-        compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
-    }
+    // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
+    compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
 
     kdcFixture project(':test:fixtures:minikdc')
 
