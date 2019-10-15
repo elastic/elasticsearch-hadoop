@@ -124,7 +124,7 @@ jar {
 }
 
 javadoc {
-    dependsOn scaladoc //ensures that scala compiles and scala docs are valid
+    dependsOn compileScala
     source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
     source += "$buildDir/generated/java"
     classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
