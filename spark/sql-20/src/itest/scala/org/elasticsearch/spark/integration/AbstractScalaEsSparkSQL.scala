@@ -503,8 +503,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docPath/1/_source")
-    val hit2 = RestUtils.get(s"$docPath/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1")
+    val hit2 = RestUtils.get(s"$docPath/2")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
@@ -525,8 +525,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val jsonDF = sqc.read.json(rdd).toDF.select("id", "name")
     jsonDF.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docPath/1/_source")
-    val hit2 = RestUtils.get(s"$docPath/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1")
+    val hit2 = RestUtils.get(s"$docPath/2")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, containsString("suffix"))
@@ -554,8 +554,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = sqc.createDataFrame(rdd, schema)
     df.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docPath/1/_source")
-    val hit2 = RestUtils.get(s"$docPath/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1")
+    val hit2 = RestUtils.get(s"$docPath/2")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, not(containsString("suffix")))
@@ -581,8 +581,8 @@ class AbstractScalaEsScalaSparkSQL(prefix: String, readMetadata: jl.Boolean, pus
     val df = sqc.createDataFrame(rdd, schema)
     df.saveToEs(target, conf)
     RestUtils.refresh(index)
-    val hit1 = RestUtils.get(s"$docPath/1/_source")
-    val hit2 = RestUtils.get(s"$docPath/2/_source")
+    val hit1 = RestUtils.get(s"$docPath/1")
+    val hit2 = RestUtils.get(s"$docPath/2")
 
     assertThat(hit1, containsString("suffix"))
     assertThat(hit2, containsString("suffix"))
