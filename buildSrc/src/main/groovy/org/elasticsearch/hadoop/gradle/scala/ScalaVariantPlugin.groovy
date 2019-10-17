@@ -1,15 +1,16 @@
 package org.elasticsearch.hadoop.gradle.scala
 
-import org.gradle.StartParameter
+
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.plugins.scala.ScalaBasePlugin
-import org.gradle.api.tasks.GradleBuild
+import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.Test
+import org.gradle.internal.os.OperatingSystem
 
 class ScalaVariantPlugin implements Plugin<Project> {
 
@@ -35,7 +36,7 @@ class ScalaVariantPlugin implements Plugin<Project> {
             // For all variants make a crossBuild#variant per variant version
             variantExtension.variants.all { String variantVersion ->
                 String variantBaseVersion = baseVersionFromFullVersion(variantVersion)
-                GradleBuild crossBuildForVariant = project.getTasks().create("variants#${variantBaseVersion.replace('.', '_')}", GradleBuild.class)
+                Exec crossBuildForVariant = project.getTasks().create("variants#${variantBaseVersion.replace('.', '_')}", Exec.class)
 
                 // The crossBuild runs the distribution task with a different scala property, and 'nestedRun' set to true
                 Map<String, String> properties = new HashMap<>()
@@ -45,11 +46,21 @@ class ScalaVariantPlugin implements Plugin<Project> {
                     properties.put('localRepo', 'true')
                 }
 
-                StartParameter parameters = project.gradle.startParameter.newBuild()
-                parameters.setProjectProperties(properties)
+                if (OperatingSystem.current().isWindows()) {
+                    crossBuildForVariant.executable('gradlew.bat')
+                } else {
+                    crossBuildForVariant.executable('./gradlew')
+                }
 
-                crossBuildForVariant.setStartParameter(parameters)
-                crossBuildForVariant.setTasks([distribution.getPath()])
+                crossBuildForVariant.args(distribution.getPath())
+                crossBuildForVariant.args(properties.collect { key, val -> "-P${key}=${val}" })
+                crossBuildForVariant.args('-S')
+                if (project.logger.isDebugEnabled()) {
+                    crossBuildForVariant.args('--debug')
+                } else if (project.logger.isInfoEnabled()) {
+                    crossBuildForVariant.args('--info')
+                }
+                crossBuildForVariant.workingDir(project.rootDir)
 
                 // The crossBuild depends on each variant build
                 crossBuild.dependsOn(crossBuildForVariant)
@@ -72,7 +83,8 @@ class ScalaVariantPlugin implements Plugin<Project> {
 
             // When working with a variant use a different folder to cache the artifacts between builds
             project.sourceSets.each {
-                it.output.classesDir = project.file(it.output.classesDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
+                it.java.outputDir = project.file(it.java.outputDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
+                it.scala.outputDir = project.file(it.scala.outputDir.absolutePath.replaceAll("classes", "classes.${variantSuffix}"))
             }
 
             Javadoc javadoc = project.getTasks().getByName('javadoc') as Javadoc

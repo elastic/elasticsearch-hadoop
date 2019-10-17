@@ -9,7 +9,7 @@ apply plugin: 'scala.variants'
 
 variants {
     defaultVersion '2.11.12'
-    targetVersions '2.10.7', '2.11.12'
+    targetVersions '2.11.12'
 }
 
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
@@ -18,6 +18,11 @@ String sparkVersion = spark20Version
 // Revert to spark 2.2.0 for scala 2.10 as 2.3+ does not support scala 2.10
 if (project.ext.scalaMajorVersion == '2.10') {
     sparkVersion = '2.2.0'
+}
+
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
 }
 
 compileScala {
