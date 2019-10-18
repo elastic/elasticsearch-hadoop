@@ -4,7 +4,9 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.info.JavaHome
+import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
+import org.elasticsearch.gradle.precommit.UpdateShasTask
 import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
 import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
@@ -13,8 +15,11 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.artifacts.DependencySubstitutions
+import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.maven.MavenPom
 import org.gradle.api.artifacts.maven.MavenResolver
@@ -24,6 +29,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
 import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.Upload
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
@@ -51,6 +57,7 @@ class BuildPlugin implements Plugin<Project>  {
         configureVersions(project)
         configureRuntimeSettings(project)
         configureRepositories(project)
+        configureConfigurations(project)
         configureDependencies(project)
         configureBuildTasks(project)
         configureEclipse(project)
@@ -239,6 +246,37 @@ class BuildPlugin implements Plugin<Project>  {
                 url "https://s3.amazonaws.com/download.elasticsearch.org/lucenesnapshots/${revision}"
             }
         }
+    }
+
+    /** Return the configuration name used for finding transitive deps of the given dependency. */
+    private static String transitiveDepConfigName(String groupId, String artifactId, String version) {
+        return "_transitive_${groupId}_${artifactId}_${version}"
+    }
+
+    private static void configureConfigurations(Project project) {
+        if (project.path.startsWith(":qa")) {
+            return
+        }
+
+        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
+        Closure disableTransitiveDeps = { Dependency dep ->
+            if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
+                dep.transitive = false
+
+                // also create a configuration just for this dependency version, so that later
+                // we can determine which transitive dependencies it has
+                String depConfig = transitiveDepConfigName(dep.group, dep.name, dep.version)
+                if (project.configurations.findByName(depConfig) == null) {
+                    project.configurations.create(depConfig)
+                    project.dependencies.add(depConfig, "${dep.group}:${dep.name}:${dep.version}")
+                }
+            }
+        }
+
+        project.configurations.compile.dependencies.all(disableTransitiveDeps)
+        project.configurations.provided.dependencies.all(disableTransitiveDeps)
+        project.configurations.optional.dependencies.all(disableTransitiveDeps)
+        project.configurations.compileOnly.dependencies.all(disableTransitiveDeps)
     }
 
     /**
@@ -714,9 +752,31 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configurePrecommit(Project project) {
-        if (project != project.rootProject && project.hasProperty('localRepo') == false) {
+        List<Object> precommitTasks = []
+        if (project.hasProperty('localRepo') == false) {
             LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
-            project.tasks.getByName('check').dependsOn(licenseHeaders)
+            precommitTasks.add(licenseHeaders)
+
+            if (!project.path.startsWith(":qa")) {
+                TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
+                    dependencies = project.configurations.runtime.fileCollection {
+                        !(it instanceof ProjectDependency)
+                    }
+                    mapping from: /hadoop-.*/, to: 'hadoop'
+                    mapping from: /hive-.*/, to: 'hive'
+                    mapping from: /jackson-.*/, to: 'jackson'
+                    mapping from: /spark-.*/, to: 'spark'
+                    mapping from: /scala-.*/, to: 'scala'
+                }
+                // we also create the updateShas helper task that is associated with dependencyLicenses
+                UpdateShasTask updateShas = project.tasks.create('updateShas', UpdateShasTask.class)
+                updateShas.parentTask = dependencyLicenses
+
+                precommitTasks.add(dependencyLicenses)
+            }
         }
+        Task precommit = project.tasks.create('precommit')
+        precommit.dependsOn(precommitTasks)
+        project.tasks.getByName('check').dependsOn(precommit)
     }
 }

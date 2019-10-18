@@ -53,8 +53,15 @@ dependencies {
 
     compile 'org.scala-lang:scala-library:2.11.8'
     compile project(":elasticsearch-spark-20")
+    
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
+    compileOnly("org.slf4j:slf4j-api:1.7.6")
 
-    // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
+    compile("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
+    compile("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
+
     compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
     compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
 
@@ -425,7 +432,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -451,7 +458,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -483,7 +490,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -510,7 +517,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
