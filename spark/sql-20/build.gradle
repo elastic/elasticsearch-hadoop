@@ -98,18 +98,36 @@ dependencies {
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
     compile("org.scala-lang:scala-library:$scalaVersion")
+    compile("org.scala-lang:scala-reflect:$scalaVersion")
 
     provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${project.ext.scalaMajorVersion}:2.6.7.1")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_${project.ext.scalaMajorVersion}:3.2.11")
+    compileOnly("org.slf4j:slf4j-api:1.7.6")
 
+    if ('2.10'.equals(scalaMajorVersion)) {
+        compileOnly("org.apache.spark:spark-unsafe_${project.ext.scalaMajorVersion}:$sparkVersion")
+        compileOnly("org.apache.avro:avro:1.7.7")
+        compileOnly("log4j:log4j:1.2.17")
+        compileOnly("com.google.code.findbugs:jsr305:2.0.1")
+        compileOnly("org.json4s:json4s-ast_2.10:3.2.10")
+        compileOnly("com.esotericsoftware.kryo:kryo:2.21")
+    }
+    
     optional("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
     optional("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
+    compileOnly("org.apache.spark:spark-catalyst_${project.ext.scalaMajorVersion}:$sparkVersion")
+    compileOnly("org.apache.spark:spark-tags_${project.ext.scalaMajorVersion}:$sparkVersion")
+    compileOnly("com.google.protobuf:protobuf-java:2.5.0")
+
     optional("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
@@ -119,10 +137,15 @@ dependencies {
 
     itestCompile(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
 
+    testCompile(project.ext.hadoopClient)
+    testCompile("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+        exclude group: 'javax.servlet'
+        exclude group: 'org.apache.hadoop'
+    }
     itestCompile("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    itestCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
     itestCompile("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {

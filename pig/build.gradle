@@ -34,6 +34,9 @@ ext.pigClassifier = "h2"
 
 dependencies {
     provided("org.apache.pig:pig:$pigVersion:$pigClassifier")
+    provided("joda-time:joda-time:$jodaVersion")
+
+    testRuntime("org.apache.pig:pig:$pigVersion:$pigClassifier")
     testRuntime("joda-time:joda-time:$jodaVersion")
 
     testRuntime "com.google.guava:guava:11.0"

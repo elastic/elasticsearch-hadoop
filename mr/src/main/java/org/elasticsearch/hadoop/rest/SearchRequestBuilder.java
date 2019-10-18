@@ -303,7 +303,7 @@ public class SearchRequestBuilder {
             if (StringUtils.hasText(fields)) {
                 generator.writeFieldName("_source");
                 generator.writeBeginArray();
-                final String[] fieldsArray = org.apache.commons.lang.StringUtils.split(fields, StringUtils.DEFAULT_DELIMITER);
+                final List<String> fieldsArray = StringUtils.tokenize(fields, StringUtils.DEFAULT_DELIMITER);
                 for (String field : fieldsArray) {
                     generator.writeString(field);
                 }
