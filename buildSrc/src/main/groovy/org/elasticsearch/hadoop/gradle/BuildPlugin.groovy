@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.DependenciesInfoTask
 import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.info.JavaHome
@@ -65,6 +66,7 @@ class BuildPlugin implements Plugin<Project>  {
         configureIntegrationTestTask(project)
         configureTestReports(project)
         configurePrecommit(project)
+        configureDependenciesInfo(project)
     }
 
     /**
@@ -753,30 +755,41 @@ class BuildPlugin implements Plugin<Project>  {
 
     private static void configurePrecommit(Project project) {
         List<Object> precommitTasks = []
-        if (project.hasProperty('localRepo') == false) {
-            LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
-            precommitTasks.add(licenseHeaders)
+        LicenseHeadersTask licenseHeaders = project.tasks.create('licenseHeaders', LicenseHeadersTask.class)
+        precommitTasks.add(licenseHeaders)
 
-            if (!project.path.startsWith(":qa")) {
-                TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
-                    dependencies = project.configurations.runtime.fileCollection {
-                        !(it instanceof ProjectDependency)
-                    }
-                    mapping from: /hadoop-.*/, to: 'hadoop'
-                    mapping from: /hive-.*/, to: 'hive'
-                    mapping from: /jackson-.*/, to: 'jackson'
-                    mapping from: /spark-.*/, to: 'spark'
-                    mapping from: /scala-.*/, to: 'scala'
+        if (!project.path.startsWith(":qa")) {
+            TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
+                dependencies = project.configurations.runtime.fileCollection {
+                    !(it instanceof ProjectDependency)
                 }
-                // we also create the updateShas helper task that is associated with dependencyLicenses
-                UpdateShasTask updateShas = project.tasks.create('updateShas', UpdateShasTask.class)
-                updateShas.parentTask = dependencyLicenses
-
-                precommitTasks.add(dependencyLicenses)
+                mapping from: /hadoop-.*/, to: 'hadoop'
+                mapping from: /hive-.*/, to: 'hive'
+                mapping from: /jackson-.*/, to: 'jackson'
+                mapping from: /spark-.*/, to: 'spark'
+                mapping from: /scala-.*/, to: 'scala'
             }
+            // we also create the updateShas helper task that is associated with dependencyLicenses
+            UpdateShasTask updateShas = project.tasks.create('updateShas', UpdateShasTask.class)
+            updateShas.parentTask = dependencyLicenses
+
+            precommitTasks.add(dependencyLicenses)
         }
         Task precommit = project.tasks.create('precommit')
         precommit.dependsOn(precommitTasks)
         project.tasks.getByName('check').dependsOn(precommit)
+    }
+
+    private static void configureDependenciesInfo(Project project) {
+        if (!project.path.startsWith(":qa")) {
+            project.tasks.register("dependenciesInfo", DependenciesInfoTask) { DependenciesInfoTask task ->
+                task.runtimeConfiguration = project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME)
+                task.compileOnlyConfiguration = project.configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)
+                // Create a property called mappings that points to the same mappings in the dependency licenses task.
+                task.getConventionMapping().map('mappings') {
+                    (project.tasks.getByName('dependencyLicenses') as DependencyLicensesTask).mappings
+                }
+            }
+        }
     }
 }
