@@ -11,6 +11,8 @@ dependencies {
     provided("commons-logging:commons-logging:1.1.1")
     provided("commons-httpclient:commons-httpclient:3.0.1")
     provided("commons-codec:commons-codec:1.4")
+
+    provided("javax.xml.bind:jaxb-api:2.3.1")
     
     provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
