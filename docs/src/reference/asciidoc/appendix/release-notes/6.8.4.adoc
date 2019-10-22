@@ -1,6 +1,0 @@
-[[eshadoop-6.8.4]]
-== Elasticsearch for Apache Hadoop version 6.8.4
-October 22, 2019
-
-ES-Hadoop 6.8.4 is a version compatibility release,
-tested specifically against Elasticsearch 6.8.4.
