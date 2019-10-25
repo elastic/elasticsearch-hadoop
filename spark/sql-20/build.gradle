@@ -46,9 +46,7 @@ compileScala {
         "-Yno-adapted-args",
         "-Ywarn-dead-code",
         "-Ywarn-numeric-widen",
-        "-Xfatal-warnings",
-        "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
-        "-P:genjavadoc:out=$buildDir/generated/java".toString()
+        "-Xfatal-warnings"
     ]
 }
 
@@ -151,4 +149,13 @@ sourcesJar {
 
 scaladoc {
     title = "${rootProject.description} ${version} API"
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.with {
+        additionalParameters = [
+                "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
+                "-P:genjavadoc:out=$buildDir/generated/java".toString()
+        ]
+    }
 }
