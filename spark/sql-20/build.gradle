@@ -12,6 +12,14 @@ variants {
     targetVersions '2.10.7', '2.11.12'
 }
 
+configurations {
+    scalaCompilerPlugin {
+        defaultDependencies { dependencies ->
+            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+        }
+    }
+}
+
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
 String sparkVersion = spark20Version
 
@@ -124,7 +132,9 @@ jar {
 }
 
 javadoc {
+    dependsOn compileScala
     source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
+    source += "$buildDir/generated/java"
     classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
 }
 
@@ -134,4 +144,13 @@ sourcesJar {
 
 scaladoc {
     title = "${rootProject.description} ${version} API"
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.with {
+        additionalParameters = [
+                "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
+                "-P:genjavadoc:out=$buildDir/generated/java".toString()
+        ]
+    }
 }
