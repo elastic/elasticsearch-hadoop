@@ -8,6 +8,7 @@ This section summarizes the changes in each release.
 [float]
 [[release-notes-7]]
 ===== 7.x
+* <<eshadoop-7.4.2>>
 * <<eshadoop-7.4.1>>
 * <<eshadoop-7.4.0>>
 * <<eshadoop-7.3.2>>
