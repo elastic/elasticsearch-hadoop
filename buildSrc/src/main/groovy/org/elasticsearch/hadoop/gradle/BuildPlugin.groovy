@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
 import org.elasticsearch.gradle.info.JavaHome
@@ -91,8 +92,7 @@ class BuildPlugin implements Plugin<Project>  {
 
             // We snap the runtime to java 8 since Hadoop needs to see some significant
             // upgrades to support any runtime higher than that
-            List<JavaHome> javaVersions = project.rootProject.ext.javaVersions as List<JavaHome>
-            JavaHome esHadoopRuntimeJava = javaVersions.find { it.version == 8 }
+            JavaHome esHadoopRuntimeJava = BuildParams.javaVersions.find { it.version == 8 }
             if (esHadoopRuntimeJava == null) {
                 throw new GradleException(
                         '$JAVA8_HOME must be set to build ES-Hadoop. ' +
@@ -202,7 +202,7 @@ class BuildPlugin implements Plugin<Project>  {
         }
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
-        project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.javaVersions = BuildParams.javaVersions
         project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
     }
 
