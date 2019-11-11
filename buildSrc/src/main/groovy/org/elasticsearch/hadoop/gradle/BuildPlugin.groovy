@@ -93,8 +93,7 @@ class BuildPlugin implements Plugin<Project> {
 
             // We snap the runtime to java 8 since Hadoop needs to see some significant
             // upgrades to support any runtime higher than that
-            List<JavaHome> javaVersions = project.rootProject.ext.javaVersions as List<JavaHome>
-            JavaHome esHadoopRuntimeJava = javaVersions.find { it.version == 8 }
+            JavaHome esHadoopRuntimeJava = BuildParams.javaVersions.find { it.version == 8 }
             if (esHadoopRuntimeJava == null) {
                 throw new GradleException(
                         '$JAVA8_HOME must be set to build ES-Hadoop. ' +
@@ -202,6 +201,7 @@ class BuildPlugin implements Plugin<Project> {
             project.rootProject.ext.revHash = gitHash(gitHead)
             project.rootProject.ext.settingsConfigured = true
 
+            // TODO: Still needed?
             String inFipsJvmScript = 'print(java.security.Security.getProviders()[0].name.toLowerCase().contains("fips"));'
             project.rootProject.ext.inFipsJvm = Boolean.parseBoolean(runJavascript(project, javaHome, inFipsJvmScript))
 
@@ -209,10 +209,11 @@ class BuildPlugin implements Plugin<Project> {
                 params.setInFipsJvm(project.rootProject.ext.inFipsJvm)
                 params.setIsRutimeJavaHomeSet(project.rootProject.ext.isRuntimeJavaHomeSet)
             }
+            // End Section
         }
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
-        project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.javaVersions = BuildParams.javaVersions
         project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
     }
 
