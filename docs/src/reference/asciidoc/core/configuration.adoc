@@ -284,7 +284,7 @@ The syntax for this setting is similar to that of {es} {ref}/search-request-body
 Multiple values can be specified by using a comma. By default, no value is specified, meaning no properties/fields are treated as arrays.
 
 NOTE: Not all fields need to specify `es.read.field.as.array` to be treated as an array. Fields of type `nested` are always
-treated as an array of objects, and should not be marked under `es.read.field.as.array.include`.
+treated as an array of objects and should not be marked under `es.read.field.as.array.include`.
 
 For example, given the document:
 [source,json]
