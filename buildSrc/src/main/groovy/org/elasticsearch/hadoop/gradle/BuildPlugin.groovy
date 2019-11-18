@@ -1,6 +1,7 @@
 package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.gradle.DependenciesInfoTask
 import org.elasticsearch.gradle.info.GenerateGlobalBuildInfoTask
 import org.elasticsearch.gradle.info.GlobalBuildInfoPlugin
@@ -93,8 +94,7 @@ class BuildPlugin implements Plugin<Project>  {
 
             // We snap the runtime to java 8 since Hadoop needs to see some significant
             // upgrades to support any runtime higher than that
-            List<JavaHome> javaVersions = project.rootProject.ext.javaVersions as List<JavaHome>
-            JavaHome esHadoopRuntimeJava = javaVersions.find { it.version == 8 }
+            JavaHome esHadoopRuntimeJava = BuildParams.javaVersions.find { it.version == 8 }
             if (esHadoopRuntimeJava == null) {
                 throw new GradleException(
                         '$JAVA8_HOME must be set to build ES-Hadoop. ' +
@@ -162,24 +162,21 @@ class BuildPlugin implements Plugin<Project>  {
             println "Using Gradle [${project.gradle.gradleVersion}]"
 
             // Hadoop versions
-            project.rootProject.ext.hadoopClient = []
-            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopStable"
-
+            project.rootProject.ext.hadoopDistro = project.hasProperty("distro") ? project.getProperty("distro") : "hadoopYarn"
             switch (project.rootProject.ext.hadoopDistro) {
                 // Hadoop YARN/2.0.x
                 case "hadoopYarn":
-                    String version = project.hadoop2Version
-                    project.rootProject.ext.hadoopVersion = version
-                    project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$version"]
-                    println "Using Apache Hadoop on YARN [$version]"
+                    project.rootProject.ext.hadoopVersion = project.hadoop2Version
+                    println "Using Apache Hadoop on YARN [$project.hadoop2Version]"
                     break
-
+                case "hadoopStable":
+                    project.rootProject.ext.hadoopVersion = project.hadoop22Version
+                    println "Using Apache Hadoop [$project.hadoop22Version]"
+                    break
                 default:
-                    String version = project.hadoop22Version
-                    project.rootProject.ext.hadoopVersion = version
-                    project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$version"]
-                    println "Using Apache Hadoop [$version]"
+                    throw new GradleException("Invalid [hadoopDistro] setting: [$project.rootProject.ext.hadoopDistro]")
             }
+            project.rootProject.ext.hadoopClient = ["org.apache.hadoop:hadoop-client:$project.rootProject.ext.hadoopVersion"]
         }
         project.ext.eshadoopVersion = project.rootProject.ext.eshadoopVersion
         project.ext.elasticsearchVersion = project.rootProject.ext.elasticsearchVersion
@@ -207,7 +204,7 @@ class BuildPlugin implements Plugin<Project>  {
         }
         project.ext.gitHead = project.rootProject.ext.gitHead
         project.ext.revHash = project.rootProject.ext.revHash
-        project.ext.javaVersions = project.rootProject.ext.javaVersions
+        project.ext.javaVersions = BuildParams.javaVersions
         project.ext.isRuntimeJavaHomeSet = project.rootProject.ext.isRuntimeJavaHomeSet
     }
 
