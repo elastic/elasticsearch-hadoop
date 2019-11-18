@@ -313,7 +313,7 @@ If your document contains multiple levels of arrays:
 }
 ----
 
-Then specify the dimensionality of the array in the configuration
+Then specify the dimensionality of the array in the configuration:
 [source,ini]
 ----
 # mapping foo.bar as a 3-level/dimensional array
