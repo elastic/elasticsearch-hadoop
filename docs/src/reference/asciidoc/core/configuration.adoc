@@ -277,7 +277,7 @@ es.read.field.exclude = company.income
 added[2.2]
 `es.read.field.as.array.include` (default empty)::
 Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
-whether to treat a field on a document as a single value or an array of values. When encountering multiple values, {eh} will automatically read
+whether to treat a field on a document as a single value or an array. When encountering multiple values, {eh} automatically reads
 the field into the appropriate array/list type for an integration, but in strict mapping scenarios (like Spark SQL) this
 may lead to problems (an array is encountered when Spark's Catalyst engine expects a single value).
 The syntax for this setting is similar to that of {es} {ref}/search-request-body.html#request-body-search-source-filtering[include/exclude].
