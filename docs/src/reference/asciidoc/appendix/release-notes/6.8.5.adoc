@@ -1,0 +1,6 @@
+[[eshadoop-6.8.5]]
+== Elasticsearch for Apache Hadoop version 6.8.5
+Month DD, YYYY
+
+ES-Hadoop 6.8.5 is a version compatibility release,
+tested specifically against Elasticsearch 6.8.5.
