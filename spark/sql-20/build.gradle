@@ -96,6 +96,8 @@ dependencies {
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
     compile(project(":elasticsearch-spark"))
+    testCompile(project(":elasticsearch-spark").sourceSets.test.output)
+    itestCompile(project(":elasticsearch-spark").sourceSets.itest.output)
 
     compile("org.scala-lang:scala-library:$scalaVersion")
     compile("org.scala-lang:scala-reflect:$scalaVersion")
@@ -116,6 +118,8 @@ dependencies {
         compileOnly("com.google.code.findbugs:jsr305:2.0.1")
         compileOnly("org.json4s:json4s-ast_2.10:3.2.10")
         compileOnly("com.esotericsoftware.kryo:kryo:2.21")
+    } else {
+        testCompile("com.esotericsoftware.kryo:kryo:2.21")
     }
     
     optional("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {

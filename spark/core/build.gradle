@@ -95,6 +95,8 @@ dependencies {
     testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
 
     itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+
+    testCompile("com.esotericsoftware.kryo:kryo:2.21")
 //    itestCompile("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
 //        exclude group: 'org.apache.hadoop'
 //    }
