@@ -10,7 +10,7 @@ apply plugin: 'scala.variants'
 
 variants {
     defaultVersion '2.11.12'
-    targetVersions '2.10.7', '2.11.12'
+    targetVersions '2.11.12'
 }
 
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"
@@ -79,11 +79,17 @@ dependencies {
     provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
     compile("org.scala-lang:scala-library:${project.ext.scalaVersion}")
+    compile("org.scala-lang:scala-reflect:$scalaVersion")
 
     provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_${project.ext.scalaMajorVersion}:2.6.7.1")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("com.google.guava:guava:14.0.1")
+    compileOnly("com.google.protobuf:protobuf-java:2.5.0")
+    compileOnly("org.slf4j:slf4j-api:1.7.6")
 
 //    optional("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
 //        exclude group: 'org.apache.hadoop'
