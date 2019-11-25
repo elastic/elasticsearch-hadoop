@@ -15,7 +15,9 @@ variants {
 configurations {
     scalaCompilerPlugin {
         defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+            if (project.ext.scalaMajorVersion != '2.10') {
+                dependencies.add(project.dependencies.create("com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+            }
         }
     }
 }
@@ -119,9 +121,11 @@ jar {
 }
 
 javadoc {
-    dependsOn compileScala
+    if (project.ext.scalaMajorVersion != '2.10') {
+        dependsOn compileScala
+        source += "$buildDir/generated/java"
+    }
     source += project(":elasticsearch-hadoop-mr").sourceSets.main.allJava
-    source += "$buildDir/generated/java"
     classpath += files(project(":elasticsearch-hadoop-mr").sourceSets.main.compileClasspath)
 }
 
@@ -149,10 +153,12 @@ configurations.all { Configuration conf ->
 }
 
 tasks.withType(ScalaCompile) {
-    scalaCompileOptions.with {
-        additionalParameters = [
-                "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
-                "-P:genjavadoc:out=$buildDir/generated/java".toString()
-        ]
+    if (project.ext.scalaMajorVersion != '2.10') {
+        scalaCompileOptions.with {
+            additionalParameters = [
+                    "-Xplugin:" + configurations.scalaCompilerPlugin.asPath,
+                    "-P:genjavadoc:out=$buildDir/generated/java".toString()
+            ]
+        }
     }
 }
