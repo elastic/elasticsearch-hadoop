@@ -2,6 +2,9 @@ language: java
 jdk:
  - oraclejdk11
 
+script:
+  - export JAVA_HOME=$HOME/oraclejdk8
+  - $TRAVIS_BUILD_DIR/install-jdk.sh --install oraclejdk8 --target $JAVA_HOME
 
 dist: trusty
 
