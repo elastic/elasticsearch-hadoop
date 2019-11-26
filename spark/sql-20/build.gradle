@@ -6,10 +6,12 @@ evaluationDependsOn(':elasticsearch-hadoop-mr')
 apply plugin: 'scala'
 apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'scala.variants'
+apply plugin: 'ivy-publish'
+apply plugin: 'maven-publish'
 
 variants {
-    defaultVersion '2.12.8'
-    targetVersions '2.10.7', '2.11.12', '2.12.8'
+    defaultVersion '2.12.10'
+    targetVersions '2.10.7', '2.11.12', '2.12.10'
 }
 
 println "Compiled using Scala ${project.ext.scalaMajorVersion} [${project.ext.scalaVersion}]"

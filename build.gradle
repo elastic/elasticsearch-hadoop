@@ -2,7 +2,8 @@
 description = 'Elasticsearch for Apache Hadoop'
 
 apply plugin: 'es.hadoop.build.root'
-
+apply plugin: 'ivy-publish'
+apply plugin: 'maven-publish'
 defaultTasks 'build'
 
 build {
