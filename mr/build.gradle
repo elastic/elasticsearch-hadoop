@@ -5,7 +5,19 @@ description = "Elasticsearch Hadoop Map/Reduce"
 
 dependencies {
     provided(project.ext.hadoopClient)
+    provided("org.apache.hadoop:hadoop-common:${project.ext.hadoopVersion}")
+    provided("org.apache.hadoop:hadoop-mapreduce-client-core:${project.ext.hadoopVersion}")
+    
+    provided("commons-logging:commons-logging:1.1.1")
+    provided("commons-httpclient:commons-httpclient:3.0.1")
+    provided("commons-codec:commons-codec:1.4")
+
+    provided("javax.xml.bind:jaxb-api:2.3.1")
+    
     provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
+    provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
+    
+    testCompile(project.ext.hadoopClient)
     testCompile "io.netty:netty-all:4.0.29.Final"
     testCompile "org.elasticsearch:securemock:1.2"
 }
@@ -20,7 +32,7 @@ sourceSets {
 
 task generateGitHash {
     inputs.file project.ext.gitHead
-    outputs.file generatedResources
+    outputs.dir generatedResources
 
     doLast {
         Properties props = new Properties()

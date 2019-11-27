@@ -19,6 +19,7 @@
 
 
 import org.elasticsearch.gradle.test.AntFixture
+import org.elasticsearch.gradle.testclusters.DefaultTestClustersTask
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.HadoopClusterFormationTasks
@@ -39,6 +40,11 @@ configurations {
     stormDeps
 }
 
+tasks.withType(ScalaCompile) { ScalaCompile task ->
+    task.sourceCompatibility = project.ext.minimumRuntimeVersion
+    task.targetCompatibility = project.ext.minimumRuntimeVersion
+}
+
 boolean localRepo = project.getProperties().containsKey("localRepo")
 
 dependencies {
@@ -47,12 +53,17 @@ dependencies {
 
     compile 'org.scala-lang:scala-library:2.12.10'
     compile project(":elasticsearch-spark-20")
+    
+    compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
+    compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
+    compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
+    compileOnly("org.slf4j:slf4j-api:1.7.6")
 
-    if (!localRepo) {
-        // These try to pull in the elasticsearch jar, but when running with a local repo it is not available
-        compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
-        compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
-    }
+    compile("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
+    compile("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
+
+    compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
 
     kdcFixture project(':test:fixtures:minikdc')
 
@@ -139,7 +150,7 @@ if (disableTests) {
     // Configure MiniKDC
     AntFixture kdcFixture = project.tasks.create('kdcFixture', AntFixture) {
         dependsOn project.configurations.kdcFixture
-        executable = new File(project.runtimeJavaHome, 'bin/java')
+        executable = new File(project.compilerJavaHome, 'bin/java')
         env 'CLASSPATH', "${ -> project.configurations.kdcFixture.asPath }"
         waitCondition = { fixture, ant ->
             // the kdc wrapper writes the ports file when
@@ -173,55 +184,38 @@ if (disableTests) {
     // =============================================================================
     
     // Configure ES with Kerberos Auth
-    esCluster {
-        clusterConf {
-            dependsOn(kdcFixture)
-    
-            // This may be needed if we ever run against java 9:
-            // --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED
-    
-            // Set kerberos conf on JVM
-            systemProperty("java.security.krb5.conf", krb5Conf.toString())
-            //systemProperty("sun.security.krb5.debug", "true")
-    
-            // force localhost IPv4 otherwise it is a chicken and egg problem where we need the keytab for the
-            // hostname when starting the cluster but do not know the exact address that is first in the http
-            // ports file
-            setting 'http.host', '127.0.0.1'
-            setting 'xpack.license.self_generated.type', 'trial'
-            setting 'xpack.ml.enabled', 'false'
-            // Enable Security
-            setting 'xpack.security.enabled', 'true'
-            setting 'xpack.security.audit.enabled', 'true'
-            // Configure File Realm
-            setting 'xpack.security.authc.realms.file.myfile.order', '0'
-            // Configure Native Realm
-            setting 'xpack.security.authc.realms.native.mynative.order', '1'
-            // Configure Kerberos Realm
-            setting 'xpack.security.authc.realms.kerberos.krb5.order', '2'
-            setting 'xpack.security.authc.realms.kerberos.krb5.keytab.path', 'es.keytab'
-            setting 'xpack.security.authc.realms.kerberos.krb5.krb.debug', 'true'
-            setting 'xpack.security.authc.realms.kerberos.krb5.remove_realm_name', 'false'
-            // Configure API Key Realm
-            setting 'xpack.security.authc.api_key.enabled', 'true'
-    
-            setupCommand 'setupTestAdmin',
-                    'bin/elasticsearch-users', 'useradd', "test_admin", '-p', 'x-pack-test-password', '-r', 'superuser'
-    
-            extraConfigFile('es.keytab', esKeytab.toAbsolutePath())
-    
-            // Override the wait condition; Do the same wait logic, but pass in the test credentials for the API
-            waitCondition = { node, ant ->
-                File tmpFile = new File(node.cwd, 'wait.success')
-                ant.get(src: "http://${node.httpUri()}/_cluster/health?wait_for_nodes=>=${numNodes}&wait_for_status=yellow",
-                        dest: tmpFile.toString(),
-                        username: 'test_admin',
-                        password: 'x-pack-test-password',
-                        ignoreerrors: true,
-                        retries: 10)
-                return tmpFile.exists()
-            }
-        }
+    testClusters.integTest {
+        // This may be needed if we ever run against java 9:
+        // --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED
+
+        // Set kerberos conf on JVM
+        systemProperty("java.security.krb5.conf", krb5Conf.toString())
+        //systemProperty("sun.security.krb5.debug", "true")
+
+        // force localhost IPv4 otherwise it is a chicken and egg problem where we need the keytab for the
+        // hostname when starting the cluster but do not know the exact address that is first in the http
+        // ports file
+        setting 'http.host', '127.0.0.1'
+        setting 'xpack.license.self_generated.type', 'trial'
+        setting 'xpack.ml.enabled', 'false'
+        // Enable Security
+        setting 'xpack.security.enabled', 'true'
+        setting 'xpack.security.audit.enabled', 'true'
+        // Configure File Realm
+        setting 'xpack.security.authc.realms.file.myfile.order', '0'
+        // Configure Native Realm
+        setting 'xpack.security.authc.realms.native.mynative.order', '1'
+        // Configure Kerberos Realm
+        setting 'xpack.security.authc.realms.kerberos.krb5.order', '2'
+        setting 'xpack.security.authc.realms.kerberos.krb5.keytab.path', 'es.keytab'
+        setting 'xpack.security.authc.realms.kerberos.krb5.krb.debug', 'true'
+        setting 'xpack.security.authc.realms.kerberos.krb5.remove_realm_name', 'false'
+        // Configure API Key Realm
+        setting 'xpack.security.authc.api_key.enabled', 'true'
+
+        user username: 'test_admin', password: 'x-pack-test-password', role: 'superuser'
+
+        extraConfigFile('es.keytab', esKeytab.toFile())
     }
     
     // Configure Integration Test Task
@@ -243,17 +237,21 @@ if (disableTests) {
     File resourceDir = project.sourceSets.main.resources.getSrcDirs().head()
     File mrItestResourceDir = project(":elasticsearch-hadoop-mr").sourceSets.itest.resources.getSrcDirs().head()
     
-    JavaExec setupUsers = project.tasks.create("setupUsers", JavaExec.class) {
-        main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
-        classpath = sourceSets.main.runtimeClasspath
-        systemProperty('es.nodes', 'localhost:9500')
-        systemProperty('es.net.http.auth.user', 'test_admin')
-        systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
-        systemProperty('principals', "$clientPrincipal$realm")
-        systemProperty('users', "client")
-        systemProperty('proxiers', "$hivePrincipalName$realm")
+    Task setupUsers = project.tasks.create("setupUsers", DefaultTestClustersTask) {
+        useCluster(testClusters.integTest)
+        doLast {
+            project.javaexec {
+                main = 'org.elasticsearch.hadoop.qa.kerberos.setup.SetupKerberosUsers'
+                classpath = sourceSets.main.runtimeClasspath
+                systemProperty('es.nodes', 'localhost:9500')
+                systemProperty('es.net.http.auth.user', 'test_admin')
+                systemProperty('es.net.http.auth.pass', 'x-pack-test-password')
+                systemProperty('principals', "$clientPrincipal$realm")
+                systemProperty('users', "client")
+                systemProperty('proxiers', "$hivePrincipalName$realm")
+            }
+        }
     }
-    esCluster.addTask(setupUsers)
     integrationTest.dependsOn(setupUsers)
     
     // =============================================================================
@@ -356,17 +354,7 @@ if (disableTests) {
     }
     config.addDependency(jar)
     config.addDependency(testingJar)
-    
-    // Create a task to use to leave the cluster online until a user provides input to tear it down.
-    Task testCluster = project.tasks.create("testCluster")
-    testCluster.doLast {
-        project.logger.lifecycle("TEST FINISHED")
-        System.console().readLine("Tear Down? ")
-        project.logger.lifecycle("STOPPING CLUSTER")
-    }
-    esCluster.addTask(testCluster)
-    config.addClusterTask(testCluster)
-    
+
     // We need to create a tmp directory in hadoop before history server does, because history server will set permissions
     // wrong.
     HadoopMRJob createTmp = config.service('hadoop').role('datanode').createClusterTask('createTmp', HadoopMRJob.class) {
@@ -444,7 +432,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.LoadToES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -460,7 +448,7 @@ if (disableTests) {
         ])
         args = ['/data/artists/artists.dat']
     }
-    esCluster.addTask(mrLoadData)
+    integrationTest.dependsOn(mrLoadData)
     
     // Run the MR job to read data out of ES. Ensure Kerberos settings are available.
     HadoopMRJob mrReadData = config.createClusterTask('mrReadData', HadoopMRJob.class) {
@@ -470,7 +458,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.mr.ReadFromES'
         jobSettings = [
-                'es.resource': 'qa_kerberos_mr_data/_doc',
+                'es.resource': 'qa_kerberos_mr_data',
                 'es.nodes': 'localhost:9500',
                 'es.security.authentication': 'kerberos',
                 'es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -485,7 +473,7 @@ if (disableTests) {
         ])
         args = ['/data/output/mr']
     }
-    esCluster.addTask(mrReadData)
+    integrationTest.dependsOn(mrReadData)
     
     // =============================================================================
     // Spark Jobs
@@ -502,7 +490,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.LoadToES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -516,7 +504,7 @@ if (disableTests) {
                 "-Dtest.krb5.keytab=${clientKeytab.toString()}")
         args = ['/data/artists/artists.dat']
     }
-    esCluster.addTask(sparkLoadData)
+    integrationTest.dependsOn(sparkLoadData)
     
     // Run the Spark job to load data to ES. Ensure Kerberos settings are available.
     SparkApp sparkReadData = config.createClusterTask('sparkReadData', SparkApp.class) {
@@ -529,7 +517,7 @@ if (disableTests) {
         libJars.add(testingJar.archivePath)
         jobClass = 'org.elasticsearch.hadoop.qa.kerberos.spark.ReadFromES'
         jobSettings([
-                'spark.es.resource': 'qa_kerberos_spark_data/_doc',
+                'spark.es.resource': 'qa_kerberos_spark_data',
                 'spark.es.nodes': 'localhost:9500',
                 'spark.es.security.authentication': 'kerberos',
                 'spark.es.net.spnego.auth.elasticsearch.principal': "${esPrincipal}${realm}",
@@ -542,7 +530,7 @@ if (disableTests) {
                 "-Dtest.krb5.keytab=${clientKeytab.toString()}")
         args = ['/data/output/spark']
     }
-    esCluster.addTask(sparkReadData)
+    integrationTest.dependsOn(sparkReadData)
     
     // =============================================================================
     // Hive Jobs
@@ -576,7 +564,7 @@ if (disableTests) {
                 'TEST_LIB': jar.archivePath.toString()
         ])
     }
-    esCluster.addTask(hiveLoadData)
+    integrationTest.dependsOn(hiveLoadData)
     
     HiveBeeline hiveReadData = config.createClusterTask('hiveReadData', HiveBeeline.class) {
         clusterConfiguration = config
@@ -592,7 +580,7 @@ if (disableTests) {
                 'TEST_LIB': jar.archivePath.toString()
         ])
     }
-    esCluster.addTask(hiveReadData)
+    integrationTest.dependsOn(hiveReadData)
     
     // =============================================================================
     // Pig Jobs
@@ -607,7 +595,7 @@ if (disableTests) {
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ]
     }
-    esCluster.addTask(pigLoadData)
+    integrationTest.dependsOn(pigLoadData)
     
     PigScript pigReadData = config.createClusterTask('pigReadData', PigScript.class) {
         clusterConfiguration = config
@@ -618,7 +606,7 @@ if (disableTests) {
                 'PIG_OPTS': "-Djava.security.krb5.conf=${krb5Conf.toString()}"
         ]
     }
-    esCluster.addTask(pigReadData)
+    integrationTest.dependsOn(pigReadData)
     
     // =============================================================================
     // Copy job outputs
@@ -658,9 +646,6 @@ if (disableTests) {
             environmentVariables.put('HADOOP_ROOT_LOGGER','TRACE,console')
             args = ['-copyToLocal', "/data/output/$integrationName", outputDataDir]
         }
-        // When using testCluster, it should depend on the copy
-        // output tasks to ensure all jobs have run.
-        testCluster.dependsOn(copyOutputTask)
         // Integration test needs to depend on copy output tasks
         // to ensure all integrations have their output files on
         // disk

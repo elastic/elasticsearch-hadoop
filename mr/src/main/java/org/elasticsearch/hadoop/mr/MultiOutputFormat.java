@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.JobConf;
@@ -35,6 +34,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.Progressable;
 import org.elasticsearch.hadoop.mr.compat.CompatHandler;
+import org.elasticsearch.hadoop.util.StringUtils;
 
 public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop.mapred.OutputFormat {
 
@@ -259,7 +259,7 @@ public class MultiOutputFormat extends OutputFormat implements org.apache.hadoop
         for (Class<? extends OutputFormat> format : formats) {
             of.add(format.getName());
         }
-        cfg.setStrings(CFG_FIELD, StringUtils.join(of, ","));
+        cfg.setStrings(CFG_FIELD, StringUtils.concatenate(of, ","));
     }
 
     private List<OutputFormat> getNewApiFormats(Configuration cfg) {

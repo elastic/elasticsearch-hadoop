@@ -46,7 +46,7 @@ subprojects {
             if (localRepo) {
                 classpath name: "build-tools-${version}"
             } else {
-                classpath group: 'org.elasticsearch.gradle', name: 'build-tools', version: project.ext.elasticsearchVersion
+                classpath group: 'org.elasticsearch.gradle', name: 'build-tools', version: project.ext.buildToolsVersion
             }
         }
     }

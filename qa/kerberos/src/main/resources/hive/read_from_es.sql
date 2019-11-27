@@ -8,7 +8,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS es_artist_data (
   ts TIMESTAMP,
   tag STRING)
 STORED BY 'org.elasticsearch.hadoop.hive.EsStorageHandler'
-TBLPROPERTIES('es.resource' = 'qa_kerberos_hive_data/_doc', 'es.nodes' = 'localhost:9500');
+TBLPROPERTIES('es.resource' = 'qa_kerberos_hive_data', 'es.nodes' = 'localhost:9500');
 
 DROP TABLE IF EXISTS artist_data;
 

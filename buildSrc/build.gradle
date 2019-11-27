@@ -1,19 +1,32 @@
 import java.nio.file.Files
+import org.gradle.util.GradleVersion
 
 apply plugin: 'groovy'
+
+/*
+ * Build checks
+ */
+
+String minimumGradleVersion = file('src/main/resources/minimumGradleVersion').text.trim()
+if (GradleVersion.current() < GradleVersion.version(minimumGradleVersion)) {
+    throw new GradleException("Gradle ${minimumGradleVersion}+ is required to build es-hadoop")
+}
+
+if (JavaVersion.current() < JavaVersion.VERSION_11) {
+    throw new GradleException('At least Java 11 is required to use elasticsearch gradle tools')
+}
 
 /*
  * Configure Project Versions
  */
 
 boolean localRepo = project.getProperties().containsKey("localRepo")
-localRepo = false // TODO: Remove this once we can safely depend on build-tools again.
 
 Properties props = new Properties()
 props.load(project.file('esh-version.properties').newDataInputStream())
 String eshVersion = props.getProperty('eshadoop')
 String esVersion = props.getProperty('elasticsearch')
-String buildToolsVersion = "7.0.0" // TODO: Remove this once we can safely depend on build-tools again.
+String buildToolsVersion = props.getProperty('build-tools')
 
 // determine if we're building a prerelease or candidate (alphaX/betaX/rcX)
 String qualifier = System.getProperty("build.version_qualifier", "")
@@ -23,6 +36,7 @@ if (qualifier.isEmpty() == false) {
     }
     eshVersion += "-" + qualifier
     esVersion += "-" + qualifier
+    buildToolsVersion += "-" + qualifier
 }
 
 // determine if we're building a snapshot or not (by default we will be)
@@ -31,10 +45,12 @@ if (snapshot) {
     // we update the version property to reflect if we are building a snapshot or a release build
     eshVersion += "-SNAPSHOT"
     esVersion += "-SNAPSHOT"
+    buildToolsVersion += "-SNAPSHOT"
 }
 
 props.put("eshadoop", eshVersion)
 props.put("elasticsearch", esVersion)
+props.put("build-tools", buildToolsVersion)
 
 repositories {
     jcenter()
@@ -58,6 +74,7 @@ dependencies {
 
     // Provided/Optional Dependencies
     compile 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+    implementation 'org.apache.logging.log4j:log4j-core:2.11.1'
 
     if (localRepo) {
         compile name: "build-tools-${buildToolsVersion}"

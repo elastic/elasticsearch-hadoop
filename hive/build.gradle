@@ -34,7 +34,12 @@ dependencies {
     provided("org.apache.hive:hive-service:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }
+    provided("org.apache.hive:hive-exec:$hiveVersion")
+    provided("org.apache.hive:hive-metastore:$hiveVersion")
 
+    itestRuntime("org.apache.hive:hive-service:$hiveVersion") {
+        exclude module: "log4j-slf4j-impl"
+    }
     itestRuntime("org.apache.hive:hive-jdbc:$hiveVersion") {
         exclude module: "log4j-slf4j-impl"
     }

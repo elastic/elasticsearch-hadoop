@@ -20,6 +20,7 @@
 package org.elasticsearch.hadoop.gradle.fixture.hadoop
 
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.elasticsearch.gradle.info.BuildParams
 import org.elasticsearch.hadoop.gradle.util.WaitForURL
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.gradle.api.GradleException
@@ -236,7 +237,7 @@ class InstanceInfo {
 
     /** Return the java home used by this node. */
     String getJavaHome() {
-        return javaVersion == null ? project.runtimeJavaHome : project.javaVersions.get(javaVersion)
+        return javaVersion == null ? project.runtimeJavaHome : BuildParams.javaVersions.find { it.version == javaVersion }.javaHome.absolutePath
     }
 
     /** Returns debug string for the command that started this node. */

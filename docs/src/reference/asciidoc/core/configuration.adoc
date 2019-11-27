@@ -195,7 +195,7 @@ a join field is not specified, then this defaults to none.
 The document field/property name containing the document version. To specify a constant, use the `<CONSTANT>` format.
 
 `es.mapping.version.type` (default depends on +es.mapping.version+)::
-Indicates the {ref}/docs-index_.html#_version_types[type of versioning] used.
+Indicates the {ref}/docs-index_.html#index-version-types[type of versioning] used.
 If +es.mapping.version+ is undefined (default), its value is unspecified. If +es.mapping.version+ is specified, its value becomes +external+.
 
 deprecated[6.0.0]
@@ -211,7 +211,7 @@ Will not work on Elasticsearch 6.0+ index versions, but support will continue fo
 added[2.1]
 `es.mapping.include` (default none)::
 Field/property to be included in the document sent to {es}. Useful for _extracting_ the needed data from entities. The syntax is similar
-to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
+to that of {es} {ref}/search-request-body.html#request-body-search-source-filtering[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning all properties/fields are included.
 
 IMPORTANT: The `es.mapping.include` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
@@ -220,7 +220,7 @@ data that is implicitly excluded, any jobs with these property conflicts will re
 added[2.1]
 `es.mapping.exclude` (default none)::
 Field/property to be excluded in the document sent to {es}. Useful for _eliminating_ unneeded data from entities. The syntax is similar
-to that of {es} {ref}/search-request-source-filtering.html[include/exclude].
+to that of {es} {ref}/search-request-body.html#request-body-search-source-filtering[include/exclude].
 Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are excluded.
 
 IMPORTANT: The `es.mapping.exclude` feature is ignored when `es.input.json` is specified. In order to prevent the connector from indexing
@@ -277,19 +277,47 @@ es.read.field.exclude = company.income
 added[2.2]
 `es.read.field.as.array.include` (default empty)::
 Fields/properties that should be considered as arrays/lists. Since {es} can map one or multiple values to a field, {eh} cannot determine from the mapping
-whether to instantiate one value or a array type (depending on the library type). When encountering multiple values, {eh} will automatically use 
-the array/list type but in strict mapping scenarios (like Spark SQL) this might lead to an unexpected schema change.
-The syntax is similar to that of {es} {ref}/search-request-source-filtering.html[include/exclude]. 
-Multiple values can be specified by using a comma. By default, no value is specified meaning no properties/fields are included.
+whether to treat a field on a document as a single value or an array. When encountering multiple values, {eh} automatically reads
+the field into the appropriate array/list type for an integration, but in strict mapping scenarios (like Spark SQL) this
+may lead to problems (an array is encountered when Spark's Catalyst engine expects a single value).
+The syntax for this setting is similar to that of {es} {ref}/search-request-body.html#request-body-search-source-filtering[include/exclude].
+Multiple values can be specified by using a comma. By default, no value is specified, meaning no fields/properties are treated as arrays.
 
-For example:
+NOTE: Not all fields need to specify `es.read.field.as.array` to be treated as an array. Fields of type `nested` are always
+treated as an array of objects and should not be marked under `es.read.field.as.array.include`.
+
+For example, given the document:
+[source,json]
+----
+{
+  "foo": {
+    "bar": [ "abc", "def" ]
+  }
+}
+----
+
+Use the following configuration:
 [source,ini]
 ----
-# mapping nested.bar as an array
-es.read.field.as.array.include = nested.bar
+# mapping foo.bar as an array
+es.read.field.as.array.include = foo.bar
+----
 
-# mapping nested.bar as a 3-level/dimensional array
-es.read.field.as.array.include = nested.bar:3
+If your document contains multiple levels of arrays:
+[source,json]
+----
+{
+  "foo": {
+    "bar": [[["abc", "def"], ["ghi", "jkl"]], [["mno", "pqr"], ["stu", "vwx"]]]
+  }
+}
+----
+
+Then specify the dimensionality of the array in the configuration:
+[source,ini]
+----
+# mapping foo.bar as a 3-level/dimensional array
+es.read.field.as.array.include = foo.bar:3
 ----
 
 `es.read.field.as.array.exclude` (default empty)::

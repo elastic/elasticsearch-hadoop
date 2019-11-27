@@ -9,16 +9,14 @@
 :krb:   Kerberos
 :ey:	Elasticsearch on YARN
 :description: Reference documentation of {eh}
-:ver:	8.0.0
-:ver-d: 8.0.0-SNAPSHOT
-:es-v:	8.0.0-SNAPSHOT
+:ver-d: {version}-SNAPSHOT
 :sp-v:	2.2.0
 :st-v:	1.0.1
 :pg-v:	0.15.0
 :hv-v:	1.2.1
 :cs-v:	2.6.3
 
-include::{asciidoc-dir}/../../shared/versions.asciidoc[]
+include::{asciidoc-dir}/../../shared/versions/stack/{source_branch}.asciidoc[]
 include::{asciidoc-dir}/../../shared/attributes.asciidoc[]
 
 [[float]]

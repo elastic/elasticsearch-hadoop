@@ -412,6 +412,10 @@ public class RestClient implements Closeable, StatsAware {
         return execute(new SimpleRequest(method, null, path, null, buffer), checkStatus);
     }
 
+    protected Response execute(Method method, String path, ByteSequence buffer, boolean checkStatus, boolean retry) {
+        return execute(new SimpleRequest(method, null, path, null, buffer), checkStatus, retry);
+    }
+
     protected Response execute(Method method, String path, String params, ByteSequence buffer) {
         return execute(new SimpleRequest(method, null, path, params, buffer), true);
     }
@@ -421,7 +425,11 @@ public class RestClient implements Closeable, StatsAware {
     }
 
     protected Response execute(Request request, boolean checkStatus) {
-        Response response = network.execute(request);
+        return execute(request, checkStatus, true);
+    }
+
+    protected Response execute(Request request, boolean checkStatus, boolean retry) {
+        Response response = network.execute(request, retry);
         if (checkStatus) {
             checkResponse(request, response);
         }
@@ -481,7 +489,9 @@ public class RestClient implements Closeable, StatsAware {
                 body = new BytesArray(scrollId);
             }
             // use post instead of get to avoid some weird encoding issues (caused by the long URL)
-            InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), body).body();
+            // do not retry the request on another node, because that can lead to ES returning a error or
+            // less data being returned than requested.  See: https://github.com/elastic/elasticsearch-hadoop/issues/1302
+            InputStream is = execute(POST, "_search/scroll?scroll=" + scrollKeepAlive.toString(), body, true, false).body();
             stats.scrollTotal++;
             return is;
         } finally {
@@ -737,7 +747,7 @@ public class RestClient implements Closeable, StatsAware {
             throw new EsHadoopIllegalStateException("Unable to retrieve elasticsearch main cluster info.");
         }
         String clusterName = result.get("cluster_name").toString();
-        String clusterUUID = result.get("cluster_uuid").toString();
+        String clusterUUID = (String)result.get("cluster_uuid");
         @SuppressWarnings("unchecked")
         Map<String, String> versionBody = (Map<String, String>) result.get("version");
         if (versionBody == null || !StringUtils.hasText(versionBody.get("number"))) {

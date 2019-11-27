@@ -1,0 +1,6 @@
+[[eshadoop-7.4.0]]
+== Elasticsearch for Apache Hadoop version 7.4.0
+October 1, 2019
+
+ES-Hadoop 7.4.0 is a version compatibility release,
+tested specifically against Elasticsearch 7.4.0.

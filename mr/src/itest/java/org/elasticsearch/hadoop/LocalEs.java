@@ -67,13 +67,17 @@ public class LocalEs extends ExternalResource {
         }
     }
 
+    /**
+     * Installs an index template that sets number of shards to 1 and number of replicas to 0.
+     * Note, that this is only needed for ES version prior to 7.0
+     */
     private void setSingleNodeTemplate() throws Exception {
         LogFactory.getLog(getClass()).warn("Installing single node template...");
         ClusterInfo clusterInfo = InitializationUtils.discoverClusterInfo(new TestSettings(), LogFactory.getLog(this.getClass()));
         if (clusterInfo.getMajorVersion().onOrBefore(EsMajorVersion.V_5_X)) {
             RestUtils.put("_template/single-node-template",
                     "{\"template\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
-        } else {
+        } else if (clusterInfo.getMajorVersion().onOrBefore(EsMajorVersion.V_6_X)) {
             RestUtils.put("_template/single-node-template",
                     "{\"index_patterns\": \"*\", \"settings\": {\"number_of_shards\": 1,\"number_of_replicas\": 0}}".getBytes());
         }
