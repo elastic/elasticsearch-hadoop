@@ -1,6 +1,5 @@
 [[eshadoop-6.4.0]]
 == Elasticsearch for Apache Hadoop version 6.4.0
-August 23, 2018
 
 [[new-6.4.0]]
 === New Features

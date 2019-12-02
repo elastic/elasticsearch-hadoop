@@ -1,6 +1,5 @@
 [[eshadoop-6.0.0]]
 == Elasticsearch for Apache Hadoop version 6.0.0
-November 14, 2017
 
 [[breaking-6.0.0]]
 === Breaking Changes

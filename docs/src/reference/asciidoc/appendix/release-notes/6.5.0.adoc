@@ -1,6 +1,5 @@
 [[eshadoop-6.5.0]]
 == Elasticsearch for Apache Hadoop version 6.5.0
-November 6, 2018
 
 [[deprecation-6.5.0]]
 === Deprecations

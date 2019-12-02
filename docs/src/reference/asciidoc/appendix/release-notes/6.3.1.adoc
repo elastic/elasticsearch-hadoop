@@ -1,6 +1,5 @@
 [[eshadoop-6.3.1]]
-== Elasticsearch for Apache Hadoop version 6.3.1
-June 13, 2018
+== Elasticsearch for Apache Hadoop version 6.3.1å
 
 [[known-5.3.1]]
 === Known Issues
