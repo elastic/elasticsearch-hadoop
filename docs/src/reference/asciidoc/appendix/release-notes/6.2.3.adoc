@@ -1,6 +1,5 @@
 [[eshadoop-6.2.3]]
 == Elasticsearch for Apache Hadoop version 6.2.3
-March 20, 2018
 
 [[enhancements-6.2.3]]
 === Enhancements
