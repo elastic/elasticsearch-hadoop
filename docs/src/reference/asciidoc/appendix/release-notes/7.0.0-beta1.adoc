@@ -1,6 +1,5 @@
 [[eshadoop-7.0.0-beta1]]
 == Elasticsearch for Apache Hadoop version 7.0.0-beta1
-February 14, 2019
 
 [[breaking-7.0.0-beta1]]
 === Breaking Changes
