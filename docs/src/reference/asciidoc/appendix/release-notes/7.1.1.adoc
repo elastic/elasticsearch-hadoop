@@ -1,6 +1,5 @@
 [[eshadoop-7.1.1]]
 == Elasticsearch for Apache Hadoop version 7.1.1
-May 28, 2019
 
 [[bugs-7.1.1]]
 === Bug Fixes

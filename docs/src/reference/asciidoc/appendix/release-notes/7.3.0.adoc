@@ -1,6 +1,5 @@
 [[eshadoop-7.3.0]]
 == Elasticsearch for Apache Hadoop version 7.3.0
-July 31, 2019
 
 [[docs-7.3.0]]
 === Documentation

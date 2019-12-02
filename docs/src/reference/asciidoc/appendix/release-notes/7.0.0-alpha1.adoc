@@ -1,6 +1,5 @@
 [[eshadoop-7.0.0-alpha1]]
 == Elasticsearch for Apache Hadoop version 7.0.0-alpha1
-November 15, 2018
 
 [[new-7.0.0-alpha1]]
 === New Features
