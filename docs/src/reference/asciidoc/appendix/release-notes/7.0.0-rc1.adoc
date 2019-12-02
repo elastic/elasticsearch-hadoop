@@ -1,6 +1,5 @@
 [[eshadoop-7.0.0-rc1]]
 == Elasticsearch for Apache Hadoop version 7.0.0-rc1
-March 27, 2019
 
 [[bugs-7.0.0-rc1]]
 === Bug Fixes
