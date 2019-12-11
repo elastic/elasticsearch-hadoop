@@ -75,6 +75,7 @@ public class BulkProcessor implements Closeable, StatsAware {
     private int bufferEntriesThreshold;
     private boolean autoFlush = true;
     private int retryLimit;
+    private final int batchWriteWaitTime;
 
     // Processor writing state flags
     private boolean executedBulkWrite = false;
@@ -100,6 +101,7 @@ public class BulkProcessor implements Closeable, StatsAware {
         int limit = settings.getBatchWriteRetryLimit();
         // Set the processors retry limit to a smart value based on both the configured limit and the configured retry count.
         this.retryLimit = (limit < retryCount || retryCount < 0) ? retryCount : limit;
+        this.batchWriteWaitTime = settings.getBatchWriteWait();
 
         // Backing data array
         this.ba = new BytesArray(new byte[settings.getBatchSizeInBytes()], 0);
@@ -209,6 +211,16 @@ public class BulkProcessor implements Closeable, StatsAware {
 
                     // Log messages, and if wait time is set, perform the thread sleep.
                     initFlushOperation(bulkLoggingID, retryOperation, retries.size(), waitTime);
+
+                    // Check if should wait before sending the request.
+                    try {
+                        if (this.batchWriteWaitTime != 0 && !retryOperation)
+                            Thread.sleep(batchWriteWaitTime);
+                    }
+                    catch (InterruptedException ex) {
+                        // Not should be interrupted by the program
+                        ex.printStackTrace();
+                    }
 
                     // Exec bulk operation to ES, get response.
                     debugLog(bulkLoggingID, "Submitting request");

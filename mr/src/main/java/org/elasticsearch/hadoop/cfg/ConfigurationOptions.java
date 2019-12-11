@@ -87,6 +87,9 @@ public interface ConfigurationOptions {
     String ES_BATCH_WRITE_REFRESH_DEFAULT = "true";
 
     /** HTTP bulk retries **/
+    String ES_BATCH_WRITE_WAIT = "es.batch.write.wait";
+    String ES_BATCH_WRITE_WAIT_DEFAULT = "0";
+
     String ES_BATCH_WRITE_RETRY_COUNT = "es.batch.write.retry.count";
     String ES_BATCH_WRITE_RETRY_COUNT_DEFAULT = "3";
 
