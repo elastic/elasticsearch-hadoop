@@ -27,8 +27,7 @@ class ElasticsearchFixturePlugin implements Plugin<Project> {
         def version = project.hasProperty("es.version") ? project.getProperty("es.version") : project.elasticsearchVersion
 
         // Optionally allow user to disable the fixture
-        def hasLocalRepo = project.hasProperty("localRepo")
-        def useFixture = !hasLocalRepo && Boolean.parseBoolean(project.findProperty("tests.fixture.es.enable") ?: "true")
+        def useFixture = Boolean.parseBoolean(project.findProperty("tests.fixture.es.enable") ?: "true")
 
         def integrationTestTask = project.tasks.getByName("integrationTest") as RestTestRunnerTask
         if (useFixture) {

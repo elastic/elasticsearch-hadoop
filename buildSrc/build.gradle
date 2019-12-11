@@ -78,6 +78,9 @@ dependencies {
 
     if (localRepo) {
         compile name: "build-tools-${buildToolsVersion}"
+        // Required for dependency licenses task (explicitly added in case of localRepo missing transitive dependencies)
+        compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
+        compile group: 'org.apache.rat', name: 'apache-rat', version: '0.11'
     } else {
         compile group: 'org.elasticsearch.gradle', name: 'build-tools', version: buildToolsVersion
     }
