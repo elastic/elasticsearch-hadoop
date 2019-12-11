@@ -72,6 +72,7 @@ public class RestClient implements Closeable, StatsAware {
     private final ObjectMapper mapper;
     private final TimeValue scrollKeepAlive;
     private final boolean indexReadMissingAsEmpty;
+    private final int batchWriteWaitTime;
     private final HttpRetryPolicy retryPolicy;
     final EsMajorVersion internalVersion;
 
@@ -93,6 +94,7 @@ public class RestClient implements Closeable, StatsAware {
 
         scrollKeepAlive = TimeValue.timeValueMillis(settings.getScrollKeepAlive());
         indexReadMissingAsEmpty = settings.getIndexReadMissingAsEmpty();
+        batchWriteWaitTime = settings.getBatchWriteWait();
 
         String retryPolicyName = settings.getBatchWriteRetryPolicy();
 
@@ -181,6 +183,14 @@ public class RestClient implements Closeable, StatsAware {
         boolean isRetry = false;
 
         do {
+            try {
+                if (!isRetry && batchWriteWaitTime != 0)
+                    Thread.sleep(batchWriteWaitTime);
+            }
+            catch (InterruptedException ex) {
+                // Not should be interrupted by the program
+                ex.printStackTrace();
+            }
             // NB: dynamically get the stats since the transport can change
             long start = network.transportStats().netTotalTime;
             Response response = execute(PUT, resource.bulk(), data);
