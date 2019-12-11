@@ -2,6 +2,7 @@ package org.elasticsearch.hadoop.gradle
 
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.elasticsearch.gradle.VersionProperties
+import org.elasticsearch.gradle.info.BuildParams
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -162,6 +163,11 @@ class BuildPlugin implements Plugin<Project> {
 
             String inFipsJvmScript = 'print(java.security.Security.getProviders()[0].name.toLowerCase().contains("fips"));'
             project.rootProject.ext.inFipsJvm = Boolean.parseBoolean(runJavascript(project, javaHome, inFipsJvmScript))
+
+            BuildParams.init { params ->
+                params.setInFipsJvm(project.rootProject.ext.inFipsJvm)
+                params.setIsRutimeJavaHomeSet(project.rootProject.ext.isRuntimeJavaHomeSet)
+            }
         }
         project.ext.java8 = project.rootProject.ext.java8
         project.ext.gitHead = project.rootProject.ext.gitHead
@@ -195,6 +201,9 @@ class BuildPlugin implements Plugin<Project> {
                 url "https://${repo}.elastic.co/downloads"
                 layout "pattern", {
                     artifact "elasticsearch/[module]-[revision](-[classifier]).[ext]"
+                }
+                metadataSources {
+                    artifact()
                 }
             }
         }
@@ -287,20 +296,6 @@ class BuildPlugin implements Plugin<Project> {
                     }
 
                 }
-            }
-        }
-
-        // Do substitutions for ES fixture downloads
-        project.configurations.all { Configuration configuration ->
-            configuration.resolutionStrategy.dependencySubstitution { DependencySubstitutions subs ->
-                // TODO: Build tools requests a version format that does not match the version id of the distribution.
-                // Fix this when it is fixed in the mainline
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}linux-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-linux-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}windows-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-windows-x86_64"))
-                subs.substitute(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}darwin-x86_64"))
-                        .with(subs.module("dnm:elasticsearch:${project.ext.elasticsearchVersion}-darwin-x86_64"))
             }
         }
     }
