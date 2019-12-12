@@ -391,7 +391,6 @@ Whether the connector is used against an {es} instance in a cloud/restricted env
 Note that in this mode, performance is _highly_  affected.
 
 added[2.2]
-[float]
 `es.nodes.resolve.hostname` (default depends)::
 Whether the connector should resolve the nodes hostnames to IP addresses or not. By default it is +true+ unless +wan+ mode is enabled (see above) in which case it will default to false.
 
