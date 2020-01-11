@@ -353,13 +353,22 @@ public abstract class RestService implements Serializable {
                 }
             } else {
                 // TODO applyAliasMetaData should be called in order to ensure that the count are exact (alias filters and routing may change the number of documents)
-                long numDocs;
-                if (readResource.isTyped()) {
-                    numDocs = client.count(index, readResource.type(), Integer.toString(shardId), query);
-                } else {
-                    numDocs = client.countIndexShard(index, Integer.toString(shardId), query);
+
+
+                Boolean shardNumAsPartitionNum = settings.getInputShardsAsPartition();
+
+                int numPartitions = 1;
+                if(!shardNumAsPartitionNum){
+                    long numDocs;
+                    if (readResource.isTyped()) {
+                        numDocs = client.count(index, readResource.type(), Integer.toString(shardId), query);
+                    } else {
+                        numDocs = client.countIndexShard(index, Integer.toString(shardId), query);
+                    }
+
+                    numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
                 }
-                int numPartitions = (int) Math.max(1, numDocs / maxDocsPerPartition);
+
                 for (int i = 0; i < numPartitions; i++) {
                     PartitionDefinition.Slice slice = new PartitionDefinition.Slice(i, numPartitions);
                     partitions.add(new PartitionDefinition(settings, resolvedMapping, index, shardId, slice, locations));

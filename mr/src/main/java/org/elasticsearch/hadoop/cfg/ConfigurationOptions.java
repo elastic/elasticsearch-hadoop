@@ -142,6 +142,9 @@ public interface ConfigurationOptions {
     String ES_INPUT_JSON = "es.input.json";
     String ES_INPUT_JSON_DEFAULT = "no";
 
+    String ES_INPUT_SHARDS_AS_PARTITION = "es.input.shard.num.as.partition.num";
+    String ES_INPUT_SHARDS_AS_PARTITION_DEFAULT = "no";
+
     /** Index settings */
     String ES_INDEX_AUTO_CREATE = "es.index.auto.create";
     String ES_INDEX_AUTO_CREATE_DEFAULT = "yes";
