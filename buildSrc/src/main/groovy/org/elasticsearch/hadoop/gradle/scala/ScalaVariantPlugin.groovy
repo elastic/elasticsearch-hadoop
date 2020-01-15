@@ -46,6 +46,8 @@ class ScalaVariantPlugin implements Plugin<Project> {
                     properties.put('localRepo', 'true')
                 }
 
+                properties.put('build.snapshot', System.getProperty('build.snapshot', 'true'))
+
                 if (OperatingSystem.current().isWindows()) {
                     crossBuildForVariant.executable('gradlew.bat')
                 } else {
