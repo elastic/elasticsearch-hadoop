@@ -272,6 +272,7 @@ class BuildPlugin implements Plugin<Project>  {
             }
         }
 
+        // FIXHERE : Spark Restructure - all the variant configurations will need this
         project.configurations.compile.dependencies.all(disableTransitiveDeps)
         project.configurations.provided.dependencies.all(disableTransitiveDeps)
         project.configurations.optional.dependencies.all(disableTransitiveDeps)
@@ -288,6 +289,7 @@ class BuildPlugin implements Plugin<Project>  {
         sourceSets.create('itest')
 
         // Detail all common dependencies
+        // FIXHERE : Spark Restructure - each variant's configurations needs to have these set
         project.dependencies {
             testCompile "junit:junit:${project.ext.junitVersion}"
             testCompile "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}"
@@ -374,14 +376,17 @@ class BuildPlugin implements Plugin<Project>  {
         project.sourceCompatibility = '1.8'
         project.targetCompatibility = '1.8'
 
+        // FIXHERE : Spark Restructure - Variants all have java compile tasks that need configuring
         JavaCompile compileJava = project.tasks.getByName('compileJava') as JavaCompile
         compileJava.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
 
         // Enable HTML test reports
+        // FIXHERE : Spark Restructure - All the variant's test tasks
         Test testTask = project.tasks.getByName('test') as Test
         testTask.getReports().getByName('html').setEnabled(true)
 
         // Configure project jar task with manifest and include license and notice data.
+        // FIXHERE : Spark Restructure - All the variant's jar tasks
         Jar jar = project.tasks.getByName('jar') as Jar
 
         Manifest manifest = jar.getManifest()
@@ -405,12 +410,14 @@ class BuildPlugin implements Plugin<Project>  {
         }
 
         // Jar up the sources of the project
+        // FIXHERE : Spark Restructure - Need sources jars for the variants
         Jar sourcesJar = project.tasks.create('sourcesJar', Jar)
         sourcesJar.dependsOn(project.tasks.classes)
         sourcesJar.classifier = 'sources'
         sourcesJar.from(project.sourceSets.main.allSource)
 
         // Configure javadoc
+        // FIXHERE : Spark Restructure - And javadoc jars
         Javadoc javadoc = project.tasks.getByName('javadoc') as Javadoc
         javadoc.title = "${project.rootProject.description} ${project.version} API"
         javadoc.excludes = [
@@ -449,11 +456,13 @@ class BuildPlugin implements Plugin<Project>  {
         ]
 
         // Package up the javadocs into their own jar
+        // FIXHERE : Spark Restructure -  And they'll need jar tasks for the javadocs
         Jar javadocJar = project.tasks.create('javadocJar', Jar)
         javadocJar.classifier = 'javadoc'
         javadocJar.from(project.tasks.javadoc)
 
         // Task for creating ALL of a project's jars - Like assemble, but this includes the sourcesJar and javadocJar.
+        // FIXHERE : Spark Restructure - all of those jars will need to be added to pack
         Task pack = project.tasks.create('pack')
         pack.dependsOn(project.tasks.jar)
         pack.dependsOn(javadocJar)
@@ -462,6 +471,7 @@ class BuildPlugin implements Plugin<Project>  {
 
         // The distribution task is like assemble, but packages up a lot of extra jars and performs extra tasks that
         // are mostly used for snapshots and releases.
+        // FIXHERE : Spark Restructure - And this too....
         Task distribution = project.tasks.create('distribution')
         distribution.dependsOn(pack)
         // Co-locate all build artifacts into distributions subdir for easier build automation
@@ -497,6 +507,7 @@ class BuildPlugin implements Plugin<Project>  {
     }
 
     private static void configureMaven(Project project) {
+        // FIXHERE : Spark Restructure - Will need poms for each variant - is this even compatible with it?
         Task writePom = project.getTasks().create('writePom')
         writePom.doLast {
             MavenPluginConvention convention = project.getConvention().getPlugins().get('maven') as MavenPluginConvention
@@ -601,6 +612,7 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureIntegrationTestTask(Project project) {
+        // FIXHERE : Spark Restructure - Oh boy... IntegTests
         Jar hadoopTestingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
         if (hadoopTestingJar == null) {
             // jar used for testing Hadoop remotely (es-hadoop + tests)
@@ -657,6 +669,7 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to configure
      */
     private static void configureTestReports(Project project) {
+        // FIXHERE : Spark Restructure - Whyyyyy
         TestReport testReport = project.rootProject.getTasks().findByName('testReport') as TestReport
         if (testReport == null) {
             // Create the task on root if it is not created yet.
