@@ -8,6 +8,8 @@ This section summarizes the changes in each release.
 [float]
 [[release-notes-7]]
 ===== 7.x
+
+* <<eshadoop-7.5.2>>
 * <<eshadoop-7.5.1>>
 * <<eshadoop-7.5.0>>
 * <<eshadoop-7.4.2>>
@@ -76,6 +78,7 @@ http://github.com/elastic/elasticsearch-hadoop/issues/XXX[#XXX]
 
 ////////////////////////
 
+include::release-notes/7.5.2.adoc[]
 include::release-notes/7.5.1.adoc[]
 include::release-notes/7.5.0.adoc[]
 include::release-notes/7.4.2.adoc[]
