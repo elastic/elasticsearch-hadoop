@@ -804,10 +804,16 @@ class AbstractScalaEsScalaSpark(prefix: String, readMetadata: jl.Boolean) extend
     val typename = "alias"
     val target = resource(index, typename, version)
 
+    val indexPattern = "spark-template-*"
+    val patternMatchField = if (version.onOrAfter(EsMajorVersion.V_8_X)) {
+      s""""index_patterns":["$indexPattern"],"""
+    } else {
+      s""""template": "$indexPattern","""
+    }
 
     val template = s"""
         |{
-        |"template" : "spark-template-*",
+        |$patternMatchField
         |"settings" : {
         |    "number_of_shards" : 1,
         |    "number_of_replicas" : 0
