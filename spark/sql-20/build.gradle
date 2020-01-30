@@ -8,14 +8,14 @@ apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'scala.variants'
 
 variants {
-    defaultVersion '2.11.12'
-    targetVersions '2.11.12'
+    defaultVersion '2.12.10'
+    targetVersions '2.12.10'
 }
 
 configurations {
     scalaCompilerPlugin {
         defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.15"))
         }
     }
 }

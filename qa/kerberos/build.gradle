@@ -51,7 +51,7 @@ dependencies {
     compile project(":elasticsearch-hadoop-mr")
     compile project(":elasticsearch-storm")
 
-    compile 'org.scala-lang:scala-library:2.11.8'
+    compile 'org.scala-lang:scala-library:2.12.10'
     compile project(":elasticsearch-spark-20")
     
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")

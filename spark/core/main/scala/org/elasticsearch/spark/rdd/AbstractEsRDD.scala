@@ -18,8 +18,7 @@
  */
 package org.elasticsearch.spark.rdd;
 
-import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.Partition
@@ -45,7 +44,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
   @transient protected lazy val logger = LogFactory.getLog(this.getClass())
 
   override def getPartitions: Array[Partition] = {
-    esPartitions.zipWithIndex.map { case(esPartition, idx) =>
+    esPartitions.asScala.zipWithIndex.map { case(esPartition, idx) =>
       new EsPartition(id, idx, esPartition)
     }.toArray
   }
@@ -70,7 +69,7 @@ private[spark] abstract class AbstractEsRDD[T: ClassTag](
 
   @transient private[spark] lazy val esCfg = {
     val cfg = new SparkSettingsManager().load(sc.getConf).copy();
-    cfg.merge(params)
+    cfg.merge(params.asJava)
     InitializationUtils.setUserProviderIfNotSet(cfg, classOf[HadoopUserProvider], logger)
     cfg
   }

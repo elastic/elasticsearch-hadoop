@@ -15,7 +15,7 @@ variants {
 configurations {
     scalaCompilerPlugin {
         defaultDependencies { dependencies ->
-            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.13"))
+            dependencies.add(project.dependencies.create( "com.typesafe.genjavadoc:genjavadoc-plugin_${scalaVersion}:0.15"))
         }
     }
 }
