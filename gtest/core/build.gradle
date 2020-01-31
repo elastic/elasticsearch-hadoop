@@ -79,7 +79,7 @@ task testAll {
 variants.forEach { v ->
     if (v.isVariant()) {
         sourceSets {
-            create(v.variant) {
+            create(v.variantSourceSetName) {
                 java {
                     srcDir 'src/main/java'
                 }
@@ -88,7 +88,7 @@ variants.forEach { v ->
                     srcDir "src/main/${v.variant}"
                 }
             }
-            create(v.testBase) {
+            create(v.testSourceSetName) {
                 java {
                     srcDir 'src/test/java'
                 }
@@ -97,43 +97,43 @@ variants.forEach { v ->
                     srcDir "src/test/${v.variant}"
                 }
                 // This source set's associated main class is:
-                SourceSet main = (project.sourceSets as SourceSetContainer).findByName(v.variant)
+                SourceSet main = (project.sourceSets as SourceSetContainer).findByName(v.variantSourceSetName)
                 // The variant test source needs the main source set class output, and its compile classpath for compilation
-                Configuration testCompileClasspath = project.getConfigurations().getByName("${v.testBase}CompileClasspath")
+                Configuration testCompileClasspath = project.getConfigurations().getByName(v.testConfiguration("compileClasspath"))
                 setCompileClasspath(project.files(main.getOutput(), testCompileClasspath))
                 // The variant test source needs its own class output, the main source set class output, and its runtime
                 // classpath for runtime
-                Configuration testRuntimeClasspath = project.getConfigurations().getByName("${v.testBase}RuntimeClasspath")
+                Configuration testRuntimeClasspath = project.getConfigurations().getByName(v.testConfiguration("runtimeClasspath"))
                 setRuntimeClasspath(project.files(getOutput(), main.getOutput(), testRuntimeClasspath))
             }
         }
 
         java {
             registerFeature(v.variant) {
-                usingSourceSet(sourceSets.findByName(v.variant))
+                usingSourceSet(sourceSets.findByName(v.variantSourceSetName))
                 capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
                 capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
                 capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
             }
-            registerFeature(v.testBase) {
-                usingSourceSet(sourceSets.findByName(v.testBase))
+            registerFeature(v.testVariant) {
+                usingSourceSet(sourceSets.findByName(v.testSourceSetName))
                 capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
-                capability('org.elasticsearch.gradle', 'spark-framework', spark24)
+                capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
                 capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
             }
         }
 
         configurations { ConfigurationContainer container ->
-            ["Compile", "Implementation", "Runtime", "RuntimeOnly"].forEach { conf ->
-                container.getByName(v.testBase + conf) {
-                    extendsFrom configurations.findByName(v.variant + conf)
+            ["compile", "implementation", "runtime", "runtimeOnly"].forEach { conf ->
+                container.getByName(v.testConfiguration(conf)) {
+                    extendsFrom configurations.findByName(v.configuration(conf))
                 }
             }
         }
 
-        project.tasks.create(v.testBase, Test) { Test t ->
-            t.testClassesDirs = project.sourceSets.getByName(v.testBase).output.classesDirs
-            t.classpath = project.sourceSets.getByName(v.testBase).runtimeClasspath
+        project.tasks.create(v.testTaskName, Test) { Test t ->
+            t.testClassesDirs = project.sourceSets.getByName(v.testSourceSetName).output.classesDirs
+            t.classpath = project.sourceSets.getByName(v.testSourceSetName).runtimeClasspath
             t.group = 'verification'
 
             // Project Specific
@@ -146,27 +146,27 @@ variants.forEach { v ->
     }
 
     configurations { ConfigurationContainer container ->
-        container.create(v.artifactConfiguration()) {
+        container.create(v.artifactConfiguration) {
             canBeConsumed = true
             canBeResolved = false
         }
     }
 
     artifacts { ArtifactHandler a ->
-        a.add(v.artifactConfiguration(), project.tasks.getByName(v.jarTask()))
+        a.add(v.artifactConfiguration, project.tasks.getByName(v.jarTask))
     }
 
     dependencies { DependencyHandler d ->
-        d.add(v.implementation(), "org.scala-lang:scala-library:${v.scalaVersion}")
-        d.add(v.implementation(), "org.scala-lang:scala-reflect:${v.scalaVersion}")
-        d.add(v.implementation(), "org.apache.spark:spark-core_${v.scalaMajorVersion}:${v.sparkVersion}") {
+        d.add(v.configuration("implementation"), "org.scala-lang:scala-library:${v.scalaVersion}")
+        d.add(v.configuration("implementation"), "org.scala-lang:scala-reflect:${v.scalaVersion}")
+        d.add(v.configuration("implementation"), "org.apache.spark:spark-core_${v.scalaMajorVersion}:${v.sparkVersion}") {
             exclude group: 'javax.servlet'
             exclude group: 'org.apache.hadoop'
         }
-        d.add(v.testImplementation(), "junit:junit:4.12")
+        d.add(v.testConfiguration("implementation"), "junit:junit:4.12")
     }
 
     testAll {
-        dependsOn v.testBase
+        dependsOn v.testTaskName
     }
 }

@@ -21,6 +21,8 @@ package org.elasticsearch.hadoop.gradle.scala;
 
 import java.util.Objects;
 
+import org.codehaus.groovy.runtime.StringGroovyMethods;
+
 public class SparkScalaVariant {
     private final boolean main;
 
@@ -67,6 +69,18 @@ public class SparkScalaVariant {
         return variant;
     }
 
+    public String getTestVariant() {
+        return testBase;
+    }
+
+    public String getVariantSourceSetName() {
+        return variant;
+    }
+
+    public String getTestSourceSetName() {
+        return testBase;
+    }
+
     public String getSparkVersion() {
         return sparkVersion;
     }
@@ -75,27 +89,27 @@ public class SparkScalaVariant {
         return scalaVersion;
     }
 
-    public String getTestBase() {
-        return testBase;
-    }
-
     public String getScalaMajorVersion() {
         return scalaMajorVersion;
     }
 
-    public String artifactConfiguration() {
+    public String getArtifactConfiguration() {
         return artifactConfiguration;
     }
 
-    public String implementation() {
-        return main ? "implementation" : variant + "Implementation";
+    public String configuration(CharSequence configurationName) {
+        return main ? configurationName.toString() : variant + StringGroovyMethods.capitalize(configurationName);
     }
 
-    public String testImplementation() {
-        return main ? "testImplementation" : testBase + "Implementation";
+    public String testConfiguration(CharSequence configurationName) {
+        return testBase + StringGroovyMethods.capitalize(configurationName);
     }
 
-    public String jarTask() {
+    public String getTestTaskName() {
+        return testBase;
+    }
+
+    public String getJarTask() {
         return main ? "jar" : variant + "Jar";
     }
 
