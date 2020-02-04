@@ -109,8 +109,12 @@ public class SparkScalaVariant {
         return testBase;
     }
 
+    public String variantTaskName(CharSequence taskName) {
+        return main ? taskName.toString() : variant + StringGroovyMethods.capitalize(taskName);
+    }
+
     public String getJarTask() {
-        return main ? "jar" : variant + "Jar";
+        return variantTaskName("jar");
     }
 
     @Override

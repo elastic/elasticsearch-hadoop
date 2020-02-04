@@ -68,12 +68,9 @@ dependencies {
     components.all(ScalaRuntimeCapability)
 }
 
-task testAll {
-    group 'verification'
-}
-
-project.tasks.create('variants') {
-    group 'build'
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 variants.forEach { v ->
@@ -114,6 +111,8 @@ variants.forEach { v ->
                 capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
                 capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
                 capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
+                withJavadocJar()
+                withSourcesJar()
             }
             registerFeature(v.testBase) {
                 usingSourceSet(sourceSets.findByName(v.testSourceSetName))
@@ -153,7 +152,7 @@ variants.forEach { v ->
     }
 
     artifacts { ArtifactHandler a ->
-        a.add(v.artifactConfiguration, project.tasks.getByName(v.jarTask))
+        a.add(v.artifactConfiguration, project.tasks.getByName(v.variantTaskName('jar')))
     }
 
     dependencies { DependencyHandler d ->
@@ -163,21 +162,38 @@ variants.forEach { v ->
         d.add(v.testConfiguration("implementation"), "junit:junit:4.12")
     }
 
-    testAll {
+    check {
         dependsOn v.testTaskName
     }
 
     // SQL specific
-    project.tasks.getByName(v.jarTask) {
-        from(zipTree(project(':gtest:core').configurations.getByName(v.artifactConfiguration).artifacts.file.get(0))) {
-            include "org/elasticsearch/spark/**"
+    project.tasks.getByName(v.variantTaskName("jar")) { Jar jar ->
+        Project coreProject = project(':gtest:core')
+        Configuration artifactConfiguration = coreProject.getConfigurations().getByName(v.artifactConfiguration)
+        File coreJar = artifactConfiguration.artifacts.file.get(0)
+        from(zipTree(coreJar)) {
+            include "org/elasticsearch/**"
             include "META-INF/services/*"
         }
-        archiveBaseName = "sql20_${v.scalaMajorVersion}"
-        archiveClassifier = null
     }
 
-    project.tasks.variants {
-        dependsOn v.jarTask
+    Closure variantJarNameFixer = { Jar jar ->
+        jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
+        String sanitizedClassifier = jar.archiveClassifier.get().replace(v.variant, "")
+        sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
+        if (sanitizedClassifier.size() > 0) {
+            archiveClassifier = sanitizedClassifier
+        } else {
+            archiveClassifier = null
+        }
+    }
+
+    project.tasks.getByName(v.variantTaskName("jar"), variantJarNameFixer)
+    project.tasks.getByName(v.variantTaskName("javadocJar"), variantJarNameFixer)
+    project.tasks.getByName(v.variantTaskName("sourcesJar"), variantJarNameFixer)
+
+    // Because build depends on the variant javadoc and sources jars already but not the actual variant jar.
+    project.tasks.build {
+        dependsOn v.variantTaskName('jar')
     }
 }

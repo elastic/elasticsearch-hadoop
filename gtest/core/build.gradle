@@ -43,7 +43,7 @@ def scala211 = '2.11.12'
 def scala210 = '2.10.7'
 
 List<SparkScalaVariant> variants = [
-        SparkScalaVariant.main("spark24scala212", spark24, scala211),
+        SparkScalaVariant.main("spark24scala212", spark24, scala212),
         SparkScalaVariant.variant("spark24scala211", spark24, scala211),
         SparkScalaVariant.variant("spark20scala210", spark20, scala210),
         SparkScalaVariant.variant("spark13scala211", spark13, scala211),
@@ -72,8 +72,9 @@ dependencies {
     components.all(ScalaRuntimeCapability)
 }
 
-task testAll {
-    group 'verification'
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 variants.forEach { v ->
@@ -114,6 +115,8 @@ variants.forEach { v ->
                 capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
                 capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
                 capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
+                withJavadocJar()
+                withSourcesJar()
             }
             registerFeature(v.testVariant) {
                 usingSourceSet(sourceSets.findByName(v.testSourceSetName))
@@ -143,6 +146,18 @@ variants.forEach { v ->
             t.minHeapSize = "256m"
             t.maxHeapSize = "2g"
         }
+
+        // Scaladoc
+        project.getTasks().register(v.variantTaskName("scaladoc"), ScalaDoc.class) { ScalaDoc scaladoc ->
+            SourceSet main = (project.sourceSets as SourceSetContainer).findByName(v.variantSourceSetName)
+            def scaladocClasspath = project.files()
+            scaladocClasspath.from(main.getOutput())
+            scaladocClasspath.from(main.getCompileClasspath())
+            scaladoc.classpath = scaladocClasspath
+            scaladoc.setSource(main.getScala())
+            scaladoc.setDescription("Generates Scaladoc for the ${v.variantSourceSetName} source code.")
+            scaladoc.setGroup(JavaBasePlugin.DOCUMENTATION_GROUP)
+        }
     }
 
     configurations { ConfigurationContainer container ->
@@ -153,7 +168,7 @@ variants.forEach { v ->
     }
 
     artifacts { ArtifactHandler a ->
-        a.add(v.artifactConfiguration, project.tasks.getByName(v.jarTask))
+        a.add(v.artifactConfiguration, project.tasks.getByName(v.variantTaskName("jar")))
     }
 
     dependencies { DependencyHandler d ->
@@ -166,7 +181,7 @@ variants.forEach { v ->
         d.add(v.testConfiguration("implementation"), "junit:junit:4.12")
     }
 
-    testAll {
+    check {
         dependsOn v.testTaskName
     }
 }

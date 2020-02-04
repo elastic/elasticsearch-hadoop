@@ -23,6 +23,6 @@ import org.junit.Test
 
 class SQLThingTest {
   @Test def testSQL(): Unit = {
-    SQLThing.sql()
+    SQLThing.sql
   }
 }
