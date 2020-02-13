@@ -10,6 +10,7 @@ import org.elasticsearch.gradle.precommit.DependencyLicensesTask
 import org.elasticsearch.gradle.precommit.LicenseHeadersTask
 import org.elasticsearch.gradle.precommit.UpdateShasTask
 import org.elasticsearch.gradle.testclusters.RestTestRunnerTask
+import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 import org.elasticsearch.hadoop.gradle.util.Resources
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -30,6 +31,7 @@ import org.gradle.api.java.archives.Manifest
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
 import org.gradle.api.plugins.MavenPluginConvention
+import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.Upload
@@ -37,7 +39,6 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.Test
-import org.gradle.api.tasks.testing.TestReport
 import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.internal.jvm.Jvm
@@ -50,6 +51,9 @@ import org.springframework.build.gradle.propdep.PropDepsMavenPlugin
 import org.springframework.build.gradle.propdep.PropDepsPlugin
 
 class BuildPlugin implements Plugin<Project>  {
+
+    public static final String SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedTestImplementation"
+    public static final String SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME = "sharedItestImplementation"
 
     @Override
     void apply(Project project) {
@@ -65,7 +69,6 @@ class BuildPlugin implements Plugin<Project>  {
         configureEclipse(project)
         configureMaven(project)
         configureIntegrationTestTask(project)
-        configureTestReports(project)
         configurePrecommit(project)
         configureDependenciesInfo(project)
     }
@@ -252,13 +255,13 @@ class BuildPlugin implements Plugin<Project>  {
         return "_transitive_${groupId}_${artifactId}_${version}"
     }
 
-    private static void configureConfigurations(Project project) {
-        if (project.path.startsWith(":qa")) {
-            return
-        }
-
-        // force all dependencies added directly to compile/testCompile to be non-transitive, except for Elasticsearch projects
-        Closure disableTransitiveDeps = { Dependency dep ->
+    /**
+     * Applies a closure to all dependencies in a configuration (currently or in the future) that disables the
+     * resolution of transitive dependencies except for projects in the group <code>org.elasticsearch</code>.
+     * @param configuration to disable transitive dependencies on
+     */
+    static void disableTransitiveDependencies(Project project, Configuration configuration) {
+        configuration.dependencies.all { Dependency dep ->
             if (dep instanceof ModuleDependency && !(dep instanceof ProjectDependency) && dep.group.startsWith('org.elasticsearch') == false) {
                 dep.transitive = false
 
@@ -271,12 +274,28 @@ class BuildPlugin implements Plugin<Project>  {
                 }
             }
         }
+    }
 
-        // FIXHERE : Spark Restructure - all the variant configurations will need this
-        project.configurations.compile.dependencies.all(disableTransitiveDeps)
-        project.configurations.provided.dependencies.all(disableTransitiveDeps)
-        project.configurations.optional.dependencies.all(disableTransitiveDeps)
-        project.configurations.compileOnly.dependencies.all(disableTransitiveDeps)
+    private static void configureConfigurations(Project project) {
+        Configuration sharedTestImplementation = project.configurations.create(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        project.configurations.getByName(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(sharedTestImplementation)
+
+        // TODO: Remove optional and provided configurations.
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPlugin.SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPlugin.SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariantPlugin.SparkVariant variant ->
+                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
+                variantTestImplementation.extendsFrom(sharedTestImplementation)
+            }
+        }
+
+        if (!project.path.startsWith(":qa")) {
+            // FIXHERE : Spark Restructure - all the variant configurations will need this
+            disableTransitiveDependencies(project, project.configurations.compile)
+            disableTransitiveDependencies(project, project.configurations.provided)
+            disableTransitiveDependencies(project, project.configurations.optional)
+            disableTransitiveDependencies(project, project.configurations.compileOnly)
+        }
     }
 
     /**
@@ -287,30 +306,62 @@ class BuildPlugin implements Plugin<Project>  {
         // Create an itest source set, which will set up itest based configurations
         SourceSetContainer sourceSets = project.sourceSets as SourceSetContainer
         sourceSets.create('itest')
+        Configuration sharedItestImplementation = project.configurations.create(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME)
+        project.configurations.getByName('itestImplementation').extendsFrom(sharedItestImplementation)
+        project.getPlugins().withType(SparkVariantPlugin).whenPluginAdded {
+            SparkVariantPlugin.SparkVariantPluginExtension sparkVariants = project.getExtensions().getByType(SparkVariantPlugin.SparkVariantPluginExtension.class)
+            sparkVariants.featureVariants { SparkVariantPlugin.SparkVariant variant ->
+                Configuration variantTestImplementation = project.configurations.getByName(variant.configuration(SourceSet.TEST_SOURCE_SET_NAME, JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME))
+                variantTestImplementation.extendsFrom(sharedItestImplementation)
+            }
+        }
 
         // Detail all common dependencies
-        // FIXHERE : Spark Restructure - each variant's configurations needs to have these set
+        // FIXHERE : Spark Restructure - each variant's configurations needs to have these set.
+        // FIXHERE : Spark Restructure - Maybe we can add "shared" configurations and configure this to depend on those.
+        // FIXHERE : Spark Restructure - Or maybe this doesn't make sense in a plugin?
         project.dependencies {
-            testCompile "junit:junit:${project.ext.junitVersion}"
-            testCompile "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}"
 
-            testCompile "joda-time:joda-time:2.8"
+            /*
 
-            testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
-            testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
-            testRuntime "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}"
-            testRuntime "org.apache.logging.log4j:log4j-1.2-api:${project.ext.log4jVersion}"
-            testRuntime "net.java.dev.jna:jna:4.2.2"
-            testCompile "org.codehaus.groovy:groovy:${project.ext.groovyVersion}:indy"
-            testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
-            testRuntime "com.vividsolutions:jts:1.13"
+            compile (default) Scala 2.11
+            ^
+            |
+            compile (variant) Scala 2.10 (needs `force`)
+
+            Add a depedency resolution rule (could come in as a transitive dependency)
+            - Add to all configurations (default AND variant)
+
+            unfortunately, this is clunky:
+            the scala versions are easy to fix, but the spark versions
+            require extensive exclusions since their archive name format
+            (with the scala version in it) makes Gradle think that they
+            are different artifacts and thus does not consolidate multiple
+            spark versions together if they have different scala versions.
+
+             */
+
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "junit:junit:${project.ext.junitVersion}")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
+
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "joda-time:joda-time:2.8")
+
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.slf4j:slf4j-log4j12:1.7.6")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.logging.log4j:log4j-1.2-api:${project.ext.log4jVersion}")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "net.java.dev.jna:jna:4.2.2")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.codehaus.groovy:groovy:${project.ext.groovyVersion}:indy")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.locationtech.spatial4j:spatial4j:0.6")
+            add(SHARED_TEST_IMPLEMENTATION_CONFIGURATION_NAME, "com.vividsolutions:jts:1.13")
 
             // TODO: Remove when we merge ITests to test dirs
-            itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+            add(SHARED_ITEST_IMPLEMENTATION_CONFIGURATION_NAME, "org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
                 // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
                 // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
                 exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
             }
+
             itestCompile project.sourceSets.main.output
             itestCompile project.configurations.testCompile
             itestCompile project.configurations.provided
@@ -376,84 +427,87 @@ class BuildPlugin implements Plugin<Project>  {
         project.sourceCompatibility = '1.8'
         project.targetCompatibility = '1.8'
 
-        // FIXHERE : Spark Restructure - Variants all have java compile tasks that need configuring
-        JavaCompile compileJava = project.tasks.getByName('compileJava') as JavaCompile
-        compileJava.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
-
-        // Enable HTML test reports
-        // FIXHERE : Spark Restructure - All the variant's test tasks
-        Test testTask = project.tasks.getByName('test') as Test
-        testTask.getReports().getByName('html').setEnabled(true)
-
-        // Configure project jar task with manifest and include license and notice data.
-        // FIXHERE : Spark Restructure - All the variant's jar tasks
-        Jar jar = project.tasks.getByName('jar') as Jar
-
-        Manifest manifest = jar.getManifest()
-        manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
-        manifest.attributes['Implementation-Title'] = project.name
-        manifest.attributes['Implementation-Version'] = project.version
-        manifest.attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
-        manifest.attributes['Implementation-Vendor'] = "Elastic"
-        manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
-        manifest.attributes['Repository-Revision'] = project.ext.revHash
-        String build = System.env['ESHDP.BUILD']
-        if (build != null) {
-            manifest.attributes['Build'] = build
+        project.tasks.withType(JavaCompile) { JavaCompile compile ->
+            compile.getOptions().setCompilerArgs(['-Xlint:unchecked', '-Xlint:options'])
         }
 
-        jar.from("${project.rootDir}/docs/src/info") { CopySpec spec ->
-            spec.include("license.txt")
-            spec.include("notice.txt")
-            spec.into("META-INF")
-            spec.expand(copyright: new Date().format('yyyy'), version: project.version)
+        // Enable HTML test reports
+        project.tasks.withType(Test) { Test testTask ->
+            testTask.getReports().getByName('html').setEnabled(true)
+        }
+
+        // Configure project jar task with manifest and include license and notice data.
+        project.tasks.withType(Jar) { Jar jar ->
+            Manifest manifest = jar.getManifest()
+            manifest.attributes["Created-By"] = "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})"
+            manifest.attributes['Implementation-Title'] = project.name
+            manifest.attributes['Implementation-Version'] = project.version
+            manifest.attributes['Implementation-URL'] = "https://github.com/elastic/elasticsearch-hadoop"
+            manifest.attributes['Implementation-Vendor'] = "Elastic"
+            manifest.attributes['Implementation-Vendor-Id'] = "org.elasticsearch.hadoop"
+            manifest.attributes['Repository-Revision'] = project.ext.revHash
+            String build = System.env['ESHDP.BUILD']
+            if (build != null) {
+                manifest.attributes['Build'] = build
+            }
+
+            jar.from("${project.rootDir}/docs/src/info") { CopySpec spec ->
+                spec.include("license.txt")
+                spec.include("notice.txt")
+                spec.into("META-INF")
+                spec.expand(copyright: new Date().format('yyyy'), version: project.version)
+            }
         }
 
         // Jar up the sources of the project
         // FIXHERE : Spark Restructure - Need sources jars for the variants
+//        project.java {
+//            withJavadocJar()
+//            withSourcesJar()
+//        }
         Jar sourcesJar = project.tasks.create('sourcesJar', Jar)
         sourcesJar.dependsOn(project.tasks.classes)
         sourcesJar.classifier = 'sources'
         sourcesJar.from(project.sourceSets.main.allSource)
 
         // Configure javadoc
-        // FIXHERE : Spark Restructure - And javadoc jars
-        Javadoc javadoc = project.tasks.getByName('javadoc') as Javadoc
-        javadoc.title = "${project.rootProject.description} ${project.version} API"
-        javadoc.excludes = [
-                "org/elasticsearch/hadoop/mr/compat/**",
-                "org/elasticsearch/hadoop/rest/**",
-                "org/elasticsearch/hadoop/serialization/**",
-                "org/elasticsearch/hadoop/util/**",
-                "org/apache/hadoop/hive/**"
-        ]
-        // Set javadoc executable to runtime Java (1.8)
-        javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
+        project.tasks.withType(Javadoc) { Javadoc javadoc ->
+            javadoc.title = "${project.rootProject.description} ${project.version} API"
+            javadoc.excludes = [
+                    "org/elasticsearch/hadoop/mr/compat/**",
+                    "org/elasticsearch/hadoop/rest/**",
+                    "org/elasticsearch/hadoop/serialization/**",
+                    "org/elasticsearch/hadoop/util/**",
+                    "org/apache/hadoop/hive/**"
+            ]
+            // Set javadoc executable to runtime Java (1.8)
+            javadoc.executable = new File(project.ext.runtimeJavaHome, 'bin/javadoc')
 
-        MinimalJavadocOptions javadocOptions = javadoc.getOptions()
-        javadocOptions.docFilesSubDirs = true
-        javadocOptions.outputLevel = JavadocOutputLevel.QUIET
-        javadocOptions.breakIterator = true
-        javadocOptions.author = false
-        javadocOptions.header = project.name
-        javadocOptions.showFromProtected()
-        javadocOptions.addStringOption('Xdoclint:none', '-quiet')
-        javadocOptions.groups = [
-                'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
-                'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
-                'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
-                'Elasticsearch Spark' : ['org.elasticsearch.spark*'],
-                'Elasticsearch Storm' : ['org.elasticsearch.storm*'],
-        ]
-        javadocOptions.links = [ // External doc links
-                "https://docs.oracle.com/javase/8/docs/api/",
-                "https://commons.apache.org/proper/commons-logging/apidocs/",
-                "https://hadoop.apache.org/docs/stable2/api/",
-                "https://pig.apache.org/docs/r0.15.0/api/",
-                "https://hive.apache.org/javadocs/r1.2.2/api/",
-                "https://spark.apache.org/docs/latest/api/java/",
-                "https://storm.apache.org/releases/current/javadocs/"
-        ]
+            MinimalJavadocOptions javadocOptions = javadoc.getOptions()
+            javadocOptions.docFilesSubDirs = true
+            javadocOptions.outputLevel = JavadocOutputLevel.QUIET
+            javadocOptions.breakIterator = true
+            javadocOptions.author = false
+            javadocOptions.header = project.name
+            javadocOptions.showFromProtected()
+            javadocOptions.addStringOption('Xdoclint:none', '-quiet')
+            javadocOptions.groups = [
+                    'Elasticsearch Map/Reduce' : ['org.elasticsearch.hadoop.mr*'],
+                    'Elasticsearch Hive' : ['org.elasticsearch.hadoop.hive*'],
+                    'Elasticsearch Pig' : ['org.elasticsearch.hadoop.pig*'],
+                    'Elasticsearch Spark' : ['org.elasticsearch.spark*'],
+                    'Elasticsearch Storm' : ['org.elasticsearch.storm*'],
+            ]
+            javadocOptions.links = [ // External doc links
+                    "https://docs.oracle.com/javase/8/docs/api/",
+                    "https://commons.apache.org/proper/commons-logging/apidocs/",
+                    "https://hadoop.apache.org/docs/stable2/api/",
+                    "https://pig.apache.org/docs/r0.15.0/api/",
+                    "https://hive.apache.org/javadocs/r1.2.2/api/",
+                    "https://spark.apache.org/docs/latest/api/java/",
+                    "https://storm.apache.org/releases/current/javadocs/"
+            ]
+        }
 
         // Package up the javadocs into their own jar
         // FIXHERE : Spark Restructure -  And they'll need jar tasks for the javadocs
@@ -465,9 +519,9 @@ class BuildPlugin implements Plugin<Project>  {
         // FIXHERE : Spark Restructure - all of those jars will need to be added to pack
         Task pack = project.tasks.create('pack')
         pack.dependsOn(project.tasks.jar)
-        pack.dependsOn(javadocJar)
-        pack.dependsOn(sourcesJar)
-        pack.outputs.files(project.tasks.jar.archivePath, javadocJar.archivePath, sourcesJar.archivePath)
+        pack.dependsOn(project.tasks.javadocJar)
+        pack.dependsOn(project.tasks.sourcesJar)
+        pack.outputs.files(project.tasks.jar.archivePath, project.tasks.javadocJar.archivePath, project.tasks.sourcesJar.archivePath)
 
         // The distribution task is like assemble, but packages up a lot of extra jars and performs extra tasks that
         // are mostly used for snapshots and releases.
@@ -508,6 +562,8 @@ class BuildPlugin implements Plugin<Project>  {
 
     private static void configureMaven(Project project) {
         // FIXHERE : Spark Restructure - Will need poms for each variant - is this even compatible with it?
+        // Declare a publication for each variant
+        // Looks at a "component"
         Task writePom = project.getTasks().create('writePom')
         writePom.doLast {
             MavenPluginConvention convention = project.getConvention().getPlugins().get('maven') as MavenPluginConvention
@@ -661,23 +717,6 @@ class BuildPlugin implements Plugin<Project>  {
             // There's probably a more elegant way to do this in Gradle
             project.plugins.apply("es.hadoop.cluster")
         }
-    }
-
-    /**
-     * Configure the root testReport task with the test tasks in this project to report on, creating the report task
-     * on root if it is not created yet.
-     * @param project to configure
-     */
-    private static void configureTestReports(Project project) {
-        // FIXHERE : Spark Restructure - Whyyyyy
-        TestReport testReport = project.rootProject.getTasks().findByName('testReport') as TestReport
-        if (testReport == null) {
-            // Create the task on root if it is not created yet.
-            testReport = project.rootProject.getTasks().create('testReport', TestReport.class)
-            testReport.setDestinationDir(project.rootProject.file("${project.rootProject.getBuildDir()}/reports/allTests"))
-        }
-        testReport.reportOn(project.getTasks().getByName('test'))
-        testReport.reportOn(project.getTasks().getByName('integrationTest'))
     }
 
     /**
