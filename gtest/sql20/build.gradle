@@ -1,4 +1,3 @@
-import org.elasticsearch.hadoop.gradle.BuildPlugin
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
 /*
@@ -70,14 +69,16 @@ sparkVariants {
                 canBeConsumed = false
                 canBeResolved = true
             }
+            container.getByName(v.configuration("implementation")) {
+                extendsFrom(container.getByName(v.configuration("embedded")))
+            }
         }
 
         dependencies { DependencyHandler d ->
             d.add(v.configuration("implementation"), "org.scala-lang:scala-library:${v.scalaVersion}")
             d.add(v.configuration("implementation"), "org.scala-lang:scala-reflect:${v.scalaVersion}")
 
-            add(v.configuration("embedded"), project(path: ':gtest:core', configuration: v.artifactConfiguration))
-            add(v.configuration("implementation"), project(':gtest:core')) {
+            add(v.configuration("embedded"), project(':gtest:core')) {
                 capabilities {
                     requireCapability("org.elasticsearch.spark.variant:${v.getName()}")
                 }
@@ -92,13 +93,17 @@ sparkVariants {
         }
 
         Closure variantJarNameFixer = { Jar jar ->
+            // Add the scala version to the base name
             jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
-            String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
-            sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
-            if (sanitizedClassifier.size() > 0) {
-                archiveClassifier = sanitizedClassifier
-            } else {
-                archiveClassifier = null
+            // Default variant jars won't need sanitizing since they won't have the variant name added to them.
+            if (!v.isDefaultVariant() && jar.archiveClassifier.get() != null) {
+                String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
+                sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
+                if (sanitizedClassifier.size() > 0) {
+                    archiveClassifier = sanitizedClassifier
+                } else {
+                    archiveClassifier = null
+                }
             }
         }
 
@@ -109,6 +114,7 @@ sparkVariants {
         // embed dependent projects into the jar
         // Todo: Look into using the Shadow Plugin for this.
         project.tasks.getByName(v.taskName("jar")) { Jar jar ->
+            // The default variant jar from core aligns with the default variant here. Don't expect a classifier on it. 
             String expected = "core-1.0${v.isDefaultVariant() ? "" : "-" + v.getName()}.jar"
 
             Configuration embedded = project.getConfigurations().getByName(v.configuration("embedded"))

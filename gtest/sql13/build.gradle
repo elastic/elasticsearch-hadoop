@@ -1,7 +1,5 @@
 import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
-import java.util.concurrent.Callable
-
 /*
  * Licensed to Elasticsearch under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -70,19 +68,21 @@ sparkVariants {
                 canBeConsumed = false
                 canBeResolved = true
             }
+            container.getByName(v.configuration("implementation")) {
+                extendsFrom(container.getByName(v.configuration("embedded")))
+            }
         }
 
         dependencies {
             add(v.configuration("implementation"), "org.scala-lang:scala-library:${v.scalaVersion}")
             add(v.configuration("implementation"), "org.scala-lang:scala-reflect:${v.scalaVersion}")
-            
-            add(v.configuration("embedded"), project(path: ':gtest:core', configuration: v.artifactConfiguration))
-            add(v.configuration("implementation"), project(':gtest:core')) {
+
+            add(v.configuration("embedded"), project(':gtest:core')) {
                 capabilities {
                     requireCapability("org.elasticsearch.spark.variant:${v.getName()}")
                 }
             }
-            
+
             add(v.configuration("test", "implementation"), project(':gtest:core')) {
                 capabilities {
                     requireCapability("org.elasticsearch.spark.variant:${v.getVariantName("test")}")
@@ -92,7 +92,9 @@ sparkVariants {
         }
 
         Closure variantJarNameFixer = { Jar jar ->
+            // Add the scala version to the base name
             jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
+            // Default variant jars won't need sanitizing since they won't have the variant name added to them.
             if (!v.isDefaultVariant() && jar.archiveClassifier.get() != null) {
                 String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
                 sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
@@ -110,8 +112,8 @@ sparkVariants {
 
         // embed dependent projects into the jar
         // Todo: Look into using the Shadow Plugin for this.
-        // TODO: Need to find a way to ensure the jar exists, OR pull the artifact from the runtime elements config.
         project.tasks.getByName(v.taskName("jar")) { Jar jar ->
+            // The default variant from core is based on Spark 2.x. Always specify a classifier here.
             String expected = "core-1.0-${v.getName()}.jar"
 
             Configuration embedded = project.getConfigurations().getByName(v.configuration("embedded"))
@@ -121,26 +123,6 @@ sparkVariants {
                 include "org/elasticsearch/**"
                 include "META-INF/services/*"
             }
-
-//            // The default variant here does not correspond to the default variant in the core project.
-//            // Create the runtime elements config name directly.
-//            // Still doesn't have the jar created because Gradle doesn't know that it needs to depend on that jar being made.
-//            Project coreProject = project.project(':gtest:core')
-//            Configuration coreRuntimeElements = coreProject.getConfigurations().getByName(v.getName() + "RuntimeElements")
-//            File coreJar = coreRuntimeElements.artifacts.file.get(0)
-//            println "expected [$expected] from [$coreRuntimeElements] got [$coreJar] (Exists? ${coreJar.exists()})"
-//            jar.from(zipTree(coreJar)) {
-//                include "org/elasticsearch/**"
-//                include "META-INF/services/*"
-//            }
-//
-//            Configuration embeddedConfiguration = project.getConfigurations().getByName(v.configuration("embedded"))
-//            List coreJars = embeddedConfiguration.collect().findAll { it.name == expected }
-//            println "expected [$expected] got [$coreJars]"
-//            jar.from(coreJars.collect { it.isDirectory() ? it : zipTree(it) }) {
-//                include "org/elasticsearch/**"
-//                include "META-INF/services/*"
-//            }
         }
     }
 }

@@ -50,7 +50,6 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.scala.ScalaDoc;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.util.ConfigureUtil;
@@ -61,7 +60,6 @@ import static org.gradle.api.plugins.JavaPlugin.API_ELEMENTS_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.COMPILE_CLASSPATH_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.COMPILE_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME;
-import static org.gradle.api.plugins.JavaPlugin.JAR_TASK_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_CONFIGURATION_NAME;
 import static org.gradle.api.plugins.JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME;
@@ -162,10 +160,6 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
         public String itestTaskName() {
             return isDefaultVariant ? "integrationTest" : "integrationTest" + StringGroovyMethods.capitalize(name);
-        }
-
-        public String getArtifactConfiguration() {
-            return name.toString();
         }
     }
 
@@ -277,7 +271,6 @@ public class SparkVariantPlugin implements Plugin<Project> {
 
         extension.defaultVariant(sparkVariant -> configureDefaultVariant(project, sparkVariant, javaPluginExtension, javaPluginConvention));
         extension.featureVariants(sparkVariant -> configureVariant(project, sparkVariant, javaPluginExtension, javaPluginConvention));
-        extension.all(sparkVariant -> registerArtifacts(project, sparkVariant));
     }
 
     private static void configureDefaultVariant(Project project, SparkVariant sparkVariant, JavaPluginExtension javaPluginExtension,
@@ -307,8 +300,8 @@ public class SparkVariantPlugin implements Plugin<Project> {
         String version = project.getVersion().toString();
 
         // Create a main and test source set for this variant
-        SourceSet main = createVariantSourceSet(project, sparkVariant, sourceSets, MAIN_SOURCE_SET_NAME);
-        SourceSet test = createVariantSourceSet(project, sparkVariant, sourceSets, TEST_SOURCE_SET_NAME);
+        SourceSet main = createVariantSourceSet(sparkVariant, sourceSets, MAIN_SOURCE_SET_NAME);
+        SourceSet test = createVariantSourceSet(sparkVariant, sourceSets, TEST_SOURCE_SET_NAME);
 
         // Each variant's test source set is registered like just another variant in Gradle. These variants do not get any of the special
         // treatment needed in order to function like the testing part of a regular project. We need to do some basic wiring in the test
@@ -331,7 +324,7 @@ public class SparkVariantPlugin implements Plugin<Project> {
         registerVariantScaladoc(project, tasks, sparkVariant, main);
     }
 
-    private static SourceSet createVariantSourceSet(Project project, SparkVariant sparkVariant, SourceSetContainer sourceSets, String srcSetName) {
+    private static SourceSet createVariantSourceSet(SparkVariant sparkVariant, SourceSetContainer sourceSets, String srcSetName) {
         SourceSet sourceSet = sourceSets.create(sparkVariant.getSourceSetName(srcSetName));
 
         SourceDirectorySet javaSourceSet = sourceSet.getJava();
@@ -404,13 +397,5 @@ public class SparkVariantPlugin implements Plugin<Project> {
             scalaDoc.setClasspath(scaladocClasspath);
             scalaDoc.setSource(getScalaSourceSet(main).getScala());
         });
-    }
-
-    private static void registerArtifacts(Project project, SparkVariant sparkVariant) {
-        Configuration variantArtifact = project.getConfigurations().create(sparkVariant.getArtifactConfiguration());
-        variantArtifact.setCanBeConsumed(true);
-        variantArtifact.setCanBeResolved(false);
-        Jar variantJar = (Jar) project.getTasks().getByName(sparkVariant.taskName(JAR_TASK_NAME));
-        project.getArtifacts().add(sparkVariant.getArtifactConfiguration(), variantJar);
     }
 }
