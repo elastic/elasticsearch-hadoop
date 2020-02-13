@@ -1,4 +1,5 @@
-import org.elasticsearch.hadoop.gradle.scala.SparkScalaVariant
+import org.elasticsearch.hadoop.gradle.BuildPlugin
+import org.elasticsearch.hadoop.gradle.scala.SparkVariantPlugin
 
 /*
  * Licensed to Elasticsearch under one or more contributor
@@ -21,6 +22,7 @@ import org.elasticsearch.hadoop.gradle.scala.SparkScalaVariant
 
 apply plugin: 'java'
 apply plugin: 'scala'
+apply plugin: 'spark.variants'
 
 repositories {
     mavenCentral()
@@ -37,164 +39,85 @@ def scala212s = '2.12'
 def scala211s = '2.11'
 def scala210s = '2.10'
 
-def scala212 = '2.12.6'
+def scala212 = '2.12.8'
 def scala211 = '2.11.12'
 def scala210 = '2.10.7'
-
-List<SparkScalaVariant> variants = [
-        SparkScalaVariant.main("spark24scala212", spark24, scala212),
-        SparkScalaVariant.variant("spark24scala211", spark24, scala211),
-        SparkScalaVariant.variant("spark20scala210", spark20, scala210)
-]
-
-class ScalaRuntimeCapability implements ComponentMetadataRule {
-    final static String SCALA_LIBRARY = 'scala-library'
-
-    @Override
-    void execute(ComponentMetadataContext componentMetadataContext) {
-        componentMetadataContext.details.with { // Mutate each module dependency
-            if (SCALA_LIBRARY.equals(id.name)) { // check if it's a scala library
-                allVariants { // for all variants on that dependency
-                    it.withCapabilities { // mutate each variant
-                        it.addCapability('org.elasticsearch.gradle', 'scala-runtime', id.version) // add the scala runtime capability
-                    }
-                }
-            }
-        }
-    }
-}
-
-dependencies {
-    // activate the rule
-    components.all(ScalaRuntimeCapability)
-}
 
 java {
     withJavadocJar()
     withSourcesJar()
 }
 
-variants.forEach { v ->
-    if (v.isVariant()) {
-        sourceSets {
-            create(v.variantSourceSetName) {
-                java {
-                    srcDir 'src/main/java'
-                }
-                scala {
-                    srcDir 'src/main/scala'
-                    srcDir "src/main/${v.variant}"
-                }
-            }
-            create(v.testSourceSetName) {
-                java {
-                    srcDir 'src/test/java'
-                }
-                scala {
-                    srcDir 'src/test/scala'
-                    srcDir "src/test/${v.variant}"
-                }
-                // This source set's associated main class is:
-                SourceSet main = (project.sourceSets as SourceSetContainer).findByName(v.variantSourceSetName)
-                // The variant test source needs the main source set class output, and its compile classpath for compilation
-                Configuration testCompileClasspath = project.getConfigurations().getByName(v.testConfiguration("compileClasspath"))
-                setCompileClasspath(project.files(main.getOutput(), testCompileClasspath))
-                // The variant test source needs its own class output, the main source set class output, and its runtime
-                // classpath for runtime
-                Configuration testRuntimeClasspath = project.getConfigurations().getByName(v.testConfiguration("runtimeClasspath"))
-                setRuntimeClasspath(project.files(getOutput(), main.getOutput(), testRuntimeClasspath))
-            }
-        }
+sparkVariants {
+    capabilityGroup 'org.elasticsearch.spark.sql.variant'
+    setDefaultVariant "spark24scala212", spark24, scala212
+    addFeatureVariant "spark24scala211", spark24, scala211
+    addFeatureVariant "spark20scala210", spark20, scala210
 
-        java {
-            registerFeature(v.variant) {
-                usingSourceSet(sourceSets.findByName(v.variantSourceSetName))
-                capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
-                capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
-                capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
-                withJavadocJar()
-                withSourcesJar()
-            }
-            registerFeature(v.testBase) {
-                usingSourceSet(sourceSets.findByName(v.testSourceSetName))
-                capability('org.elasticsearch.gradle', 'elasticsearch', '1.0')
-                capability('org.elasticsearch.gradle', 'spark-framework', v.sparkVersion)
-                capability('org.elasticsearch.gradle', 'scala-runtime', v.scalaMajorVersion)
-            }
+    featureVariants { SparkVariantPlugin.SparkVariant v ->
+        tasks.getByName(v.testTaskName()) {
+            excludes = ["**/Abstract*.class"]
+            ignoreFailures = false
+//            executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+            minHeapSize = "256m"
+            maxHeapSize = "2g"
         }
+    }
 
+    all { SparkVariantPlugin.SparkVariant v ->
         configurations { ConfigurationContainer container ->
-            ["compile", "implementation", "runtime", "runtimeOnly"].forEach { conf ->
-                container.getByName(v.testConfiguration(conf)) {
-                    extendsFrom configurations.findByName(v.configuration(conf))
-                }
+            container.create(v.configuration("embedded")) {
+                canBeConsumed = false
+                canBeResolved = true
             }
         }
 
-        project.tasks.create(v.testTaskName, Test) { Test t ->
-            t.testClassesDirs = project.sourceSets.getByName(v.testSourceSetName).output.classesDirs
-            t.classpath = project.sourceSets.getByName(v.testSourceSetName).runtimeClasspath
-            t.group = 'verification'
+        dependencies { DependencyHandler d ->
+            d.add(v.configuration("implementation"), "org.scala-lang:scala-library:${v.scalaVersion}")
+            d.add(v.configuration("implementation"), "org.scala-lang:scala-reflect:${v.scalaVersion}")
 
-            // Project Specific
-            t.excludes = ["**/Abstract*.class"]
-            t.ignoreFailures = false
-//    t.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
-            t.minHeapSize = "256m"
-            t.maxHeapSize = "2g"
+            add(v.configuration("embedded"), project(path: ':gtest:core', configuration: v.artifactConfiguration))
+            add(v.configuration("implementation"), project(':gtest:core')) {
+                capabilities {
+                    requireCapability("org.elasticsearch.spark.variant:${v.getName()}")
+                }
+            }
+
+            d.add(v.configuration("test", "implementation"), project(':gtest:core')) {
+                capabilities {
+                    requireCapability("org.elasticsearch.spark.variant:${v.getVariantName("test")}")
+                }
+            }
+            d.add(v.configuration("test", "implementation"), "junit:junit:4.12")
         }
-    }
 
-    configurations { ConfigurationContainer container ->
-        container.create(v.artifactConfiguration) {
-            canBeConsumed = true
-            canBeResolved = false
+        Closure variantJarNameFixer = { Jar jar ->
+            jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
+            String sanitizedClassifier = jar.archiveClassifier.get().replace(v.getName(), "")
+            sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
+            if (sanitizedClassifier.size() > 0) {
+                archiveClassifier = sanitizedClassifier
+            } else {
+                archiveClassifier = null
+            }
         }
-    }
 
-    artifacts { ArtifactHandler a ->
-        a.add(v.artifactConfiguration, project.tasks.getByName(v.variantTaskName("jar")))
-    }
+        project.tasks.getByName(v.taskName("jar"), variantJarNameFixer)
+        project.tasks.getByName(v.taskName("javadocJar"), variantJarNameFixer)
+        project.tasks.getByName(v.taskName("sourcesJar"), variantJarNameFixer)
 
-    dependencies { DependencyHandler d ->
-        d.add(v.configuration("implementation"), "org.scala-lang:scala-library:${v.scalaVersion}")
-        d.add(v.configuration("implementation"), "org.scala-lang:scala-reflect:${v.scalaVersion}")
-        d.add(v.configuration("implementation"), project(path: ':gtest:core', configuration: v.artifactConfiguration))
-        d.add(v.testConfiguration("implementation"), "junit:junit:4.12")
-    }
+        // embed dependent projects into the jar
+        // Todo: Look into using the Shadow Plugin for this.
+        project.tasks.getByName(v.taskName("jar")) { Jar jar ->
+            String expected = "core-1.0${v.isDefaultVariant() ? "" : "-" + v.getName()}.jar"
 
-    check {
-        dependsOn v.testTaskName
-    }
-
-    // SQL specific
-    project.tasks.getByName(v.variantTaskName("jar")) { Jar jar ->
-        Project coreProject = project(':gtest:core')
-        Configuration artifactConfiguration = coreProject.getConfigurations().getByName(v.artifactConfiguration)
-        File coreJar = artifactConfiguration.artifacts.file.get(0)
-        from(zipTree(coreJar)) {
-            include "org/elasticsearch/**"
-            include "META-INF/services/*"
+            Configuration embedded = project.getConfigurations().getByName(v.configuration("embedded"))
+            jar.dependsOn(embedded)
+            File coreJar = embedded.getFiles().find {expected.equals(it.name)}
+            jar.from(project.zipTree(coreJar)) {
+                include "org/elasticsearch/**"
+                include "META-INF/services/*"
+            }
         }
-    }
-
-    Closure variantJarNameFixer = { Jar jar ->
-        jar.archiveBaseName.set(jar.archiveBaseName.get() + "_" + v.scalaMajorVersion)
-        String sanitizedClassifier = jar.archiveClassifier.get().replace(v.variant, "")
-        sanitizedClassifier = sanitizedClassifier.startsWith("-") ? sanitizedClassifier.substring(1) : sanitizedClassifier
-        if (sanitizedClassifier.size() > 0) {
-            archiveClassifier = sanitizedClassifier
-        } else {
-            archiveClassifier = null
-        }
-    }
-
-    project.tasks.getByName(v.variantTaskName("jar"), variantJarNameFixer)
-    project.tasks.getByName(v.variantTaskName("javadocJar"), variantJarNameFixer)
-    project.tasks.getByName(v.variantTaskName("sourcesJar"), variantJarNameFixer)
-
-    // Because build depends on the variant javadoc and sources jars already but not the actual variant jar.
-    project.tasks.build {
-        dependsOn v.variantTaskName('jar')
     }
 }
