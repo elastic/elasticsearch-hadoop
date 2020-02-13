@@ -48,22 +48,23 @@ tasks.withType(ScalaCompile) { ScalaCompile task ->
 boolean localRepo = project.getProperties().containsKey("localRepo")
 
 dependencies {
-    compile project(":elasticsearch-hadoop-mr")
-    compile project(":elasticsearch-storm")
+    implementation(project(":elasticsearch-hadoop-mr"))
+    implementation(project(":elasticsearch-storm"))
 
-    compile 'org.scala-lang:scala-library:2.11.8'
-    compile project(":elasticsearch-spark-20")
+    implementation('org.scala-lang:scala-library:2.11.12')
+    implementation('org.scala-lang:scala-reflect:2.11.12')
+    implementation(project(":elasticsearch-spark-20"))
     
     compileOnly("com.fasterxml.jackson.module:jackson-module-scala_2.11:2.6.7.1")
     compileOnly("com.fasterxml.jackson.core:jackson-annotations:2.6.7")
     compileOnly("org.json4s:json4s-jackson_2.11:3.2.11")
     compileOnly("org.slf4j:slf4j-api:1.7.6")
 
-    compile("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
-    compile("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
+    implementation("org.apache.hadoop:hadoop-client:${HadoopClusterConfiguration.HADOOP.defaultVersion()}")
+    implementation("org.apache.spark:spark-sql_2.11:$project.ext.spark20Version")
 
-    compile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
-    compile project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath
+    implementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
+    implementation(project(":elasticsearch-storm").sourceSets.itest.runtimeClasspath)
 
     kdcFixture project(':test:fixtures:minikdc')
 

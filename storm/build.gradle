@@ -7,10 +7,9 @@ evaluationDependsOn(':elasticsearch-hadoop-mr')
 
 dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
-    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
+    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
 }
 
 jar {
@@ -35,8 +34,8 @@ dependencies {
         exclude module: "log4j-slf4j-impl"
     }
 
-    itestCompile "com.google.guava:guava:16.0.1"
-    itestRuntime "com.twitter:carbonite:1.4.0"
+    itestImplementation("com.google.guava:guava:16.0.1")
+    itestImplementation("com.twitter:carbonite:1.4.0")
 }
 
 // add itest to Eclipse
