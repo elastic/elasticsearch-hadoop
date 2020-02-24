@@ -29,12 +29,15 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
 import org.gradle.api.GradleException
 
+import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
+
 class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
+    static final Version VERSION = new Version(2, 3, 4)
     static final Map<Version, Map<String, String>> VERSION_MAP = [:]
     static {
-        VERSION_MAP.put(new Version(2, 3, 3),
-                ['SHA-512': '27CF9AD268E684D6926201BB5478F7F5A410659972BC79FC14AF61245EFF50C9A4363E400311B2FA9E1326E8AF1EB6DDE1D359B88B9143F25A49B3E11596B002'])
+        VERSION_MAP.put(VERSION,
+                ['SHA-512': '9FBEFCE2739990FFEDE6968A9C2F3FE399430556163BFDABDF5737A8F9E52CD535489F5CA7D641039A87700F50BFD91A706CA47979EE51A3A18787A92E2D6D53'])
     }
 
     static RoleDescriptor GATEWAY = RoleDescriptor.requiredGateway('spark', [])
@@ -61,7 +64,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
 
     @Override
     Version defaultVersion() {
-        return new Version(2, 3, 3)
+        return VERSION
     }
 
     @Override
@@ -116,7 +119,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    Map<String, Map<String, String>> collectConfigFilesContents(InstanceConfiguration configuration) {
+    Map<String, FileSettings> collectConfigFilesContents(InstanceConfiguration configuration) {
         return ['spark-defaults.conf' : configuration.getSettingsContainer().flattenFile('spark-defaults.conf')]
     }
 
@@ -126,7 +129,7 @@ class SparkYarnServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    String httpUri(InstanceConfiguration configuration, Map<String, Map<String, String>> configFileContents) {
+    String httpUri(InstanceConfiguration configuration, Map<String, FileSettings> configFileContents) {
         if (GATEWAY.equals(configuration.roleDescriptor)) {
             return null
         }

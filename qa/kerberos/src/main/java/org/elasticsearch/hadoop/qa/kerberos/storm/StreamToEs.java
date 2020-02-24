@@ -41,12 +41,13 @@ public class StreamToEs {
     public static void main(String[] args) throws Exception {
         final String submitPrincipal = args[0];
         final String submitKeytab = args[1];
+        final String esNodes = args[2];
         LoginContext loginContext = LoginUtil.keytabLogin(submitPrincipal, submitKeytab);
         try {
             Subject.doAs(loginContext.getSubject(), new PrivilegedExceptionAction<Void>() {
                 @Override
                 public Void run() throws Exception {
-                    submitJob(submitPrincipal, submitKeytab);
+                    submitJob(submitPrincipal, submitKeytab, esNodes);
                     return null;
                 }
             });
@@ -55,7 +56,7 @@ public class StreamToEs {
         }
     }
 
-    public static void submitJob(String principal, String keytab) throws Exception {
+    public static void submitJob(String principal, String keytab, String esNodes) throws Exception {
         List doc1 = Collections.singletonList("{\"reason\" : \"business\",\"airport\" : \"SFO\"}");
         List doc2 = Collections.singletonList("{\"participants\" : 5,\"airport\" : \"OTP\"}");
 
@@ -71,7 +72,7 @@ public class StreamToEs {
         List<Object> plugins = new ArrayList<Object>();
         plugins.add(AutoElasticsearch.class.getName());
         conf.put(Config.TOPOLOGY_AUTO_CREDENTIALS, plugins);
-        conf.put(ConfigurationOptions.ES_PORT, "9500");
+        conf.put(ConfigurationOptions.ES_NODES, esNodes);
         conf.put(ConfigurationOptions.ES_SECURITY_AUTHENTICATION, "kerberos");
         conf.put(ConfigurationOptions.ES_NET_SPNEGO_AUTH_ELASTICSEARCH_PRINCIPAL, "HTTP/build.elastic.co@BUILD.ELASTIC.CO");
         conf.put(ConfigurationOptions.ES_INPUT_JSON, "true");

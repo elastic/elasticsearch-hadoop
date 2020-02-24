@@ -31,6 +31,10 @@ dependencies {
     }
 }
 
+// Target Java 1.8 compilation
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
 // for testing, until fixture are actually debuggable.
 // gradle hides EVERYTHING so you have no clue what went wrong.
 task kdc(type: JavaExec) {

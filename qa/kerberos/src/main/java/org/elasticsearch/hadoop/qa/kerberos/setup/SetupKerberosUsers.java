@@ -19,8 +19,6 @@
 
 package org.elasticsearch.hadoop.qa.kerberos.setup;
 
-import java.util.Properties;
-
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.hadoop.cfg.PropertiesSettings;
 import org.elasticsearch.hadoop.cfg.Settings;

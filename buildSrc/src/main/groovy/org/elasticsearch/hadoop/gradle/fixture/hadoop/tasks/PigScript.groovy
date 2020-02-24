@@ -30,7 +30,23 @@ class PigScript extends AbstractClusterTask {
 
     File script
     List<File> libJars = []
-    Map<String, String> env = [:]
+
+    void libJars(File... files) {
+        libJars.addAll(files)
+    }
+
+    @Override
+    InstanceConfiguration defaultInstance(HadoopClusterConfiguration clusterConfiguration) {
+        return clusterConfiguration
+                .service(HadoopClusterConfiguration.PIG)
+                .role(PigServiceDescriptor.GATEWAY)
+                .instance(0)
+    }
+
+    @Override
+    Map<String, String> taskEnvironmentVariables() {
+        return [:]
+    }
 
     @TaskAction
     void runPig() {
@@ -43,10 +59,7 @@ class PigScript extends AbstractClusterTask {
         }
 
         // Gateway conf
-        InstanceConfiguration pigGateway = clusterConfiguration
-                .service(HadoopClusterConfiguration.PIG)
-                .role(PigServiceDescriptor.GATEWAY)
-                .instance(0)
+        InstanceConfiguration pigGateway = getInstance()
 
         File baseDir = pigGateway.getBaseDir()
         File homeDir = new File(baseDir, pigGateway.getServiceDescriptor().homeDirName(pigGateway))
@@ -67,9 +80,7 @@ class PigScript extends AbstractClusterTask {
         }
 
         // Use the service descriptor to pick up HADOOP_HOME=<hadoopHome>
-        Map<String, String> environment = pigGateway.getEnvironmentVariables()
-        pigGateway.getServiceDescriptor().finalizeEnv(environment, pigGateway)
-        environment.putAll(env)
+        Map<String, String> environment = collectEnvVars()
 
         // Additional env's
         // PIG_HEAPSIZE - In MB
