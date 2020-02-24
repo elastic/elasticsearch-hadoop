@@ -3,6 +3,7 @@ description = "Elasticsearch Spark (for Spark 1.3-1.6)"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
+apply plugin: 'java-library'
 apply plugin: 'scala'
 apply plugin: 'es.hadoop.build'
 apply plugin: 'scala.variants'
@@ -88,10 +89,9 @@ eclipse {
 
 dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
-    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    compile("org.scala-lang:scala-library:${project.ext.scalaVersion}")
-    compile("org.scala-lang:scala-reflect:${project.ext.scalaVersion}")
+    api("org.scala-lang:scala-library:${project.ext.scalaVersion}")
+    api("org.scala-lang:scala-reflect:${project.ext.scalaVersion}")
 
     provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
@@ -122,17 +122,17 @@ dependencies {
         exclude group: 'org.apache.hadoop'
     }
 
-    testCompile project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath
-    itestCompile project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath
+    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.runtimeClasspath)
+    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.runtimeClasspath)
 
-    testCompile("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    itestCompile("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    itestImplementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    testCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
 }
@@ -171,8 +171,14 @@ configurations.all { Configuration conf ->
             }
         }
     }
-
-    conf.exclude group: "org.mortbay.jetty"
+}
+configurations {
+    testImplementation {
+        exclude group: "org.mortbay.jetty"
+    }
+    itestImplementation {
+        exclude group: "org.mortbay.jetty"
+    }
 }
 
 tasks.withType(ScalaCompile) {

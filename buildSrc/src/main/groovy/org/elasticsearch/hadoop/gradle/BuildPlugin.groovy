@@ -273,6 +273,7 @@ class BuildPlugin implements Plugin<Project>  {
         }
 
         project.configurations.compile.dependencies.all(disableTransitiveDeps)
+        project.configurations.implementation.dependencies.all(disableTransitiveDeps)
         project.configurations.provided.dependencies.all(disableTransitiveDeps)
         project.configurations.optional.dependencies.all(disableTransitiveDeps)
         project.configurations.compileOnly.dependencies.all(disableTransitiveDeps)
@@ -289,19 +290,19 @@ class BuildPlugin implements Plugin<Project>  {
 
         // Detail all common dependencies
         project.dependencies {
-            testCompile "junit:junit:${project.ext.junitVersion}"
-            testCompile "org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}"
+            testImplementation("junit:junit:${project.ext.junitVersion}")
+            testImplementation("org.hamcrest:hamcrest-all:${project.ext.hamcrestVersion}")
 
-            testCompile "joda-time:joda-time:2.8"
+            testImplementation("joda-time:joda-time:2.8")
 
-            testRuntime "org.slf4j:slf4j-log4j12:1.7.6"
-            testRuntime "org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}"
-            testRuntime "org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}"
-            testRuntime "org.apache.logging.log4j:log4j-1.2-api:${project.ext.log4jVersion}"
-            testRuntime "net.java.dev.jna:jna:4.2.2"
-            testCompile "org.codehaus.groovy:groovy:${project.ext.groovyVersion}:indy"
-            testRuntime "org.locationtech.spatial4j:spatial4j:0.6"
-            testRuntime "com.vividsolutions:jts:1.13"
+            testImplementation("org.slf4j:slf4j-log4j12:1.7.6")
+            testImplementation("org.apache.logging.log4j:log4j-api:${project.ext.log4jVersion}")
+            testImplementation("org.apache.logging.log4j:log4j-core:${project.ext.log4jVersion}")
+            testImplementation("org.apache.logging.log4j:log4j-1.2-api:${project.ext.log4jVersion}")
+            testImplementation("net.java.dev.jna:jna:4.2.2")
+            testImplementation("org.codehaus.groovy:groovy:${project.ext.groovyVersion}:indy")
+            testImplementation("org.locationtech.spatial4j:spatial4j:0.6")
+            testImplementation("com.vividsolutions:jts:1.13")
 
             // TODO: Remove when we merge ITests to test dirs
             itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
@@ -309,11 +310,11 @@ class BuildPlugin implements Plugin<Project>  {
                 // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
                 exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
             }
-            itestCompile project.sourceSets.main.output
-            itestCompile project.configurations.testCompile
-            itestCompile project.configurations.provided
-            itestCompile project.sourceSets.test.output
-            itestRuntime project.configurations.testRuntime
+            itestImplementation(project.sourceSets.main.output)
+            itestImplementation(project.configurations.testImplementation)
+            itestImplementation(project.configurations.provided)
+            itestImplementation(project.sourceSets.test.output)
+            itestImplementation(project.configurations.testRuntimeClasspath)
         }
 
         // Deal with the messy conflicts out there
@@ -575,18 +576,6 @@ class BuildPlugin implements Plugin<Project>  {
                     connection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                     developerConnection = 'scm:git:git://github.com/elastic/elasticsearch-hadoop'
                 }
-                developers {
-                    developer {
-                        id = 'jbaiera'
-                        name = 'James Baiera'
-                        email = 'james.baiera@elastic.co'
-                    }
-                    developer {
-                        id = 'costin'
-                        name = 'Costin Leau'
-                        email = 'costin@elastic.co'
-                    }
-                }
             }
 
             groupId = "org.elasticsearch"
@@ -757,7 +746,7 @@ class BuildPlugin implements Plugin<Project>  {
 
         if (!project.path.startsWith(":qa")) {
             TaskProvider<DependencyLicensesTask> dependencyLicenses = project.tasks.register('dependencyLicenses', DependencyLicensesTask.class) {
-                dependencies = project.configurations.runtime.fileCollection {
+                dependencies = project.configurations.runtimeClasspath.fileCollection {
                     !(it instanceof ProjectDependency)
                 }
                 mapping from: /hadoop-.*/, to: 'hadoop'
@@ -780,7 +769,7 @@ class BuildPlugin implements Plugin<Project>  {
     private static void configureDependenciesInfo(Project project) {
         if (!project.path.startsWith(":qa")) {
             project.tasks.register("dependenciesInfo", DependenciesInfoTask) { DependenciesInfoTask task ->
-                task.runtimeConfiguration = project.configurations.getByName(JavaPlugin.RUNTIME_CONFIGURATION_NAME)
+                task.runtimeConfiguration = project.configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME)
                 task.compileOnlyConfiguration = project.configurations.getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME)
                 // Create a property called mappings that points to the same mappings in the dependency licenses task.
                 task.getConventionMapping().map('mappings') {

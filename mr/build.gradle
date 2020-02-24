@@ -17,9 +17,9 @@ dependencies {
     provided("org.codehaus.jackson:jackson-mapper-asl:${project.ext.jacksonVersion}")
     provided("org.codehaus.jackson:jackson-core-asl:${project.ext.jacksonVersion}")
     
-    testCompile(project.ext.hadoopClient)
-    testCompile "io.netty:netty-all:4.0.29.Final"
-    testCompile "org.elasticsearch:securemock:1.2"
+    testImplementation(project.ext.hadoopClient)
+    testImplementation("io.netty:netty-all:4.0.29.Final")
+    testImplementation("org.elasticsearch:securemock:1.2")
 }
 
 String generatedResources = "$buildDir/generated-resources/main"
