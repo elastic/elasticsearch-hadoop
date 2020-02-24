@@ -3,6 +3,7 @@ description = "Elasticsearch Spark (for Spark 2.X)"
 
 evaluationDependsOn(':elasticsearch-hadoop-mr')
 
+apply plugin: 'java-library'
 apply plugin: 'scala'
 apply plugin: 'es.hadoop.build.integration'
 apply plugin: 'scala.variants'
@@ -95,10 +96,9 @@ eclipse {
 
 dependencies {
     provided(project(":elasticsearch-hadoop-mr"))
-    provided(project(path: ":elasticsearch-hadoop-mr", configuration:"compile"))
 
-    compile("org.scala-lang:scala-library:$scalaVersion")
-    compile("org.scala-lang:scala-reflect:$scalaVersion")
+    api("org.scala-lang:scala-library:$scalaVersion")
+    api("org.scala-lang:scala-reflect:$scalaVersion")
 
     provided("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
@@ -132,23 +132,23 @@ dependencies {
         exclude group: 'org.apache.hadoop'
     }
 
-    testCompile "org.elasticsearch:securemock:1.2"
-    testCompile(project(":elasticsearch-hadoop-mr").sourceSets.test.output)
+    testImplementation("org.elasticsearch:securemock:1.2")
+    testImplementation(project(":elasticsearch-hadoop-mr").sourceSets.test.output)
 
-    itestCompile(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
+    itestImplementation(project(":elasticsearch-hadoop-mr").sourceSets.itest.output)
 
-    testCompile(project.ext.hadoopClient)
-    testCompile("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testImplementation(project.ext.hadoopClient)
+    testImplementation("org.apache.spark:spark-core_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'javax.servlet'
         exclude group: 'org.apache.hadoop'
     }
-    itestCompile("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    itestImplementation("org.apache.spark:spark-yarn_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    testCompile("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    testImplementation("org.apache.spark:spark-sql_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
-    itestCompile("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
+    itestImplementation("org.apache.spark:spark-streaming_${project.ext.scalaMajorVersion}:$sparkVersion") {
         exclude group: 'org.apache.hadoop'
     }
 }
