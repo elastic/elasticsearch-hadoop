@@ -37,7 +37,6 @@ import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.testing.Test
-import org.gradle.api.tasks.testing.TestReport
 import org.gradle.external.javadoc.JavadocOutputLevel
 import org.gradle.external.javadoc.MinimalJavadocOptions
 import org.gradle.internal.jvm.Jvm
@@ -65,7 +64,6 @@ class BuildPlugin implements Plugin<Project>  {
         configureEclipse(project)
         configureMaven(project)
         configureIntegrationTestTask(project)
-        configureTestReports(project)
         configurePrecommit(project)
         configureDependenciesInfo(project)
     }
@@ -590,22 +588,34 @@ class BuildPlugin implements Plugin<Project>  {
      * @param project to be configured
      */
     private static void configureIntegrationTestTask(Project project) {
-        Jar hadoopTestingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-        if (hadoopTestingJar == null) {
-            // jar used for testing Hadoop remotely (es-hadoop + tests)
-            hadoopTestingJar = project.rootProject.tasks.create('hadoopTestingJar', Jar)
-            hadoopTestingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
-            hadoopTestingJar.classifier = 'testing'
-            project.logger.info("Created Remote Testing Jar")
-        }
+        if (project != project.rootProject) {
+
+        Jar itestJar = project.tasks.create('itestJar', Jar)
+        itestJar.dependsOn(project.tasks.getByName('jar'))
+        itestJar.getArchiveClassifier().set('testing')
+        project.logger.info("Created [${project.name}] Testing Jar")
+
+//        Jar hadoopTestingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
+//        if (hadoopTestingJar == null) {
+//            // jar used for testing Hadoop remotely (es-hadoop + tests)
+//            hadoopTestingJar = project.rootProject.tasks.create('hadoopTestingJar', Jar)
+//            hadoopTestingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
+//            hadoopTestingJar.classifier = 'testing'
+//            project.logger.info("Created Remote Testing Jar")
+//        }
+
+        itestJar.from(project.sourceSets.main.output)
+        itestJar.from(project.sourceSets.test.output)
+        itestJar.from(project.sourceSets.itest.output)
 
         // Add this project's classes to the testing uber-jar
-        hadoopTestingJar.from(project.sourceSets.test.output)
-        hadoopTestingJar.from(project.sourceSets.main.output)
-        hadoopTestingJar.from(project.sourceSets.itest.output)
+//        hadoopTestingJar.from(project.sourceSets.test.output)
+//        hadoopTestingJar.from(project.sourceSets.main.output)
+//        hadoopTestingJar.from(project.sourceSets.itest.output)
 
         Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
-        integrationTest.dependsOn(hadoopTestingJar)
+//        integrationTest.dependsOn(hadoopTestingJar)
+        integrationTest.dependsOn(itestJar)
 
         integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
         integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
@@ -632,28 +642,12 @@ class BuildPlugin implements Plugin<Project>  {
         integrationTest.reports.html.enabled = false
 
         // Only add cluster settings if it's not the root project
-        if (project != project.rootProject) {
+//        if (project != project.rootProject) {
             project.logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
             // Create the cluster fixture around the integration test.
             // There's probably a more elegant way to do this in Gradle
             project.plugins.apply("es.hadoop.cluster")
         }
-    }
-
-    /**
-     * Configure the root testReport task with the test tasks in this project to report on, creating the report task
-     * on root if it is not created yet.
-     * @param project to configure
-     */
-    private static void configureTestReports(Project project) {
-        TestReport testReport = project.rootProject.getTasks().findByName('testReport') as TestReport
-        if (testReport == null) {
-            // Create the task on root if it is not created yet.
-            testReport = project.rootProject.getTasks().create('testReport', TestReport.class)
-            testReport.setDestinationDir(project.rootProject.file("${project.rootProject.getBuildDir()}/reports/allTests"))
-        }
-        testReport.reportOn(project.getTasks().getByName('test'))
-        testReport.reportOn(project.getTasks().getByName('integrationTest'))
     }
 
     /**
