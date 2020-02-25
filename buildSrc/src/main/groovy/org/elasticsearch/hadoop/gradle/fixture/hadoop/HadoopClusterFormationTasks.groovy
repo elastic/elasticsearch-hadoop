@@ -52,12 +52,11 @@ import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContai
 class HadoopClusterFormationTasks {
 
     /**
-     * A start and stop task for an instance, as well as any and all instance specific setup and teardown tasks
+     * A start and stop task for a fixture
      */
-    static class InstanceTasks {
+    static class TaskPair {
         Task startTask
         Task stopTask
-        List<Task> allTasks
     }
 
     /**
@@ -73,7 +72,7 @@ class HadoopClusterFormationTasks {
      * <p>
      * Returns a list of NodeInfo objects for each node in the cluster.
      *
-     * Based on {@link org.elasticsearch.gradle.test.ClusterFormationTasks}
+     * Based on (now removed) org.elasticsearch.gradle.test.ClusterFormationTasks
      */
     static List<InstanceInfo> setup(Project project, HadoopClusterConfiguration clusterConfiguration) {
         String prefix = clusterConfiguration.getName()
@@ -103,20 +102,20 @@ class HadoopClusterFormationTasks {
         List<InstanceInfo> nodes = []
 
         // Create the fixtures for each service
-        List<InstanceTasks> clusterTaskPairs = []
+        List<TaskPair> clusterTaskPairs = []
         for (ServiceConfiguration serviceConfiguration : clusterConfiguration.getServices()) {
 
             // Get the download task for this service's package and add it to the service's dependency tasks
             DistributionTasks distributionTasks = getOrConfigureDistributionDownload(project, serviceConfiguration)
 
             // Keep track of the start tasks in this service
-            List<InstanceTasks> serviceTaskPairs = []
+            List<TaskPair> serviceTaskPairs = []
 
             // Create fixtures for each role in the service
             for (RoleConfiguration roleConfiguration : serviceConfiguration.getRoles()) {
 
                 // Keep track of the start tasks in this role
-                List<InstanceTasks> roleTaskPairs = []
+                List<TaskPair> roleTaskPairs = []
 
                 // Create fixtures for each instance in the role
                 for (InstanceConfiguration instanceConfiguration : roleConfiguration.getInstances()) {
@@ -140,7 +139,7 @@ class HadoopClusterFormationTasks {
                     nodes.add(instanceInfo)
 
                     // Create the tasks for the instance
-                    InstanceTasks instanceTasks
+                    TaskPair instanceTasks
                     try {
                         instanceTasks = configureNode(project, prefix, instanceDependencies, instanceInfo,
                                 distributionTasks)
@@ -169,16 +168,6 @@ class HadoopClusterFormationTasks {
                             def depStop = ((Fixture)dependency).stopTask
                             instanceClusterTasks.forEach { Task clusterTask ->
                                 clusterTask.finalizedBy(depStop)
-                            }
-                        }
-                    }
-
-                    // Check to see if any of the instance tasks are test cluster aware, and if they are, set the
-                    // es cluster to be whichever cluster was configured, if any
-                    if (instanceInfo.elasticsearchCluster != null) {
-                        for (Task instanceTask : instanceTasks.allTasks) {
-                            if (instanceTask instanceof DefaultTestClustersTask) {
-                                ((DefaultTestClustersTask) instanceTask).useCluster(instanceInfo.elasticsearchCluster)
                             }
                         }
                     }
@@ -248,44 +237,31 @@ class HadoopClusterFormationTasks {
         return new DistributionTasks(download: downloadTask, verify: verifyTask)
     }
 
-    static InstanceTasks configureNode(Project project, String prefix, Object dependsOn, InstanceInfo node,
-                                       DistributionTasks distribution) {
-        List<Task> instanceTasks = []
-
-        Task clean = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
+    static TaskPair configureNode(Project project, String prefix, Object dependsOn, InstanceInfo node,
+                                  DistributionTasks distribution) {
+        Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
             group = 'hadoopFixture'
         }
-        instanceTasks.add(clean)
 
         // Only create CWD and check previous if the role is an executable process
-        Task lastInitTask = clean
         if (node.getConfig().getRoleDescriptor().isExecutableProcess()) {
-            Task createCwd = project.tasks.create(name: taskName(prefix, node, 'createCwd'), type: DefaultTask, dependsOn: clean) {
+            setup = project.tasks.create(name: taskName(prefix, node, 'createCwd'), type: DefaultTask, dependsOn: setup) {
                 doLast {
                     node.cwd.mkdirs()
                 }
                 outputs.dir node.cwd
                 group = 'hadoopFixture'
             }
-            Task checkPrevious = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, createCwd, node)
-            Task stopPrevious = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, checkPrevious, node)
-            lastInitTask = stopPrevious
-
-            instanceTasks.add(createCwd)
-            instanceTasks.add(checkPrevious)
-            instanceTasks.add(stopPrevious)
+            setup = configureCheckPreviousTask(taskName(prefix, node, 'checkPrevious'), project, setup, node)
+            setup = configureStopTask(taskName(prefix, node, 'stopPrevious'), project, setup, node)
         }
 
         // Always extract the package contents, and configure the files
-        Task extract = configureExtractTask(taskName(prefix, node, 'extract'), project, lastInitTask, node, distribution)
-        Task configure = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, extract, node)
-        Task extraConfig = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, configure, node)
-
-        instanceTasks.add(extract)
-        instanceTasks.add(configure)
-        instanceTasks.add(extraConfig)
+        setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distribution)
+        setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
+        setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
 
         // If the role for this instance is not a process, we skip creating start and stop tasks for it.
         if (!node.getConfig().getRoleDescriptor().isExecutableProcess()) {
@@ -294,16 +270,15 @@ class HadoopClusterFormationTasks {
             for (Object dependency : node.config.getDependencies()) {
                 if (dependency instanceof Fixture) {
                     def depStop = ((Fixture)dependency).stopTask
-                    extraConfig.finalizedBy(depStop)
+                    setup.finalizedBy(depStop)
                 }
             }
-            return new InstanceTasks(startTask: extraConfig, allTasks: instanceTasks)
+            return new TaskPair(startTask: setup)
         }
 
         Map<String, Object[]> setupCommands = new LinkedHashMap<>()
         setupCommands.putAll(node.config.getServiceDescriptor().defaultSetupCommands(node.config))
         setupCommands.putAll(node.config.getSetupCommands())
-        Task lastSetupCommand = extraConfig
         for (Map.Entry<String, Object[]> command : setupCommands) {
             // the first argument is the actual script name, relative to home
             Object[] args = command.getValue().clone()
@@ -323,21 +298,17 @@ class HadoopClusterFormationTasks {
                 commandPath = node.homeDir.toPath().resolve(args[0].toString()).toString()
             }
             args[0] = commandPath
-            lastSetupCommand = configureExecTask(taskName(prefix, node, command.getKey()), project, lastSetupCommand, node, args)
-            instanceTasks.add(lastSetupCommand)
+            setup = configureExecTask(taskName(prefix, node, command.getKey()), project, setup, node, args)
         }
 
         // Configure daemon start task
-        Task start = configureStartTask(taskName(prefix, node, 'start'), project, lastSetupCommand, node)
-        instanceTasks.add(start)
+        Task start = configureStartTask(taskName(prefix, node, 'start'), project, setup, node)
 
         // Configure wait task
         Task wait = configureWaitTask(taskName(prefix, node, 'wait'), project, node, start, 30)
-        instanceTasks.add(wait)
 
         // Configure daemon stop task
         Task stop = configureStopTask(taskName(prefix, node, 'stop'), project, [], node)
-        instanceTasks.add(stop)
 
         // We're running in the background, so make sure that the stop command is called after all cluster tasks finish
         wait.finalizedBy(stop)
@@ -351,7 +322,7 @@ class HadoopClusterFormationTasks {
                 stop.finalizedBy(depStop)
             }
         }
-        return new InstanceTasks(startTask: wait, stopTask: stop, allTasks: instanceTasks)
+        return new TaskPair(startTask: wait, stopTask: stop)
     }
 
     static Task configureCheckPreviousTask(String name, Project project, Task setup, InstanceInfo node) {
@@ -376,6 +347,9 @@ class HadoopClusterFormationTasks {
         // Add all node level configs to node Configuration
         return project.tasks.create(name: name, type: DefaultTestClustersTask, dependsOn: setup) {
             group = 'hadoopFixture'
+            if (node.elasticsearchCluster != null) {
+                useCluster(node.elasticsearchCluster)
+            }
             doFirst {
                 // Write each config file needed
                 node.configFiles.forEach { configFile ->
