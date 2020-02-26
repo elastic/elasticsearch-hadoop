@@ -27,18 +27,10 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.ServiceDescriptor
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
-import org.gradle.api.GradleException
 
 import static org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.SettingsContainer.FileSettings
 
 class HadoopServiceDescriptor implements ServiceDescriptor {
-
-    static final Map<Version, Map<String, String>> VERSION_MAP = [:]
-    static {
-        VERSION_MAP.put(new Version(2, 7, 7),
-                ['SHA-512': '17c8917211dd4c25f78bf60130a390f9e273b0149737094e45f4ae5c917b1174b97eb90818c5df068e607835120126281bcc07514f38bd7fd3cb8e9d3db1bdde'])
-    }
 
     static final RoleDescriptor NAMENODE = RoleDescriptor.requiredProcess('namenode')
     static final RoleDescriptor DATANODE = RoleDescriptor.requiredProcess('datanode', [NAMENODE])
@@ -73,12 +65,8 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     }
 
     @Override
-    void configureDownload(ApacheMirrorDownload task, ServiceConfiguration configuration) {
-        Version version = configuration.getVersion()
-        task.packagePath = 'hadoop/common'
-        task.packageName = 'hadoop'
-        task.artifactFileName = "hadoop-${version}.tar.gz"
-        task.version = "${version}"
+    String getDependencyCoordinates(ServiceConfiguration configuration) {
+        return "hadoop.common:hadoop-${configuration.getVersion()}:${artifactName(configuration)}@tar.gz"
     }
 
     @Override
@@ -90,15 +78,6 @@ class HadoopServiceDescriptor implements ServiceDescriptor {
     String artifactName(ServiceConfiguration configuration) {
         Version version = configuration.getVersion()
         return "hadoop-${version}"
-    }
-
-    @Override
-    Map<String, String> packageHashVerification(Version version) {
-        Map<String, String> hashVerifications = VERSION_MAP.get(version)
-        if (hashVerifications == null) {
-            throw new GradleException("Unsupported version [$version] - No download hash configured")
-        }
-        return hashVerifications
     }
 
     @Override

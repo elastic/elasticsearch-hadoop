@@ -28,13 +28,12 @@ import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.HadoopClusterConfigur
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.InstanceConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.RoleConfiguration
 import org.elasticsearch.hadoop.gradle.fixture.hadoop.conf.ServiceConfiguration
-import org.elasticsearch.hadoop.gradle.tasks.ApacheMirrorDownload
-import org.elasticsearch.hadoop.gradle.tasks.VerifyChecksums
 import org.gradle.api.AntBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
@@ -57,14 +56,6 @@ class HadoopClusterFormationTasks {
     static class TaskPair {
         Task startTask
         Task stopTask
-    }
-
-    /**
-     * Pairing of download and verification tasks for a distribution
-     */
-    static class DistributionTasks {
-        ApacheMirrorDownload download
-        VerifyChecksums verify
     }
 
     /**
@@ -104,7 +95,7 @@ class HadoopClusterFormationTasks {
         for (ServiceConfiguration serviceConfiguration : clusterConfiguration.getServices()) {
 
             // Get the download task for this service's package and add it to the service's dependency tasks
-            DistributionTasks distributionTasks = getOrConfigureDistributionDownload(project, serviceConfiguration)
+            Configuration distributionConfiguration = getOrConfigureDistributionDownload(project, serviceConfiguration)
 
             // Keep track of the start tasks in this service
             List<TaskPair> serviceTaskPairs = []
@@ -140,7 +131,7 @@ class HadoopClusterFormationTasks {
                     TaskPair instanceTasks
                     try {
                         instanceTasks = configureNode(project, prefix, instanceDependencies, instanceInfo,
-                                distributionTasks)
+                                distributionConfiguration)
                     } catch (Exception e) {
                         throw new GradleException(
                                 "Exception occurred while initializing instance [${instanceInfo.toString()}]", e)
@@ -207,36 +198,21 @@ class HadoopClusterFormationTasks {
      * either an already created one from the root project, or a newly created download task. These also contain the
      * verify task to ensure the download has been securely captured.
      */
-    static DistributionTasks getOrConfigureDistributionDownload(Project project, ServiceConfiguration serviceConfiguration) {
+    static Configuration getOrConfigureDistributionDownload(Project project, ServiceConfiguration serviceConfiguration) {
         Version serviceVersion = serviceConfiguration.getVersion()
 
-        String downloadTaskName = "download${serviceConfiguration.serviceDescriptor.packageName().capitalize()}#${serviceVersion}"
-        String verifyTaskName = "verify${serviceConfiguration.serviceDescriptor.packageName().capitalize()}#${serviceVersion}"
-
-        ApacheMirrorDownload downloadTask = project.rootProject.tasks.findByName(downloadTaskName) as ApacheMirrorDownload
-        if (downloadTask == null) {
-            downloadTask = project.rootProject.tasks.create(name: downloadTaskName, type: ApacheMirrorDownload) as ApacheMirrorDownload
-            serviceConfiguration.getServiceDescriptor().configureDownload(downloadTask, serviceConfiguration)
-            downloadTask.group = 'downloads'
-            downloadTask.onlyIf { !downloadTask.outputFile().exists() }
+        String configurationName = "download${serviceConfiguration.serviceDescriptor.packageName().capitalize()}#${serviceVersion}"
+        Configuration configuration = project.configurations.findByName(configurationName)
+        if (configuration == null) {
+            configuration = project.configurations.create(configurationName)
+            project.dependencies.add(configurationName, serviceConfiguration.getServiceDescriptor().getDependencyCoordinates(serviceConfiguration))
         }
 
-        VerifyChecksums verifyTask = project.rootProject.tasks.findByName(verifyTaskName) as VerifyChecksums
-        if (verifyTask == null) {
-            verifyTask = project.rootProject.tasks.create(name: verifyTaskName, type: VerifyChecksums) as VerifyChecksums
-            verifyTask.group = 'downloads'
-            verifyTask.dependsOn downloadTask
-            verifyTask.inputFile downloadTask.outputFile()
-            for (Map.Entry<String, String> hash : serviceConfiguration.serviceDescriptor.packageHashVerification(serviceVersion)) {
-                verifyTask.checksum hash.key, hash.value
-            }
-        }
-
-        return new DistributionTasks(download: downloadTask, verify: verifyTask)
+        return configuration
     }
 
     static TaskPair configureNode(Project project, String prefix, Object dependsOn, InstanceInfo node,
-                                  DistributionTasks distribution) {
+                                  Configuration distributionConfiguration) {
         Task setup = project.tasks.create(name: taskName(prefix, node, 'clean'), type: Delete, dependsOn: dependsOn) {
             delete node.homeDir
             delete node.cwd
@@ -257,7 +233,7 @@ class HadoopClusterFormationTasks {
         }
 
         // Always extract the package contents, and configure the files
-        setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distribution)
+        setup = configureExtractTask(taskName(prefix, node, 'extract'), project, setup, node, distributionConfiguration)
         setup = configureWriteConfigTask(taskName(prefix, node, 'configure'), project, setup, node)
         setup = configureExtraConfigFilesTask(taskName(prefix, node, 'extraConfig'), project, setup, node)
 
@@ -329,13 +305,13 @@ class HadoopClusterFormationTasks {
         return setup
     }
 
-    static Task configureExtractTask(String name, Project project, Task setup, InstanceInfo node, DistributionTasks distribution) {
-        List extractDependsOn = [distribution.verify, setup]
+    static Task configureExtractTask(String name, Project project, Task setup, InstanceInfo node, Configuration distributionConfiguration) {
+        List extractDependsOn = [distributionConfiguration, setup]
         return project.tasks.create(name: name, type: Copy, dependsOn: extractDependsOn) {
             group = 'hadoopFixture'
             // TODO: Switch logic if a service is ever not a tar distribution
             from {
-                project.tarTree(project.resources.gzip(distribution.download.outputFile()))
+                project.tarTree(project.resources.gzip(distributionConfiguration.files.first()))
             }
             into node.baseDir
         }
