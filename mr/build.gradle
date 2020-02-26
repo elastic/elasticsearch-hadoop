@@ -20,6 +20,11 @@ dependencies {
     testImplementation(project.ext.hadoopClient)
     testImplementation("io.netty:netty-all:4.0.29.Final")
     testImplementation("org.elasticsearch:securemock:1.2")
+    itestImplementation("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
+        // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
+        // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
+        exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
+    }
 }
 
 String generatedResources = "$buildDir/generated-resources/main"

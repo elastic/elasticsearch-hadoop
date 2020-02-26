@@ -302,12 +302,6 @@ class BuildPlugin implements Plugin<Project>  {
             testImplementation("org.locationtech.spatial4j:spatial4j:0.6")
             testImplementation("com.vividsolutions:jts:1.13")
 
-            // TODO: Remove when we merge ITests to test dirs
-            itestCompile("org.apache.hadoop:hadoop-minikdc:${project.ext.minikdcVersion}") {
-                // For some reason, the dependencies that are pulled in with MiniKDC have multiple resource files
-                // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
-                exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
-            }
             itestImplementation(project.sourceSets.main.output)
             itestImplementation(project.configurations.testImplementation)
             itestImplementation(project.configurations.provided)
@@ -589,60 +583,44 @@ class BuildPlugin implements Plugin<Project>  {
      */
     private static void configureIntegrationTestTask(Project project) {
         if (project != project.rootProject) {
+            Jar itestJar = project.tasks.create('itestJar', Jar)
+            itestJar.dependsOn(project.tasks.getByName('jar'))
+            itestJar.getArchiveClassifier().set('testing')
+            project.logger.info("Created [${project.name}] Testing Jar")
 
-        Jar itestJar = project.tasks.create('itestJar', Jar)
-        itestJar.dependsOn(project.tasks.getByName('jar'))
-        itestJar.getArchiveClassifier().set('testing')
-        project.logger.info("Created [${project.name}] Testing Jar")
+            // Add this project's classes to the testing uber-jar
+            itestJar.from(project.sourceSets.main.output)
+            itestJar.from(project.sourceSets.test.output)
+            itestJar.from(project.sourceSets.itest.output)
 
-//        Jar hadoopTestingJar = project.rootProject.tasks.findByName('hadoopTestingJar') as Jar
-//        if (hadoopTestingJar == null) {
-//            // jar used for testing Hadoop remotely (es-hadoop + tests)
-//            hadoopTestingJar = project.rootProject.tasks.create('hadoopTestingJar', Jar)
-//            hadoopTestingJar.dependsOn(project.rootProject.tasks.getByName('jar'))
-//            hadoopTestingJar.classifier = 'testing'
-//            project.logger.info("Created Remote Testing Jar")
-//        }
+            Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
+            integrationTest.dependsOn(itestJar)
 
-        itestJar.from(project.sourceSets.main.output)
-        itestJar.from(project.sourceSets.test.output)
-        itestJar.from(project.sourceSets.itest.output)
+            integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
+            integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
+            integrationTest.excludes = ["**/Abstract*.class"]
 
-        // Add this project's classes to the testing uber-jar
-//        hadoopTestingJar.from(project.sourceSets.test.output)
-//        hadoopTestingJar.from(project.sourceSets.main.output)
-//        hadoopTestingJar.from(project.sourceSets.itest.output)
+            integrationTest.ignoreFailures = false
 
-        Test integrationTest = project.tasks.create('integrationTest', RestTestRunnerTask.class)
-//        integrationTest.dependsOn(hadoopTestingJar)
-        integrationTest.dependsOn(itestJar)
+            integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
+            integrationTest.minHeapSize = "256m"
+            integrationTest.maxHeapSize = "2g"
 
-        integrationTest.testClassesDirs = project.sourceSets.itest.output.classesDirs
-        integrationTest.classpath = project.sourceSets.itest.runtimeClasspath
-        integrationTest.excludes = ["**/Abstract*.class"]
+            integrationTest.testLogging {
+                displayGranularity 0
+                events "started", "failed" //, "standardOut", "standardError"
+                exceptionFormat "full"
+                showCauses true
+                showExceptions true
+                showStackTraces true
+                stackTraceFilters "groovy"
+                minGranularity 2
+                maxGranularity 2
+            }
 
-        integrationTest.ignoreFailures = false
+            integrationTest.reports.html.enabled = false
 
-        integrationTest.executable = "${project.ext.get('runtimeJavaHome')}/bin/java"
-        integrationTest.minHeapSize = "256m"
-        integrationTest.maxHeapSize = "2g"
-
-        integrationTest.testLogging {
-            displayGranularity 0
-            events "started", "failed" //, "standardOut", "standardError"
-            exceptionFormat "full"
-            showCauses true
-            showExceptions true
-            showStackTraces true
-            stackTraceFilters "groovy"
-            minGranularity 2
-            maxGranularity 2
-        }
-
-        integrationTest.reports.html.enabled = false
-
-        // Only add cluster settings if it's not the root project
-//        if (project != project.rootProject) {
+            // Only add cluster settings if it's not the root project
             project.logger.info "Configuring ${project.name} integrationTest task to use ES Fixture"
             // Create the cluster fixture around the integration test.
             // There's probably a more elegant way to do this in Gradle
