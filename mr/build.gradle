@@ -25,6 +25,9 @@ dependencies {
         // that cause issues when they are loaded. We exclude the ldap schema data jar to get around this.
         exclude group: "org.apache.directory.api", module: "api-ldap-schema-data"
     }
+
+    testImplementation(project(":test:shared"))
+    itestImplementation(project(":test:shared"))
 }
 
 String generatedResources = "$buildDir/generated-resources/main"
