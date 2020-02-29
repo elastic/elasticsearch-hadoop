@@ -16,23 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.hadoop.rest;
 
-import static org.elasticsearch.hadoop.rest.Request.Method.*;
+package org.elasticsearch.hadoop.serialization;
 
-public class TestRestClient {
+public class JdkMainValueReaderTest extends JdkValueReaderTest {
 
-    private final RestClient restClient;
-
-    public TestRestClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
-
-    public void waitForShards() throws Exception {
-        restClient.execute(GET, "_cluster/health?level=indices&wait_for_status=green");
-    }
-
-    public void waitForShards(String index) throws Exception {
-        restClient.execute(GET, "_cluster/health/" + index + "?level=indices&wait_for_status=yellow");
-    }
 }
