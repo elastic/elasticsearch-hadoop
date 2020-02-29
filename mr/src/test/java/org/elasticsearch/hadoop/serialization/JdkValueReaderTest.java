@@ -19,6 +19,6 @@
 
 package org.elasticsearch.hadoop.serialization;
 
-public class JdkMainValueReaderTest extends JdkValueReaderTest {
+public class JdkValueReaderTest extends BaseValueReaderTest {
 
 }
